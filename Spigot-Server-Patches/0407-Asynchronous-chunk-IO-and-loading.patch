@@ -1,4 +1,4 @@
-From a82f85934120f0328dcbcfd3e2bcdce42ceed9d2 Mon Sep 17 00:00:00 2001
+From cb2c909ee04f438edd6765c9ee0b4cb057e6799f Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1696,10 +1696,10 @@ index 0000000000..24f231bf45
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 new file mode 100644
-index 0000000000..66761409b0
+index 0000000000..c3a6b482c2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,114 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1707,6 +1707,7 @@ index 0000000000..66761409b0
 +import com.destroystokyo.paper.io.IOUtil;
 +import com.destroystokyo.paper.io.PrioritizedTaskQueue;
 +import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.IAsyncTaskHandler;
 +import net.minecraft.server.IChunkAccess;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.server.MinecraftServer;
@@ -1744,7 +1745,9 @@ index 0000000000..66761409b0
 +            // has a plugin modified something it should not have and made us CME?
 +            ConcreteFileIOThread.LOGGER.error("Failed to serialize unloading chunk data for task: " + this.toString() + ", falling back to a synchronous execution", ex);
 +
-+            MinecraftServer.getServer().scheduleOnMain(() -> {
++            // Note: We add to the server thread queue here since this is what the server will drain tasks from
++            // when waiting for chunks
++            ((IAsyncTaskHandler<Runnable>)this.world.getChunkProvider().serverThreadQueue).addTask(() -> {
 +                try (Timing ignored = this.world.timings.chunkUnloadDataSave.startTiming()) {
 +                    NBTTagCompound data = ConcreteFileIOThread.FAILURE_VALUE;
 +
@@ -1859,7 +1862,7 @@ index 0000000000..400fae5d09
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..921cc59145
+index 0000000000..373793c488
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,303 @@
@@ -2079,11 +2082,11 @@ index 0000000000..921cc59145
 +
 +        if (this.workers == null) {
 +            if (Bukkit.isPrimaryThread()) {
-+                ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).awaitTasks(() -> false);
++                ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).executeAll();
 +            } else {
 +                CompletableFuture<Void> wait = new CompletableFuture<>();
 +                MinecraftServer.getServer().scheduleOnMain(() -> {
-+                    ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).awaitTasks(() -> false);
++                    ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).executeAll();
 +                });
 +                wait.join();
 +            }
@@ -2325,7 +2328,7 @@ index d76860daf8..213e519803 100644
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  this.world.timings.chunkAwait.stopTiming(); // Paper
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index f88e3d957f..ca5f9fcc9b 100644
+index f88e3d957f..85f4f03c4f 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -2420,7 +2423,7 @@ index f88e3d957f..ca5f9fcc9b 100644
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
  
-@@ -233,11 +272,72 @@ public class ChunkRegionLoader {
+@@ -233,11 +272,83 @@ public class ChunkRegionLoader {
                  protochunk1.a(worldgenstage_features, BitSet.valueOf(nbttagcompound5.getByteArray(s1)));
              }
  
@@ -2460,9 +2463,20 @@ index f88e3d957f..ca5f9fcc9b 100644
 +        NibbleArray[] skyLight = new NibbleArray[17 - (-1)];
 +
 +        for (int i = -1; i < 17; ++i) {
++            NibbleArray blockArray = lightenginethreaded.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkPos, i)); // TODO obfhelpers
++            NibbleArray skyArray = lightenginethreaded.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkPos, i)); // TODO obfhelpers
++
++            // copy data for safety
++            if (blockArray != null) {
++                blockArray = blockArray.copy();
++            }
++            if (skyArray != null) {
++                skyArray = skyArray.copy();
++            }
++
 +            // apply offset of 1 for -1 starting index
-+            blockLight[i + 1] = lightenginethreaded.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkPos, i)); // TODO obfhelpers
-+            skyLight[i + 1] = lightenginethreaded.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkPos, i)); // TODO obfhelpers
++            blockLight[i + 1] = blockArray;
++            skyLight[i + 1] = skyArray;
 +        }
 +
 +        TickList<Block> blockTickList = chunk.n(); // TODO obfhelper
@@ -2494,7 +2508,7 @@ index f88e3d957f..ca5f9fcc9b 100644
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
          NBTTagCompound nbttagcompound = new NBTTagCompound();
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
-@@ -246,7 +346,7 @@ public class ChunkRegionLoader {
+@@ -246,7 +357,7 @@ public class ChunkRegionLoader {
          nbttagcompound.set("Level", nbttagcompound1);
          nbttagcompound1.setInt("xPos", chunkcoordintpair.x);
          nbttagcompound1.setInt("zPos", chunkcoordintpair.z);
@@ -2503,7 +2517,7 @@ index f88e3d957f..ca5f9fcc9b 100644
          nbttagcompound1.setLong("InhabitedTime", ichunkaccess.q());
          nbttagcompound1.setString("Status", ichunkaccess.getChunkStatus().d());
          ChunkConverter chunkconverter = ichunkaccess.p();
-@@ -262,14 +362,22 @@ public class ChunkRegionLoader {
+@@ -262,14 +373,22 @@ public class ChunkRegionLoader {
  
          NBTTagCompound nbttagcompound2;
  
@@ -2530,7 +2544,7 @@ index f88e3d957f..ca5f9fcc9b 100644
              if (chunksection != Chunk.a || nibblearray != null || nibblearray1 != null) {
                  nbttagcompound2 = new NBTTagCompound();
                  nbttagcompound2.setByte("Y", (byte) (i & 255));
-@@ -334,10 +442,10 @@ public class ChunkRegionLoader {
+@@ -334,10 +453,10 @@ public class ChunkRegionLoader {
                      // Paper start
                      if ((int)Math.floor(entity.locX) >> 4 != chunk.getPos().x || (int)Math.floor(entity.locZ) >> 4 != chunk.getPos().z) {
                          LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
@@ -2543,7 +2557,7 @@ index f88e3d957f..ca5f9fcc9b 100644
                          continue;
                      }
                      // Paper end
-@@ -378,7 +486,11 @@ public class ChunkRegionLoader {
+@@ -378,7 +497,11 @@ public class ChunkRegionLoader {
          if (ticklist instanceof ProtoChunkTickList) {
              nbttagcompound1.set("ToBeTicked", ((ProtoChunkTickList) ticklist).a());
          } else if (ticklist instanceof TickListChunk) {
@@ -2556,7 +2570,7 @@ index f88e3d957f..ca5f9fcc9b 100644
          } else {
              nbttagcompound1.set("TileTicks", worldserver.getBlockTickList().a(chunkcoordintpair));
          }
-@@ -388,7 +500,11 @@ public class ChunkRegionLoader {
+@@ -388,7 +511,11 @@ public class ChunkRegionLoader {
          if (ticklist1 instanceof ProtoChunkTickList) {
              nbttagcompound1.set("LiquidsToBeTicked", ((ProtoChunkTickList) ticklist1).a());
          } else if (ticklist1 instanceof TickListChunk) {
@@ -2581,6 +2595,19 @@ index e324989b46..abb0d69d2f 100644
      public static int a(ChunkStatus chunkstatus) {
          return ChunkStatus.r.getInt(chunkstatus.c());
      }
+diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+index c0d5112444..340f20f934 100644
+--- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
++++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+@@ -87,7 +87,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
+ 
+     }
+ 
+-    protected void executeAll() {
++    public void executeAll() { // Paper - protected -> public
+         while (this.executeNext()) {
+             ;
+         }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
 index 3f14392e6e..cc933ec067 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
@@ -2684,6 +2711,18 @@ index 2b99fdc630..729e598672 100644
      }
  
      public String getServerIp() {
+diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
+index 90c096876e..eb2c061550 100644
+--- a/src/main/java/net/minecraft/server/NibbleArray.java
++++ b/src/main/java/net/minecraft/server/NibbleArray.java
+@@ -71,6 +71,7 @@ public class NibbleArray {
+         return this.a;
+     }
+ 
++    public NibbleArray copy() { return this.b(); } // Paper - OBFHELPER
+     public NibbleArray b() {
+         return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 89b72da828..d3510ad7e2 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
