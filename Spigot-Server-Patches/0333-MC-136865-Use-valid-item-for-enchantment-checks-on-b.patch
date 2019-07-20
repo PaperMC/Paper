@@ -1,0 +1,33 @@
+From e8401927cb5951f9f934619dc3b1afa8be467dab Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Thu, 1 Nov 2018 14:50:05 -0700
+Subject: [PATCH] MC-136865: Use valid item for enchantment checks on block
+ break
+
+When an itemstack runs out of durability, the amount is reduced to
+0 which then marks the item as invalid. This causes the last unit
+of durability to not apply enchantments as the enchantment level
+check sees the item as a dud.
+
+keep the clone of the item used to a non empty value so it represents
+the item used.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index a898535d1b..f953bd7ceb 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -352,9 +352,10 @@ public class PlayerInteractManager {
+                     ItemStack itemstack = this.player.getItemInMainHand();
+                     boolean flag1 = this.player.hasBlock(iblockdata);
+ 
++                    ItemStack itemstack1 = flag && flag1 && event.isDropItems() && !itemstack.isEmpty() ? itemstack.cloneItemStack() : ItemStack.a; // Paper - MC-136865 - clone before use
+                     itemstack.a(this.world, iblockdata, blockposition, this.player);
+                     if (flag && flag1 && event.isDropItems()) { // CraftBukkit - Check if block should drop items
+-                        ItemStack itemstack1 = itemstack.isEmpty() ? ItemStack.a : itemstack.cloneItemStack();
++                        //ItemStack itemstack1 = itemstack.isEmpty() ? ItemStack.a : itemstack.cloneItemStack(); // Paper - MC-136865 - move up
+ 
+                         block.a(this.world, this.player, blockposition, iblockdata, tileentity, itemstack1);
+                     }
+-- 
+2.22.0
+

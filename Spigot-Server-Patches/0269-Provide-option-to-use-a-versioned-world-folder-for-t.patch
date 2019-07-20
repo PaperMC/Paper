@@ -1,0 +1,230 @@
+From 9c38be60e37133286ee35635cdc44ac7a4eb555e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 29 Jul 2018 15:48:50 -0400
+Subject: [PATCH] Provide option to use a versioned world folder for testing
+
+This should not ever be used in production!!
+
+This setting is intended for testing so you can try out converting your world
+without actually modifying the world files.
+
+This will add some additional overhead to your world, but you're
+just testing anyways so that's not a big deal :)
+
+Will store in a folder named after the current version.
+
+PlayerData and Data folders are copied on server start, so there
+may be some delay there, but region files are only copied on demand.
+
+This is highly experiemental so backup your world before relying on this to not modify it
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index eeef7d330b..dfdc7c384d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -13,6 +13,7 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
++import java.util.logging.Logger;
+ import java.util.regex.Pattern;
+ 
+ import com.google.common.collect.Lists;
+@@ -287,4 +288,27 @@ public class PaperConfig {
+             Bukkit.getLogger().log(Level.INFO, "Using Aikar's Alternative Luck Formula to apply Luck attribute to all loot pool calculations. See https://luckformula.emc.gs");
+         }
+     }
++
++    public static boolean useVersionedWorld = false;
++    private static void useVersionedWorld() {
++        useVersionedWorld = getBoolean("settings.use-versioned-world", false);
++        if (useVersionedWorld) {
++            Logger logger = Bukkit.getLogger();
++            String ver = MinecraftServer.getServer().getVersion();
++            logger.log(Level.INFO, "******************************************************");
++            logger.log(Level.INFO, "*** Using a versioned world folder. Your world will be saved");
++            logger.log(Level.INFO, "*** to into the " + ver + " folder, but copied from your current world.");
++            logger.log(Level.INFO, "*** ");
++            logger.log(Level.INFO, "*** This setting should not be used in your real world!!!");
++            logger.log(Level.INFO, "*** If you want to retain the new world, you need to move ");
++            logger.log(Level.INFO, "*** the folders out of the " + ver + " folder and overwrite existing");
++            logger.log(Level.INFO, "*** ");
++            logger.log(Level.INFO, "*** Deleting the " + ver + " folder will cause it to recreate again");
++            logger.log(Level.INFO, "*** from your unversioned world files.");
++            logger.log(Level.INFO, "*** ");
++            logger.log(Level.INFO, "*** You should backup your original world files incase something goes");
++            logger.log(Level.INFO, "*** wrong with this system! This is not a backup system.");
++            logger.log(Level.INFO, "******************************************************");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index 21b3b06f53..8718811655 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -10,13 +10,41 @@ import java.io.IOException;
+ import javax.annotation.Nullable;
+ import com.destroystokyo.paper.PaperConfig; // Paper
+ 
++import org.apache.logging.log4j.LogManager;
++
+ public abstract class RegionFileCache implements AutoCloseable {
+ 
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> cache = new Long2ObjectLinkedOpenHashMap();
+     private final File a;
++    // Paper start
++    private final File templateWorld;
++    private final File actualWorld;
++    private boolean useAltWorld;
++    // Paper end
++
+ 
+     protected RegionFileCache(File file) {
+         this.a = file;
++        // Paper end
++
++        this.actualWorld = file;
++        if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
++            this.useAltWorld = true;
++            String name = file.getName();
++            File container = file.getParentFile().getParentFile();
++            if (name.equals("DIM-1") || name.equals("DIM1")) {
++                container = container.getParentFile();
++            }
++            this.templateWorld = new File(container, name);
++            File region = new File(file, "region");
++            if (!region.exists()) {
++                region.mkdirs();
++            }
++        } else {
++            this.useAltWorld = false;
++            this.templateWorld = file;
++        }
++        // Paper start
+     }
+ 
+     private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+@@ -34,6 +62,7 @@ public abstract class RegionFileCache implements AutoCloseable {
+                 this.a.mkdirs();
+             }
+ 
++            copyIfNeeded(chunkcoordintpair.x, chunkcoordintpair.z); // Paper
+             File file = new File(this.a, "r." + chunkcoordintpair.getRegionX() + "." + chunkcoordintpair.getRegionZ() + ".mca");
+             if (existingOnly && !file.exists()) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(file);
+@@ -43,6 +72,15 @@ public abstract class RegionFileCache implements AutoCloseable {
+         }
+     }
+ 
++    public static File getRegionFileName(File file, int i, int j) {
++        File file1 = new File(file, "region");
++        return new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
++    }
++    public synchronized boolean hasRegionFile(File file, int i, int j) {
++        return cache.containsKey(ChunkCoordIntPair.pair(i, j));
++    }
++    // Paper End
++
+     @Nullable
+     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
+         RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+@@ -132,9 +170,33 @@ public abstract class RegionFileCache implements AutoCloseable {
+ 
+     // CraftBukkit start
+     public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
++        copyIfNeeded(pos.x, pos.z); // Paper
+         RegionFile regionfile = a(pos, true);
+ 
+         return regionfile != null ? regionfile.d(pos) : false;
+     }
+     // CraftBukkit end
++
++    private void copyIfNeeded(int x, int z) {
++        if (!useAltWorld) {
++            return;
++        }
++        synchronized (RegionFileCache.class) {
++            if (hasRegionFile(this.actualWorld, x, z)) {
++                return;
++            }
++            File actual = RegionFileCache.getRegionFileName(this.actualWorld, x, z);
++            File template = RegionFileCache.getRegionFileName(this.templateWorld, x, z);
++            if (!actual.exists() && template.exists()) {
++                try {
++                    net.minecraft.server.MinecraftServer.LOGGER.info("Copying" + template + " to " + actual);
++                    java.nio.file.Files.copy(template.toPath(), actual.toPath(), java.nio.file.StandardCopyOption.COPY_ATTRIBUTES);
++                } catch (IOException e1) {
++                    LogManager.getLogger().error("Error copying " + template + " to " + actual, e1);
++                    MinecraftServer.getServer().safeShutdown(false);
++                    com.destroystokyo.paper.util.SneakyThrow.sneaky(e1);
++                }
++            }
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+index 350ac42d6b..eaae446861 100644
+--- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
++++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+@@ -31,6 +31,58 @@ public class WorldNBTStorage implements IPlayerFileData {
+ 
+     public WorldNBTStorage(File file, String s, @Nullable MinecraftServer minecraftserver, DataFixer datafixer) {
+         this.a = datafixer;
++        // Paper start
++        if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
++            File origBaseDir = new File(file, s);
++            final String currentVersion = MinecraftServer.getServer().getVersion();
++            file = new File(file, currentVersion);
++            File baseDir = new File(file, s);
++
++            if (!baseDir.exists() && origBaseDir.exists() && !baseDir.mkdirs()) {
++                LogManager.getLogger().error("Could not create world directory for " + file);
++                System.exit(1);
++            }
++
++            try {
++                boolean printedHeader = false;
++                String[] dirs  = {"advancements", "data", "datapacks", "playerdata", "stats"};
++                for (String dir : dirs) {
++                    File origPlayerData = new File(origBaseDir, dir);
++                    File targetPlayerData = new File(baseDir, dir);
++                    if (origPlayerData.exists() && !targetPlayerData.exists()) {
++                        if (!printedHeader) {
++                            LogManager.getLogger().info("**** VERSIONED WORLD - Copying files");
++                            printedHeader = true;
++                        }
++                        LogManager.getLogger().info("- Copying: " + dir);
++                        org.apache.commons.io.FileUtils.copyDirectory(origPlayerData, targetPlayerData);
++                    }
++                }
++
++                String[] files = {"level.dat", "level.dat_old", "session.lock", "uid.dat"};
++                for (String fileName : files) {
++                    File origPlayerData = new File(origBaseDir, fileName);
++                    File targetPlayerData = new File(baseDir, fileName);
++                    if (origPlayerData.exists() && !targetPlayerData.exists()) {
++                        if (!printedHeader) {
++                            LogManager.getLogger().info("- Copying files");
++                            printedHeader = true;
++                        }
++                        LogManager.getLogger().info("- Copying: " + fileName);
++                        org.apache.commons.io.FileUtils.copyFile(origPlayerData, targetPlayerData);
++
++                    }
++                }
++                if (printedHeader) {
++                    LogManager.getLogger().info("**** VERSIONED WORLD - Copying DONE");
++                }
++            } catch (IOException e) {
++                LogManager.getLogger().error("Error copying versioned world data for " + origBaseDir + " to " + baseDir, e);
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(e);
++            }
++
++        }
++        // Paper end
+         this.baseDir = new File(file, s);
+         this.baseDir.mkdirs();
+         this.playerDir = new File(this.baseDir, "playerdata");
+-- 
+2.22.0
+
