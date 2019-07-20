@@ -1,4 +1,4 @@
-From 809683d3881bc499a0cf61ab612defa3d8247f66 Mon Sep 17 00:00:00 2001
+From a102a6cc49527bdeed3a809e3ef6989aa3d083b6 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 20 Jul 2019 15:20:04 -0700
 Subject: [PATCH] Better server sleeping/waiting
@@ -10,6 +10,8 @@ did not want that.
 
 We also introduce a method to wait for a completable future, which
 is common when waiting for sync loads to complete.
+
+This aims to fix https://bugs.mojang.com/browse/MC-149018
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 775b5f7fe..c0ecfa53d 100644
@@ -25,14 +27,14 @@ index 775b5f7fe..c0ecfa53d 100644
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index d521d25cf..a038718fa 100644
+index d521d25cf..49bf6db00 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -91,6 +91,101 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
  
      }
  
-+    // Paper start - better waiting
++    // Paper start - better waiting (MC-149018)
 +    public void waitFor(final long time) { // time in ns
 +        final long start = System.nanoTime();
 +
@@ -131,7 +133,7 @@ index d521d25cf..a038718fa 100644
          while (this.executeNext()) {
              ;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eb1006dda..cda28cd53 100644
+index eb1006dda..b5305b7be 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -988,9 +988,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -141,7 +143,7 @@ index eb1006dda..cda28cd53 100644
 -        this.awaitTasks(() -> {
 -            return !this.canSleepForTick();
 -        });
-+        // Paper start - improve wait
++        // Paper start - improve wait (MC-149018)
 +        // ac will be false here given that flag is set depending on the last value of executeNext, which will be false
 +        // after executing all tasks
 +        this.waitFor((this.nextTick * 1000 * 1000) - System.nanoTime());
