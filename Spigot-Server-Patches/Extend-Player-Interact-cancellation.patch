@@ -13,21 +13,21 @@ Update adjacent blocks of doors, double plants, pistons and beds
 when cancelling interaction.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index e306b138d..89a13b88b 100644
+index ac60c96e3a..a898535d1b 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
-         if (event.isCancelled()) {
-             // Let the client know the block still exists
-             ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
-+            // Paper start - brute force neighbor blocks for any attached blocks
-+            for (EnumDirection dir : EnumDirection.values()) {
-+                ((EntityPlayer) this.player).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
-+            }
-+            // Paper end
-             // Update any tile entity data for this block
-             TileEntity tileentity = this.world.getTileEntity(blockposition);
-             if (tileentity != null) {
+                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
+                 if (event.isCancelled()) {
+                     // Let the client know the block still exists
++                    // Paper start - brute force neighbor blocks for any attached blocks
++                    for (EnumDirection dir : EnumDirection.values()) {
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
++                    }
++                    // Paper end
+                     this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
+                     // Update any tile entity data for this block
+                     TileEntity tileentity = this.world.getTileEntity(blockposition);
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
                  ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
              } else if (iblockdata.getBlock() instanceof BlockCake) {

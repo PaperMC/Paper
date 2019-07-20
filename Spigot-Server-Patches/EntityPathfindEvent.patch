@@ -6,20 +6,20 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/server/Navigation.java b/src/main/java/net/minecraft/server/Navigation.java
-index 04ccf141ce..e15728668e 100644
+index 9ca0e2c9d0..fd1dbb1085 100644
 --- a/src/main/java/net/minecraft/server/Navigation.java
 +++ b/src/main/java/net/minecraft/server/Navigation.java
 @@ -0,0 +0,0 @@ public class Navigation extends NavigationAbstract {
  
      @Override
-     public PathEntity a(Entity entity) {
--        return this.b(new BlockPosition(entity));
-+        return this.b(new BlockPosition(entity), entity); // Paper - Forward target entity
+     public PathEntity a(Entity entity, int i) {
+-        return this.a(new BlockPosition(entity), i);
++        return this.a(new BlockPosition(entity), entity, i); // Paper - Forward target entity
      }
  
      private int t() {
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index 4a03bd9800..a9f17b0318 100644
+index 4e49133b03..4d04ba8fc6 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -32,62 +32,68 @@ index 4a03bd9800..a9f17b0318 100644
      @Nullable
      protected PathEntity c;
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
-         return this.b(new BlockPosition(d0, d1, d2));
-     }
  
--    @Nullable
--    public PathEntity b(BlockPosition blockposition) {
-+    // Paper start - Add target entity parameter for path find event
-+    @Nullable public PathEntity b(BlockPosition blockposition) { return this.b(blockposition, null); }
-+    @Nullable public PathEntity b(BlockPosition blockposition, Entity target) {
+     @Nullable
+     public PathEntity a(BlockPosition blockposition, int i) {
+-        return this.a(ImmutableSet.of(blockposition), 8, false, i);
++        // Paper start - add target parameter
++        return this.a(blockposition, null, i);
++    }
++    @Nullable public PathEntity a(BlockPosition blockposition, Entity target, int i) {
++        return this.a(ImmutableSet.of(blockposition), target, 8, false, i);
 +        // Paper end
-         float f = (float) blockposition.getX() + 0.5F;
-         float f1 = (float) blockposition.getY() + 0.5F;
-         float f2 = (float) blockposition.getZ() + 0.5F;
- 
--        return this.a(blockposition, (double) f, (double) f1, (double) f2, 8, false);
-+        return this.a(blockposition, target, (double) f, (double) f1, (double) f2, 8, false); // Paper - Path find event
      }
  
      @Nullable
-@@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
-         double d1 = entity.getBoundingBox().minY;
-         double d2 = entity.locZ;
- 
--        return this.a(blockposition, d0, d1, d2, 16, true);
-+        return this.a(blockposition, entity, d0, d1, d2, 16, true); // Paper - Path find event
+     public PathEntity a(Entity entity, int i) {
+-        return this.a(ImmutableSet.of(new BlockPosition(entity)), 16, true, i);
++        return this.a(ImmutableSet.of(new BlockPosition(entity)), entity, 16, true, i); // Paper
      }
  
      @Nullable
--    protected PathEntity a(BlockPosition blockposition, double d0, double d1, double d2, int i, boolean flag) {
-+    protected PathEntity a(BlockPosition blockposition, double d0, double d1, double d2, int i, boolean flag) { return this.a(blockposition, null, d0, d1, d2, i, flag); }
-+    @Nullable protected PathEntity a(BlockPosition blockposition, Entity target, double d0, double d1, double d2, int i, boolean flag) {
-         if (this.a.locY < 0.0D) {
++    // Paper start - Add target
+     protected PathEntity a(Set<BlockPosition> set, int i, boolean flag, int j) {
++        return this.a(set, null, i, flag, j);
++    }
++    @Nullable protected PathEntity a(Set<BlockPosition> set, Entity target, int i, boolean flag, int j) {
++        // Paper end
+         if (set.isEmpty()) {
              return null;
-         } else if (!this.a()) {
+         } else if (this.a.locY < 0.0D) {
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
-         } else if (this.c != null && !this.c.b() && blockposition.equals(this.q)) {
+         } else if (this.c != null && !this.c.b() && set.contains(this.q)) {
              return this.c;
          } else {
 +            // Paper start - Pathfind event
-+            if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
-+                MCUtil.toLocation(getEntity().world, blockposition), target == null ? null : target.getBukkitEntity()).callEvent()) {
-+                return null;
++            boolean copiedSet = false;
++            for (BlockPosition possibleTarget : set) {
++                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(getEntity().getBukkitEntity(),
++                    MCUtil.toLocation(getEntity().world, possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                    if (!copiedSet) {
++                        copiedSet = true;
++                        set = new java.util.HashSet<>(set);
++                    }
++                    // note: since we copy the set this remove call is safe, since we're iterating over the old copy
++                    set.remove(possibleTarget);
++                    if (set.isEmpty()) {
++                        return null;
++                    }
++                }
 +            }
 +            // Paper end
-             this.q = blockposition.immutableCopy();
+             this.b.getMethodProfiler().enter("pathfind");
              float f = this.i();
- 
+             BlockPosition blockposition = flag ? (new BlockPosition(this.a)).up() : new BlockPosition(this.a);
 diff --git a/src/main/java/net/minecraft/server/NavigationFlying.java b/src/main/java/net/minecraft/server/NavigationFlying.java
-index 9dfca6067f..551ff417bd 100644
+index f5844a7260..fbf5752aa5 100644
 --- a/src/main/java/net/minecraft/server/NavigationFlying.java
 +++ b/src/main/java/net/minecraft/server/NavigationFlying.java
 @@ -0,0 +0,0 @@ public class NavigationFlying extends NavigationAbstract {
  
      @Override
-     public PathEntity a(Entity entity) {
--        return this.b(new BlockPosition(entity));
-+        return this.b(new BlockPosition(entity), entity); // Paper - Pathfind event
+     public PathEntity a(Entity entity, int i) {
+-        return this.a(new BlockPosition(entity), i);
++        return this.a(new BlockPosition(entity), entity, i); // Paper - Forward target entity
      }
  
      @Override

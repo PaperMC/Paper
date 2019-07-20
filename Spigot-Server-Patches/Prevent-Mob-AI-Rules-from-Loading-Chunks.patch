@@ -5,7 +5,7 @@ Subject: [PATCH] Prevent Mob AI Rules from Loading Chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
-index 4199c154e..31c441201 100644
+index bf8ca9b32a..7ccb3d5c06 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
 @@ -0,0 +0,0 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
@@ -46,14 +46,13 @@ index 4199c154e..31c441201 100644
  
      @Override
      protected boolean a(IWorldReader iworldreader, BlockPosition blockposition) {
--        Block block = iworldreader.getType(blockposition).getBlock();
-+        Block block = world.getBlockIfLoaded(blockposition); // Paper
-+        if (block == null) return false; // Paper
+-        IChunkAccess ichunkaccess = iworldreader.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
++        IChunkAccess ichunkaccess = iworldreader.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
  
-         return block == this.g && iworldreader.getType(blockposition.up()).isAir() && iworldreader.getType(blockposition.up(2)).isAir();
+         return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).getBlock() == this.g && ichunkaccess.getType(blockposition.up()).isAir() && ichunkaccess.getType(blockposition.up(2)).isAir();
      }
 diff --git a/src/main/java/net/minecraft/server/RandomPositionGenerator.java b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
-index dd6a8fe3d..ddbb71b1a 100644
+index 6e4da70b7e..643dc0241d 100644
 --- a/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 +++ b/src/main/java/net/minecraft/server/RandomPositionGenerator.java
 @@ -0,0 +0,0 @@ public class RandomPositionGenerator {
