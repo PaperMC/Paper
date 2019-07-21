@@ -1,0 +1,132 @@
+From 067f8a34842642d10d77ee2c67185f74d6e02a11 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 28 Jul 2018 12:18:27 -0400
+Subject: [PATCH] Ignore Dead Entities in entityList iteration
+
+A spigot change delays removal of entities from the entity list.
+This causes a change in behavior from Vanilla where getEntities type
+methods will return dead entities that they shouldn't otherwise be doing.
+
+This will ensure that dead entities are skipped from iteration since
+they shouldn't of been in the list in the first place.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 360abc05e4..391726d99c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -176,6 +176,7 @@ public class PaperCommand extends Command {
+                 Collection<Entity> entities = world.entitiesById.values();
+                 entities.forEach(e -> {
+                     MinecraftKey key = e.getMinecraftKey();
++                    if (e.shouldBeRemoved) return; // Paper
+ 
+                     MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
+                     ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index a74e389d14..09e010e670 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -678,6 +678,7 @@ public class Chunk implements IChunkAccess {
+ 
+                 while (iterator.hasNext()) {
+                     Entity entity1 = (Entity) iterator.next();
++                    if (entity1.shouldBeRemoved) continue; // Paper
+ 
+                     if (entity1.getBoundingBox().c(axisalignedbb) && entity1 != entity) {
+                         if (predicate == null || predicate.test(entity1)) {
+@@ -715,6 +716,7 @@ public class Chunk implements IChunkAccess {
+ 
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
++                if (entity.shouldBeRemoved) continue; // Paper
+ 
+                 if ((entitytypes == null || entity.getEntityType() == entitytypes) && entity.getBoundingBox().c(axisalignedbb) && predicate.test(entity)) {
+                     list.add(entity);
+@@ -736,6 +738,7 @@ public class Chunk implements IChunkAccess {
+ 
+             while (iterator.hasNext()) {
+                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
++                if (t0.shouldBeRemoved) continue; // Paper
+ 
+                 if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
+                     list.add(t0);
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 701090c11e..7d579c119b 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -126,6 +126,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public float D;
+     public float E;
+     public float F;
++    public boolean shouldBeRemoved; // Paper
+     public float fallDistance;
+     private float av;
+     private float aw;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index f8ecb42d1a..5263bebc56 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -845,7 +845,7 @@ public class WorldServer extends World {
+ 
+         while (objectiterator.hasNext()) {
+             Entity entity = (Entity) objectiterator.next();
+-
++            if (entity.shouldBeRemoved) continue; // Paper
+             if (entity instanceof EntityInsentient) {
+                 EntityInsentient entityinsentient = (EntityInsentient) entity;
+ 
+@@ -1136,6 +1136,7 @@ public class WorldServer extends World {
+                 entity.origin = entity.getBukkitEntity().getLocation();
+             }
+             // Paper end
++            entity.shouldBeRemoved = false; // Paper - shouldn't be removed after being re-added
+             new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
+         }
+ 
+@@ -1150,6 +1151,7 @@ public class WorldServer extends World {
+             this.removeEntityFromChunk(entity);
+             this.entitiesById.remove(entity.getId());
+             this.unregisterEntity(entity);
++            entity.shouldBeRemoved = true; // Paper
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0c190e5f49..ddfb39ef6f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -931,6 +931,7 @@ public class CraftWorld implements World {
+         for (Object o : world.entitiesById.values()) {
+             if (o instanceof net.minecraft.server.Entity) {
+                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
++                if (mcEnt.shouldBeRemoved) continue; // Paper
+                 Entity bukkitEntity = mcEnt.getBukkitEntity();
+ 
+                 // Assuming that bukkitEntity isn't null
+@@ -950,6 +951,7 @@ public class CraftWorld implements World {
+         for (Object o : world.entitiesById.values()) {
+             if (o instanceof net.minecraft.server.Entity) {
+                 net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
++                if (mcEnt.shouldBeRemoved) continue; // Paper
+                 Entity bukkitEntity = mcEnt.getBukkitEntity();
+ 
+                 // Assuming that bukkitEntity isn't null
+@@ -976,6 +978,7 @@ public class CraftWorld implements World {
+ 
+         for (Object entity: world.entitiesById.values()) {
+             if (entity instanceof net.minecraft.server.Entity) {
++                if (((net.minecraft.server.Entity) entity).shouldBeRemoved) continue; // Paper
+                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
+ 
+                 if (bukkitEntity == null) {
+@@ -999,6 +1002,7 @@ public class CraftWorld implements World {
+ 
+         for (Object entity: world.entitiesById.values()) {
+             if (entity instanceof net.minecraft.server.Entity) {
++                if (((net.minecraft.server.Entity) entity).shouldBeRemoved) continue; // Paper
+                 Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
+ 
+                 if (bukkitEntity == null) {
+-- 
+2.22.0
+
