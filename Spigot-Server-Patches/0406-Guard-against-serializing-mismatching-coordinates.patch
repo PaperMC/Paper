@@ -1,0 +1,54 @@
+From 45e8540db7446fb7a0b90ef9be39f206e55ba055 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 17 Jul 2019 03:55:30 -0700
+Subject: [PATCH] Guard against serializing mismatching coordinates
+
+Check the coordinate in the compound before writing
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index a028074112..a8977b9c76 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -22,11 +22,19 @@ public class ChunkRegionLoader {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+ 
++    // Paper start
++    // TODO this needs to be re-checked each update
++    public static ChunkCoordIntPair getChunkCoordinate(NBTTagCompound chunkData) {
++        NBTTagCompound levelData = chunkData.getCompound("Level");
++        return new ChunkCoordIntPair(levelData.getInt("xPos"), levelData.getInt("zPos"));
++    }
++    // Paper end
++
+     public static ProtoChunk loadChunk(WorldServer worldserver, DefinedStructureManager definedstructuremanager, VillagePlace villageplace, ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
+         ChunkGenerator<?> chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
+         WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
+-        NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level");
+-        ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos"));
++        NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level"); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
++        ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
+ 
+         if (!Objects.equals(chunkcoordintpair, chunkcoordintpair1)) {
+             ChunkRegionLoader.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkcoordintpair, chunkcoordintpair, chunkcoordintpair1);
+diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
+index 3f14392e6e..d03a0640c6 100644
+--- a/src/main/java/net/minecraft/server/IChunkLoader.java
++++ b/src/main/java/net/minecraft/server/IChunkLoader.java
+@@ -87,6 +87,13 @@ public class IChunkLoader extends RegionFileCache {
+ 
+     @Override
+     public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
++        // Paper start
++        if (!chunkcoordintpair.equals(ChunkRegionLoader.getChunkCoordinate(nbttagcompound))) {
++            String world = (this instanceof PlayerChunkMap) ? ((PlayerChunkMap)this).world.getWorld().getName() : null;
++            throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkcoordintpair.toString()
++                + " but compound says coordinate is " + ChunkRegionLoader.getChunkCoordinate(nbttagcompound).toString() + (world == null ? " for an unknown world" : (" for world: " + world)));
++        }
++        // Paper end
+         super.write(chunkcoordintpair, nbttagcompound);
+         if (this.a != null) {
+             this.a.a(chunkcoordintpair.pair());
+-- 
+2.22.0
+
