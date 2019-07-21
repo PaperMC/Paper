@@ -173,7 +173,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public boolean sleep(Location location, boolean force) {
-        Preconditions.checkArgument(location != null, "Location == null");
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
         Preconditions.checkArgument(location.getWorld().equals(getWorld()), "Cannot sleep across worlds");
 
         BlockPosition blockposition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
