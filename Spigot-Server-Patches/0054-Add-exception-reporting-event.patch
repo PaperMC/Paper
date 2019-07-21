@@ -1,4 +1,4 @@
-From 599de7111c22e14f4eb714ace7d8b832e772723a Mon Sep 17 00:00:00 2001
+From 2dcaa28a3ddee3a3e45a0217be730e2f10b1cde9 Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 03:15:41 -0600
 Subject: [PATCH] Add exception reporting event
@@ -49,7 +49,7 @@ index 000000000..f699ce18c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index f6f5b72de..ec64391a4 100644
+index 46635a530..6c13ae3ba 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,6 @@
@@ -80,10 +80,10 @@ index f6f5b72de..ec64391a4 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 534636889..cafa244fd 100644
+index 25e0163c6..4e60de0b6 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -14,6 +14,9 @@ import java.util.function.BooleanSupplier;
+@@ -15,6 +15,9 @@ import java.util.function.BooleanSupplier;
  import java.util.function.Function;
  import java.util.function.Supplier;
  import javax.annotation.Nullable;
@@ -121,10 +121,10 @@ index 2cb0962ff..21a8ed323 100644
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c352c71d0..b5ae705d9 100644
+index e2ab4b1bf..14b0875ee 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -674,6 +674,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -681,6 +681,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  this.world.checkSession();
              } catch (ExceptionWorldConflict exceptionworldconflict) {
                  PlayerChunkMap.LOGGER.error("Couldn't save chunk; already in use by another instance of Minecraft?", exceptionworldconflict);
@@ -132,7 +132,7 @@ index c352c71d0..b5ae705d9 100644
                  return false;
              }
  
-@@ -701,6 +702,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -708,6 +709,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return true;
              } catch (Exception exception) {
                  PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
@@ -168,7 +168,7 @@ index d4a9af975..88b5aa3a5 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index a54d65337..4aa65c193 100644
+index fc2bb1d69..9c065c999 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
@@ -179,15 +179,15 @@ index a54d65337..4aa65c193 100644
  import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
  // CraftBukkit end
  
-@@ -83,6 +84,7 @@ public final class SpawnerCreature {
-                                                         entityinsentient = (EntityInsentient) entity;
-                                                     } catch (Exception exception) {
-                                                         SpawnerCreature.LOGGER.warn("Failed to create mob", exception);
-+                                                        ServerInternalException.reportInternalException(exception); // Paper
-                                                         return;
-                                                     }
+@@ -86,6 +87,7 @@ public final class SpawnerCreature {
+                                                             entityinsentient = (EntityInsentient) entity;
+                                                         } catch (Exception exception) {
+                                                             SpawnerCreature.LOGGER.warn("Failed to create mob", exception);
++                                                            ServerInternalException.reportInternalException(exception); // Paper
+                                                             return;
+                                                         }
  
-@@ -210,6 +212,7 @@ public final class SpawnerCreature {
+@@ -214,6 +216,7 @@ public final class SpawnerCreature {
                                  entity = biomebase_biomemeta.b.a(generatoraccess.getMinecraftWorld());
                              } catch (Exception exception) {
                                  SpawnerCreature.LOGGER.warn("Failed to create mob", exception);
@@ -196,7 +196,7 @@ index a54d65337..4aa65c193 100644
                              }
  
 diff --git a/src/main/java/net/minecraft/server/VillageSiege.java b/src/main/java/net/minecraft/server/VillageSiege.java
-index 0a1d342c1..347608531 100644
+index a58d3ba4c..6e4c5d4d8 100644
 --- a/src/main/java/net/minecraft/server/VillageSiege.java
 +++ b/src/main/java/net/minecraft/server/VillageSiege.java
 @@ -1,5 +1,7 @@
@@ -207,8 +207,8 @@ index 0a1d342c1..347608531 100644
  import java.util.Iterator;
  import javax.annotation.Nullable;
  
-@@ -97,6 +99,7 @@ public class VillageSiege {
-                 entityzombie.prepare(this.a, this.a.getDamageScaler(new BlockPosition(entityzombie)), EnumMobSpawn.EVENT, (GroupDataEntity) null, (NBTTagCompound) null);
+@@ -100,6 +102,7 @@ public class VillageSiege {
+                 entityzombie.prepare(worldserver, worldserver.getDamageScaler(new BlockPosition(entityzombie)), EnumMobSpawn.EVENT, (GroupDataEntity) null, (NBTTagCompound) null);
              } catch (Exception exception) {
                  exception.printStackTrace();
 +                ServerInternalException.reportInternalException(exception); // Paper
@@ -216,7 +216,7 @@ index 0a1d342c1..347608531 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c58c95b03..d2062b335 100644
+index d80497e99..6e7f72a1a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -2,6 +2,9 @@ package net.minecraft.server;

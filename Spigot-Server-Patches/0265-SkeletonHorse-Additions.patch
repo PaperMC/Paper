@@ -1,0 +1,78 @@
+From 40d2f3111011db90efdaf6ee49973f47c7bfde29 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 27 Jul 2018 22:36:31 -0500
+Subject: [PATCH] SkeletonHorse Additions
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHorseSkeleton.java b/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
+index ab6deaaa8..0aa77914c 100644
+--- a/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
++++ b/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
+@@ -6,7 +6,7 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+ 
+     private final PathfinderGoalHorseTrap bI = new PathfinderGoalHorseTrap(this);
+     private boolean bJ;
+-    private int bK;
++    private int bK;public int getTrapTime() { return this.bK; } // Paper - OBFHELPER
+ 
+     public EntityHorseSkeleton(EntityTypes<? extends EntityHorseSkeleton> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -124,10 +124,12 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+         return 0.96F;
+     }
+ 
++    public boolean isTrap() { return this.dV(); } // Paper - OBFHELPER
+     public boolean dV() {
+         return this.bJ;
+     }
+ 
++    public void setTrap(boolean trap) { this.r(trap); } // Paper - OBFHELPER
+     public void r(boolean flag) {
+         if (flag != this.bJ) {
+             this.bJ = flag;
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java b/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
+index 7b0a6f82f..f09374413 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
+@@ -15,6 +15,7 @@ public class PathfinderGoalHorseTrap extends PathfinderGoal {
+ 
+     @Override
+     public void e() {
++        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.a.getBukkitEntity()).callEvent()) return; // Paper
+         DifficultyDamageScaler difficultydamagescaler = this.a.world.getDamageScaler(new BlockPosition(this.a));
+ 
+         this.a.r(false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+index e822c2200..2a7d1d4ec 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+@@ -26,4 +26,26 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
+     public Variant getVariant() {
+         return Variant.SKELETON_HORSE;
+     }
++
++    // Paper start
++    @Override
++    public EntityHorseSkeleton getHandle() {
++        return (EntityHorseSkeleton) super.getHandle();
++    }
++
++    @Override
++    public int getTrapTime() {
++        return getHandle().getTrapTime();
++    }
++
++    @Override
++    public boolean isTrap() {
++        return getHandle().isTrap();
++    }
++
++    @Override
++    public void setTrap(boolean trap) {
++        getHandle().setTrap(trap);
++    }
++    // Paper end
+ }
+-- 
+2.22.0
+

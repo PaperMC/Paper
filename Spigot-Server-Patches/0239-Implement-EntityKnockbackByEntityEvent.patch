@@ -1,0 +1,31 @@
+From c185f52a958da51003dfc1764e93b431d1049f0c Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Mon, 18 Jun 2018 15:46:23 +0200
+Subject: [PATCH] Implement EntityKnockbackByEntityEvent
+
+This event is called when an entity receives knockback by another entity.
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index a578dec9d..c2634f881 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1430,6 +1430,16 @@ public abstract class EntityLiving extends Entity {
+             Vec3D vec3d1 = (new Vec3D(d0, 0.0D, d1)).d().a((double) f);
+ 
+             this.setMot(vec3d.x / 2.0D - vec3d1.x, this.onGround ? Math.min(0.4D, vec3d.y / 2.0D + (double) f) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
++
++            // Paper start - call EntityKnockbackByEntityEvent
++            Vec3D currentMot = this.getMot();
++            org.bukkit.util.Vector delta = new org.bukkit.util.Vector(currentMot.x - vec3d.x, currentMot.y - vec3d.y, currentMot.z - vec3d.z);
++            // Restore old velocity to be able to access it in the event
++            this.setMot(vec3d);
++            if (entity == null || new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent((LivingEntity) getBukkitEntity(), entity.getBukkitEntity(), f, delta).callEvent()) {
++                this.setMot(vec3d.x + delta.getX(), vec3d.y + delta.getY(), vec3d.z + delta.getZ());
++            }
++            // Paper end
+         }
+     }
+ 
+-- 
+2.22.0
+
