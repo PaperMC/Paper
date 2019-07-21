@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import java.util.Locale;
 import org.bukkit.Keyed;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,6 +76,25 @@ public interface Villager extends AbstractVillager {
      * @throws IllegalArgumentException if experience &lt; 0
      */
     public void setVillagerExperience(int experience);
+
+    /**
+     * Attempts to make this villager sleep at the given location.
+     * <br>
+     * The location must be in the current world and have a bed placed at the
+     * location. The villager will put its head on the specified block while
+     * sleeping.
+     *
+     * @param location the location of the bed
+     * @return whether the sleep was successful
+     */
+    public boolean sleep(@NotNull Location location);
+
+    /**
+     * Causes this villager to wake up if he's currently sleeping.
+     *
+     * @throws IllegalStateException if not sleeping
+     */
+    public void wakeup();
 
     /**
      * Represents Villager type, usually corresponding to what biome they spawn
