@@ -1,0 +1,42 @@
+From 7ce874f3a9f088b4594969f430ced3e505e36dbd Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Tue, 7 Feb 2017 16:55:35 -0600
+Subject: [PATCH] Make targetSize more aggressive in the chunk unload queue
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 14b0875ee..63140fb64 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -109,7 +109,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.v = new AtomicInteger();
+         this.playerMap = new PlayerMap();
+         this.trackedEntities = new Int2ObjectOpenHashMap();
+-        this.A = Queues.newConcurrentLinkedQueue();
++        this.A = new com.destroystokyo.paper.utils.CachedSizeConcurrentLinkedQueue<>(); // Paper
+         this.definedStructureManager = definedstructuremanager;
+         this.x = worldserver.getWorldProvider().getDimensionManager().a(file);
+         this.world = worldserver;
+@@ -354,7 +354,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         // Spigot start
+         org.spigotmc.SlackActivityAccountant activityAccountant = this.world.getMinecraftServer().slackActivityAccountant;
+         activityAccountant.startActivity(0.5);
+-        int targetSize = (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR);
++        int targetSize = Math.min(this.unloadQueue.size() - 100,  (int) (this.unloadQueue.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Make more aggressive
+         // Spigot end
+         while (longiterator.hasNext()) { // Spigot
+             long j = longiterator.nextLong();
+@@ -376,7 +376,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+         Runnable runnable;
+ 
+-        while ((booleansupplier.getAsBoolean() || this.A.size() > 2000) && (runnable = (Runnable) this.A.poll()) != null) {
++        int queueTarget = Math.min(this.A.size() - 100, (int) (this.A.size() * UNLOAD_QUEUE_RESIZE_FACTOR)); // Paper - Target this queue as well
++
++        while ((booleansupplier.getAsBoolean() || this.A.size() > queueTarget) && (runnable = (Runnable) this.A.poll()) != null) { // Paper - Target this queue as well
+             runnable.run();
+         }
+ 
+-- 
+2.22.0
+

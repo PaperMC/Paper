@@ -1,0 +1,42 @@
+From 1008d7421eebcd517bacab5acd8a7cbf1c7afc29 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 18 Jun 2018 01:12:53 -0400
+Subject: [PATCH] PlayerReadyArrowEvent
+
+Called when a player is firing a bow and the server is choosing an arrow to use.
+Plugins can skip selection of certain arrows and control which is used.
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 494425e59..bae1cd65d 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -2051,6 +2051,17 @@ public abstract class EntityHuman extends EntityLiving {
+         return (EntitySize) EntityHuman.b.getOrDefault(entitypose, EntityHuman.bs);
+     }
+ 
++    // Paper start
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
++        return !(this instanceof EntityPlayer) ||
++                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
++                    ((EntityPlayer) this).getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
++                ).callEvent();
++        // Paper end
++    }
++
+     @Override
+     public ItemStack f(ItemStack itemstack) {
+         if (!(itemstack.getItem() instanceof ItemProjectileWeapon)) {
+@@ -2067,7 +2078,7 @@ public abstract class EntityHuman extends EntityLiving {
+                 for (int i = 0; i < this.inventory.getSize(); ++i) {
+                     ItemStack itemstack2 = this.inventory.getItem(i);
+ 
+-                    if (predicate.test(itemstack2)) {
++                    if (predicate.test(itemstack2) && tryReadyArrow(itemstack, itemstack2)) { // Paper
+                         return itemstack2;
+                     }
+                 }
+-- 
+2.22.0
+
