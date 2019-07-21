@@ -5,7 +5,11 @@ import java.util.Locale;
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.VillagerProfession;
+import net.minecraft.server.IBlockData;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.BlockBed;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
@@ -76,6 +80,29 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkArgument(experience >= 0, "Experience must be positive");
 
         getHandle().setExperience(experience);
+    }
+
+    @Override
+    public boolean sleep(Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
+        Preconditions.checkArgument(location.getWorld().equals(getWorld()), "Cannot sleep across worlds");
+
+        BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        IBlockData iblockdata = getHandle().world.getType(position);
+        if (!(iblockdata.getBlock() instanceof BlockBed)) {
+            return false;
+        }
+
+        getHandle().e(position); // PAIL rename sleep
+        return true;
+    }
+
+    @Override
+    public void wakeup() {
+        Preconditions.checkState(isSleeping(), "Cannot wakeup if not sleeping");
+
+        getHandle().dy(); // PAIL rename wakeup
     }
 
     public static Profession nmsToBukkitProfession(VillagerProfession nms) {
