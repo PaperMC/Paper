@@ -1,4 +1,4 @@
-From 74d5a420f19f93e2638c23887f6e3999f019375d Mon Sep 17 00:00:00 2001
+From beb775db0faaa78516104e91c25c9414f114ff91 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1863,7 +1863,7 @@ index 0000000000..400fae5d09
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..8a29d9db4b
+index 0000000000..ed34555c6e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,303 @@
@@ -1971,7 +1971,7 @@ index 0000000000..8a29d9db4b
 +
 +        return this.chunkLoadTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkLoadTask valueInMap) -> {
 +            if (valueInMap != null) {
-+                throw new IllegalStateException("Double scheduling chunk load");
++                throw new IllegalStateException("Double scheduling chunk load for task: " + valueInMap.toString());
 +            }
 +
 +            final ChunkLoadTask ret = new ChunkLoadTask(world, chunkX, chunkZ, priority, ChunkTaskManager.this, onComplete);
@@ -2004,7 +2004,7 @@ index 0000000000..8a29d9db4b
 +
 +        return this.chunkLoadTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkLoadTask valueInMap) -> {
 +            if (valueInMap != null) {
-+                throw new IllegalStateException("Double scheduling chunk load");
++                throw new IllegalStateException("Double scheduling chunk load for task: " + valueInMap.toString());
 +            }
 +
 +            final ChunkLoadTask ret = new ChunkLoadTask(world, chunkX, chunkZ, priority, ChunkTaskManager.this, onComplete);
@@ -2037,7 +2037,7 @@ index 0000000000..8a29d9db4b
 +
 +        return this.chunkSaveTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ)), (final Long keyInMap, final ChunkSaveTask valueInMap) -> {
 +            if (valueInMap != null) {
-+                throw new IllegalStateException("Double scheduling chunk save");
++                throw new IllegalStateException("Double scheduling chunk save for task: " + valueInMap.toString());
 +            }
 +
 +            final ChunkSaveTask ret = new ChunkSaveTask(world, chunkX, chunkZ, priority, ChunkTaskManager.this, asyncSaveData, chunk);
@@ -2604,7 +2604,7 @@ index d521d25cf5..84024e6ba4 100644
              ;
          }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 3f14392e6e..cc933ec067 100644
+index 3f14392e6e..00e92fa531 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -3,6 +3,10 @@ package net.minecraft.server;
@@ -2629,13 +2629,13 @@ index 3f14392e6e..cc933ec067 100644
  
      public IChunkLoader(File file, DataFixer datafixer) {
          super(file);
-@@ -55,9 +61,26 @@ public class IChunkLoader extends RegionFileCache {
+@@ -55,9 +61,34 @@ public class IChunkLoader extends RegionFileCache {
              NBTTagCompound level = nbttagcompound.getCompound("Level");
              if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
                  ChunkProviderServer cps = (generatoraccess == null) ? null : ((WorldServer) generatoraccess).getChunkProvider();
 +                // Paper start - Async chunk loading
 +                CompletableFuture<Void> future = new CompletableFuture<>();
-+                MCUtil.ensureMain((Runnable)() -> {
++                Runnable runnable = () -> {
 +                try {
 +                // Paper end
                  if (check(cps, pos.x - 1, pos.z) && check(cps, pos.x - 1, pos.z - 1) && check(cps, pos.x, pos.z - 1)) {
@@ -2646,7 +2646,15 @@ index 3f14392e6e..cc933ec067 100644
 +                } catch (IOException ex) {
 +                    future.completeExceptionally(ex);
 +                }
-+                });
++                };
++
++                if (MinecraftServer.getServer().isMainThread()) {
++                    future.complete(null);
++                    runnable.run();
++                } else {
++                    ((PlayerChunkMap)this).world.getChunkProvider().serverThreadQueue.addTask(runnable);
++                }
++
 +                try {
 +                    future.join();
 +                } catch (CompletionException ex) {
@@ -2656,7 +2664,7 @@ index 3f14392e6e..cc933ec067 100644
              }
          }
          // CraftBukkit end
-@@ -65,11 +88,13 @@ public class IChunkLoader extends RegionFileCache {
+@@ -65,11 +96,13 @@ public class IChunkLoader extends RegionFileCache {
          if (i < 1493) {
              nbttagcompound = GameProfileSerializer.a(this.b, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
              if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
@@ -2670,7 +2678,7 @@ index 3f14392e6e..cc933ec067 100644
              }
          }
  
-@@ -89,7 +114,9 @@ public class IChunkLoader extends RegionFileCache {
+@@ -89,7 +122,9 @@ public class IChunkLoader extends RegionFileCache {
      public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
          super.write(chunkcoordintpair, nbttagcompound);
          if (this.a != null) {
