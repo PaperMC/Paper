@@ -1,58 +1,50 @@
-From f17756b416e61ab026cea099dfa6893aa40c60f7 Mon Sep 17 00:00:00 2001
+From 1be5ed18e42356fc17c4d54a33c8fbfe8e0b29e3 Mon Sep 17 00:00:00 2001
 From: Tom <cryptite@gmail.com>
 Date: Sun, 21 Jul 2019 11:21:06 -0500
 Subject: [PATCH] Don't use streams for VoxelShape calls
 
-Streams aren't performant in hot code, and these calls are heavily used for all Entity movement events. Replacing them
-with known-performant Lists and for loops rather than the syntactic sugar that are streams saves on entity ticking.
-
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index 2e460a7f6..8ec5a7ff7 100644
+index 2e460a7f6..3ed599ed7 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
-@@ -2,10 +2,8 @@ package net.minecraft.server;
- 
- import com.google.common.collect.UnmodifiableIterator;
+@@ -4,6 +4,7 @@ import com.google.common.collect.UnmodifiableIterator;
  import it.unimi.dsi.fastutil.objects.Object2ByteLinkedOpenHashMap;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Objects;
--import java.util.Random;
-+
-+import java.util.*;
+ import java.util.Iterator;
+ import java.util.List;
++import java.util.Collections; // paper
+ import java.util.Objects;
+ import java.util.Random;
  import java.util.stream.Stream;
- import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
-@@ -75,7 +73,7 @@ public class Block implements IMaterial {
+@@ -75,7 +76,7 @@ public class Block implements IMaterial {
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
 -            double d0 = VoxelShapes.a(EnumDirection.EnumAxis.Y, entity.getBoundingBox().d(0.0D, 1.0D, 0.0D), Stream.of(voxelshape), -1.0D);
-+            double d0 = VoxelShapes.a(EnumDirection.EnumAxis.Y, entity.getBoundingBox().d(0.0D, 1.0D, 0.0D), Collections.singletonList(voxelshape), -1.0D);
++            double d0 = VoxelShapes.a(EnumDirection.EnumAxis.Y, entity.getBoundingBox().d(0.0D, 1.0D, 0.0D), Collections.singletonList(voxelshape), -1.0D); // paper
  
              entity.enderTeleportTo(entity.locX, entity.locY + 1.0D + d0, entity.locZ);
          }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 4fdf63564..3150beb6e 100644
+index 581c78e00..89f4463e4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -708,22 +708,22 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -704,22 +704,22 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
              AxisAlignedBB axisalignedbb = this.getBoundingBox();
  
              if (d0 != 0.0D || d1 != 0.0D || d2 != 0.0D) {
 -                StreamAccumulator<VoxelShape> streamaccumulator = new StreamAccumulator<>(this.world.a(this, this.getBoundingBox(), d0, d1, d2));
-+                List<VoxelShape> shapes = this.world.a(this, this.getBoundingBox(), d0, d1, d2);
++                List<VoxelShape> shapes = this.world.a(this, this.getBoundingBox(), d0, d1, d2); // paper
  
                  if (d1 != 0.0D) {
 -                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), streamaccumulator.a(), d1);
-+                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), shapes, d1);
++                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), shapes, d1); // paper
                      this.a(this.getBoundingBox().d(0.0D, d1, 0.0D));
                  }
  
                  if (d0 != 0.0D) {
 -                    d0 = VoxelShapes.a(EnumDirection.EnumAxis.X, this.getBoundingBox(), streamaccumulator.a(), d0);
-+                    d0 = VoxelShapes.a(EnumDirection.EnumAxis.X, this.getBoundingBox(), shapes, d0);
++                    d0 = VoxelShapes.a(EnumDirection.EnumAxis.X, this.getBoundingBox(), shapes, d0); // paper
                      if (d0 != 0.0D) {
                          this.a(this.getBoundingBox().d(d0, 0.0D, 0.0D));
                      }
@@ -60,34 +52,34 @@ index 4fdf63564..3150beb6e 100644
  
                  if (d2 != 0.0D) {
 -                    d2 = VoxelShapes.a(EnumDirection.EnumAxis.Z, this.getBoundingBox(), streamaccumulator.a(), d2);
-+                    d2 = VoxelShapes.a(EnumDirection.EnumAxis.Z, this.getBoundingBox(), shapes, d2);
++                    d2 = VoxelShapes.a(EnumDirection.EnumAxis.Z, this.getBoundingBox(), shapes, d2); // paper
                      if (d2 != 0.0D) {
                          this.a(this.getBoundingBox().d(0.0D, 0.0D, d2));
                      }
-@@ -744,41 +744,41 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -740,41 +740,41 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                  d1 = (double) this.Q;
                  d2 = d9;
                  if (d7 != 0.0D || d1 != 0.0D || d9 != 0.0D) {
 -                    StreamAccumulator<VoxelShape> streamaccumulator1 = new StreamAccumulator<>(this.world.a(this, this.getBoundingBox(), d7, d1, d9));
-+                    List<VoxelShape> shapes = this.world.a(this, this.getBoundingBox(), d7, d1, d9);
++                    List<VoxelShape> shapes = this.world.a(this, this.getBoundingBox(), d7, d1, d9); // paper
                      AxisAlignedBB axisalignedbb2 = this.getBoundingBox();
                      AxisAlignedBB axisalignedbb3 = axisalignedbb2.b(d7, 0.0D, d9);
  
 -                    d11 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb3, streamaccumulator1.a(), d1);
-+                    d11 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb3, shapes, d1);
++                    d11 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb3, shapes, d1); // paper
                      if (d11 != 0.0D) {
                          axisalignedbb2 = axisalignedbb2.d(0.0D, d11, 0.0D);
                      }
  
 -                    double d15 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb2, streamaccumulator1.a(), d7);
-+                    double d15 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb2, shapes, d7);
++                    double d15 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb2, shapes, d7); // paper
  
                      if (d15 != 0.0D) {
                          axisalignedbb2 = axisalignedbb2.d(d15, 0.0D, 0.0D);
                      }
  
 -                    double d16 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb2, streamaccumulator1.a(), d9);
-+                    double d16 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb2, shapes, d9);
++                    double d16 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb2, shapes, d9); // paper
  
                      if (d16 != 0.0D) {
                          axisalignedbb2 = axisalignedbb2.d(0.0D, 0.0D, d16);
@@ -95,42 +87,42 @@ index 4fdf63564..3150beb6e 100644
  
                      AxisAlignedBB axisalignedbb4 = this.getBoundingBox();
 -                    double d17 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb4, streamaccumulator1.a(), d1);
-+                    double d17 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb4, shapes, d1);
++                    double d17 = VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb4, shapes, d1); // paper
  
                      if (d17 != 0.0D) {
                          axisalignedbb4 = axisalignedbb4.d(0.0D, d17, 0.0D);
                      }
  
 -                    double d18 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb4, streamaccumulator1.a(), d7);
-+                    double d18 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb4, shapes, d7);
++                    double d18 = VoxelShapes.a(EnumDirection.EnumAxis.X, axisalignedbb4, shapes, d7); // paper
  
                      if (d18 != 0.0D) {
                          axisalignedbb4 = axisalignedbb4.d(d18, 0.0D, 0.0D);
                      }
  
 -                    double d19 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb4, streamaccumulator1.a(), d9);
-+                    double d19 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb4, shapes, d9);
++                    double d19 = VoxelShapes.a(EnumDirection.EnumAxis.Z, axisalignedbb4, shapes, d9); // paper
  
                      if (d19 != 0.0D) {
                          axisalignedbb4 = axisalignedbb4.d(0.0D, 0.0D, d19);
-@@ -799,7 +799,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -795,7 +795,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                          this.a(axisalignedbb4);
                      }
  
 -                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), streamaccumulator1.a(), d1);
-+                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), shapes, d1);
++                    d1 = VoxelShapes.a(EnumDirection.EnumAxis.Y, this.getBoundingBox(), shapes, d1); // paper
                      if (d1 != 0.0D) {
                          this.a(this.getBoundingBox().d(0.0D, d1, 0.0D));
                      }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 24ca35119..2d77c72e4 100644
+index 24ca35119..f526c7789 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
  import com.mojang.datafixers.DataFixUtils;
  import com.mojang.datafixers.types.Type;
  
-+import java.util.List;
++import java.util.List; // paper
  import java.util.Map;
  import java.util.Set;
  import java.util.UUID;
@@ -139,35 +131,36 @@ index 24ca35119..2d77c72e4 100644
          }
  
 -        Stream<VoxelShape> stream = iworldreader.b((Entity) null, axisalignedbb1);
-+        List<VoxelShape> shapes = iworldreader.b(null, axisalignedbb1);
++        List<VoxelShape> shapes = iworldreader.b(null, axisalignedbb1); // paper
  
 -        return 1.0D + VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb, stream, flag ? -2.0D : -1.0D);
-+        return 1.0D + VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb, shapes, flag ? -2.0D : -1.0D);
++        return 1.0D + VoxelShapes.a(EnumDirection.EnumAxis.Y, axisalignedbb, shapes, flag ? -2.0D : -1.0D); // paper
      }
  
      public static void a(World world, @Nullable EntityHuman entityhuman, @Nullable Entity entity, @Nullable NBTTagCompound nbttagcompound) {
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index 175f242a8..d4f9682dc 100644
+index 175f242a8..c21f9c65d 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -1,10 +1,7 @@
- package net.minecraft.server;
+@@ -2,6 +2,9 @@ package net.minecraft.server;
  
--import java.util.List;
--import java.util.Objects;
--import java.util.Set;
-+import java.util.*;
+ import java.util.List;
+ import java.util.Objects;
++import java.util.Arrays; // paper
++import java.util.ArrayList; // paper
++import java.util.Collections; // paper
+ import java.util.Set;
  import java.util.function.Predicate;
--import java.util.stream.Stream;
- import javax.annotation.Nullable;
- 
- public interface IEntityAccess {
-@@ -15,19 +12,25 @@ public interface IEntityAccess {
-         return this.getEntities(entity, axisalignedbb, IEntitySelector.f);
+ import java.util.stream.Stream;
+@@ -16,18 +19,30 @@ public interface IEntityAccess {
      }
  
--    default Stream<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, Set<Entity> set) {
-+    default List<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, Set<Entity> set) {
+     default Stream<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, Set<Entity> set) {
++        return getEmptyCollisionShapes(entity, voxelshape, set).stream(); // paper
++    }
++
++    // Paper start
++    default List<VoxelShape> getEmptyCollisionShapes(@Nullable Entity entity, VoxelShape voxelshape, Set<Entity> set) {
          if (voxelshape.isEmpty()) {
 -            return Stream.empty();
 +            return Collections.emptyList();
@@ -196,17 +189,18 @@ index 175f242a8..d4f9682dc 100644
 +            return shapes;
          }
      }
++    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index 554825ec1..ab36d90d6 100644
+index 554825ec1..7a5a6a09a 100644
 --- a/src/main/java/net/minecraft/server/IWorldReader.java
 +++ b/src/main/java/net/minecraft/server/IWorldReader.java
 @@ -1,6 +1,8 @@
  package net.minecraft.server;
  
-+import java.util.ArrayList;
++import java.util.ArrayList; // paper
  import java.util.Collections;
-+import java.util.List;
++import java.util.List; // paper
  import java.util.Set;
  import java.util.function.Predicate;
  import java.util.stream.Stream;
@@ -215,7 +209,7 @@ index 554825ec1..ab36d90d6 100644
      }
  
 -    default Stream<VoxelShape> a(VoxelShape voxelshape, VoxelShape voxelshape1, boolean flag) {
-+    default List<VoxelShape> a(VoxelShape voxelshape, VoxelShape voxelshape1, boolean flag) {
++    default List<VoxelShape> a(VoxelShape voxelshape, VoxelShape voxelshape1, boolean flag) { // paper - use List instead of stream
          int i = MathHelper.floor(voxelshape.b(EnumDirection.EnumAxis.X)) - 1;
          int j = MathHelper.f(voxelshape.c(EnumDirection.EnumAxis.X)) + 1;
          int k = MathHelper.floor(voxelshape.b(EnumDirection.EnumAxis.Y)) - 1;
@@ -290,12 +284,12 @@ index 554825ec1..ab36d90d6 100644
      }
  
 -    default Stream<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, double d0, double d1, double d2) {
-+    default List<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, double d0, double d1, double d2) {
++    default List<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, double d0, double d1, double d2) { // paper
          return this.a(entity, axisalignedbb, Collections.emptySet(), d0, d1, d2);
      }
  
 -    default Stream<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set, double d0, double d1, double d2) {
-+    default List<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set, double d0, double d1, double d2) {
++    default List<VoxelShape> a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set, double d0, double d1, double d2) { // paper
          double d3 = 1.0E-7D;
          VoxelShape voxelshape = VoxelShapes.a(axisalignedbb);
          VoxelShape voxelshape1 = VoxelShapes.a(axisalignedbb.d(d0 > 0.0D ? -1.0E-7D : 1.0E-7D, d1 > 0.0D ? -1.0E-7D : 1.0E-7D, d2 > 0.0D ? -1.0E-7D : 1.0E-7D));
@@ -304,20 +298,22 @@ index 554825ec1..ab36d90d6 100644
      }
  
 -    default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb) {
-+    default List<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb) {
++    default List<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb) { // paper
          return this.a(entity, VoxelShapes.a(axisalignedbb), VoxelShapes.a(), Collections.emptySet());
      }
  
 -    default Stream<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, VoxelShape voxelshape1, Set<Entity> set) {
-+    default List<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, VoxelShape voxelshape1, Set<Entity> set) {
++    default List<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, VoxelShape voxelshape1, Set<Entity> set) { // paper
          boolean flag = entity != null && entity.bG();
          boolean flag1 = entity != null && this.i(entity);
  
-@@ -212,7 +222,10 @@ public interface IWorldReader extends IBlockAccess {
+@@ -211,8 +221,11 @@ public interface IWorldReader extends IBlockAccess {
+         return entity.locX > d0 && entity.locX < d2 && entity.locZ > d1 && entity.locZ < d3;
      }
  
-     default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+-    default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
 -        return this.a(entity, VoxelShapes.a(axisalignedbb), VoxelShapes.a(), set).allMatch(VoxelShape::isEmpty);
++    default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) { // paper
 +        for (VoxelShape shape : this.a(entity, VoxelShapes.a(axisalignedbb), VoxelShapes.a(), set)) {
 +            if (!shape.isEmpty()) return false;
 +        }
@@ -376,14 +372,14 @@ index 1f70c0405..000000000
 -    }
 -}
 diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
-index 8c33bf159..71d037454 100644
+index 8c33bf159..ca05b7070 100644
 --- a/src/main/java/net/minecraft/server/VoxelShapes.java
 +++ b/src/main/java/net/minecraft/server/VoxelShapes.java
 @@ -6,8 +6,8 @@ import com.google.common.math.IntMath;
  import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
  import it.unimi.dsi.fastutil.doubles.DoubleList;
  import java.util.Iterator;
-+import java.util.List;
++import java.util.List; // paper
  import java.util.Objects;
 -import java.util.stream.Stream;
  
@@ -395,16 +391,16 @@ index 8c33bf159..71d037454 100644
  
 -    public static double a(EnumDirection.EnumAxis enumdirection_enumaxis, AxisAlignedBB axisalignedbb, Stream<VoxelShape> stream, double d0) {
 -        for (Iterator iterator = stream.iterator(); iterator.hasNext(); d0 = ((VoxelShape) iterator.next()).a(enumdirection_enumaxis, axisalignedbb, d0)) {
-+    public static double a(EnumDirection.EnumAxis enumdirection_enumaxis, AxisAlignedBB axisalignedbb, List<VoxelShape> shapes, double d0) {
++    public static double a(EnumDirection.EnumAxis enumdirection_enumaxis, AxisAlignedBB axisalignedbb, List<VoxelShape> shapes, double d0) {  // paper
 +        for (Iterator iterator = shapes.iterator(); iterator.hasNext(); d0 = ((VoxelShape) iterator.next()).a(enumdirection_enumaxis, axisalignedbb, d0)) {
              if (Math.abs(d0) < 1.0E-7D) {
                  return 0.0D;
              }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 57b0f1a38..880d84ea2 100644
+index 57b0f1a38..6e7b2b597 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -2387,10 +2387,14 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+@@ -2387,10 +2387,16 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
          }
      }
  
@@ -413,16 +409,18 @@ index 57b0f1a38..880d84ea2 100644
 -
 -        return entity == null ? stream : Stream.concat(stream, this.a(entity, voxelshape, set));
 +    public List<VoxelShape> a(@Nullable Entity entity, VoxelShape voxelshape, VoxelShape voxelshape1, Set<Entity> set) {
++        // Paper start - use list instead of stream
 +        List<VoxelShape> shapes = IIBlockAccess.super.a(entity, voxelshape, voxelshape1, set); // CraftBukkit - decompile error
 +        if (entity == null) {
 +            return shapes;
 +        } else {
-+            shapes.addAll(this.a(entity, voxelshape, set));
++            shapes.addAll(this.getEmptyCollisionShapes(entity, voxelshape, set));
 +            return shapes;
 +        }
++        // Paper end
      }
  
      public List<Entity> getEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super Entity> predicate) {
 -- 
-2.17.1.windows.2
+2.21.0.windows.1
 
