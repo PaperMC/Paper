@@ -1,4 +1,4 @@
-From 58d7624e50baa3dea5c27dd877a73b9f0b89c18b Mon Sep 17 00:00:00 2001
+From 546b9b7038b125e941cebe9d696732eb61818981 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 19 Jul 2019 03:29:14 -0700
 Subject: [PATCH] Reduce sync loads
@@ -11,7 +11,7 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 8db92edc36..c7ff5132e2 100644
+index 8db92edc36..a37f118839 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -1,9 +1,13 @@
@@ -48,7 +48,7 @@ index 8db92edc36..c7ff5132e2 100644
              case "ver":
              case "version":
                  Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -146,6 +156,39 @@ public class PaperCommand extends Command {
+@@ -146,6 +156,40 @@ public class PaperCommand extends Command {
          return true;
      }
  
@@ -59,6 +59,7 @@ index 8db92edc36..c7ff5132e2 100644
 +        }
 +        File file = new File(new File(new File("."), "debug"),
 +            "sync-load-info" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
++        file.getParentFile().mkdirs();
 +        sender.sendMessage(ChatColor.GREEN + "Writing sync load info to " + file.toString());
 +
 +
@@ -90,16 +91,19 @@ index 8db92edc36..c7ff5132e2 100644
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 0000000000..ad6c5ff0d5
+index 0000000000..59aec10329
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,172 @@
 +package com.destroystokyo.paper.io;
 +
 +import com.google.gson.JsonArray;
 +import com.google.gson.JsonObject;
 +import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.longs.Long2IntMap;
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 +import net.minecraft.server.World;
 +
 +import java.util.ArrayList;
@@ -111,7 +115,14 @@ index 0000000000..ad6c5ff0d5
 +
 +    public static final boolean ENABLED = Boolean.getBoolean("paper.debug-sync-loads");
 +
-+    private static final WeakHashMap<World, Object2IntOpenHashMap<ThrowableWithEquals>> SYNC_LOADS = new WeakHashMap<>();
++    private static final WeakHashMap<World, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation>> SYNC_LOADS = new WeakHashMap<>();
++
++    private static final class SyncLoadInformation {
++
++        public int times;
++
++        public final Long2IntOpenHashMap coordinateTimes = new Long2IntOpenHashMap();
++    }
 +
 +    public static void logSyncLoad(final World world, final int chunkX, final int chunkZ) {
 +        if (!ENABLED) {
@@ -120,13 +131,23 @@ index 0000000000..ad6c5ff0d5
 +
 +        final ThrowableWithEquals stacktrace = new ThrowableWithEquals(Thread.currentThread().getStackTrace());
 +
-+        SYNC_LOADS.compute(world, (final World keyInMap, Object2IntOpenHashMap<ThrowableWithEquals> map) -> {
++        SYNC_LOADS.compute(world, (final World keyInMap, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation> map) -> {
 +            if (map == null) {
-+                map = new Object2IntOpenHashMap<>();
++                map = new Object2ObjectOpenHashMap<>();
 +            }
 +
-+            map.computeInt(stacktrace, (ThrowableWithEquals keyInMap0, Integer valueInMap) -> {
-+                return valueInMap == null ? Integer.valueOf(1) : Integer.valueOf(valueInMap.intValue() +  1);
++            map.compute(stacktrace, (ThrowableWithEquals keyInMap0, SyncLoadInformation valueInMap) -> {
++                if (valueInMap == null) {
++                    valueInMap = new SyncLoadInformation();
++                }
++
++                ++valueInMap.times;
++
++                valueInMap.coordinateTimes.compute(IOUtil.getCoordinateKey(chunkX, chunkZ), (Long keyInMap1, Integer valueInMap1) -> {
++                    return valueInMap1 == null ? Integer.valueOf(1) : Integer.valueOf(valueInMap1.intValue() + 1);
++                });
++
++                return valueInMap;
 +            });
 +
 +            return map;
@@ -138,29 +159,29 @@ index 0000000000..ad6c5ff0d5
 +
 +        final JsonArray worldsData = new JsonArray();
 +
-+        for (final Map.Entry<World, Object2IntOpenHashMap<ThrowableWithEquals>> entry : SYNC_LOADS.entrySet()) {
++        for (final Map.Entry<World, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation>> entry : SYNC_LOADS.entrySet()) {
 +            final World world = entry.getKey();
 +
 +            final JsonObject worldData = new JsonObject();
 +
 +            worldData.addProperty("name", world.getWorld().getName());
 +
-+            final List<Pair<ThrowableWithEquals, Integer>> data = new ArrayList<>();
++            final List<Pair<ThrowableWithEquals, SyncLoadInformation>> data = new ArrayList<>();
 +
-+            entry.getValue().forEach((ThrowableWithEquals stacktrace, Integer times) -> {
++            entry.getValue().forEach((ThrowableWithEquals stacktrace, SyncLoadInformation times) -> {
 +                data.add(new Pair<>(stacktrace, times));
 +            });
 +
-+            data.sort((Pair<ThrowableWithEquals, Integer> pair1, Pair<ThrowableWithEquals, Integer> pair2) -> {
-+                return pair2.getSecond().compareTo(pair1.getSecond()); // reverse order
++            data.sort((Pair<ThrowableWithEquals, SyncLoadInformation> pair1, Pair<ThrowableWithEquals, SyncLoadInformation> pair2) -> {
++                return Integer.compare(pair2.getSecond().times, pair1.getSecond().times); // reverse order
 +            });
 +
 +            final JsonArray stacktraces = new JsonArray();
 +
-+            for (Pair<ThrowableWithEquals, Integer> pair : data) {
++            for (Pair<ThrowableWithEquals, SyncLoadInformation> pair : data) {
 +                final JsonObject stacktrace = new JsonObject();
 +
-+                stacktrace.addProperty("times", pair.getSecond());
++                stacktrace.addProperty("times", pair.getSecond().times);
 +
 +                final JsonArray traces = new JsonArray();
 +
@@ -169,6 +190,16 @@ index 0000000000..ad6c5ff0d5
 +                }
 +
 +                stacktrace.add("stacktrace", traces);
++
++                final JsonArray coordinates = new JsonArray();
++
++                for (Long2IntMap.Entry coordinate : pair.getSecond().coordinateTimes.long2IntEntrySet()) {
++                    final long key = coordinate.getLongKey();
++                    final int times = coordinate.getIntValue();
++                    coordinates.add("(" + IOUtil.getCoordinateX(key) + "," + IOUtil.getCoordinateZ(key) + "): " + times);
++                }
++
++                stacktrace.add("coordinates", coordinates);
 +
 +                stacktraces.add(stacktrace);
 +            }
@@ -237,10 +268,10 @@ index 0000000000..ad6c5ff0d5
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e75e311376..7ade9a53b4 100644
+index 5c6f9c4809..cd11efc68f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -321,6 +321,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -315,6 +315,7 @@ public class ChunkProviderServer extends IChunkProvider {
                  // Paper start - async chunk io // Paper start - async chunk loading
                  this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  // Paper end

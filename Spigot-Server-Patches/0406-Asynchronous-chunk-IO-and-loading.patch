@@ -1,4 +1,4 @@
-From 539e3d351dda9a8f9f48c3cbbfe8cced9ab4437e Mon Sep 17 00:00:00 2001
+From 74d5a420f19f93e2638c23887f6e3999f019375d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -318,10 +318,10 @@ index 9d8bee5cac..dc59b6431b 100644
  
 diff --git a/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
 new file mode 100644
-index 0000000000..19f4b89a98
+index 0000000000..7fb74810e4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/ConcreteFileIOThread.java
-@@ -0,0 +1,664 @@
+@@ -0,0 +1,665 @@
 +package com.destroystokyo.paper.io;
 +
 +import net.minecraft.server.ChunkCoordIntPair;
@@ -951,6 +951,7 @@ index 0000000000..19f4b89a98
 +
 +                ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
 +                    if (valueInMap == null) {
++                        ChunkDataTask.this.inProgressWrite.wrote.complete(ConcreteFileIOThread.FAILURE_VALUE); // Hack
 +                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
 +                    }
 +                    if (valueInMap != ChunkDataTask.this) {
@@ -1696,7 +1697,7 @@ index 0000000000..24f231bf45
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 new file mode 100644
-index 0000000000..c3a6b482c2
+index 0000000000..d1c0d450e5
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 @@ -0,0 +1,114 @@
@@ -1808,7 +1809,7 @@ index 0000000000..c3a6b482c2
 +        }
 +        this.taskManager.chunkSaveTasks.compute(Long.valueOf(IOUtil.getCoordinateKey(this.chunkX, this.chunkZ)), (final Long keyInMap, final ChunkSaveTask valueInMap) -> {
 +            if (valueInMap != ChunkSaveTask.this) {
-+                throw new IllegalStateException("Expected this task to be scheduled, but another was! Other:" + valueInMap + ", this: " + ChunkSaveTask.this);
++                throw new IllegalStateException("Expected this task to be scheduled, but another was! Other: " + valueInMap + ", this: " + ChunkSaveTask.this);
 +            }
 +            return null;
 +        });
@@ -1862,7 +1863,7 @@ index 0000000000..400fae5d09
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..373793c488
+index 0000000000..8a29d9db4b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,303 @@
@@ -1901,7 +1902,7 @@ index 0000000000..373793c488
 +    protected static PrioritizedTaskQueue<ChunkTask> globalQueue;
 +
 +    public static void initGlobalLoadThreads(int threads) {
-+        if (threads <= 0) {
++        if (threads <= 0 || globalWorkers != null) {
 +            return;
 +        }
 +
@@ -2170,10 +2171,10 @@ index 0000000000..373793c488
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 775b5f7fe3..e75e311376 100644
+index 775b5f7fe3..5c6f9c4809 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -160,11 +160,143 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -160,11 +160,137 @@ public class ChunkProviderServer extends IChunkProvider {
          return playerChunk.getAvailableChunkNow();
  
      }
@@ -2232,28 +2233,22 @@ index 775b5f7fe3..e75e311376 100644
 +            // we know the chunk is at full status here (either in read-only mode or the real thing)
 +            this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
 +            return;
-+        } else {
-+            // Paper start - async io
-+            ChunkStatus status = world.getChunkProvider().playerChunkMap.getStatusOnDiskNoLoad(x, z); // Paper - async io - move to own method
-+
-+            if (status == ChunkStatus.EMPTY) {
-+                // does not exist on disk
-+                onComplete.accept(null);
-+                return;
-+            }
-+
-+            if (status == ChunkStatus.FULL) {
-+                this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
-+                return;
-+            } else if (status != null) {
-+                onComplete.accept(null);
-+                return; // not full status on disk
-+            }
-+            // status is null here
-+            // Paper end
-+
-+            // at this stage we don't know what status the chunk is in
 +        }
++
++        ChunkStatus status = world.getChunkProvider().playerChunkMap.getStatusOnDiskNoLoad(x, z);
++
++        if (status != null && status != ChunkStatus.FULL) {
++            // does not exist on disk
++            onComplete.accept(null);
++            return;
++        }
++
++        if (status == ChunkStatus.FULL) {
++            this.bringToFullStatusAsync(x, z, chunkPos, onComplete);
++            return;
++        }
++
++        // status is null here
 +
 +        // here we don't know what status it is and we're not supposed to generate
 +        // so we asynchronously load empty status
@@ -2317,7 +2312,7 @@ index 775b5f7fe3..e75e311376 100644
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -186,6 +318,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -186,6 +312,9 @@ public class ChunkProviderServer extends IChunkProvider {
              CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
  
              if (!completablefuture.isDone()) { // Paper
