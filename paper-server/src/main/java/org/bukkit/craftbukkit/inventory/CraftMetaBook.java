@@ -26,7 +26,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
     static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
     static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
-    static final int MAX_PAGES = 50;
+    static final int MAX_PAGES = 100;
     static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
     static final int MAX_TITLE_LENGTH = 32;
 
@@ -128,7 +128,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
             if (hasPages()) {
                 NBTTagList list = new NBTTagList();
                 for (IChatBaseComponent page : pages) {
-                    list.add(new NBTTagString(page == null ? "" : page.getString()));
+                    list.add(new NBTTagString(page == null ? "" : page.e())); // PAIL getLegacyString
                 }
                 itemData.set(BOOK_PAGES.NBT, list);
             }
