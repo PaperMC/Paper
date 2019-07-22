@@ -1,0 +1,62 @@
+From fd695562a7d0f37a43941927398112c74e579c94 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 21 Jul 2019 17:57:39 -0700
+Subject: [PATCH] Avoid the client re-setting its velocity on block break
+ cancel
+
+With 1.14.4, the client will now re-set its velocity if a block break
+was cancelled. This change will now lie to the client, then re-send
+block updates to revert to previous behaviour.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 596b87bc06..7c3fb03a12 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -261,7 +261,23 @@ public class PlayerInteractManager {
+         if (this.breakBlock(blockposition)) {
+             this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true));
+         } else {
+-            this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++            // Paper start
++            // Lie to the client that it broke the block to avoid the client re-setting its velocity
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true));
++            // client thinks it's air now, re-send real block
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++
++            // Brute force all possible updates
++            for (EnumDirection dir : EnumDirection.values()) {
++                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
++            }
++
++            // Update any tile entity data for this block
++            TileEntity tileentity = this.world.getTileEntity(blockposition);
++            if (tileentity != null) {
++                this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++            }
++            // Paper end
+         }
+ 
+     }
+@@ -305,8 +321,9 @@ public class PlayerInteractManager {
+                 if (isSwordNoBreak) {
+                     return false;
+                 }
++                // Paper start - move up
+                 // Let the client know the block still exists
+-                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                /*this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
+ 
+                 // Brute force all possible updates
+                 for (EnumDirection dir : EnumDirection.values()) {
+@@ -318,6 +335,8 @@ public class PlayerInteractManager {
+                 if (tileentity != null) {
+                     this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
+                 }
++                 */
++                // Paper end
+                 return false;
+             }
+         }
+-- 
+2.22.0
+
