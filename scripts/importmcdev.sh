@@ -93,7 +93,9 @@ done
 # we do not need any lines added to this file for NMS
 
 # import FileName
-
+import VoxelShapes
+import StreamAccumulator
+import IEntityAccess
 
 
 ########################################################
