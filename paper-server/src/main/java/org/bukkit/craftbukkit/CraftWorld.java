@@ -1620,12 +1620,14 @@ public class CraftWorld implements World {
             }
 
             BlockFace[] faces = new BlockFace[]{BlockFace.EAST, BlockFace.NORTH, BlockFace.WEST, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN};
-            final BlockPosition pos = new BlockPosition((int) x, (int) y, (int) z);
+            final BlockPosition pos = new BlockPosition(x, y, z);
             for (BlockFace dir : faces) {
                 IBlockData nmsBlock = world.getType(pos.shift(CraftBlock.blockFaceToNotch(dir)));
                 if (nmsBlock.getMaterial().isBuildable() || BlockDiodeAbstract.isDiode(nmsBlock)) {
                     boolean taken = false;
-                    AxisAlignedBB bb = EntityHanging.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height);
+                    AxisAlignedBB bb = (ItemFrame.class.isAssignableFrom(clazz))
+                            ? EntityItemFrame.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height)
+                            : EntityHanging.calculateBoundingBox(null, pos, CraftBlock.blockFaceToNotch(dir).opposite(), width, height);
                     List<net.minecraft.server.Entity> list = (List<net.minecraft.server.Entity>) world.getEntities(null, bb);
                     for (Iterator<net.minecraft.server.Entity> it = list.iterator(); !taken && it.hasNext();) {
                         net.minecraft.server.Entity e = it.next();
@@ -1642,7 +1644,7 @@ public class CraftWorld implements World {
             }
 
             if (LeashHitch.class.isAssignableFrom(clazz)) {
-                entity = new EntityLeash(world, new BlockPosition((int) x, (int) y, (int) z));
+                entity = new EntityLeash(world, new BlockPosition(x, y, z));
                 entity.attachedToPlayer = true;
             } else {
                 // No valid face found
@@ -1650,9 +1652,9 @@ public class CraftWorld implements World {
 
                 EnumDirection dir = CraftBlock.blockFaceToNotch(face).opposite();
                 if (Painting.class.isAssignableFrom(clazz)) {
-                    entity = new EntityPainting(world, new BlockPosition((int) x, (int) y, (int) z), dir);
+                    entity = new EntityPainting(world, new BlockPosition(x, y, z), dir);
                 } else if (ItemFrame.class.isAssignableFrom(clazz)) {
-                    entity = new EntityItemFrame(world, new BlockPosition((int) x, (int) y, (int) z), dir);
+                    entity = new EntityItemFrame(world, new BlockPosition(x, y, z), dir);
                 }
             }
 
