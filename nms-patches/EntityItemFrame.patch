@@ -1,6 +1,55 @@
 --- a/net/minecraft/server/EntityItemFrame.java
 +++ b/net/minecraft/server/EntityItemFrame.java
-@@ -108,6 +108,11 @@
+@@ -52,15 +52,29 @@
+     @Override
+     protected void updateBoundingBox() {
+         if (this.direction != null) {
++            // CraftBukkit start code moved in to calculateBoundingBox
++            this.a(calculateBoundingBox(this, this.blockPosition, this.direction, this.getHangingWidth(), this.getHangingHeight()));
++            // CraftBukkit end
++        }
++    }
++
++    // CraftBukkit start - break out BB calc into own method
++    public static AxisAlignedBB calculateBoundingBox(@Nullable Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
++        {
+             double d0 = 0.46875D;
+ 
+-            this.locX = (double) this.blockPosition.getX() + 0.5D - (double) this.direction.getAdjacentX() * 0.46875D;
+-            this.locY = (double) this.blockPosition.getY() + 0.5D - (double) this.direction.getAdjacentY() * 0.46875D;
+-            this.locZ = (double) this.blockPosition.getZ() + 0.5D - (double) this.direction.getAdjacentZ() * 0.46875D;
+-            double d1 = (double) this.getHangingWidth();
+-            double d2 = (double) this.getHangingHeight();
+-            double d3 = (double) this.getHangingWidth();
+-            EnumDirection.EnumAxis enumdirection_enumaxis = this.direction.k();
++            double locX = (double) blockPosition.getX() + 0.5D - (double) direction.getAdjacentX() * 0.46875D;
++            double locY = (double) blockPosition.getY() + 0.5D - (double) direction.getAdjacentY() * 0.46875D;
++            double locZ = (double) blockPosition.getZ() + 0.5D - (double) direction.getAdjacentZ() * 0.46875D;
++            if (entity != null) {
++                entity.locX = locX;
++                entity.locY = locY;
++                entity.locZ = locZ;
++            }
++            double d1 = (double) width;
++            double d2 = (double) height;
++            double d3 = (double) width;
++            EnumDirection.EnumAxis enumdirection_enumaxis = direction.k();
+ 
+             switch (enumdirection_enumaxis) {
+                 case X:
+@@ -76,9 +90,10 @@
+             d1 /= 32.0D;
+             d2 /= 32.0D;
+             d3 /= 32.0D;
+-            this.a(new AxisAlignedBB(this.locX - d1, this.locY - d2, this.locZ - d3, this.locX + d1, this.locY + d2, this.locZ + d3));
++            return new AxisAlignedBB(locX - d1, locY - d2, locZ - d3, locX + d1, locY + d2, locZ + d3);
+         }
+     }
++    // CraftBukkit end
+ 
+     @Override
+     public boolean survives() {
+@@ -108,6 +123,11 @@
              return false;
          } else if (!damagesource.isExplosion() && !this.getItem().isEmpty()) {
              if (!this.world.isClientSide) {
@@ -12,7 +61,7 @@
                  this.b(damagesource.getEntity(), false);
                  this.a(SoundEffects.ENTITY_ITEM_FRAME_REMOVE_ITEM, 1.0F, 1.0F);
              }
-@@ -193,6 +198,12 @@
+@@ -193,6 +213,12 @@
      }
  
      public void setItem(ItemStack itemstack, boolean flag) {
@@ -25,7 +74,7 @@
          if (!itemstack.isEmpty()) {
              itemstack = itemstack.cloneItemStack();
              itemstack.setCount(1);
-@@ -200,7 +211,7 @@
+@@ -200,7 +226,7 @@
          }
  
          this.getDataWatcher().set(EntityItemFrame.ITEM, itemstack);
