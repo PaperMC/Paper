@@ -34,7 +34,7 @@
          IBlockData iblockdata;
  
          if (this.i) {
-@@ -111,10 +120,32 @@
+@@ -111,9 +120,31 @@
  
              if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
                  if (!this.world.a((EntityHuman) this.player, blockposition)) {
@@ -47,27 +47,26 @@
 +                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
 +                    }
 +                    // CraftBukkit end
-                     return;
-                 }
- 
++                    return;
++                }
++
 +                // CraftBukkit start
 +                PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
 +                if (event.isCancelled()) {
 +                    // Let the client know the block still exists
-+                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                    // Update any tile entity data for this block
 +                    TileEntity tileentity = this.world.getTileEntity(blockposition);
 +                    if (tileentity != null) {
 +                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
 +                    }
-+                    return;
-+                }
+                     return;
+                 }
 +                // CraftBukkit end
-+
+ 
                  if (this.isCreative()) {
                      if (!this.world.douseFire((EntityHuman) null, blockposition, enumdirection)) {
-                         this.a(blockposition, packetplayinblockdig_enumplayerdigtype);
-@@ -130,16 +161,50 @@
+@@ -130,15 +161,49 @@
                      return;
                  }
  
@@ -85,22 +84,22 @@
 +                    if (data.getBlock() instanceof BlockDoor) {
 +                        // For some reason *BOTH* the bottom/top part have to be marked updated.
 +                        boolean bottom = data.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
-+                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, bottom ? blockposition.up() : blockposition.down()));
 +                    } else if (data.getBlock() instanceof BlockTrapdoor) {
-+                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                    }
 +                } else if (!iblockdata.isAir()) {
                      iblockdata.attack(this.world, blockposition, this.player);
                      f = iblockdata.getDamage(this.player, this.player.world, blockposition);
 +                    // Allow fire punching to be blocked
 +                    this.world.douseFire((EntityHuman) null, blockposition, enumdirection);
-                 }
- 
++                }
++
 +                if (event.useItemInHand() == Event.Result.DENY) {
 +                    // If we 'insta destroyed' then the client needs to be informed.
 +                    if (f > 1.0f) {
-+                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                    }
 +                    return;
 +                }
@@ -108,19 +107,26 @@
 +
 +                if (blockEvent.isCancelled()) {
 +                    // Let the client know the block still exists
-+                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
 +                    return;
 +                }
 +
 +                if (blockEvent.getInstaBreak()) {
 +                    f = 2.0f;
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  if (!iblockdata.isAir() && f >= 1.0F) {
                      this.a(blockposition, packetplayinblockdig_enumplayerdigtype);
-                 } else {
-@@ -196,10 +261,66 @@
+@@ -189,17 +254,73 @@
+         if (this.breakBlock(blockposition)) {
+             this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true));
+         } else {
+-            this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++            this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition)); // CraftBukkit - SPIGOT-5196
+         }
+ 
+     }
  
      public boolean breakBlock(BlockPosition blockposition) {
          IBlockData iblockdata = this.world.getType(blockposition);
