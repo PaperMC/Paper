@@ -1,4 +1,4 @@
-From 4512db9ba3624a674524887f0bb45e752c8548cc Mon Sep 17 00:00:00 2001
+From 48964ee44dba83311bac3ea611cb999c4e3baa30 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -133,10 +133,10 @@ index 0000000000..f7e376ce6a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000..9d8bee5cac
+index 0000000000..23626bef3a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,777 @@
+@@ -0,0 +1,782 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -536,13 +536,18 @@ index 0000000000..9d8bee5cac
 +
 +        } finally {
 +            if (chunkPacketInfoAntiXray.ticketHold != null) {
-+                MCUtil.ensureMain(null, (Runnable) () -> {
++                Runnable runnable = () -> {
 +                    Chunk chunk = chunkPacketInfoAntiXray.getChunk();
 +                    ChunkCoordIntPair chunkPos = chunk.getPos();
 +
 +                    ChunkPacketBlockControllerAntiXray.this.removeXrayTickets(chunkPos.x, chunkPos.z, (ChunkProviderServer) chunk.world.getChunkProvider(),
 +                        chunkPacketInfoAntiXray.ticketHold);
-+                });
++                };
++                if (MinecraftServer.getServer().isMainThread()) {
++                    runnable.run();
++                } else {
++                    MinecraftServer.getServer().scheduleOnMain(runnable);
++                }
 +            }
 +        }
 +    }
