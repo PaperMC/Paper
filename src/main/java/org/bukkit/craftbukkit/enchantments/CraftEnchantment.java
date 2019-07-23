@@ -148,7 +148,7 @@ public class CraftEnchantment extends Enchantment {
         case 31:
             return "CHANNELING";
         case 32:
-            return "MULTSHOT";
+            return "MULTISHOT";
         case 33:
             return "QUICK_CHARGE";
         case 34:
