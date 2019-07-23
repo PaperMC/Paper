@@ -48,6 +48,8 @@ public class WorldCreator {
         seed = world.getSeed();
         environment = world.getEnvironment();
         generator = world.getGenerator();
+        type = world.getWorldType();
+        generateStructures = world.canGenerateStructures();
 
         return this;
     }
@@ -67,6 +69,9 @@ public class WorldCreator {
         seed = creator.seed();
         environment = creator.environment();
         generator = creator.generator();
+        type = creator.type();
+        generateStructures = creator.generateStructures();
+        generatorSettings = creator.generatorSettings();
 
         return this;
     }
