@@ -1,4 +1,4 @@
-From 12e80a9ef7b851d384c096d66ead0f01ead61004 Mon Sep 17 00:00:00 2001
+From 61279b641a11e0c1754b0b40846c7e1e7259110f Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 15 Jun 2019 08:54:33 -0700
 Subject: [PATCH] Fix World#isChunkGenerated calls
@@ -134,7 +134,7 @@ index 14a176d61d..98590e233a 100644
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 0911880c9d..ea53ae502b 100644
+index 17eee15b2d..8dd934319d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -878,11 +878,61 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -294,7 +294,7 @@ index 6f34d8aea0..d2b3289450 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index af409010ac..ff6be0f5b7 100644
+index acf151a253..a2b6c3c94a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -393,8 +393,22 @@ public class CraftWorld implements World {
@@ -324,8 +324,8 @@ index af409010ac..ff6be0f5b7 100644
 @@ -506,20 +520,49 @@ public class CraftWorld implements World {
      @Override
      public boolean loadChunk(int x, int z, boolean generate) {
-         org.spigotmc.AsyncCatcher.catchOp( "chunk load"); // Spigot
--        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true);
+         org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
+-        IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, generate || isChunkGenerated(x, z) ? ChunkStatus.FULL : ChunkStatus.EMPTY, true); // Paper
 +        // Paper start - Optimize this method
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
  
@@ -381,7 +381,7 @@ index af409010ac..ff6be0f5b7 100644
      }
  
      @Override
-@@ -2249,21 +2292,44 @@ public class CraftWorld implements World {
+@@ -2251,21 +2294,44 @@ public class CraftWorld implements World {
  
      // Paper start
      private Chunk getChunkAtGen(int x, int z, boolean gen) {
