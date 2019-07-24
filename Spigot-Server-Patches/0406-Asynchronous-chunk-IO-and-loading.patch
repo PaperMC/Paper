@@ -1,4 +1,4 @@
-From a368fa15e0ee58039bb981be19193397e5f6e50b Mon Sep 17 00:00:00 2001
+From 012c518ee6021184be45de5acfa1f2c49fc1ebda Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -237,7 +237,7 @@ index 5942c3438e..61eeb6747a 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-index 9d8bee5cac..dc59b6431b 100644
+index 23626bef3a..1edcecd2ee 100644
 --- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 @@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
@@ -2765,10 +2765,10 @@ index 23d1935dd5..14f8b61042 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eb1006dda7..39009dccf2 100644
+index e9a4973592..7e5452c8a9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -776,6 +776,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -774,6 +774,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
          // Spigot end
@@ -2815,7 +2815,7 @@ index af934ef8bc..8d18d9dd0f 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index e698e1c931..9f99f2b1ea 100644
+index b447c49a63..594c2b9aa6 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -62,7 +62,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3562,7 +3562,7 @@ index b0e6ad773e..f6c95ae8c1 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 607e37cb91..15e5cb2527 100644
+index 6491596538..f5ef138aff 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,9 +1,9 @@
@@ -3666,7 +3666,7 @@ index 607e37cb91..15e5cb2527 100644
  
      public void doTick(BooleanSupplier booleansupplier) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index d06716c006..496b0b3a11 100644
+index a734a87c41..3c62528a04 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -531,22 +531,23 @@ public class CraftWorld implements World {
@@ -3701,7 +3701,7 @@ index d06716c006..496b0b3a11 100644
  
              // fall through to load
              // we do this so we do not re-read the chunk data on disk
-@@ -2323,16 +2324,17 @@ public class CraftWorld implements World {
+@@ -2325,16 +2326,17 @@ public class CraftWorld implements World {
  
      @Override
      public CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
