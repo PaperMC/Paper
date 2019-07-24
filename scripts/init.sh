@@ -16,6 +16,20 @@ if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
 fi
 
+# apply patches directly to the file tree
+# used to fix issues from upstream source repos
+cd $basedir
+prepatchesdir="$basedir/scripts/pre-source-patches"
+for file in $(ls $prepatchesdir)
+do
+    if [ $file == "README.md" ]; then
+        continue
+    fi
+
+    echo "--==-- Applying PRE-SOURCE patch: $file --==--"
+    $patch -p0 < "$prepatchesdir/$file"
+done
+
 echo "Applying CraftBukkit patches to NMS..."
 cd "$workdir/CraftBukkit"
 $gitcmd checkout -B patched HEAD >/dev/null 2>&1
