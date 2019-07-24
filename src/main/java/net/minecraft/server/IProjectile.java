@@ -114,7 +114,7 @@ public abstract class IProjectile extends Entity {
         this.shoot((double) f5, (double) f6, (double) f7, f3, f4);
         Vec3D vec3d = entity.getMot();
 
-        this.setMot(this.getMot().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
+        if (!entity.world.paperConfig.disableRelativeProjectileVelocity) this.setMot(this.getMot().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z)); // Paper - allow disabling relative velocity
     }
 
     protected void a(MovingObjectPosition movingobjectposition) {

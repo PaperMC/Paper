@@ -493,4 +493,9 @@ public class PaperWorldConfig {
         }
         log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks / Update Radius: " + updateRadius);
     }
+
+    public boolean disableRelativeProjectileVelocity;
+    private void disableRelativeProjectileVelocity() {
+        disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
+    }
 }
