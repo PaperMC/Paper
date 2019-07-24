@@ -51,10 +51,24 @@ public class ChunkRegionLoader {
         return holder.protoChunk;
     }
 
+    // Paper start
+    private static final int CURRENT_DATA_VERSION = SharedConstants.getGameVersion().getWorldVersion();
+    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
+    // Paper end
+
     public static InProgressChunkHolder loadChunk(WorldServer worldserver, DefinedStructureManager definedstructuremanager, VillagePlace villageplace, ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound, boolean distinguish) {
         ArrayDeque<Runnable> tasksToExecuteOnMain = new ArrayDeque<>();
         // Paper end
         ChunkGenerator chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
+        // Paper start - Do NOT attempt to load chunks saved with newer versions
+        if (nbttagcompound.hasKeyOfType("DataVersion", 99)) {
+            int dataVersion = nbttagcompound.getInt("DataVersion");
+            if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
+                new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
+                System.exit(1);
+            }
+        }
+        // Paper end
         WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
         NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level"); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
         ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
