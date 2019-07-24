@@ -1,82 +1,83 @@
-From 684cae4a51364946731d85130fdc002b257c0e5c Mon Sep 17 00:00:00 2001
+From c691177f3fa98782904f01348dbbbf1a435d86a5 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Mon, 3 Jun 2019 02:02:39 -0400
 Subject: [PATCH] Implement alternative item-despawn-rate
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index b8540619..a61ceb00 100644
+index 318a470ee..4c359b1a8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -1,8 +1,14 @@
+@@ -1,12 +1,17 @@
  package com.destroystokyo.paper;
  
-+import java.util.ArrayList;
+ import java.util.Arrays;
 +import java.util.EnumMap;
 +import java.util.HashMap;
  import java.util.List;
 +import java.util.Map;
  
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.ChunkEdgeMode;
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
+ import net.minecraft.server.MinecraftServer;
  import org.bukkit.Bukkit;
 +import org.bukkit.Material;
 +import org.bukkit.configuration.ConfigurationSection;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
  
-@@ -109,6 +115,44 @@ public class PaperWorldConfig {
-         hardDespawnDistance = hardDespawnDistance*hardDespawnDistance;
+@@ -562,4 +567,42 @@ public class PaperWorldConfig {
+     private void disableRelativeProjectileVelocity() {
+         disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
      }
- 
++
 +    public boolean altItemDespawnRateEnabled;
 +    public Map<Material, Integer> altItemDespawnRateMap;
-+    private void altItemDespawnRate(){
++    private void altItemDespawnRate() {
 +        String path = "alt-item-despawn-rate";
 +
-+        altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
++            altItemDespawnRateEnabled = getBoolean(path + ".enabled", false);
 +
-+        Map<Material, Integer> altItemDespawnRateMapDefault = new EnumMap(Material.class);
++            Map<Material, Integer> altItemDespawnRateMapDefault = new EnumMap<>(Material.class);
 +        altItemDespawnRateMapDefault.put(Material.COBBLESTONE, 300);
-+        for(Material key : altItemDespawnRateMapDefault.keySet()){
++        for(Material key : altItemDespawnRateMapDefault.keySet()) {
 +            config.addDefault("world-settings.default." + path + ".items." + key, altItemDespawnRateMapDefault.get(key));
 +        }
 +
-+        ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
++            ConfigurationSection mapSection = config.getConfigurationSection("world-settings." + worldName + "." + path + ".items");
 +        if(mapSection == null) {
 +            mapSection = config.getConfigurationSection("world-settings.default." + path + ".items");
 +        }
 +        Map<String, Integer> rawMap = new HashMap<>();
-+        for(String key : mapSection.getKeys(false)){
++        for(String key : mapSection.getKeys(false)) {
 +            int val = mapSection.getInt(key);
 +            rawMap.put(key, val);
 +        }
 +
-+        altItemDespawnRateMap = new EnumMap(Material.class);
-+        for(String key : rawMap.keySet()){
++            altItemDespawnRateMap = new EnumMap<>(Material.class);
++        for(String key : rawMap.keySet()) {
 +            try {
 +                altItemDespawnRateMap.put(Material.valueOf(key), rawMap.get(key));
 +            } catch (Exception e) {
 +                logError("Could not add item " + key + " to altItemDespawnRateItems: " + e.getMessage());
 +            }
 +        }
-+        if(altItemDespawnRateEnabled){
++        if(altItemDespawnRateEnabled) {
 +            for(Material key : altItemDespawnRateMap.keySet()) {
 +                log("alt-item-despawn-rate " + key + ": " + altItemDespawnRateMap.get(key));
 +            }
 +        }
 +    }
-+
-     public boolean keepSpawnInMemory;
-     private void keepSpawnInMemory() {
-         keepSpawnInMemory = getBoolean("keep-spawn-loaded", true);
+ }
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
-index 7e925631..11ac4a57 100644
+index 209169895..59c6586b2 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
 +++ b/src/main/java/net/minecraft/server/EntityItem.java
 @@ -5,6 +5,7 @@ import java.util.List;
  import java.util.UUID;
  import javax.annotation.Nullable;
  // CraftBukkit start
-+import org.bukkit.Material;
++import org.bukkit.Material; // Paper
  import org.bukkit.event.entity.EntityPickupItemEvent;
  import org.bukkit.event.player.PlayerPickupItemEvent;
  // CraftBukkit end
@@ -101,5 +102,5 @@ index 7e925631..11ac4a57 100644
                  // CraftBukkit start - fire ItemDespawnEvent
                  if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 -- 
-2.19.0
+2.22.0
 
