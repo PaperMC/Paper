@@ -1,4 +1,4 @@
-From 2817ea0cd2b735fcf41d322476b4b1d6c97f39a4 Mon Sep 17 00:00:00 2001
+From e724746a98cf149f377d9a442782dc448abb8405 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 9 Sep 2018 00:32:05 -0400
 Subject: [PATCH] Remove deadlock risk in firing async events
@@ -29,10 +29,10 @@ index adca48f1..2d3cee14 100644
       *
       * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index da3cd63b..583f8ee4 100644
+index 132c861c..d0e735bc 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -398,7 +398,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -399,7 +399,7 @@ public final class SimplePluginManager implements PluginManager {
       * @return true if the plugin is enabled, otherwise false
       */
      @Override
@@ -41,7 +41,7 @@ index da3cd63b..583f8ee4 100644
          if ((plugin != null) && (plugins.contains(plugin))) {
              return plugin.isEnabled();
          } else {
-@@ -407,7 +407,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -408,7 +408,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
      @Override
@@ -50,7 +50,7 @@ index da3cd63b..583f8ee4 100644
          if (!plugin.isEnabled()) {
              List<Command> pluginCommands = PluginCommandYamlParser.parse(plugin);
  
-@@ -445,7 +445,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -446,7 +446,7 @@ public final class SimplePluginManager implements PluginManager {
      }
  
      @Override
@@ -59,7 +59,7 @@ index da3cd63b..583f8ee4 100644
          // Paper end - close Classloader on disable
          if (plugin.isEnabled()) {
              try {
-@@ -506,6 +506,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -515,6 +515,7 @@ public final class SimplePluginManager implements PluginManager {
              defaultPerms.get(false).clear();
          }
      }
@@ -67,7 +67,7 @@ index da3cd63b..583f8ee4 100644
  
      /**
       * Calls an event with the given details.
-@@ -516,25 +517,11 @@ public final class SimplePluginManager implements PluginManager {
+@@ -525,25 +526,13 @@ public final class SimplePluginManager implements PluginManager {
       */
      @Override
      public void callEvent(@NotNull Event event) {
@@ -88,7 +88,9 @@ index da3cd63b..583f8ee4 100644
 -            }
 +        // Paper - replace callEvent by merging to below method
 +        if (event.isAsynchronous() && server.isPrimaryThread()) {
-+            throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
++            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
++        } else if (!event.isAsynchronous() && !server.isPrimaryThread()) {
++            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
 -    }
  
@@ -136,5 +138,5 @@ index 17dbe913..bae26ce7 100644
      @Test
      public void testRemovePermissionByNameLower() {
 -- 
-2.21.0
+2.22.0
 

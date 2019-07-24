@@ -1,0 +1,52 @@
+From 0f18a6843159010c7875f1b721be24a86f41e33a Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Thu, 8 Sep 2016 08:48:33 -0700
+Subject: [PATCH] Add source to PlayerExpChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+index 26a3a1d03..a4cd502bc 100644
+--- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
+@@ -190,7 +190,7 @@ public class EntityExperienceOrb extends Entity {
+                 }
+ 
+                 if (this.value > 0) {
+-                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this.value).getAmount()); // CraftBukkit - this.value -> event.getAmount()
++                    entityhuman.giveExp(CraftEventFactory.callPlayerExpChangeEvent(entityhuman, this).getAmount()); // CraftBukkit - this.value -> event.getAmount() // Paper - supply experience orb object
+                 }
+ 
+                 this.die();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index cf1abd187..445f2aef9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -106,6 +106,7 @@ import org.bukkit.entity.ThrownPotion;
+ import org.bukkit.entity.Vehicle;
+ import org.bukkit.entity.Villager;
+ import org.bukkit.entity.Villager.Profession;
++import org.bukkit.entity.ExperienceOrb; // Paper
+ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.Event.Result;
+@@ -973,6 +974,17 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start - Add orb
++    public static PlayerExpChangeEvent callPlayerExpChangeEvent(EntityHuman entity, EntityExperienceOrb entityOrb) {
++        Player player = (Player) entity.getBukkitEntity();
++        ExperienceOrb source = (ExperienceOrb) entityOrb.getBukkitEntity();
++        int expAmount = source.getExperience();
++        PlayerExpChangeEvent event = new PlayerExpChangeEvent(player, source, expAmount);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static boolean handleBlockGrowEvent(World world, BlockPosition pos, IBlockData block) {
+         return handleBlockGrowEvent(world, pos, block, 3);
+     }
+-- 
+2.22.0
+
