@@ -1,4 +1,4 @@
-From 76ec5cd5870016019c709317fd0091bfd13f7d11 Mon Sep 17 00:00:00 2001
+From 740862772ad8504b5bd9badc779ff59c0e633b93 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
@@ -167,10 +167,10 @@ index 857b2f8868..bbf136614c 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 36a89817f8..dd6e69a0f1 100644
+index 36a89817f8..baf3bd461b 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -77,6 +77,58 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -77,6 +77,37 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
  
@@ -178,24 +178,9 @@ index 36a89817f8..dd6e69a0f1 100644
 +    // Note: Partially copied from the getChunkAt method below
 +    @Nullable
 +    public Chunk getChunkAtIfCachedImmediately(int x, int z) {
-+        if (Thread.currentThread() != this.serverThread) {
-+            return CompletableFuture.supplyAsync(() -> {
-+                return this.getChunkAtIfCachedImmediately(x, z);
-+            }, this.serverThreadQueue).join();
-+        }
-+
 +        long k = ChunkCoordIntPair.pair(x, z);
 +
-+        IChunkAccess ichunkaccess;
-+
-+        for (int l = 0; l < 4; ++l) {
-+            if (k == this.cachePos[l] && ChunkStatus.FULL == this.cacheStatus[l]) {
-+                ichunkaccess = this.cacheChunk[l];
-+                if (ichunkaccess instanceof Chunk) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
-+                    return (Chunk)ichunkaccess;
-+                }
-+            }
-+        }
++        // Note: Bypass cache to make this MT-Safe
 +
 +        PlayerChunk playerChunk = this.getChunk(k);
 +        if (playerChunk == null) {
@@ -207,15 +192,9 @@ index 36a89817f8..dd6e69a0f1 100644
 +
 +    @Nullable
 +    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
-+        if (Thread.currentThread() != this.serverThread) {
-+            return CompletableFuture.supplyAsync(() -> {
-+                return this.getChunkAtIfLoadedImmediately(x, z);
-+            }, this.serverThreadQueue).join();
-+        }
-+
 +        long k = ChunkCoordIntPair.pair(x, z);
 +
-+        // Note: Bypass cache since we need to check ticket level
++        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
 +
 +        PlayerChunk playerChunk = this.getChunk(k);
 +        if (playerChunk == null) {
@@ -326,7 +305,7 @@ index 613d534aeb..f31a996aa5 100644
          // CraftBukkit start - fire event
          setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 35a67665a2..5c863860ae 100644
+index 9c3e95bbbc..dcbc4ea7e1 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -126,6 +126,7 @@ public abstract class EntityLiving extends Entity {
