@@ -1,27 +1,25 @@
-From 9d0b00855e63c7b10a20b3ea1ed9ca5b7ada665c Mon Sep 17 00:00:00 2001
+From 59eb66ff7cd0d8621439abc1a141bb1d8d1ce5f7 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 7 Jun 2019 18:54:35 -0400
 Subject: [PATCH] Implement performUpgrade flag
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 184f1b00..478e8cb6 100644
+index e9a497359..675a890ae 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -58,7 +58,11 @@ import org.bukkit.craftbukkit.Main;
+@@ -67,6 +67,10 @@ import org.bukkit.craftbukkit.Main;
  import org.bukkit.event.server.ServerLoadEvent;
  // CraftBukkit end
- import org.spigotmc.SlackActivityAccountant; // Spigot
--import co.aikar.timings.MinecraftTimings; // Paper
+ import co.aikar.timings.MinecraftTimings; // Paper
 +// Paper start
-+import co.aikar.timings.MinecraftTimings;
 +import java.io.FileOutputStream;
 +import java.io.OutputStream;
 +// Paper end
+ import org.spigotmc.SlackActivityAccountant; // Spigot
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable, Runnable {
- 
-@@ -141,6 +145,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -150,6 +154,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      private final CircularTimer ap;
      private boolean aq;
      private boolean forceUpgrade;
@@ -29,7 +27,7 @@ index 184f1b00..478e8cb6 100644
      private boolean eraseCache;
      private float at;
      public final Executor executorService;
-@@ -263,7 +268,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -273,7 +278,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              });
          }
  
@@ -38,7 +36,7 @@ index 184f1b00..478e8cb6 100644
              MinecraftServer.LOGGER.info("Forcing world upgrade! {}", s); // CraftBukkit
              WorldData worlddata = this.getConvertable().b(s); // CraftBukkit
  
-@@ -298,10 +303,65 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -308,10 +313,65 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                      }
                  }
              }
@@ -54,7 +52,7 @@ index 184f1b00..478e8cb6 100644
 +        try {
 +            File file = new File(filename);
 +
-+            WorldData worlddata = Convertable.a(file, (DataFixer)this.dataConverterManager);
++                WorldData worlddata = Convertable.a(file, (DataFixer)this.dataConverterManager);
 +            String ver = worlddata.getLastForceUpgradeVersion();
 +            result = this.getVersion().equals(ver);
 +        } catch (Exception e) {
@@ -68,33 +66,33 @@ index 184f1b00..478e8cb6 100644
 +        try {
 +            File level_datFile = new File(filename);
 +
-+            WorldData worlddata = Convertable.a(level_datFile, (DataFixer)this.dataConverterManager);
++                WorldData worlddata = Convertable.a(level_datFile, (DataFixer)this.dataConverterManager);
 +            worlddata.setLastForceUpgradeVersion(this.getVersion());
 +
-+            worlddata.d(19133);
++                worlddata.d(19133);
 +            NBTTagCompound nbttagcompound1 = worlddata.a((NBTTagCompound) null);
 +            NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 +
-+            nbttagcompound2.set("Data", nbttagcompound1);
++                nbttagcompound2.set("Data", nbttagcompound1);
 +
-+            File file = new File(world, "level.dat_new");
++                File file = new File(world, "level.dat_new");
 +            File file1 = new File(world, "level.dat_old");
 +            File file2 = new File(world, "level.dat");
 +
-+            NBTCompressedStreamTools.a(nbttagcompound2, (OutputStream) (new FileOutputStream(level_datFile)));
++                NBTCompressedStreamTools.a(nbttagcompound2, (OutputStream) (new FileOutputStream(level_datFile)));
 +            if (file1.exists()) {
 +                file1.delete();
 +            }
 +
-+            file2.renameTo(file1);
++                file2.renameTo(file1);
 +            if (file2.exists()) {
 +                file2.delete();
 +            }
 +
-+            file.renameTo(file2);
++                file.renameTo(file2);
 +            if (file.exists()) {
 +                file.delete();
-+                }
++            }
 +        } catch (Exception e) {
 +            e.printStackTrace();
 +        }
@@ -104,7 +102,7 @@ index 184f1b00..478e8cb6 100644
      protected synchronized void b(IChatBaseComponent ichatbasecomponent) {
          this.S = ichatbasecomponent;
      }
-@@ -1326,6 +1386,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1351,6 +1411,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  dedicatedserver.setForceUpgrade(true);
              }
  
@@ -117,7 +115,7 @@ index 184f1b00..478e8cb6 100644
              if (optionset.has("eraseCache")) {
                  dedicatedserver.setEraseCache(true);
              }
-@@ -1346,6 +1412,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1371,6 +1437,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          this.forceUpgrade = flag;
      }
  
@@ -131,26 +129,26 @@ index 184f1b00..478e8cb6 100644
          this.eraseCache = flag;
      }
 diff --git a/src/main/java/net/minecraft/server/WorldData.java b/src/main/java/net/minecraft/server/WorldData.java
-index d4b0cca2..b5e043fa 100644
+index ca4c31458..dd48a704b 100644
 --- a/src/main/java/net/minecraft/server/WorldData.java
 +++ b/src/main/java/net/minecraft/server/WorldData.java
-@@ -74,6 +74,7 @@ public class WorldData {
-     private final GameRules Y;
-     private final CustomFunctionCallbackTimerQueue<MinecraftServer> Z;
+@@ -73,6 +73,7 @@ public class WorldData {
+     private final GameRules X;
+     private final CustomFunctionCallbackTimerQueue<MinecraftServer> Y;
      public WorldServer world; // CraftBukkit
 +    private String lastForceUpgrade; // Paper
  
      protected WorldData() {
          this.f = WorldType.NORMAL;
-@@ -280,6 +281,7 @@ public class WorldData {
-             this.X = UUID.fromString(nbttagcompound.getString("WanderingTraderId"));
+@@ -279,6 +280,7 @@ public class WorldData {
+             this.W = UUID.fromString(nbttagcompound.getString("WanderingTraderId"));
          }
  
 +        this.lastForceUpgrade = nbttagcompound.getString("Paper.LastForceUpgrade"); // Paper
      }
  
      public WorldData(WorldSettings worldsettings, String s) {
-@@ -426,6 +428,7 @@ public class WorldData {
+@@ -425,6 +427,7 @@ public class WorldData {
          }
  
          nbttagcompound.setString("Bukkit.Version", Bukkit.getName() + "/" + Bukkit.getVersion() + "/" + Bukkit.getBukkitVersion()); // CraftBukkit
@@ -158,7 +156,7 @@ index d4b0cca2..b5e043fa 100644
      }
  
      public long getSeed() {
-@@ -486,6 +489,16 @@ public class WorldData {
+@@ -484,6 +487,16 @@ public class WorldData {
          this.k = blockposition.getZ();
      }
  
@@ -176,7 +174,7 @@ index d4b0cca2..b5e043fa 100644
          return this.levelName;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 405ea5c4..82960b10 100644
+index 1fa81904d..293cf0568 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -111,6 +111,7 @@ public class Main {
@@ -188,5 +186,5 @@ index 405ea5c4..82960b10 100644
  
                  acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 -- 
-2.19.0
+2.22.0
 
