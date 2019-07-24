@@ -10,7 +10,7 @@
  
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -90,13 +91,25 @@
+@@ -90,13 +91,39 @@
      public static final String SECTIONS_TAG = "sections";
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
@@ -27,17 +27,31 @@
 +    }
 +    // Paper end - guard against serializing mismatching coordinates
  
++    // Paper start - Do not let the server load chunks from newer versions
++    private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion();
++    private static final boolean JUST_CORRUPT_IT = Boolean.getBoolean("Paper.ignoreWorldDataVersion");
++    // Paper end - Do not let the server load chunks from newer versions
++
      @Nullable
      public static SerializableChunkData parse(LevelHeightAccessor world, RegistryAccess registryManager, CompoundTag nbt) {
          if (!nbt.contains("Status", 8)) {
              return null;
          } else {
 -            ChunkPos chunkcoordintpair = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos"));
++            // Paper start - Do not let the server load chunks from newer versions
++            if (nbt.contains("DataVersion", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++                final int dataVersion = nbt.getInt("DataVersion");
++                if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
++                    new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
++                    System.exit(1);
++                }
++            }
++            // Paper end - Do not let the server load chunks from newer versions
 +            ChunkPos chunkcoordintpair = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
              long i = nbt.getLong("LastUpdate");
              long j = nbt.getLong("InhabitedTime");
              ChunkStatus chunkstatus = ChunkStatus.byName(nbt.getString("Status"));
-@@ -110,7 +123,7 @@
+@@ -110,7 +137,7 @@
                  dataresult = BlendingData.Packed.CODEC.parse(NbtOps.INSTANCE, nbt.getCompound("blending_data"));
                  logger = SerializableChunkData.LOGGER;
                  Objects.requireNonNull(logger);
@@ -46,7 +60,7 @@
              } else {
                  blendingdata_d = null;
              }
-@@ -121,7 +134,7 @@
+@@ -121,7 +148,7 @@
                  dataresult = BelowZeroRetrogen.CODEC.parse(NbtOps.INSTANCE, nbt.getCompound("below_zero_retrogen"));
                  logger = SerializableChunkData.LOGGER;
                  Objects.requireNonNull(logger);
@@ -55,7 +69,7 @@
              } else {
                  belowzeroretrogen = null;
              }
-@@ -178,7 +191,7 @@
+@@ -178,7 +205,7 @@
              ListTag nbttaglist2 = nbt.getList("sections", 10);
              List<SerializableChunkData.SectionData> list4 = new ArrayList(nbttaglist2.size());
              Registry<Biome> iregistry = registryManager.lookupOrThrow(Registries.BIOME);
@@ -64,7 +78,7 @@
  
              for (int i1 = 0; i1 < nbttaglist2.size(); ++i1) {
                  CompoundTag nbttagcompound3 = nbttaglist2.getCompound(i1);
-@@ -196,17 +209,17 @@
+@@ -196,17 +223,17 @@
                          datapaletteblock = new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
                      }
  
@@ -85,7 +99,7 @@
                  } else {
                      chunksection = null;
                  }
-@@ -217,7 +230,8 @@
+@@ -217,7 +244,8 @@
                  list4.add(new SerializableChunkData.SectionData(b0, chunksection, nibblearray, nibblearray1));
              }
  
@@ -95,21 +109,20 @@
          }
      }
  
-@@ -287,7 +301,13 @@
-             if (this.chunkStatus.isOrAfter(ChunkStatus.INITIALIZE_LIGHT)) {
-                 protochunk.setLightEngine(levellightengine);
+@@ -289,6 +317,12 @@
              }
-+        }
-+
+         }
+ 
 +        // CraftBukkit start - load chunk persistent data from nbt - SPIGOT-6814: Already load PDC here to account for 1.17 to 1.18 chunk upgrading.
 +        if (this.persistentDataContainer instanceof CompoundTag) {
 +            ((ChunkAccess) object).persistentDataContainer.putAll((CompoundTag) this.persistentDataContainer);
-         }
++        }
 +        // CraftBukkit end
- 
++
          ((ChunkAccess) object).setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> enumset = EnumSet.noneOf(Heightmap.Types.class);
-@@ -348,6 +368,12 @@
+         Iterator iterator1 = ((ChunkAccess) object).getPersistedStatus().heightmapsAfter().iterator();
+@@ -348,6 +382,12 @@
          return PalettedContainer.codecRO(biomeRegistry.asHolderIdMap(), biomeRegistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, biomeRegistry.getOrThrow(Biomes.PLAINS));
      }
  
@@ -122,7 +135,7 @@
      public static SerializableChunkData copyOf(ServerLevel world, ChunkAccess chunk) {
          if (!chunk.canBeSerialized()) {
              throw new IllegalArgumentException("Chunk can't be serialized: " + String.valueOf(chunk));
-@@ -419,7 +445,14 @@
+@@ -419,7 +459,14 @@
              });
              CompoundTag nbttagcompound1 = packStructureData(StructurePieceSerializationContext.fromLevel(world), chunkcoordintpair, chunk.getAllStarts(), chunk.getAllReferences());
  
@@ -138,7 +151,7 @@
          }
      }
  
-@@ -432,7 +465,7 @@
+@@ -432,7 +479,7 @@
          nbttagcompound.putLong("LastUpdate", this.lastUpdateTime);
          nbttagcompound.putLong("InhabitedTime", this.inhabitedTime);
          nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
@@ -147,7 +160,7 @@
          Logger logger;
  
          if (this.blendingData != null) {
-@@ -513,6 +546,11 @@
+@@ -513,6 +560,11 @@
          });
          nbttagcompound.put("Heightmaps", nbttagcompound2);
          nbttagcompound.put("structures", this.structureData);
@@ -159,7 +172,7 @@
          return nbttagcompound;
      }
  
-@@ -623,6 +661,12 @@
+@@ -623,6 +675,12 @@
                  StructureStart structurestart = StructureStart.loadStaticStart(context, nbttagcompound1.getCompound(s), worldSeed);
  
                  if (structurestart != null) {
