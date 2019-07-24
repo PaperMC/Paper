@@ -1,0 +1,92 @@
+From 2367b8fc37274600701109e28bd28b6fe7f9ec73 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Tue, 31 Oct 2017 03:26:18 +0100
+Subject: [PATCH] Send attack SoundEffects only to players who can see the
+ attacker
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 9d1c3b0737..4cfe87d078 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -956,6 +956,15 @@ public abstract class EntityHuman extends EntityLiving {
+         return super.isFrozen() || this.isSleeping();
+     }
+ 
++    // Paper start - send SoundEffect to everyone who can see fromEntity
++    private static void sendSoundEffect(EntityHuman fromEntity, double x, double y, double z, SoundEffect soundEffect, SoundCategory soundCategory, float volume, float pitch) {
++        fromEntity.world.sendSoundEffect(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity himself
++        if (fromEntity instanceof EntityPlayer) {
++            ((EntityPlayer) fromEntity).playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(soundEffect, soundCategory, x, y, z, volume, pitch));
++        }
++    }
++    // Paper end
++
+     public void attack(Entity entity) {
+         if (entity.bs()) {
+             if (!entity.t(this)) {
+@@ -980,7 +989,7 @@ public abstract class EntityHuman extends EntityLiving {
+                     int i = b0 + EnchantmentManager.b((EntityLiving) this);
+ 
+                     if (this.isSprinting() && flag) {
+-                        this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_KNOCKBACK, this.getSoundCategory(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_KNOCKBACK, this.getSoundCategory(), 1.0F, 1.0F);  // Paper - send while respecting visibility
+                         ++i;
+                         flag1 = true;
+                     }
+@@ -1055,7 +1064,7 @@ public abstract class EntityHuman extends EntityLiving {
+                                 }
+                             }
+ 
+-                            this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_SWEEP, this.getSoundCategory(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_SWEEP, this.getSoundCategory(), 1.0F, 1.0F);  // Paper - send while respecting visibility
+                             this.dE();
+                         }
+ 
+@@ -1083,15 +1092,15 @@ public abstract class EntityHuman extends EntityLiving {
+                         }
+ 
+                         if (flag2) {
+-                            this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_CRIT, this.getSoundCategory(), 1.0F, 1.0F);
++                            sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_CRIT, this.getSoundCategory(), 1.0F, 1.0F);  // Paper - send while respecting visibility
+                             this.a(entity);
+                         }
+ 
+                         if (!flag2 && !flag3) {
+                             if (flag) {
+-                                this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_STRONG, this.getSoundCategory(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_STRONG, this.getSoundCategory(), 1.0F, 1.0F);  // Paper - send while respecting visibility
+                             } else {
+-                                this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_WEAK, this.getSoundCategory(), 1.0F, 1.0F);
++                                sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_WEAK, this.getSoundCategory(), 1.0F, 1.0F);  // Paper - send while respecting visibility
+                             }
+                         }
+ 
+@@ -1143,7 +1152,7 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+                         this.applyExhaustion(world.spigotConfig.combatExhaustion); // Spigot - Change to use configurable value
+                     } else {
+-                        this.world.playSound((EntityHuman) null, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_NODAMAGE, this.getSoundCategory(), 1.0F, 1.0F);
++                        sendSoundEffect(this, this.locX, this.locY, this.locZ, SoundEffects.ENTITY_PLAYER_ATTACK_NODAMAGE, this.getSoundCategory(), 1.0F, 1.0F); // Paper - send while respecting visibility
+                         if (flag4) {
+                             entity.extinguish();
+                         }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 8add757cc8..22f1d9e27b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -671,6 +671,11 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         this.playSound(entityhuman, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, soundeffect, soundcategory, f, f1);
+     }
+ 
++    // Paper start - OBFHELPER
++    public final void sendSoundEffect(@Nullable EntityHuman fromEntity, double x, double y, double z, SoundEffect soundeffect, SoundCategory soundcategory, float volume, float pitch) {
++        this.playSound(fromEntity, x, y, z, soundeffect, soundcategory, volume, pitch);
++    }
++    // Paper end
+     public abstract void playSound(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1);
+ 
+     public abstract void playSound(@Nullable EntityHuman entityhuman, Entity entity, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1);
+-- 
+2.22.0
+

@@ -1,0 +1,162 @@
+From 9f6a1c486a41aa4246ef8622be3e3534ab03ae3a Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 22 Sep 2018 00:33:08 -0500
+Subject: [PATCH] Add LivingEntity#getTargetEntity
+
+
+diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+index 4f60b931a1..c950139c0f 100644
+--- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
++++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+@@ -108,6 +108,7 @@ public class AxisAlignedBB {
+         return this.b(vec3d.x, vec3d.y, vec3d.z);
+     }
+ 
++    public final AxisAlignedBB expand(double x, double y, double z) { return b(x, y, z); } // Paper - OBFHELPER
+     public AxisAlignedBB b(double d0, double d1, double d2) {
+         double d3 = this.minX;
+         double d4 = this.minY;
+@@ -137,6 +138,12 @@ public class AxisAlignedBB {
+         return new AxisAlignedBB(d3, d4, d5, d6, d7, d8);
+     }
+ 
++    // Paper start
++    public AxisAlignedBB grow(double d0) {
++        return grow(d0, d0, d0);
++    }
++    // Paper end
++
+     public AxisAlignedBB grow(double d0, double d1, double d2) {
+         double d3 = this.minX - d0;
+         double d4 = this.minY - d1;
+@@ -194,6 +201,7 @@ public class AxisAlignedBB {
+         return this.minX < d3 && this.maxX > d0 && this.minY < d4 && this.maxY > d1 && this.minZ < d5 && this.maxZ > d2;
+     }
+ 
++    public final boolean contains(Vec3D vec3d) { return c(vec3d); } // Paper - OBFHELPER
+     public boolean c(Vec3D vec3d) {
+         return this.e(vec3d.x, vec3d.y, vec3d.z);
+     }
+@@ -226,6 +234,7 @@ public class AxisAlignedBB {
+         return this.g(-d0);
+     }
+ 
++    public final Optional<Vec3D> calculateIntercept(Vec3D vec3d, Vec3D vec3d1) { return b(vec3d, vec3d1); } // Paper - OBFHELPER
+     public Optional<Vec3D> b(Vec3D vec3d, Vec3D vec3d1) {
+         double[] adouble = new double[]{1.0D};
+         double d0 = vec3d1.x - vec3d.x;
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 75da085969..046e7e031c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1497,6 +1497,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.c(f - 90.0F, f1);
+     }
+ 
++    public final Vec3D getEyePosition(float partialTicks) { return j(partialTicks); } // Paper - OBFHELPER
+     public Vec3D j(float f) {
+         if (f == 1.0F) {
+             return new Vec3D(this.locX, this.locY + (double) this.getHeadHeight(), this.locZ);
+@@ -2144,6 +2145,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.getPassengers().size() < 1;
+     }
+ 
++    public final float getCollisionBorderSize() { return aS(); } // Paper - OBFHELPER
+     public float aS() {
+         return 0.0F;
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 192a9a86d1..251afcc1bb 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -3225,6 +3225,37 @@ public abstract class EntityLiving extends Entity {
+         return world.rayTrace(raytrace);
+     }
+ 
++    public MovingObjectPositionEntity getTargetEntity(int maxDistance) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3D start = this.getEyePosition(1.0F);
++        Vec3D direction = this.getLookDirection();
++        Vec3D end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
++
++        List<Entity> entityList = world.getEntities(this, getBoundingBox().expand(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).grow(1.0D, 1.0D, 1.0D), IEntitySelector.notSpectator().and(Entity::isInteractable));
++
++        double distance = 0.0D;
++        MovingObjectPositionEntity result = null;
++
++        for (Entity entity : entityList) {
++            AxisAlignedBB aabb = entity.getBoundingBox().grow((double) entity.getCollisionBorderSize());
++            Optional<Vec3D> rayTraceResult = aabb.calculateIntercept(start, end);
++
++            if (rayTraceResult.isPresent()) {
++                Vec3D rayTrace = rayTraceResult.get();
++                double distanceTo = start.distanceSquared(rayTrace);
++                if (distanceTo < distance || distance == 0.0D) {
++                    result = new MovingObjectPositionEntity(entity, rayTrace);
++                    distance = distanceTo;
++                }
++            }
++        }
++
++        return result;
++    }
++
+     public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
+ 
+     public int getShieldBlockingDelay() {
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 9bf1919451..56488b78dd 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -18,6 +18,7 @@ public final class IEntitySelector {
+     public static final Predicate<Entity> e = (entity) -> {
+         return !(entity instanceof EntityHuman) || !entity.isSpectator() && !((EntityHuman) entity).isCreative();
+     };
++    public static Predicate<Entity> notSpectator() { return f; } // Paper - OBFHELPER
+     public static final Predicate<Entity> f = (entity) -> {
+         return !entity.isSpectator();
+     };
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index d5c4115a85..c4aa1945ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -202,6 +202,33 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+             new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().world, ((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getBlockPosition()),
+                 net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getDirection()));
+     }
++
++    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks) {
++        net.minecraft.server.MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
++        return rayTrace == null ? null : rayTrace.getEntity().getBukkitEntity();
++    }
++
++    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
++        net.minecraft.server.MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
++        return rayTrace == null ? null : new com.destroystokyo.paper.entity.TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getPos().x, rayTrace.getPos().y, rayTrace.getPos().z));
++    }
++
++    public net.minecraft.server.MovingObjectPositionEntity rayTraceEntity(int maxDistance, boolean ignoreBlocks) {
++        net.minecraft.server.MovingObjectPositionEntity rayTrace = getHandle().getTargetEntity(maxDistance);
++        if (rayTrace == null) {
++            return null;
++        }
++        if (!ignoreBlocks) {
++            net.minecraft.server.MovingObjectPosition rayTraceBlocks = getHandle().getRayTrace(maxDistance, net.minecraft.server.RayTrace.FluidCollisionOption.NONE);
++            if (rayTraceBlocks != null) {
++                net.minecraft.server.Vec3D eye = getHandle().getEyePosition(1.0F);
++                if (eye.distanceSquared(rayTraceBlocks.getPos()) <= eye.distanceSquared(rayTrace.getPos())) {
++                    return null;
++                }
++            }
++        }
++        return rayTrace;
++    }
+     // Paper end
+ 
+     @Override
+-- 
+2.22.0
+
