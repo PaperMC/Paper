@@ -1,11 +1,12 @@
 --- a/net/minecraft/server/EntityZombie.java
 +++ b/net/minecraft/server/EntityZombie.java
-@@ -8,6 +8,14 @@
+@@ -8,6 +8,15 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.Zombie;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.entity.EntityTargetEvent;
@@ -15,7 +16,7 @@
  public class EntityZombie extends EntityMonster {
  
      protected static final IAttribute d = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
-@@ -23,6 +31,7 @@
+@@ -23,6 +32,7 @@
      private boolean bE;
      private int bF;
      public int drownedConversionTime;
@@ -23,7 +24,7 @@
  
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
-@@ -144,7 +153,11 @@
+@@ -144,7 +154,11 @@
      public void tick() {
          if (!this.world.isClientSide && this.isAlive()) {
              if (this.isDrownConverting()) {
@@ -36,7 +37,7 @@
                  if (this.drownedConversionTime < 0) {
                      this.ea();
                  }
-@@ -193,6 +206,7 @@
+@@ -193,6 +207,7 @@
      }
  
      public void startDrownedConversion(int i) {
@@ -44,13 +45,14 @@
          this.drownedConversionTime = i;
          this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, true);
      }
-@@ -231,7 +245,12 @@
+@@ -231,7 +246,13 @@
                  entityzombie.setCustomNameVisible(this.getCustomNameVisible());
              }
  
 -            this.world.addEntity(entityzombie);
 +            // CraftBukkit start
 +            if (CraftEventFactory.callEntityTransformEvent(this, entityzombie, EntityTransformEvent.TransformReason.DROWNED).isCancelled()) {
++                ((Zombie) getBukkitEntity()).setConversionTime(-1); // SPIGOT-5208: End conversion to stop event spam
 +                return;
 +            }
 +            // CraftBukkit end
@@ -58,7 +60,7 @@
              this.die();
          }
      }
-@@ -264,8 +283,8 @@
+@@ -264,8 +285,8 @@
                      if (this.world.getType(blockposition).a((IBlockAccess) this.world, blockposition, (Entity) entityzombie) && this.world.getLightLevel(new BlockPosition(i1, j1, k1)) < 10) {
                          entityzombie.setPosition((double) i1, (double) j1, (double) k1);
                          if (!this.world.isPlayerNearby((double) i1, (double) j1, (double) k1, 7.0D) && this.world.i((Entity) entityzombie) && this.world.getCubes(entityzombie) && !this.world.containsLiquid(entityzombie.getBoundingBox())) {
@@ -69,7 +71,7 @@
                              entityzombie.prepare(this.world, this.world.getDamageScaler(new BlockPosition(entityzombie)), EnumMobSpawn.REINFORCEMENT, (GroupDataEntity) null, (NBTTagCompound) null);
                              this.getAttributeInstance(EntityZombie.d).addModifier(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
                              entityzombie.getAttributeInstance(EntityZombie.d).addModifier(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, AttributeModifier.Operation.ADDITION));
-@@ -289,7 +308,14 @@
+@@ -289,7 +310,14 @@
              float f = this.world.getDamageScaler(new BlockPosition(this)).b();
  
              if (this.getItemInMainHand().isEmpty() && this.isBurning() && this.random.nextFloat() < f * 0.3F) {
@@ -85,7 +87,7 @@
              }
          }
  
-@@ -379,7 +405,7 @@
+@@ -379,7 +407,7 @@
              EntityZombieVillager entityzombievillager = (EntityZombieVillager) EntityTypes.ZOMBIE_VILLAGER.a(this.world);
  
              entityzombievillager.u(entityvillager);
@@ -94,7 +96,7 @@
              entityzombievillager.prepare(this.world, this.world.getDamageScaler(new BlockPosition(entityzombievillager)), EnumMobSpawn.CONVERSION, new EntityZombie.GroupDataZombie(false), (NBTTagCompound) null);
              entityzombievillager.setVillagerData(entityvillager.getVillagerData());
              entityzombievillager.a((NBTBase) entityvillager.es().a((DynamicOps) DynamicOpsNBT.a).getValue());
-@@ -392,7 +418,13 @@
+@@ -392,7 +420,13 @@
                  entityzombievillager.setCustomNameVisible(entityvillager.getCustomNameVisible());
              }
  
@@ -109,7 +111,7 @@
              this.world.a((EntityHuman) null, 1026, new BlockPosition(this), 0);
          }
  
-@@ -439,7 +471,7 @@
+@@ -439,7 +473,7 @@
                      entitychicken1.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, 0.0F);
                      entitychicken1.prepare(generatoraccess, difficultydamagescaler, EnumMobSpawn.JOCKEY, (GroupDataEntity) null, (NBTTagCompound) null);
                      entitychicken1.r(true);
