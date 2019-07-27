@@ -1358,6 +1358,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         VoxelShape voxelshape1 = iblockdata1.getCollisionShape(this, blockposition);
 
         if (VoxelShapes.c(voxelshape, voxelshape1, OperatorBoolean.NOT_SAME)) {
+            boolean wasTicking = this.tickingEntities; this.tickingEntities = true; // Paper
             Iterator iterator = this.navigators.iterator();
 
             while (iterator.hasNext()) {
@@ -1368,6 +1369,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                 }
             }
 
+            this.tickingEntities = wasTicking; // Paper
         }
     }
 
