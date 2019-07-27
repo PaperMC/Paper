@@ -1,9 +1,9 @@
-From 822d6e522e4779a517df87e7e7d4c6bb515b93b0 Mon Sep 17 00:00:00 2001
+From 016b028f7716699869ba7b2c469007a6a3e34515 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Fri, 26 Jul 2019 12:27:13 -0600
-Subject: [PATCH] Add LZ4 support for region files
+Subject: [PATCH] Add Zstd support for region files
 
-Using lz4-java: https://github.com/lz4/lz4-java
+Using zstd-jni: https://github.com/luben/zstd-jni
 There's a new option in PaperConfig for this which defaults to false.
 Since the patch hooks Mojang's versioning system for new compression methods, it
 should be internally consistent, easily-updatable, and reversible with a force-upgrade.
@@ -11,24 +11,24 @@ should be internally consistent, easily-updatable, and reversible with a force-u
 This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
 
 diff --git a/pom.xml b/pom.xml
-index beda5dc8..181ec637 100644
+index beda5dc8..f6b95132 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -106,6 +106,12 @@
              <version>5.1.47</version>
              <scope>runtime</scope>
          </dependency>
-+        <!-- Paper - lz4 for region files -->
++        <!-- Paper - zstd for region files -->
 +        <dependency>
-+            <groupId>org.lz4</groupId>
-+            <artifactId>lz4-java</artifactId>
-+            <version>1.6.0</version>
++            <groupId>com.github.luben</groupId>
++            <artifactId>zstd-jni</artifactId>
++            <version>1.4.1-1</version>
 +        </dependency>
          <!-- testing -->
          <dependency>
              <groupId>junit</groupId>
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 5942c343..ac77440c 100644
+index 5942c343..0bb4c4db 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -388,4 +388,9 @@ public class PaperConfig {
@@ -36,13 +36,13 @@ index 5942c343..ac77440c 100644
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
 +
-+    public static boolean useLZ4Compression = false;
-+    private static void useLZ4Compression() {
-+        useLZ4Compression = getBoolean("settings.use-lz4-compression", false);
++    public static boolean useZstdCompression = false;
++    private static void useZstdCompression() {
++        useZstdCompression = getBoolean("settings.use-zstd-compression", false);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 41f1e15c..5b02e54a 100644
+index 41f1e15c..c84719cd 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -1,5 +1,6 @@
@@ -58,12 +58,12 @@ index 41f1e15c..5b02e54a 100644
                              return new DataInputStream(new BufferedInputStream(new InflaterInputStream(new ByteArrayInputStream(abyte))));
 -                        } else {
 +                        }
-+                        // Paper start - LZ4 support
++                        // Paper start - zstd support
 +                        else if (b0 == 255) {
 +                            abyte = new byte[l - 1];
 +                            this.b.read(abyte);
 +
-+                            return new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4FrameInputStream(new ByteArrayInputStream(abyte))));
++                            return new DataInputStream(new BufferedInputStream(new com.github.luben.zstd.ZstdInputStream(new ByteArrayInputStream(abyte))));
 +                        }
 +                        // Paper end
 +                        else {
@@ -75,8 +75,8 @@ index 41f1e15c..5b02e54a 100644
      private void a(int i, byte[] abyte, int j) throws IOException {
          this.b.seek((long) (i * 4096));
 -        this.writeIntAndByte(j + 1, (byte)2); // Paper - Avoid 4 io write calls
-+        // Paper start - LZ4 support
-+        if (PaperConfig.useLZ4Compression) {
++        // Paper start - zstd support
++        if (PaperConfig.useZstdCompression) {
 +            this.writeIntAndByte(j + 1, (byte)255); // Paper - Avoid 4 io write calls
 +        } else {
 +            this.writeIntAndByte(j + 1, (byte)2); // Paper - Avoid 4 io write calls
@@ -89,9 +89,9 @@ index 41f1e15c..5b02e54a 100644
  
      void writeOversizedData(int x, int z, NBTTagCompound oversizedData) throws IOException {
          File file = getOversizedFile(x, z);
-+        // Paper start - LZ4 support
-+        if (PaperConfig.useLZ4Compression) {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new net.jpountz.lz4.LZ4FrameOutputStream(new java.io.FileOutputStream(file)), 32 * 1024))) {
++        // Paper start - zstd support
++        if (PaperConfig.useZstdCompression) {
++            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new com.github.luben.zstd.ZstdOutputStream(new java.io.FileOutputStream(file)), 32 * 1024))) {
 +                NBTCompressedStreamTools.writeNBT(oversizedData, out);
 +            }
 +        }
@@ -103,9 +103,9 @@ index 41f1e15c..5b02e54a 100644
  
      synchronized NBTTagCompound getOversizedData(int x, int z) throws IOException {
          File file = getOversizedFile(x, z);
-+        // Paper start - LZ4 support
-+        if (PaperConfig.useLZ4Compression) {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4FrameInputStream(new java.io.FileInputStream(file))))) {
++        // Paper start - zstd support
++        if (PaperConfig.useZstdCompression) {
++            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new com.github.luben.zstd.ZstdInputStream(new java.io.FileInputStream(file))))) {
 +                return NBTCompressedStreamTools.readNBT(out);
 +            }
 +        }
@@ -117,11 +117,11 @@ index 41f1e15c..5b02e54a 100644
      private static final java.util.zip.Deflater deflater = new java.util.zip.Deflater();
      // since file IO is single threaded, no benefit to using per-region file buffers/synchronization, we can change that later if it becomes viable.
      private static DirectByteArrayOutputStream compressData(byte[] buf, int length) throws IOException {
-+        // Paper start - LZ4 support
-+        if (PaperConfig.useLZ4Compression) {
++        // Paper start - zstd support
++        if (PaperConfig.useZstdCompression) {
 +            try (
 +                ByteArrayOutputStream rawOut = new ByteArrayOutputStream(length);
-+                net.jpountz.lz4.LZ4FrameOutputStream compressedOut = new net.jpountz.lz4.LZ4FrameOutputStream(rawOut)
++                com.github.luben.zstd.ZstdOutputStream compressedOut = new com.github.luben.zstd.ZstdOutputStream(rawOut)
 +            ) {
 +                compressedOut.write(buf);
 +
