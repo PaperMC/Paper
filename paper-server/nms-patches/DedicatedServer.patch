@@ -31,7 +31,7 @@
          this.propertyManager = dedicatedserversettings;
          this.remoteControlCommandListener = new RemoteControlCommandListener(this);
          Thread thread = new Thread("Server Infinisleeper") {
-@@ -65,13 +78,27 @@
+@@ -65,13 +78,37 @@
      public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -55,14 +55,24 @@
 +                        } else {
 +                            s = bufferedreader.readLine();
 +                        }
-+                        if (s != null && s.trim().length() > 0) { // Trim to filter lines which are just spaces
++
++                        // SPIGOT-5220: Throttle if EOF (ctrl^d) or stdin is /dev/null
++                        if (s == null) {
++                            try {
++                                Thread.sleep(50L);
++                            } catch (InterruptedException ex) {
++                                Thread.currentThread().interrupt();
++                            }
++                            continue;
++                        }
++                        if (s.trim().length() > 0) { // Trim to filter lines which are just spaces
 +                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
 +                        }
 +                        // CraftBukkit end
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -80,6 +107,27 @@
+@@ -80,6 +117,27 @@
              }
          };
  
@@ -90,7 +100,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -133,6 +181,12 @@
+@@ -133,6 +191,12 @@
              return false;
          }
  
@@ -103,7 +113,7 @@
          if (!this.getOnlineMode()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -147,7 +201,7 @@
+@@ -147,7 +211,7 @@
          if (!NameReferencingFileConverter.e(this)) {
              return false;
          } else {
@@ -112,7 +122,7 @@
              long i = SystemUtils.getMonotonicNanos();
              String s = dedicatedserverproperties.levelSeed;
              String s1 = dedicatedserverproperties.generatorSettings;
-@@ -177,7 +231,13 @@
+@@ -177,7 +241,13 @@
              if (worldtype == WorldType.FLAT) {
                  jsonobject.addProperty("flat_world_options", s1);
              } else if (!s1.isEmpty()) {
@@ -127,7 +137,7 @@
              }
  
              this.a(this.getWorld(), this.getWorld(), j, worldtype, jsonobject);
-@@ -199,6 +259,7 @@
+@@ -199,6 +269,7 @@
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.remoteControlListener = new RemoteControlListener(this);
                  this.remoteControlListener.a();
@@ -135,7 +145,7 @@
              }
  
              if (this.getMaxTickTime() > 0L) {
-@@ -301,6 +362,7 @@
+@@ -301,6 +372,7 @@
              this.remoteStatusListener.b();
          }
  
@@ -143,7 +153,7 @@
      }
  
      @Override
-@@ -334,7 +396,15 @@
+@@ -334,7 +406,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
@@ -160,7 +170,7 @@
          }
  
      }
-@@ -534,14 +604,45 @@
+@@ -534,14 +614,45 @@
  
      @Override
      public String getPlugins() {
@@ -208,7 +218,7 @@
          });
          return this.remoteControlCommandListener.getMessages();
      }
-@@ -562,4 +663,16 @@
+@@ -562,4 +673,16 @@
      public boolean b(GameProfile gameprofile) {
          return false;
      }
