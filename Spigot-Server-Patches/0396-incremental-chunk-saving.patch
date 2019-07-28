@@ -1,11 +1,11 @@
-From 26a439d52fa750663f2280641d8299ec5bdbfc4b Mon Sep 17 00:00:00 2001
+From cffcc434581178122d9cae2f3ac04815131d0840 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
 Subject: [PATCH] incremental chunk saving
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index de11a91af6..4d3c6c6b47 100644
+index de11a91af..4d3c6c6b4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -489,4 +489,19 @@ public class PaperWorldConfig {
@@ -29,7 +29,7 @@ index de11a91af6..4d3c6c6b47 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ee8f801745..2003522d96 100644
+index ee8f80174..2003522d9 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -42,7 +42,7 @@ public class Chunk implements IChunkAccess {
@@ -41,8 +41,28 @@ index ee8f801745..2003522d96 100644
      private volatile boolean s;
      private long t;
      @Nullable
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 9765eaf24..5fabfe87c 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -335,6 +335,15 @@ public class ChunkProviderServer extends IChunkProvider {
+         } // Paper - Timings
+     }
+ 
++    // Paper start - duplicate save, but call incremental
++    public void saveIncrementally() {
++        this.tickDistanceManager();
++        try (co.aikar.timings.Timing timed = world.timings.chunkSaveData.startTiming()) { // Paper - Timings
++            this.playerChunkMap.saveIncrementally();
++        } // Paper - Timings
++    }
++    // Paper end
++
+     @Override
+     public void close() throws IOException {
+         this.save(true);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 380c3663a6..01b389d89f 100644
+index 380c3663a..6eef4592a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -165,6 +165,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -70,7 +90,7 @@ index 380c3663a6..01b389d89f 100644
 +            for (WorldServer world : getWorlds()) {
 +                if (world.paperConfig.autoSavePeriod > 0) {
 +                    try {
-+                        world.save(null, false, world.isSavingDisabled());
++                        world.saveIncrementally(serverAutoSave);
 +                    } catch (ExceptionWorldConflict exceptionWorldConflict) {
 +                        MinecraftServer.LOGGER.warn(exceptionWorldConflict.getMessage());
 +                    }
@@ -86,24 +106,23 @@ index 380c3663a6..01b389d89f 100644
          this.methodProfiler.enter("snooper");
          if (((DedicatedServer) this).getDedicatedServerProperties().snooperEnabled && !this.snooper.d() && this.ticks > 100) { // Spigot
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 493770bf68..17eee15b2d 100644
+index 493770bf6..2be6fa0f0 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -325,15 +325,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-             });
-             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
-         } else {
--            this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
-+            // Paper start
-+            int savedThisTick = 0;
-+            for (PlayerChunk playerchunk : this.visibleChunks.values()) {
-+                if (!playerchunk.hasBeenLoaded()) continue;
-+                // Paper end
-                 IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
+@@ -297,6 +297,36 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         super.close();
+     }
  
-                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
--                    this.saveChunk(ichunkaccess);
-+                    // paper start
++    // Paper start - derived from below
++    protected void saveIncrementally() {
++        int savedThisTick = 0;
++        for (PlayerChunk playerchunk : visibleChunks.values()) {
++            if (playerchunk.hasBeenLoaded()) {
++
++                IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
++
++
++                if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
 +                    boolean shouldSave = true;
 +
 +                    if (ichunkaccess instanceof Chunk) {
@@ -112,58 +131,71 @@ index 493770bf68..17eee15b2d 100644
 +
 +                    if (shouldSave && this.saveChunk(ichunkaccess)) {
 +                        ++savedThisTick;
-                     playerchunk.m();
-                 }
- 
--            });
-+                    if (savedThisTick >= world.paperConfig.maxAutoSaveChunksPerTick) {
-+                        return;
++                        playerchunk.m();
 +                    }
 +                }
-+            };
-+            // paper end
-         }
- 
-     }
++
++                if (savedThisTick >= world.paperConfig.maxAutoSaveChunksPerTick) {
++                    return;
++                }
++            }
++        }
++    }
++    // paper end
++
+     protected void save(boolean flag) {
+         if (flag) {
+             List<PlayerChunk> list = (List) this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList());
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1003ea50d3..d709002c89 100644
+index 1003ea50d..4148325a2 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -760,8 +760,9 @@ public class WorldServer extends World {
+@@ -756,11 +756,44 @@ public class WorldServer extends World {
+         return this.worldProvider.d();
+     }
+ 
++    // Paper start - derived from below
++    public void saveIncrementally(boolean doFull) throws ExceptionWorldConflict {
++        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
++
++        if (doFull) {
++            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld()));
++        }
++
++        try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) {
++            if (doFull) {
++                this.k_();
++            }
++
++            timings.worldSaveChunks.startTiming(); // Paper
++            if (!this.isSavingDisabled()) chunkproviderserver.saveIncrementally();
++            timings.worldSaveChunks.stopTiming(); // Paper
++
++
++            // CraftBukkit start - moved from MinecraftServer.saveChunks
++            // PAIL - rename
++            if (doFull) {
++                WorldServer worldserver1 = this;
++                WorldData worlddata = worldserver1.getWorldData();
++
++                worldserver1.getWorldBorder().a(worlddata);
++                worlddata.c(this.server.getBossBattleCustomData().c());
++                worldserver1.getDataManager().saveWorldData(worlddata, this.server.getPlayerList().r());
++                // CraftBukkit end
++            }
++        }
++    }
++    // Paper end
++
+     public void save(@Nullable IProgressUpdate iprogressupdate, boolean flag, boolean flag1) throws ExceptionWorldConflict {
          ChunkProviderServer chunkproviderserver = this.getChunkProvider();
  
          if (!flag1) {
 -            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
-+            if (flag || server.serverAutoSave) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper - full saves only
++            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
              try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
-+            if (flag || server.serverAutoSave) { // Paper
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
-             }
-@@ -770,6 +771,7 @@ public class WorldServer extends World {
-             if (iprogressupdate != null) {
-                 iprogressupdate.c(new ChatMessage("menu.savingChunks", new Object[0]));
-             }
-+            } // Paper
- 
-             timings.worldSaveChunks.startTiming(); // Paper
-             chunkproviderserver.save(flag);
-@@ -777,6 +779,7 @@ public class WorldServer extends World {
-             } // Paper
-         }
- 
-+        if (flag || server.serverAutoSave) { // Paper
-         // CraftBukkit start - moved from MinecraftServer.saveChunks
-         // PAIL - rename
-         WorldServer worldserver1 = this;
-@@ -786,6 +789,7 @@ public class WorldServer extends World {
-         worlddata.c(this.server.getBossBattleCustomData().c());
-         worldserver1.getDataManager().saveWorldData(worlddata, this.server.getPlayerList().r());
-         // CraftBukkit end
-+        } // Paper
-     }
- 
-     protected void k_() throws ExceptionWorldConflict {
 -- 
 2.22.0
 
