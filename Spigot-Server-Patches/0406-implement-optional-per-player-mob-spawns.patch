@@ -1,4 +1,4 @@
-From 9478588c2491b971d0974e48d4f061ee0b5b7a6e Mon Sep 17 00:00:00 2001
+From f44b688e1946267ae6e36755bbbef91347086e29 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,7 +19,7 @@ index 318a470ee..ff1e27e7d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2554c2840..e4acf310b 100644
+index 2554c2840..30b983d9c 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -489,8 +489,24 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -32,17 +32,17 @@ index 2554c2840..e4acf310b 100644
 +                                    int currEntityCount = object2intmap.getInt(enumcreaturetype);
 +                                    int difference = k1 - currEntityCount;
 +                                    if(this.world.paperConfig.perPlayerMobSpawns){
-+                                        final int[] min = {Integer.MAX_VALUE};
-+                                        final int finalLimit = limit;
-+                                        playerChunkMap.getPlayersNear(chunk.getPos())
-+                                            .forEach((entityplayer) -> min[0] = Math.min(
-+                                                finalLimit - ((WorldServer)chunk.getWorld()).getMobCountNear(entityplayer, enumcreaturetype),
-+                                                min[0]));
-+                                        difference = (min[0] == Integer.MAX_VALUE) ? 0 : min[0];
++                                        int minDiff = Integer.MAX_VALUE;
++                                        for(EntityPlayer entityplayer : playerChunkMap.getPlayersNear(chunk.getPos())) {
++                                            minDiff = Math.min(
++                                                limit - this.world.getMobCountNear(entityplayer, enumcreaturetype),
++                                                minDiff);
++                                            difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
++                                        }
 +                                    }
 +
 +                                    if (difference > 0) {
-+                                        List spawned = SpawnerCreature.spawnMobs(enumcreaturetype, this.world, chunk, blockposition, difference);
++                                        List<Entity> spawned = SpawnerCreature.spawnMobs(enumcreaturetype, this.world, chunk, blockposition, difference);
 +                                        object2intmap.put(enumcreaturetype, currEntityCount + spawned.size());
 +                                        this.world.updatePlayerMobTypeMap(spawned);
 +                                        // Paper end
@@ -50,7 +50,7 @@ index 2554c2840..e4acf310b 100644
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index a7fc34f85..6111166d3 100644
+index a7fc34f85..63c193d72 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -253,6 +253,7 @@ public class EntityTypes<T extends Entity> {
@@ -62,14 +62,35 @@ index a7fc34f85..6111166d3 100644
          return this.ba;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b447c49a6..202243d0c 100644
+index b447c49a6..4178e67c4 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -1097,6 +1097,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -23,6 +23,7 @@ import java.io.File;
+ import java.io.IOException;
+ import java.io.Writer;
+ import java.util.ArrayList;
++import java.util.Collection;
+ import java.util.HashMap; // Paper
+ import java.util.Iterator;
+ import java.util.List;
+@@ -1097,6 +1098,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
-+    public Stream<EntityPlayer> getPlayersNear(ChunkCoordIntPair coordIntPair) { return a(coordIntPair, false); } // Paper - OBFHELPER
++    // Paper start -- Based on method below without streams
++    public Collection<EntityPlayer> getPlayersNear(ChunkCoordIntPair chunkcoordintpair) {
++        Collection<EntityPlayer> players = this.playerMap.a(chunkcoordintpair.pair()).collect(Collectors.toSet()); // TODO remove stream from playermap
++        Iterator<EntityPlayer> iterator = players.iterator();
++        while(iterator.hasNext()){
++            EntityPlayer entityplayer = iterator.next();
++
++            int i = b(chunkcoordintpair, entityplayer, true);
++
++            if(i > this.viewDistance) { iterator.remove(); }
++        }
++        return players;
++    }
++    // Paper end
      @Override
      public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
