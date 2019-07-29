@@ -15,7 +15,7 @@ public abstract class EntityHanging extends Entity {
     protected static final Predicate<Entity> b = (entity) -> {
         return entity instanceof EntityHanging;
     };
-    private int e;
+    private int e; { this.e = this.getId() % this.world.spigotConfig.hangingTickFrequency; } // Paper
     public BlockPosition blockPosition;
     protected EnumDirection direction;
 
