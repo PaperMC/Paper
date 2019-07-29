@@ -981,13 +981,14 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        if (save) {
-            try {
+        try {
+            if (save) {
                 handle.save(null, true, true);
-                handle.close();
-            } catch (Exception ex) {
-                getLogger().log(Level.SEVERE, null, ex);
             }
+
+            handle.getChunkProvider().close(save);
+        } catch (Exception ex) {
+            getLogger().log(Level.SEVERE, null, ex);
         }
 
         worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
