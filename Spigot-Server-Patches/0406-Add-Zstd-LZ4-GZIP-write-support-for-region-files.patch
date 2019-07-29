@@ -1,4 +1,4 @@
-From 0c1756d3e44ba701e29e1c4e5272db7f2b92c05a Mon Sep 17 00:00:00 2001
+From dd8509110121119498589197bc2f2c31c7f847fc Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Fri, 26 Jul 2019 12:27:13 -0600
 Subject: [PATCH] Add Zstd/LZ4/(GZIP write) support for region files
@@ -61,7 +61,7 @@ index 5942c3438..6a06cfaa2 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 41f1e15cb..71730c0d0 100644
+index 41f1e15cb..b736c8322 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -1,6 +1,8 @@
@@ -111,7 +111,7 @@ index 41f1e15cb..71730c0d0 100644
      @Nullable
      public synchronized DataInputStream getReadStream(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) { // Paper - OBFHELPER
          try {
-@@ -165,21 +183,330 @@ public class RegionFile implements AutoCloseable {
+@@ -165,20 +183,260 @@ public class RegionFile implements AutoCloseable {
                          byte[] abyte;
  
                          if (b0 == 1) {
@@ -132,21 +132,6 @@ index 41f1e15cb..71730c0d0 100644
 +
 +                                System.out.println("Decompression time: " + (((finish - start) / 3L) / 1_000L) + "us");
 +                            }
-+
-+                            /*if (java.lang.Math.random() <= 0.001d) {
-+                                File parentDir = new File(this.file.getParentFile(), "rawchunks");
-+                                parentDir.mkdirs();
-+                                byte[] buf = new byte[1024 * 4];
-+                                try (
-+                                    GZIPInputStream inForFile = new GZIPInputStream(new ByteArrayInputStream(abyte));
-+                                    java.io.FileOutputStream outForFile = new java.io.FileOutputStream(new File(parentDir, "chunk." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".taco"))
-+                                ) {
-+                                    int bytesRead;
-+                                    while ((bytesRead = inForFile.read(buf)) > 0) {
-+                                        outForFile.write(buf, 0, bytesRead);
-+                                    }
-+                                }
-+                            }*/
 +
                              return new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(abyte))));
                          } else if (b0 == 2) {
@@ -265,21 +250,6 @@ index 41f1e15cb..71730c0d0 100644
 +                            abyte = new byte[totalBytes];
 +                            outBuf.get(abyte);
 +
-+                            /*if (java.lang.Math.random() <= 0.001d) {
-+                                File parentDir = new File(this.file.getParentFile(), "rawchunks");
-+                                parentDir.mkdirs();
-+                                byte[] buf = new byte[1024 * 4];
-+                                try (
-+                                    ByteArrayInputStream inForFile = new ByteArrayInputStream(abyte);
-+                                    java.io.FileOutputStream outForFile = new java.io.FileOutputStream(new File(parentDir, "chunk." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".taco"))
-+                                ) {
-+                                    int bytesRead;
-+                                    while ((bytesRead = inForFile.read(buf)) > 0) {
-+                                        outForFile.write(buf, 0, bytesRead);
-+                                    }
-+                                }
-+                            }*/
-+
 +                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte)));
 +                        }
 +                        // Paper start - new compression support
@@ -288,21 +258,6 @@ index 41f1e15cb..71730c0d0 100644
 +
 +                            abyte = new byte[l - 1];
 +                            this.b.read(abyte);
-+
-+                            /*if (java.lang.Math.random() <= 0.001d) {
-+                                File parentDir = new File(this.file.getParentFile(), "rawchunks");
-+                                parentDir.mkdirs();
-+                                byte[] buf = new byte[1024 * 4];
-+                                try (
-+                                    ByteArrayInputStream inForFile = new ByteArrayInputStream(abyte);
-+                                    java.io.FileOutputStream outForFile = new java.io.FileOutputStream(new File(parentDir, "chunk." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".taco"))
-+                                ) {
-+                                    int bytesRead;
-+                                    while ((bytesRead = inForFile.read(buf)) > 0) {
-+                                        outForFile.write(buf, 0, bytesRead);
-+                                    }
-+                                }
-+                            }*/
 +
 +                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte)));
 +                        } else if (b0 == 126) {
@@ -323,21 +278,6 @@ index 41f1e15cb..71730c0d0 100644
 +
 +                                System.out.println("Decompression time: " + (((finish - start) / 3L) / 1_000L) + "us");
 +                            }
-+
-+                            /*if (java.lang.Math.random() <= 0.001d) {
-+                                File parentDir = new File(this.file.getParentFile(), "rawchunks");
-+                                parentDir.mkdirs();
-+                                byte[] buf = new byte[1024 * 4];
-+                                try (
-+                                    net.jpountz.lz4.LZ4BlockInputStream inForFile = new net.jpountz.lz4.LZ4BlockInputStream(new ByteArrayInputStream(abyte), lz4Decompressor);
-+                                    java.io.FileOutputStream outForFile = new java.io.FileOutputStream(new File(parentDir, "chunk." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".taco"))
-+                                ) {
-+                                    int bytesRead;
-+                                    while ((bytesRead = inForFile.read(buf)) > 0) {
-+                                        outForFile.write(buf, 0, bytesRead);
-+                                    }
-+                                }
-+                            }*/
 +
 +                            return new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4BlockInputStream(new ByteArrayInputStream(abyte), lz4Decompressor)));
 +                        } else if (b0 == 127) {
@@ -421,14 +361,6 @@ index 41f1e15cb..71730c0d0 100644
 +                            abyte = new byte[(int) decompressedBytes];
 +                            outBuf.get(abyte);
 +
-+                            /*if (java.lang.Math.random() <= 0.001d) {
-+                                File parentDir = new File(this.file.getParentFile(), "rawchunks");
-+                                parentDir.mkdirs();
-+                                try (java.io.FileOutputStream outForFile = new java.io.FileOutputStream(new File(parentDir, "chunk." + chunkcoordintpair.x + "." + chunkcoordintpair.z + ".taco"))) {
-+                                    outForFile.write(outBuf);
-+                                }
-+                            }*/
-+
 +                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte)));
 +                        }
 +                        // Paper end
@@ -439,14 +371,11 @@ index 41f1e15cb..71730c0d0 100644
                  }
              }
 -        } catch (IOException ioexception) {
--            ServerInternalException.reportInternalException(ioexception); // Paper
 +        } catch (IOException | DataFormatException ioexception) { // Paper - new compression support
-+            ioexception.printStackTrace();
-+            //ServerInternalException.reportInternalException(ioexception); // Paper
+             ServerInternalException.reportInternalException(ioexception); // Paper
              return null;
          }
-     }
-@@ -294,6 +621,7 @@ public class RegionFile implements AutoCloseable {
+@@ -294,6 +552,7 @@ public class RegionFile implements AutoCloseable {
  
              // Paper - move this into writeChunkData
          } catch (IOException ioexception) {
@@ -454,7 +383,7 @@ index 41f1e15cb..71730c0d0 100644
              com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
          }
  
-@@ -302,7 +630,7 @@ public class RegionFile implements AutoCloseable {
+@@ -302,7 +561,7 @@ public class RegionFile implements AutoCloseable {
      private void writeChunkData(final int sectorOffset, final byte[] data, final int dataLength) throws IOException { this.a(sectorOffset, data, dataLength); } // Paper - OBFHELPER
      private void a(int i, byte[] abyte, int j) throws IOException {
          this.b.seek((long) (i * 4096));
@@ -463,7 +392,7 @@ index 41f1e15cb..71730c0d0 100644
          this.b.write(abyte, 0, j);
      }
  
-@@ -487,18 +815,58 @@ public class RegionFile implements AutoCloseable {
+@@ -487,18 +746,58 @@ public class RegionFile implements AutoCloseable {
  
      void writeOversizedData(int x, int z, NBTTagCompound oversizedData) throws IOException {
          File file = getOversizedFile(x, z);
@@ -526,7 +455,7 @@ index 41f1e15cb..71730c0d0 100644
  
      }
  
-@@ -509,6 +877,50 @@ public class RegionFile implements AutoCloseable {
+@@ -509,6 +808,50 @@ public class RegionFile implements AutoCloseable {
              org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Using Spigot Oversized Chunk save method. Warning this will result in extremely fragmented chunks, as well as making the entire region file unable to be to used in any other software but Forge or Spigot (not usable in Vanilla or CraftBukkit). Paper's method is highly recommended.");
              org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
          }
@@ -577,7 +506,7 @@ index 41f1e15cb..71730c0d0 100644
      }
      public class ChunkTooLargeException extends RuntimeException {
          public ChunkTooLargeException(int x, int z, int sectors) {
-@@ -543,6 +955,7 @@ public class RegionFile implements AutoCloseable {
+@@ -543,6 +886,7 @@ public class RegionFile implements AutoCloseable {
              // Paper start - apply dynamic compression
              int origLength = this.count;
              byte[] buf = this.buf;
@@ -585,7 +514,7 @@ index 41f1e15cb..71730c0d0 100644
              DirectByteArrayOutputStream out = compressData(buf, origLength);
              byte[] bytes = out.getBuffer();
              int length = out.size();
-@@ -552,21 +965,143 @@ public class RegionFile implements AutoCloseable {
+@@ -552,21 +896,135 @@ public class RegionFile implements AutoCloseable {
      }
  
      private static final byte[] compressionBuffer = new byte[1024 * 64]; // 64k fits most standard chunks input size even, ideally 1 pass through zlib
@@ -633,17 +562,9 @@ index 41f1e15cb..71730c0d0 100644
 +            DirectByteArrayOutputStream out = null;
 +            for (int i = 0; i < 3; i++) {
 +                out = new DirectByteArrayOutputStream(length);
-+
-+                java.nio.ByteBuffer outBuf = java.nio.ByteBuffer.allocateDirect(lz4Compressor.maxCompressedLength(length));
-+                java.nio.ByteBuffer inBuf = java.nio.ByteBuffer.allocateDirect(length);
-+                inBuf.put(buf, 0, length);
-+                inBuf.rewind();
-+                int compressedBytes;
-+                compressedBytes = lz4Compressor.compress(inBuf, 0, inBuf.remaining(), outBuf, 0, outBuf.remaining());
-+                outBuf.rewind();
-+                byte[] retBytes = new byte[compressedBytes];
-+                outBuf.get(retBytes);
-+                out.write(retBytes);
++                try (net.jpountz.lz4.LZ4BlockOutputStream compressStream = new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)) {
++                    compressStream.write(buf, 0, length);
++                }
 +                out.close();
 +            }
 +            long finish = System.nanoTime();
