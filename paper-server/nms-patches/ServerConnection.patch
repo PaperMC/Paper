@@ -1,0 +1,24 @@
+--- a/net/minecraft/server/ServerConnection.java
++++ b/net/minecraft/server/ServerConnection.java
+@@ -77,10 +77,20 @@
+                     channel.pipeline().addLast("packet_handler", networkmanager);
+                     networkmanager.setPacketListener(new HandshakeListener(ServerConnection.this.e, networkmanager));
+                 }
+-            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).bind().syncUninterruptibly());
++            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
+         }
+     }
+ 
++    // CraftBukkit start
++    public void acceptConnections() {
++        synchronized (this.f) { // PAIL: listeningChannels
++            for (ChannelFuture f : this.f) {
++                f.channel().config().setAutoRead(true);
++            }
++        }
++    }
++    // CraftBukkit end
++
+     public void b() {
+         this.c = false;
+         Iterator iterator = this.f.iterator();
