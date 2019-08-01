@@ -1,4 +1,4 @@
-From 65f26dca59ce75c94d4a7045259591f2b0f69eca Mon Sep 17 00:00:00 2001
+From a779d0cecb23304ac9cd93acd7dd787c98756b99 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,10 +19,10 @@ index 318a470ee..ff1e27e7d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2554c2840..e471dbd98 100644
+index 2554c2840..940be30c8 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -489,8 +489,25 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -489,8 +489,24 @@ public class ChunkProviderServer extends IChunkProvider {
                                  if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
                                      int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
@@ -31,22 +31,21 @@ index 2554c2840..e471dbd98 100644
 +                                    // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +                                    int currEntityCount = object2intmap.getInt(enumcreaturetype);
 +                                    int difference = k1 - currEntityCount;
++
 +                                    if(this.world.paperConfig.perPlayerMobSpawns){
 +                                        int minDiff = Integer.MAX_VALUE;
 +                                        for(EntityPlayer entityplayer : playerChunkMap.getPlayersNear(chunk.getPos())) {
 +                                            if (entityplayer.isSpectator() || !entityplayer.affectsSpawning) { continue; }
-+                                            minDiff = Math.min(
-+                                                limit - this.world.getMobCountNear(entityplayer, enumcreaturetype),
-+                                                minDiff);
-+                                            difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
++                                            minDiff = Math.min(limit - this.world.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
 +                                        }
++                                        difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
 +                                    }
 +
 +                                    if (difference > 0) {
 +                                        List<Entity> spawned = SpawnerCreature.spawnMobs(enumcreaturetype, this.world, chunk, blockposition, difference);
 +                                        object2intmap.put(enumcreaturetype, currEntityCount + spawned.size());
 +                                        this.world.updatePlayerMobTypeMap(spawned);
-+                                        // Paper end
++                                    // Paper end
                                      }
                                  }
                              }
@@ -63,7 +62,7 @@ index a7fc34f85..63c193d72 100644
          return this.ba;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b447c49a6..b4734216b 100644
+index b447c49a6..008f0c2d3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -146,6 +146,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -74,21 +73,15 @@ index b447c49a6..b4734216b 100644
      private static int b(ChunkCoordIntPair chunkcoordintpair, EntityPlayer entityplayer, boolean flag) {
          int i;
          int j;
-@@ -1097,6 +1098,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1097,6 +1098,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
-+    // Paper start - Based on method below without streams
++    // Paper start
 +    public List<EntityPlayer> getPlayersNear(ChunkCoordIntPair chunkcoordintpair) {
 +        List<EntityPlayer> players = this.playerMap.getPlayers();
-+        Iterator<EntityPlayer> iterator = players.iterator();
-+        while(iterator.hasNext()){
-+            EntityPlayer entityplayer = iterator.next();
-+
-+            int i = distanceBetween(chunkcoordintpair, entityplayer);
-+
-+            if(i > this.viewDistance) { iterator.remove(); }
-+        }
++        players.removeIf(
++            entityplayer -> distanceBetween(chunkcoordintpair, entityplayer) > this.viewDistance);
 +        return players;
 +    }
 +    // Paper end
@@ -96,7 +89,7 @@ index b447c49a6..b4734216b 100644
      public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
 diff --git a/src/main/java/net/minecraft/server/PlayerMap.java b/src/main/java/net/minecraft/server/PlayerMap.java
-index f386c4e99..6f6c06ec7 100644
+index f386c4e99..eb96a5cae 100644
 --- a/src/main/java/net/minecraft/server/PlayerMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerMap.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;
@@ -112,12 +105,12 @@ index f386c4e99..6f6c06ec7 100644
  
      public PlayerMap() {}
  
-+    public List<EntityPlayer> getPlayers() { return new ArrayList<>(this.a.keySet()); } // Paper start - Based on method below without streams
++    public List<EntityPlayer> getPlayers() { return new ArrayList<>(this.a.keySet()); } // Paper - Based on method below without streams
      public Stream<EntityPlayer> a(long i) {
          return this.a.keySet().stream();
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index c6ea37ffb..11087fd73 100644
+index c6ea37ffb..eabb9c863 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -1,5 +1,6 @@
@@ -131,13 +124,13 @@ index c6ea37ffb..11087fd73 100644
  
      private static final Logger LOGGER = LogManager.getLogger();
  
-+    // Paper start - add maxSpawns parameter and update counts
++    // Paper start - add maxSpawns parameter and return spawned mobs
      public static void a(EnumCreatureType enumcreaturetype, World world, Chunk chunk, BlockPosition blockposition) {
 +        spawnMobs(enumcreaturetype, world, chunk, blockposition, Integer.MAX_VALUE);
 +    }
 +    public static List<Entity> spawnMobs(EnumCreatureType enumcreaturetype, World world, Chunk chunk, BlockPosition blockposition, int maxSpawns) {
 +        List<Entity> mobsSpawned = new ArrayList<>();
-+        // Paper end
++    // Paper end
          ChunkGenerator<?> chunkgenerator = world.getChunkProvider().getChunkGenerator();
          int i = 0;
          BlockPosition blockposition1 = getRandomPosition(world, chunk);
@@ -186,20 +179,22 @@ index c6ea37ffb..11087fd73 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 649159653..9bfd7328d 100644
+index 649159653..6def98b8c 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -21,6 +21,9 @@ import java.io.BufferedWriter;
- import java.io.IOException;
- import java.io.Writer;
- import java.nio.file.Files;
-+import java.util.ArrayList; // Paper
-+import java.util.EnumMap; // Paper
-+import java.util.HashMap; // Paper
- import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
-@@ -70,6 +73,7 @@ public class WorldServer extends World {
+@@ -46,6 +46,11 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.event.server.MapInitializeEvent;
+ import org.bukkit.event.weather.LightningStrikeEvent;
+ // CraftBukkit end
++// Paper start
++import java.util.ArrayList;
++import java.util.EnumMap;
++import java.util.HashMap;
++// Paper end
+ 
+ public class WorldServer extends World {
+ 
+@@ -70,6 +75,7 @@ public class WorldServer extends World {
      private boolean ticking;
      @Nullable
      private final MobSpawnerTrader mobSpawnerTrader;
@@ -207,7 +202,7 @@ index 649159653..9bfd7328d 100644
  
      // CraftBukkit start
      private int tickPosition;
-@@ -846,6 +850,7 @@ public class WorldServer extends World {
+@@ -846,6 +852,7 @@ public class WorldServer extends World {
      }
  
      public Object2IntMap<EnumCreatureType> l() {
@@ -215,12 +210,11 @@ index 649159653..9bfd7328d 100644
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
-@@ -870,14 +875,48 @@ public class WorldServer extends World {
-                         entity.spawnReason == CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+@@ -871,13 +878,42 @@ public class WorldServer extends World {
                      continue;
                  }
-+                filteredEntities.add(entity);
                  // Paper end
++                filteredEntities.add(entity); // Paper
                  object2intmap.mergeInt(enumcreaturetype, 1, Integer::sum);
              }
          }
@@ -240,24 +234,19 @@ index 649159653..9bfd7328d 100644
 +        for (Entity entity : entities) {
 +            ((ChunkProviderServer) this.chunkProvider).playerChunkMap.getPlayersNear(entity.getChunkAtLocation().getPos()).forEach( (player) -> {
 +                if (!this.playerMobTypeMap.containsKey(player.uniqueID)) { this.playerMobTypeMap.put(player.uniqueID, new EnumMap<>(EnumCreatureType.class)); }
-+                Map<EnumCreatureType, Integer> tmpMap = this.playerMobTypeMap.get(player.uniqueID);
++                Map<EnumCreatureType, Integer> typeIntegerMap = this.playerMobTypeMap.get(player.uniqueID);
++
 +                EnumCreatureType enumType = entity.getEntityType().getEnumCreatureType();
-+                tmpMap.put(
-+                    enumType,
-+                    tmpMap.getOrDefault(enumType, 0) + 1);
++                typeIntegerMap.put(enumType, typeIntegerMap.getOrDefault(enumType, 0) + 1);
 +            });
 +        }
 +    }
 +
 +    public int getMobCountNear(EntityPlayer entityPlayer, EnumCreatureType enumCreatureType) {
-+        int count = 0;
-+        if (this.playerMobTypeMap != null) {
-+            Map<EnumCreatureType, Integer> map = this.playerMobTypeMap.get(entityPlayer.uniqueID);
-+            if (map != null) {
-+                count = map.getOrDefault(enumCreatureType, 0);
-+            }
-+        }
-+        return count;
++        if (this.playerMobTypeMap == null) { return 0; }
++        Map<EnumCreatureType, Integer> typeIntegerMap = this.playerMobTypeMap.get(entityPlayer.uniqueID);
++        if (typeIntegerMap == null) { return 0; }
++        return typeIntegerMap.getOrDefault(enumCreatureType, 0);
 +    }
 +    // Paper end
 +
