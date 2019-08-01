@@ -1,0 +1,30 @@
+From 9f0730869d67140b876e5005bede99cba081f968 Mon Sep 17 00:00:00 2001
+From: KennyTV <28825609+KennyTV@users.noreply.github.com>
+Date: Thu, 1 Aug 2019 23:27:19 +0200
+Subject: [PATCH] Pass fireworks through vanished players
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
+index aaae9b37..86d5b28d 100644
+--- a/src/main/java/net/minecraft/server/EntityFireworks.java
++++ b/src/main/java/net/minecraft/server/EntityFireworks.java
+@@ -105,6 +105,16 @@ public class EntityFireworks extends Entity implements IProjectile {
+ 
+         vec3d = this.getMot();
+         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this.getBoundingBox().a(vec3d).g(1.0D), (entity) -> {
++            // Paper start - Cancel hit for vanished players
++            if (this.spawningEntity != null && entity instanceof EntityPlayer && this.world instanceof WorldServer) {
++                Entity spawningEntity = ((WorldServer) this.world).getEntity(this.spawningEntity);
++                if (spawningEntity instanceof EntityPlayer) {
++                    org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                    org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) spawningEntity.getBukkitEntity();
++                    if (!shooter.canSee(collided)) return false;
++                }
++            }
++            // Paper end
+             return !entity.isSpectator() && entity.isAlive() && entity.isInteractable();
+         }, RayTrace.BlockCollisionOption.COLLIDER, true);
+ 
+-- 
+2.13.0.windows.1
+
