@@ -134,9 +134,9 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * <p>
      * This overrides all other EXP settings
      * <p>
-     * This doesn't prevent prevent the EXP from dropping.
+     * <b>This doesn't prevent prevent the EXP from dropping.
      * {@link #setDroppedExp(int)} should be used stop the
-     * EXP from dropping.
+     * EXP from dropping.</b>
      *
      * @param keepLevel True to keep all current value levels
      */
@@ -146,6 +146,10 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     /**
      * Sets if the Player keeps inventory on death.
+     * <p>
+     * <b>This doesn't prevent prevent the items from dropping.
+     * {@code getDrops().clear()} should be used stop the
+     * items from dropping.</b>
      *
      * @param keepInventory True to keep the inventory
      */
