@@ -25,4 +25,22 @@ public interface Firework extends Entity {
      * remaining fuse.
      */
     void detonate();
+
+    /**
+     * Gets if the firework was shot at an angle (i.e. from a crossbow).
+     *
+     * A firework which was not shot at an angle will fly straight upwards.
+     *
+     * @return shot at angle status
+     */
+    boolean isShotAtAngle();
+
+    /**
+     * Sets if the firework was shot at an angle (i.e. from a crossbow).
+     *
+     * A firework which was not shot at an angle will fly straight upwards.
+     *
+     * @param shotAtAngle
+     */
+    void setShotAtAngle(boolean shotAtAngle);
 }
