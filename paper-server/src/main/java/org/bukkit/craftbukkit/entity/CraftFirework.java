@@ -68,4 +68,14 @@ public class CraftFirework extends CraftEntity implements Firework {
     public void detonate() {
         getHandle().expectedLifespan = 0;
     }
+
+    @Override
+    public boolean isShotAtAngle() {
+        return getHandle().i();
+    }
+
+    @Override
+    public void setShotAtAngle(boolean shotAtAngle) {
+        getHandle().getDataWatcher().set(EntityFireworks.d, shotAtAngle);
+    }
 }
