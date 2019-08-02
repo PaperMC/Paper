@@ -1,6 +1,7 @@
 package org.bukkit.util;
 
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Doubles;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -202,7 +203,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return angle in radians
      */
     public float angle(@NotNull Vector other) {
-        double dot = dot(other) / (length() * other.length());
+        double dot = Doubles.constrainToRange(dot(other) / (length() * other.length()), -1.0, 1.0);
 
         return (float) Math.acos(dot);
     }

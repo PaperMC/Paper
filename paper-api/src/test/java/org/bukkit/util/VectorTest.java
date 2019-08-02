@@ -114,4 +114,12 @@ public class VectorTest {
             assertEquals(a, v.angle(axis), Vector.getEpsilon());
         }
     }
+
+    @Test
+    public void testSmallAngle() {
+        Vector a = new Vector(-0.13154885489775203, 0.0, 0.12210868381700482);
+        Vector b = new Vector(-0.7329152226448059, -0.0, 0.6803199648857117);
+
+        assertTrue(Double.isFinite(a.angle(b)));
+    }
 }
