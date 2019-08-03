@@ -1,4 +1,4 @@
-From 797100ce3de371cb6b804fca55f13cdfa2816463 Mon Sep 17 00:00:00 2001
+From c56a818d76b4779d6f9b1bc215e3eb0717c706dc Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -550,7 +550,7 @@ index 0000000000..4f13d3ff83
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index bf566135b7..deba640566 100644
+index bf566135b7..da317d1e85 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -415,7 +415,22 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -590,14 +590,14 @@ index bf566135b7..deba640566 100644
 +                                    if (this.world.paperConfig.perPlayerMobSpawns) {
 +                                        int minDiff = Integer.MAX_VALUE;
 +                                        for (EntityPlayer entityplayer : this.playerChunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
-+                                            minDiff = Math.min(limit - this.world.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
++                                            minDiff = Math.min(limit - this.playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
 +                                        }
 +                                        difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
 +                                    }
 +
 +                                    if (difference > 0) {
 +                                        int spawnCount = SpawnerCreature.spawnMobs(enumcreaturetype, this.world, chunk, blockposition, difference,
-+                                            this.world.paperConfig.perPlayerMobSpawns ? this.world::updatePlayerMobCounts : null);
++                                            this.world.paperConfig.perPlayerMobSpawns ? this.playerChunkMap::updatePlayerMobTypeMap : null);
 +                                        worldMobCount[enumcreaturetype.ordinal()] += spawnCount;
 +                                        // Paper end
                                      }
@@ -760,7 +760,7 @@ index c6ea37ffbd..9d4a96ae49 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 451ad4f32b..276aa5c831 100644
+index 451ad4f32b..fe7bdbb8f6 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -881,7 +881,20 @@ public class WorldServer extends World {
@@ -785,14 +785,14 @@ index 451ad4f32b..276aa5c831 100644
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
          while (objectiterator.hasNext()) {
-@@ -906,13 +919,34 @@ public class WorldServer extends World {
+@@ -906,11 +919,16 @@ public class WorldServer extends World {
                      continue;
                  }
                  // Paper end
 -                object2intmap.mergeInt(enumcreaturetype, 1, Integer::sum);
 +                // Paper start - rework mob spawning
 +                if (updatePlayerCounts) {
-+                    this.updatePlayerMobCounts(entity);
++                    this.getChunkProvider().playerChunkMap.updatePlayerMobTypeMap(entity);
 +                }
 +                ++ret[enumcreaturetype.ordinal()];
 +                // Paper end
@@ -803,25 +803,7 @@ index 451ad4f32b..276aa5c831 100644
 +        return ret;
      }
  
-+    // Paper start
-+    public void updatePlayerMobCounts(Entity entity) {
-+        int chunkX = (int)Math.floor(entity.locX) >> 4;
-+        int chunkZ = (int)Math.floor(entity.locZ) >> 4;
-+        int index = entity.getEntityType().getEnumCreatureType().ordinal();
-+
-+        for (EntityPlayer player : this.getChunkProvider().playerChunkMap.playerMobDistanceMap.getPlayersInRange(chunkX, chunkZ)) {
-+            ++player.mobCounts[index];
-+        }
-+    }
-+
-+    public int getMobCountNear(EntityPlayer entityPlayer, EnumCreatureType enumCreatureType) {
-+        return entityPlayer.mobCounts[enumCreatureType.ordinal()];
-+    }
-+    // Paper end
-+
      @Override
-     public boolean addEntity(Entity entity) {
-         // CraftBukkit start
 -- 
 2.22.0
 
