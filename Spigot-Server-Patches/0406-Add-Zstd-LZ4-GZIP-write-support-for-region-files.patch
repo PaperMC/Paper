@@ -1,4 +1,4 @@
-From 359544c68aecc33c5f945f827cccec97465f226f Mon Sep 17 00:00:00 2001
+From 1af05601e1a89c68fd25895d0630a17b44affc9f Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Fri, 26 Jul 2019 12:27:13 -0600
 Subject: [PATCH] Add Zstd/LZ4/(GZIP write) support for region files
@@ -34,62 +34,121 @@ index beda5dc8a..6ef72b759 100644
          <dependency>
              <groupId>junit</groupId>
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 5942c3438..117ffd4ff 100644
+index 5942c3438..cc9e9a05c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -388,4 +388,32 @@ public class PaperConfig {
+@@ -1,5 +1,6 @@
+ package com.destroystokyo.paper;
+ 
++import com.destroystokyo.paper.region.RegionCompressionType;
+ import com.google.common.base.Strings;
+ import com.google.common.base.Throwables;
+ 
+@@ -9,10 +10,7 @@ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ import java.nio.charset.StandardCharsets;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
++import java.util.*;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+@@ -388,4 +386,21 @@ public class PaperConfig {
          maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
 +
-+    public static int compressionMethod = 2;
-+    private static void compressionMethod() {
-+        compressionMethod = getInt("settings.compression-method", 2);
-+        if (compressionMethod < 0 || compressionMethod > 127 || (compressionMethod > 2 && compressionMethod < 126)) {
-+            fatal("compression-method must be 0, 1, 2, 126, or 127");
-+        }
-+
-+        if (compressionMethod == 127) {
-+            log("Using Zstd compression.");
-+        } else if (PaperConfig.compressionMethod == 126) {
-+            log("Using LZ4 compression.");
-+        } else if (PaperConfig.compressionMethod == 2) {
-+            log("Using Zlib compression.");
-+        } else if (PaperConfig.compressionMethod == 0) {
-+            log("Using NOP (no) compression.");
++    public static RegionCompressionType regionCompressionMethod = RegionCompressionType.ZLIB;
++    public static boolean regionZstdUseHighCompression = false;
++    private static void regionCompression() {
++        Optional<RegionCompressionType> type = RegionCompressionType.getFromName(getString("settings.region-compression-method", "zlib"));
++        if (!type.isPresent()) {
++            fatal("Valid values for region-compression-method are: " + String.join(", ", Arrays.copyOf(RegionCompressionType.values(), RegionCompressionType.values().length, String[].class)));
 +        } else {
-+            log("Using GZIP compression.");
-+        }
-+    }
++            regionCompressionMethod = type.get();
++            log("Using " + regionCompressionMethod.getName() + " compression for region files.");
 +
-+    public static boolean zstdUseHighCompression = false;
-+    private static void zstdUseHighCompression() {
-+        zstdUseHighCompression = getBoolean("settings.zstd-use-high-compression", false);
-+        if (compressionMethod == 127 && zstdUseHighCompression) {
-+            log("Using high compression level (make my PC hurt).");
++            regionZstdUseHighCompression = getBoolean("settings.region-zstd-use-high-compression", false);
++            if (regionCompressionMethod == RegionCompressionType.ZSTD && regionZstdUseHighCompression) {
++                log("Using high compression level for region files. (make my PC hurt)");
++            }
 +        }
 +    }
  }
+diff --git a/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
+new file mode 100644
+index 000000000..fd7bd51b4
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
+@@ -0,0 +1,43 @@
++package com.destroystokyo.paper.region;
++
++import java.util.Optional;
++
++public enum RegionCompressionType {
++    NOP(0, "nop"),
++    GZIP(1, "gzip"),
++    ZLIB(2, "zlib"),
++    LZ4(126, "lz4"),
++    ZSTD(127, "zstd");
++
++    private final int type;
++    private final String name;
++    RegionCompressionType(int type, String name) {
++        this.type = type;
++        this.name = name;
++    }
++
++    public int getType() { return type; }
++
++    public String getName() { return name; }
++
++    public static Optional<RegionCompressionType> getFromName(String name) {
++        name = name.toLowerCase();
++        for (RegionCompressionType value : values()) {
++            if (value.getName().equals(name)) {
++                return Optional.of(value);
++            }
++        }
++        return Optional.empty();
++    }
++
++    public static Optional<RegionCompressionType> getFromType(int type) {
++        for (RegionCompressionType value : values()) {
++            if (value.getType() == type) {
++                return Optional.of(value);
++            }
++        }
++        return Optional.empty();
++    }
++
++    public String toString() { return name; }
++}
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 41f1e15cb..7f55e1b42 100644
+index 41f1e15cb..f02d57341 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -1,5 +1,6 @@
+@@ -1,6 +1,8 @@
  package net.minecraft.server;
  
-+import com.destroystokyo.paper.PaperConfig;
++import com.destroystokyo.paper.PaperConfig; // Paper
  import com.destroystokyo.paper.exception.ServerInternalException;
++import com.destroystokyo.paper.region.RegionCompressionType; // Paper
  import com.google.common.collect.Lists;
  import java.io.BufferedInputStream;
-@@ -12,6 +13,7 @@ import java.io.File;
+ import java.io.BufferedOutputStream;
+@@ -12,6 +14,7 @@ import java.io.File;
  import java.io.IOException;
  import java.io.RandomAccessFile;
  import java.util.List;
-+import java.util.zip.DataFormatException;
++import java.util.Optional; // Paper
  import java.util.zip.DeflaterOutputStream;
  import java.util.zip.GZIPInputStream;
  import java.util.zip.InflaterInputStream;
-@@ -31,6 +33,18 @@ public class RegionFile implements AutoCloseable {
+@@ -31,6 +34,18 @@ public class RegionFile implements AutoCloseable {
      private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
      private final List<Boolean> e; private List<Boolean> getFreeSectors() { return this.e; } // Paper - OBFHELPER
  
@@ -108,7 +167,7 @@ index 41f1e15cb..7f55e1b42 100644
      // Paper start - Cache chunk status
      private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
  
-@@ -131,6 +145,7 @@ public class RegionFile implements AutoCloseable {
+@@ -131,6 +146,7 @@ public class RegionFile implements AutoCloseable {
          // Paper - we need this earlier
      }
  
@@ -116,151 +175,155 @@ index 41f1e15cb..7f55e1b42 100644
      @Nullable
      public synchronized DataInputStream getReadStream(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) { // Paper - OBFHELPER
          try {
-@@ -167,18 +182,95 @@ public class RegionFile implements AutoCloseable {
-                         if (b0 == 1) {
-                             abyte = new byte[l - 1];
-                             this.b.read(abyte);
+@@ -164,21 +180,96 @@ public class RegionFile implements AutoCloseable {
+                         byte b0 = this.b.readByte();
+                         byte[] abyte;
+ 
+-                        if (b0 == 1) {
+-                            abyte = new byte[l - 1];
+-                            this.b.read(abyte);
 -                            return new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(abyte))));
 -                        } else if (b0 == 2) {
-+
-+                            return new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(abyte), 32 * 1024), 32 * 1024)); // Paper - new & optimized compression
-+                        }
-+                        // Paper start - new & optimized compression
-+                        else if (b0 == 2) {
-+                            abyte = new byte[l - 1];
-+                            this.b.read(abyte);
-+
-+                            int power = 1;
-+                            byte[] outBuf = new byte[1024 * 64 * power];
-+                            int totalBytes = 0;
-+
-+                            synchronized (zlibInflater) {
-+                                zlibInflater.setInput(abyte, 0, abyte.length);
-+                                int decompressedBytes;
-+                                while (!zlibInflater.finished()) {
-+                                    boolean resize = false;
-+                                    decompressedBytes = zlibInflater.inflate(decompressionBuffer);
-+
-+                                    while (decompressedBytes > 1024 * 64 * power - totalBytes) {
-+                                        power++;
-+                                        resize = true;
-+                                    }
-+                                    if (resize) {
-+                                        byte[] tmp = outBuf;
-+                                        outBuf = new byte[1024 * 64 * power];
-+                                        System.arraycopy(tmp, 0, outBuf, 0, totalBytes);
-+                                    }
-+
-+                                    System.arraycopy(decompressionBuffer, 0, outBuf, totalBytes, decompressedBytes);
-+                                    totalBytes += decompressedBytes;
-+                                }
-+                                zlibInflater.reset();
-+                            }
-+
-+                            abyte = new byte[totalBytes];
-+                            System.arraycopy(outBuf, 0, abyte, 0, totalBytes);
-+
-+                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
-+                        } else if (b0 == 0) {
-+                            abyte = new byte[l - 1];
-+                            this.b.read(abyte);
-+
-+                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
-+                        } else if (b0 == 126) {
-+                            abyte = new byte[l - 1];
-+                            this.b.read(abyte);
-+
-+                            return new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4BlockInputStream(new ByteArrayInputStream(abyte), lz4Decompressor), 32 * 1024));
-+                        } else if (b0 == 127) {
-                             abyte = new byte[l - 1];
-                             this.b.read(abyte);
+-                            abyte = new byte[l - 1];
+-                            this.b.read(abyte);
 -                            return new DataInputStream(new BufferedInputStream(new InflaterInputStream(new ByteArrayInputStream(abyte))));
 -                        } else {
-+
-+                            int power = 1;
-+                            byte[] outBuf;
-+
-+                            long decompressedBytes;
-+                            boolean resize;
-+                            do {
-+                                resize = false;
-+                                outBuf = new byte[1024 * 64 * power];
-+
-+                                decompressedBytes = com.github.luben.zstd.Zstd.decompressFastDict(outBuf, 0, abyte, 0, abyte.length, zstdDictDecompressor);
-+                                if (com.github.luben.zstd.Zstd.isError(decompressedBytes)) {
-+                                    if (com.github.luben.zstd.Zstd.getErrorCode(decompressedBytes) == com.github.luben.zstd.Zstd.errDstSizeTooSmall()) {
-+                                        resize = true;
-+                                    } else {
-+                                        throw new com.github.luben.zstd.ZstdException(decompressedBytes);
-+                                    }
-+                                }
-+
-+                                if (resize) {
-+                                    power++;
-+                                }
-+                            } while (resize);
-+
-+                            abyte = new byte[(int) decompressedBytes];
-+                            System.arraycopy(outBuf, 0, abyte, 0, (int) decompressedBytes);
-+
-+                            return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
-+                        }
-+                        // Paper end
-+                        else {
++                        // Paper start - new & optimized compression
++                        Optional<RegionCompressionType> compressionType = RegionCompressionType.getFromType(b0);
++                        if (!compressionType.isPresent()) {
                              return null;
                          }
++
++                        int power;
++                        byte[] outBuf;
++                        switch (compressionType.get()) {
++                            case NOP:
++                                abyte = new byte[l - 1];
++                                this.b.read(abyte);
++                                return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
++                            case GZIP:
++                                abyte = new byte[l - 1];
++                                this.b.read(abyte);
++                                return new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(abyte), 32 * 1024), 32 * 1024));
++                            case ZLIB:
++                                abyte = new byte[l - 1];
++                                this.b.read(abyte);
++
++                                power = 1;
++                                outBuf = new byte[1024 * 64 * power];
++                                int totalBytes = 0;
++                                synchronized (zlibInflater) {
++                                    zlibInflater.setInput(abyte, 0, abyte.length);
++                                    int decompressedBytes;
++                                    while (!zlibInflater.finished()) {
++                                        boolean resize = false;
++                                        decompressedBytes = zlibInflater.inflate(decompressionBuffer);
++
++                                        while (decompressedBytes > 1024 * 64 * power - totalBytes) {
++                                            power++;
++                                            resize = true;
++                                        }
++                                        if (resize) {
++                                            byte[] tmp = outBuf;
++                                            outBuf = new byte[1024 * 64 * power];
++                                            System.arraycopy(tmp, 0, outBuf, 0, totalBytes);
++                                        }
++
++                                        System.arraycopy(decompressionBuffer, 0, outBuf, totalBytes, decompressedBytes);
++                                        totalBytes += decompressedBytes;
++                                    }
++                                    zlibInflater.reset();
++                                }
++                                abyte = new byte[totalBytes];
++                                System.arraycopy(outBuf, 0, abyte, 0, totalBytes);
++
++                                return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
++                            case LZ4:
++                                abyte = new byte[l - 1];
++                                this.b.read(abyte);
++                                return new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4BlockInputStream(new ByteArrayInputStream(abyte), lz4Decompressor), 32 * 1024));
++                            case ZSTD:
++                                abyte = new byte[l - 1];
++                                this.b.read(abyte);
++
++                                power = 1;
++                                long decompressedBytes;
++                                boolean resize;
++                                do {
++                                    resize = false;
++                                    outBuf = new byte[1024 * 64 * power];
++
++                                    decompressedBytes = com.github.luben.zstd.Zstd.decompressFastDict(outBuf, 0, abyte, 0, abyte.length, zstdDictDecompressor);
++                                    if (com.github.luben.zstd.Zstd.isError(decompressedBytes)) {
++                                        if (com.github.luben.zstd.Zstd.getErrorCode(decompressedBytes) == com.github.luben.zstd.Zstd.errDstSizeTooSmall()) {
++                                            resize = true;
++                                        } else {
++                                            throw new com.github.luben.zstd.ZstdException(decompressedBytes);
++                                        }
++                                    }
++
++                                    if (resize) {
++                                        power++;
++                                    }
++                                } while (resize);
++                                abyte = new byte[(int) decompressedBytes];
++                                System.arraycopy(outBuf, 0, abyte, 0, (int) decompressedBytes);
++
++                                return new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(abyte), 32 * 1024));
++                            default:
++                                return null;
++                        }
++                        // Paper end
                      }
                  }
              }
 -        } catch (IOException ioexception) {
-+        } catch (IOException | DataFormatException | com.github.luben.zstd.ZstdException ioexception) { // Paper - new & optimized compression
++        } catch (IOException | java.util.zip.DataFormatException | com.github.luben.zstd.ZstdException ioexception) { // Paper - new & optimized compression
              ServerInternalException.reportInternalException(ioexception); // Paper
              return null;
          }
-@@ -294,6 +386,7 @@ public class RegionFile implements AutoCloseable {
- 
-             // Paper - move this into writeChunkData
-         } catch (IOException ioexception) {
-+            ioexception.printStackTrace();
-             com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
-         }
- 
-@@ -302,7 +395,7 @@ public class RegionFile implements AutoCloseable {
+@@ -302,7 +393,7 @@ public class RegionFile implements AutoCloseable {
      private void writeChunkData(final int sectorOffset, final byte[] data, final int dataLength) throws IOException { this.a(sectorOffset, data, dataLength); } // Paper - OBFHELPER
      private void a(int i, byte[] abyte, int j) throws IOException {
          this.b.seek((long) (i * 4096));
 -        this.writeIntAndByte(j + 1, (byte)2); // Paper - Avoid 4 io write calls
-+        this.writeIntAndByte(j + 1, (byte)PaperConfig.compressionMethod); // Paper - Avoid 4 io write calls // Paper - new compression support
++        this.writeIntAndByte(j + 1, (byte)PaperConfig.regionCompressionMethod.getType()); // Paper - Avoid 4 io write calls // Paper - new & optimized compression
          this.b.write(abyte, 0, j);
      }
  
-@@ -487,18 +580,58 @@ public class RegionFile implements AutoCloseable {
+@@ -487,18 +578,67 @@ public class RegionFile implements AutoCloseable {
  
      void writeOversizedData(int x, int z, NBTTagCompound oversizedData) throws IOException {
          File file = getOversizedFile(x, z);
 -        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new java.io.FileOutputStream(file), new java.util.zip.Deflater(java.util.zip.Deflater.BEST_COMPRESSION), 32 * 1024), 32 * 1024))) {
 -            NBTCompressedStreamTools.writeNBT(oversizedData, out);
 +        // Paper start - new & optimized compression
-+        if (PaperConfig.compressionMethod == 127) {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new com.github.luben.zstd.ZstdOutputStream(new java.io.FileOutputStream(file), 19).setDict(zstdDictHighCompressor), 32 * 1024))) {
-+                NBTCompressedStreamTools.writeNBT(oversizedData, out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 126) {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new net.jpountz.lz4.LZ4BlockOutputStream(new java.io.FileOutputStream(file), 32 * 1024, lz4Compressor), 32 * 1024))) {
-+                NBTCompressedStreamTools.writeNBT(oversizedData, out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 2) {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new java.io.FileOutputStream(file), new java.util.zip.Deflater(java.util.zip.Deflater.BEST_COMPRESSION), 32 * 1024), 32 * 1024))) {
-+                NBTCompressedStreamTools.writeNBT(oversizedData, out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 0) {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new java.io.FileOutputStream(file), 32 * 1024))) {
-+                NBTCompressedStreamTools.writeNBT(oversizedData, out);
-+            }
-+        } else {
-+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new java.util.zip.GZIPOutputStream(new java.io.FileOutputStream(file), 32 * 1024), 32 * 1024))) {
-+                NBTCompressedStreamTools.writeNBT(oversizedData, out);
-+            }
++        switch (PaperConfig.regionCompressionMethod) {
++            case NOP:
++                try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new java.io.FileOutputStream(file), 32 * 1024))) {
++                    NBTCompressedStreamTools.writeNBT(oversizedData, out);
++                }
++                break;
++            case GZIP:
++                try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new java.util.zip.GZIPOutputStream(new java.io.FileOutputStream(file), 32 * 1024), 32 * 1024))) {
++                    NBTCompressedStreamTools.writeNBT(oversizedData, out);
++                }
++                break;
++            case ZLIB:
++                try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new DeflaterOutputStream(new java.io.FileOutputStream(file), new java.util.zip.Deflater(java.util.zip.Deflater.BEST_COMPRESSION), 32 * 1024), 32 * 1024))) {
++                    NBTCompressedStreamTools.writeNBT(oversizedData, out);
++                }
++                break;
++            case LZ4:
++                try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new net.jpountz.lz4.LZ4BlockOutputStream(new java.io.FileOutputStream(file), 32 * 1024, lz4Compressor), 32 * 1024))) {
++                    NBTCompressedStreamTools.writeNBT(oversizedData, out);
++                }
++                break;
++            case ZSTD:
++                try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new com.github.luben.zstd.ZstdOutputStream(new java.io.FileOutputStream(file), 19).setDict(zstdDictHighCompressor), 32 * 1024))) {
++                    NBTCompressedStreamTools.writeNBT(oversizedData, out);
++                }
++                break;
          }
 +        // Paper end
          this.setOversized(x, z, true);
@@ -272,32 +335,35 @@ index 41f1e15cb..7f55e1b42 100644
 -        try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file))))) {
 -            return NBTCompressedStreamTools.readNBT(out);
 +        // Paper start - new & optimized compression
-+        if (PaperConfig.compressionMethod == 127) {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new com.github.luben.zstd.ZstdInputStream(new java.io.FileInputStream(file)).setDict(zstdDictDecompressor), 32 * 1024))) {
-+                return NBTCompressedStreamTools.readNBT(out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 126) {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4BlockInputStream(new java.io.FileInputStream(file), lz4Decompressor), 32 * 1024))) {
-+                return NBTCompressedStreamTools.readNBT(out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 2) {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file), new java.util.zip.Inflater(), 32 * 1024), 32 * 1024))) {
-+                return NBTCompressedStreamTools.readNBT(out);
-+            }
-+        } else if (PaperConfig.compressionMethod == 0) {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new java.io.FileInputStream(file), 32 * 1024))) {
-+                return NBTCompressedStreamTools.readNBT(out);
-+            }
-+        } else {
-+            try (DataInputStream out = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new java.io.FileInputStream(file), 32 * 1024), 32 * 1024))) {
-+                return NBTCompressedStreamTools.readNBT(out);
-+            }
++        switch (PaperConfig.regionCompressionMethod) {
++            case NOP:
++                try (DataInputStream out = new DataInputStream(new BufferedInputStream(new java.io.FileInputStream(file), 32 * 1024))) {
++                    return NBTCompressedStreamTools.readNBT(out);
++                }
++            case GZIP:
++                try (DataInputStream out = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new java.io.FileInputStream(file), 32 * 1024), 32 * 1024))) {
++                    return NBTCompressedStreamTools.readNBT(out);
++                }
++            case ZLIB:
++                try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file), new java.util.zip.Inflater(), 32 * 1024), 32 * 1024))) {
++                    return NBTCompressedStreamTools.readNBT(out);
++                }
++            case LZ4:
++                try (DataInputStream out = new DataInputStream(new BufferedInputStream(new net.jpountz.lz4.LZ4BlockInputStream(new java.io.FileInputStream(file), lz4Decompressor), 32 * 1024))) {
++                    return NBTCompressedStreamTools.readNBT(out);
++                }
++            case ZSTD:
++                try (DataInputStream out = new DataInputStream(new BufferedInputStream(new com.github.luben.zstd.ZstdInputStream(new java.io.FileInputStream(file)).setDict(zstdDictDecompressor), 32 * 1024))) {
++                    return NBTCompressedStreamTools.readNBT(out);
++                }
++            default:
++                return null;
          }
 +        // Paper end
  
      }
  
-@@ -509,6 +642,19 @@ public class RegionFile implements AutoCloseable {
+@@ -509,6 +649,16 @@ public class RegionFile implements AutoCloseable {
              org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Using Spigot Oversized Chunk save method. Warning this will result in extremely fragmented chunks, as well as making the entire region file unable to be to used in any other software but Forge or Spigot (not usable in Vanilla or CraftBukkit). Paper's method is highly recommended.");
              org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "====================================");
          }
@@ -306,18 +372,15 @@ index 41f1e15cb..7f55e1b42 100644
 +        byte[] zstdDict;
 +        try {
 +            zstdDict = toBytes(RegionFile.class.getClassLoader().getResourceAsStream("paper.zstd.dict"));
-+        } catch (IOException ignored) { zstdDict = null; }
-+        if (zstdDict == null) {
-+            zstdDict = new byte[0];
-+        }
++        } catch (IOException ignored) { zstdDict = new byte[0]; }
 +        zstdDictHighCompressor = new com.github.luben.zstd.ZstdDictCompress(zstdDict, 19);
-+        zstdDictCompressor = new com.github.luben.zstd.ZstdDictCompress(zstdDict, PaperConfig.zstdUseHighCompression ? 19 : 1);
++        zstdDictCompressor = new com.github.luben.zstd.ZstdDictCompress(zstdDict, PaperConfig.regionZstdUseHighCompression ? 19 : 1);
 +        zstdDictDecompressor = new com.github.luben.zstd.ZstdDictDecompress(zstdDict);
 +        // Paper end
      }
      public class ChunkTooLargeException extends RuntimeException {
          public ChunkTooLargeException(int x, int z, int sectors) {
-@@ -552,21 +698,70 @@ public class RegionFile implements AutoCloseable {
+@@ -552,21 +702,75 @@ public class RegionFile implements AutoCloseable {
      }
  
      private static final byte[] compressionBuffer = new byte[1024 * 64]; // 64k fits most standard chunks input size even, ideally 1 pass through zlib
@@ -327,61 +390,69 @@ index 41f1e15cb..7f55e1b42 100644
 -        synchronized (deflater) {
 -            deflater.setInput(buf, 0, length);
 -            deflater.finish();
--
 +        // Paper start - new & optimized compression
-+        if (PaperConfig.compressionMethod == 127) {
-+            byte[] output = new byte[(int) com.github.luben.zstd.Zstd.compressBound(length)];
-+            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(output.length);
-+            long compressedBytes = com.github.luben.zstd.Zstd.compressFastDict(output, 0, buf, 0, length, zstdDictCompressor);
-+            if (com.github.luben.zstd.Zstd.isError(compressedBytes)) {
-+                throw new com.github.luben.zstd.ZstdException(compressedBytes);
-+            }
-+            out.write(output, 0, (int) compressedBytes);
-+            out.close();
-+            return out;
-+        } else if (PaperConfig.compressionMethod == 126) {
-+            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
-+            try (net.jpountz.lz4.LZ4BlockOutputStream compressStream = new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)) {
-+                compressStream.write(buf, 0, length);
-+            }
-+            out.close();
-+            return out;
-+        } else if (PaperConfig.compressionMethod == 2) {
-+            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
-+            synchronized (zlibDeflater) {
-+                zlibDeflater.setInput(buf, 0, length);
-+                zlibDeflater.finish();
-+                while (!zlibDeflater.finished()) {
-+                    out.write(compressionBuffer, 0, zlibDeflater.deflate(compressionBuffer));
++        DirectByteArrayOutputStream out;
++        switch (PaperConfig.regionCompressionMethod) {
++            case NOP:
++                out = new DirectByteArrayOutputStream(length);
++                out.write(buf, 0, length);
++                out.close();
++                return out;
++            case GZIP:
++                out = new DirectByteArrayOutputStream(length);
++                try (java.util.zip.GZIPOutputStream compressedOut = new java.util.zip.GZIPOutputStream(out, 32 * 1024)) {
++                    compressedOut.write(buf);
 +                }
 +                out.close();
-+                zlibDeflater.reset();
-+            }
-+            return out;
-+        } else if (PaperConfig.compressionMethod == 0) {
-+            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
-+            out.write(buf, 0, length);
-+            out.close();
-+            return out;
-+        } else {
-             DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
--            while (!deflater.finished()) {
--                out.write(compressionBuffer, 0, deflater.deflate(compressionBuffer));
-+            try (java.util.zip.GZIPOutputStream compressedOut = new java.util.zip.GZIPOutputStream(out, 32 * 1024)) {
-+                compressedOut.write(buf);
-             }
-             out.close();
--            deflater.reset();
-             return out;
-         }
++                return out;
++            case ZLIB:
++                out = new DirectByteArrayOutputStream(length);
++                synchronized (zlibDeflater) {
++                    zlibDeflater.setInput(buf, 0, length);
++                    zlibDeflater.finish();
++                    while (!zlibDeflater.finished()) {
++                        out.write(compressionBuffer, 0, zlibDeflater.deflate(compressionBuffer));
++                    }
++                    out.close();
++                    zlibDeflater.reset();
++                }
++                return out;
++            case LZ4:
++                out = new DirectByteArrayOutputStream(length);
++                try (net.jpountz.lz4.LZ4BlockOutputStream compressStream = new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)) {
++                    compressStream.write(buf, 0, length);
++                }
++                out.close();
++                return out;
++            case ZSTD:
++                byte[] output = new byte[(int) com.github.luben.zstd.Zstd.compressBound(length)];
++                out = new DirectByteArrayOutputStream(output.length);
++                long compressedBytes = com.github.luben.zstd.Zstd.compressFastDict(output, 0, buf, 0, length, zstdDictCompressor);
++                if (com.github.luben.zstd.Zstd.isError(compressedBytes)) {
++                    throw new com.github.luben.zstd.ZstdException(compressedBytes);
++                }
++                out.write(output, 0, (int) compressedBytes);
++                out.close();
++                return out;
++            default:
++                out = new DirectByteArrayOutputStream();
++                return out;
++        }
 +        // Paper end
 +    }
 +    // Paper end
-+
+ 
+-            DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(length);
+-            while (!deflater.finished()) {
+-                out.write(compressionBuffer, 0, deflater.deflate(compressionBuffer));
+-            }
+-            out.close();
+-            deflater.reset();
+-            return out;
 +    // Paper start - new & optimized compression
 +    private static byte[] toBytes(java.io.InputStream inStream) throws IOException {
 +        if (inStream == null) {
-+            return null;
++            return new byte[0];
 +        }
 +
 +        DirectByteArrayOutputStream out = new DirectByteArrayOutputStream(inStream.available());
@@ -390,7 +461,7 @@ index 41f1e15cb..7f55e1b42 100644
 +        int bytesRead;
 +        while ((bytesRead = inStream.read(buffer)) > 0) {
 +            out.write(buffer, 0, bytesRead);
-+        }
+         }
 +        out.close();
 +        return out.getBuffer();
      }
