@@ -999,8 +999,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.attributeModifiers = HashMultimap.create();
             return;
         }
-        Iterator<Map.Entry<Attribute, AttributeModifier>> iterator = attributeModifiers.entries().iterator();
+
+        checkAttributeList();
         this.attributeModifiers.clear();
+
+        Iterator<Map.Entry<Attribute, AttributeModifier>> iterator = attributeModifiers.entries().iterator();
         while (iterator.hasNext()) {
             Map.Entry<Attribute, AttributeModifier> next = iterator.next();
 
