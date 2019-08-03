@@ -1,11 +1,11 @@
-From 140b99afea441f487613310f6388ed5185b2d3a1 Mon Sep 17 00:00:00 2001
+From cd60ab088b10227fd54b9571897bf664c3bb50ba Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 318a470e..ff1e27e7 100644
+index 318a470ee..ff1e27e7d 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -562,4 +562,9 @@ public class PaperWorldConfig {
@@ -19,7 +19,7 @@ index 318a470e..ff1e27e7 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2554c284..ade106aa 100644
+index 2554c2840..ade106aa3 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -489,8 +489,25 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -51,7 +51,7 @@ index 2554c284..ade106aa 100644
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 18695d9b..764dd97e 100644
+index 18695d9b5..764dd97ef 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -80,6 +80,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -63,7 +63,7 @@ index 18695d9b..764dd97e 100644
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index a7fc34f8..612b9b7e 100644
+index a7fc34f85..612b9b7e3 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -253,6 +253,7 @@ public class EntityTypes<T extends Entity> {
@@ -75,7 +75,7 @@ index a7fc34f8..612b9b7e 100644
          return this.ba;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b447c49a..008f0c2d 100644
+index b447c49a6..008f0c2d3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -146,6 +146,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -102,28 +102,19 @@ index b447c49a..008f0c2d 100644
      public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
 diff --git a/src/main/java/net/minecraft/server/PlayerMap.java b/src/main/java/net/minecraft/server/PlayerMap.java
-index f386c4e9..eb96a5ca 100644
+index f386c4e99..f8f35b0e0 100644
 --- a/src/main/java/net/minecraft/server/PlayerMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerMap.java
-@@ -2,6 +2,8 @@ package net.minecraft.server;
- 
- import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
- import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
-+import java.util.ArrayList; // Paper
-+import java.util.List; // Paper
- import java.util.stream.Stream;
- 
- public final class PlayerMap {
-@@ -10,6 +12,7 @@ public final class PlayerMap {
+@@ -10,6 +10,7 @@ public final class PlayerMap {
  
      public PlayerMap() {}
  
-+    public List<EntityPlayer> getPlayers() { return new ArrayList<>(this.a.keySet()); } // Paper - Based on method below without streams
++    public java.util.List<EntityPlayer> getPlayers() { return new java.util.ArrayList<>(this.a.keySet()); } // Paper - Based on method below without streams
      public Stream<EntityPlayer> a(long i) {
          return this.a.keySet().stream();
      }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index c6ea37ff..2fd161ab 100644
+index c6ea37ffb..899c8c172 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -150,34 +141,31 @@ index c6ea37ff..2fd161ab 100644
          BlockPosition blockposition1 = getRandomPosition(world, chunk);
          int j = blockposition1.getX();
          int k = blockposition1.getY();
-@@ -115,9 +121,13 @@ public final class SpawnerCreature {
+@@ -115,9 +121,11 @@ public final class SpawnerCreature {
                                                              groupdataentity = entityinsentient.prepare(world, world.getDamageScaler(new BlockPosition(entityinsentient)), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
                                                              // CraftBukkit start
                                                              if (world.addEntity(entityinsentient, SpawnReason.NATURAL)) {
 -                                                                ++i;
 +                                                                ++i; // Paper - force diff on name change
                                                                  ++i2;
-+                                                            // Paper start - stop when limit is reached
-+                                                                trackEntity.accept(entityinsentient);
++                                                                trackEntity.accept(entityinsentient); // Paper
                                                              }
-+                                                            if (i >= maxSpawns) { return; }
-+                                                            // Paper end
++                                                            if (i >= maxSpawns) { return; } // Paper
                                                              // CraftBukkit end
                                                              if (i >= entityinsentient.dC()) {
                                                                  return;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 64915965..8d926200 100644
+index 649159653..7aaa4f3b3 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -846,6 +850,16 @@ public class WorldServer extends World {
+@@ -846,6 +846,15 @@ public class WorldServer extends World {
      }
  
      public Object2IntMap<EnumCreatureType> l() {
-+        // Paper start
++        // Paper start -- reset player mobCounts
 +        if (this.paperConfig.perPlayerMobSpawns) {
-+            int maxI = EnumCreatureType.values().length;
-+            for(EntityPlayer player : this.players){
-+                for(int i = 0; i < maxI; i++) {
++            for(EntityPlayer player : this.players){ // TODO iterate over copy?
++                for(int i = 0, maxI = EnumCreatureType.values().length; i < maxI; i++) {
 +                    player.mobCounts[i] = 0;
 +                }
 +            }
@@ -186,7 +174,7 @@ index 64915965..8d926200 100644
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
-@@ -871,6 +885,7 @@ public class WorldServer extends World {
+@@ -871,6 +880,7 @@ public class WorldServer extends World {
                      continue;
                  }
                  // Paper end
@@ -194,16 +182,16 @@ index 64915965..8d926200 100644
                  object2intmap.mergeInt(enumcreaturetype, 1, Integer::sum);
              }
          }
-@@ -878,6 +893,20 @@ public class WorldServer extends World {
+@@ -878,6 +888,20 @@ public class WorldServer extends World {
          return object2intmap;
      }
  
 +    // Paper start
 +    public void updatePlayerMobCounts(Entity entity) {
 +        if (!this.paperConfig.perPlayerMobSpawns) { return; }
++        int ordinal = entity.getEntityType().getEnumCreatureType().ordinal();
 +        for (EntityPlayer player : ((ChunkProviderServer) this.chunkProvider).playerChunkMap.getPlayersNear(entity.getChunkAtLocation().getPos())) {
-+            EnumCreatureType enumType = entity.getEntityType().getEnumCreatureType();
-+            player.mobCounts[enumType.ordinal()]++;
++            player.mobCounts[ordinal]++;
 +        }
 +    }
 +
