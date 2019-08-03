@@ -1,4 +1,4 @@
-From cd60ab088b10227fd54b9571897bf664c3bb50ba Mon Sep 17 00:00:00 2001
+From e9bf486f2dd749debf4240ac7c6c7640a9963d48 Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,10 +19,19 @@ index 318a470ee..ff1e27e7d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 2554c2840..ade106aa3 100644
+index bf566135b..403f2899e 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -489,8 +489,25 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -415,7 +415,7 @@ public class ChunkProviderServer extends IChunkProvider {
+             this.world.timings.countNaturalMobs.startTiming(); // Paper - timings
+             int l = this.chunkMapDistance.b();
+             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
+-            Object2IntMap<EnumCreatureType> object2intmap = this.world.l();
++            Object2IntMap<EnumCreatureType> object2intmap = this.world.l(true); // Paper -- update player mob counts
+ 
+             this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
+             this.world.getMethodProfiler().exit();
+@@ -468,8 +468,25 @@ public class ChunkProviderServer extends IChunkProvider {
                                  if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
                                      int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
@@ -75,7 +84,7 @@ index a7fc34f85..612b9b7e3 100644
          return this.ba;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b447c49a6..008f0c2d3 100644
+index fd0d2b6e6..edb517d20 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -146,6 +146,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -86,7 +95,7 @@ index b447c49a6..008f0c2d3 100644
      private static int b(ChunkCoordIntPair chunkcoordintpair, EntityPlayer entityplayer, boolean flag) {
          int i;
          int j;
-@@ -1097,6 +1098,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1115,6 +1116,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
@@ -155,15 +164,18 @@ index c6ea37ffb..899c8c172 100644
                                                              if (i >= entityinsentient.dC()) {
                                                                  return;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 649159653..7aaa4f3b3 100644
+index 451ad4f32..08f7607a1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -846,6 +846,15 @@ public class WorldServer extends World {
+@@ -880,7 +880,17 @@ public class WorldServer extends World {
+         return list.isEmpty() ? null : (EntityPlayer) list.get(this.random.nextInt(list.size()));
      }
  
-     public Object2IntMap<EnumCreatureType> l() {
+-    public Object2IntMap<EnumCreatureType> l() {
++    public Object2IntMap<EnumCreatureType> l() { return this.l(false); }
++    public Object2IntMap<EnumCreatureType> l(boolean updatePlayerCounts) {
 +        // Paper start -- reset player mobCounts
-+        if (this.paperConfig.perPlayerMobSpawns) {
++        if (this.paperConfig.perPlayerMobSpawns && updatePlayerCounts) {
 +            for(EntityPlayer player : this.players){ // TODO iterate over copy?
 +                for(int i = 0, maxI = EnumCreatureType.values().length; i < maxI; i++) {
 +                    player.mobCounts[i] = 0;
@@ -174,15 +186,15 @@ index 649159653..7aaa4f3b3 100644
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
-@@ -871,6 +880,7 @@ public class WorldServer extends World {
+@@ -906,6 +916,7 @@ public class WorldServer extends World {
                      continue;
                  }
                  // Paper end
-+                updatePlayerMobCounts(entity); // Paper
++                if (this.paperConfig.perPlayerMobSpawns && updatePlayerCounts) { updatePlayerMobCounts(entity); } // Paper
                  object2intmap.mergeInt(enumcreaturetype, 1, Integer::sum);
              }
          }
-@@ -878,6 +888,20 @@ public class WorldServer extends World {
+@@ -913,6 +924,20 @@ public class WorldServer extends World {
          return object2intmap;
      }
  
