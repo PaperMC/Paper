@@ -1,4 +1,4 @@
-From e9bf486f2dd749debf4240ac7c6c7640a9963d48 Mon Sep 17 00:00:00 2001
+From 6f06e8b8f2d2ddc5cc117ca776c0069457070e3e Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -19,7 +19,7 @@ index 318a470ee..ff1e27e7d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index bf566135b..403f2899e 100644
+index bf566135b..d1c4e4581 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -415,7 +415,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -27,7 +27,7 @@ index bf566135b..403f2899e 100644
              int l = this.chunkMapDistance.b();
              EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
 -            Object2IntMap<EnumCreatureType> object2intmap = this.world.l();
-+            Object2IntMap<EnumCreatureType> object2intmap = this.world.l(true); // Paper -- update player mob counts
++            Object2IntMap<EnumCreatureType> object2intmap = this.world.countMobs(true); // Paper -- update player mob counts
  
              this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
              this.world.getMethodProfiler().exit();
@@ -164,7 +164,7 @@ index c6ea37ffb..899c8c172 100644
                                                              if (i >= entityinsentient.dC()) {
                                                                  return;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 451ad4f32..08f7607a1 100644
+index 451ad4f32..03ec84be4 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -880,7 +880,17 @@ public class WorldServer extends World {
@@ -172,9 +172,9 @@ index 451ad4f32..08f7607a1 100644
      }
  
 -    public Object2IntMap<EnumCreatureType> l() {
-+    public Object2IntMap<EnumCreatureType> l() { return this.l(false); }
-+    public Object2IntMap<EnumCreatureType> l(boolean updatePlayerCounts) {
-+        // Paper start -- reset player mobCounts
++    // Paper start -- reset & update player mob counts only if updatePlayerCounts is true otherwise retain original functionality
++    public Object2IntMap<EnumCreatureType> l() { return this.countMobs(false); }
++    public Object2IntMap<EnumCreatureType> countMobs(boolean updatePlayerCounts) {
 +        if (this.paperConfig.perPlayerMobSpawns && updatePlayerCounts) {
 +            for(EntityPlayer player : this.players){ // TODO iterate over copy?
 +                for(int i = 0, maxI = EnumCreatureType.values().length; i < maxI; i++) {
@@ -182,7 +182,7 @@ index 451ad4f32..08f7607a1 100644
 +                }
 +            }
 +        }
-+        // Paper end
++    // Paper end
          Object2IntMap<EnumCreatureType> object2intmap = new Object2IntOpenHashMap();
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
