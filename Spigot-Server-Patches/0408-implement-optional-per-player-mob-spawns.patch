@@ -1,4 +1,4 @@
-From c56a818d76b4779d6f9b1bc215e3eb0717c706dc Mon Sep 17 00:00:00 2001
+From 16fb653f3e7a86cf98eba965decb626eed9194ea Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Fri, 26 Jul 2019 10:24:32 +0500
 Subject: [PATCH] implement optional per player mob spawns
@@ -42,10 +42,10 @@ index 318a470eea..ff1e27e7d6 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 new file mode 100644
-index 0000000000..ae65711c9b
+index 0000000000..9ebd7ecb7a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,253 @@
 +package com.destroystokyo.paper.util;
 +
 +import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
@@ -98,17 +98,18 @@ index 0000000000..ae65711c9b
 +            final SectionPosition oldPosition = this.players.put(player, newPosition);
 +
 +            if (oldPosition == null) {
-+                this.addNewPlayer(player, newViewDistance);
++                this.addNewPlayer(player, newPosition, newViewDistance);
 +            } else {
 +                this.updatePlayer(player, oldPosition, newPosition, oldViewDistance, newViewDistance);
 +            }
 +            //this.validatePlayer(player, newViewDistance); // debug only
 +        }
 +
-+        this.players.keySet().removeAll(gone);
-+
 +        for (final EntityPlayer player : gone) {
-+            this.removePlayer(player, oldViewDistance);
++            final SectionPosition oldPosition = this.players.remove(player);
++            if (oldPosition != null) {
++                this.removePlayer(player, oldPosition, oldViewDistance);
++            }
 +        }
 +    }
 +
@@ -180,8 +181,8 @@ index 0000000000..ae65711c9b
 +
 +        if (Math.max(totalX, totalZ) > (2 * oldViewDistance)) {
 +            // teleported?
-+            this.removePlayer(player, oldViewDistance);
-+            this.addNewPlayer(player, newViewDistance);
++            this.removePlayer(player, oldPosition, oldViewDistance);
++            this.addNewPlayer(player, newPosition, newViewDistance);
 +            return;
 +        }
 +
@@ -271,14 +272,12 @@ index 0000000000..ae65711c9b
 +        } else {
 +            // different view distance
 +            // for now :)
-+            this.removePlayer(player, oldViewDistance);
-+            this.addNewPlayer(player, newViewDistance);
++            this.removePlayer(player, oldPosition, oldViewDistance);
++            this.addNewPlayer(player, newPosition, newViewDistance);
 +        }
 +    }
 +
-+    private void removePlayer(final EntityPlayer player, final int viewDistance) {
-+        final SectionPosition position = player.getPlayerMapSection();
-+
++    private void removePlayer(final EntityPlayer player, final SectionPosition position, final int viewDistance) {
 +        final int x = position.getX();
 +        final int z = position.getZ();
 +
@@ -289,9 +288,7 @@ index 0000000000..ae65711c9b
 +        }
 +    }
 +
-+    private void addNewPlayer(final EntityPlayer player, final int viewDistance) {
-+        final SectionPosition position = player.getPlayerMapSection();
-+
++    private void addNewPlayer(final EntityPlayer player, final SectionPosition position, final int viewDistance) {
 +        final int x = position.getX();
 +        final int z = position.getZ();
 +
