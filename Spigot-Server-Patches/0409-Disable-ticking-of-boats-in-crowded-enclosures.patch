@@ -1,0 +1,81 @@
+From ca64f306ee9321385c9cf7738916b366b9c00084 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Sun, 4 Aug 2019 15:19:46 +0500
+Subject: [PATCH] Disable ticking of boats in crowded enclosures
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 318a470e..48267268 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -562,4 +562,9 @@ public class PaperWorldConfig {
+     private void disableRelativeProjectileVelocity() {
+         disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
+     }
++
++    public int minBoatCollisionsToDisableTicking;
++    private void minBoatCollisionsToDisableTicking() {
++        minBoatCollisionsToDisableTicking = getInt("min-boat-collisions-to-disable-ticking", 10);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+index 32b7f780..e6c91d84 100644
+--- a/src/main/java/net/minecraft/server/EntityBoat.java
++++ b/src/main/java/net/minecraft/server/EntityBoat.java
+@@ -53,6 +53,9 @@ public class EntityBoat extends Entity {
+     public double unoccupiedDeceleration = -1;
+     public boolean landBoats = false;
+     // CraftBukkit end
++    // Paper start
++    private int machineActivatedTick = MinecraftServer.currentTick + 20;
++    // Paper end
+ 
+     public EntityBoat(EntityTypes<? extends EntityBoat> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -234,6 +237,11 @@ public class EntityBoat extends Entity {
+     private Location lastLocation; // CraftBukkit
+     @Override
+     public void tick() {
++        // Paper start
++        if (machineActivatedTick < MinecraftServer.currentTick) {
++            return;
++        }
++        // Paper end
+         this.aJ = this.aI;
+         this.aI = this.s();
+         if (this.aI != EntityBoat.EnumStatus.UNDER_WATER && this.aI != EntityBoat.EnumStatus.UNDER_FLOWING_WATER) {
+@@ -313,8 +321,10 @@ public class EntityBoat extends Entity {
+             }
+         }
+ 
++
+         this.checkBlockCollisions();
+         List<Entity> list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, -0.009999999776482582D, 0.20000000298023224D), IEntitySelector.a(this));
++        if (list.size() < this.world.paperConfig.minBoatCollisionsToDisableTicking && this.machineActivatedTick == MinecraftServer.currentTick) { this.machineActivatedTick = MinecraftServer.currentTick + 20; } // Paper
+ 
+         if (!list.isEmpty()) {
+             boolean flag = !this.world.isClientSide && !(this.getRidingPassenger() instanceof EntityHuman);
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 92601c58..261d53f3 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -8,6 +8,7 @@ import net.minecraft.server.Entity;
+ import net.minecraft.server.EntityAmbient;
+ import net.minecraft.server.EntityAnimal;
+ import net.minecraft.server.EntityArrow;
++import net.minecraft.server.EntityBoat; // Paper
+ import net.minecraft.server.EntityComplexPart;
+ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityCreeper;
+@@ -191,7 +192,7 @@ public class ActivationRange
+     public static boolean checkEntityImmunities(Entity entity)
+     {
+         // quick checks.
+-        if ( entity.inWater || entity.fireTicks > 0 )
++        if ( (entity.inWater && !(entity instanceof EntityBoat)) || entity.fireTicks > 0 ) // Paper - exclude boats
+         {
+             return true;
+         }
+-- 
+2.22.0
+
