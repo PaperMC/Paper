@@ -1778,7 +1778,7 @@ public class CraftWorld implements World {
 
     @Override
     public File getWorldFolder() {
-        return ((WorldNBTStorage) world.getDataManager()).getDirectory();
+        return world.getDataManager().getDirectory();
     }
 
     @Override
