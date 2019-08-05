@@ -15,7 +15,7 @@ items and experience which is otherwise only properly possible by using
 internal code.
 
 diff --git a/src/main/java/net/minecraft/server/CombatTracker.java b/src/main/java/net/minecraft/server/CombatTracker.java
-index 84c3ea9d0..f563a7b63 100644
+index 84c3ea9d00..f563a7b630 100644
 --- a/src/main/java/net/minecraft/server/CombatTracker.java
 +++ b/src/main/java/net/minecraft/server/CombatTracker.java
 @@ -0,0 +0,0 @@ public class CombatTracker {
@@ -27,7 +27,7 @@ index 84c3ea9d0..f563a7b63 100644
          int i = this.f ? 300 : 100;
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7811beb80..f9b097fd6 100644
+index 7811beb807..f9b097fd6f 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -47,7 +47,7 @@ index 7811beb80..f9b097fd6 100644
  
      protected void i(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index 627925e3b..e516db270 100644
+index 627925e3ba..e516db2701 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
 @@ -0,0 +0,0 @@ public class EntityArmorStand extends EntityLiving {
@@ -61,7 +61,7 @@ index 627925e3b..e516db270 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityFox.java b/src/main/java/net/minecraft/server/EntityFox.java
-index 85231309f..1da2f013f 100644
+index 85231309fd..97059b8239 100644
 --- a/src/main/java/net/minecraft/server/EntityFox.java
 +++ b/src/main/java/net/minecraft/server/EntityFox.java
 @@ -0,0 +0,0 @@ public class EntityFox extends EntityAnimal {
@@ -74,7 +74,7 @@ index 85231309f..1da2f013f 100644
 +        ItemStack itemstack = this.getEquipment(EnumItemSlot.MAINHAND).cloneItemStack(); // Paper
 +
 +        // Paper start - Cancellable death event
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.d(damagesource);
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.processDeath(damagesource);
 +
 +        // Below is code to drop
 +
@@ -93,8 +93,33 @@ index 85231309f..1da2f013f 100644
      }
  
      public static boolean a(EntityFox entityfox, EntityLiving entityliving) {
+diff --git a/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java b/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
+index 2483cfd28a..2a988366cd 100644
+--- a/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
+@@ -0,0 +0,0 @@ public abstract class EntityHorseChestedAbstract extends EntityHorseAbstract {
+                 this.a((IMaterial) Blocks.CHEST);
+             }
+ 
+-            this.setCarryingChest(false);
++            //this.setCarryingChest(false); // Paper - moved to post death logic
+         }
+ 
+     }
+ 
++    // Paper start
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {
++        if (this.isCarryingChest() && (event == null || !event.isCancelled())) {
++            this.setCarryingChest(false);
++        }
++    }
++    // Paper end
++
+     @Override
+     public void b(NBTTagCompound nbttagcompound) {
+         super.b(nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index edc25586a..37ff76486 100644
+index b09712ca91..1e53af2cce 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
@@ -175,8 +200,19 @@ index edc25586a..37ff76486 100644
 +
                  boolean flag = false;
  
-                 if (entityliving instanceof EntityWither) {
+-                if (entityliving instanceof EntityWither) {
++                if (this.killed && entityliving instanceof EntityWither) {
+                     if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+                         BlockPosition blockposition = new BlockPosition(this.locX, this.locY, this.locZ);
+                         IBlockData iblockdata = Blocks.WITHER_ROSE.getBlockData();
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+                 }
+             }
+ 
++            if (this.killed) { // Paper
+             this.world.broadcastEntityEffect(this, (byte) 3);
+             this.setPose(EntityPose.DYING);
++            } // Paper
          }
      }
  
@@ -187,10 +223,10 @@ index edc25586a..37ff76486 100644
          int i;
  
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
- 
          boolean flag = this.lastDamageByPlayerTime > 0;
  
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = null; // Paper
+         this.cF(); // CraftBukkit - from below // PAIL
++        org.bukkit.event.entity.EntityDeathEvent deathEvent; // Paper
          if (this.isDropExperience() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
              this.a(damagesource, flag);
              this.dropDeathLoot(damagesource, i, flag);
@@ -198,19 +234,23 @@ index edc25586a..37ff76486 100644
 -            CraftEventFactory.callEntityDeathEvent(this, this.drops);
 -            this.drops = new ArrayList<org.bukkit.inventory.ItemStack>();
 +            deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops); // Paper
-+            if (!deathEvent.isCancelled()) this.drops = new ArrayList<org.bukkit.inventory.ItemStack>(); // Paper
          } else {
 -            CraftEventFactory.callEntityDeathEvent(this);
 +            deathEvent = CraftEventFactory.callEntityDeathEvent(this); // Paper
              // CraftBukkit end
          }
++        this.postDeathDropItems(deathEvent); // Paper
++        this.drops = new ArrayList<>(); // Paper
  
--        this.cF();
-+        if (!deathEvent.isCancelled()) this.cF();; // Paper
+-        // this.cF();// CraftBukkit - moved up
 +        return deathEvent; // Paper
      }
  
      protected void cF() {}
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {} // Paper - method for post death logic that cannot be ran before the event is potentially cancelled
+ 
+     protected void dropDeathLoot(DamageSource damagesource, int i, boolean flag) {}
+ 
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          return SoundEffects.ENTITY_GENERIC_HURT;
      }
@@ -233,7 +273,7 @@ index edc25586a..37ff76486 100644
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index dcd48d8b3..d7bc6e329 100644
+index dcd48d8b3d..d7bc6e3297 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -284,7 +324,7 @@ index dcd48d8b3..d7bc6e329 100644
          }
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftSound.java b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-index 73cb64e09..9f317ff2e 100644
+index 73cb64e09d..9f317ff2e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
 @@ -0,0 +0,0 @@ public enum CraftSound {
@@ -311,7 +351,7 @@ index 73cb64e09..9f317ff2e 100644
          this.minecraftKey = minecraftKey;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2c99a1e9d..e9458dc65 100644
+index 2c99a1e9df..e9458dc65f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -332,7 +372,7 @@ index 2c99a1e9d..e9458dc65 100644
  
      public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 5309a4e30..4074100c4 100644
+index 5309a4e304..4074100c44 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -0,0 +0,0 @@ public class CraftEventFactory {

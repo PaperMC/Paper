@@ -8,7 +8,7 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 5fabfe87c..2c6a164f0 100644
+index ca5963b11a..3894b04342 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -43,7 +43,7 @@ index 5fabfe87c..2c6a164f0 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index e778c2e85..73f93e494 100644
+index e778c2e857..73f93e4948 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
@@ -65,7 +65,7 @@ index e778c2e85..73f93e494 100644
          if (nbttagcompound != null) {
              ChunkStatus chunkstatus = ChunkStatus.a(nbttagcompound.getCompound("Level").getString("Status"));
 diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
-index dd1822d6f..e324989b4 100644
+index dd1822d6ff..e324989b46 100644
 --- a/src/main/java/net/minecraft/server/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/server/ChunkStatus.java
 @@ -0,0 +0,0 @@ public class ChunkStatus {
@@ -95,7 +95,7 @@ index dd1822d6f..e324989b4 100644
          return (ChunkStatus) IRegistry.CHUNK_STATUS.get(MinecraftKey.a(s));
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 14a176d61..98590e233 100644
+index 14a176d61d..98590e233a 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -0,0 +0,0 @@ public class PlayerChunk {
@@ -119,7 +119,7 @@ index 14a176d61..98590e233 100644
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 2be6fa0f0..bdadbd436 100644
+index 2be6fa0f07..bdadbd436e 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -187,12 +187,12 @@ index 2be6fa0f0..bdadbd436 100644
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
          // Spigot start
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index b0ec9edf6..41f1e15cb 100644
+index 86ae53fed3..e6e412b7c1 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
-     private final List<Boolean> e; private List<Boolean> getFreeSectors() { return this.e; } // Paper - OBFHELPER
+     private final int[] d = new int[1024]; private final int[] timestamps = d; // Paper - OBFHELPER
+     private final List<Boolean> e; // PAIL freeSectors
  
 +    // Paper start - Cache chunk status
 +    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
@@ -230,7 +230,7 @@ index b0ec9edf6..41f1e15cb 100644
          return this.getOffset(chunkcoordintpair) != 0;
      }
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-         this.c[j] = i; // Paper - move this to after the write
+         this.c[j] = i; // Spigot - move this to after the write
      }
  
 +    private final int getChunkLocation(ChunkCoordIntPair chunkcoordintpair) { return this.f(chunkcoordintpair); } // Paper - OBFHELPER
@@ -246,7 +246,7 @@ index b0ec9edf6..41f1e15cb 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 6f34d8aea..d2b328945 100644
+index 6f34d8aea0..d2b3289450 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public abstract class RegionFileCache implements AutoCloseable {
@@ -279,7 +279,7 @@ index 6f34d8aea..d2b328945 100644
                      printOversizedLog("ChunkTooLarge even after reduction. Trying in overzealous mode.", regionfile.file, chunkX, chunkZ);
                      // Eek, major fail. We have retry logic, so reduce threshholds and fall back
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index acf151a25..a2b6c3c94 100644
+index ceb256222f..21f1530138 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
