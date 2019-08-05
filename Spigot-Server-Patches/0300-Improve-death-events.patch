@@ -1,4 +1,4 @@
-From d568e19f732f587625314700a585994247c5e024 Mon Sep 17 00:00:00 2001
+From 5d6dc2bb82c80b978eaccdeb9e69dbf34d723805 Mon Sep 17 00:00:00 2001
 From: Phoenix616 <mail@moep.tv>
 Date: Tue, 21 Aug 2018 01:39:35 +0100
 Subject: [PATCH] Improve death events
@@ -93,8 +93,33 @@ index 85231309fd..97059b8239 100644
      }
  
      public static boolean a(EntityFox entityfox, EntityLiving entityliving) {
+diff --git a/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java b/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
+index 2483cfd28a..2a988366cd 100644
+--- a/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityHorseChestedAbstract.java
+@@ -55,11 +55,19 @@ public abstract class EntityHorseChestedAbstract extends EntityHorseAbstract {
+                 this.a((IMaterial) Blocks.CHEST);
+             }
+ 
+-            this.setCarryingChest(false);
++            //this.setCarryingChest(false); // Paper - moved to post death logic
+         }
+ 
+     }
+ 
++    // Paper start
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {
++        if (this.isCarryingChest() && (event == null || !event.isCancelled())) {
++            this.setCarryingChest(false);
++        }
++    }
++    // Paper end
++
+     @Override
+     public void b(NBTTagCompound nbttagcompound) {
+         super.b(nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index b09712ca91..3b99e6edce 100644
+index b09712ca91..1e53af2cce 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -85,7 +85,7 @@ public abstract class EntityLiving extends Entity {
@@ -144,7 +169,7 @@ index b09712ca91..3b99e6edce 100644
              if (this.aY >= 0 && entityliving != null) {
                  entityliving.a(this, this.aY, damagesource);
              }
-@@ -1340,11 +1346,29 @@ public abstract class EntityLiving extends Entity {
+@@ -1340,14 +1346,32 @@ public abstract class EntityLiving extends Entity {
              if (this.isSleeping()) {
                  this.dy();
              }
@@ -175,8 +200,19 @@ index b09712ca91..3b99e6edce 100644
 +
                  boolean flag = false;
  
-                 if (entityliving instanceof EntityWither) {
-@@ -1371,7 +1395,8 @@ public abstract class EntityLiving extends Entity {
+-                if (entityliving instanceof EntityWither) {
++                if (this.killed && entityliving instanceof EntityWither) {
+                     if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+                         BlockPosition blockposition = new BlockPosition(this.locX, this.locY, this.locZ);
+                         IBlockData iblockdata = Blocks.WITHER_ROSE.getBlockData();
+@@ -1366,12 +1390,15 @@ public abstract class EntityLiving extends Entity {
+                 }
+             }
+ 
++            if (this.killed) { // Paper
+             this.world.broadcastEntityEffect(this, (byte) 3);
+             this.setPose(EntityPose.DYING);
++            } // Paper
          }
      }
  
@@ -186,7 +222,7 @@ index b09712ca91..3b99e6edce 100644
          Entity entity = damagesource.getEntity();
          int i;
  
-@@ -1384,18 +1409,19 @@ public abstract class EntityLiving extends Entity {
+@@ -1384,21 +1411,24 @@ public abstract class EntityLiving extends Entity {
          boolean flag = this.lastDamageByPlayerTime > 0;
  
          this.cF(); // CraftBukkit - from below // PAIL
@@ -203,6 +239,7 @@ index b09712ca91..3b99e6edce 100644
 +            deathEvent = CraftEventFactory.callEntityDeathEvent(this); // Paper
              // CraftBukkit end
          }
++        this.postDeathDropItems(deathEvent); // Paper
 +        this.drops = new ArrayList<>(); // Paper
  
 -        // this.cF();// CraftBukkit - moved up
@@ -210,7 +247,11 @@ index b09712ca91..3b99e6edce 100644
      }
  
      protected void cF() {}
-@@ -1449,6 +1475,7 @@ public abstract class EntityLiving extends Entity {
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {} // Paper - method for post death logic that cannot be ran before the event is potentially cancelled
+ 
+     protected void dropDeathLoot(DamageSource damagesource, int i, boolean flag) {}
+ 
+@@ -1449,6 +1479,7 @@ public abstract class EntityLiving extends Entity {
          return SoundEffects.ENTITY_GENERIC_HURT;
      }
  
@@ -218,7 +259,7 @@ index b09712ca91..3b99e6edce 100644
      @Nullable
      protected SoundEffect getSoundDeath() {
          return SoundEffects.ENTITY_GENERIC_DEATH;
-@@ -1898,10 +1925,12 @@ public abstract class EntityLiving extends Entity {
+@@ -1898,10 +1929,12 @@ public abstract class EntityLiving extends Entity {
  
      }
  
