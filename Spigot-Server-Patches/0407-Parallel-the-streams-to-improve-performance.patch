@@ -1,0 +1,224 @@
+From 48a81fdfa2330ce916e068936985523ccb07102e Mon Sep 17 00:00:00 2001
+From: Ghost_chu <2908803755@qq.com>
+Date: Tue, 6 Aug 2019 21:09:10 +0800
+Subject: [PATCH] Parallel the streams to improve performance
+
+Parallel the streams to improve performance
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 63a68872..80deffb3 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -113,7 +113,7 @@ public abstract class ChunkMapDistance {
+                 while (longiterator.hasNext()) {
+                     long j = longiterator.nextLong();
+ 
+-                    if (this.e(j).stream().anyMatch((ticket) -> {
++                    if (this.e(j).stream().parallel().anyMatch((ticket) -> { //Paper - parallel stream
+                         return ticket.getTicketType() == TicketType.PLAYER;
+                     })) {
+                         PlayerChunk playerchunk = playerchunkmap.getUpdatingChunk(j);
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index c2ccb858..7a4079bc 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -777,7 +777,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+     private int eD() {
+         InventorySubcontainer inventorysubcontainer = this.getInventory();
+ 
+-        return EntityVillager.bA.entrySet().stream().mapToInt((entry) -> {
++        return EntityVillager.bA.entrySet().stream().parallel().mapToInt((entry) -> { //Paper - parallel stream
+             return inventorysubcontainer.a((Item) entry.getKey()) * (Integer) entry.getValue();
+         }).sum();
+     }
+@@ -846,7 +846,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+         if (this.a(i)) {
+             AxisAlignedBB axisalignedbb = this.getBoundingBox().grow(10.0D, 10.0D, 10.0D);
+             List<EntityVillager> list = this.world.a(EntityVillager.class, axisalignedbb);
+-            List<EntityVillager> list1 = (List) list.stream().filter((entityvillager) -> {
++            List<EntityVillager> list1 = (List) list.stream().parallel().filter((entityvillager) -> {
+                 return entityvillager.a(i);
+             }).limit(5L).collect(Collectors.toList());
+ 
+diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
+index 0cec80ec..d0d3c67e 100644
+--- a/src/main/java/net/minecraft/server/Pathfinder.java
++++ b/src/main/java/net/minecraft/server/Pathfinder.java
+@@ -31,7 +31,7 @@ public class Pathfinder {
+         this.a.a();
+         this.e.a(iworldreader, entityinsentient);
+         PathPoint pathpoint = this.e.b();
+-        Map<PathDestination, BlockPosition> map = (Map) set.stream().collect(Collectors.toMap((blockposition) -> {
++        Map<PathDestination, BlockPosition> map = (Map) set.stream().parallel().collect(Collectors.toMap((blockposition) -> {//Paper - parallel stream
+             return this.e.a((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
+         }, Function.identity()));
+         PathEntity pathentity = this.a(pathpoint, map, f, i);
+@@ -61,10 +61,10 @@ public class Pathfinder {
+             PathPoint pathpoint1 = this.a.c();
+ 
+             pathpoint1.i = true;
+-            set.stream().filter((pathdestination) -> {
++            set.stream().parallel().filter((pathdestination) -> {
+                 return pathpoint1.c((PathPoint) pathdestination) <= (float) i;
+             }).forEach(PathDestination::e);
+-            if (set.stream().anyMatch(PathDestination::f)) {
++            if (set.stream().parallel().anyMatch(PathDestination::f)) {//Paper - parallel stream
+                 break;
+             }
+ 
+@@ -95,12 +95,12 @@ public class Pathfinder {
+ 
+         Stream stream;
+ 
+-        if (set.stream().anyMatch(PathDestination::f)) {
+-            stream = set.stream().filter(PathDestination::f).map((pathdestination) -> {
++        if (set.stream().parallel().anyMatch(PathDestination::f)) {//Paper - parallel stream
++            stream = set.stream().parallel().filter(PathDestination::f).map((pathdestination) -> {
+                 return this.a(pathdestination.d(), (BlockPosition) map.get(pathdestination), true);
+             }).sorted(Comparator.comparingInt(PathEntity::e));
+         } else {
+-            stream = set.stream().map((pathdestination) -> {
++            stream = set.stream().parallel().map((pathdestination) -> {
+                 return this.a(pathdestination.d(), (BlockPosition) map.get(pathdestination), false);
+             }).sorted(Comparator.comparingDouble(PathEntity::l).thenComparingInt(PathEntity::e));
+         }
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalBreakDoor.java b/src/main/java/net/minecraft/server/PathfinderGoalBreakDoor.java
+index 584b35e1..8d2e8b15 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalBreakDoor.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalBreakDoor.java
+@@ -27,7 +27,7 @@ public class PathfinderGoalBreakDoor extends PathfinderGoalDoorInteract {
+ 
+     @Override
+     public boolean a() {
+-        return !super.a() ? false : (!this.entity.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) ? false : this.a(this.entity.world.getDifficulty()) && !this.g());
++        return super.a() && (this.entity.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) && (this.a(this.entity.world.getDifficulty()) && !this.g()));
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalEatTile.java b/src/main/java/net/minecraft/server/PathfinderGoalEatTile.java
+index e9679bb4..3f846a78 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalEatTile.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalEatTile.java
+@@ -27,7 +27,7 @@ public class PathfinderGoalEatTile extends PathfinderGoal {
+         } else {
+             BlockPosition blockposition = new BlockPosition(this.b);
+ 
+-            return PathfinderGoalEatTile.a.test(this.c.getType(blockposition)) ? true : this.c.getType(blockposition.down()).getBlock() == Blocks.GRASS_BLOCK;
++            return PathfinderGoalEatTile.a.test(this.c.getType(blockposition)) || this.c.getType(blockposition.down()).getBlock() == Blocks.GRASS_BLOCK;
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
+index 7ccb3d5c..e56a99e7 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalRemoveBlock.java
+@@ -38,7 +38,7 @@ public class PathfinderGoalRemoveBlock extends PathfinderGoalGotoTarget {
+     }
+ 
+     private boolean m() {
+-        return this.e != null && this.a((IWorldReader) this.a.world, this.e) ? true : this.l();
++        return this.e != null && this.a((IWorldReader) this.a.world, this.e) || this.l();
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSit.java b/src/main/java/net/minecraft/server/PathfinderGoalSit.java
+index 3bb38030..977e1866 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalSit.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalSit.java
+@@ -28,7 +28,7 @@ public class PathfinderGoalSit extends PathfinderGoal {
+         } else {
+             EntityLiving entityliving = this.entity.getOwner();
+ 
+-            return entityliving == null ? true : (this.entity.h((Entity) entityliving) < 144.0D && entityliving.getLastDamager() != null ? false : this.willSit);
++            return entityliving == null || ((!(this.entity.h((Entity) entityliving) < 144.0D) || entityliving.getLastDamager() == null) && this.willSit);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalTempt.java b/src/main/java/net/minecraft/server/PathfinderGoalTempt.java
+index d1164dd6..bb0ae808 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalTempt.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalTempt.java
+@@ -47,7 +47,7 @@ public class PathfinderGoalTempt extends PathfinderGoal {
+         } else {
+             this.target = this.a.world.a(PathfinderGoalTempt.c, (EntityLiving) this.a);
+             // CraftBukkit start
+-            boolean tempt = this.target == null ? false : this.a(this.target.getItemInMainHand()) || this.a(this.target.getItemInOffHand());
++            boolean tempt = this.target != null && (this.a(this.target.getItemInMainHand()) || this.a(this.target.getItemInOffHand()));
+             if (tempt) {
+                 EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this.a, this.target, EntityTargetEvent.TargetReason.TEMPT);
+                 if (event.isCancelled()) {
+diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
+index 45fd1350..1b64f3b3 100644
+--- a/src/main/java/net/minecraft/server/PathfinderNormal.java
++++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
+@@ -142,7 +142,7 @@ public class PathfinderNormal extends PathfinderAbstract {
+     }
+ 
+     private boolean a(PathPoint pathpoint, @Nullable PathPoint pathpoint1, @Nullable PathPoint pathpoint2, @Nullable PathPoint pathpoint3) {
+-        return pathpoint3 != null && pathpoint2 != null && pathpoint1 != null ? (pathpoint3.i ? false : (pathpoint2.b <= pathpoint.b && pathpoint1.b <= pathpoint.b ? pathpoint3.k >= 0.0F && (pathpoint2.b < pathpoint.b || pathpoint2.k >= 0.0F) && (pathpoint1.b < pathpoint.b || pathpoint1.k >= 0.0F) : false)) : false;
++        return (pathpoint3 != null && pathpoint2 != null && pathpoint1 != null) && (!pathpoint3.i && ((pathpoint2.b <= pathpoint.b && pathpoint1.b <= pathpoint.b) && (pathpoint3.k >= 0.0F && (pathpoint2.b < pathpoint.b || pathpoint2.k >= 0.0F) && (pathpoint1.b < pathpoint.b || pathpoint1.k >= 0.0F))));
+     }
+ 
+     public static double a(IBlockAccess iblockaccess, BlockPosition blockposition) {
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index fd0d2b6e..878fc10e 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -329,12 +329,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     protected void save(boolean flag) {
+         if (flag) {
+-            List<PlayerChunk> list = (List) this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList());
++            List<PlayerChunk> list = (List) this.visibleChunks.values().stream().parallel().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList()); //Paper - parallel stream
+             MutableBoolean mutableboolean = new MutableBoolean();
+ 
+             do {
+                 mutableboolean.setFalse();
+-                list.stream().map((playerchunk) -> {
++                list.stream().parallel().map((playerchunk) -> {
+                     CompletableFuture completablefuture;
+ 
+                     do {
+@@ -355,7 +355,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             });
+             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
+         } else {
+-            this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
++            this.visibleChunks.values().stream().parallel().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> { //Paper - parallel stream
+                 IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
+ 
+                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
+@@ -775,7 +775,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         return false;
+                     }
+ 
+-                    if (chunkstatus == ChunkStatus.EMPTY && ichunkaccess.h().values().stream().noneMatch(StructureStart::e)) {
++                    if (chunkstatus == ChunkStatus.EMPTY && ichunkaccess.h().values().stream().parallel().noneMatch(StructureStart::e)) {//Paper - parallel stream
+                         return false;
+                     }
+                 }
+@@ -868,7 +868,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+             // Craftbukkit - decompile error
+             csvwriter.a(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getChunkStatus).orElse(null), optional1.map(Chunk::getState).orElse(null), a(playerchunk.c()), a(playerchunk.a()), a(playerchunk.b()), this.chunkDistanceManager.c(entry.getLongKey()), !this.isOutsideOfRange(chunkcoordintpair), optional1.map((chunk) -> {
+-                return Stream.of(chunk.getEntitySlices()).mapToInt(List::size).sum(); // Spigot
++                return Stream.of(chunk.getEntitySlices()).parallel().mapToInt(List::size).sum(); // Spigot //Paper - parallel stream
+             }).orElse(0), optional1.map((chunk) -> {
+                 return chunk.getTileEntities().size();
+             }).orElse(0));
+diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
+index e510234d..d58e5926 100644
+--- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
++++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
+@@ -23,7 +23,7 @@ import com.destroystokyo.paper.event.block.BeaconEffectEvent;
+ public class TileEntityBeacon extends TileEntity implements ITileInventory, ITickable {
+ 
+     public static final MobEffectList[][] a = new MobEffectList[][]{{MobEffects.FASTER_MOVEMENT, MobEffects.FASTER_DIG}, {MobEffects.RESISTANCE, MobEffects.JUMP}, {MobEffects.INCREASE_DAMAGE}, {MobEffects.REGENERATION}};
+-    private static final Set<MobEffectList> b = (Set) Arrays.stream(TileEntityBeacon.a).flatMap(Arrays::stream).collect(Collectors.toSet());
++    private static final Set<MobEffectList> b = (Set) Arrays.stream(TileEntityBeacon.a).parallel().flatMap(Arrays::stream).collect(Collectors.toSet()); //Paper - parallel stream
+     private List<TileEntityBeacon.BeaconColorTracker> c = Lists.newArrayList();
+     private List<TileEntityBeacon.BeaconColorTracker> g = Lists.newArrayList();
+     public int levels = 0;
+-- 
+2.16.1.windows.1
+
