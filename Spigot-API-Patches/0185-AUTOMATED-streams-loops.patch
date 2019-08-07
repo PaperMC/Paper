@@ -1,0 +1,89 @@
+From ea447723ba88de3e811ac4a51224e6b57ac5744d Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Wed, 7 Aug 2019 18:21:07 +0200
+Subject: [PATCH] [AUTOMATED] streams -> loops
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+index bf3e059f..8c49d67e 100644
+--- a/src/main/java/co/aikar/timings/TimingsReportListener.java
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -58,7 +58,9 @@ public class TimingsReportListener implements MessageCommandSender {
+ 
+     @Override
+     public void sendMessage(@NotNull String message) {
+-        senders.forEach((sender) -> sender.sendMessage(message));
++        for (CommandSender sender : senders) {
++            sender.sendMessage(message);
++        }
+     }
+ 
+     public void addConsoleIfNeeded() {
+diff --git a/src/main/java/com/destroystokyo/paper/MaterialSetTag.java b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
+index c91ea2a0..53c36e30 100644
+--- a/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
++++ b/src/main/java/com/destroystokyo/paper/MaterialSetTag.java
+@@ -14,7 +14,9 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.inventory.ItemStack;
+ 
++import java.util.ArrayList;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.Set;
+ import java.util.function.Predicate;
+ import java.util.stream.Collectors;
+@@ -115,7 +117,16 @@ public class MaterialSetTag implements Tag<Material> {
+     }
+     @NotNull
+     public MaterialSetTag add(@NotNull Predicate<Material> filter) {
+-        add(Stream.of(Material.values()).filter(((Predicate<Material>) Material::isLegacy).negate()).filter(filter).collect(Collectors.toList()));
++        List<Material> list = new ArrayList<>();
++        Predicate<Material> predicate = ((Predicate<Material>) Material::isLegacy).negate();
++        for (Material material : Material.values()) {
++            if (predicate.test(material)) {
++                if (filter.test(material)) {
++                    list.add(material);
++                }
++            }
++        }
++        add(list);
+         return this;
+     }
+ 
+@@ -139,7 +150,16 @@ public class MaterialSetTag implements Tag<Material> {
+ 
+     @NotNull
+     public MaterialSetTag not(@NotNull Predicate<Material> filter) {
+-        not(Stream.of(Material.values()).filter(((Predicate<Material>) Material::isLegacy).negate()).filter(filter).collect(Collectors.toList()));
++        List<Material> list = new ArrayList<>();
++        Predicate<Material> predicate = ((Predicate<Material>) Material::isLegacy).negate();
++        for (Material material : Material.values()) {
++            if (predicate.test(material)) {
++                if (filter.test(material)) {
++                    list.add(material);
++                }
++            }
++        }
++        not(list);
+         return this;
+     }
+ 
+@@ -181,7 +201,13 @@ public class MaterialSetTag implements Tag<Material> {
+ 
+     @NotNull
+     public MaterialSetTag ensureSize(@NotNull String label, int size) {
+-        long actual = this.materials.stream().filter(((Predicate<Material>) Material::isLegacy).negate()).count();
++        long actual = 0L;
++        Predicate<Material> predicate = ((Predicate<Material>) Material::isLegacy).negate();
++        for (Material material : this.materials) {
++            if (predicate.test(material)) {
++                actual++;
++            }
++        }
+         if (size != actual) {
+             throw new IllegalStateException(label + " - Expected " + size + " materials, got " + actual);
+         }
+-- 
+2.17.1
+
