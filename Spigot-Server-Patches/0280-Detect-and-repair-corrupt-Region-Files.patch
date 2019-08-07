@@ -1,4 +1,4 @@
-From 1bdd1d5693380eb76a04520a2de4e4e7318b5c41 Mon Sep 17 00:00:00 2001
+From a1683b33a2ec42ca595cd7182ffdf5b376c844be Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Aug 2018 00:49:20 -0400
 Subject: [PATCH] Detect and repair corrupt Region Files
@@ -11,18 +11,18 @@ I don't know why mojang only checks for 4096, when anything less than 8192 is a 
 But to be safe, it will attempt to back up the file.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 4e6288e8bb..e68f901943 100644
+index 3aeac69c26..17648c1c04 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -27,13 +27,13 @@ public class RegionFile implements AutoCloseable {
      // Spigot end
      private static final byte[] a = new byte[4096];
-     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
+     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER // PAIL dataFile
 -    private final int[] c = new int[1024];
 -    private final int[] d = new int[1024];
-+    private final int[] c = new int[1024]; private int[] offsets = c; // Paper - OBFHELPER
-+    private final int[] d = new int[1024];private int[] timestamps = d; // Paper - OBFHELPER
-     private final List<Boolean> e;
++    private final int[] c = new int[1024]; private final int[] offsets = c; // Paper - OBFHELPER
++    private final int[] d = new int[1024]; private final int[] timestamps = d; // Paper - OBFHELPER
+     private final List<Boolean> e; // PAIL freeSectors
  
      public RegionFile(File file) throws IOException {
          this.b = new RandomAccessFile(file, "rw");
@@ -52,13 +52,13 @@ index 4e6288e8bb..e68f901943 100644
          for (j = 0; j < 1024; ++j) {
              k = headerAsInts.get(); // Paper
 -            this.d[j] = k;
-+            if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
++            if (this.offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
          }
  
          this.file = file; // Spigot
-@@ -306,6 +307,53 @@ public class RegionFile implements AutoCloseable {
-         this.b.close();
+@@ -349,6 +350,53 @@ public class RegionFile implements AutoCloseable {
      }
+     // Spigot end
  
 +    // Paper start
 +    public synchronized void deleteChunk(int j1) {
