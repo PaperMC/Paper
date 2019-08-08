@@ -1,0 +1,38 @@
+From a4fd6e666a9fa4c842e695a752caccdd4baebd43 Mon Sep 17 00:00:00 2001
+From: Nicholas Stonecipher <nickster258@users.noreply.github.com>
+Date: Thu, 8 Aug 2019 11:06:19 -0400
+Subject: [PATCH] MC-12211 Comparator in subtraction mode does not u
+
+This resolves the visaul glitch mentioned in the Jira report,
+while also preventing the comparator from experiencing 0-tick falling edge
+timing issues when in the bugged state mentioned in the report.
+
+This instant 0-tick response is undesirable given the erratic and
+seemingly unpredictable behavior represented by a comparator in a bugged
+state. It is also problematic as a comparator in a bugged state can
+schedule tile ticks on itself when it should not.
+
+diff --git a/src/main/java/net/minecraft/server/BlockRedstoneComparator.java b/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
+index 58d58bd1..87e273c1 100644
+--- a/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
++++ b/src/main/java/net/minecraft/server/BlockRedstoneComparator.java
+@@ -32,7 +32,15 @@ public class BlockRedstoneComparator extends BlockDiodeAbstract implements ITile
+     protected boolean a(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         int i = this.b(world, blockposition, iblockdata);
+ 
+-        return i >= 15 ? true : (i == 0 ? false : i >= this.b((IWorldReader) world, blockposition, iblockdata));
++        // Paper start - Fix MC 12211
++        if (i == 0) {
++            return false;
++        } else {
++            int j = this.b((IWorldReader) world, blockposition, iblockdata);
++
++            return (i > j) || (i == j && iblockdata.get(BlockRedstoneComparator.MODE) == BlockPropertyComparatorMode.COMPARE);
++        }
++        // Paper end
+     }
+ 
+     protected void a(World world, BlockPosition blockposition) {
+-- 
+2.21.0.windows.1
+
