@@ -1,4 +1,4 @@
-From 6c351faf55a3eae75cba059bf40c43892824311d Mon Sep 17 00:00:00 2001
+From 01cb68e57f3d65a8dda0662cc7da5803907b6bc3 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Thu, 8 Aug 2019 21:55:41 -0600
 Subject: [PATCH] Add village API
@@ -6,28 +6,168 @@ Subject: [PATCH] Add village API
 This adds a Bukkit (Paper) API to get and modify info on villages and sieges in the world.
 There's a fair number of changes here because this update completely changes how villages work.
 
-diff --git a/src/main/java/com/destroystokyo/paper/world/Siege.java b/src/main/java/com/destroystokyo/paper/world/Siege.java
+diff --git a/src/main/java/com/destroystokyo/paper/event/world/SiegeBeginEvent.java b/src/main/java/com/destroystokyo/paper/event/world/SiegeBeginEvent.java
 new file mode 100644
-index 00000000..3a4b9962
+index 00000000..357fd19d
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/world/Siege.java
-@@ -0,0 +1,13 @@
++++ b/src/main/java/com/destroystokyo/paper/event/world/SiegeBeginEvent.java
+@@ -0,0 +1,58 @@
++package com.destroystokyo.paper.event.world;
++
++import com.destroystokyo.paper.world.SiegeProvider;
++import org.bukkit.World;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class SiegeBeginEvent extends WorldEvent implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private boolean cancel = false;
++    private final SiegeProvider siegeProvider;
++
++    public SiegeBeginEvent(World world, SiegeProvider siegeProvider) {
++        super(world);
++        this.siegeProvider = siegeProvider;
++    }
++
++    /**
++     * Gets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins
++     * <p>
++     * If the siege is cancelled, its SiegeState will be set to DONE and no zombies will spawn
++     *
++     * @return true if this event is cancelled
++     */
++    public boolean isCancelled() { return cancel; }
++
++    /**
++     * Sets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins
++     * <p>
++     * If the siege is cancelled, its SiegeState will be set to DONE and no zombies will spawn
++     *
++     * @param cancel true if you wish to cancel this event
++     */
++    public void setCancelled(boolean cancel) { this.cancel = cancel; }
++
++    /**
++     * Gets the SiegeProvider for this world
++     *
++     * @return SiegeProvider for this world
++     */
++    @NotNull
++    public SiegeProvider getSiegeProvider() { return siegeProvider; }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/world/SiegeEndEvent.java b/src/main/java/com/destroystokyo/paper/event/world/SiegeEndEvent.java
+new file mode 100644
+index 00000000..8d5e6474
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/world/SiegeEndEvent.java
+@@ -0,0 +1,37 @@
++package com.destroystokyo.paper.event.world;
++
++import com.destroystokyo.paper.world.SiegeProvider;
++import org.bukkit.World;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class SiegeEndEvent extends WorldEvent {
++    private static final HandlerList handlers = new HandlerList();
++    private boolean cancel = false;
++    private final SiegeProvider siegeProvider;
++
++    public SiegeEndEvent(World world, SiegeProvider siegeProvider) {
++        super(world);
++        this.siegeProvider = siegeProvider;
++    }
++
++    /**
++     * Gets the SiegeProvider for this world
++     *
++     * @return SiegeProvider for this world
++     */
++    @NotNull
++    public SiegeProvider getSiegeProvider() { return siegeProvider; }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/world/SiegeProvider.java b/src/main/java/com/destroystokyo/paper/world/SiegeProvider.java
+new file mode 100644
+index 00000000..05db635a
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/world/SiegeProvider.java
+@@ -0,0 +1,46 @@
 +package com.destroystokyo.paper.world;
 +
 +import org.bukkit.Location;
++import org.jetbrains.annotations.NotNull;
 +
-+public interface Siege {
++public interface SiegeProvider {
++    /**
++     * Gets the current state of the siege
++     *
++     * @return The current state of the siege
++     */
++    @NotNull
 +    SiegeState getState();
 +
-+    int getWavesRemaining();
++    void setState(@NotNull SiegeState state);
 +
++    /**
++     * Returns the amount of time, in ticks, until the next mob spawn
++     *
++     * @return The amount of time, in ticks, until the next mob spawn
++     */
++    int getNextSpawnTime();
++
++    void setNextSpawnTime(int time);
++
++    /**
++     * Returns the number of mobs remaining
++     *
++     * @return The number of mobs remaining
++     */
 +    int getMobsRemaining();
 +
++    void setMobsRemaining(int mobs);
++
++    /**
++     * Returns the monster spawn location for the siege
++     *
++     * @return The monster spawn location for the siege
++     */
++    @NotNull
 +    Location getMobSpawnLocation();
++
++    void setMobSpawnLocation(@NotNull Location location);
++
++    boolean tryForceSiege();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/world/SiegeState.java b/src/main/java/com/destroystokyo/paper/world/SiegeState.java
 new file mode 100644
-index 00000000..7f9434a2
+index 00000000..ecfb9a84
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/world/SiegeState.java
 @@ -0,0 +1,8 @@
@@ -36,35 +176,35 @@ index 00000000..7f9434a2
 +public enum SiegeState {
 +    TONIGHT,
 +    CAN_ACTIVATE,
-+    ACTIVATED,
++    ACTIVE,
 +    DONE
 +}
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 1e7b633c..aa103928 100644
+index 1e7b633c..f658d0f4 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -1,5 +1,6 @@
  package org.bukkit;
  
-+import com.destroystokyo.paper.world.Siege;
++import com.destroystokyo.paper.world.SiegeProvider; // Paper
  import java.io.File;
  import org.bukkit.generator.ChunkGenerator;
  
-@@ -2159,6 +2160,19 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -23,7 +24,6 @@ import org.bukkit.entity.LightningStrike;
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Player;
+ import org.bukkit.generator.BlockPopulator;
+-import org.bukkit.generator.ChunkGenerator;
+ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.material.MaterialData;
+ import org.bukkit.metadata.Metadatable;
+@@ -2159,6 +2159,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
       */
      public double getHumidity(int x, int z);
  
 +    // Paper start - village API
-+
-+    /**
-+     * Tries to activate a random siege in the world.
-+     * This requires a player to be nearby a village.
-+     *
-+     *
-+     * @return
-+     */
 +    @Nullable
-+    Siege tryActivateRandomSiege();
++    SiegeProvider getSiegeProvider();
 +    // Paper end
 +
      /**

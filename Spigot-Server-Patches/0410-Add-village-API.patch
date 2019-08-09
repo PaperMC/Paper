@@ -1,4 +1,4 @@
-From 05a9572c177544b0c47988288bcb4b65cfaca63c Mon Sep 17 00:00:00 2001
+From 0c2804aa6f47a6289531dc4fffb06e094876cf1b Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Thu, 8 Aug 2019 21:52:20 -0600
 Subject: [PATCH] Add village API
@@ -6,59 +6,106 @@ Subject: [PATCH] Add village API
 This adds a Bukkit (Paper) API to get and modify info on villages and sieges in the world.
 There's a fair number of changes here because this update completely changes how villages work.
 
-diff --git a/src/main/java/com/destroystokyo/paper/world/CraftSiege.java b/src/main/java/com/destroystokyo/paper/world/CraftSiege.java
+diff --git a/src/main/java/com/destroystokyo/paper/world/CraftSiegeProvider.java b/src/main/java/com/destroystokyo/paper/world/CraftSiegeProvider.java
 new file mode 100644
-index 000000000..f9ab002c2
+index 000000000..246f8e724
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/world/CraftSiege.java
-@@ -0,0 +1,42 @@
++++ b/src/main/java/com/destroystokyo/paper/world/CraftSiegeProvider.java
+@@ -0,0 +1,69 @@
 +package com.destroystokyo.paper.world;
 +
 +import net.minecraft.server.VillageSiege;
++import net.minecraft.server.WorldServer;
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.CraftWorld;
 +
-+public class CraftSiege implements Siege {
++public class CraftSiegeProvider implements SiegeProvider {
++    private final WorldServer world;
 +    private final VillageSiege siege;
-+    private final CraftWorld world;
 +
-+    public CraftSiege() {
-+        this.siege = new VillageSiege();
-+        this.world = null;
-+    }
-+
-+    public CraftSiege(CraftWorld world) {
-+        this.siege = new VillageSiege();
++    public CraftSiegeProvider(WorldServer world, VillageSiege siege) {
 +        this.world = world;
++        this.siege = siege;
 +    }
++
++    public VillageSiege getHandle() { return siege; }
++
++    public WorldServer getWorld() { return world; }
 +
 +    public SiegeState getState() {
 +        if (siege.hasSetupSiege()) {
-+            return SiegeState.ACTIVATED;
++            return SiegeState.ACTIVE;
 +        }
 +        return SiegeState.valueOf(siege.getSiegeState().name().substring(6));
 +    }
 +
-+    public int getWavesRemaining() { return siege.getSiegeCount(); }
++    public void setState(SiegeState state) {
++        switch (state) {
++            case ACTIVE:
++                if (!siege.hasSetupSiege()) {
++                    siege.trySetupSiege(world);
++                }
++                break;
++            default:
++                siege.setSiegeState(VillageSiege.State.valueOf("SIEGE_" + state.name()));
++        }
++    }
++
++    public int getNextSpawnTime() { return siege.getNextSpawnTime(); }
++
++    public void setNextSpawnTime(int waves) {
++        if (waves < 0) {
++            throw new IllegalArgumentException("waves cannot be < 0");
++        }
++        siege.setNextSpawnTime(waves);
++    }
 +
 +    public int getMobsRemaining() { return siege.getMobCount(); }
 +
-+    public Location getMobSpawnLocation() { return new Location(world, siege.getSpawnX(), siege.getSpawnY(), siege.getSpawnZ()); }
-+
-+    public VillageSiege getSiege() { return siege; }
-+
-+    public CraftWorld getWorld() { return world; }
-+
-+    public static CraftSiege tryActivateSiege(CraftWorld world) {
-+        CraftSiege siege = new CraftSiege(world);
-+        return siege.getSiege().trySetupSiege(world.getHandle()) ? siege : null;
++    public void setMobsRemaining(int mobs) {
++        if (mobs < 0) {
++            throw new IllegalArgumentException("mobs cannot be < 0");
++        }
++        siege.setMobCount(mobs);
 +    }
++
++    public Location getMobSpawnLocation() { return new Location(world.getWorld(), siege.getSpawnX(), siege.getSpawnY(), siege.getSpawnZ()); }
++
++    public void setMobSpawnLocation(Location location) {
++        if (!location.getWorld().equals(world)) {
++            throw new IllegalArgumentException("location must be in the same world.");
++        }
++        siege.setSpawnX(location.getBlockX());
++        siege.setSpawnY(location.getBlockY());
++        siege.setSpawnZ(location.getBlockZ());
++    }
++
++    public boolean tryForceSiege() { return !siege.hasSetupSiege() && siege.trySetupSiege(world); }
 +}
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
+index b794a39d3..a9290bf03 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderGenerate.java
+@@ -19,7 +19,7 @@ public class ChunkProviderGenerate extends ChunkGeneratorAbstract<GeneratorSetti
+     private final MobSpawnerPhantom k = new MobSpawnerPhantom();
+     private final MobSpawnerPatrol l = new MobSpawnerPatrol();
+     private final MobSpawnerCat m = new MobSpawnerCat();
+-    private final VillageSiege n = new VillageSiege();
++    private final VillageSiege n = new VillageSiege(); public VillageSiege getVillageSiege() { return n; } // Paper - OBFHELPER
+ 
+     public ChunkProviderGenerate(GeneratorAccess generatoraccess, WorldChunkManager worldchunkmanager, GeneratorSettingsOverworld generatorsettingsoverworld) {
+         super(generatoraccess, worldchunkmanager, 4, 8, 256, generatorsettingsoverworld, true);
 diff --git a/src/main/java/net/minecraft/server/VillageSiege.java b/src/main/java/net/minecraft/server/VillageSiege.java
-index 6e4c5d4d8..de3af0b60 100644
+index 6e4c5d4d8..841afad11 100644
 --- a/src/main/java/net/minecraft/server/VillageSiege.java
 +++ b/src/main/java/net/minecraft/server/VillageSiege.java
-@@ -7,13 +7,13 @@ import javax.annotation.Nullable;
+@@ -1,19 +1,19 @@
+ package net.minecraft.server;
+ 
+-import com.destroystokyo.paper.exception.ServerInternalException;
++import com.destroystokyo.paper.exception.ServerInternalException; // Paper
+ 
+ import java.util.Iterator;
+ import javax.annotation.Nullable;
  
  public class VillageSiege {
  
@@ -69,17 +116,60 @@ index 6e4c5d4d8..de3af0b60 100644
 -    private int e;
 -    private int f;
 -    private int g;
-+    private boolean a; public boolean hasSetupSiege() { return a; } // Paper - OBFHELPER
-+    private VillageSiege.State b; public VillageSiege.State getSiegeState() { return b; } // Paper - OBFHELPER
-+    private int c; public int getMobCount() { return c; } // Paper - OBFHELPER
-+    private int d; public int getSiegeCount() { return d; } // Paper - OBFHELPER
-+    private int e; public int getSpawnX() { return e; } // Paper - OBFHELPER
-+    private int f; public int getSpawnY() { return f; } // Paper - OBFHELPER
-+    private int g; public int getSpawnZ() { return g; } // Paper - OBFHELPER
++    private boolean a; public boolean hasSetupSiege() { return a; } public void setHasSetupSiege(boolean val) { this.a = val; } // Paper - OBFHELPER
++    private VillageSiege.State b; public VillageSiege.State getSiegeState() { return b; } public void setSiegeState(State val) { this.b = val; } // Paper - OBFHELPER
++    private int c; public int getMobCount() { return c; } public void setMobCount(int val) { this.c = val; } // Paper - OBFHELPER
++    private int d; public int getNextSpawnTime() { return d; } public void setNextSpawnTime(int val) { this.d = val; } // Paper - OBFHELPER
++    private int e; public int getSpawnX() { return e; } public void setSpawnX(int val) { this.e = val; } // Paper - OBFHELPER
++    private int f; public int getSpawnY() { return f; } public void setSpawnY(int val) { this.f = val; } // Paper - OBFHELPER
++    private int g; public int getSpawnZ() { return g; } public void setSpawnZ(int val) { this.g = val; } // Paper - OBFHELPER
  
      public VillageSiege() {
          this.b = VillageSiege.State.SIEGE_DONE;
-@@ -60,6 +60,7 @@ public class VillageSiege {
+@@ -23,7 +23,7 @@ public class VillageSiege {
+         if (!worldserver.J() && flag) {
+             float f = worldserver.j(0.0F);
+ 
+-            if ((double) f == 0.5D) {
++            if (!hasSetupSiege() && (double) f == 0.5D) { // Paper - don't cancel existing siege in the case of re-setting or freezing world time
+                 this.b = worldserver.random.nextInt(10) == 0 ? VillageSiege.State.SIEGE_TONIGHT : VillageSiege.State.SIEGE_DONE;
+             }
+ 
+@@ -35,7 +35,7 @@ public class VillageSiege {
+                         return 0;
+                     }
+ 
+-                    this.a = true;
++                    // Paper - moved "this.a = true;" to trySetupSiege
+                 }
+ 
+                 if (this.d > 0) {
+@@ -48,18 +48,30 @@ public class VillageSiege {
+                         --this.c;
+                     } else {
+                         this.b = VillageSiege.State.SIEGE_DONE;
++                        setHasSetupSiege(false); // Paper - reset siege setup status
++                        // Paper start - add SiegeEndEvent
++                        com.destroystokyo.paper.event.world.SiegeEndEvent end = new com.destroystokyo.paper.event.world.SiegeEndEvent(worldserver.getWorld(), worldserver.getWorld().getSiegeProvider());
++                        worldserver.getServer().getPluginManager().callEvent(end);
++                        // Paper end
+                     }
+ 
+                     return 1;
+                 }
+             }
+         } else {
+-            this.b = VillageSiege.State.SIEGE_DONE;
+-            this.a = false;
++            // Paper start - add SiegeEndEvent
++            if (hasSetupSiege()) {
++                this.b = VillageSiege.State.SIEGE_DONE;
++                this.a = false;
++                com.destroystokyo.paper.event.world.SiegeEndEvent end = new com.destroystokyo.paper.event.world.SiegeEndEvent(worldserver.getWorld(), worldserver.getWorld().getSiegeProvider());
++                worldserver.getServer().getPluginManager().callEvent(end);
++            }
++            // Paper end
+             return 0;
          }
      }
  
@@ -87,39 +177,189 @@ index 6e4c5d4d8..de3af0b60 100644
      private boolean a(WorldServer worldserver) {
          Iterator iterator = worldserver.getPlayers().iterator();
  
-@@ -127,7 +128,7 @@ public class VillageSiege {
+@@ -83,6 +95,22 @@ public class VillageSiege {
+                         }
+                     }
+ 
++                    // Paper start - set state, add SiegeBeginEvent & SiegeEndEvent
++                    setSiegeState(State.SIEGE_CAN_ACTIVATE); // Set CAN_ACTIVATE because it seems unused - perfect for plugins!
++                    com.destroystokyo.paper.event.world.SiegeBeginEvent begin = new com.destroystokyo.paper.event.world.SiegeBeginEvent(worldserver.getWorld(), worldserver.getWorld().getSiegeProvider());
++                    worldserver.getServer().getPluginManager().callEvent(begin);
++                    if (begin.isCancelled()) {
++                        setSiegeState(State.SIEGE_DONE);
++                        return false;
++                    }
++                    if (getSiegeState() == State.SIEGE_DONE) { // Separate check because the state can be modified without cancelling
++                        com.destroystokyo.paper.event.world.SiegeEndEvent end = new com.destroystokyo.paper.event.world.SiegeEndEvent(worldserver.getWorld(), worldserver.getWorld().getSiegeProvider());
++                        worldserver.getServer().getPluginManager().callEvent(end);
++                        return false;
++                    }
++                    // Paper end
++                    setHasSetupSiege(true); // Paper - moved "this.a = true;" to trySetupSiege
++
+                     return true;
+                 }
+             }
+@@ -127,7 +155,7 @@ public class VillageSiege {
          return null;
      }
  
 -    static enum State {
-+    public static enum State { // Paper - public
++    public static enum State { // Paper - public access
  
          SIEGE_CAN_ACTIVATE, SIEGE_TONIGHT, SIEGE_DONE;
  
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index b81b37445..77cd8e96b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -241,6 +241,18 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         }
+     }
+ 
++    // Paper start - village API
++    public VillageSiege getVillageSiege() {
++        if (chunkProvider.getChunkGenerator() instanceof ChunkProviderGenerate) {
++            return ((ChunkProviderGenerate) chunkProvider.getChunkGenerator()).getVillageSiege();
++        }
++        if (chunkProvider.getChunkGenerator() instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator) {
++            return ((org.bukkit.craftbukkit.generator.CustomChunkGenerator) chunkProvider.getChunkGenerator()).getVillageSiege();
++        }
++        return null;
++    }
++    // Paper end
++
+     @Override
+     public boolean e() {
+         return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 21f153013..6cde76579 100644
+index 21f153013..d7f7e673d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -1,5 +1,7 @@
  package org.bukkit.craftbukkit;
  
-+import com.destroystokyo.paper.world.CraftSiege;
-+import com.destroystokyo.paper.world.Siege;
++import com.destroystokyo.paper.world.CraftSiegeProvider; // Paper
++import com.destroystokyo.paper.world.SiegeProvider; // Paper
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableList;
  import com.google.common.collect.ImmutableMap;
-@@ -997,6 +999,11 @@ public class CraftWorld implements World {
+@@ -22,75 +24,7 @@ import java.util.concurrent.CompletableFuture;
+ import java.util.function.Predicate;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+-import net.minecraft.server.AxisAlignedBB;
+-import net.minecraft.server.BiomeBase;
+-import net.minecraft.server.BlockChorusFlower;
+-import net.minecraft.server.BlockDiodeAbstract;
+-import net.minecraft.server.BlockPosition;
+-import net.minecraft.server.Blocks;
+-import net.minecraft.server.ChunkCoordIntPair;
+-import net.minecraft.server.ChunkMapDistance;
+-import net.minecraft.server.ChunkStatus;
+-import net.minecraft.server.EntityAreaEffectCloud;
+-import net.minecraft.server.EntityArmorStand;
+-import net.minecraft.server.EntityArrow;
+-import net.minecraft.server.EntityBoat;
+-import net.minecraft.server.EntityEgg;
+-import net.minecraft.server.EntityEnderSignal;
+-import net.minecraft.server.EntityEvokerFangs;
+-import net.minecraft.server.EntityExperienceOrb;
+-import net.minecraft.server.EntityFallingBlock;
+-import net.minecraft.server.EntityFireball;
+-import net.minecraft.server.EntityFireworks;
+-import net.minecraft.server.EntityHanging;
+-import net.minecraft.server.EntityHuman;
+-import net.minecraft.server.EntityInsentient;
+-import net.minecraft.server.EntityItem;
+-import net.minecraft.server.EntityItemFrame;
+-import net.minecraft.server.EntityLeash;
+-import net.minecraft.server.EntityLightning;
+-import net.minecraft.server.EntityMinecartChest;
+-import net.minecraft.server.EntityMinecartCommandBlock;
+-import net.minecraft.server.EntityMinecartFurnace;
+-import net.minecraft.server.EntityMinecartHopper;
+-import net.minecraft.server.EntityMinecartMobSpawner;
+-import net.minecraft.server.EntityMinecartRideable;
+-import net.minecraft.server.EntityMinecartTNT;
+-import net.minecraft.server.EntityPainting;
+-import net.minecraft.server.EntityPotion;
+-import net.minecraft.server.EntitySnowball;
+-import net.minecraft.server.EntityTNTPrimed;
+-import net.minecraft.server.EntityTippedArrow;
+-import net.minecraft.server.EntityTypes;
+-import net.minecraft.server.EntityZombie;
+-import net.minecraft.server.EnumDifficulty;
+-import net.minecraft.server.EnumDirection;
+-import net.minecraft.server.EnumMobSpawn;
+-import net.minecraft.server.ExceptionWorldConflict;
+-import net.minecraft.server.Explosion;
+-import net.minecraft.server.GameRules;
+-import net.minecraft.server.GroupDataEntity;
+-import net.minecraft.server.HeightMap;
+-import net.minecraft.server.IBlockData;
+-import net.minecraft.server.IChunkAccess;
+-import net.minecraft.server.MinecraftKey;
+-import net.minecraft.server.MovingObjectPosition;
+-import net.minecraft.server.PacketPlayOutCustomSoundEffect;
+-import net.minecraft.server.PacketPlayOutUpdateTime;
+-import net.minecraft.server.PacketPlayOutWorldEvent;
+-import net.minecraft.server.PlayerChunk;
+-import net.minecraft.server.ProtoChunkExtension;
+-import net.minecraft.server.RayTrace;
+-import net.minecraft.server.SoundCategory;
+-import net.minecraft.server.Ticket;
+-import net.minecraft.server.TicketType;
+-import net.minecraft.server.Unit;
+-import net.minecraft.server.Vec3D;
+-import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
+-import net.minecraft.server.WorldGenHugeMushroomConfiguration;
+-import net.minecraft.server.WorldGenerator;
+-import net.minecraft.server.WorldNBTStorage;
+-import net.minecraft.server.WorldServer;
++import net.minecraft.server.*;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.BlockChangeDelegate;
+ import org.bukkit.Bukkit;
+@@ -118,6 +52,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.entity.CraftItem;
+ import org.bukkit.craftbukkit.entity.CraftLightningStrike;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
+ import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+@@ -997,6 +932,17 @@ public class CraftWorld implements World {
          return this.world.getBiome(new BlockPosition(x, 0, z)).getHumidity();
      }
  
 +    // Paper start - village API
 +    @Override
-+    public Siege tryActivateRandomSiege() { return CraftSiege.tryActivateSiege(this); }
++    public SiegeProvider getSiegeProvider() {
++        VillageSiege siege = getHandle().getVillageSiege();
++        if (siege == null) {
++            return null;
++        }
++        return new CraftSiegeProvider(getHandle(), siege);
++    }
 +    // Paper end
 +
      @Override
      public List<Entity> getEntities() {
          List<Entity> list = new ArrayList<Entity>();
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+index 68d38655f..f9d198ccf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
+@@ -40,7 +40,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
+     private final MobSpawnerPhantom mobSpawnerPhantom = new MobSpawnerPhantom();
+     private final MobSpawnerPatrol mobSpawnerPatrol = new MobSpawnerPatrol();
+     private final MobSpawnerCat mobSpawnerCat = new MobSpawnerCat();
+-    private final VillageSiege villageSiege = new VillageSiege();
++    private final VillageSiege villageSiege = new VillageSiege(); public VillageSiege getVillageSiege() { return villageSiege; } // Paper - OBFHELPER
+ 
+     private static class CustomBiomeGrid implements BiomeGrid {
+         BiomeBase[] biome;
 -- 
 2.22.0.windows.1
 
