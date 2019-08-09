@@ -1,0 +1,125 @@
+From 05a9572c177544b0c47988288bcb4b65cfaca63c Mon Sep 17 00:00:00 2001
+From: egg82 <eggys82@gmail.com>
+Date: Thu, 8 Aug 2019 21:52:20 -0600
+Subject: [PATCH] Add village API
+
+This adds a Bukkit (Paper) API to get and modify info on villages and sieges in the world.
+There's a fair number of changes here because this update completely changes how villages work.
+
+diff --git a/src/main/java/com/destroystokyo/paper/world/CraftSiege.java b/src/main/java/com/destroystokyo/paper/world/CraftSiege.java
+new file mode 100644
+index 000000000..f9ab002c2
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/world/CraftSiege.java
+@@ -0,0 +1,42 @@
++package com.destroystokyo.paper.world;
++
++import net.minecraft.server.VillageSiege;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.CraftWorld;
++
++public class CraftSiege implements Siege {
++    private final VillageSiege siege;
++    private final CraftWorld world;
++
++    public CraftSiege() {
++        this.siege = new VillageSiege();
++        this.world = null;
++    }
++
++    public CraftSiege(CraftWorld world) {
++        this.siege = new VillageSiege();
++        this.world = world;
++    }
++
++    public SiegeState getState() {
++        if (siege.hasSetupSiege()) {
++            return SiegeState.ACTIVATED;
++        }
++        return SiegeState.valueOf(siege.getSiegeState().name().substring(6));
++    }
++
++    public int getWavesRemaining() { return siege.getSiegeCount(); }
++
++    public int getMobsRemaining() { return siege.getMobCount(); }
++
++    public Location getMobSpawnLocation() { return new Location(world, siege.getSpawnX(), siege.getSpawnY(), siege.getSpawnZ()); }
++
++    public VillageSiege getSiege() { return siege; }
++
++    public CraftWorld getWorld() { return world; }
++
++    public static CraftSiege tryActivateSiege(CraftWorld world) {
++        CraftSiege siege = new CraftSiege(world);
++        return siege.getSiege().trySetupSiege(world.getHandle()) ? siege : null;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/VillageSiege.java b/src/main/java/net/minecraft/server/VillageSiege.java
+index 6e4c5d4d8..de3af0b60 100644
+--- a/src/main/java/net/minecraft/server/VillageSiege.java
++++ b/src/main/java/net/minecraft/server/VillageSiege.java
+@@ -7,13 +7,13 @@ import javax.annotation.Nullable;
+ 
+ public class VillageSiege {
+ 
+-    private boolean a;
+-    private VillageSiege.State b;
+-    private int c;
+-    private int d;
+-    private int e;
+-    private int f;
+-    private int g;
++    private boolean a; public boolean hasSetupSiege() { return a; } // Paper - OBFHELPER
++    private VillageSiege.State b; public VillageSiege.State getSiegeState() { return b; } // Paper - OBFHELPER
++    private int c; public int getMobCount() { return c; } // Paper - OBFHELPER
++    private int d; public int getSiegeCount() { return d; } // Paper - OBFHELPER
++    private int e; public int getSpawnX() { return e; } // Paper - OBFHELPER
++    private int f; public int getSpawnY() { return f; } // Paper - OBFHELPER
++    private int g; public int getSpawnZ() { return g; } // Paper - OBFHELPER
+ 
+     public VillageSiege() {
+         this.b = VillageSiege.State.SIEGE_DONE;
+@@ -60,6 +60,7 @@ public class VillageSiege {
+         }
+     }
+ 
++    public boolean trySetupSiege(WorldServer worldserver) { return a(worldserver); } // Paper - OBFHELPER
+     private boolean a(WorldServer worldserver) {
+         Iterator iterator = worldserver.getPlayers().iterator();
+ 
+@@ -127,7 +128,7 @@ public class VillageSiege {
+         return null;
+     }
+ 
+-    static enum State {
++    public static enum State { // Paper - public
+ 
+         SIEGE_CAN_ACTIVATE, SIEGE_TONIGHT, SIEGE_DONE;
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 21f153013..6cde76579 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit;
+ 
++import com.destroystokyo.paper.world.CraftSiege;
++import com.destroystokyo.paper.world.Siege;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+@@ -997,6 +999,11 @@ public class CraftWorld implements World {
+         return this.world.getBiome(new BlockPosition(x, 0, z)).getHumidity();
+     }
+ 
++    // Paper start - village API
++    @Override
++    public Siege tryActivateRandomSiege() { return CraftSiege.tryActivateSiege(this); }
++    // Paper end
++
+     @Override
+     public List<Entity> getEntities() {
+         List<Entity> list = new ArrayList<Entity>();
+-- 
+2.22.0.windows.1
+
