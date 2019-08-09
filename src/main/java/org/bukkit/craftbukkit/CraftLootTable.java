@@ -74,20 +74,22 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
-        // builder.luck(context.getLuck());
+        if (getHandle() != LootTable.a) { // PAIL - empty
+            // builder.luck(context.getLuck());
 
-        if (context.getLootedEntity() != null) {
-            Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
-            builder.set(LootContextParameters.THIS_ENTITY, nmsLootedEntity);
-            builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
-            builder.set(LootContextParameters.POSITION, new BlockPosition(nmsLootedEntity));
-        }
+            if (context.getLootedEntity() != null) {
+                Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
+                builder.set(LootContextParameters.THIS_ENTITY, nmsLootedEntity);
+                builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
+                builder.set(LootContextParameters.POSITION, new BlockPosition(nmsLootedEntity));
+            }
 
-        if (context.getKiller() != null) {
-            EntityHuman nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
-            builder.set(LootContextParameters.KILLER_ENTITY, nmsKiller);
-            // If there is a player killer, damage source should reflect that in case loot tables use that information
-            builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
+            if (context.getKiller() != null) {
+                EntityHuman nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
+                builder.set(LootContextParameters.KILLER_ENTITY, nmsKiller);
+                // If there is a player killer, damage source should reflect that in case loot tables use that information
+                builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
+            }
         }
 
         return builder.build(getHandle().getLootContextParameterSet());
