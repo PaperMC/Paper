@@ -1,4 +1,4 @@
-From 45722987f75238768d3d2e6fd2db793bfbecd0a4 Mon Sep 17 00:00:00 2001
+From 9f5e59128e7e24eb6333e43467680c26d1b08bd5 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Sat, 10 Aug 2019 13:35:03 -0600
 Subject: [PATCH] Optimize player search methods
@@ -38,7 +38,7 @@ index e8def7f81..0c782d5f5 100644
          double d3 = this.locX - d0;
          double d4 = this.locY - d1;
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index dca18afdb..09dcd8d3f 100644
+index dca18afdb..5afcc842d 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
 @@ -60,7 +60,49 @@ public interface IEntityAccess {
@@ -92,7 +92,7 @@ index dca18afdb..09dcd8d3f 100644
          double d4 = -1.0D;
          EntityHuman entityhuman = null;
          Iterator iterator = this.getPlayers().iterator();
-@@ -79,7 +121,30 @@ public interface IEntityAccess {
+@@ -79,7 +121,24 @@ public interface IEntityAccess {
          }
  
          return entityhuman;
@@ -107,23 +107,17 @@ index dca18afdb..09dcd8d3f 100644
 +    }
 +
 +    default List<EntityHuman> filterPlayers(@Nullable List<? extends Entity> entities) {
-+        List<EntityHuman> retVal = Lists.newArrayList();
 +        if (entities == null || entities.isEmpty()) {
-+            return retVal;
++            return Lists.newArrayList();
 +        }
 +
-+        for (Entity e : entities) {
-+            if (e instanceof EntityHuman) {
-+                retVal.add((EntityHuman) e);
-+            }
-+        }
-+        return retVal;
++        return Lists.transform(entities, v -> v instanceof EntityHuman ? (EntityHuman) v : null);
      }
 +    // Paper end
  
      @Nullable
      default EntityHuman findNearbyPlayer(Entity entity, double d0) {
-@@ -94,7 +159,49 @@ public interface IEntityAccess {
+@@ -94,7 +153,49 @@ public interface IEntityAccess {
      }
  
      @Nullable
@@ -174,7 +168,7 @@ index dca18afdb..09dcd8d3f 100644
          double d3 = -1.0D;
          EntityHuman entityhuman = null;
          Iterator iterator = this.getPlayers().iterator();
-@@ -113,9 +220,39 @@ public interface IEntityAccess {
+@@ -113,9 +214,39 @@ public interface IEntityAccess {
          }
  
          return entityhuman;
@@ -216,7 +210,7 @@ index dca18afdb..09dcd8d3f 100644
          Iterator iterator = this.getPlayers().iterator();
  
          double d4;
-@@ -137,7 +274,8 @@ public interface IEntityAccess {
+@@ -137,7 +268,8 @@ public interface IEntityAccess {
          } while (d3 >= 0.0D && d4 >= d3 * d3);
  
          return true;
