@@ -1,4 +1,4 @@
-From 3a1f3c47a1144b605d06169dd754516a678b4ca6 Mon Sep 17 00:00:00 2001
+From 45722987f75238768d3d2e6fd2db793bfbecd0a4 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Sat, 10 Aug 2019 13:35:03 -0600
 Subject: [PATCH] Optimize player search methods
@@ -38,31 +38,18 @@ index e8def7f81..0c782d5f5 100644
          double d3 = this.locX - d0;
          double d4 = this.locY - d1;
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index dca18afdb..fc66469e5 100644
+index dca18afdb..09dcd8d3f 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -1,11 +1,7 @@
- package net.minecraft.server;
- 
- import com.google.common.collect.Lists;
--import java.util.Iterator;
--import java.util.List;
--import java.util.Objects;
--import java.util.Set;
--import java.util.UUID;
-+import java.util.*;
- import java.util.function.Predicate;
- import java.util.stream.Stream;
- import javax.annotation.Nullable;
-@@ -60,7 +56,49 @@ public interface IEntityAccess {
+@@ -60,7 +60,49 @@ public interface IEntityAccess {
      }
  
      @Nullable
 -    default EntityHuman a(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) {
 +    // Paper start - optimize method
 +    default EntityHuman a(double centerX, double centerY, double centerZ, double searchRadius, @Nullable Predicate<Entity> predicate) {
-+        List<? extends Entity> foundEntities = searchRadius < 0.0d ? getAllPlayers(predicate)
-+            : getEntities(null,
++        List<EntityHuman> foundEntities = searchRadius < 0.0d ? getAllPlayers(predicate)
++            : filterPlayers(getEntities(null,
 +            new AxisAlignedBB(
 +                centerX - searchRadius,
 +                centerY - searchRadius,
@@ -72,7 +59,7 @@ index dca18afdb..fc66469e5 100644
 +                centerZ + searchRadius
 +            ),
 +            predicate
-+        );
++        ));
 +        if (foundEntities.isEmpty()) {
 +            return null;
 +        }
@@ -81,8 +68,8 @@ index dca18afdb..fc66469e5 100644
 +        double minDistance = Double.MAX_VALUE;
 +        double searchRadiusSquared = searchRadius * searchRadius;
 +
-+        for (Entity entity : foundEntities) {
-+            if (!(entity instanceof EntityHuman) || entity.dead) { // Paper - don't pull dead players
++        for (EntityHuman entity : foundEntities) {
++            if (entity == null || entity.dead) { // Paper - don't pull dead players
 +                continue;
 +            }
 +            double distance = entity.getDistanceSquared(centerX, centerY, centerZ);
@@ -95,7 +82,7 @@ index dca18afdb..fc66469e5 100644
 +            }
 +            minDistance = Math.min(minDistance, distance);
 +            if (distance == minDistance) {
-+                retVal = (EntityHuman) entity;
++                retVal = entity;
 +            }
 +        }
 +
@@ -105,16 +92,30 @@ index dca18afdb..fc66469e5 100644
          double d4 = -1.0D;
          EntityHuman entityhuman = null;
          Iterator iterator = this.getPlayers().iterator();
-@@ -79,7 +117,16 @@ public interface IEntityAccess {
+@@ -79,7 +121,30 @@ public interface IEntityAccess {
          }
  
          return entityhuman;
 +    }*/
 +
 +    default List<EntityHuman> getAllPlayers(@Nullable Predicate<? super Entity> predicate) {
-+        List<EntityHuman> retVal = new ArrayList<>(this.getPlayers());
++        List<EntityHuman> retVal = Lists.newArrayList(this.getPlayers());
 +        if (predicate != null) {
 +            retVal.removeIf(predicate);
++        }
++        return retVal;
++    }
++
++    default List<EntityHuman> filterPlayers(@Nullable List<? extends Entity> entities) {
++        List<EntityHuman> retVal = Lists.newArrayList();
++        if (entities == null || entities.isEmpty()) {
++            return retVal;
++        }
++
++        for (Entity e : entities) {
++            if (e instanceof EntityHuman) {
++                retVal.add((EntityHuman) e);
++            }
 +        }
 +        return retVal;
      }
@@ -122,15 +123,15 @@ index dca18afdb..fc66469e5 100644
  
      @Nullable
      default EntityHuman findNearbyPlayer(Entity entity, double d0) {
-@@ -94,7 +141,49 @@ public interface IEntityAccess {
+@@ -94,7 +159,49 @@ public interface IEntityAccess {
      }
  
      @Nullable
 -    default EntityHuman a(double d0, double d1, double d2) {
 +    // Paper start - optimize methods
 +    default EntityHuman a(double centerX, double centerZ, double searchRadius) {
-+        List<? extends Entity> foundEntities = searchRadius < 0.0d ? getAllPlayers(IEntitySelector.notSpectator())
-+            : getEntities(null,
++        List<EntityHuman> foundEntities = searchRadius < 0.0d ? getAllPlayers(IEntitySelector.notSpectator())
++            : filterPlayers(getEntities(null,
 +            new AxisAlignedBB(
 +                centerX - searchRadius,
 +                Double.MIN_VALUE,
@@ -140,7 +141,7 @@ index dca18afdb..fc66469e5 100644
 +                centerZ + searchRadius
 +            ),
 +            IEntitySelector.notSpectator()
-+        );
++        ));
 +        if (foundEntities.isEmpty()) {
 +            return null;
 +        }
@@ -149,8 +150,8 @@ index dca18afdb..fc66469e5 100644
 +        double minDistance = Double.MAX_VALUE;
 +        double searchRadiusSquared = searchRadius * searchRadius;
 +
-+        for (Entity entity : foundEntities) {
-+            if (!(entity instanceof EntityHuman) || entity.dead) { // Paper - don't pull dead players
++        for (EntityHuman entity : foundEntities) {
++            if (entity == null || entity.dead) { // Paper - don't pull dead players
 +                continue;
 +            }
 +            double distance = entity.getDistanceSquared(centerX, entity.locY, centerZ);
@@ -163,7 +164,7 @@ index dca18afdb..fc66469e5 100644
 +            }
 +            minDistance = Math.min(minDistance, distance);
 +            if (distance == minDistance) {
-+                retVal = (EntityHuman) entity;
++                retVal = entity;
 +            }
 +        }
 +
@@ -173,7 +174,7 @@ index dca18afdb..fc66469e5 100644
          double d3 = -1.0D;
          EntityHuman entityhuman = null;
          Iterator iterator = this.getPlayers().iterator();
-@@ -113,9 +202,43 @@ public interface IEntityAccess {
+@@ -113,9 +220,39 @@ public interface IEntityAccess {
          }
  
          return entityhuman;
@@ -181,13 +182,8 @@ index dca18afdb..fc66469e5 100644
 +    }*/
 +
 +    default boolean isPlayerNearby(double centerX, double centerY, double centerZ, double searchRadius) {
-+        if (searchRadius < 0.0d) {
-+            // Keeping with previous behavior
-+            return !this.getPlayers().isEmpty();
-+        }
- 
--    default boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
-+        List<Entity> foundEntities = getEntities(null,
++        List<EntityHuman> foundEntities = searchRadius < 0.0d ? getAllPlayers(IEntitySelector.notSpectator())
++            : filterPlayers(getEntities(null,
 +            new AxisAlignedBB(
 +                centerX - searchRadius,
 +                centerY - searchRadius,
@@ -197,14 +193,15 @@ index dca18afdb..fc66469e5 100644
 +                centerZ + searchRadius
 +            ),
 +            IEntitySelector.notSpectator()
-+        );
++        ));
 +        if (foundEntities.isEmpty()) {
 +            return false;
 +        }
-+
+ 
+-    default boolean isPlayerNearby(double d0, double d1, double d2, double d3) {
 +        double searchRadiusSquared = searchRadius * searchRadius;
-+        for (Entity entity : foundEntities) {
-+            if (!(entity instanceof EntityHuman) || entity.dead) { // Paper - Optimize previous behavior, test if dead
++        for (EntityHuman entity : foundEntities) {
++            if (entity == null || !IEntitySelector.isAlive().test(entity)) {
 +                continue;
 +            }
 +            double distance = entity.getDistanceSquared(centerX, centerY, centerZ);
@@ -219,7 +216,7 @@ index dca18afdb..fc66469e5 100644
          Iterator iterator = this.getPlayers().iterator();
  
          double d4;
-@@ -137,7 +260,8 @@ public interface IEntityAccess {
+@@ -137,7 +274,8 @@ public interface IEntityAccess {
          } while (d3 >= 0.0D && d4 >= d3 * d3);
  
          return true;
@@ -229,6 +226,18 @@ index dca18afdb..fc66469e5 100644
  
      @Nullable
      default EntityHuman a(PathfinderTargetCondition pathfindertargetcondition, EntityLiving entityliving) {
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 56739e6ed..6c06faa96 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
+ public final class IEntitySelector {
+ 
+     public static final Predicate<Entity> a = Entity::isAlive;
++    public static Predicate<EntityLiving> isAlive() { return b; } // Paper - OBFHELPER
+     public static final Predicate<EntityLiving> b = EntityLiving::isAlive;
+     public static final Predicate<Entity> c = (entity) -> {
+         return entity.isAlive() && !entity.isVehicle() && !entity.isPassenger();
 -- 
 2.22.0.windows.1
 
