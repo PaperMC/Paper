@@ -18,7 +18,7 @@ fi
 
 # apply patches directly to the file tree
 # used to fix issues from upstream source repos
-cd $basedir
+cd "$basedir"
 prepatchesdir="$basedir/scripts/pre-source-patches"
 for file in $(ls $prepatchesdir)
 do
