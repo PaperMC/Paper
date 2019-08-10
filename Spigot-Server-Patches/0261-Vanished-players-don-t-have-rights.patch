@@ -1,11 +1,11 @@
-From 442793995643e0aae62c4cceaba2664e0c0d6c63 Mon Sep 17 00:00:00 2001
+From 2f9de55b20b3d882293326b36bf77120b701fec4 Mon Sep 17 00:00:00 2001
 From: Hugo Manrique <hugmanrique@gmail.com>
 Date: Mon, 23 Jul 2018 14:22:26 +0200
 Subject: [PATCH] Vanished players don't have rights
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 924187413..9776a2992 100644
+index 92418741..9776a299 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -97,7 +97,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -17,20 +17,41 @@ index 924187413..9776a2992 100644
      public final List<Entity> passengers;
      protected int j;
      private Entity vehicle;
+diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
+index 3cf3b1c1..50fa6ed8 100644
+--- a/src/main/java/net/minecraft/server/EntityFireworks.java
++++ b/src/main/java/net/minecraft/server/EntityFireworks.java
+@@ -113,6 +113,16 @@ public class EntityFireworks extends Entity implements IProjectile {
+
+         vec3d = this.getMot();
+         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this.getBoundingBox().a(vec3d).g(1.0D), (entity) -> {
++            // Paper start - Cancel hit for vanished players
++            if (this.spawningEntity != null && entity instanceof EntityPlayer && this.world instanceof WorldServer) {
++                Entity spawningEntity = ((WorldServer) this.world).getEntity(this.spawningEntity);
++                if (spawningEntity instanceof EntityPlayer) {
++                    org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                    org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) spawningEntity.getBukkitEntity();
++                    if (!shooter.canSee(collided)) return false;
++                }
++            }
++            // Paper end
+             return !entity.isSpectator() && entity.isAlive() && entity.isInteractable();
+         }, RayTrace.BlockCollisionOption.COLLIDER, true);
+
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 3328a8479..367b02800 100644
+index 3328a847..367b0280 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
 @@ -146,6 +146,7 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
          return this.c != null ? this.c.g : this.b(iblockaccess, blockposition, VoxelShapeCollision.a());
      }
- 
+
 +    public final VoxelShape getCollisionShape(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) { return this.b(iblockaccess, blockposition, voxelshapecollision); } // Paper - OBFHELPER
      public VoxelShape b(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
          return this.getBlock().b(this, iblockaccess, blockposition, voxelshapecollision);
      }
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
-index c34c635a8..0c8b11bbe 100644
+index c34c635a..0c8b11bb 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
 +++ b/src/main/java/net/minecraft/server/ItemBlock.java
 @@ -136,7 +136,8 @@ public class ItemBlock extends Item {
@@ -41,28 +62,28 @@ index c34c635a8..0c8b11bbe 100644
 +        World world = blockactioncontext.getWorld(); // Paper
 +        boolean defaultReturn = (!this.d() || iblockdata.canPlace(world, blockactioncontext.getClickPosition())) && world.checkEntityCollision(iblockdata, entityhuman, voxelshapecollision, blockactioncontext.getClickPosition(), true); // Paper
          org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
- 
+
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
 diff --git a/src/main/java/net/minecraft/server/VoxelShape.java b/src/main/java/net/minecraft/server/VoxelShape.java
-index 3801b3f21..092f02cc2 100644
+index 3801b3f2..092f02cc 100644
 --- a/src/main/java/net/minecraft/server/VoxelShape.java
 +++ b/src/main/java/net/minecraft/server/VoxelShape.java
 @@ -46,6 +46,7 @@ public abstract class VoxelShape {
          return this.a.a();
      }
- 
+
 +    public final VoxelShape offset(double x, double y, double z) { return this.a(x, y, z); } // Paper - OBFHELPER
      public VoxelShape a(double d0, double d1, double d2) {
          return (VoxelShape) (this.isEmpty() ? VoxelShapes.a() : new VoxelShapeArray(this.a, new DoubleListOffset(this.a(EnumDirection.EnumAxis.X), d0), new DoubleListOffset(this.a(EnumDirection.EnumAxis.Y), d1), new DoubleListOffset(this.a(EnumDirection.EnumAxis.Z), d2)));
      }
 diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
-index b8659f703..c8bd4b703 100644
+index b8659f70..c8bd4b70 100644
 --- a/src/main/java/net/minecraft/server/VoxelShapes.java
 +++ b/src/main/java/net/minecraft/server/VoxelShapes.java
 @@ -33,6 +33,7 @@ public final class VoxelShapes {
          return a(new AxisAlignedBB(d0, d1, d2, d3, d4, d5));
      }
- 
+
 +    public static final VoxelShape of(AxisAlignedBB axisAlignedbb) { return VoxelShapes.a(axisAlignedbb); } // Paper - OBFHELPER
      public static VoxelShape a(AxisAlignedBB axisalignedbb) {
          int i = a(axisalignedbb.minX, axisalignedbb.maxX);
@@ -70,19 +91,19 @@ index b8659f703..c8bd4b703 100644
 @@ -127,6 +128,7 @@ public final class VoxelShapes {
          }
      }
- 
+
 +    public static final boolean applyOperation(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) { return VoxelShapes.c(voxelshape, voxelshape1, operatorboolean); } // Paper - OBFHELPER
      public static boolean c(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) {
          if (operatorboolean.apply(false, false)) {
              throw new IllegalArgumentException();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index cacc18ca4..c60279da8 100644
+index cacc18ca..c60279da 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -164,6 +164,48 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
- 
+
 +    // Paper start
 +    // ret true if no collision
 +    public final boolean checkEntityCollision(IBlockData data, Entity source, VoxelShapeCollision voxelshapedcollision,
@@ -129,7 +150,7 @@ index cacc18ca4..c60279da8 100644
      public BiomeBase getBiome(BlockPosition blockposition) {
          IChunkProvider ichunkprovider = this.getChunkProvider();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index b095abedb..12aa6f78a 100644
+index b095abed..12aa6f78 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -1136,6 +1136,14 @@ public class CraftEventFactory {
@@ -147,6 +168,6 @@ index b095abedb..12aa6f78a 100644
          Bukkit.getPluginManager().callEvent(event);
          return event;
      }
--- 
-2.22.0
+--
+2.13.0.windows.1
 
