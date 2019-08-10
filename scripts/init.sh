@@ -20,7 +20,7 @@ fi
 # used to fix issues from upstream source repos
 cd "$basedir"
 prepatchesdir="$basedir/scripts/pre-source-patches"
-for file in $(ls $prepatchesdir)
+for file in $(ls "$prepatchesdir")
 do
     if [ $file == "README.md" ]; then
         continue
