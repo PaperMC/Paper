@@ -1,0 +1,50 @@
+From 840f11c59ed0325131ba7ea783b460a0c8929b71 Mon Sep 17 00:00:00 2001
+From: MrMaurice211 <t_ulu_m@live.com.mx>
+Date: Fri, 9 Aug 2019 20:20:16 -0500
+Subject: [PATCH] New non-deprecated method to get MapView from id
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 7a8ab7d4..62d42da3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -65,6 +65,7 @@ import net.minecraft.server.LootTableRegistry;
+ import net.minecraft.server.MapIcon;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MobEffects;
++import net.minecraft.server.NBTTagCompound;
+ import net.minecraft.server.PlayerList;
+ import net.minecraft.server.ServerCommand;
+ import net.minecraft.server.TagsServer;
+@@ -1299,16 +1300,26 @@ public final class CraftServer implements Server {
+         }
+         return worldmap.mapView;
+     }
+-
++    
++    // Paper start - A way to get MapView without being deprecated
+     @Override
+-    public CraftMapView createMap(World world) {
++    public CraftMapView getMap(World world, int id) {
+         Validate.notNull(world, "World cannot be null");
+ 
+         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(Items.MAP, 1);
++        NBTTagCompound tag = stack.hasTag() ? stack.getTag() : new NBTTagCompound();
++        tag.setInt("map", id);
++        stack.setTag(tag);
+         WorldMap worldmap = ItemWorldMap.getSavedMap(stack, ((CraftWorld) world).getHandle());
+         return worldmap.mapView;
+     }
+ 
++    @Override
++    public CraftMapView createMap(World world) {
++        return getMap(world, -1); // Paper - We use the new method id -1 tells Minecraft to generate a new map
++    }
++    // Paper End
++
+     @Override
+     public ItemStack createExplorerMap(World world, Location location, StructureType structureType) {
+         return this.createExplorerMap(world, location, structureType, 100, true);
+-- 
+2.18.0.windows.1
+
