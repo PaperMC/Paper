@@ -1,0 +1,45 @@
+From d08de45f9412884d00aa6eb4ae633bec93de89f4 Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Sun, 11 Aug 2019 08:14:47 -0700
+Subject: [PATCH] Implement PlayerFlowerPotManipulateEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockFlowerPot.java b/src/main/java/net/minecraft/server/BlockFlowerPot.java
+index 57322db77..5ef54fa42 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowerPot.java
++++ b/src/main/java/net/minecraft/server/BlockFlowerPot.java
+@@ -33,8 +33,30 @@ public class BlockFlowerPot extends Block {
+         Block block = item instanceof ItemBlock ? (Block) BlockFlowerPot.b.getOrDefault(((ItemBlock) item).getBlock(), Blocks.AIR) : Blocks.AIR;
+         boolean flag = block == Blocks.AIR;
+         boolean flag1 = this.c == Blocks.AIR;
+-
++ 
+         if (flag != flag1) {
++            // Paper start
++            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entityhuman.getBukkitEntity();
++            boolean placing = flag1;
++            org.bukkit.block.Block bukkitblock = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition);
++            org.bukkit.inventory.ItemStack bukkititemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack);
++            org.bukkit.Material mat = org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(c);
++            org.bukkit.inventory.ItemStack bukkititemstack1 = new org.bukkit.inventory.ItemStack(mat, 1);
++            org.bukkit.inventory.ItemStack whichitem = placing ? bukkititemstack : bukkititemstack1;
++
++            com.destroystokyo.paper.event.player.PlayerFlowerPotManipulateEvent event = new com.destroystokyo.paper.event.player.PlayerFlowerPotManipulateEvent(player, bukkitblock, whichitem, placing);
++            player.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                // Update client
++                player.sendBlockChange(bukkitblock.getLocation(), bukkitblock.getBlockData());
++                player.updateInventory();
++
++                return true;
++            }
++            // Paper end
++
++
+             if (flag1) {
+                 world.setTypeAndData(blockposition, block.getBlockData(), 3);
+                 entityhuman.a(StatisticList.POT_FLOWER);
+-- 
+2.20.1.windows.1
+
