@@ -1,0 +1,1555 @@
+From 22ffcafc9871c63aa3dd49b09ff18773436ae02e Mon Sep 17 00:00:00 2001
+From: Ronny Jauch <ronny.jauch@outlook.com>
+Date: Sun, 11 Aug 2019 16:48:54 +0200
+Subject: [PATCH] Added options to save worlds to redis instead of filesystem
+
+
+diff --git a/pom.xml b/pom.xml
+index 9cbd4880..6de4e161 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -51,6 +51,11 @@
+             <version>4.5.2</version>
+             <scope>runtime</scope>
+         </dependency>
++        <dependency>
++            <groupId>org.redisson</groupId>
++            <artifactId>redisson</artifactId>
++            <version>3.11.2</version>
++        </dependency>
+         <!--
+           Required to add the missing Log4j2Plugins.dat file from log4j-core
+           which has been removed by Mojang. Without it, log4j has to classload
+@@ -217,6 +222,10 @@
+                                     <shadedPattern>org.bukkit.craftbukkit.libs.joptsimple</shadedPattern>
+                                 </relocation>
+                                 -->
++                                <relocation>
++                                    <pattern>io.netty</pattern>
++                                    <shadedPattern>com.destroystokyo.paper.libs.io.netty</shadedPattern>
++                                </relocation>
+                                 <relocation>
+                                     <pattern>jline</pattern>
+                                     <shadedPattern>org.bukkit.craftbukkit.libs.jline</shadedPattern>
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 9f240c35..0345f48b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -232,6 +232,20 @@ public class PaperConfig {
+         if (enableFileIOThreadSleep) Bukkit.getLogger().info("Enabled sleeping between chunk saves, beware of memory issues");
+     }
+ 
++    public static boolean enableRedisSaving;
++    private static void enableRedisSaving() {
++        enableRedisSaving = getBoolean("settings.use-redis-for-world-saving", false);
++        if (enableRedisSaving) {
++            Bukkit.getLogger().info("Enabled redis for saving worlds.");
++            Bukkit.getLogger().info("THIS FEATURE IS FULLY EXPERIMENTAL, BE AWARE OF BUGS.");
++        }
++    }
++
++    public static String redisSavingPrefix;
++    private static void redisSavingPrefix() {
++        redisSavingPrefix = getString("settings.redis-world-saving-prefix", "paper");
++    }
++
+     public static boolean loadPermsBeforePlugins = true;
+     private static void loadPermsBeforePlugins() {
+         loadPermsBeforePlugins = getBoolean("settings.load-permissions-yml-before-plugins", true);
+diff --git a/src/main/java/com/destroystokyo/paper/redis/RandomAccessFileRedis.java b/src/main/java/com/destroystokyo/paper/redis/RandomAccessFileRedis.java
+new file mode 100644
+index 00000000..a45f35d1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/redis/RandomAccessFileRedis.java
+@@ -0,0 +1,197 @@
++package com.destroystokyo.paper.redis;
++
++import com.destroystokyo.paper.util.WorldFileUtils;
++import com.google.common.primitives.Ints;
++import net.minecraft.server.MinecraftServer;
++import org.redisson.Redisson;
++import org.redisson.client.codec.ByteArrayCodec;
++import org.redisson.client.protocol.RedisCommand;
++import org.redisson.client.protocol.RedisStrictCommand;
++import org.redisson.client.protocol.convertor.IntegerReplayConvertor;
++import org.redisson.client.protocol.convertor.LongReplayConvertor;
++import org.redisson.command.CommandExecutor;
++
++import java.io.*;
++import java.nio.ByteBuffer;
++import java.nio.MappedByteBuffer;
++import java.nio.channels.FileChannel;
++import java.nio.channels.FileLock;
++import java.nio.channels.ReadableByteChannel;
++import java.nio.channels.WritableByteChannel;
++
++public class RandomAccessFileRedis {
++
++    private static final RedisCommand<Object> GETRANGE = new RedisCommand<>("getrange");
++    private static final RedisStrictCommand<Long> STRLEN = new RedisStrictCommand<>("strlen", new LongReplayConvertor());
++    private static final RedisCommand<Integer> SETRANGE = new RedisCommand<>("setrange", new IntegerReplayConvertor());
++    private static final ByteArrayCodec CODEC = ByteArrayCodec.INSTANCE;
++
++    private final String key;
++    private final CommandExecutor commandExecutor;
++    private int position = 0;
++    private long length = 0;
++
++    public RandomAccessFileRedis(File file, String mode) {
++        this.key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++        System.out.println("key = " + key);
++        commandExecutor = ((Redisson) MinecraftServer.getServer().getRedissonClient()).getCommandExecutor();
++        this.length = redisReadLength();
++    }
++
++    private Long redisReadLength() {
++        return commandExecutor.read(key, CODEC, STRLEN, key);
++    }
++
++    public long length() {
++        return redisReadLength();
++    }
++
++    public void write(byte[] a) throws IOException {
++        commandExecutor.read(key, CODEC, SETRANGE, key, position, a);
++        position += a.length;
++        length += a.length;
++    }
++
++    public void write(int i) throws IOException {
++        byte[] bytes = Ints.toByteArray(i);
++        write(bytes);
++    }
++
++    public void seek(long l) throws IOException {
++        position = (int) l;
++    }
++
++    public int readInt() throws IOException {
++        byte[] read = commandExecutor.read(key, CODEC, GETRANGE, key, position, position += 4);
++        int array = Ints.fromByteArray(read);
++        return array;
++    }
++
++    public byte readByte() throws IOException {
++        byte[] read = commandExecutor.read(key, CODEC, GETRANGE, key, position, position += 1);
++        return read[0];
++    }
++
++    public void read(byte[] abyte) throws IOException {
++        byte[] read = commandExecutor.read(key, CODEC, GETRANGE, key, position, position += abyte.length);
++        System.arraycopy(read, 0, abyte, 0, abyte.length);
++    }
++
++    public void write(byte[] abyte, int i, int j) throws IOException {
++        byte[] copy = new byte[j - i];
++        System.arraycopy(abyte, i, copy, 0, j);
++        write(copy);
++    }
++
++    public void close() throws IOException {
++
++    }
++
++    public FileDescriptor getFD() throws IOException {
++        return null;
++    }
++
++    public void writeInt(int i) throws IOException {
++        byte[] bytes = Ints.toByteArray(i);
++        write(bytes);
++    }
++
++    public void writeByte(int i) throws IOException {
++        byte[] a = new byte[]{(byte) i};
++        write(a);
++    }
++
++    public FileChannel getChannel() {
++        RandomAccessFileRedis rafr = this;
++
++        return new FileChannel() {
++            @Override
++            public int read(ByteBuffer dst) throws IOException {
++                byte[] bytes = dst.array();
++                rafr.read(bytes);
++                dst.put(bytes);
++                return bytes.length;
++            }
++
++            @Override
++            public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public int write(ByteBuffer src) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public long position() throws IOException {
++                return 0;
++            }
++
++            @Override
++            public FileChannel position(long newPosition) throws IOException {
++                return null;
++            }
++
++            @Override
++            public long size() throws IOException {
++                return 0;
++            }
++
++            @Override
++            public FileChannel truncate(long size) throws IOException {
++                return null;
++            }
++
++            @Override
++            public void force(boolean metaData) throws IOException {
++
++            }
++
++            @Override
++            public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public int read(ByteBuffer dst, long position) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public int write(ByteBuffer src, long position) throws IOException {
++                return 0;
++            }
++
++            @Override
++            public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
++                return null;
++            }
++
++            @Override
++            public FileLock lock(long position, long size, boolean shared) throws IOException {
++                return null;
++            }
++
++            @Override
++            public FileLock tryLock(long position, long size, boolean shared) throws IOException {
++                return null;
++            }
++
++            @Override
++            protected void implCloseChannel() throws IOException {
++
++            }
++        };
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/redis/RandomAccessWriter.java b/src/main/java/com/destroystokyo/paper/redis/RandomAccessWriter.java
+new file mode 100644
+index 00000000..a1983924
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/redis/RandomAccessWriter.java
+@@ -0,0 +1,97 @@
++package com.destroystokyo.paper.redis;
++
++import java.io.*;
++import java.nio.channels.FileChannel;
++
++public class RandomAccessWriter {
++
++    private boolean useRedis;
++
++    private RandomAccessFile raf;
++    private RandomAccessFileRedis rafr;
++
++    public RandomAccessWriter(File file, String mode, boolean useRedis) throws FileNotFoundException {
++        if(useRedis) {
++            rafr = new RandomAccessFileRedis(file, mode);
++        } else {
++            raf = new RandomAccessFile(file, mode);
++        }
++        this.useRedis = useRedis;
++    }
++
++    public long length() throws IOException {
++        return useRedis ? rafr.length() : raf.length();
++    }
++
++    public void write(byte[] a) throws IOException {
++        if (useRedis) {
++            rafr.write(a);
++        } else {
++            raf.write(a);
++        }
++    }
++
++    public void write(int i) throws IOException {
++        if (useRedis) {
++            rafr.write(i);
++        } else {
++            raf.write(i);
++        }
++    }
++
++    public void writeInt(int i) throws IOException {
++        if (useRedis) {
++            rafr.writeInt(i);
++        } else {
++            raf.writeInt(i);
++        }
++    }
++
++    public void seek(long l) throws IOException {
++        if (useRedis) {
++            rafr.seek(l);
++        } else {
++            raf.seek(l);
++        }
++    }
++
++    public FileChannel getChannel() {
++        return useRedis ? rafr.getChannel() : raf.getChannel();
++    }
++
++    public int readInt() throws IOException {
++        return useRedis ? rafr.readInt() : raf.readInt();
++    }
++
++    public byte readByte() throws IOException {
++        return useRedis ? rafr.readByte() : raf.readByte();
++    }
++
++    public void read(byte[] abyte) throws IOException {
++        if (useRedis) {
++            rafr.read(abyte);
++        } else {
++            raf.read(abyte);
++        }
++    }
++
++    public void write(byte[] abyte, int i, int j) throws IOException {
++        if (useRedis) {
++            rafr.write(abyte, i, j);
++        } else {
++            raf.write(abyte, i, j);
++        }
++    }
++
++    public void close() throws IOException {
++        if (useRedis) {
++            rafr.close();
++        } else {
++            raf.close();
++        }
++    }
++
++    public FileDescriptor getFD() throws IOException {
++        return useRedis ? rafr.getFD() : raf.getFD();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/WorldFileUtils.java b/src/main/java/com/destroystokyo/paper/util/WorldFileUtils.java
+new file mode 100644
+index 00000000..c0430fa7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/WorldFileUtils.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.util;
++
++import com.destroystokyo.paper.PaperConfig;
++import com.mojang.datafixers.DataFixTypes;
++import com.mojang.datafixers.DataFixer;
++import net.minecraft.server.*;
++import org.redisson.api.RBinaryStream;
++
++import javax.annotation.Nullable;
++import java.io.File;
++import java.io.FileInputStream;
++import java.util.regex.Pattern;
++
++public class WorldFileUtils {
++
++    public static String getWorldNameFromRegionFile(File file) {
++        String path = file.getPath();
++        while(new File(path).getName().contains(".")){
++            path = path.substring(0, path.lastIndexOf("\\"));
++        }
++
++        String[] remove = {"advancements", "data", "datapacks", "DIM1", "DIM-1", "playerdata", "region", "stats"};
++        String pattern = Pattern.quote(System.getProperty("file.separator"));
++        String[] splittedPath = path.split(pattern);
++
++        for (int i = 0; i<splittedPath.length; i++) {
++           for (String rm : remove) {
++               if (path.endsWith(rm)) {
++                   path = path.substring(0, path.lastIndexOf("\\"));
++               }
++           }
++        }
++
++        return path.substring(path.lastIndexOf("\\") + 1);
++    }
++
++    public static String getRedisKeyFromRegionFile(File file) {
++        String worldName = getWorldNameFromRegionFile(file);
++        String prefix = PaperConfig.redisSavingPrefix;
++        String strippedWorldPath = file.getPath().substring(file.getPath().indexOf(worldName));
++        strippedWorldPath = strippedWorldPath.replace(File.separator, ":");
++
++        return prefix + ":worlds:" + strippedWorldPath;
++    }
++
++    @Nullable
++    public static WorldData loadWorldDataFromRedis(File file, DataFixer dataFixer) {
++        String key = getRedisKeyFromRegionFile(file);
++        RBinaryStream binaryStream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key);
++
++        try {
++            NBTTagCompound var2 = NBTCompressedStreamTools.a(binaryStream.getInputStream());
++            NBTTagCompound var3 = var2.getCompound("Data");
++            NBTTagCompound var4 = var3.hasKeyOfType("Player", 10) ? var3.getCompound("Player") : null;
++            var3.remove("Player");
++            int var5 = var3.hasKeyOfType("DataVersion", 99) ? var3.getInt("DataVersion") : -1;
++            return new WorldData(GameProfileSerializer.a(dataFixer, DataFixTypes.LEVEL, var3, var5), dataFixer, var5, var4);
++        } catch (Exception var6) {
++            MinecraftServer.LOGGER.error("Exception reading {}", key, var6);
++            return null;
++        }
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index c7ad71c5..33a803e8 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.util.WorldFileUtils;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+@@ -129,9 +130,26 @@ public class AdvancementDataPlayer {
+     }
+ 
+     private void g() {
+-        if (this.e.isFile()) {
++        // Paper start
++        boolean keyExists = false;
++        String key = WorldFileUtils.getRedisKeyFromRegionFile(this.e);
++        if (MinecraftServer.getServer().isRedisEnabled()) {
++            keyExists = MinecraftServer.getServer().getRedissonClient().getBucket(key).isExists();
++        }
++        // Paper end
++
++
++        if (this.e.isFile() || keyExists) {
+             try {
+-                JsonReader jsonreader = new JsonReader(new StringReader(Files.toString(this.e, StandardCharsets.UTF_8)));
++                // Paper start
++                String s;
++                if (!MinecraftServer.getServer().isRedisEnabled()) {
++                    s = Files.toString(this.e, StandardCharsets.UTF_8);
++                } else {
++                    s = (String) MinecraftServer.getServer().getRedissonClient().getBucket(key).get();
++                }
++                JsonReader jsonreader = new JsonReader(new StringReader(s));
++                // Paper end
+                 Throwable throwable = null;
+ 
+                 try {
+@@ -215,7 +233,15 @@ public class AdvancementDataPlayer {
+         }
+ 
+         try {
+-            Files.write(AdvancementDataPlayer.b.toJson(map), this.e, StandardCharsets.UTF_8);
++            // Paper start
++            String advancementData = AdvancementDataPlayer.b.toJson(map);
++            if (!MinecraftServer.getServer().isRedisEnabled()) {
++                Files.write(advancementData, this.e, StandardCharsets.UTF_8);
++            } else {
++                String key = WorldFileUtils.getRedisKeyFromRegionFile(this.e);
++                MinecraftServer.getServer().getRedissonClient().getBucket(key).set(advancementData);
++            }
++            // Paper end
+         } catch (IOException ioexception) {
+             AdvancementDataPlayer.a.error("Couldn't save player advancements to {}", this.e, ioexception);
+         }
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 9c22e343..5a356142 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
+ // Spigot start
+ import java.util.function.Supplier;
+ import org.spigotmc.SupplierUtils;
++import com.destroystokyo.paper.util.WorldFileUtils;
+ // Spigot end
+ 
+ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+@@ -90,6 +91,7 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+     public ChunkRegionLoader(File file, DataFixer datafixer) {
+         // Paper start
+         this.actualWorld = file;
++        String worldName = WorldFileUtils.getWorldNameFromRegionFile(this.actualWorld); // Paper - getting worldName from file
+         if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
+             this.useAltWorld = true;
+             String name = file.getName();
+@@ -100,7 +102,11 @@ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+             this.templateWorld = new File(container, name);
+             File region = new File(file, "region");
+             if (!region.exists()) {
+-                region.mkdirs();
++                // Paper start - dont create region folder, if we are using redis
++                if(!MinecraftServer.getServer().isRedisEnabled()) {
++                    region.mkdirs();
++                }
++                // Paper end
+             }
+         } else {
+             this.useAltWorld = false;
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 21a05b2b..a0943789 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++
+ import com.google.common.collect.Lists;
+ import com.google.gson.JsonObject;
+ import com.mojang.authlib.GameProfileRepository;
+@@ -35,6 +36,11 @@ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.server.RemoteServerCommandEvent;
+ // CraftBukkit end
+ 
++// Paper start
++import org.redisson.api.RedissonClient;
++import com.destroystokyo.paper.PaperConfig;
++// Paper end
++
+ public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+@@ -214,6 +220,14 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             com.destroystokyo.paper.PaperConfig.registerCommands();
+             com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+             // Paper end
++            // Paper start - init redis, if redis saving is enabled
++            if(PaperConfig.enableRedisSaving){
++                boolean connected = this.initRedisson();
++                if (!connected) {
++                    return false;
++                }
++            }
++            // Paper end
+ 
+             DedicatedServer.LOGGER.info("Generating keypair");
+             this.a(MinecraftEncryption.b());
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8db5c6a3..c4ba4201 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1,7 +1,6 @@
+ package net.minecraft.server;
+ 
+-import co.aikar.timings.Timings;
+-import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.base.Stopwatch;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+@@ -20,10 +19,11 @@ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
+-import java.awt.GraphicsEnvironment;
++
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+ import java.io.IOException;
++
+ import java.io.UnsupportedEncodingException;
+ import java.net.Proxy;
+ import java.net.URLEncoder;
+@@ -31,18 +31,7 @@ import java.nio.ByteBuffer;
+ import java.nio.charset.StandardCharsets;
+ import java.security.KeyPair;
+ import java.text.SimpleDateFormat;
+-import java.util.Arrays;
+-import java.util.Base64;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Queue;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
++import java.util.*;
+ import java.util.concurrent.Callable;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.ExecutionException;
+@@ -58,11 +47,18 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ // CraftBukkit start
+ import joptsimple.OptionSet;
+-import org.bukkit.Bukkit;
+-import org.bukkit.craftbukkit.CraftServer;
+-import org.bukkit.craftbukkit.Main;
+ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
++
++// Paper start
++import java.io.InputStream;
++import org.apache.commons.io.FileUtils;
++import org.redisson.Redisson;
++import org.redisson.api.RBucket;
++import org.redisson.api.RedissonClient;
++import org.redisson.client.RedisConnectionException;
++import org.redisson.config.Config;
++// Paper end
+ import org.spigotmc.SlackActivityAccountant; // Spigot
+ import co.aikar.timings.MinecraftTimings; // Paper
+ 
+@@ -137,6 +133,12 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     private boolean forceUpgrade;
+     private float ap;
+ 
++    // Paper start
++    private RedissonClient redissonClient;
++    private boolean triedConnect = false;
++    // Paper end
++
++
+     // CraftBukkit start
+     public org.bukkit.craftbukkit.CraftServer server;
+     public OptionSet options;
+@@ -222,6 +224,35 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+     public abstract PropertyManager getPropertyManager();
+     // CraftBukkit end
+ 
++    // Paper start
++    public RedissonClient getRedissonClient() {
++        return redissonClient;
++    }
++
++    public boolean initRedisson() {
++        if (this.redissonClient == null && !triedConnect) {
++            triedConnect = true;
++            Config config;
++            File file = new File("redis.yml");
++            try {
++                if (!file.exists()) {
++                    InputStream is = getClass().getClassLoader().getResourceAsStream("configurations/redis.yml");
++                    FileUtils.copyInputStreamToFile(is, file);
++                }
++                config = Config.fromYAML(file);
++                RedissonClient redisson = Redisson.create(config);
++                this.redissonClient = redisson;
++            } catch (IOException ex) {
++                MinecraftServer.LOGGER.warn("Cant load redis configuration file from: " + file.getPath());
++                MinecraftServer.LOGGER.warn("Please check your syntax!");
++            } catch (RedisConnectionException cEx) {
++                MinecraftServer.LOGGER.warn("Cannot connect to redis, make sure it is running!");
++            }
++        }
++        return this.redissonClient != null;
++    }
++    // Paper end
++
+     public abstract boolean init() throws IOException;
+ 
+     public void convertWorld(String s) {
+@@ -681,6 +712,16 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         while (iterator.hasNext()) {
+             worldserver = (WorldServer) iterator.next();
+             if (worldserver != null) {
++                // Paper start - check for session.lock
++                if (PaperConfig.enableRedisSaving) {
++                    RBucket<Object> sessionLock = this.redissonClient
++                        .getBucket(PaperConfig.redisSavingPrefix +
++                            ":worlds:" +
++                            worldserver.getWorld().getName() +
++                            ":session.lock");
++                    sessionLock.deleteAsync();
++                }
++                // Paper end
+                 worldserver.close();
+             }
+         }
+@@ -952,7 +993,7 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+             this.m.b().a(agameprofile);
+         }
+ 
+-            this.methodProfiler.enter("save");
++        this.methodProfiler.enter("save");
+ 
+         serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
+         int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
+@@ -1875,4 +1916,18 @@ public abstract class MinecraftServer implements IAsyncTaskHandler, IMojangStati
+         return SERVER;
+     }
+     // CraftBukkit end
++
++    // Paper start
++    public WorldServer getWorldServer(String world) {
++        return this.worldServer.values().stream()
++            .filter(worldServer-> worldServer.getWorld().getName().equals(world))
++            .distinct()
++            .findFirst()
++            .orElse(null);
++    }
++
++    public boolean isRedisEnabled() {
++        return PaperConfig.enableRedisSaving;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 012238ac..ad048d75 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -40,8 +40,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
+ import org.bukkit.event.player.PlayerRespawnEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ import org.bukkit.util.Vector;
+-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+ // CraftBukkit end
++// Paper start
++import org.redisson.RedissonKeys;
++import org.redisson.api.RBucket;
++import org.redisson.api.RedissonClient;
++import org.spigotmc.event.player.PlayerSpawnLocationEvent;
++import com.destroystokyo.paper.util.WorldFileUtils;
++// Paper end
+ 
+ public abstract class PlayerList {
+ 
+@@ -1426,6 +1432,8 @@ public abstract class PlayerList {
+     }
+ 
+     public ServerStatisticManager getStatisticManager(EntityPlayer entityhuman) {
++        RedissonClient client = MinecraftServer.getServer().getRedissonClient(); // Paper
++
+         UUID uuid = entityhuman.getUniqueID();
+         ServerStatisticManager serverstatisticmanager = uuid == null ? null : (ServerStatisticManager) entityhuman.getStatisticManager();
+         // CraftBukkit end
+@@ -1434,13 +1442,26 @@ public abstract class PlayerList {
+             File file = new File(this.server.getWorldServer(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "stats");
+             File file1 = new File(file, uuid + ".json");
+ 
+-            if (!file1.exists()) {
+-                File file2 = new File(file, entityhuman.getDisplayName().getString() + ".json");
++            if (!MinecraftServer.getServer().isRedisEnabled()) { // Paper - decide if we need redis or filesystem
++                if (!file1.exists()) {
++                    File file2 = new File(file, entityhuman.getDisplayName().getString() + ".json");
+ 
+-                if (file2.exists() && file2.isFile()) {
+-                    file2.renameTo(file1);
++                    if (file2.exists() && file2.isFile()) {
++                        file2.renameTo(file1);
++                    }
+                 }
+-            }
++            } else { // Paper start
++                String key1 = WorldFileUtils.getRedisKeyFromRegionFile(file1);
++                RBucket<Object> bucket1 = client.getBucket(key1);
++                if(!bucket1.isExists()) {
++                    File file2 = new File(file, entityhuman.getDisplayName().getString() + ".json");
++                    String key2 = WorldFileUtils.getRedisKeyFromRegionFile(file2);
++                    RBucket<Object> bucket2 = client.getBucket(key2);
++                    if (bucket2.isExists()) {
++                        bucket2.rename(key1);
++                    }
++                }
++            } // Paper end
+ 
+             serverstatisticmanager = new ServerStatisticManager(this.server, file1);
+             // this.o.put(uuid, serverstatisticmanager); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index c754e5b2..288ca7f2 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -10,12 +10,15 @@ import java.io.DataInputStream;
+ import java.io.DataOutputStream;
+ import java.io.File;
+ import java.io.IOException;
+-import java.io.RandomAccessFile;
+ import java.util.List;
+ import java.util.zip.DeflaterOutputStream;
+ import java.util.zip.GZIPInputStream;
+ import java.util.zip.InflaterInputStream;
+ import javax.annotation.Nullable;
++// Paper start
++import com.destroystokyo.paper.redis.RandomAccessWriter;
++import com.destroystokyo.paper.util.WorldFileUtils;
++// Paper end
+ 
+ public class RegionFile {
+ 
+@@ -26,7 +29,7 @@ public class RegionFile {
+     // Spigot end
+     private static final byte[] a = new byte[4096];
+     private final File b;private File getFile() { return b; } // Paper - OBFHELPER
+-    private RandomAccessFile c;private RandomAccessFile getDataFile() { return c; } // Paper - OBFHELPER
++    private RandomAccessWriter c;private RandomAccessWriter getDataFile() { return c; } // Paper - OBFHELPER
+     private final int[] d = new int[1024];private int[] offsets = d; // Paper - OBFHELPER
+     private final int[] e = new int[1024];private int[] timestamps = e; // Paper - OBFHELPER
+     private List<Boolean> f; private List<Boolean> getFreeSectors() { return this.f; } // Paper - OBFHELPER
+@@ -34,6 +37,9 @@ public class RegionFile {
+     private long h;
+ 
+     public RegionFile(File file) {
++
++        boolean useRedis = MinecraftServer.getServer().isRedisEnabled(); // Paper
++
+         this.b = file;
+         this.g = 0;
+ 
+@@ -42,7 +48,8 @@ public class RegionFile {
+                 this.h = file.lastModified();
+             }
+ 
+-            this.c = new RandomAccessFile(file, "rw");
++            this.c = new RandomAccessWriter(file, "rw", useRedis); // Paper - this.c = new RandomAccessFile(file, "rw");
++
+             if (this.c.length() < 8192L) { // Paper - headers should be 8192
+                 this.c.write(RegionFile.a);
+                 this.c.write(RegionFile.a);
+@@ -385,12 +392,15 @@ public class RegionFile {
+         try {
+             timestamps[j1] = 0;
+             offsets[j1] = 0;
+-            RandomAccessFile file = getDataFile();
+-            file.seek(j1 * 4);
+-            file.writeInt(0);
++
++            // Paper start
++            RandomAccessWriter randomAccessWriter = getDataFile();
++            randomAccessWriter.seek(j1 * 4);
++            randomAccessWriter.writeInt(0);
+             // clear the timestamp
+-            file.seek(4096 + j1 * 4);
+-            file.writeInt(0);
++            randomAccessWriter.seek(4096 + j1 * 4);
++            randomAccessWriter.writeInt(0);
++            // Paper end
+             org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.SEVERE, "Deleted corrupt chunk (" + debug + ") " + getFile().getAbsolutePath(), e);
+         } catch (IOException e) {
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index 369aaa84..364d6471 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.destroystokyo.paper.exception.ServerInternalException;
+-import com.google.common.collect.Maps;
++
+ import java.io.DataInputStream;
+ import java.io.DataOutputStream;
+ import java.io.File;
+@@ -11,6 +11,7 @@ import java.util.Map;
+ import javax.annotation.Nullable;
+ import com.destroystokyo.paper.PaperConfig; // Paper
+ import java.util.LinkedHashMap; // Paper
++import com.destroystokyo.paper.util.WorldFileUtils; // Paper
+ 
+ public class RegionFileCache {
+ 
+@@ -20,13 +21,16 @@ public class RegionFileCache {
+     public static synchronized RegionFile a(File file, int i, int j) {
+         File file1 = new File(file, "region");
+         File file2 = new File(file1, "r." + (i >> 5) + "." + (j >> 5) + ".mca");
++        String worldName = WorldFileUtils.getWorldNameFromRegionFile(file); // Paper
+         RegionFile regionfile = (RegionFile) RegionFileCache.cache.get(file2);
+ 
+         if (regionfile != null) {
+             return regionfile;
+         } else {
+             if (!file1.exists()) {
+-                file1.mkdirs();
++                if(!MinecraftServer.getServer().isRedisEnabled()) { // Paper - only write file if we are not using redis
++                    file1.mkdirs();
++                }
+             }
+ 
+             if (RegionFileCache.cache.size() >= 256) {
+diff --git a/src/main/java/net/minecraft/server/ServerStatisticManager.java b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+index d622983b..6d30db02 100644
+--- a/src/main/java/net/minecraft/server/ServerStatisticManager.java
++++ b/src/main/java/net/minecraft/server/ServerStatisticManager.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.util.WorldFileUtils;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import com.google.gson.JsonElement;
+@@ -25,15 +26,22 @@ import org.apache.commons.io.FileUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++// Paper start
++import org.redisson.api.RBucket;
++import org.redisson.api.RedissonClient;
++// Paper end
++
+ public class ServerStatisticManager extends StatisticManager {
+ 
+     private static final Logger b = LogManager.getLogger();
+     private final MinecraftServer c;
+     private final File d;
+     private final Set<Statistic<?>> e = Sets.newHashSet();
++    private final RedissonClient redissonClient; // Paper
+     private int f = -300;
+ 
+     public ServerStatisticManager(MinecraftServer minecraftserver, File file) {
++        redissonClient = minecraftserver.getRedissonClient(); // Paper
+         this.c = minecraftserver;
+         this.d = file;
+         // Spigot start
+@@ -43,22 +51,41 @@ public class ServerStatisticManager extends StatisticManager {
+             this.a.put( wrapper, entry.getValue().intValue() );
+         }
+         // Spigot end
+-        if (file.isFile()) {
+-            try {
+-                this.a(minecraftserver.az(), FileUtils.readFileToString(file));
+-            } catch (IOException ioexception) {
+-                ServerStatisticManager.b.error("Couldn't read statistics file {}", file, ioexception);
+-            } catch (JsonParseException jsonparseexception) {
+-                ServerStatisticManager.b.error("Couldn't parse statistics file {}", file, jsonparseexception);
++        if (!MinecraftServer.getServer().isRedisEnabled()) { // Paper
++            if (file.isFile()) {
++                try {
++                    this.a(minecraftserver.az(), FileUtils.readFileToString(file));
++                } catch (IOException ioexception) {
++                    ServerStatisticManager.b.error("Couldn't read statistics file {}", file, ioexception);
++                } catch (JsonParseException jsonparseexception) {
++                    ServerStatisticManager.b.error("Couldn't parse statistics file {}", file, jsonparseexception);
++                }
+             }
++        } else {
++            // Paper start
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++            RBucket<String> stats = redissonClient.getBucket(key);
++            if (stats.isExists()) {
++                try {
++                    this.a(minecraftserver.az(), stats.get());
++                } catch (JsonParseException jsonparseexception) {
++                    ServerStatisticManager.b.error("Couldn't parse statistics key {}", key, jsonparseexception);
++                }
++            }
++            // Paper end
+         }
+-
+     }
+ 
+     public void a() {
+         if ( org.spigotmc.SpigotConfig.disableStatSaving ) return; // Spigot
+         try {
+-            FileUtils.writeStringToFile(this.d, this.b());
++            if (!MinecraftServer.getServer().isRedisEnabled()) { // Paper
++                FileUtils.writeStringToFile(this.d, this.b());
++            } else { // Paper start
++                String key = WorldFileUtils.getRedisKeyFromRegionFile(this.d);
++                RBucket<String> bucket = redissonClient.getBucket(key);
++                bucket.set(this.b());
++            } // Paper end
+         } catch (IOException ioexception) {
+             ServerStatisticManager.b.error("Couldn't save stats", ioexception);
+         }
+diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+index 9be0e994..f7d1bb25 100644
+--- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
++++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.util.WorldFileUtils;
+ import com.mojang.datafixers.DataFixTypes;
+ import com.mojang.datafixers.DataFixer;
+ import java.io.DataInputStream;
+@@ -15,13 +16,23 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ // CraftBukkit start
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.UUID;
++import java.util.stream.Collectors;
++import java.util.stream.StreamSupport;
++
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.redisson.api.RBinaryStream;
++import org.redisson.api.RBucket;
++import org.redisson.api.RKeys;
++import org.redisson.api.RedissonClient;
+ // CraftBukkit end
+ 
+ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+     private static final Logger b = LogManager.getLogger();
++    private final RedissonClient redissonClient;
+     private final File baseDir;
+     private final File playerDir;
+     private final long sessionId = SystemUtils.getMonotonicMillis();
+@@ -32,6 +43,8 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+     public WorldNBTStorage(File file, String s, @Nullable MinecraftServer minecraftserver, DataFixer datafixer) {
+         this.a = datafixer;
++        this.redissonClient = minecraftserver.getRedissonClient();
++
+         // Paper start
+         if (com.destroystokyo.paper.PaperConfig.useVersionedWorld) {
+             File origBaseDir = new File(file, s);
+@@ -49,6 +62,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+                 String[] dirs  = {"advancements", "data", "datapacks", "playerdata", "stats"};
+                 for (String dir : dirs) {
+                     File origPlayerData = new File(origBaseDir, dir);
++                    System.out.println("origPlayerData = " + origPlayerData.getPath());
+                     File targetPlayerData = new File(baseDir, dir);
+                     if (origPlayerData.exists() && !targetPlayerData.exists()) {
+                         if (!printedHeader) {
+@@ -89,7 +103,9 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+         this.playerDir = new File(this.baseDir, "playerdata");
+         this.f = s;
+         if (minecraftserver != null) {
+-            this.playerDir.mkdirs();
++            if(!minecraftserver.isRedisEnabled()) {
++                this.playerDir.mkdirs();
++            }
+             this.g = new DefinedStructureManager(minecraftserver, this.baseDir, datafixer);
+         } else {
+             this.g = null;
+@@ -101,7 +117,15 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     private void j() {
+         try {
+             File file = new File(this.baseDir, "session.lock");
+-            DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file));
++            DataOutputStream dataoutputstream;
++            if (MinecraftServer.getServer().isRedisEnabled()) {
++                String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++                RBinaryStream binaryStream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key);
++                dataoutputstream = new DataOutputStream(binaryStream.getOutputStream());
++                file.deleteOnExit();
++            } else {
++                dataoutputstream = new DataOutputStream(new FileOutputStream(file));
++            }
+ 
+             try {
+                 dataoutputstream.writeLong(this.sessionId);
+@@ -111,7 +135,11 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+         } catch (IOException ioexception) {
+             ioexception.printStackTrace();
+-            throw new RuntimeException("Failed to check session lock for world located at " + this.baseDir + ", aborting. Stop the server and delete the session.lock in this world to prevent further issues."); // Spigot
++            String baseDir = this.baseDir.getPath();
++            if (MinecraftServer.getServer().isRedisEnabled()) {
++               baseDir = WorldFileUtils.getRedisKeyFromRegionFile(this.baseDir);
++            }
++            throw new RuntimeException("Failed to check session lock for world located at " + baseDir + ", aborting. Stop the server and delete the session.lock in this world to prevent further issues."); // Spigot
+         }
+     }
+ 
+@@ -121,12 +149,24 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+     public void checkSession() throws ExceptionWorldConflict {
+         try {
++            DataInputStream datainputstream;
+             File file = new File(this.baseDir, "session.lock");
+-            DataInputStream datainputstream = new DataInputStream(new FileInputStream(file));
++
++            if (MinecraftServer.getServer().isRedisEnabled()) {
++                String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++                RBinaryStream binaryStream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key);
++                datainputstream = new DataInputStream(binaryStream.getInputStream());
++            } else {
++                datainputstream = new DataInputStream(new FileInputStream(file));
++            }
+ 
+             try {
+                 if (datainputstream.readLong() != this.sessionId) {
+-                    throw new ExceptionWorldConflict("The save for world located at " + this.baseDir + " is being accessed from another location, aborting");  // Spigot
++                    String baseDir = this.baseDir.getPath();
++                    if (MinecraftServer.getServer().isRedisEnabled()) {
++                        baseDir = WorldFileUtils.getRedisKeyFromRegionFile(this.baseDir);
++                    }
++                    throw new ExceptionWorldConflict("The save for world located at " + baseDir + " is being accessed from another location, aborting");  // Spigot
+                 }
+             } finally {
+                 datainputstream.close();
+@@ -143,18 +183,29 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+ 
+     @Nullable
+     public WorldData getWorldData() {
++
+         File file = new File(this.baseDir, "level.dat");
++        if (!MinecraftServer.getServer().isRedisEnabled()) {
+ 
+-        if (file.exists()) {
+-            WorldData worlddata = WorldLoader.a(file, this.a);
++            if (file.exists()) {
++                WorldData worlddata = WorldLoader.a(file, this.a);
+ 
+-            if (worlddata != null) {
+-                return worlddata;
++                if (worlddata != null) {
++                    return worlddata;
++                }
+             }
++
++            file = new File(this.baseDir, "level.dat_old");
++            return file.exists() ? WorldLoader.a(file, this.a) : null;
++        } else {
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++            RBucket<Object> levelDat = MinecraftServer.getServer().getRedissonClient().getBucket(key);
++            if (levelDat.isExists()) {
++                return WorldFileUtils.loadWorldDataFromRedis(file, this.a);
++            }
++            return null;
+         }
+ 
+-        file = new File(this.baseDir, "level.dat_old");
+-        return file.exists() ? WorldLoader.a(file, this.a) : null;
+     }
+ 
+     public void saveWorldData(WorldData worlddata, @Nullable NBTTagCompound nbttagcompound) {
+@@ -167,20 +218,30 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+             File file = new File(this.baseDir, "level.dat_new");
+             File file1 = new File(this.baseDir, "level.dat_old");
+             File file2 = new File(this.baseDir, "level.dat");
+-
+-            NBTCompressedStreamTools.a(nbttagcompound2, (OutputStream) (new FileOutputStream(file)));
+-            if (file1.exists()) {
+-                file1.delete();
++            OutputStream dst;
++            if (MinecraftServer.getServer().isRedisEnabled()) {
++                String key = WorldFileUtils.getRedisKeyFromRegionFile(file2);
++                RBinaryStream binaryStream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key);
++                dst = binaryStream.getOutputStream();
++            } else {
++                dst = (OutputStream) (new FileOutputStream(file));
+             }
+ 
+-            file2.renameTo(file1);
+-            if (file2.exists()) {
+-                file2.delete();
+-            }
++            NBTCompressedStreamTools.a(nbttagcompound2, dst);
++            if (!MinecraftServer.getServer().isRedisEnabled()) {
++                if (file1.exists()) {
++                    file1.delete();
++                }
+ 
+-            file.renameTo(file2);
+-            if (file.exists()) {
+-                file.delete();
++                file2.renameTo(file1);
++                if (file2.exists()) {
++                    file2.delete();
++                }
++
++                file.renameTo(file2);
++                if (file.exists()) {
++                    file.delete();
++                }
+             }
+         } catch (Exception exception) {
+             exception.printStackTrace();
+@@ -199,12 +260,31 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+             File file = new File(this.playerDir, entityhuman.bu() + ".dat.tmp");
+             File file1 = new File(this.playerDir, entityhuman.bu() + ".dat");
+ 
+-            NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) (new FileOutputStream(file)));
+-            if (file1.exists()) {
+-                file1.delete();
++            System.out.println("file1.getPath() = " + file1.getPath());
++
++            OutputStream dst;
++
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++            String key1 = WorldFileUtils.getRedisKeyFromRegionFile(file1);
++            System.out.println("key = " + key);
++            System.out.println("key1 = " + key1);
++            if (MinecraftServer.getServer().isRedisEnabled()) {
++                RBinaryStream binaryStream = this.redissonClient.getBinaryStream(key);
++                dst = binaryStream.getOutputStream();
++            } else {
++                dst = (new FileOutputStream(file));
+             }
++            NBTCompressedStreamTools.a(nbttagcompound, dst);
+ 
+-            file.renameTo(file1);
++            if (!MinecraftServer.getServer().isRedisEnabled()) {
++                if (file1.exists()) {
++                    file1.delete();
++                }
++
++                file.renameTo(file1);
++            } else {
++                this.redissonClient.getBucket(key).rename(key1);
++            }
+         } catch (Exception exception) {
+             WorldNBTStorage.b.error("Failed to save player data for {}", entityhuman.getName(), exception); // Paper
+         }
+@@ -215,32 +295,66 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     public NBTTagCompound load(EntityHuman entityhuman) {
+         NBTTagCompound nbttagcompound = null;
+ 
+-        try {
+-            File file = new File(this.playerDir, entityhuman.bu() + ".dat");
+-            // Spigot Start
+-            boolean usingWrongFile = false;
+-            if ( org.bukkit.Bukkit.getOnlineMode() && !file.exists() ) // Paper - Check online mode first
+-            {
+-                file = new File( this.playerDir, UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + entityhuman.getName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
+-                if ( file.exists() )
++        File file = new File(this.playerDir, entityhuman.bu() + ".dat");
++        if(!MinecraftServer.getServer().isRedisEnabled()) {
++            try {
++                // Spigot Start
++                boolean usingWrongFile = false;
++                if ( org.bukkit.Bukkit.getOnlineMode() && !file.exists() ) // Paper - Check online mode first
+                 {
+-                    usingWrongFile = true;
+-                    org.bukkit.Bukkit.getServer().getLogger().warning( "Using offline mode UUID file for player " + entityhuman.getName() + " as it is the only copy we can find." );
++                    file = new File( this.playerDir, UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + entityhuman.getName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
++                    if ( file.exists() )
++                    {
++                        usingWrongFile = true;
++                        org.bukkit.Bukkit.getServer().getLogger().warning( "Using offline mode UUID file for player " + entityhuman.getName() + " as it is the only copy we can find." );
++                    }
+                 }
+-            }
+-            // Spigot End
++                // Spigot End
+ 
+-            if (file.exists() && file.isFile()) {
+-                nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file)));
++                if (file.exists() && file.isFile()) {
++                    nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file)));
++                }
++                // Spigot Start
++                if ( usingWrongFile )
++                {
++                    file.renameTo( new File( file.getPath() + ".offline-read" ) );
++                }
++                // Spigot End
++            } catch (Exception exception) {
++                WorldNBTStorage.b.warn("Failed to load player data for {}", entityhuman.getDisplayName().getString());
+             }
+-            // Spigot Start
+-            if ( usingWrongFile )
+-            {
+-                file.renameTo( new File( file.getPath() + ".offline-read" ) );
++        } else {
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++            RBucket<Object> playerData = this.redissonClient.getBucket(key);
++            try {
++                boolean usingWrongFile = false;
++                if ( org.bukkit.Bukkit.getOnlineMode() && !playerData.isExists() ) // Paper - Check online mode first
++                {
++                    file = new File( this.playerDir, UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + entityhuman.getName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
++                    key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++                    playerData = this.redissonClient.getBucket(key);
++                    if ( playerData.isExists() )
++                    {
++                        usingWrongFile = true;
++                        org.bukkit.Bukkit.getServer().getLogger().warning( "Using offline mode UUID file for player " + entityhuman.getName() + " as it is the only copy we can find." );
++                    }
++                }
++                // Spigot End
++
++                if (playerData.isExists()) {
++                    RBinaryStream playerDataStream = this.redissonClient.getBinaryStream(key);
++                    nbttagcompound = NBTCompressedStreamTools.a(playerDataStream.getInputStream());
++                }
++                // Spigot Start
++                if ( usingWrongFile )
++                {
++                    File file1 = new File(file.getPath() + ".offline-read");
++                    String key1 = WorldFileUtils.getRedisKeyFromRegionFile(file1);
++                    playerData.rename(key1);
++                }
++            } catch (Exception exception) {
++                WorldNBTStorage.b.warn("Failed to load player data for {}", entityhuman.getDisplayName().getString());
+             }
+-            // Spigot End
+-        } catch (Exception exception) {
+-            WorldNBTStorage.b.warn("Failed to load player data for {}", entityhuman.getDisplayName().getString());
+         }
+ 
+         if (nbttagcompound != null) {
+@@ -248,7 +362,11 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+             if (entityhuman instanceof EntityPlayer) {
+                 CraftPlayer player = (CraftPlayer) entityhuman.getBukkitEntity();
+                 // Only update first played if it is older than the one we have
+-                long modified = new File(this.playerDir, entityhuman.getUniqueID().toString() + ".dat").lastModified();
++                long modified = Long.MAX_VALUE;
++                if (!MinecraftServer.getServer().isRedisEnabled()) {
++                    modified = new File(this.playerDir, entityhuman.getUniqueID().toString() + ".dat").lastModified();
++                }
++
+                 if (modified < player.getFirstPlayed()) {
+                     player.setFirstPlayed(modified);
+                 }
+@@ -283,19 +401,29 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     }
+ 
+     public String[] getSeenPlayers() {
+-        String[] astring = this.playerDir.list();
++        if(MinecraftServer.getServer().isRedisEnabled()) { // Paper
++            String[] astring = this.playerDir.list();
+ 
+-        if (astring == null) {
+-            astring = new String[0];
+-        }
++            if (astring == null) {
++                astring = new String[0];
++            }
+ 
+-        for (int i = 0; i < astring.length; ++i) {
+-            if (astring[i].endsWith(".dat")) {
+-                astring[i] = astring[i].substring(0, astring[i].length() - 4);
++            for (int i = 0; i < astring.length; ++i) {
++                if (astring[i].endsWith(".dat")) {
++                    astring[i] = astring[i].substring(0, astring[i].length() - 4);
++                }
+             }
+-        }
+ 
+-        return astring;
++            return astring;
++        } else { // Paper start
++            String pattern = WorldFileUtils.getRedisKeyFromRegionFile(this.playerDir) + ":*.json";
++            System.out.println("pattern = " + pattern);
++            Iterable<String> keys = this.redissonClient.getKeys().getKeysByPattern(pattern);
++            List<String> list = StreamSupport
++                .stream(keys.spliterator(), false)
++                .collect(Collectors.toList());
++            return (String[]) list.toArray();
++        } // Paper end
+     }
+ 
+     public void a() {}
+@@ -303,7 +431,9 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     public File getDataFile(DimensionManager dimensionmanager, String s) {
+         File file = new File(dimensionmanager.a(this.baseDir), "data");
+ 
+-        file.mkdirs();
++        if(!MinecraftServer.getServer().isRedisEnabled()) { // Paper
++            file.mkdirs();
++        }
+         return new File(file, s + ".dat");
+     }
+ 
+@@ -319,10 +449,28 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     public UUID getUUID() {
+         if (uuid != null) return uuid;
+         File file1 = new File(this.baseDir, "uid.dat");
+-        if (file1.exists()) {
++
++        // Paper start
++        String key = WorldFileUtils.getRedisKeyFromRegionFile(file1);
++        boolean fileKeyExists = false;
++        if  (MinecraftServer.getServer().isRedisEnabled()) {
++            fileKeyExists = redissonClient.getBucket(key).isExists();
++        } else {
++            fileKeyExists = file1.exists();
++        } // Paper end
++
++        if (fileKeyExists) {
+             DataInputStream dis = null;
+             try {
+-                dis = new DataInputStream(new FileInputStream(file1));
++                // Paper start
++                InputStream in;
++                if (!MinecraftServer.getServer().isRedisEnabled()) {
++                    in = new FileInputStream(file1);
++                } else {
++                    in = redissonClient.getBinaryStream(key).getInputStream();
++                }
++                // Paper end
++                dis = new DataInputStream(in);
+                 return uuid = new UUID(dis.readLong(), dis.readLong());
+             } catch (IOException ex) {
+                 b.warn("Failed to read " + file1 + ", generating new random UUID", ex);
+@@ -339,7 +487,15 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+         uuid = UUID.randomUUID();
+         DataOutputStream dos = null;
+         try {
+-            dos = new DataOutputStream(new FileOutputStream(file1));
++            // Paper start
++            OutputStream out;
++            if (!MinecraftServer.getServer().isRedisEnabled()) {
++                out = new FileOutputStream(file1);
++            } else {
++                out = redissonClient.getBinaryStream(key).getOutputStream();
++            }
++            // Paper end
++            dos = new DataOutputStream(out);
+             dos.writeLong(uuid.getMostSignificantBits());
+             dos.writeLong(uuid.getLeastSignificantBits());
+         } catch (IOException ex) {
+diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
+index e86d382c..1c128822 100644
+--- a/src/main/java/net/minecraft/server/WorldPersistentData.java
++++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.util.WorldFileUtils;
+ import com.google.common.collect.Maps;
+ import com.mojang.datafixers.DataFixTypes;
+ import it.unimi.dsi.fastutil.objects.Object2IntMap;
+@@ -21,6 +22,7 @@ import java.util.function.Function;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.redisson.api.RedissonClient;
+ 
+ public class WorldPersistentData {
+ 
+@@ -30,11 +32,13 @@ public class WorldPersistentData {
+     private final Object2IntMap<String> d = new Object2IntOpenHashMap();
+     @Nullable
+     private final IDataManager e;
++    private final RedissonClient redissonClient;
+ 
+     public WorldPersistentData(DimensionManager dimensionmanager, @Nullable IDataManager idatamanager) {
+         this.b = dimensionmanager;
+         this.e = idatamanager;
+         this.d.defaultReturnValue(-1);
++        this.redissonClient = MinecraftServer.getServer().getRedissonClient();
+     }
+ 
+     @Nullable
+@@ -72,9 +76,16 @@ public class WorldPersistentData {
+             }
+ 
+             File file = this.e.getDataFile(this.b, "idcounts");
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
+ 
+-            if (file != null && file.exists()) {
+-                DataInputStream datainputstream = new DataInputStream(new FileInputStream(file));
++            if ((file != null && file.exists()) || (MinecraftServer.getServer().isRedisEnabled() && redissonClient.getBucket(key).isExists())) {
++                InputStream in;
++                if (MinecraftServer.getServer().isRedisEnabled()) {
++                    in = this.redissonClient.getBinaryStream(key).getInputStream();
++                } else {
++                    in = new FileInputStream(file);
++                }
++                DataInputStream datainputstream = new DataInputStream(in);
+                 NBTTagCompound nbttagcompound = NBTCompressedStreamTools.a(datainputstream);
+ 
+                 datainputstream.close();
+@@ -88,6 +99,7 @@ public class WorldPersistentData {
+                     }
+                 }
+             }
++
+         } catch (Exception exception) {
+             WorldPersistentData.a.error("Could not load aux values", exception);
+         }
+@@ -114,7 +126,14 @@ public class WorldPersistentData {
+                         nbttagcompound.setInt((String) entry.getKey(), entry.getIntValue());
+                     }
+ 
+-                    DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file));
++                    OutputStream out;
++                    if (!MinecraftServer.getServer().isRedisEnabled()) {
++                        out = new FileOutputStream(file);
++                    } else {
++                        String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++                        out = this.redissonClient.getBinaryStream(key).getOutputStream();
++                    }
++                    DataOutputStream dataoutputstream = new DataOutputStream(out);
+ 
+                     NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+                     dataoutputstream.close();
+@@ -130,7 +149,13 @@ public class WorldPersistentData {
+     public static NBTTagCompound a(IDataManager idatamanager, DimensionManager dimensionmanager, String s, int i) throws IOException {
+         if ("Mineshaft".equals(s) || "Mineshaft_index".equals(s)) return new NBTTagCompound(); // Paper
+         File file = idatamanager.getDataFile(dimensionmanager, s);
+-        FileInputStream fileinputstream = new FileInputStream(file);
++        InputStream fileinputstream;
++        if (!MinecraftServer.getServer().isRedisEnabled()) {
++            fileinputstream = new FileInputStream(file);
++        } else {
++            String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++            fileinputstream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key).getInputStream();
++        }
+         Throwable throwable = null;
+ 
+         NBTTagCompound nbttagcompound;
+@@ -188,9 +213,16 @@ public class WorldPersistentData {
+ 
+                     nbttagcompound.set("data", persistentbase.b(new NBTTagCompound()));
+                     nbttagcompound.setInt("DataVersion", 1631);
+-                    FileOutputStream fileoutputstream = new FileOutputStream(file);
+-
+-                    NBTCompressedStreamTools.a(nbttagcompound, (OutputStream) fileoutputstream);
++                    // Paper start
++                    OutputStream fileoutputstream;
++                    if (!MinecraftServer.getServer().isRedisEnabled()) {
++                        fileoutputstream = new FileOutputStream(file);
++                    } else {
++                        String key = WorldFileUtils.getRedisKeyFromRegionFile(file);
++                        fileoutputstream = MinecraftServer.getServer().getRedissonClient().getBinaryStream(key).getOutputStream();
++                    }
++                    // Paper end
++                    NBTCompressedStreamTools.a(nbttagcompound, fileoutputstream);
+                     fileoutputstream.close();
+                 }
+             } catch (Exception exception) {
+diff --git a/src/main/resources/configurations/redis.yml b/src/main/resources/configurations/redis.yml
+new file mode 100644
+index 00000000..0b51e7b4
+--- /dev/null
++++ b/src/main/resources/configurations/redis.yml
+@@ -0,0 +1,21 @@
++---
++singleServerConfig:
++  idleConnectionTimeout: 10000
++  connectTimeout: 10000
++  timeout: 3000
++  retryAttempts: 3
++  retryInterval: 1500
++  password: null
++  subscriptionsPerConnection: 5
++  clientName: null
++  address: "redis://127.0.0.1:6379"
++  subscriptionConnectionMinimumIdleSize: 1
++  subscriptionConnectionPoolSize: 50
++  connectionMinimumIdleSize: 24
++  connectionPoolSize: 64
++  database: 0
++  dnsMonitoringInterval: 5000
++threads: 16
++nettyThreads: 32
++codec: !<org.redisson.codec.FstCodec> {}
++transportMode: "NIO"
+\ No newline at end of file
+-- 
+2.22.0.windows.1
+
