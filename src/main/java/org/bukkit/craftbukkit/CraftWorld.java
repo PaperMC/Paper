@@ -19,6 +19,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 import net.minecraft.server.AxisAlignedBB;
@@ -77,6 +78,7 @@ import net.minecraft.server.MovingObjectPosition;
 import net.minecraft.server.PacketPlayOutCustomSoundEffect;
 import net.minecraft.server.PacketPlayOutUpdateTime;
 import net.minecraft.server.PacketPlayOutWorldEvent;
+import net.minecraft.server.PersistentRaid;
 import net.minecraft.server.PlayerChunk;
 import net.minecraft.server.ProtoChunkExtension;
 import net.minecraft.server.RayTrace;
@@ -88,7 +90,6 @@ import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
 import net.minecraft.server.WorldGenHugeMushroomConfiguration;
 import net.minecraft.server.WorldGenerator;
-import net.minecraft.server.WorldNBTStorage;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.BlockChangeDelegate;
@@ -104,6 +105,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.StructureType;
 import org.bukkit.TreeType;
+import org.bukkit.Raid;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
@@ -2144,5 +2146,21 @@ public class CraftWorld implements World {
         BlockPosition originPos = new BlockPosition(origin.getX(), origin.getY(), origin.getZ());
         BlockPosition nearest = getHandle().getChunkProvider().getChunkGenerator().findNearestMapFeature(getHandle(), structureType.getName(), originPos, radius, findUnexplored);
         return (nearest == null) ? null : new Location(this, nearest.getX(), nearest.getY(), nearest.getZ());
+    }
+
+    @Override
+    public Raid locateNearestRaid(Location location, int radius) {
+        Validate.notNull(location, "Location cannot be null");
+        Validate.isTrue(radius >= 0, "Radius cannot be negative");
+
+        PersistentRaid persistentRaid = world.C(); // PAIL rename getPersistentRaid
+        net.minecraft.server.Raid raid = persistentRaid.a(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), radius * radius); // PAIL rename getNearbyRaid
+        return (raid == null) ? null : new CraftRaid(raid);
+    }
+
+    @Override
+    public List<Raid> getRaids() {
+        PersistentRaid persistentRaid = world.C(); // PAIL rename getPersistentRaid
+        return persistentRaid.a.values().stream().map(CraftRaid::new).collect(Collectors.toList());
     }
 }
