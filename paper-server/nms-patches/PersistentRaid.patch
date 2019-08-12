@@ -1,0 +1,46 @@
+--- a/net/minecraft/server/PersistentRaid.java
++++ b/net/minecraft/server/PersistentRaid.java
+@@ -9,7 +9,7 @@
+ 
+ public class PersistentRaid extends PersistentBase {
+ 
+-    private final Map<Integer, Raid> a = Maps.newHashMap();
++    public final Map<Integer, Raid> a = Maps.newHashMap(); // PAIL rename raids, private -> public
+     private final WorldServer b;
+     private int c;
+     private int d;
+@@ -92,19 +92,33 @@
+                 boolean flag = false;
+ 
+                 if (!raid.j()) {
++                    /* CraftBukkit - moved down
+                     if (!this.a.containsKey(raid.u())) {
+                         this.a.put(raid.u(), raid);
+                     }
++                    */
+ 
+                     flag = true;
+-                } else if (raid.m() < raid.l()) {
++                    // CraftBukkit start - fixed a bug with raid: players could add up Bad Omen level even when the raid had finished
++                } else if (raid.isInProgress() && raid.m() < raid.l()) {
+                     flag = true;
++                    // CraftBukkit end
+                 } else {
+                     entityplayer.removeEffect(MobEffects.BAD_OMEN);
+                     entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, (byte) 43));
+                 }
+ 
+                 if (flag) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callRaidTriggerEvent(raid, entityplayer)) {
++                        entityplayer.removeEffect(MobEffects.BAD_OMEN);
++                        return null;
++                    }
++
++                    if (!this.a.containsKey(raid.u())) {
++                        this.a.put(raid.u(), raid);
++                    }
++                    // CraftBukkit end
+                     raid.a((EntityHuman) entityplayer);
+                     entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, (byte) 43));
+                     if (!raid.c()) {

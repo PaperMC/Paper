@@ -39,6 +39,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySlime;
+import net.minecraft.server.EntityRaider;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.EntityWaterAnimal;
@@ -60,6 +61,7 @@ import net.minecraft.server.MovingObjectPositionBlock;
 import net.minecraft.server.MovingObjectPositionEntity;
 import net.minecraft.server.NPC;
 import net.minecraft.server.PacketPlayInCloseWindow;
+import net.minecraft.server.Raid;
 import net.minecraft.server.Unit;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldServer;
@@ -70,6 +72,7 @@ import org.bukkit.Statistic.Type;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -78,6 +81,7 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftRaider;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -100,6 +104,7 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Raider;
 import org.bukkit.entity.Sheep;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
@@ -188,6 +193,10 @@ import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
+import org.bukkit.event.raid.RaidTriggerEvent;
+import org.bukkit.event.raid.RaidFinishEvent;
+import org.bukkit.event.raid.RaidStopEvent;
+import org.bukkit.event.raid.RaidSpawnWaveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
@@ -1440,5 +1449,34 @@ public class CraftEventFactory {
         event.setCancelled(cancelled);
         Bukkit.getPluginManager().callEvent(event);
         return event;
+    }
+
+    /**
+     * Raid events
+     */
+    public static boolean callRaidTriggerEvent(Raid raid, EntityPlayer player) {
+        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid), raid.i().getWorld(), player.getBukkitEntity());
+        Bukkit.getPluginManager().callEvent(event);
+        return !event.isCancelled();
+    }
+
+    public static void callRaidFinishEvent(Raid raid, List<Player> players) {
+        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid), raid.i().getWorld(), players);
+        Bukkit.getPluginManager().callEvent(event);
+    }
+
+    public static void callRaidStopEvent(Raid raid, RaidStopEvent.Reason reason) {
+        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid), raid.i().getWorld(), reason);
+        Bukkit.getPluginManager().callEvent(event);
+    }
+
+    public static void callRaidSpawnWaveEvent(Raid raid, EntityRaider leader, List<EntityRaider> raiders) {
+        Raider craftLeader = (CraftRaider) leader.getBukkitEntity();
+        List<Raider> craftRaiders = new ArrayList<>();
+        for (EntityRaider entityRaider : raiders) {
+            craftRaiders.add((Raider) entityRaider.getBukkitEntity());
+        }
+        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.i().getWorld(), craftLeader, craftRaiders);
+        Bukkit.getPluginManager().callEvent(event);
     }
 }
