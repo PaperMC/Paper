@@ -1962,6 +1962,24 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Location locateNearestStructure(@NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored);
 
     /**
+     * Finds the nearest raid close to the given location.
+     *
+     * @param location the origin location
+     * @param radius the radius
+     * @return the closest {@link Raid}, or null if no raids were found
+     */
+    @Nullable
+    public Raid locateNearestRaid(@NotNull Location location, int radius);
+
+    /**
+     * Gets all raids that are going on over this world.
+     *
+     * @return the list of all active raids
+     */
+    @NotNull
+    public List<Raid> getRaids();
+
+    /**
      * Represents various map environment types that a world may be
      */
     public enum Environment {
