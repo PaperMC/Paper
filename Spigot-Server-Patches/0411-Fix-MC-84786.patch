@@ -1,0 +1,24 @@
+From 84d6eb1cfd350c7ffdf8b62e9a0795faa7265800 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 13 Aug 2019 06:35:17 -0700
+Subject: [PATCH] Fix MC-84786
+
+The problem was we were checking isExpired() on the entry, but if it
+was expired at that point, then it would be null.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index a183bb450d..6e57661048 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -512,7 +512,7 @@ public abstract class PlayerList {
+         Player player = entity.getBukkitEntity();
+         PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress());
+ 
+-        if (getProfileBans().isBanned(gameprofile) && !getProfileBans().get(gameprofile).hasExpired()) {
++        if (getProfileBans().isBanned(gameprofile) && getProfileBans().get(gameprofile) != null) { // Paper - Fix MC-84786
+             GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
+ 
+             chatmessage = new ChatMessage("multiplayer.disconnect.banned.reason", new Object[]{gameprofilebanentry.getReason()});
+-- 
+2.22.0
+
