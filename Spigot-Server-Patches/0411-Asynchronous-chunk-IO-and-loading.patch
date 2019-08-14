@@ -1,4 +1,4 @@
-From ca0494a8b980a7dcf890dac2395f4aa10997f256 Mon Sep 17 00:00:00 2001
+From 66b5ee28c04386493197202b616cb793c2acc649 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1722,7 +1722,7 @@ index 0000000000..305da47868
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 new file mode 100644
-index 0000000000..835a8296dc
+index 0000000000..60312b85f9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 @@ -0,0 +1,112 @@
@@ -1771,7 +1771,7 @@ index 0000000000..835a8296dc
 +
 +            // Note: We add to the server thread queue here since this is what the server will drain tasks from
 +            // when waiting for chunks
-+            ((IAsyncTaskHandler<Runnable>)this.world.getChunkProvider().serverThreadQueue).addTask(() -> {
++            ChunkTaskManager.queueChunkWaitTask(() -> {
 +                try (Timing ignored = this.world.timings.chunkUnloadDataSave.startTiming()) {
 +                    NBTTagCompound data = PaperFileIOThread.FAILURE_VALUE;
 +
@@ -1886,10 +1886,10 @@ index 0000000000..a68f8787c9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..9d8d63f129
+index 0000000000..3cdc74f1ce
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,336 @@
+@@ -0,0 +1,370 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1907,6 +1907,7 @@ index 0000000000..9d8d63f129
 +
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.function.Consumer;
 +
 +public final class ChunkTaskManager {
@@ -1923,6 +1924,8 @@ index 0000000000..9d8d63f129
 +    // used if async chunks are disabled in config
 +    protected static QueueExecutorThread<ChunkTask>[] globalWorkers;
 +    protected static PrioritizedTaskQueue<ChunkTask> globalQueue;
++
++    protected static final ConcurrentLinkedQueue<Runnable> CHUNK_WAIT_QUEUE = new ConcurrentLinkedQueue<>();
 +
 +    public static void initGlobalLoadThreads(int threads) {
 +        if (threads <= 0 || globalWorkers != null) {
@@ -1966,6 +1969,34 @@ index 0000000000..9d8d63f129
 +            });
 +
 +            this.workers[i].start();
++        }
++    }
++
++    /**
++     * Polls and runs the next available chunk wait queue task. This is to be used when the server is waiting on a chunk queue.
++     * (per-world can cause issues if all the worker threads are blocked waiting for a response from the main thread)
++     */
++    public static boolean pollChunkWaitQueue() {
++        final Runnable run = CHUNK_WAIT_QUEUE.poll();
++        if (run != null) {
++            run.run();
++            return true;
++        }
++        return false;
++    }
++
++    /**
++     * Queues a chunk wait task. Note that this will execute out of order with respect to tasks scheduled on a world's
++     * chunk task queue, since this is the global chunk wait queue.
++     */
++    public static void queueChunkWaitTask(final Runnable runnable) {
++        CHUNK_WAIT_QUEUE.add(runnable);
++    }
++
++    private static void drainChunkWaitQueue() {
++        Runnable run;
++        while ((run = CHUNK_WAIT_QUEUE.poll()) != null) {
++            run.run();
 +        }
 +    }
 +
@@ -2135,15 +2166,17 @@ index 0000000000..9d8d63f129
 +
 +    public void flush() {
 +        // flush here since we schedule tasks on the IO thread that can schedule tasks here
++        drainChunkWaitQueue();
 +        PaperFileIOThread.Holder.INSTANCE.flush();
++        drainChunkWaitQueue();
 +
 +        if (this.workers == null) {
 +            if (Bukkit.isPrimaryThread()) {
-+                ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).executeAll();
++                ((IAsyncTaskHandler<Runnable>)this.world.getChunkProvider().serverThreadQueue).executeAll();
 +            } else {
 +                CompletableFuture<Void> wait = new CompletableFuture<>();
 +                MinecraftServer.getServer().scheduleOnMain(() -> {
-+                    ((IAsyncTaskHandler<Runnable>) this.world.getChunkProvider().serverThreadQueue).executeAll();
++                    ((IAsyncTaskHandler<Runnable>)this.world.getChunkProvider().serverThreadQueue).executeAll();
 +                });
 +                wait.join();
 +            }
@@ -2155,6 +2188,7 @@ index 0000000000..9d8d63f129
 +        }
 +
 +        // flush again since tasks we execute async saves
++        drainChunkWaitQueue();
 +        PaperFileIOThread.Holder.INSTANCE.flush();
 +    }
 +
@@ -2227,7 +2261,7 @@ index 0000000000..9d8d63f129
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 3894b04342..494b2488c0 100644
+index 3894b04342..e254c43f70 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -124,11 +124,137 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2378,6 +2412,20 @@ index 3894b04342..494b2488c0 100644
                  this.world.timings.chunkAwait.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  this.world.timings.chunkAwait.stopTiming(); // Paper
+@@ -631,11 +760,12 @@ public class ChunkProviderServer extends IChunkProvider {
+         protected boolean executeNext() {
+         // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
+         try {
++            boolean execChunkTask = com.destroystokyo.paper.io.chunk.ChunkTaskManager.pollChunkWaitQueue(); // Paper
+             if (ChunkProviderServer.this.tickDistanceManager()) {
+                 return true;
+             } else {
+                 ChunkProviderServer.this.lightEngine.queueUpdate();
+-                return super.executeNext();
++                return super.executeNext() || execChunkTask; // Paper
+             }
+         } finally {
+             playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index a028074112..98cc4efcf5 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -2673,7 +2721,7 @@ index d521d25cf5..84024e6ba4 100644
              ;
          }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 3f14392e6e..00e92fa531 100644
+index 3f14392e6e..625d90fff1 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -3,6 +3,10 @@ package net.minecraft.server;
@@ -2698,42 +2746,18 @@ index 3f14392e6e..00e92fa531 100644
  
      public IChunkLoader(File file, DataFixer datafixer) {
          super(file);
-@@ -55,9 +61,34 @@ public class IChunkLoader extends RegionFileCache {
-             NBTTagCompound level = nbttagcompound.getCompound("Level");
-             if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-                 ChunkProviderServer cps = (generatoraccess == null) ? null : ((WorldServer) generatoraccess).getChunkProvider();
-+                // Paper start - Async chunk loading
-+                CompletableFuture<Void> future = new CompletableFuture<>();
-+                Runnable runnable = () -> {
-+                try {
-+                // Paper end
-                 if (check(cps, pos.x - 1, pos.z) && check(cps, pos.x - 1, pos.z - 1) && check(cps, pos.x, pos.z - 1)) {
-                     level.setBoolean("LightPopulated", true);
-                 }
-+                // Paper start - Async chunk loading
-+                future.complete(null);
-+                } catch (IOException ex) {
-+                    future.completeExceptionally(ex);
-+                }
-+                };
-+
-+                if (MinecraftServer.getServer().isMainThread()) {
-+                    future.complete(null);
-+                    runnable.run();
-+                } else {
-+                    ((PlayerChunkMap)this).world.getChunkProvider().serverThreadQueue.addTask(runnable);
-+                }
-+
-+                try {
-+                    future.join();
-+                } catch (CompletionException ex) {
-+                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ex.getCause());
-+                }
-+                // Paper end
+@@ -21,8 +27,8 @@ public class IChunkLoader extends RegionFileCache {
+     private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
+         ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
+         if (cps != null) {
+-            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
+-            if (cps.isLoaded(x, z)) {
++            //com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread"); // Paper - this function is now MT-Safe
++            if (cps.getChunkAtIfCachedImmediately(x, z) != null) { // Paper - isLoaded is a ticket level check, not a chunk loaded check!
+                 return true;
              }
          }
-         // CraftBukkit end
-@@ -65,11 +96,13 @@ public class IChunkLoader extends RegionFileCache {
+@@ -65,11 +71,13 @@ public class IChunkLoader extends RegionFileCache {
          if (i < 1493) {
              nbttagcompound = GameProfileSerializer.a(this.b, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
              if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
@@ -2747,7 +2771,7 @@ index 3f14392e6e..00e92fa531 100644
              }
          }
  
-@@ -89,7 +122,9 @@ public class IChunkLoader extends RegionFileCache {
+@@ -89,7 +97,9 @@ public class IChunkLoader extends RegionFileCache {
      public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
          super.write(chunkcoordintpair, nbttagcompound);
          if (this.a != null) {
