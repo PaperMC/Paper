@@ -1,4 +1,4 @@
-From 66b5ee28c04386493197202b616cb793c2acc649 Mon Sep 17 00:00:00 2001
+From 107fa548001a9ccf03ead4dd47842d432f782969 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -2721,7 +2721,7 @@ index d521d25cf5..84024e6ba4 100644
              ;
          }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 3f14392e6e..625d90fff1 100644
+index 3f14392e6e..39f6ddb1d2 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -3,6 +3,10 @@ package net.minecraft.server;
@@ -2746,7 +2746,7 @@ index 3f14392e6e..625d90fff1 100644
  
      public IChunkLoader(File file, DataFixer datafixer) {
          super(file);
-@@ -21,8 +27,8 @@ public class IChunkLoader extends RegionFileCache {
+@@ -21,14 +27,18 @@ public class IChunkLoader extends RegionFileCache {
      private boolean check(ChunkProviderServer cps, int x, int z) throws IOException {
          ChunkCoordIntPair pos = new ChunkCoordIntPair(x, z);
          if (cps != null) {
@@ -2757,7 +2757,18 @@ index 3f14392e6e..625d90fff1 100644
                  return true;
              }
          }
-@@ -65,11 +71,13 @@ public class IChunkLoader extends RegionFileCache {
+ 
+         if (this.chunkExists(pos)) {
+-            NBTTagCompound nbt = read(pos);
++            // Paper start - prioritize
++            NBTTagCompound nbt = cps == null ? read(pos) :
++                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.loadChunkData((WorldServer)cps.getWorld(), x, z,
++                    com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHER_PRIORITY, false, true).chunkData;
++            // Paper end
+             if (nbt != null) {
+                 NBTTagCompound level = nbt.getCompound("Level");
+                 if (level.getBoolean("TerrainPopulated")) {
+@@ -65,11 +75,13 @@ public class IChunkLoader extends RegionFileCache {
          if (i < 1493) {
              nbttagcompound = GameProfileSerializer.a(this.b, DataFixTypes.CHUNK, nbttagcompound, i, 1493);
              if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
@@ -2771,7 +2782,7 @@ index 3f14392e6e..625d90fff1 100644
              }
          }
  
-@@ -89,7 +97,9 @@ public class IChunkLoader extends RegionFileCache {
+@@ -89,7 +101,9 @@ public class IChunkLoader extends RegionFileCache {
      public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
          super.write(chunkcoordintpair, nbttagcompound);
          if (this.a != null) {
