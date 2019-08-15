@@ -1,4 +1,4 @@
-From 0e442d6b5fbc3a3a88968a73c8df876d1a6a386d Mon Sep 17 00:00:00 2001
+From 5d5f94cde1d2c983ddce06a462201aec17641069 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 7 Jan 2017 15:24:46 -0500
 Subject: [PATCH] Provide E/TE/Chunk count stat methods
@@ -7,17 +7,22 @@ Provides counts without the ineffeciency of using .getEntities().size()
 which creates copy of the collections.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 9b8fb80a4..b07e3fe26 100644
+index 13f2dbdd6..2087a38a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -271,6 +271,35 @@ public class CraftWorld implements World {
+@@ -271,6 +271,48 @@ public class CraftWorld implements World {
      private int waterAnimalSpawn = -1;
      private int ambientSpawn = -1;
  
 +    // Paper start - Provide fast information methods
-+    // TODO review these changes
 +    public int getEntityCount() {
-+        return world.entitiesById.size();
++        int ret = 0;
++        for (net.minecraft.server.Entity entity : world.entitiesById.values()) {
++            if (entity.isChunkLoaded()) {
++                ++ret;
++            }
++        }
++        return ret;
 +    }
 +    public int getTileEntityCount() {
 +        // We don't use the full world tile entity list, so we must iterate chunks
@@ -36,7 +41,15 @@ index 9b8fb80a4..b07e3fe26 100644
 +        return world.tileEntityListTick.size();
 +    }
 +    public int getChunkCount() {
-+        return world.getChunkProvider().playerChunkMap.visibleChunks.size();
++        int ret = 0;
++
++        for (PlayerChunk chunkHolder : world.getChunkProvider().playerChunkMap.visibleChunks.values()) {
++            if (chunkHolder.getChunk() != null) {
++                ++ret;
++            }
++        }
++
++        return ret;
 +    }
 +    public int getPlayerCount() {
 +        return world.players.size();
