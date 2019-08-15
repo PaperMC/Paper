@@ -1,4 +1,4 @@
-From e1dc1fc92f1d4e46ea41c274074713de49976a3c Mon Sep 17 00:00:00 2001
+From 25dd8434749412dffeb0e19d91868e66355c0f78 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
@@ -52,7 +52,7 @@ index e780f7af40..627fec10a8 100644
      public boolean captureBlockStates = false;
      public boolean captureTreeGeneration = false;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index d8c49d95e1..93d1cf0683 100644
+index d8c49d95e1..97049aba9d 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -72,6 +72,9 @@ public class WorldServer extends World {
@@ -65,9 +65,26 @@ index d8c49d95e1..93d1cf0683 100644
  
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-@@ -942,6 +945,12 @@ public class WorldServer extends World {
+@@ -940,8 +943,28 @@ public class WorldServer extends World {
+     // CraftBukkit start
+     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
-         if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
+-        if (entity.valid) { MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable()); return true; } // Paper
++        // Paper start
++        if (entity.valid) {
++            MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
++
++            if (DEBUG_ENTITIES) {
++                Throwable thr = entity.addedToWorldStack;
++                if (thr == null) {
++                    MinecraftServer.LOGGER.error("Double add entity has no add stacktrace");
++                } else {
++                    MinecraftServer.LOGGER.error("Double add stacktrace: ", thr);
++                }
++            }
++            return true;
++        }
++        // Paper end
          if (entity.dead) {
 +            // Paper start
 +            if (DEBUG_ENTITIES) {
@@ -78,7 +95,7 @@ index d8c49d95e1..93d1cf0683 100644
              // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getName(entity.getEntityType())); // CraftBukkit
              return false;
          } else if (this.isUUIDTaken(entity)) {
-@@ -1107,7 +1116,24 @@ public class WorldServer extends World {
+@@ -1107,7 +1130,24 @@ public class WorldServer extends World {
                  }
              }
  
