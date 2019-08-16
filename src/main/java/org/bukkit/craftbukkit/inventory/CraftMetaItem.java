@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
@@ -301,7 +301,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (meta.hasAttributeModifiers()) {
-            this.attributeModifiers = HashMultimap.create(meta.attributeModifiers);
+            this.attributeModifiers = LinkedHashMultimap.create(meta.attributeModifiers);
         }
 
         this.repairCost = meta.repairCost;
@@ -415,7 +415,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     static Multimap<Attribute, AttributeModifier> buildModifiers(NBTTagCompound tag, ItemMetaKey key) {
-        Multimap<Attribute, AttributeModifier> modifiers = HashMultimap.create();
+        Multimap<Attribute, AttributeModifier> modifiers = LinkedHashMultimap.create();
         if (!tag.hasKeyOfType(key.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
             return modifiers;
         }
@@ -576,7 +576,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static Multimap<Attribute, AttributeModifier> buildModifiers(Map<String, Object> map, ItemMetaKey key) {
         Map<?, ?> mods = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
-        Multimap<Attribute, AttributeModifier> result = HashMultimap.create();
+        Multimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
         if (mods == null) {
             return result;
         }
@@ -960,14 +960,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     private void checkAttributeList() {
         if (attributeModifiers == null) {
-            attributeModifiers = HashMultimap.create();
+            attributeModifiers = LinkedHashMultimap.create();
         }
     }
 
     @Override
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(@Nullable EquipmentSlot slot) {
         checkAttributeList();
-        SetMultimap<Attribute, AttributeModifier> result = HashMultimap.create();
+        SetMultimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
         for (Map.Entry<Attribute, AttributeModifier> entry : attributeModifiers.entries()) {
             if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
                 result.put(entry.getKey(), entry.getValue());
@@ -996,7 +996,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Override
     public void setAttributeModifiers(@Nullable Multimap<Attribute, AttributeModifier> attributeModifiers) {
         if (attributeModifiers == null || attributeModifiers.isEmpty()) {
-            this.attributeModifiers = HashMultimap.create();
+            this.attributeModifiers = LinkedHashMultimap.create();
             return;
         }
 
@@ -1192,7 +1192,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 clone.enchantments = new LinkedHashMap<Enchantment, Integer>(this.enchantments);
             }
             if (this.hasAttributeModifiers()) {
-                clone.attributeModifiers = HashMultimap.create(this.attributeModifiers);
+                clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
             }
             clone.hideFlag = this.hideFlag;
             clone.unbreakable = this.unbreakable;
