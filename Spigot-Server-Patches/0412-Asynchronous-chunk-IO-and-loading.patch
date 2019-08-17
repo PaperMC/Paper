@@ -1,4 +1,4 @@
-From d3287050f2e7a2274f9eff24e046ac82cf573212 Mon Sep 17 00:00:00 2001
+From d92aab3b847292e9faf7302e204f9266790ac1c1 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1886,7 +1886,7 @@ index 0000000000..1dfa8abfd8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..9b2b1dbef8
+index 0000000000..98a9744a0e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,429 @@
@@ -1980,8 +1980,8 @@ index 0000000000..9b2b1dbef8
 +                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
 +
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + loadTask.toString());
-+                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + saveTask.toString());
++                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
++                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
 +            }
 +        }
 +    }
@@ -1996,7 +1996,7 @@ index 0000000000..9b2b1dbef8
 +
 +        for (int i = 0; i < threads; ++i) {
 +            globalWorkers[i] = new QueueExecutorThread<>(globalQueue, (long)0.10e6); //0.1ms
-+            globalWorkers[i].setName("Async chunk loader thread #" + i);
++            globalWorkers[i].setName("Paper Async Chunk Task Thread #" + i);
 +            globalWorkers[i].setPriority(Thread.NORM_PRIORITY - 1);
 +            globalWorkers[i].setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
 +                PaperFileIOThread.LOGGER.fatal("Thread '" + thread.getName() + "' threw an uncaught exception!", throwable);
