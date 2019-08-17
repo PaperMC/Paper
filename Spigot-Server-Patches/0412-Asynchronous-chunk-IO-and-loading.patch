@@ -1,4 +1,4 @@
-From 0832bc6e7617a6c21ca999407ce9dfb95a268b86 Mon Sep 17 00:00:00 2001
+From 87e1235457612d97feec4f9c5f30b1e804a0ae1c Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1840,7 +1840,7 @@ index 0000000000..60312b85f9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
 new file mode 100644
-index 0000000000..a68f8787c9
+index 0000000000..1dfa8abfd8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
 @@ -0,0 +1,40 @@
@@ -1869,7 +1869,7 @@ index 0000000000..a68f8787c9
 +    @Override
 +    public String toString() {
 +        return "Chunk task: class:" + this.getClass().getName() + ", for world '" + this.world.getWorld().getName() +
-+            "', (" + this.chunkX + "," + this.chunkZ + "), hashcode:" + this.hashCode();
++            "', (" + this.chunkX + "," + this.chunkZ + "), hashcode:" + this.hashCode() + ", priority: " + this.getPriority();
 +    }
 +
 +    @Override
@@ -1886,10 +1886,10 @@ index 0000000000..a68f8787c9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..3cdc74f1ce
+index 0000000000..9b2b1dbef8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,370 @@
+@@ -0,0 +1,429 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1902,9 +1902,11 @@ index 0000000000..3cdc74f1ce
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NBTTagCompound;
 +import net.minecraft.server.WorldServer;
++import org.apache.logging.log4j.Level;
 +import org.bukkit.Bukkit;
 +import org.spigotmc.AsyncCatcher;
 +
++import java.util.ArrayDeque;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.ConcurrentLinkedQueue;
@@ -1926,6 +1928,63 @@ index 0000000000..3cdc74f1ce
 +    protected static PrioritizedTaskQueue<ChunkTask> globalQueue;
 +
 +    protected static final ConcurrentLinkedQueue<Runnable> CHUNK_WAIT_QUEUE = new ConcurrentLinkedQueue<>();
++
++    public static final ArrayDeque<ChunkInfo> WAITING_CHUNKS = new ArrayDeque<>(); // stack
++
++    private static final class ChunkInfo {
++
++        public final int chunkX;
++        public final int chunkZ;
++        public final WorldServer world;
++
++        public ChunkInfo(final int chunkX, final int chunkZ, final WorldServer world) {
++            this.chunkX = chunkX;
++            this.chunkZ = chunkZ;
++            this.world = world;
++        }
++
++        @Override
++        public String toString() {
++            return "[( " + this.chunkX + "," + this.chunkZ + ") in '" + this.world.getWorld().getName() + "']";
++        }
++    }
++
++    public static void pushChunkWait(final WorldServer world, final int chunkX, final int chunkZ) {
++        synchronized (WAITING_CHUNKS) {
++            WAITING_CHUNKS.push(new ChunkInfo(chunkX, chunkZ, world));
++        }
++    }
++
++    public static void popChunkWait() {
++        synchronized (WAITING_CHUNKS) {
++            WAITING_CHUNKS.pop();
++        }
++    }
++
++    public static String getChunkWaitInfo() {
++        synchronized (WAITING_CHUNKS) {
++            return WAITING_CHUNKS.toString();
++        }
++    }
++
++    public static void dumpAllChunkLoadInfo() {
++        synchronized (WAITING_CHUNKS) {
++            if (WAITING_CHUNKS.isEmpty()) {
++                return;
++            }
++
++            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
++
++            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
++                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
++                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
++
++                PaperFileIOThread.LOGGER.log(Level.ERROR, chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
++                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + loadTask.toString());
++                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + saveTask.toString());
++            }
++        }
++    }
 +
 +    public static void initGlobalLoadThreads(int threads) {
 +        if (threads <= 0 || globalWorkers != null) {
@@ -2261,7 +2320,7 @@ index 0000000000..3cdc74f1ce
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 3894b04342..e254c43f70 100644
+index 3894b04342..9138a256bd 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -124,11 +124,137 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2402,17 +2461,21 @@ index 3894b04342..e254c43f70 100644
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -150,6 +276,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -150,8 +276,13 @@ public class ChunkProviderServer extends IChunkProvider {
              CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
  
              if (!completablefuture.isDone()) { // Paper
-+                // Paper start - async chunk io // Paper start - async chunk loading
++                // Paper start - async chunk io/loading
 +                this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
++                com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
 +                // Paper end
                  this.world.timings.chunkAwait.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
++                com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                  this.world.timings.chunkAwait.stopTiming(); // Paper
-@@ -631,11 +760,12 @@ public class ChunkProviderServer extends IChunkProvider {
+             } // Paper
+             ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
+@@ -631,11 +762,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {
@@ -3731,6 +3794,34 @@ index 78e018caa1..7d55d8abd0 100644
      }
      // Paper end
  
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index a1d93200e6..6ca0ebfdee 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -6,6 +6,7 @@ import java.lang.management.ThreadInfo;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import com.destroystokyo.paper.PaperConfig;
++import com.destroystokyo.paper.io.chunk.ChunkTaskManager; // Paper
+ import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
+ 
+@@ -83,6 +84,7 @@ public class WatchdogThread extends Thread
+                 log.log( Level.SEVERE, "If you are unsure or still think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" );
+                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
+                 log.log( Level.SEVERE, "Paper version: " + Bukkit.getServer().getVersion() );
++                ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
+                 //
+                 if ( net.minecraft.server.World.lastPhysicsProblem != null )
+                 {
+@@ -111,6 +113,7 @@ public class WatchdogThread extends Thread
+                 // Paper end - Different message for short timeout
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
++                log.log( Level.SEVERE, "The server is waiting on these chunks: " + ChunkTaskManager.getChunkWaitInfo() ); // Paper - async chunk debug
+                 dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
 -- 
-2.22.0
+2.22.1
 
