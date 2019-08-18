@@ -745,7 +745,22 @@ public class ChunkProviderServer extends IChunkProvider {
             this.world.getMethodProfiler().enter("naturalSpawnCount");
             this.world.timings.countNaturalMobs.startTiming(); // Paper - timings
             int l = this.chunkMapDistance.b();
-            SpawnerCreature.d spawnercreature_d = SpawnerCreature.a(l, this.world.A(), this::a);
+            // Paper start - per player mob spawning
+            SpawnerCreature.d spawnercreature_d; // moved down
+            if (this.playerChunkMap.playerMobDistanceMap != null) {
+                // update distance map
+                this.world.timings.playerMobDistanceMapUpdate.startTiming();
+                this.playerChunkMap.playerMobDistanceMap.update(this.world.players, this.playerChunkMap.viewDistance);
+                this.world.timings.playerMobDistanceMapUpdate.stopTiming();
+                // re-set mob counts
+                for (EntityPlayer player : this.world.players) {
+                    Arrays.fill(player.mobCounts, 0);
+                }
+                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.A(), this::a, true);
+            } else {
+                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.A(), this::a, false);
+            }
+            // Paper end
             this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
 
             this.p = spawnercreature_d;

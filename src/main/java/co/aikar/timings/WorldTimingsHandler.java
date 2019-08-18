@@ -57,6 +57,7 @@ public class WorldTimingsHandler {
 
 
     public final Timing miscMobSpawning;
+    public final Timing playerMobDistanceMapUpdate;
 
     public final Timing poiUnload;
     public final Timing chunkUnload;
@@ -122,6 +123,7 @@ public class WorldTimingsHandler {
 
 
         miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
+        playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
 
         poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
         chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");

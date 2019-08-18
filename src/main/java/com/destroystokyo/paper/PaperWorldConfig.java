@@ -551,4 +551,9 @@ public class PaperWorldConfig {
             }
         }
     }
+
+    public boolean perPlayerMobSpawns = false;
+    private void perPlayerMobSpawns() {
+        perPlayerMobSpawns = getBoolean("per-player-mob-spawns", false);
+    }
 }

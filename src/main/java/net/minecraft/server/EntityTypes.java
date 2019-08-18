@@ -280,6 +280,7 @@ public class EntityTypes<T extends Entity> {
         return this.bl;
     }
 
+    public final EnumCreatureType getEnumCreatureType() { return this.e(); } // Paper - OBFHELPER
     public EnumCreatureType e() {
         return this.bg;
     }
