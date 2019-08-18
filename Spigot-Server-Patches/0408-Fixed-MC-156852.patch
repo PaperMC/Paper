@@ -1,0 +1,28 @@
+From 6e3e4c0d0ef13a74817402992dc91eeb14611941 Mon Sep 17 00:00:00 2001
+From: TheGreatKetchup <TheGreatKetchup@users.noreply.github.com>
+Date: Thu, 1 Aug 2019 21:24:30 -0400
+Subject: [PATCH] Fixed MC-156852
+
+This corrects the 1.14.4 of "phantom" blocks that the client thinks are
+deleted but the server does not.
+
+It uses the same solution that fixed the glitch that caused the same
+issue in 1.8-1.12.
+
+Originally solved by Gnembon on MC-5694 at bugs.mojang.com
+
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index e5e9de542..c96564a59 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -218,6 +218,7 @@ public class PlayerInteractManager {
+                     int j = (int) (f * 10.0F);
+ 
+                     this.world.a(this.player.getId(), blockposition, j);
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition)); // Paper - fixes MC-156852
+                     this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true));
+                     this.l = j;
+                 }
+-- 
+2.22.0
+

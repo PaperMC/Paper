@@ -1,4 +1,4 @@
-From d99eaf4f0c6f2a9b5cd3be7cee05369dca7244d1 Mon Sep 17 00:00:00 2001
+From 5e18e2daec98e2f74e083d7f2d9e3c0fee32f327 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000..5626ae4e3a
+index 000000000..db899937b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,244 @@
+@@ -0,0 +1,247 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -187,6 +187,9 @@ index 0000000000..5626ae4e3a
 +
 +                Collection<Entity> entities = world.entitiesById.values();
 +                entities.forEach(e -> {
++                    if (!e.isChunkLoaded()) {
++                        return;
++                    }
 +                    MinecraftKey key = new MinecraftKey(""); // TODO: update in next patch
 +
 +                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
@@ -256,7 +259,7 @@ index 0000000000..5626ae4e3a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
-index 0000000000..db79fe41b9
+index 000000000..db79fe41b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +1,184 @@
@@ -446,7 +449,7 @@ index 0000000000..db79fe41b9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000..a738657394
+index 000000000..a73865739
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +1,67 @@
@@ -518,10 +521,10 @@ index 0000000000..a738657394
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index d88c9b6f65..5e0797afde 100644
+index e02e00300..e6cf90484 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -152,6 +152,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -162,6 +162,15 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -538,7 +541,7 @@ index d88c9b6f65..5e0797afde 100644
          this.setSpawnAnimals(dedicatedserverproperties.spawnAnimals);
          this.setSpawnNPCs(dedicatedserverproperties.spawnNpcs);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9eea61fc2b..d4dff91586 100644
+index 9eea61fc2..d4dff9158 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -134,9 +134,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
@@ -555,7 +558,7 @@ index 9eea61fc2b..d4dff91586 100644
      public boolean impulse;
      public int portalCooldown;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index e34ef4531c..43d207ae59 100644
+index e34ef4531..43d207ae5 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -578,7 +581,7 @@ index e34ef4531c..43d207ae59 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index bec64d7f28..7f648dbbc9 100644
+index bec64d7f2..7f648dbbc 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -86,6 +86,8 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -599,7 +602,7 @@ index bec64d7f28..7f648dbbc9 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8465a91088..4d38bf5018 100644
+index 305b6eaa9..dce5bde54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -756,6 +756,7 @@ public final class CraftServer implements Server {
@@ -626,7 +629,7 @@ index 8465a91088..4d38bf5018 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
          ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -1958,4 +1961,35 @@ public final class CraftServer implements Server {
+@@ -1959,4 +1962,35 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }
@@ -663,7 +666,7 @@ index 8465a91088..4d38bf5018 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 87088cf691..d28530051d 100644
+index fd5bc0fec..0e33cb367 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -128,6 +128,14 @@ public class Main {
@@ -682,7 +685,7 @@ index 87088cf691..d28530051d 100644
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index dd8cb8e5bb..2551339031 100644
+index 6ae3b3185..8c7dd0133 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -39,36 +39,36 @@ public class SpigotWorldConfig

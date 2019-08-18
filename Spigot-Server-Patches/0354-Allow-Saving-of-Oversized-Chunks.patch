@@ -1,4 +1,4 @@
-From 2d05bd7f3624fb882fd0eee352819bafc6876d5a Mon Sep 17 00:00:00 2001
+From 34e2a8960d67bda57cbaafad5086bc2f520f327a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
@@ -31,7 +31,7 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
-index 9fd8a75dae..d49afd622e 100644
+index 9fd8a75da..d49afd622 100644
 --- a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 +++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
 @@ -69,6 +69,7 @@ public class NBTCompressedStreamTools {
@@ -51,7 +51,7 @@ index 9fd8a75dae..d49afd622e 100644
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index b7c94fe238..80eea5dfbd 100644
+index b7c94fe23..80eea5dfb 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
 @@ -11,7 +11,7 @@ import java.util.Objects;
@@ -64,7 +64,7 @@ index b7c94fe238..80eea5dfbd 100644
  
      public NBTTagList() {}
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index e68f901943..ed2ccebb23 100644
+index e90ef45ee..ccc3d6c7a 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -23,7 +23,7 @@ public class RegionFile implements AutoCloseable {
@@ -75,7 +75,7 @@ index e68f901943..ed2ccebb23 100644
 +    final File file; // Paper - private -> package
      // Spigot end
      private static final byte[] a = new byte[4096];
-     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER
+     private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER // PAIL dataFile
 @@ -33,6 +33,7 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(File file) throws IOException {
@@ -86,7 +86,7 @@ index e68f901943..ed2ccebb23 100644
              this.b.write(RegionFile.a);
 @@ -66,6 +67,7 @@ public class RegionFile implements AutoCloseable {
          }
-         header.clear();
+         ((java.nio.Buffer) header).clear();
          java.nio.IntBuffer headerAsInts = header.asIntBuffer();
 +        initOversizedState();
          // Paper End
@@ -102,7 +102,7 @@ index e68f901943..ed2ccebb23 100644
                      // Spigot end
                      this.e.set((k >> 8) + l, false);
 @@ -102,11 +104,11 @@ public class RegionFile implements AutoCloseable {
-             if (offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
+             if (this.offsets[j] != 0) this.timestamps[j] = k; // Paper - don't set timestamp if it got 0'd above due to corruption
          }
  
 -        this.file = file; // Spigot
@@ -126,7 +126,7 @@ index e68f901943..ed2ccebb23 100644
      }
  
      protected synchronized void a(ChunkCoordIntPair chunkcoordintpair, byte[] abyte, int i) {
-@@ -201,8 +203,9 @@ public class RegionFile implements AutoCloseable {
+@@ -202,8 +204,9 @@ public class RegionFile implements AutoCloseable {
  
              if (i1 >= 256) {
                  // Spigot start
@@ -137,7 +137,7 @@ index e68f901943..ed2ccebb23 100644
                  // Spigot end
              }
  
-@@ -352,6 +355,109 @@ public class RegionFile implements AutoCloseable {
+@@ -395,6 +398,109 @@ public class RegionFile implements AutoCloseable {
              logger.error("Error backing up corrupt file" + file.getAbsolutePath(), e);
          }
      }
@@ -247,7 +247,7 @@ index e68f901943..ed2ccebb23 100644
      // Paper end
  
      class ChunkBuffer extends ByteArrayOutputStream {
-@@ -363,8 +469,35 @@ public class RegionFile implements AutoCloseable {
+@@ -406,8 +512,35 @@ public class RegionFile implements AutoCloseable {
              this.b = chunkcoordintpair;
          }
  
@@ -286,7 +286,7 @@ index e68f901943..ed2ccebb23 100644
 +
  }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 8718811655..c53518a477 100644
+index 871881165..c53518a47 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -47,6 +47,7 @@ public abstract class RegionFileCache implements AutoCloseable {
