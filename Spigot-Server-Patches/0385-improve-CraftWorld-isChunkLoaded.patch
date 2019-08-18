@@ -1,0 +1,34 @@
+From 90d05dc9e70d89f1d55c4f96b06311ab0a7e37a7 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 21 May 2019 02:34:04 +0100
+Subject: [PATCH] improve CraftWorld#isChunkLoaded
+
+getChunkAt will request the chunk using vanillas chunk loading system,
+which while we're not going to load the chunk, does involve the server
+waiting for the execution queue to get to our request; We can just query
+the chunk status and get a response now, vs having to wait
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 91b65fde05..b6ca8a9e94 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -400,14 +400,13 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public boolean isChunkLoaded(int x, int z) {
+-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
+-        return chunk != null;
++        return world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z) != null; // Paper
+     }
+ 
+     @Override
+     public boolean isChunkGenerated(int x, int z) {
+         try {
+-            return isChunkLoaded(x, z) || world.getChunkProvider().playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z));
++            return world.getChunkProvider().getChunkAtIfCachedImmediately(x, z) != null || world.getChunkProvider().playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z)); // Paper
+         } catch (IOException ex) {
+             throw new RuntimeException(ex);
+         }
+-- 
+2.22.1
+
