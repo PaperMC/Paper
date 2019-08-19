@@ -3089,10 +3089,13 @@ public abstract class EntityLiving extends Entity {
         this.datawatcher.set(EntityLiving.ag, (byte) j);
     }
 
-    public void c(EnumHand enumhand) {
+    // Paper start -- OBFHELPER and forwarder to method with forceUpdate parameter
+    public void c(EnumHand enumhand) { this.updateActiveItem(enumhand, false); }
+    public void updateActiveItem(EnumHand enumhand, boolean forceUpdate) {
+    // Paper end
         ItemStack itemstack = this.b(enumhand);
 
-        if (!itemstack.isEmpty() && !this.isHandRaised()) {
+        if (!itemstack.isEmpty() && !this.isHandRaised() || forceUpdate) { // Paper use override flag
             this.activeItem = itemstack;
             this.bd = itemstack.k();
             if (!this.world.isClientSide) {
@@ -3170,6 +3173,7 @@ public abstract class EntityLiving extends Entity {
             this.releaseActiveItem();
         } else {
             if (!this.activeItem.isEmpty() && this.isHandRaised()) {
+                this.updateActiveItem(this.getRaisedHand(), true); // Paper
                 this.b(this.activeItem, 16);
                 // CraftBukkit start - fire PlayerItemConsumeEvent
                 ItemStack itemstack;
@@ -3204,8 +3208,8 @@ public abstract class EntityLiving extends Entity {
                 }
 
                 this.clearActiveItem();
-                // Paper start - if the replacement is anything but the default, update the client inventory
-                if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
+                // Paper start
+                if (this instanceof EntityPlayer) {
                     ((EntityPlayer) this).getBukkitEntity().updateInventory();
                 }
                 // Paper end
