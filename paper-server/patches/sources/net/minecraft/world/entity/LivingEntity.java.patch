@@ -379,15 +379,17 @@
          }
      }
  
-@@ -987,24 +1133,55 @@
-         return this.addEffect(effect, (Entity) null);
-     }
+@@ -985,26 +1131,57 @@
  
+     public final boolean addEffect(MobEffectInstance effect) {
+         return this.addEffect(effect, (Entity) null);
++    }
++
 +    // CraftBukkit start
 +    public boolean addEffect(MobEffectInstance mobeffect, EntityPotionEffectEvent.Cause cause) {
 +        return this.addEffect(mobeffect, (Entity) null, cause);
-+    }
-+
+     }
+ 
      public boolean addEffect(MobEffectInstance effect, @Nullable Entity source) {
 -        if (!this.canBeAffected(effect)) {
 +        return this.addEffect(effect, source, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
@@ -856,7 +858,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1527,25 +1854,53 @@
+@@ -1527,27 +1854,55 @@
          }
      }
  
@@ -903,8 +905,8 @@
          }
  
 +        return 0; // CraftBukkit
-+    }
-+
+     }
+ 
 +    protected void dropExperience(ServerLevel world, @Nullable Entity attacker) {
 +        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
 +        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
@@ -912,9 +914,11 @@
 +            this.expToDrop = 0;
 +        }
 +        // CraftBukkit end
-     }
- 
++    }
++
      protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {}
+ 
+     public long getLootTableSeed() {
 @@ -1612,19 +1967,35 @@
      }
  
@@ -967,12 +971,12 @@
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getHurtSound0(DamageSource damagesource) {
 +        return this.getHurtSound(damagesource);
-     }
- 
-+    public SoundEvent getDeathSound0() {
-+        return this.getDeathSound();
 +    }
 +
++    public SoundEvent getDeathSound0() {
++        return this.getDeathSound();
+     }
+ 
 +    public SoundEvent getFallDamageSound0(int fallHeight) {
 +        return this.getFallDamageSound(fallHeight);
 +    }
@@ -1043,7 +1047,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1098,7 +1102,7 @@
 +        };
 +        float magicModifier = magic.apply((double) f).floatValue();
 +        f += magicModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> absorption = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1223,27 +1227,26 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,9 +2487,19 @@
+@@ -1935,8 +2487,18 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-     }
- 
++    }
++
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
-     }
 @@ -1999,7 +2561,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1440,11 +1443,28 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3483,13 +4074,48 @@
+@@ -3410,9 +4001,14 @@
+     }
+ 
+     public void startUsingItem(InteractionHand hand) {
++        // Paper start - Prevent consuming the wrong itemstack
++        this.startUsingItem(hand, false);
++    }
++    public void startUsingItem(InteractionHand hand, boolean forceUpdate) {
++        // Paper end - Prevent consuming the wrong itemstack
+         ItemStack itemstack = this.getItemInHand(hand);
+ 
+-        if (!itemstack.isEmpty() && !this.isUsingItem()) {
++        if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
+             this.useItem = itemstack;
+             this.useItemRemaining = itemstack.getUseDuration(this);
+             if (!this.level().isClientSide) {
+@@ -3483,13 +4079,49 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
 -                    ItemStack itemstack = this.useItem.finishUsingItem(this.level(), this);
++                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
 +                    // CraftBukkit start - fire PlayerItemConsumeEvent
 +                    ItemStack itemstack;
 +                    PlayerItemConsumeEvent event = null; // Paper
@@ -1453,7 +1473,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1464,7 +1484,7 @@
 +                            entityPlayer.getBukkitEntity().updateScaledHealth();
 +                            return;
 +                        }
-+
+ 
 +                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
 +                    } else {
 +                        itemstack = this.useItem.finishUsingItem(this.level(), this);
@@ -1482,15 +1502,15 @@
                      }
  
                      this.stopUsingItem();
-+                    // Paper start - if the replacement is anything but the default, update the client inventory
-+                    if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                    // Paper start
++                    if (this instanceof ServerPlayer) {
 +                        ((ServerPlayer) this).getBukkitEntity().updateInventory();
 +                    }
 +                    // Paper end
                  }
  
              }
-@@ -3544,12 +4170,69 @@
+@@ -3544,12 +4176,69 @@
          if (this.isUsingItem() && !this.useItem.isEmpty()) {
              Item item = this.useItem.getItem();
  
@@ -1498,14 +1518,14 @@
 +            return item.getUseAnimation(this.useItem) != ItemUseAnimation.BLOCK ? null : (item.getUseDuration(this.useItem, this) - this.useItemRemaining < getShieldBlockingDelay() ? null : this.useItem); // Paper - Make shield blocking delay configurable
          } else {
              return null;
-         }
-     }
- 
++        }
++    }
++
 +    // Paper start - Make shield blocking delay configurable
 +    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
-+        }
+         }
 +
 +        Vec3 start = new Vec3(getX(), getY() + getEyeHeight(), getZ());
 +        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
@@ -1513,8 +1533,8 @@
 +        ClipContext raytrace = new ClipContext(start, end, ClipContext.Block.OUTLINE, fluidCollisionOption, this);
 +
 +        return this.level().clip(raytrace);
-+    }
-+
+     }
+ 
 +    public @Nullable net.minecraft.world.phys.EntityHitResult getTargetEntity(int maxDistance) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
@@ -1561,7 +1581,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3568,12 +4251,18 @@
+@@ -3568,12 +4257,18 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean particleEffects) {
@@ -1582,7 +1602,7 @@
          Level world = this.level();
  
          if (world.hasChunkAt(blockposition)) {
-@@ -3592,18 +4281,43 @@
+@@ -3592,18 +4287,43 @@
              }
  
              if (flag2) {
@@ -1630,7 +1650,7 @@
                  world.broadcastEntityEvent(this, (byte) 46);
              }
  
-@@ -3613,7 +4327,7 @@
+@@ -3613,7 +4333,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1639,7 +1659,7 @@
          }
      }
  
-@@ -3706,7 +4420,7 @@
+@@ -3706,7 +4426,7 @@
      }
  
      public void stopSleeping() {
@@ -1648,7 +1668,7 @@
          Level world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3718,9 +4432,9 @@
+@@ -3718,9 +4438,9 @@
  
                  this.level().setBlock(blockposition, (BlockState) iblockdata.setValue(BedBlock.OCCUPIED, false), 3);
                  Vec3 vec3d = (Vec3) BedBlock.findStandUpPosition(this.getType(), this.level(), blockposition, enumdirection, this.getYRot()).orElseGet(() -> {
@@ -1660,7 +1680,7 @@
                  });
                  Vec3 vec3d1 = Vec3.atBottomCenterOf(blockposition).subtract(vec3d).normalize();
                  float f = (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-@@ -3740,7 +4454,7 @@
+@@ -3740,7 +4460,7 @@
  
      @Nullable
      public Direction getBedOrientation() {
@@ -1669,7 +1689,7 @@
  
          return blockposition != null ? BedBlock.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3905,7 +4619,7 @@
+@@ -3905,7 +4625,7 @@
      public float maxUpStep() {
          float f = (float) this.getAttributeValue(Attributes.STEP_HEIGHT);
  
