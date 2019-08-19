@@ -1,4 +1,4 @@
-From 2567891663da05271689ca3b429a3a678ceff42e Mon Sep 17 00:00:00 2001
+From c621bcf025700ef7702f729a581387d5e13355b0 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 19 Jul 2019 03:29:14 -0700
 Subject: [PATCH] Reduce sync loads
@@ -280,9 +280,26 @@ index 9138a256bd..9f9bebdb22 100644
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b81b37445c..d3a0ed52bc 100644
+index b81b37445c..9d29fc8ca4 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
+@@ -1195,14 +1195,14 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+     }
+ 
+     public boolean n(BlockPosition blockposition) {
+-        return isOutsideWorld(blockposition) ? false : this.chunkProvider.b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return isOutsideWorld(blockposition) ? false : this.isLoaded(blockposition); // Paper - reduce sync loads
+     }
+ 
+     public boolean a(BlockPosition blockposition, Entity entity) {
+         if (isOutsideWorld(blockposition)) {
+             return false;
+         } else {
+-            IChunkAccess ichunkaccess = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
++            IChunkAccess ichunkaccess = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper - reduce sync loads
+ 
+             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity);
+         }
 @@ -1249,7 +1249,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
  
          for (int i1 = i; i1 <= j; ++i1) {
@@ -310,6 +327,23 @@ index b81b37445c..d3a0ed52bc 100644
  
                  if (chunk != null) {
                      chunk.a(oclass, axisalignedbb, list, predicate);
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index cf981632c7..e0992b9daf 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -150,6 +150,12 @@ public class WorldServer extends World {
+     };
+     public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
+     // Paper end
++    // Paper start
++    @Override
++    public boolean isChunkLoaded(int x, int z) {
++        return this.getChunkProvider().getChunkAtIfCachedImmediately(x, z) != null;
++    }
++    // Paper end
+ 
+     // Add env and gen to constructor
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 -- 
 2.22.1
 
