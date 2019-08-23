@@ -1,4 +1,4 @@
-From da8b4b518bb3aba14dc9717f5c367d30e1cc1d9b Mon Sep 17 00:00:00 2001
+From b6e93e4d6f1690e6a8683f19fc15ebc8365d4387 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 22 Aug 2019 23:12:13 -0700
 Subject: [PATCH] fixup! MC Utils
@@ -629,7 +629,7 @@ index 14f8b61042..b9cb12984e 100644
  
      /**
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index a6b0fb1601..d537cb6e8c 100644
+index a6b0fb1601..7a800279cb 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -105,6 +105,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -649,23 +649,45 @@ index a6b0fb1601..d537cb6e8c 100644
          this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
      }
  
-@@ -1269,6 +1272,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1268,7 +1271,29 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         return sectionposition;
      }
  
++    // Paper start
++    void addPlayerToDistanceMaps(EntityPlayer player) {
++        this.updateMaps(player);
++    }
++
++    void removePlayerFromDistanceMaps(EntityPlayer player) {
++        this.playerViewDistanceMap.remove(player);
++    }
++
++    void updateDistanceMaps(EntityPlayer player) {
++        this.updateMaps(player);
++    }
++
++    private void updateMaps(EntityPlayer player) {
++        int chunkX = (int)Math.floor(player.locX);
++        int chunkZ = (int)Math.floor(player.locZ);
++
++        this.playerViewDistanceMap.update(player, chunkX, chunkZ, this.viewDistance);
++    }
++    // Paper end
++
      public void movePlayer(EntityPlayer entityplayer) {
-+        this.playerViewDistanceMap.update(entityplayer, (int)Math.floor(entityplayer.locX) >> 4, (int)Math.floor(entityplayer.locZ) >> 4, this.viewDistance); // Paper
++        this.updateDistanceMaps(entityplayer); // Paper
          ObjectIterator objectiterator = this.trackedEntities.values().iterator();
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 5eff278e76..a36c90a5e8 100644
+index 5eff278e76..7af684d98e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1075,6 +1075,7 @@ public class WorldServer extends World {
          }
  
          this.registerEntity(entityplayer);
-+        this.getChunkProvider().playerChunkMap.playerViewDistanceMap.update(entityplayer, ichunkaccess.getPos().x, ichunkaccess.getPos().z, this.getChunkProvider().playerChunkMap.viewDistance); // Paper
++        this.getChunkProvider().playerChunkMap.addPlayerToDistanceMaps(entityplayer); // Paper
      }
  
      // CraftBukkit start
@@ -673,7 +695,7 @@ index 5eff278e76..a36c90a5e8 100644
              EntityPlayer entityplayer = (EntityPlayer) entity;
  
              this.players.remove(entityplayer);
-+            this.getChunkProvider().playerChunkMap.playerViewDistanceMap.remove(entityplayer); // Paper
++            this.getChunkProvider().playerChunkMap.removePlayerFromDistanceMaps(entityplayer); // Paper
          }
  
          this.getScoreboard().a(entity);
