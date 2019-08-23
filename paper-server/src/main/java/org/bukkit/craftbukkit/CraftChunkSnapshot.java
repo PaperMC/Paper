@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.BiomeBase;
 import net.minecraft.server.DataPaletteBlock;
 import net.minecraft.server.HeightMap;
@@ -96,6 +97,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final int getHighestBlockYAt(int x, int z) {
+        Preconditions.checkState(hmap != null, "ChunkSnapshot created without height map. Please call getSnapshot with includeMaxblocky=true");
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return hmap.a(x, z);
@@ -103,6 +105,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final Biome getBiome(int x, int z) {
+        Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
@@ -110,6 +113,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final double getRawBiomeTemperature(int x, int z) {
+        Preconditions.checkState(biomeTemp != null, "ChunkSnapshot created without biome temperatures. Please call getSnapshot with includeBiomeTempRain=true");
         CraftChunk.validateChunkCoordinates(x, 0, z);
 
         return biomeTemp[z << 4 | x];
