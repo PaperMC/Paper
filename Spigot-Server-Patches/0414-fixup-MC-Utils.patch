@@ -1,0 +1,682 @@
+From da8b4b518bb3aba14dc9717f5c367d30e1cc1d9b Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 22 Aug 2019 23:12:13 -0700
+Subject: [PATCH] fixup! MC Utils
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/AreaMap.java
+new file mode 100644
+index 0000000000..64a6e614b6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/AreaMap.java
+@@ -0,0 +1,282 @@
++package com.destroystokyo.paper.util;
++
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
++import net.minecraft.server.ChunkCoordIntPair;
++import net.minecraft.server.MCUtil;
++
++import java.util.Iterator;
++
++/** @author Spottedleaf */
++public abstract class AreaMap<E> {
++
++    /* Tested via https://gist.github.com/Spottedleaf/520419c6f41ef348fe9926ce674b7217 */
++
++    private final Object2LongOpenHashMap<E> objectToLastCoordinate = new Object2LongOpenHashMap<>();
++    private final Object2IntOpenHashMap<E> objectToViewDistance = new Object2IntOpenHashMap<>();
++
++    {
++        this.objectToViewDistance.defaultReturnValue(-1);
++    }
++
++    // we use linked for better iteration.
++    // map of: coordinate to set of objects in coordinate
++    private final Long2ObjectOpenHashMap<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> areaMap = new Long2ObjectOpenHashMap<>(32, 0.3f);
++
++    private final PooledLinkedHashSets<E> pooledHashSets;
++
++    public AreaMap() {
++        this(new PooledLinkedHashSets<>());
++    }
++
++    // let users define a "global" or "shared" pooled sets if they wish
++    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets) {
++        this.pooledHashSets = pooledHashSets;
++    }
++
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final long key) {
++        return this.areaMap.get(key);
++    }
++
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final ChunkCoordIntPair chunkPos) {
++        return this.getObjectsInRange(chunkPos.x, chunkPos.z);
++    }
++
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final int chunkX, final int chunkZ) {
++        return this.getObjectsInRange(MCUtil.getCoordinateKey(chunkX, chunkZ));
++    }
++
++    public void update(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        final int oldDistance = this.objectToViewDistance.put(object, viewDistance);
++        final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
++        if (oldDistance == -1) {
++            this.objectToLastCoordinate.put(object, newPos);
++            this.addObject(object, chunkX, chunkZ, viewDistance);
++        } else {
++            this.updateObject(object, this.objectToLastCoordinate.put(object, newPos), newPos, oldDistance, viewDistance);
++        }
++        //this.validate(object, viewDistance);
++    }
++
++    public void remove(final E object) {
++        final long position = this.objectToLastCoordinate.removeLong(object);
++        final int viewDistance = this.objectToViewDistance.removeInt(object);
++
++        if (viewDistance == -1) {
++            throw new IllegalStateException("Cannot remove object " + object + " from area map " + this.toString());
++        }
++
++        this.removeObject(object, MCUtil.getCoordinateX(position), MCUtil.getCoordinateZ(position), viewDistance);
++        //this.validate(object, -1);
++    }
++
++    protected abstract PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getEmptySetFor(final E object);
++
++    // expensive op, only for debug
++    private void validate(final E object, final int viewDistance) {
++        int entiesGot = 0;
++        int expectedEntries = (2 * viewDistance + 1);
++        expectedEntries *= expectedEntries;
++        if (viewDistance < 0) {
++            expectedEntries = 0;
++        }
++
++        final long currPosition = this.objectToLastCoordinate.getLong(object);
++
++        final int centerX = MCUtil.getCoordinateX(currPosition);
++        final int centerZ = MCUtil.getCoordinateZ(currPosition);
++
++        for (Iterator<Long2ObjectLinkedOpenHashMap.Entry<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>>> iterator = this.areaMap.long2ObjectEntrySet().fastIterator();
++             iterator.hasNext();) {
++
++            final Long2ObjectLinkedOpenHashMap.Entry<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> entry = iterator.next();
++            final long key = entry.getLongKey();
++            final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> map = entry.getValue();
++
++            if (map.referenceCount == 0) {
++                throw new IllegalStateException("Invalid map");
++            }
++
++            if (map.contains(object)) {
++                ++entiesGot;
++
++                final int chunkX = MCUtil.getCoordinateX(key);
++                final int chunkZ = MCUtil.getCoordinateZ(key);
++
++                final int dist = Math.max(Math.abs(chunkX - centerX), Math.abs(chunkZ - centerZ));
++
++                if (dist > viewDistance) {
++                    throw new IllegalStateException("Expected view distance " + viewDistance + ", got " + dist);
++                }
++            }
++        }
++
++        if (entiesGot != expectedEntries) {
++            throw new IllegalStateException("Expected " + expectedEntries + ", got " + entiesGot);
++        }
++    }
++
++    protected final void addObjectTo(final E object, final int chunkX, final int chunkZ) {
++        final long key = MCUtil.getCoordinateKey(chunkX, chunkZ);
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> current = this.areaMap.putIfAbsent(key, this.getEmptySetFor(object));
++
++        if (current != null) {
++            PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> next = this.pooledHashSets.findMapWith(current, object);
++            if (next == current) {
++                throw new IllegalStateException("Expected different map: got " + next.toString());
++            }
++            this.areaMap.put(key, next);
++        }
++    }
++
++    protected final void removeObjectFrom(final E object, final int chunkX, final int chunkZ) {
++        final long key = MCUtil.getCoordinateKey(chunkX, chunkZ);
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> current = this.areaMap.get(key);
++
++        if (current == null) {
++            throw new IllegalStateException("Current map may not be null for " + object + ", (" + chunkX + "," + chunkZ + ")");
++        }
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> next = this.pooledHashSets.findMapWithout(current, object);
++
++        if (next == current) {
++            throw new IllegalStateException("Current map [" + next.toString() + "] should have contained " + object + ", (" + chunkX + "," + chunkZ + ")");
++        }
++
++        if (next != null) {
++            this.areaMap.put(key, next);
++        } else {
++            this.areaMap.remove(key);
++        }
++    }
++
++    protected final void addForRectangle(final E object, final int minX, final int maxX, final int minZ, final int maxZ,
++                                         final int right, final int up) {
++        for (int currX = minX; currX != maxX; currX += right) {
++            for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                this.addObjectTo(object, currX, currZ);
++            }
++        }
++    }
++
++    protected final void removeForRectangle(final E object, final int minX, final int maxX, final int minZ, final int maxZ,
++                                            final int right, final int up) {
++        for (int currX = minX; currX != maxX; currX += right) {
++            for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                this.removeObjectFrom(object, currX, currZ);
++            }
++        }
++    }
++
++    private void addObject(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
++            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
++                this.addObjectTo(object, chunkX + xoff, chunkZ + zoff);
++            }
++        }
++    }
++
++    private void removeObject(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
++            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
++                this.removeObjectFrom(object, chunkX + xoff, chunkZ + zoff);
++            }
++        }
++    }
++
++    /* math sign function except 0 returns 1 */
++    protected static int sign(int val) {
++        return 1 | (val >> (Integer.SIZE - 1));
++    }
++
++    protected final void updateObject(final E object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
++        final int toX = MCUtil.getCoordinateX(newPosition);
++        final int toZ = MCUtil.getCoordinateZ(newPosition);
++        final int fromX = MCUtil.getCoordinateX(oldPosition);
++        final int fromZ = MCUtil.getCoordinateZ(oldPosition);
++
++        final int dx = toX - fromX;
++        final int dz = toZ - fromZ;
++
++        final int totalX = Math.abs(fromX - toX);
++        final int totalZ = Math.abs(fromZ - toZ);
++
++        if (Math.max(totalX, totalZ) > (2 * oldViewDistance) || oldViewDistance != newViewDistance) {
++            // teleported?
++            this.removeObject(object, fromX, fromZ, oldViewDistance);
++            this.addObject(object, toX, toZ, newViewDistance);
++            return;
++        }
++
++        // x axis is width
++        // z axis is height
++        // right refers to the x axis of where we moved
++        // top refers to the z axis of where we moved
++
++        // same view distance
++
++        // used for relative positioning
++        final int up = sign(dz); // 1 if dz >= 0, -1 otherwise
++        final int right = sign(dx); // 1 if dx >= 0, -1 otherwise
++
++        // The area excluded by overlapping the two view distance squares creates four rectangles:
++        // Two on the left, and two on the right. The ones on the left we consider the "removed" section
++        // and on the right the "added" section.
++        // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
++        // exclusive to the regions they surround.
++
++        // 4 points of the rectangle
++        int maxX; // exclusive
++        int minX; // inclusive
++        int maxZ; // exclusive
++        int minZ; // inclusive
++
++        if (dx != 0) {
++            // handle right addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX + (oldViewDistance * right) + right; // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            this.addForRectangle(object, minX, maxX, minZ, maxZ, right, up);
++        }
++
++        if (dz != 0) {
++            // handle up addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = toX - (oldViewDistance * right); // inclusive
++            maxZ = toZ + (oldViewDistance * up) + up; // exclusive
++            minZ = fromZ + (oldViewDistance * up) + up; // inclusive
++
++            this.addForRectangle(object, minX, maxX, minZ, maxZ, right, up);
++        }
++
++        if (dx != 0) {
++            // handle left removal
++
++            maxX = toX - (oldViewDistance * right); // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            this.removeForRectangle(object, minX, maxX, minZ, maxZ, right, up);
++        }
++
++        if (dz != 0) {
++            // handle down removal
++
++            maxX = fromX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = toZ - (oldViewDistance * up); // exclusive
++            minZ = fromZ - (oldViewDistance * up); // inclusive
++
++            this.removeForRectangle(object, minX, maxX, minZ, maxZ, right, up);
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerAreaMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerAreaMap.java
+new file mode 100644
+index 0000000000..53d1e7b331
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/PlayerAreaMap.java
+@@ -0,0 +1,19 @@
++package com.destroystokyo.paper.util;
++
++import net.minecraft.server.EntityPlayer;
++
++public final class PlayerAreaMap extends AreaMap<EntityPlayer> {
++
++    public PlayerAreaMap() {
++        super();
++    }
++
++    public PlayerAreaMap(final PooledLinkedHashSets<EntityPlayer> pooledHashSets) {
++        super(pooledHashSets);
++    }
++
++    @Override
++    protected PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getEmptySetFor(final EntityPlayer player) {
++        return player.cachedSingleHashSet;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/PooledLinkedHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledLinkedHashSets.java
+new file mode 100644
+index 0000000000..b6a0dfa3c7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/PooledLinkedHashSets.java
+@@ -0,0 +1,261 @@
++package com.destroystokyo.paper.util;
++
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
++import java.lang.ref.WeakReference;
++import java.util.Iterator;
++
++/** @author Spottedleaf */
++public class PooledLinkedHashSets<E> {
++
++    /* Tested via https://gist.github.com/Spottedleaf/a93bb7a8993d6ce142d3efc5932bf573 */
++
++    // we really want to avoid that equals() check as much as possible...
++    protected final Object2ObjectOpenHashMap<PooledObjectLinkedOpenHashSet<E>, PooledObjectLinkedOpenHashSet<E>> mapPool = new Object2ObjectOpenHashMap<>(128, 0.25f);
++
++    protected void decrementReferenceCount(final PooledObjectLinkedOpenHashSet<E> current) {
++        if (current.referenceCount == 0) {
++            throw new IllegalStateException("Cannot decrement reference count for " + current);
++        }
++        if (current.referenceCount == -1 || --current.referenceCount > 0) {
++            return;
++        }
++
++        this.mapPool.remove(current);
++        return;
++    }
++
++    public PooledObjectLinkedOpenHashSet<E> findMapWith(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
++        final PooledObjectLinkedOpenHashSet<E> cached = current.getAddCache(object);
++
++        if (cached != null) {
++            decrementReferenceCount(current);
++
++            if (cached.referenceCount == 0) {
++                // bring the map back from the dead
++                PooledObjectLinkedOpenHashSet<E> contending = this.mapPool.putIfAbsent(cached, cached);
++                if (contending != null) {
++                    // a map already exists with the elements we want
++                    if (contending.referenceCount != -1) {
++                        ++contending.referenceCount;
++                    }
++                    current.updateAddCache(object, contending);
++                    return contending;
++                }
++
++                cached.referenceCount = 1;
++            } else if (cached.referenceCount != -1) {
++                ++cached.referenceCount;
++            }
++
++            return cached;
++        }
++
++        if (!current.add(object)) {
++            return current;
++        }
++
++        // we use get/put since we use a different key on put
++        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
++
++        if (ret == null) {
++            ret = new PooledObjectLinkedOpenHashSet<>(current);
++            current.remove(object);
++            this.mapPool.put(ret, ret);
++            ret.referenceCount = 1;
++        } else {
++            if (ret.referenceCount != -1) {
++                ++ret.referenceCount;
++            }
++            current.remove(object);
++        }
++
++        current.updateAddCache(object, ret);
++
++        decrementReferenceCount(current);
++        return ret;
++    }
++
++    // rets null if current.size() == 1
++    public PooledObjectLinkedOpenHashSet<E> findMapWithout(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
++        if (current.set.size() == 1) {
++            decrementReferenceCount(current);
++            return null;
++        }
++
++        final PooledObjectLinkedOpenHashSet<E> cached = current.getRemoveCache(object);
++
++        if (cached != null) {
++            decrementReferenceCount(current);
++
++            if (cached.referenceCount == 0) {
++                // bring the map back from the dead
++                PooledObjectLinkedOpenHashSet<E> contending = this.mapPool.putIfAbsent(cached, cached);
++                if (contending != null) {
++                    // a map already exists with the elements we want
++                    if (contending.referenceCount != -1) {
++                        ++contending.referenceCount;
++                    }
++                    current.updateRemoveCache(object, contending);
++                    return contending;
++                }
++
++                cached.referenceCount = 1;
++            } else if (cached.referenceCount != -1) {
++                ++cached.referenceCount;
++            }
++
++            return cached;
++        }
++
++        if (!current.remove(object)) {
++            return current;
++        }
++
++        // we use get/put since we use a different key on put
++        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
++
++        if (ret == null) {
++            ret = new PooledObjectLinkedOpenHashSet<>(current);
++            current.add(object);
++            this.mapPool.put(ret, ret);
++            ret.referenceCount = 1;
++        } else {
++            if (ret.referenceCount != -1) {
++                ++ret.referenceCount;
++            }
++            current.add(object);
++        }
++
++        current.updateRemoveCache(object, ret);
++
++        decrementReferenceCount(current);
++        return ret;
++    }
++
++    public static final class PooledObjectLinkedOpenHashSet<E> implements Iterable<E> {
++
++        private static final WeakReference NULL_REFERENCE = new WeakReference<>(null);
++
++        final ObjectLinkedOpenHashSet<E> set;
++        int referenceCount; // -1 if special
++        int hash; // optimize hashcode
++
++        // add cache
++        WeakReference<E> lastAddObject = NULL_REFERENCE;
++        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastAddMap = NULL_REFERENCE;
++
++        // remove cache
++        WeakReference<E> lastRemoveObject = NULL_REFERENCE;
++        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastRemoveMap = NULL_REFERENCE;
++
++        public PooledObjectLinkedOpenHashSet() {
++            this.set = new ObjectLinkedOpenHashSet<>(2, 0.8f);
++        }
++
++        public PooledObjectLinkedOpenHashSet(final E single) {
++            this();
++            this.referenceCount = -1;
++            this.add(single);
++        }
++
++        public PooledObjectLinkedOpenHashSet(final PooledObjectLinkedOpenHashSet<E> other) {
++            this.set = other.set.clone();
++            this.hash = other.hash;
++        }
++
++        // from https://github.com/Spottedleaf/ConcurrentUtil/blob/master/src/main/java/ca/spottedleaf/concurrentutil/util/IntegerUtil.java
++        // generated by https://github.com/skeeto/hash-prospector
++        private static int hash0(int x) {
++            x *= 0x36935555;
++            x ^= x >>> 16;
++            return x;
++        }
++
++        PooledObjectLinkedOpenHashSet<E> getAddCache(final E element) {
++            final E currentAdd = this.lastAddObject.get();
++
++            if (currentAdd == null || !(currentAdd == element || currentAdd.equals(element))) {
++                return null;
++            }
++
++            return this.lastAddMap.get();
++        }
++
++        PooledObjectLinkedOpenHashSet<E> getRemoveCache(final E element) {
++            final E currentRemove = this.lastRemoveObject.get();
++
++            if (currentRemove == null || !(currentRemove == element || currentRemove.equals(element))) {
++                return null;
++            }
++
++            return this.lastRemoveMap.get();
++        }
++
++        void updateAddCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
++            this.lastAddObject = new WeakReference<>(element);
++            this.lastAddMap = new WeakReference<>(map);
++        }
++
++        void updateRemoveCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
++            this.lastRemoveObject = new WeakReference<>(element);
++            this.lastRemoveMap = new WeakReference<>(map);
++        }
++
++        boolean add(final E element) {
++            boolean added =  this.set.add(element);
++
++            if (added) {
++                this.hash += hash0(element.hashCode());
++            }
++
++            return added;
++        }
++
++        boolean remove(Object element) {
++            boolean removed = this.set.remove(element);
++
++            if (removed) {
++                this.hash -= hash0(element.hashCode());
++            }
++
++            return removed;
++        }
++
++        public boolean contains(final Object element) {
++            return this.set.contains(element);
++        }
++
++        @Override
++        public Iterator<E> iterator() {
++            return this.set.iterator();
++        }
++
++        @Override
++        public int hashCode() {
++            return this.hash;
++        }
++
++        @Override
++        public boolean equals(final Object other) {
++            if (!(other instanceof PooledObjectLinkedOpenHashSet)) {
++                return false;
++            }
++            if (this.referenceCount == 0) {
++                return other == this;
++            } else {
++                if (other == this) {
++                    // Unfortunately we are never equal to our own instance while in use!
++                    return false;
++                }
++                return this.hash == ((PooledObjectLinkedOpenHashSet)other).hash && this.set.equals(((PooledObjectLinkedOpenHashSet)other).set);
++            }
++        }
++
++        @Override
++        public String toString() {
++            return "PooledHashSet: size: " + this.set.size() + ", reference count: " + this.referenceCount + ", hash: " +
++                this.hashCode() + ", identity: " + System.identityHashCode(this) + " map: " + this.set.toString();
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 5c4a4be1b7..7dde1b1f37 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -100,6 +100,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public Integer clientViewDistance;
+     // CraftBukkit end
+ 
++    public final com.destroystokyo.paper.util.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
++
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super((World) worldserver, gameprofile);
+         playerinteractmanager.player = this;
+@@ -115,6 +117,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.displayName = this.getName();
+         this.canPickUpLoot = true;
+         this.maxHealthCache = this.getMaxHealth();
++        this.cachedSingleHashSet = new com.destroystokyo.paper.util.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+         this.cachedSingleMobDistanceMap = new com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 14f8b61042..b9cb12984e 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -36,6 +36,18 @@ import java.util.function.Supplier;
+ public final class MCUtil {
+     private static final Executor asyncExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build());
+ 
++    public static long getCoordinateKey(final int x, final int z) {
++        return ((long)z << 32) | (x & 0xFFFFFFFFL);
++    }
++
++    public static int getCoordinateX(final long key) {
++        return (int)key;
++    }
++
++    public static int getCoordinateZ(final long key) {
++        return (int)(key >>> 32);
++    }
++
+     private MCUtil() {}
+ 
+     /**
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index a6b0fb1601..d537cb6e8c 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -105,6 +105,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     };
+     // CraftBukkit end
+ 
++    public final com.destroystokyo.paper.util.PlayerAreaMap playerViewDistanceMap; // Paper
++
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+         super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
+         this.visibleChunks = this.updatingChunks.clone();
+@@ -136,6 +138,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.m = supplier;
+         this.n = new VillagePlace(new File(this.x, "poi"), datafixer, this.world); // Paper
+         this.setViewDistance(i);
++        this.playerViewDistanceMap = new com.destroystokyo.paper.util.PlayerAreaMap(); // Paper
+         this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
+     }
+ 
+@@ -1269,6 +1272,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     public void movePlayer(EntityPlayer entityplayer) {
++        this.playerViewDistanceMap.update(entityplayer, (int)Math.floor(entityplayer.locX) >> 4, (int)Math.floor(entityplayer.locZ) >> 4, this.viewDistance); // Paper
+         ObjectIterator objectiterator = this.trackedEntities.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5eff278e76..a36c90a5e8 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1075,6 +1075,7 @@ public class WorldServer extends World {
+         }
+ 
+         this.registerEntity(entityplayer);
++        this.getChunkProvider().playerChunkMap.playerViewDistanceMap.update(entityplayer, ichunkaccess.getPos().x, ichunkaccess.getPos().z, this.getChunkProvider().playerChunkMap.viewDistance); // Paper
+     }
+ 
+     // CraftBukkit start
+@@ -1256,6 +1257,7 @@ public class WorldServer extends World {
+             EntityPlayer entityplayer = (EntityPlayer) entity;
+ 
+             this.players.remove(entityplayer);
++            this.getChunkProvider().playerChunkMap.playerViewDistanceMap.remove(entityplayer); // Paper
+         }
+ 
+         this.getScoreboard().a(entity);
+-- 
+2.22.1
+

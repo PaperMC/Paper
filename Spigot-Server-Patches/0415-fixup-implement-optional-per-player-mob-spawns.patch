@@ -1,0 +1,640 @@
+From c4c8c41313b40d003c8a7102458bf0c3136f7979 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 22 Aug 2019 23:17:33 -0700
+Subject: [PATCH] fixup! implement optional per player mob spawns
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index 24b4c6e6a6..f4d5db02f7 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -69,8 +69,6 @@ public class WorldTimingsHandler {
+     public final Timing chunkUnloadPOISerialization;
+     public final Timing chunkUnloadDataSave;
+ 
+-    public final Timing playerMobDistanceMapUpdate;
+-
+     public WorldTimingsHandler(World server) {
+         String name = server.worldData.getName() +" - ";
+ 
+@@ -136,8 +134,6 @@ public class WorldTimingsHandler {
+         chunkUnloadPrepareSave = Timings.ofSafe(name + "Chunk unload - Async Save Prepare");
+         chunkUnloadPOISerialization = Timings.ofSafe(name + "Chunk unload - POI Data Serialization");
+         chunkUnloadDataSave = Timings.ofSafe(name + "Chunk unload - Data Serialization");
+-
+-        playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
+     }
+ 
+     public static Timing getTickList(WorldServer worldserver, String timingsType) {
+diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
+deleted file mode 100644
+index 9ebd7ecb7a..0000000000
+--- a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
++++ /dev/null
+@@ -1,253 +0,0 @@
+-package com.destroystokyo.paper.util;
+-
+-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+-import net.minecraft.server.ChunkCoordIntPair;
+-import net.minecraft.server.EntityPlayer;
+-import net.minecraft.server.SectionPosition;
+-import org.spigotmc.AsyncCatcher;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-
+-/** @author Spottedleaf */
+-public final class PlayerMobDistanceMap {
+-
+-    private static final PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> EMPTY_SET = new PooledHashSets.PooledObjectLinkedOpenHashSet<>();
+-
+-    private final Map<EntityPlayer, SectionPosition> players = new HashMap<>();
+-    // we use linked for better iteration.
+-    private final Long2ObjectOpenHashMap<PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer>> playerMap = new Long2ObjectOpenHashMap<>(32, 0.5f);
+-    private int viewDistance;
+-
+-    private final PooledHashSets<EntityPlayer> pooledHashSets = new PooledHashSets<>();
+-
+-    public PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInRange(final ChunkCoordIntPair chunkPos) {
+-        return this.getPlayersInRange(chunkPos.x, chunkPos.z);
+-    }
+-
+-    public PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInRange(final int chunkX, final int chunkZ) {
+-        return this.playerMap.getOrDefault(ChunkCoordIntPair.pair(chunkX, chunkZ), EMPTY_SET);
+-    }
+-
+-    public void update(final List<EntityPlayer> currentPlayers, final int newViewDistance) {
+-        AsyncCatcher.catchOp("Distance map update");
+-        final ObjectLinkedOpenHashSet<EntityPlayer> gone = new ObjectLinkedOpenHashSet<>(this.players.keySet());
+-
+-        final int oldViewDistance = this.viewDistance;
+-        this.viewDistance = newViewDistance;
+-
+-        for (final EntityPlayer player : currentPlayers) {
+-            if (player.isSpectator() || !player.affectsSpawning) {
+-                continue; // will be left in 'gone' (or not added at all)
+-            }
+-
+-            gone.remove(player);
+-
+-            final SectionPosition newPosition = player.getPlayerMapSection();
+-            final SectionPosition oldPosition = this.players.put(player, newPosition);
+-
+-            if (oldPosition == null) {
+-                this.addNewPlayer(player, newPosition, newViewDistance);
+-            } else {
+-                this.updatePlayer(player, oldPosition, newPosition, oldViewDistance, newViewDistance);
+-            }
+-            //this.validatePlayer(player, newViewDistance); // debug only
+-        }
+-
+-        for (final EntityPlayer player : gone) {
+-            final SectionPosition oldPosition = this.players.remove(player);
+-            if (oldPosition != null) {
+-                this.removePlayer(player, oldPosition, oldViewDistance);
+-            }
+-        }
+-    }
+-
+-    // expensive op, only for debug
+-    private void validatePlayer(final EntityPlayer player, final int viewDistance) {
+-        int entiesGot = 0;
+-        int expectedEntries = (2 * viewDistance + 1);
+-        expectedEntries *= expectedEntries;
+-
+-        final SectionPosition currPosition = player.getPlayerMapSection();
+-
+-        final int centerX = currPosition.getX();
+-        final int centerZ = currPosition.getZ();
+-
+-        for (final Long2ObjectLinkedOpenHashMap.Entry<PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer>> entry : this.playerMap.long2ObjectEntrySet()) {
+-            final long key = entry.getLongKey();
+-            final PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> map = entry.getValue();
+-
+-            if (map.referenceCount == 0) {
+-                throw new IllegalStateException("Invalid map");
+-            }
+-
+-            if (map.set.contains(player)) {
+-                ++entiesGot;
+-
+-                final int chunkX = ChunkCoordIntPair.getX(key);
+-                final int chunkZ = ChunkCoordIntPair.getZ(key);
+-
+-                final int dist = Math.max(Math.abs(chunkX - centerX), Math.abs(chunkZ - centerZ));
+-
+-                if (dist > viewDistance) {
+-                    throw new IllegalStateException("Expected view distance " + viewDistance + ", got " + dist);
+-                }
+-            }
+-        }
+-
+-        if (entiesGot != expectedEntries) {
+-            throw new IllegalStateException("Expected " + expectedEntries + ", got " + entiesGot);
+-        }
+-    }
+-
+-    private void addPlayerTo(final EntityPlayer player, final int chunkX, final int chunkZ) {
+-       this.playerMap.compute(ChunkCoordIntPair.pair(chunkX, chunkZ), (final Long key, final PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players) -> {
+-           if (players == null) {
+-               return player.cachedSingleMobDistanceMap;
+-           } else {
+-               return PlayerMobDistanceMap.this.pooledHashSets.findMapWith(players, player);
+-           }
+-        });
+-    }
+-
+-    private void removePlayerFrom(final EntityPlayer player, final int chunkX, final int chunkZ) {
+-        this.playerMap.compute(ChunkCoordIntPair.pair(chunkX, chunkZ), (final Long keyInMap, final PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players) -> {
+-            return PlayerMobDistanceMap.this.pooledHashSets.findMapWithout(players, player); // rets null instead of an empty map
+-        });
+-    }
+-
+-    private void updatePlayer(final EntityPlayer player, final SectionPosition oldPosition, final SectionPosition newPosition, final int oldViewDistance, final int newViewDistance) {
+-        final int toX = newPosition.getX();
+-        final int toZ = newPosition.getZ();
+-        final int fromX = oldPosition.getX();
+-        final int fromZ = oldPosition.getZ();
+-
+-        final int dx = toX - fromX;
+-        final int dz = toZ - fromZ;
+-
+-        final int totalX = Math.abs(fromX - toX);
+-        final int totalZ = Math.abs(fromZ - toZ);
+-
+-        if (Math.max(totalX, totalZ) > (2 * oldViewDistance)) {
+-            // teleported?
+-            this.removePlayer(player, oldPosition, oldViewDistance);
+-            this.addNewPlayer(player, newPosition, newViewDistance);
+-            return;
+-        }
+-
+-        // x axis is width
+-        // z axis is height
+-        // right refers to the x axis of where we moved
+-        // top refers to the z axis of where we moved
+-
+-        if (oldViewDistance == newViewDistance) {
+-            // same view distance
+-
+-            // used for relative positioning
+-            final int up = 1 | (dz >> (Integer.SIZE - 1)); // 1 if dz >= 0, -1 otherwise
+-            final int right = 1 | (dx >> (Integer.SIZE - 1)); // 1 if dx >= 0, -1 otherwise
+-
+-            // The area excluded by overlapping the two view distance squares creates four rectangles:
+-            // Two on the left, and two on the right. The ones on the left we consider the "removed" section
+-            // and on the right the "added" section.
+-            // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
+-            // exclusive to the regions they surround.
+-
+-            // 4 points of the rectangle
+-            int maxX; // exclusive
+-            int minX; // inclusive
+-            int maxZ; // exclusive
+-            int minZ; // inclusive
+-
+-            if (dx != 0) {
+-                // handle right addition
+-
+-                maxX = toX + (oldViewDistance * right) + right; // exclusive
+-                minX = fromX + (oldViewDistance * right) + right; // inclusive
+-                maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
+-                minZ = toZ - (oldViewDistance * up); // inclusive
+-
+-                for (int currX = minX; currX != maxX; currX += right) {
+-                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
+-                        this.addPlayerTo(player, currX, currZ);
+-                    }
+-                }
+-            }
+-
+-            if (dz != 0) {
+-                // handle up addition
+-
+-                maxX = toX + (oldViewDistance * right) + right; // exclusive
+-                minX = toX - (oldViewDistance * right); // inclusive
+-                maxZ = toZ + (oldViewDistance * up) + up; // exclusive
+-                minZ = fromZ + (oldViewDistance * up) + up; // inclusive
+-
+-                for (int currX = minX; currX != maxX; currX += right) {
+-                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
+-                        this.addPlayerTo(player, currX, currZ);
+-                    }
+-                }
+-            }
+-
+-            if (dx != 0) {
+-                // handle left removal
+-
+-                maxX = toX - (oldViewDistance * right); // exclusive
+-                minX = fromX - (oldViewDistance * right); // inclusive
+-                maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
+-                minZ = toZ - (oldViewDistance * up); // inclusive
+-
+-                for (int currX = minX; currX != maxX; currX += right) {
+-                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
+-                        this.removePlayerFrom(player, currX, currZ);
+-                    }
+-                }
+-            }
+-
+-            if (dz != 0) {
+-                // handle down removal
+-
+-                maxX = fromX + (oldViewDistance * right) + right; // exclusive
+-                minX = fromX - (oldViewDistance * right); // inclusive
+-                maxZ = toZ - (oldViewDistance * up); // exclusive
+-                minZ = fromZ - (oldViewDistance * up); // inclusive
+-
+-                for (int currX = minX; currX != maxX; currX += right) {
+-                    for (int currZ = minZ; currZ != maxZ; currZ += up) {
+-                        this.removePlayerFrom(player, currX, currZ);
+-                    }
+-                }
+-            }
+-        } else {
+-            // different view distance
+-            // for now :)
+-            this.removePlayer(player, oldPosition, oldViewDistance);
+-            this.addNewPlayer(player, newPosition, newViewDistance);
+-        }
+-    }
+-
+-    private void removePlayer(final EntityPlayer player, final SectionPosition position, final int viewDistance) {
+-        final int x = position.getX();
+-        final int z = position.getZ();
+-
+-        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
+-            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
+-                this.removePlayerFrom(player, x + xoff, z + zoff);
+-            }
+-        }
+-    }
+-
+-    private void addNewPlayer(final EntityPlayer player, final SectionPosition position, final int viewDistance) {
+-        final int x = position.getX();
+-        final int z = position.getZ();
+-
+-        for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
+-            for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
+-                this.addPlayerTo(player, x + xoff, z + zoff);
+-            }
+-        }
+-    }
+-}
+diff --git a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
+deleted file mode 100644
+index 4f13d3ff83..0000000000
+--- a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
++++ /dev/null
+@@ -1,241 +0,0 @@
+-package com.destroystokyo.paper.util;
+-
+-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+-import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+-import java.lang.ref.WeakReference;
+-import java.util.Iterator;
+-
+-/** @author Spottedleaf */
+-public class PooledHashSets<E> {
+-
+-    // we really want to avoid that equals() check as much as possible...
+-    protected final Object2ObjectOpenHashMap<PooledObjectLinkedOpenHashSet<E>, PooledObjectLinkedOpenHashSet<E>> mapPool = new Object2ObjectOpenHashMap<>(64, 0.25f);
+-
+-    protected void decrementReferenceCount(final PooledObjectLinkedOpenHashSet<E> current) {
+-        if (current.referenceCount == 0) {
+-            throw new IllegalStateException("Cannot decrement reference count for " + current);
+-        }
+-        if (current.referenceCount == -1 || --current.referenceCount > 0) {
+-            return;
+-        }
+-
+-        this.mapPool.remove(current);
+-        return;
+-    }
+-
+-    public PooledObjectLinkedOpenHashSet<E> findMapWith(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
+-        final PooledObjectLinkedOpenHashSet<E> cached = current.getAddCache(object);
+-
+-        if (cached != null) {
+-            if (cached.referenceCount != -1) {
+-                ++cached.referenceCount;
+-            }
+-
+-            decrementReferenceCount(current);
+-
+-            return cached;
+-        }
+-
+-        if (!current.add(object)) {
+-            return current;
+-        }
+-
+-        // we use get/put since we use a different key on put
+-        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
+-
+-        if (ret == null) {
+-            ret = new PooledObjectLinkedOpenHashSet<>(current);
+-            current.remove(object);
+-            this.mapPool.put(ret, ret);
+-            ret.referenceCount = 1;
+-        } else {
+-            if (ret.referenceCount != -1) {
+-                ++ret.referenceCount;
+-            }
+-            current.remove(object);
+-        }
+-
+-        current.updateAddCache(object, ret);
+-
+-        decrementReferenceCount(current);
+-        return ret;
+-    }
+-
+-    // rets null if current.size() == 1
+-    public PooledObjectLinkedOpenHashSet<E> findMapWithout(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
+-        if (current.set.size() == 1) {
+-            decrementReferenceCount(current);
+-            return null;
+-        }
+-
+-        final PooledObjectLinkedOpenHashSet<E> cached = current.getRemoveCache(object);
+-
+-        if (cached != null) {
+-            if (cached.referenceCount != -1) {
+-                ++cached.referenceCount;
+-            }
+-
+-            decrementReferenceCount(current);
+-
+-            return cached;
+-        }
+-
+-        if (!current.remove(object)) {
+-            return current;
+-        }
+-
+-        // we use get/put since we use a different key on put
+-        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
+-
+-        if (ret == null) {
+-            ret = new PooledObjectLinkedOpenHashSet<>(current);
+-            current.add(object);
+-            this.mapPool.put(ret, ret);
+-            ret.referenceCount = 1;
+-        } else {
+-            if (ret.referenceCount != -1) {
+-                ++ret.referenceCount;
+-            }
+-            current.add(object);
+-        }
+-
+-        current.updateRemoveCache(object, ret);
+-
+-        decrementReferenceCount(current);
+-        return ret;
+-    }
+-
+-    public static final class PooledObjectLinkedOpenHashSet<E> implements Iterable<E> {
+-
+-        private static final WeakReference NULL_REFERENCE = new WeakReference(null);
+-
+-        final ObjectLinkedOpenHashSet<E> set;
+-        int referenceCount; // -1 if special
+-        int hash; // optimize hashcode
+-
+-        // add cache
+-        WeakReference<E> lastAddObject = NULL_REFERENCE;
+-        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastAddMap = NULL_REFERENCE;
+-
+-        // remove cache
+-        WeakReference<E> lastRemoveObject = NULL_REFERENCE;
+-        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastRemoveMap = NULL_REFERENCE;
+-
+-        public PooledObjectLinkedOpenHashSet() {
+-            this.set = new ObjectLinkedOpenHashSet<>(2, 0.6f);
+-        }
+-
+-        public PooledObjectLinkedOpenHashSet(final E single) {
+-            this();
+-            this.referenceCount = -1;
+-            this.add(single);
+-        }
+-
+-        public PooledObjectLinkedOpenHashSet(final PooledObjectLinkedOpenHashSet<E> other) {
+-            this.set = other.set.clone();
+-            this.hash = other.hash;
+-        }
+-
+-        // from https://github.com/Spottedleaf/ConcurrentUtil/blob/master/src/main/java/ca/spottedleaf/concurrentutil/util/IntegerUtil.java
+-        // generated by https://github.com/skeeto/hash-prospector
+-        static int hash0(int x) {
+-            x *= 0x36935555;
+-            x ^= x >>> 16;
+-            return x;
+-        }
+-
+-        public PooledObjectLinkedOpenHashSet<E> getAddCache(final E element) {
+-            final E currentAdd = this.lastAddObject.get();
+-
+-            if (currentAdd == null || !(currentAdd == element || currentAdd.equals(element))) {
+-                return null;
+-            }
+-
+-            final PooledObjectLinkedOpenHashSet<E> map = this.lastAddMap.get();
+-            if (map == null || map.referenceCount == 0) {
+-                // we need to ret null if ref count is zero as calling code will assume the map is in use
+-                return null;
+-            }
+-
+-            return map;
+-        }
+-
+-        public PooledObjectLinkedOpenHashSet<E> getRemoveCache(final E element) {
+-            final E currentRemove = this.lastRemoveObject.get();
+-
+-            if (currentRemove == null || !(currentRemove == element || currentRemove.equals(element))) {
+-                return null;
+-            }
+-
+-            final PooledObjectLinkedOpenHashSet<E> map = this.lastRemoveMap.get();
+-            if (map == null || map.referenceCount == 0) {
+-                // we need to ret null if ref count is zero as calling code will assume the map is in use
+-                return null;
+-            }
+-
+-            return map;
+-        }
+-
+-        public void updateAddCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
+-            this.lastAddObject = new WeakReference<>(element);
+-            this.lastAddMap = new WeakReference<>(map);
+-        }
+-
+-        public void updateRemoveCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
+-            this.lastRemoveObject = new WeakReference<>(element);
+-            this.lastRemoveMap = new WeakReference<>(map);
+-        }
+-
+-        boolean add(final E element) {
+-            boolean added =  this.set.add(element);
+-
+-            if (added) {
+-                this.hash += hash0(element.hashCode());
+-            }
+-
+-            return added;
+-        }
+-
+-        boolean remove(Object element) {
+-            boolean removed = this.set.remove(element);
+-
+-            if (removed) {
+-                this.hash -= hash0(element.hashCode());
+-            }
+-
+-            return removed;
+-        }
+-
+-        @Override
+-        public Iterator<E> iterator() {
+-            return this.set.iterator();
+-        }
+-
+-        @Override
+-        public int hashCode() {
+-            return this.hash;
+-        }
+-
+-        @Override
+-        public boolean equals(final Object other) {
+-            if (!(other instanceof PooledObjectLinkedOpenHashSet)) {
+-                return false;
+-            }
+-            if (this.referenceCount == 0) {
+-                return other == this;
+-            } else {
+-                if (other == this) {
+-                    // Unfortunately we are never equal to our own instance while in use!
+-                    return false;
+-                }
+-                return this.hash == ((PooledObjectLinkedOpenHashSet)other).hash && this.set.equals(((PooledObjectLinkedOpenHashSet)other).set);
+-            }
+-        }
+-
+-        @Override
+-        public String toString() {
+-            return "PooledHashSet: size: " + this.set.size() + ", reference count: " + this.referenceCount + ", hash: " +
+-                this.hashCode() + ", identity: " + System.identityHashCode(this) + " map: " + this.set.toString();
+-        }
+-    }
+-}
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index bc50113122..c9c19d40cd 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -557,11 +557,7 @@ public class ChunkProviderServer extends IChunkProvider {
+             EnumCreatureType[] aenumcreaturetype = EnumCreatureType.values();
+             // Paper start - per player mob spawning
+             int[] worldMobCount;
+-            if (this.playerChunkMap.playerMobDistanceMap != null) {
+-                // update distance map
+-                this.world.timings.playerMobDistanceMapUpdate.startTiming();
+-                this.playerChunkMap.playerMobDistanceMap.update(this.world.players, this.playerChunkMap.viewDistance);
+-                this.world.timings.playerMobDistanceMapUpdate.stopTiming();
++            if (this.world.paperConfig.perPlayerMobSpawns) {
+                 // re-set mob counts
+                 for (EntityPlayer player : this.world.players) {
+                     Arrays.fill(player.mobCounts, 0);
+@@ -629,8 +625,14 @@ public class ChunkProviderServer extends IChunkProvider {
+ 
+                                     if (this.world.paperConfig.perPlayerMobSpawns) {
+                                         int minDiff = Integer.MAX_VALUE;
+-                                        for (EntityPlayer entityplayer : this.playerChunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
+-                                            minDiff = Math.min(limit - this.playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
++                                        Iterable<EntityPlayer> players = this.playerChunkMap.playerViewDistanceMap.getObjectsInRange(chunk.getPos());
++                                        if (players != null) {
++                                            for (EntityPlayer entityplayer : players) {
++                                                if (!entityplayer.affectsSpawning || entityplayer.isSpectator()) {
++                                                    continue;
++                                                }
++                                                minDiff = Math.min(limit - this.playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
++                                            }
+                                         }
+                                         difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
+                                     }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 7dde1b1f37..d2720b19fd 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -83,7 +83,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     // Paper start - mob spawning rework
+     public static final int ENUMCREATURETYPE_TOTAL_ENUMS = EnumCreatureType.values().length;
+     public final int[] mobCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
+-    public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleMobDistanceMap;
+     // Paper end
+ 
+     // CraftBukkit start
+@@ -118,7 +117,6 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.canPickUpLoot = true;
+         this.maxHealthCache = this.getMaxHealth();
+         this.cachedSingleHashSet = new com.destroystokyo.paper.util.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+-        this.cachedSingleMobDistanceMap = new com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+     }
+ 
+     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index d537cb6e8c..3d6014d35c 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -78,7 +78,6 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
+     private final Queue<Runnable> A;
+     int viewDistance; // Paper - private -> package private
+-    public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+ 
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
+@@ -139,9 +138,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.n = new VillagePlace(new File(this.x, "poi"), datafixer, this.world); // Paper
+         this.setViewDistance(i);
+         this.playerViewDistanceMap = new com.destroystokyo.paper.util.PlayerAreaMap(); // Paper
+-        this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
+     }
+ 
++    // Paper start
+     public void updatePlayerMobTypeMap(Entity entity) {
+         if (!this.world.paperConfig.perPlayerMobSpawns) {
+             return;
+@@ -150,7 +149,16 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         int chunkZ = (int)Math.floor(entity.locZ) >> 4;
+         int index = entity.getEntityType().getEnumCreatureType().ordinal();
+ 
+-        for (EntityPlayer player : this.playerMobDistanceMap.getPlayersInRange(chunkX, chunkZ)) {
++        Iterable<EntityPlayer> players = this.playerViewDistanceMap.getObjectsInRange(chunkX, chunkZ);
++
++        if (players == null) {
++            return;
++        }
++
++        for (EntityPlayer player : players) {
++            if (!player.affectsSpawning || player.isSpectator()) {
++                continue;
++            }
+             ++player.mobCounts[index];
+         }
+     }
+@@ -158,6 +166,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     public int getMobCountNear(EntityPlayer entityPlayer, EnumCreatureType enumCreatureType) {
+         return entityPlayer.mobCounts[enumCreatureType.ordinal()];
+     }
++    // Paper end
+ 
+     private static double a(ChunkCoordIntPair chunkcoordintpair, Entity entity) {
+         double d0 = (double) (chunkcoordintpair.x * 16 + 8);
+-- 
+2.22.1
+

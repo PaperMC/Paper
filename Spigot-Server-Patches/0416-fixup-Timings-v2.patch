@@ -1,0 +1,71 @@
+From 0fdbc48596ccf8d64103580a0987e29c0fe66602 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 22 Aug 2019 23:29:12 -0700
+Subject: [PATCH] fixup! Timings v2
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index f4d5db02f7..0b838d2822 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -8,6 +8,9 @@ import net.minecraft.server.WorldServer;
+  */
+ // TODO: Re-implement missing timers
+ public class WorldTimingsHandler {
++    public final Timing playerViewDistanceMapUpdate;
++    public final Timing playerViewDistanceMapAdd;
++    public final Timing playerViewDistanceMapRemove;
+     public final Timing mobSpawn;
+     public final Timing doChunkUnload;
+     public final Timing doPortalForcer;
+@@ -72,6 +75,9 @@ public class WorldTimingsHandler {
+     public WorldTimingsHandler(World server) {
+         String name = server.worldData.getName() +" - ";
+ 
++        playerViewDistanceMapUpdate = Timings.ofSafe("Player View Distance Map - Update");
++        playerViewDistanceMapAdd = Timings.ofSafe("Player View Distance Map - Add");
++        playerViewDistanceMapRemove = Timings.ofSafe("Player View Distance Map - Remove");
+         mobSpawn = Timings.ofSafe(name + "mobSpawn");
+         doChunkUnload = Timings.ofSafe(name + "doChunkUnload");
+         scheduledBlocks = Timings.ofSafe(name + "Scheduled Blocks");
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 3d6014d35c..a679e74460 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1281,7 +1281,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     public void movePlayer(EntityPlayer entityplayer) {
++        try (Timing ignored = this.world.timings.playerViewDistanceMapUpdate) { // Paper - timings
+         this.playerViewDistanceMap.update(entityplayer, (int)Math.floor(entityplayer.locX) >> 4, (int)Math.floor(entityplayer.locZ) >> 4, this.viewDistance); // Paper
++        } // Paper - timings
+         ObjectIterator objectiterator = this.trackedEntities.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index a36c90a5e8..a7100cc6a8 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1075,7 +1075,9 @@ public class WorldServer extends World {
+         }
+ 
+         this.registerEntity(entityplayer);
++        try (co.aikar.timings.Timing ignored = this.timings.playerViewDistanceMapAdd.startTiming()) { // Paper - timings
+         this.getChunkProvider().playerChunkMap.playerViewDistanceMap.update(entityplayer, ichunkaccess.getPos().x, ichunkaccess.getPos().z, this.getChunkProvider().playerChunkMap.viewDistance); // Paper
++        } // Paper - timings
+     }
+ 
+     // CraftBukkit start
+@@ -1257,7 +1259,9 @@ public class WorldServer extends World {
+             EntityPlayer entityplayer = (EntityPlayer) entity;
+ 
+             this.players.remove(entityplayer);
++            try (co.aikar.timings.Timing ignored = this.timings.playerViewDistanceMapAdd.startTiming()) { // Paper - timings
+             this.getChunkProvider().playerChunkMap.playerViewDistanceMap.remove(entityplayer); // Paper
++            } // Paper - timings
+         }
+ 
+         this.getScoreboard().a(entity);
+-- 
+2.22.1
+
