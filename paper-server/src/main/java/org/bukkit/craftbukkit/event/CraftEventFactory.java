@@ -200,16 +200,15 @@ public class CraftEventFactory {
     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
 
     // helper methods
-    private static boolean canBuild(CraftWorld world, Player player, int x, int z) {
-        WorldServer worldServer = world.getHandle();
+    private static boolean canBuild(World world, Player player, int x, int z) {
         int spawnSize = Bukkit.getServer().getSpawnRadius();
 
-        if (world.getHandle().getWorldProvider().getDimensionManager() != DimensionManager.OVERWORLD) return true;
+        if (world.getWorldProvider().getDimensionManager() != DimensionManager.OVERWORLD) return true;
         if (spawnSize <= 0) return true;
         if (((CraftServer) Bukkit.getServer()).getHandle().getOPs().isEmpty()) return true;
         if (player.isOp()) return true;
 
-        BlockPosition chunkcoordinates = worldServer.getSpawn();
+        BlockPosition chunkcoordinates = world.getSpawn();
 
         int distanceFromSpawn = Math.max(Math.abs(x - chunkcoordinates.getX()), Math.abs(z - chunkcoordinates.getZ()));
         return distanceFromSpawn > spawnSize;
@@ -276,7 +275,7 @@ public class CraftEventFactory {
 
         boolean canBuild = true;
         for (int i = 0; i < blockStates.size(); i++) {
-            if (!canBuild(craftWorld, player, blockStates.get(i).getX(), blockStates.get(i).getZ())) {
+            if (!canBuild(world, player, blockStates.get(i).getX(), blockStates.get(i).getZ())) {
                 canBuild = false;
                 break;
             }
@@ -304,7 +303,7 @@ public class CraftEventFactory {
         Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
         Block placedBlock = replacedBlockState.getBlock();
 
-        boolean canBuild = canBuild(craftWorld, player, placedBlock.getX(), placedBlock.getZ());
+        boolean canBuild = canBuild(world, player, placedBlock.getX(), placedBlock.getZ());
 
         org.bukkit.inventory.ItemStack item;
         EquipmentSlot equipmentSlot;
@@ -347,32 +346,32 @@ public class CraftEventFactory {
     /**
      * Bucket methods
      */
-    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemInHand) {
-        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, Items.BUCKET);
+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand) {
+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemInHand, Items.BUCKET);
     }
 
-    public static PlayerBucketFillEvent callPlayerBucketFillEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket) {
-        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, bucket);
+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket) {
+        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket);
     }
 
-    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
-        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
+        Player player = (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
 
-        CraftWorld craftWorld = (CraftWorld) player.getWorld();
         CraftServer craftServer = (CraftServer) player.getServer();
 
-        Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
+        Block block = CraftBlock.at(world, changed);
+        Block blockClicked = CraftBlock.at(world, clicked);
         BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
 
-        PlayerEvent event = null;
+        PlayerEvent event;
         if (isFilling) {
-            event = new PlayerBucketFillEvent(player, blockClicked, blockFace, bucket, itemInHand);
-            ((PlayerBucketFillEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
+            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            ((PlayerBucketFillEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         } else {
-            event = new PlayerBucketEmptyEvent(player, blockClicked, blockFace, bucket, itemInHand);
-            ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
+            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
+            ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
         }
 
         craftServer.getPluginManager().callEvent(event);
