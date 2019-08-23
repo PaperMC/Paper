@@ -14,8 +14,13 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerBucketFillEvent extends PlayerBucketEvent {
     private static final HandlerList handlers = new HandlerList();
 
+    @Deprecated
     public PlayerBucketFillEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         super(who, blockClicked, blockFace, bucket, itemInHand);
+    }
+
+    public PlayerBucketFillEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        super(who, block, blockClicked, blockFace, bucket, itemInHand);
     }
 
     @NotNull

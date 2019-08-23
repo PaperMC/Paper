@@ -15,12 +15,19 @@ import org.jetbrains.annotations.Nullable;
 public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellable {
     private ItemStack itemStack;
     private boolean cancelled = false;
+    private final Block block;
     private final Block blockClicked;
     private final BlockFace blockFace;
     private final Material bucket;
 
+    @Deprecated
     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        this(who, null, blockClicked.getRelative(blockFace), blockFace, bucket, itemInHand);
+    }
+
+    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         super(who);
+        this.block = block;
         this.blockClicked = blockClicked;
         this.blockFace = blockFace;
         this.itemStack = itemInHand;
@@ -54,6 +61,16 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
      */
     public void setItemStack(@Nullable ItemStack itemStack) {
         this.itemStack = itemStack;
+    }
+
+    /**
+     * Gets the block involved in this event.
+     *
+     * @return The Block which block is involved in this event
+     */
+    @NotNull
+    public final Block getBlock() {
+        return block;
     }
 
     /**
