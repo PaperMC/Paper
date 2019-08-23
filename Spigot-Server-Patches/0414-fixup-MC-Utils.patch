@@ -1,4 +1,4 @@
-From b6e93e4d6f1690e6a8683f19fc15ebc8365d4387 Mon Sep 17 00:00:00 2001
+From 1e979d4ca883f880786098f5e6435ef29d5b5483 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Thu, 22 Aug 2019 23:12:13 -0700
 Subject: [PATCH] fixup! MC Utils
@@ -6,10 +6,10 @@ Subject: [PATCH] fixup! MC Utils
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/AreaMap.java
 new file mode 100644
-index 0000000000..64a6e614b6
+index 0000000000..e93625fb07
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/AreaMap.java
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,308 @@
 +package com.destroystokyo.paper.util;
 +
 +import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
@@ -36,8 +36,10 @@ index 0000000000..64a6e614b6
 +    // we use linked for better iteration.
 +    // map of: coordinate to set of objects in coordinate
 +    private final Long2ObjectOpenHashMap<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> areaMap = new Long2ObjectOpenHashMap<>(32, 0.3f);
-+
 +    private final PooledLinkedHashSets<E> pooledHashSets;
++
++    private final ChangeCallback<E> addCallback;
++    private final ChangeCallback<E> removeCallback;
 +
 +    public AreaMap() {
 +        this(new PooledLinkedHashSets<>());
@@ -45,7 +47,13 @@ index 0000000000..64a6e614b6
 +
 +    // let users define a "global" or "shared" pooled sets if they wish
 +    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets) {
++        this(pooledHashSets, null, null);
++    }
++
++    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets, final ChangeCallback<E> addCallback, final ChangeCallback<E> removeCallback) {
 +        this.pooledHashSets = pooledHashSets;
++        this.addCallback = addCallback;
++        this.removeCallback = removeCallback;
 +    }
 +
 +    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final long key) {
@@ -141,6 +149,13 @@ index 0000000000..64a6e614b6
 +                throw new IllegalStateException("Expected different map: got " + next.toString());
 +            }
 +            this.areaMap.put(key, next);
++
++            current = next;
++            // fall through to callback
++        }
++
++        if (this.addCallback != null) {
++            this.addCallback.accept(object, chunkX, chunkZ, current);
 +        }
 +    }
 +
@@ -163,6 +178,10 @@ index 0000000000..64a6e614b6
 +            this.areaMap.put(key, next);
 +        } else {
 +            this.areaMap.remove(key);
++        }
++
++        if (this.removeCallback != null) {
++            this.removeCallback.accept(object, chunkX, chunkZ, next);
 +        }
 +    }
 +
@@ -290,6 +309,13 @@ index 0000000000..64a6e614b6
 +
 +            this.removeForRectangle(object, minX, maxX, minZ, maxZ, right, up);
 +        }
++    }
++
++    @FunctionalInterface
++    public static interface ChangeCallback<E> {
++
++        void accept(final E object, final int x, final int z, final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> newState);
++
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerAreaMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerAreaMap.java
