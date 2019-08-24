@@ -109,9 +109,6 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         PIG_ZOMBIE_TARGET,
         /**
          * When the target is forgotten for whatever reason.
-         * <p>
-         * Currently only occurs in with spiders when there is a high
-         * brightness.
          */
         FORGOT_TARGET,
         /**
