@@ -20,33 +20,31 @@
          if (this.d > 0) {
              --this.d;
          }
-@@ -73,6 +79,16 @@
+@@ -72,7 +78,22 @@
+             this.targetPlayer = null;
          }
  
-         if (this.targetPlayer != null) {
-+            // CraftBukkit start
-+            boolean cancelled = false;
-+            if (this.targetPlayer != prevTarget) {
-+                EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this, targetPlayer, EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
-+                EntityLiving target = event.getTarget() == null ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
-+                targetPlayer = target instanceof EntityHuman ? (EntityHuman) target : null;
-+                cancelled = event.isCancelled();
-+            }
+-        if (this.targetPlayer != null) {
++        // CraftBukkit start
++        boolean cancelled = false;
++        if (this.targetPlayer != prevTarget) {
++            EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this, targetPlayer, (targetPlayer != null) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++            EntityLiving target = (event.getTarget() == null) ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++            cancelled = event.isCancelled();
 +
-+            if (!cancelled && targetPlayer != null) {
++            if (cancelled) {
++                targetPlayer = prevTarget;
++            } else {
++                targetPlayer = (target instanceof EntityHuman) ? (EntityHuman) target : null;
++            }
++        }
++
++        if (this.targetPlayer != null && !cancelled) {
++            // CraftBukkit end
              Vec3D vec3d = new Vec3D(this.targetPlayer.locX - this.locX, this.targetPlayer.locY + (double) this.targetPlayer.getHeadHeight() / 2.0D - this.locY, this.targetPlayer.locZ - this.locZ);
              double d1 = vec3d.g();
  
-@@ -81,6 +97,8 @@
- 
-                 this.setMot(this.getMot().e(vec3d.d().a(d2 * d2 * 0.1D)));
-             }
-+            }
-+            // CraftBukkit end
-         }
- 
-         this.move(EnumMoveType.SELF, this.getMot());
-@@ -113,7 +131,7 @@
+@@ -113,7 +134,7 @@
      protected void az() {}
  
      @Override
@@ -55,7 +53,7 @@
          this.damageEntity(DamageSource.FIRE, (float) i);
      }
  
-@@ -160,13 +178,19 @@
+@@ -160,13 +181,19 @@
                      if (!itemstack.isEmpty() && itemstack.f()) {
                          int i = Math.min(this.c(this.value), itemstack.getDamage());
  
@@ -78,7 +76,7 @@
                  }
  
                  this.die();
-@@ -188,6 +212,24 @@
+@@ -188,6 +215,24 @@
      }
  
      public static int getOrbValue(int i) {
