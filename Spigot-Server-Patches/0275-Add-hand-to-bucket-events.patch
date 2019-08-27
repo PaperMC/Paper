@@ -1,32 +1,32 @@
-From 04c5c10babc2a9dc7617f1da00274afdc049d092 Mon Sep 17 00:00:00 2001
+From 95b235948ac5eae580b4821f53b5ff9fab552c47 Mon Sep 17 00:00:00 2001
 From: BillyGalbreath <Blake.Galbreath@GMail.com>
 Date: Thu, 2 Aug 2018 08:44:35 -0500
 Subject: [PATCH] Add hand to bucket events
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityCow.java b/src/main/java/net/minecraft/server/EntityCow.java
-index a17738f9ff..d2c2e3cc33 100644
+index 6e385b5304..2c8bbf20ae 100644
 --- a/src/main/java/net/minecraft/server/EntityCow.java
 +++ b/src/main/java/net/minecraft/server/EntityCow.java
-@@ -62,7 +62,7 @@ public class EntityCow extends EntityAnimal {
+@@ -61,7 +61,7 @@ public class EntityCow extends EntityAnimal {
+ 
          if (itemstack.getItem() == Items.BUCKET && !entityhuman.abilities.canInstantlyBuild && !this.isBaby()) {
              // CraftBukkit start - Got milk?
-             org.bukkit.Location loc = this.getBukkitEntity().getLocation();
--            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, itemstack, Items.MILK_BUCKET);
-+            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), null, itemstack, Items.MILK_BUCKET, enumhand); // Paper - add enumHand
+-            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman.world, entityhuman, this.getChunkCoordinates(), this.getChunkCoordinates(), null, itemstack, Items.MILK_BUCKET);
++            org.bukkit.event.player.PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman.world, entityhuman, this.getChunkCoordinates(), this.getChunkCoordinates(), null, itemstack, Items.MILK_BUCKET, enumhand); // Paper - add enumHand
  
              if (event.isCancelled()) {
                  return false;
 diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
-index 6f8a116c06..731f117065 100644
+index 59e239e9d1..91ff811d8f 100644
 --- a/src/main/java/net/minecraft/server/ItemBucket.java
 +++ b/src/main/java/net/minecraft/server/ItemBucket.java
 @@ -39,7 +39,7 @@ public class ItemBucket extends Item {
                      if (iblockdata.getBlock() instanceof IFluidSource) {
                          // CraftBukkit start
                          FluidType dummyFluid = ((IFluidSource) iblockdata.getBlock()).removeFluid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
--                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, dummyFluid.b());
-+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, blockposition.getX(), blockposition.getY(), blockposition.getZ(), null, itemstack, dummyFluid.b(), enumhand); // Paper - add enumHand
+-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.b());
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.b(), enumhand); // Paper - add enumHand
  
                          if (event.isCancelled()) {
                              ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
@@ -61,49 +61,50 @@ index 6f8a116c06..731f117065 100644
              } else {
                  // CraftBukkit start
                  if (entityhuman != null) {
--                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clicked.getX(), clicked.getY(), clicked.getZ(), enumdirection, itemstack);
-+                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clicked.getX(), clicked.getY(), clicked.getZ(), enumdirection, itemstack, enumhand); // Paper - add enumHand
+-                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack);
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand); // Paper - add enumHand
                      if (event.isCancelled()) {
                          ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                          ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 379838fd60..02536db14a 100644
+index ea6c538ef8..d9679f77c8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -360,6 +360,20 @@ public class CraftEventFactory {
-     }
+@@ -360,6 +360,21 @@ public class CraftEventFactory {
  
-     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
+     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
+         Player player = (Player) who.getBukkitEntity();
 +        // Paper start - add EnumHand
-+        return getPlayerBucketEvent(isFilling, who, clickedX, clickedY, clickedZ, clickedFace, itemstack, item, null);
++        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, item, null);
 +    }
 +
-+    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemInHand, EnumHand enumHand) {
-+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, Items.BUCKET, enumHand);
++    public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, EnumHand enumHand) {
++        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
 +    }
 +
-+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
-+        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, who, clickedX, clickedY, clickedZ, clickedFace, itemInHand, bucket, enumHand);
++    public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
++        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
 +    }
 +
-+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, EntityHuman who, int clickedX, int clickedY, int clickedZ, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item, EnumHand enumHand) {
++    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item, EnumHand enumHand) {
 +        // Paper end
-         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
++        Player player = (who == null) ? null : (Player) who.getBukkitEntity();
          CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
          Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
-@@ -372,10 +386,10 @@ public class CraftEventFactory {
  
-         PlayerEvent event = null;
+@@ -371,10 +386,10 @@ public class CraftEventFactory {
+ 
+         PlayerEvent event;
          if (isFilling) {
--            event = new PlayerBucketFillEvent(player, blockClicked, blockFace, bucket, itemInHand);
-+            event = new PlayerBucketFillEvent(player, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
-             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
+-            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
++            event = new PlayerBucketFillEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
+             ((PlayerBucketFillEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
          } else {
--            event = new PlayerBucketEmptyEvent(player, blockClicked, blockFace, bucket, itemInHand);
-+            event = new PlayerBucketEmptyEvent(player, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
-             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(craftWorld, player, clickedX, clickedZ));
+-            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand);
++            event = new PlayerBucketEmptyEvent(player, block, blockClicked, blockFace, bucket, itemInHand, enumHand == null ? null : enumHand == EnumHand.OFF_HAND ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND); // Paper - add enumHand
+             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
          }
  
 -- 
-2.22.0
+2.22.1
 
