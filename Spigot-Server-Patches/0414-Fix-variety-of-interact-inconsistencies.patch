@@ -1,0 +1,123 @@
+From 8b3f12b0b4af42a0478dbd1e38e808e6124136b6 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 27 Aug 2019 23:06:57 -0700
+Subject: [PATCH] Fix variety of interact inconsistencies
+
+- Fix us not correctly reverting new 1.14.4 behavior for cancelling
+block breaks in spawn protected areas
+- Use block cancel resend logic for interacting in spawn protected
+areas, fixing desync issues with doors (i.e ghost door block or half
+opened)
+
+Fixes:
+ -SPIGOT-5196
+- MC-11563 (most similar issue)
+- https://github.com/PaperMC/Paper/issues/2498
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index e7b8b2e99..57f2e1459 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1361,8 +1361,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
+         }
+ 
+-        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(worldserver, blockposition));
+-        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(worldserver, blockposition.shift(enumdirection)));
++        PlayerInteractManager.cancelBlockBreakForClient(this.player, (WorldServer)this.player.world, blockposition, null); // Paper
++        PlayerInteractManager.cancelBlockBreakForClient(this.player, (WorldServer)this.player.world, blockposition.shift(enumdirection), null); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index c96564a59..6ee8d7fd9 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -105,6 +105,29 @@ public class PlayerInteractManager {
+         return f;
+     }
+ 
++    // Paper start
++    static void cancelBlockBreakForClient(EntityPlayer player, WorldServer world, BlockPosition pos, PacketPlayInBlockDig.EnumPlayerDigType type) {
++        if (!world.isLoaded(pos) || !pos.isValidLocation()) {
++            return;
++        }
++
++        for (EnumDirection dir : EnumDirection.values()) {
++            BlockPosition off = pos.shift(dir);
++            if (!world.isLoaded(off) || !off.isValidLocation()) {
++                continue;
++            }
++
++            player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, off));
++        }
++
++        player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, pos));
++        TileEntity tileentity = world.getTileEntity(pos);
++        if (tileentity != null) {
++            player.playerConnection.sendPacket(tileentity.getUpdatePacket());
++        }
++    }
++    // Paper end
++
+     public void a(BlockPosition blockposition, PacketPlayInBlockDig.EnumPlayerDigType packetplayinblockdig_enumplayerdigtype, EnumDirection enumdirection, int i) {
+         double d0 = this.player.locX - ((double) blockposition.getX() + 0.5D);
+         double d1 = this.player.locY - ((double) blockposition.getY() + 0.5D) + 1.5D;
+@@ -112,41 +135,22 @@ public class PlayerInteractManager {
+         double d3 = d0 * d0 + d1 * d1 + d2 * d2;
+ 
+         if (d3 > 36.0D) {
+-            this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++            cancelBlockBreakForClient(this.player, this.world, blockposition, packetplayinblockdig_enumplayerdigtype); // Paper
+         } else if (blockposition.getY() >= i) {
+-            this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++            cancelBlockBreakForClient(this.player, this.world, blockposition, packetplayinblockdig_enumplayerdigtype); // Paper
+         } else {
+             IBlockData iblockdata;
+ 
+             if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
+                 if (!this.world.a((EntityHuman) this.player, blockposition)) {
+-                    // CraftBukkit start - fire PlayerInteractEvent
+-                    CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
+-                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
+-                    // Update any tile entity data for this block
+-                    TileEntity tileentity = world.getTileEntity(blockposition);
+-                    if (tileentity != null) {
+-                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
+-                    }
+-                    // CraftBukkit end
++                    cancelBlockBreakForClient(this.player, this.world, blockposition, packetplayinblockdig_enumplayerdigtype); // Paper
+                     return;
+                 }
+ 
+                 // CraftBukkit start
+                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, blockposition, enumdirection, this.player.inventory.getItemInHand(), EnumHand.MAIN_HAND);
+                 if (event.isCancelled()) {
+-                    // Let the client know the block still exists
+-                    // Paper start - brute force neighbor blocks for any attached blocks
+-                    for (EnumDirection dir : EnumDirection.values()) {
+-                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition.shift(dir)));
+-                    }
+-                    // Paper end
+-                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
+-                    // Update any tile entity data for this block
+-                    TileEntity tileentity = this.world.getTileEntity(blockposition);
+-                    if (tileentity != null) {
+-                        this.player.playerConnection.sendPacket(tileentity.getUpdatePacket());
+-                    }
++                    cancelBlockBreakForClient(this.player, this.world, blockposition, packetplayinblockdig_enumplayerdigtype); // Paper
+                     return;
+                 }
+                 // CraftBukkit end
+@@ -162,7 +166,7 @@ public class PlayerInteractManager {
+                 }
+ 
+                 if (this.player.a((World) this.world, blockposition, this.gamemode)) {
+-                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, false));
++                    cancelBlockBreakForClient(this.player, this.world, blockposition, packetplayinblockdig_enumplayerdigtype); // Paper
+                     return;
+                 }
+ 
+-- 
+2.22.1
+
