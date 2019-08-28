@@ -1,0 +1,433 @@
+From a54f475ed3d09c444e54646ec6af3e2e7e532aed Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 27 Aug 2019 15:08:24 -0700
+Subject: [PATCH] Remove logic creating lots of garbage on the heap
+
+- PathfinderGoalSelector showed up at the top in memory profiling due
+to streams
+- ChunkMapDistance showed up at the top too due to bad iterator usage
+- PlayerChunkMap#move and ChunkMap showed near the top when moving
+around due to avoidable ChunkCoordIntPair allocations
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMap.java b/src/main/java/net/minecraft/server/ChunkMap.java
+index 55f9f4e6e..f13476db3 100644
+--- a/src/main/java/net/minecraft/server/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/ChunkMap.java
+@@ -13,9 +13,10 @@ public abstract class ChunkMap extends LightEngineGraph {
+ 
+     @Override
+     protected void a(long i, int j, boolean flag) {
+-        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
+-        int k = chunkcoordintpair.x;
+-        int l = chunkcoordintpair.z;
++        // Paper start - remove allocation of ChunkCoordIntPair
++        int k = ChunkCoordIntPair.getX(i);
++        int l = ChunkCoordIntPair.getZ(i);
++        // Paper end
+ 
+         for (int i1 = -1; i1 <= 1; ++i1) {
+             for (int j1 = -1; j1 <= 1; ++j1) {
+@@ -32,9 +33,10 @@ public abstract class ChunkMap extends LightEngineGraph {
+     @Override
+     protected int a(long i, long j, int k) {
+         int l = k;
+-        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i);
+-        int i1 = chunkcoordintpair.x;
+-        int j1 = chunkcoordintpair.z;
++        // Paper start - remove allocation of ChunkCoordIntPair
++        int i1 = ChunkCoordIntPair.getX(i);
++        int j1 = ChunkCoordIntPair.getZ(i);
++        // Paper end
+ 
+         for (int k1 = -1; k1 <= 1; ++k1) {
+             for (int l1 = -1; l1 <= 1; ++l1) {
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 63a688725..eb89083c6 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -76,10 +76,14 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     private int a(ObjectSortedSet<Ticket<?>> objectsortedset) {
+-        ObjectBidirectionalIterator<Ticket<?>> objectbidirectionaliterator = objectsortedset.iterator();
++        return getLowestTicketLevel(objectsortedset); // Paper - this creates a lot of garbage so remove the iterator
++    }
+ 
+-        return objectbidirectionaliterator.hasNext() ? ((Ticket) objectbidirectionaliterator.next()).b() : PlayerChunkMap.GOLDEN_TICKET + 1;
++    // Paper start
++    static int getLowestTicketLevel(ObjectSortedSet<Ticket<?>> set) {
++        return set.isEmpty() ? PlayerChunkMap.GOLDEN_TICKET + 1 : set.first().getTicketLevel();
+     }
++    // Paper end
+ 
+     protected abstract boolean a(long i);
+ 
+@@ -142,14 +146,9 @@ public abstract class ChunkMapDistance {
+ 
+     private boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+         ObjectSortedSet<Ticket<?>> objectsortedset = this.e(i);
+-        ObjectBidirectionalIterator<Ticket<?>> objectbidirectionaliterator = objectsortedset.iterator();
+-        int j;
++        int j = getLowestTicketLevel(objectsortedset); // Paper - iterator creates a lot of garbage
+ 
+-        if (objectbidirectionaliterator.hasNext()) {
+-            j = ((Ticket) objectbidirectionaliterator.next()).b();
+-        } else {
+-            j = PlayerChunkMap.GOLDEN_TICKET + 1;
+-        }
++        // Paper - remove iterator usage
+ 
+         boolean ret = false; // CraftBukkit
+         if (objectsortedset.add(ticket)) {
+@@ -310,9 +309,7 @@ public abstract class ChunkMapDistance {
+             if (objectsortedset == null) {
+                 return Integer.MAX_VALUE;
+             } else {
+-                ObjectBidirectionalIterator<Ticket<?>> objectbidirectionaliterator = objectsortedset.iterator();
+-
+-                return !objectbidirectionaliterator.hasNext() ? Integer.MAX_VALUE : ((Ticket) objectbidirectionaliterator.next()).b();
++                return objectsortedset.isEmpty() ? Integer.MAX_VALUE : ((Ticket) objectsortedset.first()).b(); // Paper - this creates a lot of garbage due to iteration creation
+             }
+         }
+ 
+@@ -365,7 +362,7 @@ public abstract class ChunkMapDistance {
+         }
+ 
+         public void a(int i) {
+-            ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
++            ObjectIterator objectiterator = this.a.long2ByteEntrySet().fastIterator(); // Paper - use fast iterator (reduces entry creation)
+ 
+             while (objectiterator.hasNext()) {
+                 it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry) objectiterator.next();
+@@ -446,7 +443,7 @@ public abstract class ChunkMapDistance {
+ 
+     class b extends ChunkMap {
+ 
+-        protected final Long2ByteMap a = new Long2ByteOpenHashMap();
++        protected final Long2ByteOpenHashMap a = new Long2ByteOpenHashMap(); // Paper - change type for fast iterator
+         protected final int b;
+ 
+         protected b(int i) {
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 7801879c8..64a443843 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1773,7 +1773,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     public void a(ChunkCoordIntPair chunkcoordintpair) {
+-        this.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(chunkcoordintpair.x, chunkcoordintpair.z));
++        // Paper start - remove ChunkCoordIntPair allocation
++        this.sendChunkUnload(chunkcoordintpair.x, chunkcoordintpair.z);
++    }
++    public void sendChunkUnload(int chunkX, int chunkZ) {
++        this.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(chunkX, chunkZ));
++        // Paper end
+     }
+ 
+     public SectionPosition getPlayerMapSection() { return this.M(); } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index 14f8b6104..1872a62e0 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -535,4 +535,28 @@ public final class MCUtil {
+         // TODO make sure the constant `33` is correct on future updates. See getChunkAt(int, int, ChunkStatus, boolean)
+         return 33 + ChunkStatus.getTicketLevelOffset(status);
+     }
++
++    public static <E> boolean hasCommonElement(Set<E> set0, Set<E> set1) {
++        java.util.Iterator<E> iterator;
++        Set<E> target;
++
++        // optimize by iterating over fewest entries possible
++        if (set0.size() <= set1.size()) {
++            target = set1;
++            iterator = set0.iterator();
++        } else {
++            target = set0;
++            iterator = set1.iterator();
++        }
++
++        while (iterator.hasNext()) {
++            E element = iterator.next();
++            if (target.contains(element)) {
++                return true;
++            }
++        }
++
++        return false;
++
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
+index 44bb18c59..011758fab 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ import com.google.common.collect.Sets;
+ import java.util.EnumMap;
+ import java.util.EnumSet;
++import java.util.Iterator; // Paper
+ import java.util.Map;
+ import java.util.Set;
+ import java.util.stream.Stream;
+@@ -38,33 +39,36 @@ public class PathfinderGoalSelector {
+     }
+ 
+     public void a(PathfinderGoal pathfindergoal) {
+-        this.d.stream().filter((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.j() == pathfindergoal;
+-        }).filter(PathfinderGoalWrapped::g).forEach(PathfinderGoalWrapped::d);
+-        this.d.removeIf((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.j() == pathfindergoal;
+-        });
++        // Paper start - remove streams
++        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
++            PathfinderGoalWrapped goalWrapped = iterator.next();
++            if (goalWrapped.j() != pathfindergoal) {
++                continue;
++            }
++            if (goalWrapped.g()) {
++                goalWrapped.d();
++            }
++            iterator.remove();
++        }
++        // Paper end
+     }
+ 
+     public void doTick() {
+         this.e.enter("goalCleanup");
+-        this.c().filter((pathfindergoalwrapped) -> {
+-            boolean flag;
+-
+-            if (pathfindergoalwrapped.g()) {
+-                Stream stream = pathfindergoalwrapped.i().stream();
+-                EnumSet enumset = this.f;
++        // Paper start - remove streams
++        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
++            PathfinderGoalWrapped wrappedGoal = iterator.next();
++            if (!wrappedGoal.g()) {
++                continue;
++            }
+ 
+-                this.f.getClass();
+-                if (!stream.anyMatch(enumset::contains) && pathfindergoalwrapped.b()) {
+-                    flag = false;
+-                    return flag;
+-                }
++            if (wrappedGoal.b() && !MCUtil.hasCommonElement(wrappedGoal.i(), this.f)) {
++                continue;
+             }
+ 
+-            flag = true;
+-            return flag;
+-        }).forEach(PathfinderGoal::d);
++            wrappedGoal.d();
++        }
++        // Paper end
+         this.c.forEach((pathfindergoal_type, pathfindergoalwrapped) -> {
+             if (!pathfindergoalwrapped.g()) {
+                 this.c.remove(pathfindergoal_type);
+@@ -73,30 +77,52 @@ public class PathfinderGoalSelector {
+         });
+         this.e.exit();
+         this.e.enter("goalUpdate");
+-        this.d.stream().filter((pathfindergoalwrapped) -> {
+-            return !pathfindergoalwrapped.g();
+-        }).filter((pathfindergoalwrapped) -> {
+-            Stream stream = pathfindergoalwrapped.i().stream();
+-            EnumSet enumset = this.f;
+-
+-            this.f.getClass();
+-            return stream.noneMatch(enumset::contains);
+-        }).filter((pathfindergoalwrapped) -> {
+-            return pathfindergoalwrapped.i().stream().allMatch((pathfindergoal_type) -> {
+-                return ((PathfinderGoalWrapped) this.c.getOrDefault(pathfindergoal_type, PathfinderGoalSelector.b)).a(pathfindergoalwrapped);
+-            });
+-        }).filter(PathfinderGoalWrapped::a).forEach((pathfindergoalwrapped) -> {
+-            pathfindergoalwrapped.i().forEach((pathfindergoal_type) -> {
+-                PathfinderGoalWrapped pathfindergoalwrapped1 = (PathfinderGoalWrapped) this.c.getOrDefault(pathfindergoal_type, PathfinderGoalSelector.b);
+-
+-                pathfindergoalwrapped1.d();
+-                this.c.put(pathfindergoal_type, pathfindergoalwrapped);
+-            });
+-            pathfindergoalwrapped.c();
+-        });
++        // Paper start - remove streams
++        goal_update_loop: for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
++            PathfinderGoalWrapped wrappedGoal = iterator.next();
++            if (wrappedGoal.g()) {
++                continue;
++            }
++
++            EnumSet<PathfinderGoal.Type> set = this.f;
++
++            if (MCUtil.hasCommonElement(set, wrappedGoal.i())) {
++                continue;
++            }
++
++            for (Iterator<PathfinderGoal.Type> iterator1 = set.iterator(); iterator1.hasNext();) {
++                PathfinderGoal.Type type = iterator1.next();
++                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
++                if (!wrapped.a(wrappedGoal)) {
++                    continue goal_update_loop;
++                }
++            }
++
++            if (!wrappedGoal.a()) {
++                continue;
++            }
++
++            for (Iterator<PathfinderGoal.Type> iterator1 = set.iterator(); iterator1.hasNext();) {
++                PathfinderGoal.Type type = iterator1.next();
++                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
++
++                wrapped.d();
++                this.c.put(type, wrappedGoal);
++            }
++
++            wrappedGoal.c();
++        }
++        // Paper end
+         this.e.exit();
+         this.e.enter("goalTick");
+-        this.c().forEach(PathfinderGoalWrapped::e);
++        // Paper start - remove streams
++        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
++            PathfinderGoalWrapped wrappedGoal = iterator.next();
++            if (wrappedGoal.g()) {
++                wrappedGoal.e();
++            }
++        }
++        // Paper end
+         this.e.exit();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index a6b0fb160..bc676ddc9 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -183,8 +183,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     private static int a(ChunkCoordIntPair chunkcoordintpair, int i, int j) {
+-        int k = chunkcoordintpair.x - i;
+-        int l = chunkcoordintpair.z - j;
++        // Paper start - remove ChunkCoordIntPair allocation
++        return getSquareRadiusDistance(chunkcoordintpair.x, chunkcoordintpair.z, i, j);
++    }
++    private static int getSquareRadiusDistance(int chunkX0, int chunkZ0, int i, int j) {
++        int k = chunkX0 - i;
++        int l = chunkZ0 - j;
++        // Paper end
+ 
+         return Math.max(Math.abs(k), Math.abs(l));
+     }
+@@ -960,9 +965,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
++        // Paper start - remove ChunkCoordIntPair allocation
++        this.sendChunk(entityplayer, chunkcoordintpair.x, chunkcoordintpair.z, apacket, flag, flag1);
++    }
++    protected void sendChunk(EntityPlayer entityplayer, int chunkX, int chunkZ, Packet<?>[] apacket, boolean flag, boolean flag1) {
++        // Paper end
+         if (entityplayer.world == this.world) {
+             if (flag1 && !flag) {
+-                PlayerChunk playerchunk = this.getVisibleChunk(chunkcoordintpair.pair());
++                PlayerChunk playerchunk = this.getVisibleChunk(ChunkCoordIntPair.pair(chunkX, chunkZ)); // Paper - remove ChunkCoordIntPair allocation
+ 
+                 if (playerchunk != null) {
+                     Chunk chunk = playerchunk.getChunk();
+@@ -971,12 +981,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         this.a(entityplayer, apacket, chunk);
+                     }
+ 
+-                    PacketDebug.a(this.world, chunkcoordintpair);
++                    //PacketDebug.a(this.world, chunkcoordintpair); // Paper - remove ChunkCoordIntPair allocation (this function is a no-op)
+                 }
+             }
+ 
+             if (!flag1 && flag) {
+-                entityplayer.a(chunkcoordintpair);
++                entityplayer.sendChunkUnload(chunkX, chunkZ); // Paper - remove ChunkCoordIntPair allocation
+             }
+ 
+         }
+@@ -1250,11 +1260,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+         }
+ 
++        Packet[] cachedPackets = new Packet[2]; // Paper
+         for (int k = i - this.viewDistance; k <= i + this.viewDistance; ++k) {
+             for (int l = j - this.viewDistance; l <= j + this.viewDistance; ++l) {
+-                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
+-
+-                this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag, flag);
++                // Paper start - remove excess object creation (ChunkCoordIntPair and Packet[])
++                this.sendChunk(entityplayer, k, l, cachedPackets, !flag, flag);
++                java.util.Arrays.fill(cachedPackets, null);
++                // Paper end
+             }
+         }
+ 
+@@ -1325,35 +1337,47 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             int i2 = Math.max(i, i1) + this.viewDistance;
+             int j2 = Math.max(j, j1) + this.viewDistance;
+ 
++            Packet[] cachedPackets = new Packet[2]; // Paper
++
+             for (int k2 = k1; k2 <= i2; ++k2) {
+                 for (int l2 = l1; l2 <= j2; ++l2) {
+-                    ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k2, l2);
+-                    boolean flag3 = a(chunkcoordintpair, i1, j1) <= this.viewDistance;
+-                    boolean flag4 = a(chunkcoordintpair, i, j) <= this.viewDistance;
++                    // Paper start - remove ChunkCoordIntPair allocation
++                    boolean flag3 = getSquareRadiusDistance(k2, l2, i1, j1) <= this.viewDistance;
++                    boolean flag4 = getSquareRadiusDistance(k2, l1, i, j) <= this.viewDistance;
+ 
+-                    this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
++                    this.sendChunk(entityplayer, k2, l1, cachedPackets, flag3, flag4);
++                    java.util.Arrays.fill(cachedPackets, null);
++                    // Paper end
+                 }
+             }
+         } else {
+-            ChunkCoordIntPair chunkcoordintpair1;
++            //ChunkCoordIntPair chunkcoordintpair1; // Paper - we don't set, so compile fail on further uses
+             boolean flag5;
+             boolean flag6;
+ 
++            Packet[] cachedPackets = new Packet[2]; // Paper
++
+             for (k1 = i1 - this.viewDistance; k1 <= i1 + this.viewDistance; ++k1) {
+                 for (l1 = j1 - this.viewDistance; l1 <= j1 + this.viewDistance; ++l1) {
+-                    chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
++                    // Paper - remove ChunkCoordIntPair allocation
+                     flag5 = true;
+                     flag6 = false;
+-                    this.sendChunk(entityplayer, chunkcoordintpair1, new Packet[2], true, false);
++                    // Paper start - remove ChunkCoordIntPair allocation
++                    this.sendChunk(entityplayer, k1, l1, cachedPackets, true, false);
++                    java.util.Arrays.fill(cachedPackets, null);
++                    // Paper end
+                 }
+             }
+ 
+             for (k1 = i - this.viewDistance; k1 <= i + this.viewDistance; ++k1) {
+                 for (l1 = j - this.viewDistance; l1 <= j + this.viewDistance; ++l1) {
+-                    chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
++                    // Paper - remove ChunkCoordIntPair allocation
+                     flag5 = false;
+                     flag6 = true;
+-                    this.sendChunk(entityplayer, chunkcoordintpair1, new Packet[2], false, true);
++                    // Paper start - remove ChunkCoordIntPair allocation
++                    this.sendChunk(entityplayer, k1, l1, cachedPackets, false, true);
++                    java.util.Arrays.fill(cachedPackets, null);
++                    // Paper end
+                 }
+             }
+         }
+-- 
+2.22.1
+
