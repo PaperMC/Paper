@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.server.BlockPosition;
+import net.minecraft.server.Fluid;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.World;
 import org.bukkit.block.BlockState;
@@ -21,6 +22,18 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     public BlockStateListPopulator(World world, LinkedHashMap<BlockPosition, CraftBlockState> list) {
         this.world = world;
         this.list = list;
+    }
+
+    @Override
+    public IBlockData getType(BlockPosition bp) {
+        CraftBlockState state = list.get(bp);
+        return (state != null) ? state.getHandle() : world.getType(bp);
+    }
+
+    @Override
+    public Fluid getFluid(BlockPosition bp) {
+        CraftBlockState state = list.get(bp);
+        return (state != null) ? state.getHandle().p() : world.getFluid(bp);
     }
 
     @Override
