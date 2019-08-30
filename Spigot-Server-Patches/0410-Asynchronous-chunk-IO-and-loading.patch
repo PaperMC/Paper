@@ -1,4 +1,4 @@
-From 5f7499a5fbc7f2e64fae45fa52bf74839749267a Mon Sep 17 00:00:00 2001
+From 7455060cae4cb4693f0a8146d3456d96884a72ad Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1886,10 +1886,10 @@ index 000000000..1dfa8abfd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 000000000..98a9744a0
+index 000000000..695e9909f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,429 @@
+@@ -0,0 +1,428 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -2239,11 +2239,10 @@ index 000000000..98a9744a0
 +                });
 +                wait.join();
 +            }
-+            return;
-+        }
-+
-+        for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
-+            worker.flush();
++        } else {
++            for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
++                worker.flush();
++            }
 +        }
 +
 +        // flush again since tasks we execute async saves
@@ -3638,7 +3637,7 @@ index 316959064..0e98b7803 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 4497f6a60..cf981632c 100644
+index f1ad7be75..0c1f4e6e1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -78,6 +78,79 @@ public class WorldServer extends World {
@@ -3821,5 +3820,5 @@ index a1d93200e..6ca0ebfde 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 -- 
-2.23.0
+2.22.1
 
