@@ -196,17 +196,17 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     private void setDropChance(EnumItemSlot slot, float chance) {
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()] = chance - 0.1F;
+            ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()] = chance;
         } else {
-            ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()] = chance - 0.1F;
+            ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()] = chance;
         }
     }
 
     private float getDropChance(EnumItemSlot slot) {
         if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            return ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()] + 0.1F;
+            return ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()];
         } else {
-            return ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()] + 0.1F;
+            return ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()];
         }
     }
 }
