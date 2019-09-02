@@ -1,0 +1,38 @@
+From 6e527bafc7b553afc6765738a1609c0c86d94089 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Mon, 2 Sep 2019 16:28:50 -0500
+Subject: [PATCH] Allow damaging invisible armorstands option
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 246bb4b0..a298d152 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -524,6 +524,11 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean allowDamagingInvisibleArmorstands = false;
++    private void allowDamagingInvisibleArmorstands() {
++        allowDamagingInvisibleArmorstands = getBoolean("allow-damaging-invisible-armorstands", allowDamagingInvisibleArmorstands);
++    }
++
+     public boolean antiXray;
+     public boolean asynchronous;
+     public EngineMode engineMode;
+diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
+index 75ac0753..b601b4a0 100644
+--- a/src/main/java/net/minecraft/server/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
+@@ -451,7 +451,7 @@ public class EntityArmorStand extends EntityLiving {
+                 // CraftBukkit end
+                 this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
+                 return false;
+-            } else if (!this.isInvulnerable(damagesource) && !this.bD && !this.isMarker()) {
++            } else if (!this.isInvulnerable(damagesource) && (!this.bD || world.paperConfig.allowDamagingInvisibleArmorstands) && !this.isMarker()) { // Paper
+                 // CraftBukkit start
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
+                     return false;
+-- 
+2.23.0.rc1
+
