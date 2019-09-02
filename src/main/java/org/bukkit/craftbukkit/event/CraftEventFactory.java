@@ -1173,6 +1173,9 @@ public class CraftEventFactory {
             case FIREBALL:
                 cause = IgniteCause.FIREBALL;
                 break;
+            case ARROW:
+                cause = IgniteCause.ARROW;
+                break;
             default:
                 cause = IgniteCause.FLINT_AND_STEEL;
         }
