@@ -124,6 +124,10 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
          * Block ignition caused by explosion.
          */
         EXPLOSION,
+        /**
+         * Block ignition caused by a flaming arrow.
+         */
+        ARROW,
     }
 
     @NotNull
