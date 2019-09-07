@@ -1,0 +1,49 @@
+From 7516d8ce9b0c907d6c4ba096993ec87b70afc34d Mon Sep 17 00:00:00 2001
+From: Zean Rivera <zean@zean.org>
+Date: Sat, 7 Sep 2019 01:38:33 -0700
+Subject: [PATCH] Add a flag, "disableGhostBlockFix", to allow for turning off
+ the Ghost/Phantom Block Fix https://github.com/PaperMC/Paper/pull/2396
+
+The reason for this is that this fix re-introduces
+this bug https://bugs.mojang.com/browse/MC-156013
+
+This gives server owners a way to opt out of the fix.
+It defaults to false, which is keeping the fix.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index b8131aba..b66f6530 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -157,6 +157,11 @@ public class PaperWorldConfig {
+         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+         log("End credits disabled: " + disableEndCredits);
+     }
++    
++    public boolean disableGhostBlockFix;
++    private void disableGhostBlockFix() {
++        disableGhostBlockFix = getBoolean("disable-ghost-block-fix", false);
++    }
+ 
+     public boolean optimizeExplosions;
+     private void optimizeExplosions() {
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 5e595b62..dfcef58c 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -202,7 +202,12 @@ public class PlayerInteractManager {
+                 int i = (int) (f * 10.0F);
+ 
+                 this.world.c(this.player.getId(), blockposition, i);
+-                this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                
++                boolean disableGhostBlockFix = this.world.paperConfig.disableGhostBlockFix;
++                if (!disableGhostBlockFix) {
++                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition));
++                }
++                
+                 this.k = i;
+             }
+ 
+-- 
+2.23.0.windows.1
+
