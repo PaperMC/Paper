@@ -198,4 +198,20 @@ public interface Chunk {
      */
     @NotNull
     Collection<Plugin> getPluginChunkTickets();
+
+    /**
+     * Gets the amount of time in ticks that this chunk has been inhabited.
+     *
+     * Note that the time is incremented once per tick per player in the chunk.
+     *
+     * @return inhabited time
+     */
+    long getInhabitedTime();
+
+    /**
+     * Sets the amount of time in ticks that this chunk has been inhabited.
+     *
+     * @param ticks new inhabited time
+     */
+    void setInhabitedTime(long ticks);
 }
