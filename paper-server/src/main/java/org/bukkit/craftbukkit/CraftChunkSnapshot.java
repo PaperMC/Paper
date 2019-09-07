@@ -59,6 +59,20 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     }
 
     @Override
+    public boolean contains(BlockData block) {
+        Preconditions.checkArgument(block != null, "Block cannot be null");
+
+        IBlockData nms = ((CraftBlockData) block).getState();
+        for (DataPaletteBlock<IBlockData> palette : blockids) {
+            if (palette.a(nms)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public Material getBlockType(int x, int y, int z) {
         CraftChunk.validateChunkCoordinates(x, y, z);
 
