@@ -200,6 +200,18 @@ public class CraftChunk implements Chunk {
     }
 
     @Override
+    public long getInhabitedTime() {
+        return getHandle().q();
+    }
+
+    @Override
+    public void setInhabitedTime(long ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks cannot be negative");
+
+        getHandle().b(ticks);
+    }
+
+    @Override
     public ChunkSnapshot getChunkSnapshot() {
         return getChunkSnapshot(true, false, false);
     }
