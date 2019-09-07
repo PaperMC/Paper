@@ -131,4 +131,12 @@ public interface ChunkSnapshot {
      * @return true if empty, false if not
      */
     boolean isSectionEmpty(int sy);
+
+    /**
+     * Tests if this snapshot contains the specified block.
+     *
+     * @param block block to test
+     * @return if the block is contained within
+     */
+    boolean contains(@NotNull BlockData block);
 }
