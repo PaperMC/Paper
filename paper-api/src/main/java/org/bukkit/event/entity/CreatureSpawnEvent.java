@@ -162,6 +162,14 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         EXPLOSION,
         /**
+         * When an entity is spawned as part of a raid
+         */
+        RAID,
+        /**
+         * When an entity is spawned as part of a patrol
+         */
+        PATROL,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
