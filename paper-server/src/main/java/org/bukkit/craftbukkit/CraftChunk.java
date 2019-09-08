@@ -25,7 +25,9 @@ import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
@@ -209,6 +211,20 @@ public class CraftChunk implements Chunk {
         Preconditions.checkArgument(ticks >= 0, "ticks cannot be negative");
 
         getHandle().b(ticks);
+    }
+
+    @Override
+    public boolean contains(BlockData block) {
+        Preconditions.checkArgument(block != null, "Block cannot be null");
+
+        IBlockData nms = ((CraftBlockData) block).getState();
+        for (ChunkSection section : getHandle().getSections()) {
+            if (section != null && section.getBlocks().a(nms)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
