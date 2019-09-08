@@ -354,6 +354,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
+            },
+            new StackProvider(Material.SUSPICIOUS_STEW) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaSuspiciousStew meta = ((CraftMetaSuspiciousStew) cleanStack.getItemMeta());
+                    meta.addCustomEffect(PotionEffectType.CONFUSION.createEffect(1, 0), false);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
             }
         );
 

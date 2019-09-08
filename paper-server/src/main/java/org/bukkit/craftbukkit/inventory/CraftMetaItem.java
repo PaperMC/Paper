@@ -155,6 +155,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     .put(CraftMetaKnowledgeBook.class, "KNOWLEDGE_BOOK")
                     .put(CraftMetaTropicalFishBucket.class, "TROPICAL_FISH_BUCKET")
                     .put(CraftMetaCrossbow.class, "CROSSBOW")
+                    .put(CraftMetaSuspiciousStew.class, "SUSPICIOUS_STEW")
                     .put(CraftMetaItem.class, "UNSPECIFIC")
                     .build();
 
@@ -1410,7 +1411,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaKnowledgeBook.BOOK_RECIPES.NBT,
                         CraftMetaTropicalFishBucket.VARIANT.NBT,
                         CraftMetaCrossbow.CHARGED.NBT,
-                        CraftMetaCrossbow.CHARGED_PROJECTILES.NBT
+                        CraftMetaCrossbow.CHARGED_PROJECTILES.NBT,
+                        CraftMetaSuspiciousStew.EFFECTS.NBT
                 ));
             }
             return HANDLED_TAGS;

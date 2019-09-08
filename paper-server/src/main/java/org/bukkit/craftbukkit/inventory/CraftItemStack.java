@@ -514,6 +514,8 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaTropicalFishBucket(item.getTag());
             case CROSSBOW:
                 return new CraftMetaCrossbow(item.getTag());
+            case SUSPICIOUS_STEW:
+                return new CraftMetaSuspiciousStew(item.getTag());
             default:
                 return new CraftMetaItem(item.getTag());
         }
