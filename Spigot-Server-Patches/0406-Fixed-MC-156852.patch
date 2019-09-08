@@ -1,4 +1,4 @@
-From 7cb4669fb5d991d54e6bfe922fa2e679e47af0d6 Mon Sep 17 00:00:00 2001
+From 7c8012468c1d9dd7c22fe824c36a43f9b4954e97 Mon Sep 17 00:00:00 2001
 From: TheGreatKetchup <TheGreatKetchup@users.noreply.github.com>
 Date: Thu, 1 Aug 2019 21:24:30 -0400
 Subject: [PATCH] Fixed MC-156852
@@ -11,18 +11,51 @@ issue in 1.8-1.12.
 
 Originally solved by Gnembon on MC-5694 at bugs.mojang.com
 
+From: Zean Rivera <zean@zean.org>
+Date: Sat, 7 Sep 2019 03:11:05 -0700
+Subject: [PATCH] Add a flag, "disable-ghost-block-fix", to allow for turning off the GhostBlockFix https://github.com/PaperMC/Paper/pull/2396
+
+The reason for this is that this fix re-introduces
+this bug https://bugs.mojang.com/browse/MC-156013
+
+This gives server owners a way to opt out of the GhostBlockFix.
+It defaults to false, which is keeping the GhostBlockFix.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 318a470ee..377b4dbaf 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -149,6 +149,11 @@ public class PaperWorldConfig {
+         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+         log("End credits disabled: " + disableEndCredits);
+     }
++    
++    public boolean disableGhostBlockFix;
++    private void disableGhostBlockFix() {
++        disableGhostBlockFix = getBoolean("disable-ghost-block-fix", false);
++    }
+ 
+     public boolean optimizeExplosions;
+     private void optimizeExplosions() {
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index e5e9de542..c96564a59 100644
+index e5e9de542..64865bac9 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-@@ -218,6 +218,7 @@ public class PlayerInteractManager {
+@@ -218,6 +218,14 @@ public class PlayerInteractManager {
                      int j = (int) (f * 10.0F);
  
                      this.world.a(this.player.getId(), blockposition, j);
-+                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition)); // Paper - fixes MC-156852
++                    
++                    // Paper start - The GhostBlockFix which fixes MC-156852 reintroduces the nudging bug in MC-156013
++                    boolean disableGhostBlockFix = this.world.paperConfig.disableGhostBlockFix;
++                    if (!disableGhostBlockFix) { 
++                        this.player.playerConnection.sendPacket(new PacketPlayOutBlockChange(this.world, blockposition)); // Paper - fixes MC-156852
++                    }
++                    // Paper end
++                    
                      this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true));
                      this.l = j;
                  }
 -- 
-2.23.0
+2.23.0.windows.1
 
