@@ -3,6 +3,7 @@ package org.bukkit;
 import java.util.Collection;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -214,4 +215,12 @@ public interface Chunk {
      * @param ticks new inhabited time
      */
     void setInhabitedTime(long ticks);
+
+    /**
+     * Tests if this chunk contains the specified block.
+     *
+     * @param block block to test
+     * @return if the block is contained within
+     */
+    boolean contains(@NotNull BlockData block);
 }
