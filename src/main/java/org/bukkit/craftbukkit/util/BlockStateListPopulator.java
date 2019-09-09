@@ -38,6 +38,11 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public boolean setTypeAndData(BlockPosition position, IBlockData data, int flag) {
+        // Paper start
+        // When a LinkedHashMap entry is overwritten, it keeps its old position. Removing the entry here before adding
+        // a new one ensures that the nether portal blocks are placed last and are not destroyed by physics.
+        list.remove(position);
+        // Paper end
         CraftBlockState state = CraftBlockState.getBlockState(world, position, flag);
         state.setData(data);
         list.put(position, state);
