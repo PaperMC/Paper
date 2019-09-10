@@ -1,4 +1,4 @@
-From cf4e1cc7e7461e141110e2cff416566de1c0cf49 Mon Sep 17 00:00:00 2001
+From 1e3d1109edd69764060ed8be01d1c3a180485c66 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 9 Sep 2019 22:02:12 -0700
 Subject: [PATCH] fixup! Asynchronous chunk IO and loading
@@ -34,7 +34,7 @@ index c3ca3c4a1..78bd238f4 100644
       * Prevent further additions to this queue. Attempts to add after this call has completed (potentially during) will
       * result in {@link IllegalStateException} being thrown.
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
-index f127ef236..4f47666df 100644
+index f127ef236..ee906b594 100644
 --- a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 @@ -19,11 +19,7 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
@@ -73,7 +73,7 @@ index f127ef236..4f47666df 100644
              if (this.handleClose()) {
                  return;
              }
-@@ -129,19 +119,21 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
+@@ -129,19 +119,22 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
      }
  
      protected void handleFlushThreads(final boolean shutdown) {
@@ -82,9 +82,10 @@ index f127ef236..4f47666df 100644
 -            this.flushQueue = null; // Note: this can be a release write
 -        }
 +        Thread parking;
++        ConcurrentLinkedQueue<Thread> flushQueue = this.flushQueue;
 +        do {
 +            ++flushCycles; // may be plain read opaque write
-+            while ((parking = this.flushQueue.poll()) != null) {
++            while ((parking = flushQueue.poll()) != null) {
 +                LockSupport.unpark(parking);
 +            }
 +        } while (this.pollTasks(false));
@@ -100,13 +101,13 @@ index f127ef236..4f47666df 100644
 -            ++this.flushCounter; // may be plain read plain write if we order before poll() (also would need to re-order pollTasks)
 -            LockSupport.unpark(current);
 +            // defend against a race condition where a flush thread double-checks right before we set to null
-+            while ((parking = this.flushQueue.poll()) != null) {
++            while ((parking = flushQueue.poll()) != null) {
 +                LockSupport.unpark(parking);
 +            }
          }
      }
  
-@@ -162,7 +154,6 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
+@@ -162,7 +155,6 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
          this.notifyTasks();
      }
  
@@ -114,7 +115,7 @@ index f127ef236..4f47666df 100644
      /**
       * Waits until this thread's queue is empty.
       *
-@@ -178,42 +169,47 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
+@@ -178,42 +170,47 @@ public class QueueExecutorThread<T extends PrioritizedTaskQueue.PrioritizedTask
  
          // order is important
  
