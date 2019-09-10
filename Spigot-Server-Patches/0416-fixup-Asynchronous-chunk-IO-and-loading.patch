@@ -1,0 +1,38 @@
+From 189517e0cd5967afb5ba02b06dac9282ac378936 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 9 Sep 2019 22:26:33 -0700
+Subject: [PATCH] fixup! Asynchronous chunk IO and loading
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index a6b0fb160..95ee33513 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -365,7 +365,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     return (IChunkAccess) completablefuture.join();
+                 }).filter((ichunkaccess) -> {
+                     return ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk;
+-                }).filter(this::saveChunk).forEach((ichunkaccess) -> {
++                }).filter((chunk) -> this.saveChunk(chunk, true)).forEach((ichunkaccess) -> { // Paper - async io for chunk save
+                     mutableboolean.setTrue();
+                 });
+             } while (mutableboolean.isTrue());
+@@ -373,13 +373,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             this.b(() -> {
+                 return true;
+             });
++            this.world.asyncChunkTaskManager.flush(); // Paper - flush to preserve behavior compat with pre-async behaviour
+             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.x.getName());
+         } else {
+             this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
+                 IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
+ 
+                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
+-                    this.saveChunk(ichunkaccess);
++                    this.saveChunk(ichunkaccess, true); // Paper
+                     playerchunk.m();
+                 }
+ 
+-- 
+2.22.1
+
