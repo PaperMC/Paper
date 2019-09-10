@@ -1,0 +1,73 @@
+From 8b51e84c67c125b2e3a7b5e6a4a8660e0489b53e Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 9 Sep 2019 23:16:43 -0700
+Subject: [PATCH] fixup! Timings v2
+
+
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index 24b4c6e6a..6e3c835b3 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -71,6 +71,10 @@ public class WorldTimingsHandler {
+ 
+     public final Timing playerMobDistanceMapUpdate;
+ 
++    public final Timing miscMobSpawning;
++    public final Timing chunkRangeCheckBig;
++    public final Timing chunkRangeCheckSmall;
++
+     public WorldTimingsHandler(World server) {
+         String name = server.worldData.getName() +" - ";
+ 
+@@ -138,6 +142,10 @@ public class WorldTimingsHandler {
+         chunkUnloadDataSave = Timings.ofSafe(name + "Chunk unload - Data Serialization");
+ 
+         playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
++
++        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
++        chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
++        chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
+     }
+ 
+     public static Timing getTickList(WorldServer worldserver, String timingsType) {
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index d0606ee74..e7539dd79 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -587,9 +587,21 @@ public class ChunkProviderServer extends IChunkProvider {
+                     this.world.getMethodProfiler().exit();
+                     ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
+ 
+-                    if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
++                    // Paper start - timings
++                    this.world.timings.chunkRangeCheckBig.startTiming();
++                    // note: this is just a copy of the expression in the if
++                    boolean bigRadiusOutsideRange = !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair);
++                    this.world.timings.chunkRangeCheckBig.stopTiming();
++                    if (bigRadiusOutsideRange) {
++                        // Paper end
+                         chunk.b(chunk.q() + j);
+-                        if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
++                        // Paper start - timings
++                        this.world.timings.chunkRangeCheckSmall.startTiming();
++                        // note: this is just a copy of the expression in the if
++                        boolean smallRadiusOutsideRange = flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true);
++                        this.world.timings.chunkRangeCheckSmall.stopTiming();
++                        if (smallRadiusOutsideRange) { // Spigot
++                            // Paper end
+                             this.world.getMethodProfiler().enter("spawner");
+                             this.world.timings.mobSpawn.startTiming(); // Spigot
+                             EnumCreatureType[] aenumcreaturetype1 = aenumcreaturetype;
+@@ -656,7 +668,9 @@ public class ChunkProviderServer extends IChunkProvider {
+             });
+             this.world.getMethodProfiler().enter("customSpawners");
+             if (flag1) {
++                try (co.aikar.timings.Timing ignored = this.world.timings.miscMobSpawning.startTiming()) { // Paper - timings
+                 this.chunkGenerator.doMobSpawning(this.world, this.allowMonsters, this.allowAnimals);
++                } // Paper - timings
+             }
+ 
+             this.world.getMethodProfiler().exit();
+-- 
+2.22.1
+
