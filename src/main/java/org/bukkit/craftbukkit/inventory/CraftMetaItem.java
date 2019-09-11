@@ -140,6 +140,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         static {
             classMap = ImmutableMap.<Class<? extends CraftMetaItem>, String>builder()
+                    .put(CraftMetaArmorStand.class, "ARMOR_STAND")
                     .put(CraftMetaBanner.class, "BANNER")
                     .put(CraftMetaBlockState.class, "TILE_ENTITY")
                     .put(CraftMetaBook.class, "BOOK")
