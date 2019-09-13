@@ -47,6 +47,16 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
     }
 
     @Override
+    public double getAbsorptionAmount() {
+        return getParent().getAbsorptionAmount();
+    }
+
+    @Override
+    public void setAbsorptionAmount(double amount) {
+        getParent().setAbsorptionAmount(amount);
+    }
+
+    @Override
     public double getMaxHealth() {
         return getParent().getMaxHealth();
     }
