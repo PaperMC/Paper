@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,6 +113,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (health == 0) {
             getHandle().die(DamageSource.GENERIC);
         }
+    }
+
+    @Override
+    public double getAbsorptionAmount() {
+        return getHandle().getAbsorptionHearts();
+    }
+
+    @Override
+    public void setAbsorptionAmount(double amount) {
+        Preconditions.checkArgument(amount >= 0 && Double.isFinite(amount), "amount < 0 or non-finite");
+
+        getHandle().setAbsorptionHearts((float) amount);
     }
 
     @Override
