@@ -1,0 +1,75 @@
+From 9b37bfef937b7828d2e4219e5a4ab2c000db7d1e Mon Sep 17 00:00:00 2001
+From: slicklibro <slicklibro@gmail.com>
+Date: Mon, 16 Sep 2019 14:56:36 +1200
+Subject: [PATCH] implement only-send-chunks-below-speed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 29fd4996..13c0570f 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -625,4 +625,9 @@ public class PaperWorldConfig {
+     private void generatorSettings() {
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+     }
++
++    public double onlySendChunksBelowSpeed = -1;
++    private void onlySendChunksBelowSpeed() {
++        onlySendChunksBelowSpeed = getDouble("only-send-chunks-below-speed", -1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 7801879c..6668f1c5 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -99,6 +99,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public boolean sentListPacket = false;
+     public Integer clientViewDistance;
+     // CraftBukkit end
++    public double magSqrPlayerXZ = 0; //Paper onlySendChunksBelowSpeed
++    public double magSqrVehicleXZ = 0; //Paper onlySendChunksBelowSpeed
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super((World) worldserver, gameprofile);
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index a6b0fb16..eaa5c4c4 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1226,6 +1226,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     private boolean b(EntityPlayer entityplayer) {
++        //Paper start onlySendChunksBelowSpeed
++        if(this.world.paperConfig.onlySendChunksBelowSpeed != -1) {
++            return (entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS))
++                || (entityplayer.magSqrVehicleXZ > (this.world.paperConfig.onlySendChunksBelowSpeed * this.world.paperConfig.onlySendChunksBelowSpeed)
++                || entityplayer.magSqrPlayerXZ > (this.world.paperConfig.onlySendChunksBelowSpeed * this.world.paperConfig.onlySendChunksBelowSpeed));
++        }
++        //Paper end onlySendChunksBelowSpeed
+         return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index ae17cdf2..f51f539a 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -323,7 +323,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 double d8 = d5 - this.u;
+                 double d9 = entity.getMot().g();
+                 double d10 = d6 * d6 + d7 * d7 + d8 * d8;
+-
++                this.player.magSqrVehicleXZ = d6 * d6 + d8 * d8; //Paper onlySendChunksBelowSpeed
+ 
+                 // CraftBukkit start - handle custom speeds and skipped ticks
+                 this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
+@@ -949,6 +949,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                         double d9 = d6 - this.n;
+                         double d10 = this.player.getMot().g();
+                         double d11 = d7 * d7 + d8 * d8 + d9 * d9;
++                        this.player.magSqrPlayerXZ = d7 * d7 + d9 * d9; //Paper onlySendChunksBelowSpeed
+ 
+                         if (this.player.isSleeping()) {
+                             if (d11 > 1.0D) {
+-- 
+2.20.1.windows.1
+
