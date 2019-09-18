@@ -148,8 +148,8 @@ public class Main {
             }
 
             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
-            if (javaVersion > 56.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 12 is supported.");
+            if (javaVersion > 57.0) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 13 is supported.");
                 return;
             }
 
