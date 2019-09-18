@@ -79,8 +79,8 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     }
 
     /**
-     * Sets the the cost (minimum level) which is displayed as a number on the
-     * right hand side of the enchantment offer.
+     * Sets the cost (minimum level) which is displayed as a number on the right
+     * hand side of the enchantment offer.
      *
      * @param level - cost in levels
      */

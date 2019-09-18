@@ -41,7 +41,7 @@ public interface Damageable extends Entity {
     void setHealth(double health);
 
     /**
-     * Sets the entity's absorption amount.
+     * Gets the entity's absorption amount.
      *
      * @return absorption amount from 0
      */

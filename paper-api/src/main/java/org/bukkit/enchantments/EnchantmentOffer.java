@@ -70,8 +70,8 @@ public class EnchantmentOffer {
     }
 
     /**
-     * Sets the the cost (minimum level) which is displayed as a number on the
-     * right hand side of the enchantment offer.
+     * Sets the cost (minimum level) which is displayed as a number on the right
+     * hand side of the enchantment offer.
      *
      * @param cost cost for this enchantment
      */
