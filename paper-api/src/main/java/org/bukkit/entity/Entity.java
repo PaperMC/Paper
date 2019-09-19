@@ -448,12 +448,18 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Sets whether the entity has a team colored (default: white) glow.
      *
+     * <b>nb: this refers to the 'Glowing' entity property, not whether a
+     * glowing potion effect is applied</b>
+     *
      * @param flag if the entity is glowing
      */
     void setGlowing(boolean flag);
 
     /**
      * Gets whether the entity is glowing or not.
+     *
+     * <b>nb: this refers to the 'Glowing' entity property, not whether a
+     * glowing potion effect is applied</b>
      *
      * @return whether the entity is glowing
      */
