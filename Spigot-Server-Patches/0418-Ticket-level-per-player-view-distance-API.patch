@@ -1,11 +1,16 @@
-From da3e7211ac25aede651319b4930920d071a1eadd Mon Sep 17 00:00:00 2001
+From e2e65860bb326b92ce2bf504bbd0244d3cc5d45e Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
 
+This PR implements the per-player view distance API at the ticket level.
+
+This somewhat clean solution comes from the result of many complicated ones (and research).
+
+The view-distance config value will determine the global distance (and set maximum) of normal view distance interactions with entities, mob-spawning and tracking. All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..f68a7ad0 100644
+index 63a68872..6ed20112 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -16,16 +21,28 @@ index 63a68872..f68a7ad0 100644
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
-@@ -352,7 +353,7 @@ public abstract class ChunkMapDistance {
+@@ -44,6 +45,8 @@ public abstract class ChunkMapDistance {
+     private final Executor m;
+     private long currentTick;
+ 
++    protected ObjectSet<EntityPlayer> getChunkPlayers(long i) {return (ObjectSet) ChunkMapDistance.this.c.get(i);} //Paper OBFHELPER
++
+     protected ChunkMapDistance(Executor executor, Executor executor1) {
+         executor1.getClass();
+         Mailbox<Runnable> mailbox = Mailbox.a("player ticket throttler", executor1::execute);
+@@ -352,7 +355,10 @@ public abstract class ChunkMapDistance {
  
          private int e = 0;
          private final Long2IntMap f = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
 -        private final LongSet g = new LongOpenHashSet();
 +        private final Long2ByteMap g = new Long2ByteOpenHashMap(); //Paper ticket level pp-view-dist
++
++        private ObjectIterator<Long2ByteMap.Entry> getUpdateIterator() {return this.g.long2ByteEntrySet().iterator();} //Paper OBFHELPER
++        private void insertUpdate(long i, byte d) {this.g.put(i, d);} //Paper OBFHELPER
  
          protected c(int i) {
              super(i);
-@@ -360,9 +361,9 @@ public abstract class ChunkMapDistance {
+@@ -360,9 +366,9 @@ public abstract class ChunkMapDistance {
          }
  
          @Override
@@ -33,12 +50,12 @@ index 63a68872..f68a7ad0 100644
 -            this.g.add(i);
 -        }
 +        protected void a(long i, int j, int k, byte d) {
-+            this.g.put(i, d);
++            this.insertUpdate(i, d);
 +        } //Paper ticket level pp-view-dist
  
          public void a(int i) {
              ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
-@@ -372,20 +373,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +378,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -59,17 +76,17 @@ index 63a68872..f68a7ad0 100644
                      ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
 -                            if (this.c(this.c(i))) {
-+                            if (this.c(i) <= vd - 2) { //Paper ticket level pp-view-dist
++                            if (this.getChunksMapping(i) <= vd - 2) { //Paper ticket level pp-view-dist
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -412,10 +413,14 @@ public abstract class ChunkMapDistance {
+@@ -412,10 +418,14 @@ public abstract class ChunkMapDistance {
          public void a() {
              super.a();
              if (!this.g.isEmpty()) {
 -                LongIterator longiterator = this.g.iterator();
 +                //Paper start ticket level pp-view-dist
-+                ObjectIterator<Long2ByteMap.Entry> longiterator = this.g.long2ByteEntrySet().iterator();
++                ObjectIterator<Long2ByteMap.Entry> longiterator = this.getUpdateIterator();
  
                  while (longiterator.hasNext()) {
 -                    long i = longiterator.nextLong();
@@ -80,7 +97,7 @@ index 63a68872..f68a7ad0 100644
                      int j = this.f.get(i);
                      int k = this.c(i);
  
-@@ -430,7 +435,7 @@ public abstract class ChunkMapDistance {
+@@ -430,7 +440,7 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -89,7 +106,7 @@ index 63a68872..f68a7ad0 100644
                      }
                  }
  
-@@ -448,6 +453,7 @@ public abstract class ChunkMapDistance {
+@@ -448,6 +458,7 @@ public abstract class ChunkMapDistance {
  
          protected final Long2ByteMap a = new Long2ByteOpenHashMap();
          protected final int b;
@@ -97,13 +114,22 @@ index 63a68872..f68a7ad0 100644
  
          protected b(int i) {
              super(i + 2, 16, 256);
-@@ -464,16 +470,34 @@ public abstract class ChunkMapDistance {
+@@ -455,6 +466,8 @@ public abstract class ChunkMapDistance {
+             this.a.defaultReturnValue((byte) (i + 2));
+         }
+ 
++        protected int getChunksMapping(long i) {return this.c(i);} //Paper OBFHELPER
++
+         @Override
+         protected int c(long i) {
+             return this.a.get(i);
+@@ -464,16 +477,34 @@ public abstract class ChunkMapDistance {
          protected void a(long i, int j) {
              byte b0;
  
 +            //Paper start ticket level pp-view-dist
 +            if(j == 0) {
-+                ObjectSet<EntityPlayer> c = (ObjectSet) ChunkMapDistance.this.c.get(i);
++                ObjectSet<EntityPlayer> c = ChunkMapDistance.this.getChunkPlayers(i);
 +                if (c != null && !c.isEmpty()) {
 +                    ObjectIterator<EntityPlayer> pl = c.iterator();
 +                    int[] vd = new int[c.size()];
@@ -117,6 +143,7 @@ index 63a68872..f68a7ad0 100644
 +                    }
 +                }
 +            }
++            //Paper end
 +
              if (j > this.b) {
                  b0 = this.a.remove(i);
@@ -125,8 +152,7 @@ index 63a68872..f68a7ad0 100644
              }
  
 -            this.a(i, b0, j);
-+            this.a(i, b0, j, (byte) this.pvd);
-+            //Paper end
++            this.a(i, b0, j, (byte) this.pvd); //Paper ticket level pp-view-dist
          }
  
 -        protected void a(long i, int j, int k) {}
