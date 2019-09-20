@@ -1,0 +1,185 @@
+From 0fdd93ff8e1a795085ac8213528519e10bef1c1c Mon Sep 17 00:00:00 2001
+From: slicklibro <slicklibro@gmail.com>
+Date: Fri, 20 Sep 2019 17:16:14 +1200
+Subject: [PATCH] Ticket level per-player view distance API
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 63a68872..6f142f32 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
++
+ import java.util.Set;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+@@ -352,7 +353,7 @@ public abstract class ChunkMapDistance {
+ 
+         private int e = 0;
+         private final Long2IntMap f = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
+-        private final LongSet g = new LongOpenHashSet();
++        private final Long2ByteMap g = new Long2ByteOpenHashMap(); //Paper ticket level pp-view-dist
+ 
+         protected c(int i) {
+             super(i);
+@@ -360,9 +361,9 @@ public abstract class ChunkMapDistance {
+         }
+ 
+         @Override
+-        protected void a(long i, int j, int k) {
+-            this.g.add(i);
+-        }
++        protected void a(long i, int j, int k, byte d) {
++            this.g.put(i, d);
++        } //Paper ticket level pp-view-dist
+ 
+         public void a(int i) {
+             ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
+@@ -372,20 +373,20 @@ public abstract class ChunkMapDistance {
+                 byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
+                 long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
+ 
+-                this.a(j, b0, this.c(b0), b0 <= i - 2);
++                this.a(j, b0, this.c(b0), b0 <= i - 2, i);
+             }
+ 
+             this.e = i;
+         }
+ 
+-        private void a(long i, int j, boolean flag, boolean flag1) {
++        private void a(long i, int j, boolean flag, boolean flag1, int vd) { //Paper ticket level pp-view-dist
+             if (flag != flag1) {
+                 Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i), ChunkMapDistance.this.currentTick);
+ 
+                 if (flag1) {
+                     ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
+                         ChunkMapDistance.this.m.execute(() -> {
+-                            if (this.c(this.c(i))) {
++                            if (this.c(i) <= vd - 2) { //Paper ticket level pp-view-dist
+                                 ChunkMapDistance.this.addTicket(i, ticket);
+                                 ChunkMapDistance.this.l.add(i);
+                             } else {
+@@ -412,10 +413,14 @@ public abstract class ChunkMapDistance {
+         public void a() {
+             super.a();
+             if (!this.g.isEmpty()) {
+-                LongIterator longiterator = this.g.iterator();
++                //Paper start ticket level pp-view-dist
++                ObjectIterator<Long2ByteMap.Entry> longiterator = this.g.long2ByteEntrySet().iterator();
+ 
+                 while (longiterator.hasNext()) {
+-                    long i = longiterator.nextLong();
++                    Long2ByteMap.Entry e = longiterator.next();
++                    long i = e.getLongKey();
++                    int vd = e.getByteValue();
++                    //Paper end
+                     int j = this.f.get(i);
+                     int k = this.c(i);
+ 
+@@ -430,7 +435,7 @@ public abstract class ChunkMapDistance {
+                             }
+ 
+                         });
+-                        this.a(i, k, this.c(j), this.c(k));
++                        this.a(i, k, (j <= vd - 2), (k <= vd - 2), vd);
+                     }
+                 }
+ 
+@@ -448,6 +453,7 @@ public abstract class ChunkMapDistance {
+ 
+         protected final Long2ByteMap a = new Long2ByteOpenHashMap();
+         protected final int b;
++        protected int pvd; //Paper ticket level pp-view-dist
+ 
+         protected b(int i) {
+             super(i + 2, 16, 256);
+@@ -464,16 +470,34 @@ public abstract class ChunkMapDistance {
+         protected void a(long i, int j) {
+             byte b0;
+ 
++            //Paper start ticket level pp-view-dist
++            if(j == 0) {
++                ObjectSet<EntityPlayer> c = (ObjectSet) ChunkMapDistance.this.c.get(i);
++                if (c != null && !c.isEmpty()) {
++                    ObjectIterator<EntityPlayer> pl = c.iterator();
++                    int[] vd = new int[c.size()];
++                    int x = 0;
++                    while (pl.hasNext()) {
++                        EntityPlayer p = pl.next();
++                        vd[x] = p.getViewDistance();
++                        java.util.Arrays.sort(vd);
++                        this.pvd = vd[c.size() - 1];
++                        x++;
++                    }
++                }
++            }
++
+             if (j > this.b) {
+                 b0 = this.a.remove(i);
+             } else {
+                 b0 = this.a.put(i, (byte) j);
+             }
+ 
+-            this.a(i, b0, j);
++            this.a(i, b0, j, (byte) this.pvd);
++            //Paper end
+         }
+ 
+-        protected void a(long i, int j, int k) {}
++        protected void a(long i, int j, int k, byte d) {} //Paper ticket level pp-view-dist
+ 
+         @Override
+         protected int b(long i) {
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index cd73cde8..0b38b2e6 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -80,6 +80,14 @@ public abstract class EntityHuman extends EntityLiving {
+     public String spawnWorld = "";
+     public int oldLevel = -1;
+ 
++    //Paper start ticket level pp-view-dist
++    private int viewDistance;
++
++    public int getViewDistance() { return viewDistance; }
++
++    public void setViewDistance(int i) { this.viewDistance = MathHelper.clamp(i, 3, ((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance); }
++    //Paper end
++
+     @Override
+     public CraftHumanEntity getBukkitEntity() {
+         return (CraftHumanEntity) super.getBukkitEntity();
+@@ -98,6 +106,8 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+         this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
+         this.aX = 180.0F;
++        this.setViewDistance(((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance);  //Paper ticket level pp-view-dist
++        if(((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance == 0) this.setViewDistance(this.world.spigotConfig.viewDistance); //Paper ticket level pp-view-dist
+     }
+ 
+     public boolean a(World world, BlockPosition blockposition, EnumGamemode enumgamemode) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e920545d..fd56fe1f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1986,12 +1986,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public int getViewDistance() {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
++        return getHandle().getViewDistance(); //Paper ticket level pp-view-dist
+     }
+ 
+     @Override
+     public void setViewDistance(int viewDistance) {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
++        getHandle().setViewDistance(viewDistance); //Paper ticket level pp-view-dist
+     }
+     //Paper end
+ 
+-- 
+2.20.1.windows.1
+
