@@ -1,4 +1,4 @@
-From 32514924983705e037a2b414b191ab1dbdb0dee4 Mon Sep 17 00:00:00 2001
+From a1c6af9725915f855ab2cf02e22281ece25cac87 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,40 +10,30 @@ The view-distance config value will determine the global distance (and set maxim
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..6f1a03913 100644
+index 63a688725..879099b20 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
- import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
- import it.unimi.dsi.fastutil.objects.ObjectSet;
- import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
-+
- import java.util.Set;
- import java.util.concurrent.CompletableFuture;
- import java.util.concurrent.Executor;
-@@ -44,6 +45,8 @@ public abstract class ChunkMapDistance {
+@@ -43,6 +43,7 @@ public abstract class ChunkMapDistance {
+     private final LongSet l = new LongOpenHashSet();
      private final Executor m;
      private long currentTick;
-
 +    protected ObjectSet<EntityPlayer> getChunkPlayers(long i) {return (ObjectSet) ChunkMapDistance.this.c.get(i);} //Paper OBFHELPER
-+
+ 
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-         Mailbox<Runnable> mailbox = Mailbox.a("player ticket throttler", executor1::execute);
-@@ -352,7 +355,9 @@ public abstract class ChunkMapDistance {
-
+@@ -352,7 +353,8 @@ public abstract class ChunkMapDistance {
+ 
          private int e = 0;
          private final Long2IntMap f = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
 -        private final LongSet g = new LongOpenHashSet();
 +        private final Long2ByteMap g = new Long2ByteOpenHashMap(); //Paper ticket level pp-view-dist
-+
 +        private Long2ByteMap getUpdateChunks() {return this.g;} //Paper OBFHELPER
-
+ 
          protected c(int i) {
              super(i);
-@@ -360,9 +365,9 @@ public abstract class ChunkMapDistance {
+@@ -360,9 +362,9 @@ public abstract class ChunkMapDistance {
          }
-
+ 
          @Override
 -        protected void a(long i, int j, int k) {
 -            this.g.add(i);
@@ -51,26 +41,26 @@ index 63a688725..6f1a03913 100644
 +        protected void a(long i, int j, int k, byte d) {
 +            this.g.put(i, d);
 +        } //Paper ticket level pp-view-dist
-
+ 
          public void a(int i) {
              ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
-@@ -372,20 +377,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +374,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
-
+ 
 -                this.a(j, b0, this.c(b0), b0 <= i - 2);
 +                this.a(j, b0, this.c(b0), b0 <= i - 2, i); //Paper ticket level pp-view-dist
              }
-
+ 
              this.e = i;
          }
-
+ 
 -        private void a(long i, int j, boolean flag, boolean flag1) {
 -            if (flag != flag1) {
 +        private void a(long i, int j, boolean flag, boolean flag1, int vd) { //Paper ticket level pp-view-dist
 +            if (flag != flag1 || (flag && flag1)) { //Paper ticket level pp-view-dist
                  Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i), ChunkMapDistance.this.currentTick);
-
+ 
                  if (flag1) {
                      ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // Craftbukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
@@ -79,14 +69,14 @@ index 63a688725..6f1a03913 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -412,10 +417,14 @@ public abstract class ChunkMapDistance {
+@@ -412,10 +414,14 @@ public abstract class ChunkMapDistance {
          public void a() {
              super.a();
              if (!this.g.isEmpty()) {
 -                LongIterator longiterator = this.g.iterator();
 +                //Paper start ticket level pp-view-dist
 +                ObjectIterator<Long2ByteMap.Entry> longiterator = this.getUpdateChunks().long2ByteEntrySet().iterator();
-
+ 
                  while (longiterator.hasNext()) {
 -                    long i = longiterator.nextLong();
 +                    Long2ByteMap.Entry e = longiterator.next();
@@ -95,37 +85,29 @@ index 63a688725..6f1a03913 100644
 +                    //Paper end
                      int j = this.f.get(i);
                      int k = this.c(i);
-
-@@ -430,7 +439,7 @@ public abstract class ChunkMapDistance {
+ 
+@@ -430,7 +436,7 @@ public abstract class ChunkMapDistance {
                              }
-
+ 
                          });
 -                        this.a(i, k, this.c(j), this.c(k));
 +                        this.a(i, k, this.c(j), k <= vd - 2, vd); //Paper ticket level pp-view-dist
                      }
                  }
-
-@@ -448,6 +457,7 @@ public abstract class ChunkMapDistance {
-
+ 
+@@ -448,6 +454,8 @@ public abstract class ChunkMapDistance {
+ 
          protected final Long2ByteMap a = new Long2ByteOpenHashMap();
          protected final int b;
 +        protected int pvd; //Paper ticket level pp-view-dist
-
++        protected int getChunksMapping(long i) {return this.c(i);} //Paper OBFHELPER
+ 
          protected b(int i) {
              super(i + 2, 16, 256);
-@@ -455,6 +465,8 @@ public abstract class ChunkMapDistance {
-             this.a.defaultReturnValue((byte) (i + 2));
-         }
-
-+        protected int getChunksMapping(long i) {return this.c(i);} //Paper OBFHELPER
-+
-         @Override
-         protected int c(long i) {
-             return this.a.get(i);
-@@ -464,16 +476,31 @@ public abstract class ChunkMapDistance {
+@@ -464,16 +472,31 @@ public abstract class ChunkMapDistance {
          protected void a(long i, int j) {
              byte b0;
-
+ 
 +            //Paper start ticket level pp-view-dist
 +            if(j == 0) {
 +                ObjectSet<EntityPlayer> c = ChunkMapDistance.this.getChunkPlayers(i);
@@ -146,62 +128,61 @@ index 63a688725..6f1a03913 100644
              } else {
                  b0 = this.a.put(i, (byte) j);
              }
-
+ 
 -            this.a(i, b0, j);
 +            this.a(i, b0, j, (byte) this.pvd); //Paper ticket level pp-view-dist
          }
-
+ 
 -        protected void a(long i, int j, int k) {}
 +        protected void a(long i, int j, int k, byte d) {} //Paper ticket level pp-view-dist
-
+ 
          @Override
          protected int b(long i) {
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8d..0b38b2e67 100644
+index cd73cde8d..4e7284750 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -80,6 +80,14 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -80,6 +80,12 @@ public abstract class EntityHuman extends EntityLiving {
      public String spawnWorld = "";
      public int oldLevel = -1;
-
+ 
 +    //Paper start ticket level pp-view-dist
 +    private int viewDistance;
-+
 +    public int getViewDistance() { return viewDistance; }
-+
 +    public void setViewDistance(int i) { this.viewDistance = MathHelper.clamp(i, 3, ((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance); }
 +    //Paper end
 +
      @Override
      public CraftHumanEntity getBukkitEntity() {
          return (CraftHumanEntity) super.getBukkitEntity();
-@@ -98,6 +106,8 @@ public abstract class EntityHuman extends EntityLiving {
-
+@@ -98,6 +104,8 @@ public abstract class EntityHuman extends EntityLiving {
+ 
          this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
          this.aX = 180.0F;
 +        this.setViewDistance(((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance);  //Paper ticket level pp-view-dist
 +        if(((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance == 0) this.setViewDistance(this.world.spigotConfig.viewDistance); //Paper ticket level pp-view-dist
      }
-
+ 
      public boolean a(World world, BlockPosition blockposition, EnumGamemode enumgamemode) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index e920545df..fd56fe1fd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1986,12 +1986,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-
+ 
      @Override
      public int getViewDistance() {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
 +        return getHandle().getViewDistance(); //Paper ticket level pp-view-dist
      }
-
+ 
      @Override
      public void setViewDistance(int viewDistance) {
 -        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
 +        getHandle().setViewDistance(viewDistance); //Paper ticket level pp-view-dist
      }
      //Paper end
-
---
+ 
+-- 
 2.20.1.windows.1
+
