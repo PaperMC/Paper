@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
@@ -881,6 +882,48 @@ public interface ConfigurationSection {
      * @return Whether or not the specified path is a Color.
      */
     public boolean isColor(@NotNull String path);
+
+    /**
+     * Gets the requested Location by path.
+     * <p>
+     * If the Location does not exist but a default value has been specified,
+     * this will return the default value. If the Location does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param path Path of the Location to get.
+     * @return Requested Location.
+     */
+    @Nullable
+    public Location getLocation(@NotNull String path);
+
+    /**
+     * Gets the requested {@link Location} by path, returning a default value if
+     * not found.
+     * <p>
+     * If the Location does not exist then the specified default value will
+     * returned regardless of if a default has been identified in the root
+     * {@link Configuration}.
+     *
+     * @param path Path of the Location to get.
+     * @param def The default value to return if the path is not found or is not
+     * a Location.
+     * @return Requested Location.
+     */
+    @Nullable
+    public Location getLocation(@NotNull String path, @Nullable Location def);
+
+    /**
+     * Checks if the specified path is a Location.
+     * <p>
+     * If the path exists but is not a Location, this will return false. If the
+     * path does not exist, this will return false. If the path does not exist
+     * but a default value has been specified, this will check if that default
+     * value is a Location and return appropriately.
+     *
+     * @param path Path of the Location to check.
+     * @return Whether or not the specified path is a Location.
+     */
+    public boolean isLocation(@NotNull String path);
 
     /**
      * Gets the requested ConfigurationSection by path.

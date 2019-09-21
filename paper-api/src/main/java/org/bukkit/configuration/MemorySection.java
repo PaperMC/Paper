@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
@@ -787,6 +788,23 @@ public class MemorySection implements ConfigurationSection {
     @Override
     public boolean isColor(@NotNull String path) {
         return getSerializable(path, Color.class) != null;
+    }
+
+    @Override
+    @Nullable
+    public Location getLocation(@NotNull String path) {
+        return getSerializable(path, Location.class);
+    }
+
+    @Override
+    @Nullable
+    public Location getLocation(@NotNull String path, @Nullable Location def) {
+        return getSerializable(path, Location.class, def);
+    }
+
+    @Override
+    public boolean isLocation(@NotNull String path) {
+        return getSerializable(path, Location.class) != null;
     }
 
     @Override
