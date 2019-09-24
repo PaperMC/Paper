@@ -76,7 +76,7 @@ public class ContainerHorse extends Container {
 
     @Override
     public boolean canUse(EntityHuman entityhuman) {
-        return this.c.a(entityhuman) && this.d.isAlive() && this.d.g((Entity) entityhuman) < 8.0F;
+        return this.c.a(entityhuman) && (this.d.isAlive() && this.d.valid) && this.d.g((Entity) entityhuman) < 8.0F; // Paper - Fix MC-161754
     }
 
     @Override
