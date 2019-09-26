@@ -1,4 +1,4 @@
-From fd48ded8be56cc996b270a26dd536b456136e049 Mon Sep 17 00:00:00 2001
+From 3825ea13865a0ee5b2a6b9186daa2713285e4990 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -9,9 +9,35 @@ The view-distance config value will determine the global distance (and set maxim
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..ed4d6d09 100644
+index 63a68872..464baa44 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -3,6 +3,10 @@ package net.minecraft.server;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Sets;
+ import com.mojang.datafixers.util.Either;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.IntComparators;
++import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
++import it.unimi.dsi.fastutil.ints.IntSortedSet;
+ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2IntMap;
+@@ -14,12 +18,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+-import it.unimi.dsi.fastutil.objects.ObjectAVLTreeSet;
+-import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
+-import it.unimi.dsi.fastutil.objects.ObjectIterator;
+-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+-import it.unimi.dsi.fastutil.objects.ObjectSet;
+-import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
++import it.unimi.dsi.fastutil.objects.*;
++
+ import java.util.Set;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
 @@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
      private final LongSet l = new LongOpenHashSet();
      private final Executor m;
@@ -20,106 +46,103 @@ index 63a68872..ed4d6d09 100644
 +    protected final it.unimi.dsi.fastutil.ints.Int2ObjectMap<Square> squares = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
 +    protected it.unimi.dsi.fastutil.longs.Long2ByteMap update = new it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap();
 +    class Square {
-+        public int x, y, u, v, id;
-+        public Square(int x1, int y1, int u1, int v1, int id1) {
-+            x = x1; y = y1; u = u1; v = v1; id = id1;
++        public int x, y, u, v, ticket;
++        public Square(int x1, int y1, int u1, int v1, int ticket1) {
++            x = x1; y = y1; u = u1; v = v1; ticket = ticket1;
 +        }
 +    }
 +    //Paper end
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -228,12 +238,95 @@ public abstract class ChunkMapDistance {
+@@ -228,12 +238,94 @@ public abstract class ChunkMapDistance {
  
      }
  
--    public void a(SectionPosition sectionposition, EntityPlayer entityplayer) {
 +    //Paper start ticket level pp-view-dist
-+    public void a(SectionPosition sectionposition, EntityPlayer pln) {
+     public void a(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.u().pair();
  
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
--        })).add(entityplayer);
-+        })).add(pln);
+         })).add(entityplayer);
 +
 +        int cx = ChunkCoordIntPair.getX(i);
 +        int cz = ChunkCoordIntPair.getZ(i);
 +
-+        int pvd = pln.getViewDistance() - 2;
++        int pvd = entityplayer.getViewDistance() - 2;
 +
 +        Square vdsqr = new Square(cx - pvd, cz - pvd, cx + pvd, cz + pvd, 0);
-+        Square sto = this.squares.get(pln.getUniqueID().hashCode());
-+        this.squares.put(pln.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd, cz + pvd, 0));
++        Square sto = this.squares.get(entityplayer.getId());
++        this.squares.put(entityplayer.getId(), new Square(cx - pvd, cz - pvd, cx + pvd, cz + pvd, 0));
 +
 +        if(sto == null) sto = vdsqr;
-+        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.id);
++        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.ticket);
 +
-+        it.unimi.dsi.fastutil.ints.IntSortedSet row = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
-+        it.unimi.dsi.fastutil.ints.IntSortedSet col = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
-+        it.unimi.dsi.fastutil.objects.ObjectList<Square> toproc = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        IntSortedSet row = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
++        IntSortedSet col = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
++        ObjectList<Square> toproc = new ObjectArrayList<>();
 +
-+        if(oldsqr != null) {
-+            vdsqr.id = 1; oldsqr.id = -1;
-+            toproc.add(oldsqr); toproc.add(vdsqr);
-+            row.add(oldsqr.y); row.add(oldsqr.v); col.add(oldsqr.x); col.add(oldsqr.u);
-+            row.add(vdsqr.y); row.add(vdsqr.v); col.add(vdsqr.x); col.add(vdsqr.u);
++        vdsqr.ticket = 1; oldsqr.ticket = -1;
++        toproc.add(oldsqr); toproc.add(vdsqr);
++        row.add(oldsqr.y); row.add(oldsqr.v); col.add(oldsqr.x); col.add(oldsqr.u);
++        row.add(vdsqr.y); row.add(vdsqr.v); col.add(vdsqr.x); col.add(vdsqr.u);
 +
-+            if(oldsqr.x < vdsqr.u && oldsqr.u > vdsqr.x && oldsqr.y < vdsqr.v && oldsqr.v > vdsqr.y && !sto.equals(vdsqr)) {
-+                Square ovdsqr = new Square(Math.max(oldsqr.x, vdsqr.x), Math.max(oldsqr.y, vdsqr.y), Math.min(oldsqr.u, vdsqr.u), Math.min(oldsqr.v, vdsqr.v), 0);
-+                toproc.add(ovdsqr);
-+                row.add(ovdsqr.y); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
++        if(oldsqr.x < vdsqr.u && oldsqr.u > vdsqr.x && oldsqr.y < vdsqr.v && oldsqr.v > vdsqr.y && !sto.equals(vdsqr)) {
++            Square ovdsqr = new Square(Math.max(oldsqr.x, vdsqr.x), Math.max(oldsqr.y, vdsqr.y), Math.min(oldsqr.u, vdsqr.u), Math.min(oldsqr.v, vdsqr.v), 0);
++            toproc.add(ovdsqr);
++            row.add(ovdsqr.y); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
++        }
++
++        ObjectIterator<Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
++        while(sqriterator.hasNext()) {
++            Int2ObjectMap.Entry<Square> e = sqriterator.next();
++            int uid = e.getIntKey();
++            Square sqr = e.getValue();
++            if(uid == entityplayer.getId()) continue;
++            if(sqr.ticket == -2) { this.squares.remove(uid); continue; }
++            if ((sqr.x < vdsqr.u && sqr.u > vdsqr.x && sqr.y < vdsqr.v && sqr.v > vdsqr.y) ||
++                (sqr.x < oldsqr.u && sqr.u > oldsqr.x && sqr.y < oldsqr.v && sqr.v > oldsqr.y )) {
++                toproc.add(sqr);
++                row.add(sqr.y); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
 +            }
++        }
 +
-+            ObjectIterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
-+            while(sqriterator.hasNext()) {
-+                it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square> e = sqriterator.next();
-+                int uid = e.getIntKey();
-+                Square sqr = e.getValue();
-+                if(uid == pln.getUniqueID().hashCode()) continue;
-+                if(sqr.id == -2) { this.squares.remove(uid); continue; }
-+                if ((sqr.x < vdsqr.u && sqr.u > vdsqr.x && sqr.y < vdsqr.v && sqr.v > vdsqr.y) ||
-+                    (sqr.x < oldsqr.u && sqr.u > oldsqr.x && sqr.y < oldsqr.v && sqr.v > oldsqr.y )) {
-+                    toproc.add(sqr);
-+                    row.add(sqr.y); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
++        ObjectListIterator<Square> it = toproc.iterator();
++        //coordinate compression
++
++        int[][] grid = new int[row.size()][col.size()];
++
++        while(it.hasNext()) {
++            Square sqr = it.next();
++            for(int s = row.headSet(sqr.y).size(); s < row.headSet(sqr.v).size(); s++) {
++                for(int t = col.headSet(sqr.x).size(); t < col.headSet(sqr.u).size(); t++) {
++                    grid[s][t] = sqr.ticket;
 +                }
 +            }
++        }
 +
-+            it.unimi.dsi.fastutil.objects.ObjectListIterator<Square> it = toproc.iterator();
-+            //coordinate compression
-+
-+            int[][] grid = new int[row.size()][col.size()];
-+
-+            while(it.hasNext()) {
-+                Square sqr = it.next();
-+                for(int s = row.headSet(sqr.y).size(); s < row.headSet(sqr.v).size(); s++) {
-+                    for(int t = col.headSet(sqr.x).size(); t < col.headSet(sqr.u).size(); t++) {
-+                        grid[s][t] = sqr.id;
-+                    }
-+                }
-+            }
-+
-+            int[] rw = row.toIntArray(); int[] cl = col.toIntArray();
-+            for(int s = 0; s < row.size() - 1; s++) {
-+                for(int t = 0; t < col.size() - 1; t++){
-+                    if(grid[s][t] == -1) {
-+                        for(int x = cl[t]; x < cl[t+1]; x++) {
-+                            for(int z = rw[s]; z < rw[s+1]; z++) {
-+                                long pair = ChunkCoordIntPair.asLong(x, z);
-+                                update.put(pair, (byte) -1);
-+                            }
++        int[] rw = row.toIntArray(); int[] cl = col.toIntArray();
++        for(int s = 0; s < row.size() - 1; s++) {
++            for(int t = 0; t < col.size() - 1; t++){
++                if(grid[s][t] == -1) {
++                    for(int x = cl[t]; x < cl[t+1]; x++) {
++                        for(int z = rw[s]; z < rw[s+1]; z++) {
++                            long pair = ChunkCoordIntPair.asLong(x, z);
++                            update.put(pair, (byte) -1);
 +                        }
++                    }
 +
-+                    } else if(grid[s][t] == 1) {
-+                        for(int x = cl[t]; x < cl[t+1]; x++) {
-+                            for(int z = rw[s]; z < rw[s+1]; z++) {
-+                                long pair = ChunkCoordIntPair.asLong(x, z);
-+                                update.put(pair, (byte) 1);
-+                            }
++                } else if(grid[s][t] == 1) {
++                    for(int x = cl[t]; x < cl[t+1]; x++) {
++                        for(int z = rw[s]; z < rw[s+1]; z++) {
++                            long pair = ChunkCoordIntPair.asLong(x, z);
++                            update.put(pair, (byte) 1);
 +                        }
 +                    }
 +                }
 +            }
++
 +
 +        }
 +        //Paper end
@@ -127,17 +150,17 @@ index 63a68872..ed4d6d09 100644
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
-@@ -241,7 +334,8 @@ public abstract class ChunkMapDistance {
+@@ -241,7 +333,8 @@ public abstract class ChunkMapDistance {
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.u().pair();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
 -
-+        Square sqr = this.squares.get(entityplayer.getUniqueID().hashCode());
-+        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.y, sqr.u, sqr.v, -2));
++        Square sqr = this.squares.get(entityplayer.getId());
++        this.squares.put(entityplayer.getId(), new Square(sqr.x, sqr.y, sqr.u, sqr.v, -2));
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
-@@ -372,20 +466,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +465,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -161,7 +184,7 @@ index 63a68872..ed4d6d09 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,10 +524,33 @@ public abstract class ChunkMapDistance {
+@@ -430,10 +523,33 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
