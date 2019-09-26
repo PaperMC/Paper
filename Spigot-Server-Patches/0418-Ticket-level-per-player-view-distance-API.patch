@@ -1,4 +1,4 @@
-From 3825ea13865a0ee5b2a6b9186daa2713285e4990 Mon Sep 17 00:00:00 2001
+From 22cd8e6172d4a5b77d4c097c871916b4b7738dfa Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -9,21 +9,10 @@ The view-distance config value will determine the global distance (and set maxim
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..464baa44 100644
+index 63a68872..a08425d4 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -3,6 +3,10 @@ package net.minecraft.server;
- import com.google.common.collect.ImmutableList;
- import com.google.common.collect.Sets;
- import com.mojang.datafixers.util.Either;
-+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-+import it.unimi.dsi.fastutil.ints.IntComparators;
-+import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
-+import it.unimi.dsi.fastutil.ints.IntSortedSet;
- import it.unimi.dsi.fastutil.longs.Long2ByteMap;
- import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
- import it.unimi.dsi.fastutil.longs.Long2IntMap;
-@@ -14,12 +18,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
+@@ -14,12 +14,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
@@ -34,11 +23,10 @@ index 63a68872..464baa44 100644
 -import it.unimi.dsi.fastutil.objects.ObjectSet;
 -import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 +import it.unimi.dsi.fastutil.objects.*;
-+
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
-@@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
+@@ -43,6 +38,16 @@ public abstract class ChunkMapDistance {
      private final LongSet l = new LongOpenHashSet();
      private final Executor m;
      private long currentTick;
@@ -55,7 +43,7 @@ index 63a68872..464baa44 100644
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -228,12 +238,94 @@ public abstract class ChunkMapDistance {
+@@ -228,12 +233,94 @@ public abstract class ChunkMapDistance {
  
      }
  
@@ -79,8 +67,8 @@ index 63a68872..464baa44 100644
 +        if(sto == null) sto = vdsqr;
 +        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.ticket);
 +
-+        IntSortedSet row = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
-+        IntSortedSet col = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
++        it.unimi.dsi.fastutil.ints.IntSortedSet row = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
++        it.unimi.dsi.fastutil.ints.IntSortedSet col = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
 +        ObjectList<Square> toproc = new ObjectArrayList<>();
 +
 +        vdsqr.ticket = 1; oldsqr.ticket = -1;
@@ -94,9 +82,9 @@ index 63a68872..464baa44 100644
 +            row.add(ovdsqr.y); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
 +        }
 +
-+        ObjectIterator<Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
++        ObjectIterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
 +        while(sqriterator.hasNext()) {
-+            Int2ObjectMap.Entry<Square> e = sqriterator.next();
++            it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square> e = sqriterator.next();
 +            int uid = e.getIntKey();
 +            Square sqr = e.getValue();
 +            if(uid == entityplayer.getId()) continue;
@@ -150,7 +138,7 @@ index 63a68872..464baa44 100644
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
-@@ -241,7 +333,8 @@ public abstract class ChunkMapDistance {
+@@ -241,7 +328,8 @@ public abstract class ChunkMapDistance {
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.u().pair();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
@@ -160,7 +148,7 @@ index 63a68872..464baa44 100644
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
-@@ -372,20 +465,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +460,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -184,7 +172,7 @@ index 63a68872..464baa44 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,10 +523,33 @@ public abstract class ChunkMapDistance {
+@@ -430,10 +518,33 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
