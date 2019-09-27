@@ -1,12 +1,11 @@
-From da1d53d70dec0538981a0177b907d7a1fdb4a4a1 Mon Sep 17 00:00:00 2001
+From 3e6a771a4f7688a13d6632afd0e5ee55e55bc086 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
 
 This PR implements the per-player view distance API at the ticket level.
 This somewhat clean solution comes from the result of many complicated ones (and research).
-The view distance will determine how far the player can add tickets to
-chunks.
+The view distance will determine how far the player can add tickets to chunks.
 The tracking view distance will determine how far the player can see/load chunks with tickets.
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
@@ -269,19 +268,19 @@ index 8b3052b1..3a00dedf 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95ee3351..12732bf8 100644
+index 95ee3351..cd874930 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,29 +935,31 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      protected void setViewDistance(int i) {
          int j = MathHelper.clamp(i + 1, 3, 33);
++        //Paper start ticket level pp-view-dist
 +        this.chunkDistanceManager.a(j);
 +        ObjectIterator objectiterator = this.updatingChunks.values().iterator();
  
 -        if (j != this.viewDistance) {
 -            int k = this.viewDistance;
-+        //Paper start ticket level pp-view-dist
 +        for(EntityPlayer player : this.world.players) {
 +            //no need to perform anything more complex, as all logic is handled live at the ticket level
 +            player.setTrackViewDistance(j);
