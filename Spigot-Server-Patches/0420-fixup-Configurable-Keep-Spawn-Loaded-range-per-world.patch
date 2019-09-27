@@ -1,0 +1,54 @@
+From 3af90b1e460ba13769bf9a28648c04c68fb2f825 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 26 Sep 2019 23:47:52 -0700
+Subject: [PATCH] fixup! Configurable Keep Spawn Loaded range per world
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d2c0299730..fdaf6baf1c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -580,9 +580,10 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+         // Paper start - configurable spawn reason
+         int radiusBlocks = worldserver.paperConfig.keepLoadedRange;
+-        worldloadlistener.setChunkRadius(radiusBlocks / 16);
+-        int totalChunks = ((radiusBlocks / 16) * 2 + 1);
++        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
++        int totalChunks = ((radiusChunks) * 2 + 1);
+         totalChunks *= totalChunks;
++        worldloadlistener.setChunkRadius(radiusBlocks / 16);
+         // Paper end
+ 
+         MinecraftServer.LOGGER.info("Preparing start region for dimension '{}'/{}", worldserver.getWorldData().getName(), DimensionManager.a(worldserver.worldProvider.getDimensionManager().getType())); // CraftBukkit
+@@ -596,15 +597,20 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         // Paper start - Configurable spawn radius
+         if (worldserver.keepSpawnInMemory) {
+             worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
+-        }
+ 
+-        while (worldserver.keepSpawnInMemory && chunkproviderserver.b() != totalChunks) {
+-            // Paper end
+-            // CraftBukkit start
+-            // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;
+-            this.executeModerately();
+-            // CraftBukkit end
++            // we use a getChunk loop since we don't need to worry about what some plugin does to keepSpawnInMemory
++            // or the spawn radius while we are loading
++            // just keep in mind too that executeModerately will handle player network queue (i.e commands)
++            int centerX = blockposition.getX() >> 4;
++            int centerZ = blockposition.getZ() >> 4;
++            radiusChunks += 2; // we need to load radius +2 to get the chunks in ticking level
++            for (int xoff = -radiusChunks; xoff <= radiusChunks; ++xoff) {
++                for (int zoff = -radiusChunks; zoff <= radiusChunks; ++zoff) {
++                    worldserver.getChunkAt(centerX + xoff, centerZ + zoff);
++                }
++            }
+         }
++        // Paper end
+         LOGGER.info("Loaded " + chunkproviderserver.b() + " spawn chunks for world " + worldserver.getWorldData().getName()); // Paper
+ 
+         // CraftBukkit start
+-- 
+2.22.1
+

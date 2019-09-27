@@ -1,0 +1,53 @@
+From 8f509d9b6d75585925651c168de8badb9ef291f6 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 27 Sep 2019 00:09:16 -0700
+Subject: [PATCH] fixup! Asynchronous chunk IO and loading
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+index b1b48a6f49..f281cf99f1 100644
+--- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
++++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+@@ -85,12 +85,24 @@ public final class ChunkTaskManager {
+             PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
+ 
+             for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
+-                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
+-                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
++                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
++                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
++                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
+ 
+                 PaperFileIOThread.LOGGER.log(Level.ERROR, chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
+                 PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
+                 PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
++                // log current status of chunk to indicate whether we're waiting on generation or loading
++                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
++
++                if (chunkHolder == null) {
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
++                } else {
++                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
++                }
++
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 95ee335135..59e74900f8 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -199,7 +199,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     @Nullable
+-    protected PlayerChunk getVisibleChunk(long i) {
++    public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
+         return (PlayerChunk) this.visibleChunks.get(i);
+     }
+ 
+-- 
+2.22.1
+
