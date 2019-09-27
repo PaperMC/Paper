@@ -1,0 +1,45 @@
+From fd5c1f6f31a7b702d28f352ee33e82124eb23a24 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 26 Sep 2019 22:54:44 -0700
+Subject: [PATCH] fixup! Asynchronous chunk IO and loading
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+index b1b48a6f4..1d69715e2 100644
+--- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
++++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+@@ -397,8 +397,8 @@ public final class ChunkTaskManager {
+ 
+         ChunkSaveTask chunkSaveTask = this.chunkSaveTasks.get(chunkKey);
+         if (chunkSaveTask != null) {
+-            chunkSaveTask.raisePriority(priority);
+-            if (chunkSaveTask.isScheduled() && chunkSaveTask.getPriority() != PrioritizedTaskQueue.COMPLETING_PRIORITY) {
++            final boolean raised = chunkSaveTask.raisePriority(priority);
++            if (chunkSaveTask.isScheduled() && raised) {
+                 // only notify if we're in queue to be executed
+                 this.internalScheduleNotify();
+             }
+@@ -406,8 +406,8 @@ public final class ChunkTaskManager {
+ 
+         ChunkLoadTask chunkLoadTask = this.chunkLoadTasks.get(chunkKey);
+         if (chunkLoadTask != null) {
+-            chunkLoadTask.raisePriority(priority);
+-            if (chunkLoadTask.isScheduled() && chunkLoadTask.getPriority() != PrioritizedTaskQueue.COMPLETING_PRIORITY) {
++            final boolean raised = chunkLoadTask.raisePriority(priority);
++            if (chunkLoadTask.isScheduled() && raised) {
+                 // only notify if we're in queue to be executed
+                 this.internalScheduleNotify();
+             }
+@@ -427,6 +427,9 @@ public final class ChunkTaskManager {
+     }
+ 
+     protected void internalScheduleNotify() {
++        if (this.workers == null) {
++            return;
++        }
+         for (final QueueExecutorThread<ChunkTask> worker : this.workers) {
+             if (worker.notifyTasks()) {
+                 // break here since we only want to wake up one worker for scheduling one task
+-- 
+2.22.1
+
