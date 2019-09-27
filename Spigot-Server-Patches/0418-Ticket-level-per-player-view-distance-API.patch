@@ -1,4 +1,4 @@
-From a91136caffd8f4439ab7d363e7a3a70ab80b3add Mon Sep 17 00:00:00 2001
+From 1cc9daf3260d6376cc1eea78ad389e7140e88fc3 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -9,7 +9,7 @@ The view-distance config value will determine the global distance (and set maxim
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..4882a866 100644
+index 63a68872..4561857b 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
@@ -29,26 +29,20 @@ index 63a68872..4882a866 100644
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -228,12 +238,94 @@ public abstract class ChunkMapDistance {
- 
-     }
- 
-+    //Paper start ticket level pp-view-dist
-     public void a(SectionPosition sectionposition, EntityPlayer entityplayer) {
-         long i = sectionposition.u().pair();
- 
+@@ -234,6 +244,88 @@ public abstract class ChunkMapDistance {
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
 +
++        //Paper start ticket level pp-view-dist
 +        int cx = ChunkCoordIntPair.getX(i);
 +        int cz = ChunkCoordIntPair.getZ(i);
 +
 +        int pvd = entityplayer.getViewDistance() - 2;
 +
-+        Square vdsqr = new Square(cx - pvd, cz - pvd, cx + pvd, cz + pvd, 0);
++        Square vdsqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
 +        Square sto = this.squares.get(entityplayer.getId());
-+        this.squares.put(entityplayer.getId(), new Square(cx - pvd, cz - pvd, cx + pvd, cz + pvd, 0));
++        this.squares.put(entityplayer.getId(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
 +
 +        if(sto == null) sto = vdsqr;
 +        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.ticket);
