@@ -1,4 +1,4 @@
-From 349a940ebc03b7371d99705957478f275bf3c4f4 Mon Sep 17 00:00:00 2001
+From cce3fb194183612a2c043d3f20a2a306b08bee4e Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,7 +10,7 @@ The tracking view distance will determine how far the player can see/load chunks
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..4561857b 100644
+index 63a688725..0f0ffe5a3 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
@@ -30,7 +30,7 @@ index 63a68872..4561857b 100644
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -234,6 +244,88 @@ public abstract class ChunkMapDistance {
+@@ -234,6 +244,94 @@ public abstract class ChunkMapDistance {
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
@@ -54,13 +54,10 @@ index 63a68872..4561857b 100644
 +
 +        vdsqr.ticket = 1; oldsqr.ticket = -1;
 +        toproc.add(oldsqr); toproc.add(vdsqr);
-+        row.add(oldsqr.y); row.add(oldsqr.v); col.add(oldsqr.x); col.add(oldsqr.u);
-+        row.add(vdsqr.y); row.add(vdsqr.v); col.add(vdsqr.x); col.add(vdsqr.u);
 +
 +        if(oldsqr.x < vdsqr.u && oldsqr.u > vdsqr.x && oldsqr.y < vdsqr.v && oldsqr.v > vdsqr.y && !sto.equals(vdsqr)) {
 +            Square ovdsqr = new Square(Math.max(oldsqr.x, vdsqr.x), Math.max(oldsqr.y, vdsqr.y), Math.min(oldsqr.u, vdsqr.u), Math.min(oldsqr.v, vdsqr.v), 0);
 +            toproc.add(ovdsqr);
-+            row.add(ovdsqr.y); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
 +        }
 +
 +        ObjectIterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
@@ -69,18 +66,27 @@ index 63a68872..4561857b 100644
 +            int uid = e.getIntKey();
 +            Square sqr = e.getValue();
 +            if(uid == entityplayer.getId()) continue;
-+            if(sqr.ticket == -2) { this.squares.remove(uid); continue; }
++            if(sqr.ticket == -2) {
++                toproc.add(0, sqr);
++                this.squares.remove(uid);
++                continue;
++            }
 +            if ((sqr.x < vdsqr.u && sqr.u > vdsqr.x && sqr.y < vdsqr.v && sqr.v > vdsqr.y) ||
 +                (sqr.x < oldsqr.u && sqr.u > oldsqr.x && sqr.y < oldsqr.v && sqr.v > oldsqr.y )) {
 +                toproc.add(sqr);
-+                row.add(sqr.y); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
 +            }
 +        }
 +
 +        it.unimi.dsi.fastutil.objects.ObjectListIterator<Square> it = toproc.iterator();
 +        //coordinate compression
 +
++        while(it.hasNext()) {
++            Square sqr = it.next();
++            row.add(sqr.y); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
++        }
++
 +        int[][] grid = new int[row.size()][col.size()];
++        it = toproc.iterator();
 +
 +        while(it.hasNext()) {
 +            Square sqr = it.next();
@@ -94,7 +100,7 @@ index 63a68872..4561857b 100644
 +        int[] rw = row.toIntArray(); int[] cl = col.toIntArray();
 +        for(int s = 0; s < row.size() - 1; s++) {
 +            for(int t = 0; t < col.size() - 1; t++){
-+                if(grid[s][t] == -1) {
++                if(grid[s][t] == -1 || grid[s][t] == -2) {
 +                    for(int x = cl[t]; x < cl[t+1]; x++) {
 +                        for(int z = rw[s]; z < rw[s+1]; z++) {
 +                            long pair = ChunkCoordIntPair.asLong(x, z);
@@ -119,7 +125,7 @@ index 63a68872..4561857b 100644
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
-@@ -241,7 +333,8 @@ public abstract class ChunkMapDistance {
+@@ -241,7 +339,8 @@ public abstract class ChunkMapDistance {
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.u().pair();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
@@ -129,7 +135,7 @@ index 63a68872..4561857b 100644
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
-@@ -372,20 +465,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +471,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -153,7 +159,7 @@ index 63a68872..4561857b 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,10 +523,33 @@ public abstract class ChunkMapDistance {
+@@ -430,10 +529,33 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -189,7 +195,7 @@ index 63a68872..4561857b 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index c8c74f2b..63f19c51 100644
+index c8c74f2b3..63f19c510 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
 @@ -570,9 +570,9 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
@@ -205,7 +211,7 @@ index c8c74f2b..63f19c51 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8..809edf46 100644
+index cd73cde8d..809edf46f 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -80,6 +80,29 @@ public abstract class EntityHuman extends EntityLiving {
@@ -252,7 +258,7 @@ index cd73cde8..809edf46 100644
  
      public boolean a(World world, BlockPosition blockposition, EnumGamemode enumgamemode) {
 diff --git a/src/main/java/net/minecraft/server/EntityWither.java b/src/main/java/net/minecraft/server/EntityWither.java
-index 8b3052b1..3a00dedf 100644
+index 8b3052b11..3a00dedfa 100644
 --- a/src/main/java/net/minecraft/server/EntityWither.java
 +++ b/src/main/java/net/minecraft/server/EntityWither.java
 @@ -208,9 +208,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
@@ -268,7 +274,7 @@ index 8b3052b1..3a00dedf 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95ee3351..2577226d 100644
+index 95ee33513..2577226dc 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,29 +935,34 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -445,7 +451,7 @@ index 95ee3351..2577226d 100644
                      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 3cb443c4..476da855 100644
+index 3cb443c4f..476da855d 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -155,7 +155,7 @@ public abstract class PlayerList {
@@ -467,7 +473,7 @@ index 3cb443c4..476da855 100644
          entityplayer1.dead = false;
          entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index e920545d..38a48121 100644
+index e920545df..38a48121f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1986,12 +1986,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -494,7 +500,7 @@ index e920545d..38a48121 100644
      //Paper end
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 92601c58..84fc6bfc 100644
+index 92601c581..84fc6bfc4 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -122,13 +122,14 @@ public class ActivationRange
