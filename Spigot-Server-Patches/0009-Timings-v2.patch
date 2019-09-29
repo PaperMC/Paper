@@ -1,4 +1,4 @@
-From 0c34b70f8d3e5b2d85148ffae2ee45dd4f77763f Mon Sep 17 00:00:00 2001
+From be74ac3e69b0d150492e1ae410e76b8a5ba5914b Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -147,10 +147,10 @@ index 0000000000..c6818bc86a
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000000..92c32c48d2
+index 0000000000..3a79cde595
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,130 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.World;
@@ -211,6 +211,11 @@ index 0000000000..92c32c48d2
 +    public final Timing worldSaveLevel;
 +    public final Timing chunkSaveData;
 +
++
++    public final Timing miscMobSpawning;
++    public final Timing chunkRangeCheckBig;
++    public final Timing chunkRangeCheckSmall;
++
 +    public WorldTimingsHandler(World server) {
 +        String name = server.worldData.getName() +" - ";
 +
@@ -265,6 +270,11 @@ index 0000000000..92c32c48d2
 +        chunkProviderTick = Timings.ofSafe(name + "Chunk provider tick");
 +        broadcastChunkUpdates = Timings.ofSafe(name + "Broadcast chunk updates");
 +        countNaturalMobs = Timings.ofSafe(name + "Count natural mobs");
++
++
++        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
++        chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
++        chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +    }
 +
 +    public static Timing getTickList(WorldServer worldserver, String timingsType) {
@@ -359,7 +369,7 @@ index 3ed48be382..c4d989f702 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 3b785a3ade..e51e3b74cc 100644
+index 3b785a3ade..15480a8dfb 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -129,11 +129,13 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -411,7 +421,7 @@ index 3b785a3ade..e51e3b74cc 100644
              this.world.getMethodProfiler().exit();
              this.playerChunkMap.f().forEach((playerchunk) -> {
                  Optional<Chunk> optional = ((Either) playerchunk.b().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
-@@ -399,7 +407,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -399,13 +407,27 @@ public class ChunkProviderServer extends IChunkProvider {
                      Chunk chunk = (Chunk) optional.get();
  
                      this.world.getMethodProfiler().enter("broadcast");
@@ -421,7 +431,27 @@ index 3b785a3ade..e51e3b74cc 100644
                      this.world.getMethodProfiler().exit();
                      ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
  
-@@ -449,9 +459,9 @@ public class ChunkProviderServer extends IChunkProvider {
+-                    if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
++                    // Paper start - timings
++                    this.world.timings.chunkRangeCheckBig.startTiming();
++                    // note: this is just a copy of the expression in the if
++                    boolean bigRadiusOutsideRange = !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair);
++                    this.world.timings.chunkRangeCheckBig.stopTiming();
++                    if (bigRadiusOutsideRange) {
++                        // Paper end
+                         chunk.b(chunk.q() + j);
+-                        if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
++                        // Paper start - timings
++                        this.world.timings.chunkRangeCheckSmall.startTiming();
++                        // note: this is just a copy of the expression in the if
++                        boolean smallRadiusOutsideRange = flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true);
++                        this.world.timings.chunkRangeCheckSmall.stopTiming();
++                        if (smallRadiusOutsideRange) { // Spigot
++                            // Paper end
+                             this.world.getMethodProfiler().enter("spawner");
+                             this.world.timings.mobSpawn.startTiming(); // Spigot
+                             EnumCreatureType[] aenumcreaturetype1 = aenumcreaturetype;
+@@ -449,24 +471,24 @@ public class ChunkProviderServer extends IChunkProvider {
                              this.world.getMethodProfiler().exit();
                          }
  
@@ -433,7 +463,14 @@ index 3b785a3ade..e51e3b74cc 100644
                      }
                  }
              });
-@@ -464,9 +474,7 @@ public class ChunkProviderServer extends IChunkProvider {
+             this.world.getMethodProfiler().enter("customSpawners");
+             if (flag1) {
++                try (co.aikar.timings.Timing ignored = this.world.timings.miscMobSpawning.startTiming()) { // Paper - timings
+                 this.chunkGenerator.doMobSpawning(this.world, this.allowMonsters, this.allowAnimals);
++                } // Paper - timings
+             }
+ 
+             this.world.getMethodProfiler().exit();
              this.world.getMethodProfiler().exit();
          }
  
