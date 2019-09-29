@@ -1,4 +1,4 @@
-From b73f2b42e37db856d08d557aef374ac6ec51e39f Mon Sep 17 00:00:00 2001
+From eefdd671cd06807ee582b324a8fd31be7cd0708a Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,27 +10,47 @@ The tracking view distance will determine how far the player can see/load chunks
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..4db2e954f 100644
+index 63a688725..5fecd9601 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
+@@ -1,7 +1,6 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.ImmutableList;
+-import com.google.common.collect.Sets;
+ import com.mojang.datafixers.util.Either;
+ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+@@ -20,7 +19,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+-import java.util.Set;
++
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+ import javax.annotation.Nullable;
+@@ -43,6 +42,19 @@ public abstract class ChunkMapDistance {
      private final LongSet l = new LongOpenHashSet();
      private final Executor m;
      private long currentTick;
 +    //Paper start ticket level pp-view-dist
-+    protected final it.unimi.dsi.fastutil.ints.Int2ObjectMap<Square> squares = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
++    protected static final int ADD = 1;
++    protected static final int REMOVE = -1;
++    protected static final int FULL_REMOVE = -1;
++    protected final it.unimi.dsi.fastutil.  ints.Int2ObjectMap<Square> squares = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
 +    protected it.unimi.dsi.fastutil.longs.Long2ByteMap update = new it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap();
 +    class Square {
-+        public int x, y, u, v, ticket;
-+        public Square(int x1, int y1, int u1, int v1, int ticket1) {
-+            x = x1; y = y1; u = u1; v = v1; ticket = ticket1;
++        public int x, z, u, v, action;
++        public Square(int x1, int z1, int u1, int v1, int action1) {
++            x = x1; z = z1; u = u1; v = v1; action = action1;
 +        }
 +    }
 +    //Paper end
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -234,6 +244,94 @@ public abstract class ChunkMapDistance {
+@@ -234,6 +246,94 @@ public abstract class ChunkMapDistance {
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
@@ -41,22 +61,22 @@ index 63a688725..4db2e954f 100644
 +
 +        int pvd = entityplayer.getViewDistance() - 2;
 +
-+        Square vdsqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
-+        Square sto = this.squares.get(entityplayer.getUniqueID().hashCode());
++        Square currSqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
++        Square temp = this.squares.get(entityplayer.getUniqueID().hashCode());
 +        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
 +
-+        if(sto == null) sto = vdsqr;
-+        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.ticket);
++        if(temp == null) temp = currSqr;
++        Square lastSqr = new Square(temp.x, temp.z, temp.u, temp.v, temp.action);
 +
 +        it.unimi.dsi.fastutil.ints.IntSortedSet row = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
 +        it.unimi.dsi.fastutil.ints.IntSortedSet col = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
 +        it.unimi.dsi.fastutil.objects.ObjectList<Square> toproc = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
 +
-+        vdsqr.ticket = 1; oldsqr.ticket = -1;
-+        toproc.add(oldsqr); toproc.add(vdsqr);
++        currSqr.action = ADD; lastSqr.action = REMOVE;
++        toproc.add(lastSqr); toproc.add(currSqr);
 +
-+        if(oldsqr.x < vdsqr.u && oldsqr.u > vdsqr.x && oldsqr.y < vdsqr.v && oldsqr.v > vdsqr.y && !sto.equals(vdsqr)) {
-+            Square ovdsqr = new Square(Math.max(oldsqr.x, vdsqr.x), Math.max(oldsqr.y, vdsqr.y), Math.min(oldsqr.u, vdsqr.u), Math.min(oldsqr.v, vdsqr.v), 0);
++        if(lastSqr.x < currSqr.u && lastSqr.u > currSqr.x && lastSqr.z < currSqr.v && lastSqr.v > currSqr.z && !temp.equals(currSqr)) {
++            Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), 0);
 +            toproc.add(ovdsqr);
 +        }
 +
@@ -66,13 +86,13 @@ index 63a688725..4db2e954f 100644
 +            int uid = e.getIntKey();
 +            Square sqr = e.getValue();
 +            if(uid == entityplayer.getUniqueID().hashCode()) continue;
-+            if(sqr.ticket == -2) {
++            if(sqr.action == FULL_REMOVE) {
 +                toproc.add(0, sqr);
 +                this.squares.remove(uid);
 +                continue;
 +            }
-+            if ((sqr.x < vdsqr.u && sqr.u > vdsqr.x && sqr.y < vdsqr.v && sqr.v > vdsqr.y) ||
-+                (sqr.x < oldsqr.u && sqr.u > oldsqr.x && sqr.y < oldsqr.v && sqr.v > oldsqr.y )) {
++            if ((sqr.x < currSqr.u && sqr.u > currSqr.x && sqr.z < currSqr.v && sqr.v > currSqr.z) ||
++                (sqr.x < lastSqr.u && sqr.u > lastSqr.x && sqr.z < lastSqr.v && sqr.v > lastSqr.z )) {
 +                toproc.add(sqr);
 +            }
 +        }
@@ -82,7 +102,7 @@ index 63a688725..4db2e954f 100644
 +
 +        while(it.hasNext()) {
 +            Square sqr = it.next();
-+            row.add(sqr.y); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
++            row.add(sqr.z); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
 +        }
 +
 +        int[][] grid = new int[row.size()][col.size()];
@@ -90,9 +110,9 @@ index 63a688725..4db2e954f 100644
 +
 +        while(it.hasNext()) {
 +            Square sqr = it.next();
-+            for(int s = row.headSet(sqr.y).size(); s < row.headSet(sqr.v).size(); s++) {
++            for(int s = row.headSet(sqr.z).size(); s < row.headSet(sqr.v).size(); s++) {
 +                for(int t = col.headSet(sqr.x).size(); t < col.headSet(sqr.u).size(); t++) {
-+                    grid[s][t] = sqr.ticket;
++                    grid[s][t] = sqr.action;
 +                }
 +            }
 +        }
@@ -100,11 +120,11 @@ index 63a688725..4db2e954f 100644
 +        int[] rw = row.toIntArray(); int[] cl = col.toIntArray();
 +        for(int s = 0; s < row.size() - 1; s++) {
 +            for(int t = 0; t < col.size() - 1; t++){
-+                if(grid[s][t] == -1 || grid[s][t] == -2) {
++                if(grid[s][t] == REMOVE || grid[s][t] == FULL_REMOVE) {
 +                    for(int x = cl[t]; x < cl[t+1]; x++) {
 +                        for(int z = rw[s]; z < rw[s+1]; z++) {
 +                            long pair = ChunkCoordIntPair.asLong(x, z);
-+                            update.put(pair, (byte) -1);
++                            update.put(pair, (byte) REMOVE);
 +                        }
 +                    }
 +
@@ -112,7 +132,7 @@ index 63a688725..4db2e954f 100644
 +                    for(int x = cl[t]; x < cl[t+1]; x++) {
 +                        for(int z = rw[s]; z < rw[s+1]; z++) {
 +                            long pair = ChunkCoordIntPair.asLong(x, z);
-+                            update.put(pair, (byte) 1);
++                            update.put(pair, (byte) ADD);
 +                        }
 +                    }
 +                }
@@ -125,17 +145,17 @@ index 63a688725..4db2e954f 100644
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
-@@ -241,7 +339,8 @@ public abstract class ChunkMapDistance {
+@@ -241,7 +341,8 @@ public abstract class ChunkMapDistance {
      public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
          long i = sectionposition.u().pair();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
 -
-+        Square sqr = this.squares.get(entityplayer.getUniqueID().hashCode());
-+        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.y, sqr.u, sqr.v, -2));
++        Square sqr = this.squares.get(entityplayer.getUniqueID().hashCode()); //Paper ticket level pp-view-dist
++        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.z, sqr.u, sqr.v, FULL_REMOVE)); //Paper ticket level pp-view-dist
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
-@@ -372,20 +471,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +473,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -159,43 +179,48 @@ index 63a688725..4db2e954f 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,10 +529,33 @@ public abstract class ChunkMapDistance {
+@@ -430,13 +531,37 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
 -                        this.a(i, k, this.c(j), this.c(k));
-+                    }
-+
+                     }
+-                }
+ 
 +                    //Paper start ticket level pp-view-dist
 +                    byte f = ChunkMapDistance.this.update.remove(i);
-+                    if(f == 1) {
++                    if(f == ChunkMapDistance.ADD) {
 +                        this.a(i, k, false, true, Integer.MAX_VALUE);
-+                    } else if (f == -1) {
++                    } else if (f == ChunkMapDistance.REMOVE) {
 +                        this.a(i, k, true, false, Integer.MAX_VALUE);
-                     }
-                 }
++                    }
++                }
+                 this.g.clear();
+             }
  
++            if (!ChunkMapDistance.this.update.isEmpty()) {
 +                ObjectIterator<it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry> it = ChunkMapDistance.this.update.long2ByteEntrySet().iterator();
 +
 +                while(it.hasNext()) {
 +                    it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry e = it.next();
 +                    long i = e.getLongKey();
 +                    byte f = e.getByteValue();
-+                    if(f == 1) {
++                    if(f == ChunkMapDistance.ADD) {
 +                        this.a(i, this.c(i), false, true, Integer.MAX_VALUE);
-+                    } else if (f == -1) {
++                    } else if (f == ChunkMapDistance.REMOVE) {
 +                        this.a(i, this.c(i), true, false, Integer.MAX_VALUE);
 +                    }
 +                }
 +
 +                ChunkMapDistance.this.update.clear();
-+                //Paper end
++            }
++            //Paper end
 +
-                 this.g.clear();
-             }
+         }
  
+         private boolean c(int i) {
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index c8c74f2b3..63f19c510 100644
+index c8c74f2b3..6a84a1a58 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
 @@ -570,9 +570,9 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
@@ -206,15 +231,15 @@ index c8c74f2b3..63f19c510 100644
 +                //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
                  for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
 -                    //final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
-+                    final int viewDistance = player.getTrackViewDistance(); //Paper ticket level pp-view-dist
++                    final int viewDistance = player.getTrackViewDistance() * 16; //Paper ticket level pp-view-dist
                      // Paper end
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8d..809edf46f 100644
+index cd73cde8d..ca8063c6b 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -80,6 +80,29 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -80,6 +80,32 @@ public abstract class EntityHuman extends EntityLiving {
      public String spawnWorld = "";
      public int oldLevel = -1;
  
@@ -224,27 +249,30 @@ index cd73cde8d..809edf46f 100644
 +    public int lastViewDistance;
 +    public int lastTrackViewDistance;
 +    public int getViewDistance() { return this.viewDistance; }
++    public int getTicketViewDistance() { return this.viewDistance; }
 +    public int getTrackViewDistance() { return this.trackViewDistance; }
-+    public void setTrackViewDistance(int i) {
++    public void setTrackViewDistance(int trackViewDistance) {
 +        this.lastTrackViewDistance = this.trackViewDistance;
-+        this.trackViewDistance = MathHelper.clamp(i, 3, 33);
-+        if(i != this.lastTrackViewDistance) {
-+            if (this.tracker != null) this.tracker.updatePlayer((EntityPlayer) this);
-+        }
++        this.trackViewDistance = MathHelper.clamp(trackViewDistance, 3, 33);
 +        //set pcm vd to highest vd to respect other processes.
 +        if (this.trackViewDistance > ((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance)
 +            ((WorldServer) this.world).getChunkProvider().playerChunkMap.viewDistance = this.trackViewDistance;
 +    }
-+    public void setViewDistance(int i) {
++    public void setViewDistance(int viewDistance) {
++        this.setTrackViewDistance(viewDistance);
 +        this.lastViewDistance = this.viewDistance;
-+        this.viewDistance = MathHelper.clamp(i, 3, this.trackViewDistance);
++        this.viewDistance = MathHelper.clamp(viewDistance, 3, this.trackViewDistance);
++    }
++    public void setTicketViewDistance(int ticketViewDistance) {
++        this.lastViewDistance = this.viewDistance;
++        this.viewDistance = MathHelper.clamp(ticketViewDistance, 3, this.trackViewDistance);
 +    }
 +    //Paper end
 +
      @Override
      public CraftHumanEntity getBukkitEntity() {
          return (CraftHumanEntity) super.getBukkitEntity();
-@@ -98,6 +121,12 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -98,6 +124,12 @@ public abstract class EntityHuman extends EntityLiving {
  
          this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
          this.aX = 180.0F;
@@ -258,7 +286,7 @@ index cd73cde8d..809edf46f 100644
  
      public boolean a(World world, BlockPosition blockposition, EnumGamemode enumgamemode) {
 diff --git a/src/main/java/net/minecraft/server/EntityWither.java b/src/main/java/net/minecraft/server/EntityWither.java
-index 8b3052b11..3a00dedfa 100644
+index 8b3052b11..dc2ff9482 100644
 --- a/src/main/java/net/minecraft/server/EntityWither.java
 +++ b/src/main/java/net/minecraft/server/EntityWither.java
 @@ -208,9 +208,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
@@ -269,15 +297,15 @@ index 8b3052b11..3a00dedfa 100644
 +                //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
                  for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
 -                    //final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
-+                    final int viewDistance = player.getTrackViewDistance(); //Paper ticket level pp-view-dist
++                    final int viewDistance = player.getTrackViewDistance() * 16; //Paper ticket level pp-view-dist
                      // Paper end
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95ee33513..2577226dc 100644
+index 95ee33513..6659bc736 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -935,29 +935,34 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -935,28 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      protected void setViewDistance(int i) {
          int j = MathHelper.clamp(i + 1, 3, 33);
@@ -293,7 +321,6 @@ index 95ee33513..2577226dc 100644
 +                player.setViewDistance(j);
 +            }
 +        }
-+        //Paper end
 +        while (objectiterator.hasNext()) {
 +            PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
 +            ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
@@ -305,7 +332,11 @@ index 95ee33513..2577226dc 100644
 -            this.viewDistance = j;
 -            this.chunkDistanceManager.a(this.viewDistance);
 -            ObjectIterator objectiterator = this.updatingChunks.values().iterator();
--
++            this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
++                int l = b(chunkcoordintpair, entityplayer, true);
++                boolean flag = l <= entityplayer.lastTrackViewDistance;
++                boolean flag1 = l <= entityplayer.getTrackViewDistance();
+ 
 -            while (objectiterator.hasNext()) {
 -                PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
 -                ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
@@ -315,22 +346,18 @@ index 95ee33513..2577226dc 100644
 -                    int l = b(chunkcoordintpair, entityplayer, true);
 -                    boolean flag = l <= k;
 -                    boolean flag1 = l <= this.viewDistance;
-+            this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
-+                int l = b(chunkcoordintpair, entityplayer, true);
-+                boolean flag = l <= entityplayer.lastTrackViewDistance; //Paper ticket level pp-view-dist
-+                boolean flag1 = l <= entityplayer.getTrackViewDistance(); //Paper ticket level pp-view-dist
- 
+-
 -                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
 -                });
 -            }
 +                this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
 +            });
          }
- 
++        //Paper end
 +
+ 
      }
  
-     protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
 @@ -1201,21 +1206,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
@@ -373,7 +400,7 @@ index 95ee33513..2577226dc 100644
                  ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
  
                  this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag, flag);
-@@ -1320,17 +1328,19 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1320,18 +1328,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          int k1;
          int l1;
  
@@ -395,35 +422,41 @@ index 95ee33513..2577226dc 100644
                      ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k2, l2);
 -                    boolean flag3 = a(chunkcoordintpair, i1, j1) <= this.viewDistance;
 -                    boolean flag4 = a(chunkcoordintpair, i, j) <= this.viewDistance;
+-
 +                    boolean flag3 = a(chunkcoordintpair, i1, j1) <= playerViewDistance;
 +                    boolean flag4 = a(chunkcoordintpair, i, j) <= playerViewDistance;
- 
++                    //Paper end
                      this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
                  }
-@@ -1340,8 +1350,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+@@ -1340,8 +1350,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              boolean flag5;
              boolean flag6;
  
 -            for (k1 = i1 - this.viewDistance; k1 <= i1 + this.viewDistance; ++k1) {
 -                for (l1 = j1 - this.viewDistance; l1 <= j1 + this.viewDistance; ++l1) {
++            //Paper start ticket level pp-view-dist
 +            for (k1 = i1 - playerViewDistance; k1 <= i1 + playerViewDistance; ++k1) {
 +                for (l1 = j1 - playerViewDistance; l1 <= j1 + playerViewDistance; ++l1) {
++                    //Paper end
++
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = true;
                      flag6 = false;
-@@ -1349,8 +1359,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1349,8 +1362,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  }
              }
  
 -            for (k1 = i - this.viewDistance; k1 <= i + this.viewDistance; ++k1) {
 -                for (l1 = j - this.viewDistance; l1 <= j + this.viewDistance; ++l1) {
++            //Paper start ticket level pp-view-dist
 +            for (k1 = i - playerViewDistance; k1 <= i + playerViewDistance; ++k1) {
 +                for (l1 = j - playerViewDistance; l1 <= j + playerViewDistance; ++l1) {
 +                    //Paper end
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = false;
                      flag6 = true;
-@@ -1366,7 +1377,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1366,7 +1381,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
              int i = b(chunkcoordintpair, entityplayer, true);
  
@@ -432,16 +465,16 @@ index 95ee33513..2577226dc 100644
          });
      }
  
-@@ -1616,7 +1627,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1616,7 +1631,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (entityplayer != this.tracker) {
                  Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
 -                int i = Math.min(this.trackingDistance, (PlayerChunkMap.this.viewDistance - 1) * 16);
-+                int i = Math.min(this.trackingDistance, (entityplayer.getTrackViewDistance() - 1) * 16); //Paper ticket level pp-view-dist
++                int i = Math.min(this.trackingDistance, (entityplayer.getViewDistance() - 1) * 16); //Paper ticket level pp-view-dist
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
  
                  if (flag) {
-@@ -1627,7 +1638,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1627,7 +1642,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                          PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
  
                          if (playerchunk != null && playerchunk.getChunk() != null) {
@@ -473,10 +506,10 @@ index 3cb443c4f..476da855d 100644
          entityplayer1.dead = false;
          entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX, entityplayer1.locY, entityplayer1.locZ, entityplayer1.yaw, entityplayer1.pitch));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index e920545df..38a48121f 100644
+index e920545df..6c05f0be5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1986,12 +1986,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1986,12 +1986,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public int getViewDistance() {
@@ -490,8 +523,16 @@ index e920545df..38a48121f 100644
 +        getHandle().setViewDistance(viewDistance); //Paper ticket level pp-view-dist
 +    }
 +
++    public void setTicketViewDistance(int ticketViewDistance) {
++        getHandle().setTicketViewDistance(ticketViewDistance); //Paper ticket level pp-view-dist
++    }
++
 +    public int getTrackViewDistance() {
 +        return getHandle().getTrackViewDistance(); //Paper ticket level pp-view-dist
++    }
++
++    public int getTicketViewDistance() {
++        return getHandle().getTicketViewDistance(); //Paper ticket level pp-view-dist
 +    }
 +
 +    public void setTrackViewDistance(int trackViewDistance) {
