@@ -1,4 +1,4 @@
-From cce3fb194183612a2c043d3f20a2a306b08bee4e Mon Sep 17 00:00:00 2001
+From b73f2b42e37db856d08d557aef374ac6ec51e39f Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,7 +10,7 @@ The tracking view distance will determine how far the player can see/load chunks
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..0f0ffe5a3 100644
+index 63a688725..4db2e954f 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,16 @@ public abstract class ChunkMapDistance {
@@ -42,8 +42,8 @@ index 63a688725..0f0ffe5a3 100644
 +        int pvd = entityplayer.getViewDistance() - 2;
 +
 +        Square vdsqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
-+        Square sto = this.squares.get(entityplayer.getId());
-+        this.squares.put(entityplayer.getId(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
++        Square sto = this.squares.get(entityplayer.getUniqueID().hashCode());
++        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
 +
 +        if(sto == null) sto = vdsqr;
 +        Square oldsqr = new Square(sto.x, sto.y, sto.u, sto.v, sto.ticket);
@@ -65,7 +65,7 @@ index 63a688725..0f0ffe5a3 100644
 +            it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square> e = sqriterator.next();
 +            int uid = e.getIntKey();
 +            Square sqr = e.getValue();
-+            if(uid == entityplayer.getId()) continue;
++            if(uid == entityplayer.getUniqueID().hashCode()) continue;
 +            if(sqr.ticket == -2) {
 +                toproc.add(0, sqr);
 +                this.squares.remove(uid);
@@ -130,8 +130,8 @@ index 63a688725..0f0ffe5a3 100644
          long i = sectionposition.u().pair();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
 -
-+        Square sqr = this.squares.get(entityplayer.getId());
-+        this.squares.put(entityplayer.getId(), new Square(sqr.x, sqr.y, sqr.u, sqr.v, -2));
++        Square sqr = this.squares.get(entityplayer.getUniqueID().hashCode());
++        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.y, sqr.u, sqr.v, -2));
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
