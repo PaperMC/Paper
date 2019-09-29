@@ -1,4 +1,4 @@
-From 07b31610596dc222d66d78b3b1e468314d3157e8 Mon Sep 17 00:00:00 2001
+From 0c34b70f8d3e5b2d85148ffae2ee45dd4f77763f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 0000000000..c2d2614181
+index 0000000000..c6818bc86a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,135 @@
 +package co.aikar.timings;
 +
 +import com.google.common.collect.MapMaker;
@@ -24,6 +24,7 @@ index 0000000000..c2d2614181
 +// TODO: Re-implement missing timers
 +public final class MinecraftTimings {
 +
++    public static final Timing serverOversleep = Timings.ofSafe("Server Oversleep");
 +    public static final Timing playerListTimer = Timings.ofSafe("Player List");
 +    public static final Timing commandFunctionsTimer = Timings.ofSafe("Command Functions");
 +    public static final Timing connectionTimer = Timings.ofSafe("Connection Handler");
@@ -724,7 +725,7 @@ index 2b13f4c9f9..47379046dc 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index cec3794cd4..bc0e483a2a 100644
+index cec3794cd4..c76f262db9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -63,7 +63,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -736,6 +737,17 @@ index cec3794cd4..bc0e483a2a 100644
  import org.spigotmc.SlackActivityAccountant; // Spigot
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable, Runnable {
+@@ -128,8 +128,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         });
+     });
+     private long nextTick = SystemUtils.getMonotonicMillis();
+-    private long ab;
+-    private boolean ac;
++    private long ab; final long getTickOversleepMaxTime() { return this.ab; } // Paper - OBFHELPER
++    private boolean ac; final boolean hasExecutedTask() { return this.ac; } // Paper - OBFHELPER
+     private final IReloadableResourceManager ae;
+     private final ResourcePackRepository<ResourcePackLoader> resourcePackRepository;
+     @Nullable
 @@ -685,6 +685,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
          // CraftBukkit end
@@ -744,25 +756,52 @@ index cec3794cd4..bc0e483a2a 100644
          // CraftBukkit start
          if (this.server != null) {
              this.server.disablePlugins();
-@@ -882,7 +883,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -875,6 +876,16 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
+     }
+ 
++    // Paper start
++    private boolean canOversleep() {
++        return this.hasExecutedTask() && SystemUtils.getMonotonicMillis() < this.getTickOversleepMaxTime();
++    }
++
++    private boolean canSleepForTickNoOversleep() {
++        return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < this.nextTick;
++    }
++    // Paper end
++
+     private void executeModerately() {
+         this.executeAll();
+         java.util.concurrent.locks.LockSupport.parkNanos("executing tasks", 1000L);
+@@ -882,9 +893,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      // CraftBukkit end
  
      protected void sleepForTick() {
 -        this.executeAll();
 +        //this.executeAll(); // Paper - move this into the tick method for timings
          this.awaitTasks(() -> {
-             return !this.canSleepForTick();
+-            return !this.canSleepForTick();
++            return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
          });
-@@ -962,7 +963,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     }
+ 
+@@ -962,7 +973,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      protected void exit() {}
  
      protected void a(BooleanSupplier booleansupplier) {
 -        SpigotTimings.serverTickTimer.startTiming(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
++        // Paper start - move oversleep into full server tick
++        MinecraftTimings.serverOversleep.startTiming();
++        this.awaitTasks(() -> {
++            return !this.canOversleep();
++        });
++        MinecraftTimings.serverOversleep.stopTiming();
++        // Paper end
          this.slackActivityAccountant.tickStarted(); // Spigot
          long i = SystemUtils.getMonotonicNanos();
  
-@@ -983,14 +984,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -983,14 +1001,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
  
          if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit
@@ -777,7 +816,7 @@ index cec3794cd4..bc0e483a2a 100644
          }
  
          this.methodProfiler.enter("snooper");
-@@ -1013,30 +1012,34 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1013,30 +1029,34 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          this.methodProfiler.exit();
          org.spigotmc.WatchdogThread.tick(); // Spigot
          this.slackActivityAccountant.tickEnded(l); // Spigot
@@ -821,7 +860,7 @@ index cec3794cd4..bc0e483a2a 100644
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.ticks % 20 == 0) {
              for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
-@@ -1044,7 +1047,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1044,7 +1064,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  entityplayer.playerConnection.sendPacket(new PacketPlayOutUpdateTime(entityplayer.world.getTime(), entityplayer.getPlayerTime(), entityplayer.world.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE))); // Add support for per player time
              }
          }
@@ -830,7 +869,7 @@ index cec3794cd4..bc0e483a2a 100644
  
          while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
-@@ -1087,20 +1090,20 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1087,20 +1107,20 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
  
          this.methodProfiler.exitEnter("connection");
@@ -1166,7 +1205,7 @@ index 1d5e4c5127..60c222b12b 100644
              CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 825e72e53a..a28c97a889 100644
+index 08f824228b..8a7e666473 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,5 +1,7 @@
@@ -1761,5 +1800,5 @@ index ca7789b5e0..4423839697 100644
      }
  }
 -- 
-2.22.0
+2.22.1
 
