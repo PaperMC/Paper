@@ -1,4 +1,4 @@
-From 323f1d04594635da1765e08d7296c1bf25b8eccc Mon Sep 17 00:00:00 2001
+From a2c6ac999f7791584e7d44864d1151e27692810f Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -324,7 +324,7 @@ index c8c74f2b3..6a84a1a58 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8d..5c737cd3e 100644
+index cd73cde8d..6559a251f 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -80,6 +80,39 @@ public abstract class EntityHuman extends EntityLiving {
@@ -344,7 +344,7 @@ index cd73cde8d..5c737cd3e 100644
 +    public void setTrackViewDistance(int trackViewDistance) {
 +        this.lastTrackViewDistance = this.trackViewDistance;
 +        this.trackViewDistance = MathHelper.clamp(trackViewDistance, 4, 33);
-+        this.updateViewDistancePackets();
++        if(this.lastTrackViewDistance != this.trackViewDistance) this.updateViewDistancePackets();
 +    }
 +    public void setTicketViewDistance(int ticketViewDistance) {
 +        this.lastViewDistance = this.viewDistance;
@@ -355,7 +355,7 @@ index cd73cde8d..5c737cd3e 100644
 +        this.setTicketViewDistance(viewDistance);
 +    }
 +    public void updateViewDistancePackets() {
-+        if(this instanceof EntityPlayer && this.trackViewDistance != this.lastTrackViewDistance) {
++        if(this instanceof EntityPlayer) {
 +            if(((EntityPlayer) this).playerConnection != null) {
 +                ((EntityPlayer) this).playerConnection.sendPacket(new PacketPlayOutViewDistance(this.trackViewDistance));
 +                ((WorldServer) this.world).getChunkProvider().playerChunkMap.updateTrackViewDistance((EntityPlayer) this, this.trackViewDistance);
