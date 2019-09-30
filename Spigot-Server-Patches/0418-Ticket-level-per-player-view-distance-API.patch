@@ -1,4 +1,4 @@
-From 3bdf01aeca8cc7086f9ce2b71f81e8e02b01d7e7 Mon Sep 17 00:00:00 2001
+From 323f1d04594635da1765e08d7296c1bf25b8eccc Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,7 +10,7 @@ The tracking view distance will determine how far the player can see/load chunks
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
-index 9ebd7ecb7..aa1306788 100644
+index 9ebd7ecb7..92320fe68 100644
 --- a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 @@ -32,14 +32,19 @@ public final class PlayerMobDistanceMap {
@@ -41,10 +41,10 @@ index 9ebd7ecb7..aa1306788 100644
  
              if (oldPosition == null) {
 -                this.addNewPlayer(player, newPosition, newViewDistance);
-+                this.addNewPlayer(player, newPosition, player.mobViewDistance); //Paper start ticket level pp-view-dist
++                this.addNewPlayer(player, newPosition, player.mobViewDistance); //Paper ticket level pp-view-dist
              } else {
 -                this.updatePlayer(player, oldPosition, newPosition, oldViewDistance, newViewDistance);
-+                this.updatePlayer(player, oldPosition, newPosition, player.oldMobViewDistance, player.mobViewDistance); //Paper start ticket level pp-view-dist
++                this.updatePlayer(player, oldPosition, newPosition, player.oldMobViewDistance, player.mobViewDistance); //Paper ticket level pp-view-dist
 +
              }
              //this.validatePlayer(player, newViewDistance); // debug only
@@ -54,12 +54,12 @@ index 9ebd7ecb7..aa1306788 100644
              final SectionPosition oldPosition = this.players.remove(player);
              if (oldPosition != null) {
 -                this.removePlayer(player, oldPosition, oldViewDistance);
-+                this.removePlayer(player, oldPosition, player.oldMobViewDistance); //Paper start ticket level pp-view-dist
++                this.removePlayer(player, oldPosition, player.oldMobViewDistance); //Paper ticket level pp-view-dist
              }
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..386c679fe 100644
+index 63a688725..6c7bb29b5 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -234,6 +234,7 @@ public abstract class ChunkMapDistance {
@@ -79,7 +79,7 @@ index 63a688725..386c679fe 100644
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
-@@ -353,6 +354,19 @@ public abstract class ChunkMapDistance {
+@@ -353,6 +354,20 @@ public abstract class ChunkMapDistance {
          private int e = 0;
          private final Long2IntMap f = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
          private final LongSet g = new LongOpenHashSet();
@@ -89,6 +89,7 @@ index 63a688725..386c679fe 100644
 +        protected static final int FULL_REMOVE = -2;
 +        protected final it.unimi.dsi.fastutil.ints.Int2ObjectMap<Square> squares = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
 +        protected it.unimi.dsi.fastutil.longs.Long2ByteMap update = new it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap();
++
 +        class Square {
 +            public int x, z, u, v, action;
 +            public Square(int x1, int z1, int u1, int v1, int action1) {
@@ -99,7 +100,7 @@ index 63a688725..386c679fe 100644
  
          protected c(int i) {
              super(i);
-@@ -372,20 +386,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +387,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -123,7 +124,7 @@ index 63a688725..386c679fe 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,14 +444,131 @@ public abstract class ChunkMapDistance {
+@@ -430,14 +445,167 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -132,6 +133,7 @@ index 63a688725..386c679fe 100644
 -                }
  
 +                    //Paper start ticket level pp-view-dist
++                    //attach update queue to default queue
 +                    byte f = this.update.remove(i);
 +                    if(f == ADD) {
 +                        this.a(i, k, false, true, Integer.MAX_VALUE);
@@ -142,6 +144,33 @@ index 63a688725..386c679fe 100644
                  this.g.clear();
              }
  
++            /**
++             * base logic note for ticket level pp vdist
++             *
++             * in the default update queue, only changed minimum levels are updated
++             * this poses issues when view distances overlap, as we hit a midpoint barrier
++             *
++             * e.g overlapping levels which do not surpass the peak midpoint
++             * p1 has vd of 8, p2 has vd of 2, p1 and p2 have 9 chunks in between
++             * p1 1 2 3 4 5 4 3 2 1 p2
++             * p1 x x x x x x x y y y
++             * x are tickets added by p1, and y are tickets added by p2, we want the action above.
++             * in reality however this happens as only chunks before the midpoint are updated by mojang's default queue when p1 moves
++             * p1 1 2 3 4 5 4 3 2 1 p2
++             * p1 x x x x _ _ _ y y y
++             * _ represents unloaded chunks without tickets, thus this default model fails and we must use an algorithm to account for overlaps & all cases efficiently
++             *
++             * using coordinate compression we graph overlapping squares & squares that need action to compressed cells accordingly
++             * we extract the corner coordinates of each filled cell that requires an action, loop through the coordinates and add the pos pairs accordingly to our update queue
++             *
++             * in the update queue handling above, we attach all updates to the default queue (before the midpoint)
++             * in the update queue below, we handle everything the default queue does not handle (past the midpoint)
++             *
++             * we must attach updates in this manner to maintain the integrity of the priority queue sorter/throttler by using default level values
++             *
++             * slicklibro
++             **/
++
 +            if (!this.update.isEmpty()) {
 +                ObjectIterator<it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry> it = this.update.long2ByteEntrySet().iterator();
 +
@@ -169,36 +198,43 @@ index 63a688725..386c679fe 100644
 +                int cz = ChunkCoordIntPair.getZ(i);
 +                int pvd = entityplayer.getViewDistance() - 2;
 +
++                //algorithm that graphs coordinate compressed map of squares overlapping current player's squares that need to be updated, as well as any squares that need to be purged
 +                Square currSqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
 +                Square temp = this.squares.get(entityplayer.getUniqueID().hashCode());
 +                this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
 +
-+                if (temp == null) temp = currSqr;
++                if (temp == null || temp == this.squares.defaultReturnValue()) temp = currSqr;
 +                Square lastSqr = new Square(temp.x, temp.z, temp.u, temp.v, temp.action);
 +
++                //row & col must be sorted to represent cells correctly, treeset to perform headSet().size() to obtain index
 +                it.unimi.dsi.fastutil.ints.IntSortedSet row = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
 +                it.unimi.dsi.fastutil.ints.IntSortedSet col = new it.unimi.dsi.fastutil.ints.IntRBTreeSet(it.unimi.dsi.fastutil.ints.IntComparators.NATURAL_COMPARATOR);
 +                it.unimi.dsi.fastutil.objects.ObjectList<Square> toproc = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
 +
++                //assign appropriate actions to squares
 +                lastSqr.action = REMOVE; currSqr.action = ADD;
 +                toproc.add(lastSqr); toproc.add(currSqr);
 +
++                //if both the player's last square and new square overlap, form intersect square and add that to process
 +                if (lastSqr.x < currSqr.u && lastSqr.u > currSqr.x && lastSqr.z < currSqr.v && lastSqr.v > currSqr.z && !temp.equals(currSqr)) {
 +                    Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), 0);
 +                    toproc.add(ovdsqr);
 +                }
 +
++                //iterate through all squares and only add squares that overlap the last/curr squares to process
 +                ObjectIterator<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
 +                while (sqriterator.hasNext()) {
 +                    it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<Square> e = sqriterator.next();
 +                    int uid = e.getIntKey();
 +                    Square sqr = e.getValue();
 +                    if (uid == entityplayer.getUniqueID().hashCode()) continue;
++                    //handle full removal of square for any case of full leave (world changes/disconnects/leaves/etc.)
 +                    if (sqr.action == FULL_REMOVE) {
 +                        toproc.add(0, sqr);
 +                        this.squares.remove(uid);
 +                        continue;
 +                    }
++                    //check if square overlaps, if so add it to process
 +                    if ((sqr.x < currSqr.u && sqr.u > currSqr.x && sqr.z < currSqr.v && sqr.v > currSqr.z) ||
 +                        (sqr.x < lastSqr.u && sqr.u > lastSqr.x && sqr.z < lastSqr.v && sqr.v > lastSqr.z)) {
 +                        toproc.add(sqr);
@@ -206,7 +242,7 @@ index 63a688725..386c679fe 100644
 +                }
 +
 +                it.unimi.dsi.fastutil.objects.ObjectListIterator<Square> it = toproc.iterator();
-+                //coordinate compression
++                //coordinate compress & fill map with squares to process (in correct order to form overlapped map)
 +
 +                while (it.hasNext()) {
 +                    Square sqr = it.next();
@@ -225,10 +261,12 @@ index 63a688725..386c679fe 100644
 +                    }
 +                }
 +
++                //check against cells on filled map
 +                int[] rw = row.toIntArray(); int[] cl = col.toIntArray();
 +                for (int s = 0; s < row.size() - 1; s++) {
 +                    for (int t = 0; t < col.size() - 1; t++) {
 +                        if (grid[s][t] == REMOVE || grid[s][t] == FULL_REMOVE) {
++                            //decompress/loop through coordinates and queue to update
 +                            for (int x = cl[t]; x < cl[t + 1]; x++) {
 +                                for (int z = rw[s]; z < rw[s + 1]; z++) {
 +                                    long pair = ChunkCoordIntPair.asLong(x, z);
@@ -246,11 +284,10 @@ index 63a688725..386c679fe 100644
 +                        }
 +                    }
 +
-+
 +                }
 +            } else {
 +                Square sqr = this.squares.get(entityplayer.getUniqueID().hashCode());
-+                if(sqr != null && sqr != this.squares.defaultReturnValue()) this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.z, sqr.u, sqr.v, FULL_REMOVE)); //Paper ticket level pp-view-dist
++                if(sqr != null && sqr != this.squares.defaultReturnValue()) this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(sqr.x, sqr.z, sqr.u, sqr.v, FULL_REMOVE));
 +            }
          }
 +        //Paper end
@@ -287,10 +324,10 @@ index c8c74f2b3..6a84a1a58 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8d..40fee459c 100644
+index cd73cde8d..5c737cd3e 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -80,6 +80,35 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -80,6 +80,39 @@ public abstract class EntityHuman extends EntityLiving {
      public String spawnWorld = "";
      public int oldLevel = -1;
  
@@ -306,12 +343,8 @@ index cd73cde8d..40fee459c 100644
 +    public int getTrackViewDistance() { return this.trackViewDistance; }
 +    public void setTrackViewDistance(int trackViewDistance) {
 +        this.lastTrackViewDistance = this.trackViewDistance;
-+        this.trackViewDistance = MathHelper.clamp(trackViewDistance + 1, 3, 33);
-+        if(this instanceof EntityPlayer) {
-+            if(((EntityPlayer) this).playerConnection != null) {
-+                ((EntityPlayer) this).playerConnection.sendPacket(new PacketPlayOutViewDistance(this.trackViewDistance));
-+            }
-+        }
++        this.trackViewDistance = MathHelper.clamp(trackViewDistance, 4, 33);
++        this.updateViewDistancePackets();
 +    }
 +    public void setTicketViewDistance(int ticketViewDistance) {
 +        this.lastViewDistance = this.viewDistance;
@@ -321,12 +354,20 @@ index cd73cde8d..40fee459c 100644
 +        this.setTrackViewDistance(viewDistance);
 +        this.setTicketViewDistance(viewDistance);
 +    }
++    public void updateViewDistancePackets() {
++        if(this instanceof EntityPlayer && this.trackViewDistance != this.lastTrackViewDistance) {
++            if(((EntityPlayer) this).playerConnection != null) {
++                ((EntityPlayer) this).playerConnection.sendPacket(new PacketPlayOutViewDistance(this.trackViewDistance));
++                ((WorldServer) this.world).getChunkProvider().playerChunkMap.updateTrackViewDistance((EntityPlayer) this, this.trackViewDistance);
++            }
++        }
++    }
 +    //Paper end
 +
      @Override
      public CraftHumanEntity getBukkitEntity() {
          return (CraftHumanEntity) super.getBukkitEntity();
-@@ -98,6 +127,7 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -98,6 +131,7 @@ public abstract class EntityHuman extends EntityLiving {
  
          this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
          this.aX = 180.0F;
@@ -366,7 +407,7 @@ index 8b3052b11..dc2ff9482 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 95ee33513..327f2f5be 100644
+index 95ee33513..c01ba80b8 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -147,7 +147,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -379,25 +420,13 @@ index 95ee33513..327f2f5be 100644
              ++player.mobCounts[index];
          }
      }
-@@ -935,28 +936,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -935,30 +936,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      protected void setViewDistance(int i) {
          int j = MathHelper.clamp(i + 1, 3, 33);
 +        //Paper start ticket level pp-view-dist
 +        this.chunkDistanceManager.a(j);
 +        this.viewDistance = j;
-+        ObjectIterator objectiterator = this.updatingChunks.values().iterator();
-+
-+        if(this.world.players != null && !this.world.players.isEmpty()) {
-+            for (EntityPlayer player : this.world.players) {
-+                //no need to perform anything more complex, as all logic is handled live at the ticket level
-+                player.setViewDistance(j);
-+            }
-+        }
-+        while (objectiterator.hasNext()) {
-+            PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
-+            ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
-+            Packet<?>[] apacket = new Packet[2];
  
 -        if (j != this.viewDistance) {
 -            int k = this.viewDistance;
@@ -405,33 +434,44 @@ index 95ee33513..327f2f5be 100644
 -            this.viewDistance = j;
 -            this.chunkDistanceManager.a(this.viewDistance);
 -            ObjectIterator objectiterator = this.updatingChunks.values().iterator();
--
++        if(this.world.players != null && !this.world.players.isEmpty()) {
++            for (EntityPlayer player : this.world.players) {
++                player.setViewDistance(j);
++            }
++        }
++        //Paper end
++    }
+ 
 -            while (objectiterator.hasNext()) {
 -                PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
 -                ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
--                Packet<?>[] apacket = new Packet[2];
--
++    //Paper start ticket level pp-view-dist
++    public void updateTrackViewDistance(EntityPlayer player, int i) {
++        for (int x = player.chunkX - i; x <= player.chunkX + i; ++x) {
++            for (int z = player.chunkZ - i; z <= player.chunkZ + i; ++z) {
++                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(x, z);
+                 Packet<?>[] apacket = new Packet[2];
++                int i1 = b(chunkcoordintpair, player, true);
++                boolean flag = i1 <= player.lastTrackViewDistance;
++                boolean flag1 = i1 <= i;
+ 
 -                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
 -                    int l = b(chunkcoordintpair, entityplayer, true);
 -                    boolean flag = l <= k;
 -                    boolean flag1 = l <= this.viewDistance;
-+            this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
-+                int l = b(chunkcoordintpair, entityplayer, true);
-+                boolean flag = l <= entityplayer.lastTrackViewDistance;
-+                boolean flag1 = l <= entityplayer.getTrackViewDistance();
- 
+-
 -                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
 -                });
--            }
-+                this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
-+            });
++                this.sendChunk(player, chunkcoordintpair, apacket, flag, flag1);
+             }
          }
-+        //Paper end
-+
- 
+-
      }
++    //Paper end
  
-@@ -1201,21 +1206,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
+         if (entityplayer.world == this.world) {
+@@ -1201,21 +1205,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair, boolean reducedRange) {
@@ -459,7 +499,7 @@ index 95ee33513..327f2f5be 100644
                  event.callEvent();
                  blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
                  if (event.isCancelled()) return true;
-@@ -1251,8 +1256,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1251,8 +1255,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              }
          }
  
@@ -473,7 +513,7 @@ index 95ee33513..327f2f5be 100644
                  ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
  
                  this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag, flag);
-@@ -1320,18 +1328,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1320,18 +1327,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          int k1;
          int l1;
  
@@ -502,7 +542,7 @@ index 95ee33513..327f2f5be 100644
                      this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
                  }
              }
-@@ -1340,8 +1350,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1340,8 +1349,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              boolean flag5;
              boolean flag6;
  
@@ -515,7 +555,7 @@ index 95ee33513..327f2f5be 100644
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = true;
                      flag6 = false;
-@@ -1349,8 +1361,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1349,8 +1360,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  }
              }
  
@@ -528,7 +568,7 @@ index 95ee33513..327f2f5be 100644
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = false;
                      flag6 = true;
-@@ -1366,7 +1380,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1366,7 +1379,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
              int i = b(chunkcoordintpair, entityplayer, true);
  
@@ -537,7 +577,7 @@ index 95ee33513..327f2f5be 100644
          });
      }
  
-@@ -1616,7 +1630,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1616,7 +1629,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (entityplayer != this.tracker) {
                  Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
@@ -546,12 +586,12 @@ index 95ee33513..327f2f5be 100644
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
  
                  if (flag) {
-@@ -1627,7 +1641,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1627,7 +1640,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                          PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
  
                          if (playerchunk != null && playerchunk.getChunk() != null) {
 -                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= PlayerChunkMap.this.viewDistance;
-+                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= entityplayer.getTrackViewDistance(); //Paper ticket level pp-view-dist
++                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= entityplayer.getViewDistance(); //Paper ticket level pp-view-dist
                          }
                      }
  
