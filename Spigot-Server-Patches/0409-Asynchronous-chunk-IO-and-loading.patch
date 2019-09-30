@@ -1,4 +1,4 @@
-From 9413728661866351fccf0d24d8c332f7e53c9ec1 Mon Sep 17 00:00:00 2001
+From 25eb4ce4491f0ab4ed97614dc5de32690bd815fb Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1901,10 +1901,10 @@ index 0000000000..1dfa8abfd8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..1d69715e26
+index 0000000000..59d73bfad7
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,441 @@
+@@ -0,0 +1,453 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1992,12 +1992,24 @@ index 0000000000..1d69715e26
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
 +
 +            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
-+                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
-+                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ));
++                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
++                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
++                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
 +
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, chunkInfo.chunkX + "," + chunkInfo.chunkZ + " in '" + chunkInfo.world.getWorld().getName() + ":");
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
++                // log current status of chunk to indicate whether we're waiting on generation or loading
++                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
++
++                if (chunkHolder == null) {
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
++                } else {
++                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
++                }
++
 +            }
 +        }
 +    }
@@ -2897,10 +2909,10 @@ index 23d1935dd5..14f8b61042 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccf359dff1..a256f043ad 100644
+index 5238a1a7ca..0b00581382 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -774,6 +774,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -780,6 +780,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
          // Spigot end
@@ -2947,7 +2959,7 @@ index af934ef8bc..34d0ab0d5e 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index fd0d2b6e67..9daf64bad4 100644
+index fd0d2b6e67..31d106f951 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -62,7 +62,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -2975,6 +2987,15 @@ index fd0d2b6e67..9daf64bad4 100644
 -        this.n = new VillagePlace(new File(this.x, "poi"), datafixer);
 +        this.n = new VillagePlace(new File(this.x, "poi"), datafixer, this.world); // Paper
          this.setViewDistance(i);
+     }
+ 
+@@ -180,7 +180,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     @Nullable
+-    protected PlayerChunk getVisibleChunk(long i) {
++    public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
+         return (PlayerChunk) this.visibleChunks.get(i);
      }
  
 @@ -293,6 +293,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
