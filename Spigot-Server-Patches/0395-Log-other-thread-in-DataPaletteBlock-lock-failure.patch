@@ -1,0 +1,51 @@
+From 62aa6178ba9d9f06db5d13ef1d6382cd8b16b5c6 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 21 Jun 2019 14:42:48 -0700
+Subject: [PATCH] Log other thread in DataPaletteBlock lock failure
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/ReentrantLockWithGetOwner.java b/src/main/java/com/destroystokyo/paper/util/ReentrantLockWithGetOwner.java
+new file mode 100644
+index 000000000..a3b174618
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/ReentrantLockWithGetOwner.java
+@@ -0,0 +1,11 @@
++package com.destroystokyo.paper.util;
++
++import java.util.concurrent.locks.ReentrantLock;
++
++public class ReentrantLockWithGetOwner extends ReentrantLock {
++
++    @Override
++    public Thread getOwner() {
++        return super.getOwner();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index a3bb2e877..1e2bca1e0 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -22,14 +22,17 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+     protected DataBits a; protected DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
+     private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
+     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
+-    private final ReentrantLock j = new ReentrantLock();
++    private final com.destroystokyo.paper.util.ReentrantLockWithGetOwner j = new com.destroystokyo.paper.util.ReentrantLockWithGetOwner(); private com.destroystokyo.paper.util.ReentrantLockWithGetOwner getLock() { return this.j; } // Paper - change type to ReentrantLockWithGetOwner // Paper - OBFHELPER
+ 
+     public void a() {
+-        if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
++        // Paper start - log other thread
++        Thread owningThread;
++        if (this.j.isLocked() && (owningThread = this.getLock().getOwner()) != null && owningThread != Thread.currentThread()) {
++            // Paper end
+             String s = (String) Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
+                 return thread.getName() + ": \n\tat " + (String) Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
+             }).collect(Collectors.joining("\n"));
+-            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads", new IllegalStateException());
++            CrashReport crashreport = new CrashReport("Writing into PalettedContainer from multiple threads (other thread: name: " + owningThread.getName() + ", class: " + owningThread.getClass().toString() + ")", new IllegalStateException()); // Paper - log other thread
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Thread dumps");
+ 
+             crashreportsystemdetails.a("Thread dumps", (Object) s);
+-- 
+2.23.0
+
