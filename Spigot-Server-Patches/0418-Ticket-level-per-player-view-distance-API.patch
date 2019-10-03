@@ -1,4 +1,4 @@
-From 2827d1385933c662481a2ce49344aec4fd3e26ed Mon Sep 17 00:00:00 2001
+From 991c114f6c4b8af696c4bc6fe305bac3c92f2616 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -10,7 +10,7 @@ The tracking view distance will determine how far the player can see/load chunks
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
-index 9ebd7ecb7..c482bdb9d 100644
+index 9ebd7ecb7..eeacc543d 100644
 --- a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 @@ -32,14 +32,19 @@ public final class PlayerMobDistanceMap {
@@ -58,15 +58,20 @@ index 9ebd7ecb7..c482bdb9d 100644
              }
          }
      }
-@@ -235,7 +241,7 @@ public final class PlayerMobDistanceMap {
+@@ -115,7 +121,12 @@ public final class PlayerMobDistanceMap {
  
-         for (int xoff = -viewDistance; xoff <= viewDistance; ++xoff) {
-             for (int zoff = -viewDistance; zoff <= viewDistance; ++zoff) {
--                this.removePlayerFrom(player, x + xoff, z + zoff);
-+                this.removePlayerFrom(player,   x + xoff, z + zoff);
-             }
-         }
+     private void removePlayerFrom(final EntityPlayer player, final int chunkX, final int chunkZ) {
+         this.playerMap.compute(ChunkCoordIntPair.pair(chunkX, chunkZ), (final Long keyInMap, final PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players) -> {
+-            return PlayerMobDistanceMap.this.pooledHashSets.findMapWithout(players, player); // rets null instead of an empty map
++            //Paper start ticket level pp-view-dist
++            if (players == null) {
++                return player.cachedSingleMobDistanceMap;
++            } else { //Paper end
++                return PlayerMobDistanceMap.this.pooledHashSets.findMapWithout(players, player); // rets null instead of an empty map
++            }
+         });
      }
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 index 63a688725..33b9360fd 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
@@ -381,7 +386,7 @@ index c8c74f2b3..6a84a1a58 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8d..95509cf2c 100644
+index cd73cde8d..ed57bef1b 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -80,6 +80,39 @@ public abstract class EntityHuman extends EntityLiving {
@@ -429,7 +434,7 @@ index cd73cde8d..95509cf2c 100644
          this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
          this.aX = 180.0F;
 +        this.setViewDistance(this.world.spigotConfig.viewDistance); //Paper ticket level pp-view-dist
-+        this.mobViewDistance = this.getViewDistance(); //Paper ticket level pp-view-dist
++        this.mobViewDistance = this.getViewDistance();
      }
  
      public boolean a(World world, BlockPosition blockposition, EnumGamemode enumgamemode) {
