@@ -1,0 +1,46 @@
+From dc7719179732960f0d3f8a1037122637b0c48d39 Mon Sep 17 00:00:00 2001
+From: Ghost_chu <2908803755@qq.com>
+Date: Fri, 4 Oct 2019 18:21:19 +0800
+Subject: [PATCH] Use Object2BooleanOpenHashMap to replace the HashMap to
+ optimize.
+
+Follow this thread https://www.spigotmc.org/threads/are-you-running-a-1-14-4-server-successfully.392911/#post-3534320, can see HashMap.remove took too many cpu times, so i have use FastUtil Object2BooleanOpenHashMap replace it to optimize the performance.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 59e74900..d785b1ce 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
++import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap; //Paper
+ import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import java.io.File;
+@@ -1556,7 +1557,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         // Paper start
+         // Replace trackedPlayers Set with a Map. The value is true until the player receives
+         // their first update (which is forced to have absolute coordinates), false afterward.
+-        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<>();
++        public Object2BooleanOpenHashMap<EntityPlayer> trackedPlayerMap = new Object2BooleanOpenHashMap<>();
+         public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
+ 
+         public EntityTracker(Entity entity, int i, int j, boolean flag) {
+@@ -1638,11 +1639,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                             flag1 = false;
+                         }
+                     }
+-
+                     entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
+                     // CraftBukkit end
+-
+-                    if (flag1 && this.trackedPlayerMap.putIfAbsent(entityplayer, true) == null) { // Paper
++                    if(flag1 && !this.trackedPlayerMap.containsKey(entityplayer)){ //Paper
++                        this.trackedPlayerMap.put(entityplayer, true);
+                         this.trackerEntry.b(entityplayer);
+                     }
+                 } else if (this.trackedPlayers.remove(entityplayer)) {
+-- 
+2.23.0.windows.1
+
