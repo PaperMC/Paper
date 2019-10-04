@@ -1,12 +1,8 @@
-From ed532a31f9a562ba7444e8049e44215daf3fff8a Mon Sep 17 00:00:00 2001
+From 161e41d8d883ba9d3bf1d86fa7138f578a25000c Mon Sep 17 00:00:00 2001
 From: Ghost_chu <2908803755@qq.com>
 Date: Fri, 4 Oct 2019 18:21:19 +0800
-Subject: [PATCH] Use Object2BooleanOpenHashMap to replace the HashMap to
- optimize.
-
-Follow this thread https://www.spigotmc.org/threads/are-you-running-a-1-14-4-server-successfully.392911/#post-3534320, can see HashMap.remove took too many cpu times, so i have use FastUtil Object2BooleanOpenHashMap replace it to optimize the performance.
-
-Use Object2BooleanOpenHashMap to replace the HashMap to optimize.
+Subject: [PATCH] Use Object2BooleanOpenHashMap and ObjectSet to replace the
+ HashMap and HashSet to optimize.
 
 Follow this thread https://www.spigotmc.org/threads/are-you-running-a-1-14-4-server-successfully.392911/#post-3534320, can see HashMap.remove took too many cpu times, so i have use FastUtil Object2BooleanOpenHashMap replace it to optimize the performance.
 
@@ -33,26 +29,39 @@ index 460c687d..6aea39d1 100644
          trackedPlayerMap = trackedPlayers;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900..d785b1ce 100644
+index 59e74900..53737991 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
+@@ -17,8 +17,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
-+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap; //Paper
- import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
- import it.unimi.dsi.fastutil.objects.ObjectIterator;
+-import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
+-import it.unimi.dsi.fastutil.objects.ObjectIterator;
++import it.unimi.dsi.fastutil.objects.*;
++
  import java.io.File;
-@@ -1556,7 +1557,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ import java.io.IOException;
+ import java.io.Writer;
+@@ -45,6 +45,7 @@ import java.util.function.Supplier;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++
+ import org.apache.commons.lang3.mutable.MutableBoolean;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -1556,8 +1557,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          // Paper start
          // Replace trackedPlayers Set with a Map. The value is true until the player receives
          // their first update (which is forced to have absolute coordinates), false afterward.
 -        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<>();
+-        public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
 +        public Object2BooleanOpenHashMap<EntityPlayer> trackedPlayerMap = new Object2BooleanOpenHashMap<>();
-         public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
++        public ObjectSet<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
+             this.trackerEntry = new EntityTrackerEntry(PlayerChunkMap.this.world, entity, j, flag, this::broadcast, trackedPlayerMap); // CraftBukkit // Paper
 @@ -1638,11 +1639,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                              flag1 = false;
                          }
