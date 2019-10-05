@@ -739,6 +739,10 @@ public class CraftEventFactory {
     }
 
     private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions) {
+        return handleEntityDamageEvent(entity, source, modifiers, modifierFunctions, false);
+    }
+
+    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
         if (source.isExplosion()) {
             DamageCause damageCause;
             Entity damager = entityDamage;
@@ -756,6 +760,7 @@ public class CraftEventFactory {
                 }
                 event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), entity.getBukkitEntity(), damageCause, modifiers, modifierFunctions);
             }
+            event.setCancelled(cancelled);
 
             callEvent(event);
 
@@ -778,15 +783,19 @@ public class CraftEventFactory {
                 cause = DamageCause.THORNS;
             }
 
-            return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions);
+            return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
         } else if (source == DamageSource.OUT_OF_WORLD) {
-            EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions));
+            EntityDamageEvent event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions);
+            event.setCancelled(cancelled);
+            callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             }
             return event;
         } else if (source == DamageSource.LAVA) {
-            EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
+            EntityDamageEvent event = (new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
+            event.setCancelled(cancelled);
+            callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             }
@@ -804,7 +813,9 @@ public class CraftEventFactory {
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
             }
-            EntityDamageEvent event = callEvent(new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions));
+            EntityDamageEvent event = new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
+            event.setCancelled(cancelled);
+            callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             }
@@ -826,7 +837,9 @@ public class CraftEventFactory {
             } else {
                 throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
             }
-            EntityDamageEvent event = callEvent(new EntityDamageByEntityEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions));
+            EntityDamageEvent event = new EntityDamageByEntityEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
+            event.setCancelled(cancelled);
+            callEvent(event);
             if (!event.isCancelled()) {
                 event.getEntity().setLastDamageCause(event);
             }
@@ -865,20 +878,24 @@ public class CraftEventFactory {
         }
 
         if (cause != null) {
-            return callEntityDamageEvent(null, entity, cause, modifiers, modifierFunctions);
+            return callEntityDamageEvent(null, entity, cause, modifiers, modifierFunctions, cancelled);
         }
 
         throw new IllegalStateException(String.format("Unhandled damage of %s from %s", entity, source.translationIndex));
     }
 
     private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions) {
+        return callEntityDamageEvent(damager, damagee, cause, modifiers, modifierFunctions, false);
+    }
+
+    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
         EntityDamageEvent event;
         if (damager != null) {
             event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, modifiers, modifierFunctions);
         } else {
             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, modifiers, modifierFunctions);
         }
-
+        event.setCancelled(cancelled);
         callEvent(event);
 
         if (!event.isCancelled()) {
@@ -920,6 +937,10 @@ public class CraftEventFactory {
     }
 
     public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage) {
+        return handleNonLivingEntityDamageEvent(entity, source, damage, cancelOnZeroDamage, false);
+    }
+
+    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage, boolean cancelled) {
         if (entity instanceof EntityEnderCrystal && !(source instanceof EntityDamageSource)) {
             return false;
         }
@@ -930,7 +951,8 @@ public class CraftEventFactory {
         modifiers.put(DamageModifier.BASE, damage);
         functions.put(DamageModifier.BASE, ZERO);
 
-        final EntityDamageEvent event = handleEntityDamageEvent(entity, source, modifiers, functions);
+        final EntityDamageEvent event = handleEntityDamageEvent(entity, source, modifiers, functions, cancelled);
+
         if (event == null) {
             return false;
         }
