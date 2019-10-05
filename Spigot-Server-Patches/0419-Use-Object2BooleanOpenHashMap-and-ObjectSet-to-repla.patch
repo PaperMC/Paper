@@ -1,4 +1,4 @@
-From 161e41d8d883ba9d3bf1d86fa7138f578a25000c Mon Sep 17 00:00:00 2001
+From 62a99abc860edb1022bee2dbec0c3ba0f4db38a1 Mon Sep 17 00:00:00 2001
 From: Ghost_chu <2908803755@qq.com>
 Date: Fri, 4 Oct 2019 18:21:19 +0800
 Subject: [PATCH] Use Object2BooleanOpenHashMap and ObjectSet to replace the
@@ -7,47 +7,63 @@ Subject: [PATCH] Use Object2BooleanOpenHashMap and ObjectSet to replace the
 Follow this thread https://www.spigotmc.org/threads/are-you-running-a-1-14-4-server-successfully.392911/#post-3534320, can see HashMap.remove took too many cpu times, so i have use FastUtil Object2BooleanOpenHashMap replace it to optimize the performance.
 
 diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 460c687d..6aea39d1 100644
+index 460c687d..732c44c9 100644
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -7,6 +7,8 @@ import java.util.Iterator;
  import java.util.List;
  import java.util.Set;
  import java.util.function.Consumer;
-+
-+import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap; //Paper
++import it.unimi.dsi.fastutil.objects.ObjectSet; //Paper
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
-@@ -47,7 +49,7 @@ public class EntityTrackerEntry {
+@@ -36,9 +38,9 @@ public class EntityTrackerEntry {
+     private boolean q;
+     private boolean r;
+     // CraftBukkit start
+-    final Set<EntityPlayer> trackedPlayers; // Paper - private -> package
++    final ObjectSet<EntityPlayer> trackedPlayers; // Paper - private -> package, Use ObjectSet
+     // Paper start
+-    private java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = null;
++    private Object2BooleanOpenHashMap<EntityPlayer> trackedPlayerMap = null; //Paper
+ 
+     /**
+      * Requested in https://github.com/PaperMC/Paper/issues/1537 to allow intercepting packets
+@@ -47,12 +49,12 @@ public class EntityTrackerEntry {
          player.playerConnection.sendPacket(packet);
      }
  
 -    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, java.util.Map<EntityPlayer, Boolean> trackedPlayers) {
-+    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Object2BooleanOpenHashMap<EntityPlayer> trackedPlayers) {
++    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap<EntityPlayer> trackedPlayers) { //Paper
          this(worldserver, entity, i, flag, consumer, trackedPlayers.keySet());
          trackedPlayerMap = trackedPlayers;
      }
+ 
+-    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<EntityPlayer> trackedPlayers) {
++    public EntityTrackerEntry(WorldServer worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, ObjectSet<EntityPlayer> trackedPlayers) { //Paper
+         // Paper end
+         this.trackedPlayers = trackedPlayers;
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900..53737991 100644
+index 59e74900..3af8c4d3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -17,8 +17,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
- import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
- import it.unimi.dsi.fastutil.longs.LongSet;
- import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
--import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
--import it.unimi.dsi.fastutil.objects.ObjectIterator;
-+import it.unimi.dsi.fastutil.objects.*;
-+
- import java.io.File;
- import java.io.IOException;
- import java.io.Writer;
+@@ -30,7 +30,7 @@ import java.util.Map; // Paper
+ import java.util.Objects;
+ import java.util.Optional;
+ import java.util.Queue;
+-import java.util.Set;
++import java.util.Set; //Paper
+ import java.util.concurrent.CancellationException;
+ import java.util.UUID; // Paper
+ import java.util.concurrent.CompletableFuture;
 @@ -45,6 +45,7 @@ import java.util.function.Supplier;
  import java.util.stream.Collectors;
  import java.util.stream.Stream;
  import javax.annotation.Nullable;
-+
++import it.unimi.dsi.fastutil.objects.ObjectSet; //Paper
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -57,22 +73,17 @@ index 59e74900..53737991 100644
          // their first update (which is forced to have absolute coordinates), false afterward.
 -        public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<>();
 -        public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
-+        public Object2BooleanOpenHashMap<EntityPlayer> trackedPlayerMap = new Object2BooleanOpenHashMap<>();
-+        public ObjectSet<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
++        public it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap<EntityPlayer> trackedPlayerMap = new it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap<>(); //Paper
++        public ObjectSet<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet(); //Paper
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
              this.trackerEntry = new EntityTrackerEntry(PlayerChunkMap.this.world, entity, j, flag, this::broadcast, trackedPlayerMap); // CraftBukkit // Paper
-@@ -1638,11 +1639,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-                             flag1 = false;
-                         }
-                     }
--
+@@ -1642,7 +1643,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                      entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
                      // CraftBukkit end
--
+ 
 -                    if (flag1 && this.trackedPlayerMap.putIfAbsent(entityplayer, true) == null) { // Paper
-+                    if(flag1 && !this.trackedPlayerMap.containsKey(entityplayer)){ //Paper
-+                        this.trackedPlayerMap.put(entityplayer, true);
++                    if (flag1 && !this.trackedPlayerMap.putIfAbsent(entityplayer, true)) { // Paper
                          this.trackerEntry.b(entityplayer);
                      }
                  } else if (this.trackedPlayers.remove(entityplayer)) {
