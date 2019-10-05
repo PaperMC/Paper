@@ -1,0 +1,285 @@
+From a16088fbd41772d9dc2ac024443088e7a821728a Mon Sep 17 00:00:00 2001
+From: Joe Hirschfeld <joe@ibj.io>
+Date: Fri, 4 Oct 2019 20:32:02 -0700
+Subject: [PATCH] Assign calls to fromComponent with colors
+
+When the default call to fromComponent is called, sometimes the default
+color is not the correct color for the context in which it is called.
+Change invocations of fromComponent where this is the case to the proper
+context specific default color.
+
+Originally reported in https://github.com/drtshock/PlayerVaults/issues/398
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 3cb443c4..4a74319a 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -523,7 +523,7 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
++            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage, EnumChatFormat.WHITE)); // Spigot
+         } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
+             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted", new Object[0]);
+             //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
+@@ -536,7 +536,7 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage, EnumChatFormat.WHITE));
+         } else {
+             // return this.players.size() >= this.maxPlayers && !this.f(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full", new Object[0]) : null;
+             if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
+index 21ebceaf..43c6ee50 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
+@@ -2,11 +2,8 @@ package org.bukkit.craftbukkit.block;
+ 
+ import java.util.ArrayList;
+ import java.util.Collection;
+-import net.minecraft.server.ChestLock;
+-import net.minecraft.server.EntityHuman;
+-import net.minecraft.server.MobEffectList;
+-import net.minecraft.server.TileEntity;
+-import net.minecraft.server.TileEntityBeacon;
++
++import net.minecraft.server.*;
+ import org.bukkit.Material;
+ import org.bukkit.block.Beacon;
+ import org.bukkit.block.Block;
+@@ -73,7 +70,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
+     @Override
+     public String getCustomName() {
+         TileEntityBeacon beacon = this.getSnapshot();
+-        return beacon.customName != null ? CraftChatMessage.fromComponent(beacon.customName) : null;
++        return beacon.customName != null ? CraftChatMessage.fromComponent(beacon.customName, EnumChatFormat.AQUA) : null;
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
+index 5c9bfe95..b721d5ca 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCommandBlock.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import net.minecraft.server.EnumChatFormat;
+ import net.minecraft.server.TileEntityCommand;
+ import org.bukkit.Material;
+ import org.bukkit.block.Block;
+@@ -24,7 +25,7 @@ public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand>
+         super.load(commandBlock);
+ 
+         command = commandBlock.getCommandBlock().getCommand();
+-        name = CraftChatMessage.fromComponent(commandBlock.getCommandBlock().getName());
++        name = CraftChatMessage.fromComponent(commandBlock.getCommandBlock().getName(), EnumChatFormat.LIGHT_PURPLE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
+index 36ba813e..cfd9235d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
+@@ -1,6 +1,7 @@
+ package org.bukkit.craftbukkit.block;
+ 
+ import net.minecraft.server.ChestLock;
++import net.minecraft.server.EnumChatFormat;
+ import net.minecraft.server.TileEntityContainer;
+ import org.bukkit.Material;
+ import org.bukkit.block.Block;
+@@ -35,7 +36,7 @@ public abstract class CraftContainer<T extends TileEntityContainer> extends Craf
+     @Override
+     public String getCustomName() {
+         T container = this.getSnapshot();
+-        return container.customName != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
++        return container.customName != null ? CraftChatMessage.fromComponent(container.getCustomName(), EnumChatFormat.GRAY) : null;
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java b/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
+index 3a782294..43278706 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnchantingTable.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import net.minecraft.server.EnumChatFormat;
+ import net.minecraft.server.TileEntityEnchantTable;
+ import org.bukkit.Material;
+ import org.bukkit.block.Block;
+@@ -19,7 +20,7 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
+     @Override
+     public String getCustomName() {
+         TileEntityEnchantTable enchant = this.getSnapshot();
+-        return enchant.hasCustomName() ? CraftChatMessage.fromComponent(enchant.getCustomName()) : null;
++        return enchant.hasCustomName() ? CraftChatMessage.fromComponent(enchant.getCustomName(), EnumChatFormat.WHITE) : null;
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 31db42e9..d6193d78 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -794,7 +794,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+             return null;
+         }
+ 
+-        return CraftChatMessage.fromComponent(name);
++        return CraftChatMessage.fromComponent(name, EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
+index 89affac5..676ec237 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
+@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import java.util.Set;
+ import net.minecraft.server.EntityMinecartCommandBlock;
++import net.minecraft.server.EnumChatFormat;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Server;
+ import org.bukkit.craftbukkit.CraftServer;
+@@ -62,7 +63,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
+ 
+     @Override
+     public String getName() {
+-        return CraftChatMessage.fromComponent(getHandle().getCommandBlock().getName());
++        return CraftChatMessage.fromComponent(getHandle().getCommandBlock().getName(), EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e920545d..baa70637 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -369,12 +369,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public String getPlayerListHeader() {
+-        return (playerListHeader == null) ? null : CraftChatMessage.fromComponent(playerListHeader);
++        return (playerListHeader == null) ? null : CraftChatMessage.fromComponent(playerListHeader, EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+     public String getPlayerListFooter() {
+-        return (playerListFooter == null) ? null : CraftChatMessage.fromComponent(playerListFooter);
++        return (playerListFooter == null) ? null : CraftChatMessage.fromComponent(playerListFooter, EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
+index 4c6492a9..0704e9eb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
+@@ -1,6 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
+ import net.minecraft.server.Container;
++import net.minecraft.server.EnumChatFormat;
+ import org.bukkit.GameMode;
+ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+ import org.bukkit.craftbukkit.util.CraftChatMessage;
+@@ -66,7 +67,7 @@ public class CraftInventoryView extends InventoryView {
+ 
+     @Override
+     public String getTitle() {
+-        return CraftChatMessage.fromComponent(container.getTitle());
++        return CraftChatMessage.fromComponent(container.getTitle(), EnumChatFormat.DARK_GRAY);
+     }
+ 
+     public boolean isInTop(int rawSlot) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index e96960d2..71fee6f1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -1355,14 +1355,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     @Overridden
+     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         if (hasDisplayName()) {
+-            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName));
++            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE));
+         }
+         if (hasLocalizedName()) {
+-            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName));
++            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName, EnumChatFormat.WHITE));
+         }
+ 
+         if (hasLore()) {
+-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, CraftChatMessage::fromComponent)));
++            ImmutableList.Builder<String> loreChatMessages = ImmutableList.builder();
++            for (IChatBaseComponent component : lore) {
++                loreChatMessages.add(CraftChatMessage.fromComponent(component, EnumChatFormat.WHITE));
++            }
++            builder.put(LORE.BUKKIT, loreChatMessages.build());
+         }
+ 
+         if (hasCustomModelData()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index 5eaea24d..e6790745 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.scoreboard;
+ 
++import net.minecraft.server.EnumChatFormat;
+ import net.minecraft.server.Scoreboard;
+ import net.minecraft.server.ScoreboardObjective;
+ import org.apache.commons.lang.Validate;
+@@ -35,7 +36,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+     public String getDisplayName() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+-        return CraftChatMessage.fromComponent(objective.getDisplayName());
++        return CraftChatMessage.fromComponent(objective.getDisplayName(), EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index bc92089e..782304a7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.scoreboard;
+ 
+ import com.google.common.collect.ImmutableSet;
+ import java.util.Set;
++
++import net.minecraft.server.EnumChatFormat;
+ import net.minecraft.server.ScoreboardTeam;
+ import net.minecraft.server.ScoreboardTeamBase;
+ import net.minecraft.server.ScoreboardTeamBase.EnumNameTagVisibility;
+@@ -32,7 +34,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+     public String getDisplayName() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+-        return CraftChatMessage.fromComponent(team.getDisplayName());
++        return CraftChatMessage.fromComponent(team.getDisplayName(), EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+@@ -48,7 +50,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+     public String getPrefix() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+-        return CraftChatMessage.fromComponent(team.getPrefix());
++        return CraftChatMessage.fromComponent(team.getPrefix(), EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+@@ -64,7 +66,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+     public String getSuffix() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+ 
+-        return CraftChatMessage.fromComponent(team.getSuffix());
++        return CraftChatMessage.fromComponent(team.getSuffix(), EnumChatFormat.WHITE);
+     }
+ 
+     @Override
+-- 
+2.23.0
+
