@@ -116,6 +116,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.entity.CraftLightningStrike;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -805,7 +806,12 @@ public class CraftWorld implements World {
 
     @Override
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks) {
-        return !world.createExplosion(null, x, y, z, power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
+        return createExplosion(x, y, z, power, setFire, breakBlocks, null);
+    }
+
+    @Override
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
+        return !world.createExplosion(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, breakBlocks ? Explosion.Effect.BREAK : Explosion.Effect.NONE).wasCanceled;
     }
 
     @Override
@@ -815,7 +821,20 @@ public class CraftWorld implements World {
 
     @Override
     public boolean createExplosion(Location loc, float power, boolean setFire) {
-        return createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire);
+        return createExplosion(loc, power, setFire, true);
+    }
+
+    @Override
+    public boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks) {
+        return createExplosion(loc, power, setFire, breakBlocks, null);
+    }
+
+    @Override
+    public boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks, Entity source) {
+        Preconditions.checkArgument(loc != null, "Location is null");
+        Preconditions.checkArgument(this.equals(loc.getWorld()), "Location not in world");
+
+        return createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source);
     }
 
     @Override
