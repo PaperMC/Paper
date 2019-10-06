@@ -1,4 +1,4 @@
-From 89b20106589f44fc6c7526cc8ed093c30e1a357c Mon Sep 17 00:00:00 2001
+From 0b5fcbc7b17ce0381ed6f3d786754a07089c0dd7 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -59,7 +59,7 @@ index 9ebd7ecb..c8a297c2 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a68872..4bf707da 100644
+index 63a68872..a24eaefc 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,7 @@ public abstract class ChunkMapDistance {
@@ -74,7 +74,7 @@ index 63a68872..4bf707da 100644
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
-+        this.g.update(entityplayer, i); //Paper ticket level pp-view-dist
++        this.getPlayerTicketTracker().update(entityplayer, i); //Paper ticket level pp-view-dist
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
@@ -372,10 +372,10 @@ index c8c74f2b..6a84a1a5 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index cd73cde8..7700fa99 100644
+index cd73cde8..f53e7de9 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -80,6 +80,39 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -80,6 +80,40 @@ public abstract class EntityHuman extends EntityLiving {
      public String spawnWorld = "";
      public int oldLevel = -1;
  
@@ -399,8 +399,9 @@ index cd73cde8..7700fa99 100644
 +        this.viewDistance = MathHelper.clamp(ticketViewDistance, 3, this.trackViewDistance);
 +    }
 +    public void setViewDistance(int viewDistance) {
++        this.lastViewDistance = this.viewDistance;
++        this.viewDistance = MathHelper.clamp(viewDistance, 3, 33);
 +        this.setTrackViewDistance(viewDistance);
-+        this.setTicketViewDistance(viewDistance);
 +    }
 +    public void updateViewDistancePackets() {
 +        if(this instanceof EntityPlayer) {
@@ -415,7 +416,7 @@ index cd73cde8..7700fa99 100644
      @Override
      public CraftHumanEntity getBukkitEntity() {
          return (CraftHumanEntity) super.getBukkitEntity();
-@@ -98,6 +131,9 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -98,6 +132,9 @@ public abstract class EntityHuman extends EntityLiving {
  
          this.setPositionRotation((double) blockposition.getX() + 0.5D, (double) (blockposition.getY() + 1), (double) blockposition.getZ() + 0.5D, 0.0F, 0.0F);
          this.aX = 180.0F;
@@ -457,7 +458,7 @@ index 8b3052b1..dc2ff948 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900..5ea8ecc3 100644
+index 59e74900..9004c458 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,30 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -635,7 +636,12 @@ index 59e74900..5ea8ecc3 100644
              this.a(entityplayer, false);
              ObjectIterator objectiterator = this.trackedEntities.values().iterator();
  
-@@ -1616,19 +1630,18 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1612,23 +1626,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+         }
+ 
+-        public void updatePlayer(EntityPlayer entityplayer) {
++            public void updatePlayer(EntityPlayer entityplayer) {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (entityplayer != this.tracker) {
                  Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
