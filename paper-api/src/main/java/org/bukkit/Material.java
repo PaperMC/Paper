@@ -5036,6 +5036,26 @@ public enum Material implements Keyed {
     }
 
     /**
+     * Check if the material is an air block.
+     *
+     * @return True if this material is an air block.
+     */
+    public boolean isAir() {
+        switch (this) {
+            //<editor-fold defaultstate="collapsed" desc="isAir">
+            case AIR:
+            case CAVE_AIR:
+            case VOID_AIR:
+            // ----- Legacy Separator -----
+            case LEGACY_AIR:
+                //</editor-fold>
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Check if the material is a block and does not block any light
      *
      * @return True if this material is a block and does not block any light
