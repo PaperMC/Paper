@@ -196,6 +196,15 @@ public class PerMaterialTest extends AbstractTestingBase {
     }
 
     @Test
+    public void testAir() {
+        if (material.isBlock()) {
+            assertThat(material.isAir(), is(equalTo(CraftMagicNumbers.getBlock(material).getBlockData().isAir())));
+        } else {
+            assertThat(material.isAir(), is(equalTo(false)));
+        }
+    }
+
+    @Test
     public void testItem() {
         if (material == Material.AIR) {
             assertTrue(material.isItem());
