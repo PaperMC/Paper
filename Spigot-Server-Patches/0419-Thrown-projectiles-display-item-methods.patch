@@ -1,0 +1,121 @@
+From 9950869b10cfd9680a288dcc3f94941112861996 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jakub=20Zag=C3=B3rski?= <jaqobbdev@gmail.com>
+Date: Mon, 7 Oct 2019 19:51:36 +0200
+Subject: [PATCH] Thrown projectiles display item methods
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/projectile/CraftThrownProjectile.java b/src/main/java/com/destroystokyo/paper/entity/projectile/CraftThrownProjectile.java
+new file mode 100644
+index 000000000..c10bd6ed3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/projectile/CraftThrownProjectile.java
+@@ -0,0 +1,30 @@
++package com.destroystokyo.paper.entity.projectile;
++
++import net.minecraft.server.Entity;
++import net.minecraft.server.EntityProjectileThrowable;
++import net.minecraft.server.ItemStack;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.entity.CraftProjectile;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++
++public abstract class CraftThrownProjectile extends CraftProjectile implements ThrownProjectile {
++
++    public CraftThrownProjectile(CraftServer server, Entity entity) {
++        super(server, entity);
++    }
++
++    @Override
++    public org.bukkit.inventory.ItemStack getDisplayItem() {
++        return ((EntityProjectileThrowable) getHandle()).getItem().asBukkitCopy();
++    }
++
++    @Override
++    public void setDisplayItem(org.bukkit.inventory.ItemStack displayItem) {
++        EntityProjectileThrowable handle = (EntityProjectileThrowable) getHandle();
++        if (displayItem == null || displayItem.getType().isEmpty()) {
++            handle.setItem(new ItemStack(handle.getDefaultItem()));
++        } else {
++            handle.setItem(CraftItemStack.asNMSCopy(displayItem));
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/EntityProjectileThrowable.java b/src/main/java/net/minecraft/server/EntityProjectileThrowable.java
+index eaefe02d7..459025ae7 100644
+--- a/src/main/java/net/minecraft/server/EntityProjectileThrowable.java
++++ b/src/main/java/net/minecraft/server/EntityProjectileThrowable.java
+@@ -18,16 +18,17 @@ public abstract class EntityProjectileThrowable extends EntityProjectile {
+ 
+     public void setItem(ItemStack itemstack) {
+         if (itemstack.getItem() != this.i() || itemstack.hasTag()) {
+-            this.getDataWatcher().set(EntityProjectileThrowable.e, SystemUtils.a((Object) itemstack.cloneItemStack(), (itemstack1) -> {
++            this.getDataWatcher().set(EntityProjectileThrowable.e, SystemUtils.a(itemstack.cloneItemStack(), (itemstack1) -> { // Paper - Decompiler fix
+                 itemstack1.setCount(1);
+             }));
+         }
+ 
+     }
+ 
++    public Item getDefaultItem() { return i(); } // Paper - OBFHELPER
+     protected abstract Item i();
+ 
+-    protected ItemStack getItem() {
++    public ItemStack getItem() { // Paper - protected -> public
+         return (ItemStack) this.getDataWatcher().get(EntityProjectileThrowable.e);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEgg.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEgg.java
+index 1d0f43038..03be6fb25 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEgg.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEgg.java
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Egg;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftEgg extends CraftProjectile implements Egg {
++public class CraftEgg extends com.destroystokyo.paper.entity.projectile.CraftThrownProjectile implements Egg { // Paper
+     public CraftEgg(CraftServer server, EntityEgg entity) {
+         super(server, entity);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderPearl.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderPearl.java
+index 32221ead3..8c70b76a2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderPearl.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderPearl.java
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EnderPearl;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftEnderPearl extends CraftProjectile implements EnderPearl {
++public class CraftEnderPearl extends com.destroystokyo.paper.entity.projectile.CraftThrownProjectile implements EnderPearl { // Paper
+     public CraftEnderPearl(CraftServer server, EntityEnderPearl entity) {
+         super(server, entity);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSnowball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSnowball.java
+index 222977d79..aa5df802d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSnowball.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSnowball.java
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Snowball;
+ 
+-public class CraftSnowball extends CraftProjectile implements Snowball {
++public class CraftSnowball extends com.destroystokyo.paper.entity.projectile.CraftThrownProjectile implements Snowball { // Paper
+     public CraftSnowball(CraftServer server, EntitySnowball entity) {
+         super(server, entity);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownExpBottle.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownExpBottle.java
+index 338bc530c..a9f875f1f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownExpBottle.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownExpBottle.java
+@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.ThrownExpBottle;
+ 
+-public class CraftThrownExpBottle extends CraftProjectile implements ThrownExpBottle {
++public class CraftThrownExpBottle extends com.destroystokyo.paper.entity.projectile.CraftThrownProjectile implements ThrownExpBottle { // Paper
+     public CraftThrownExpBottle(CraftServer server, EntityThrownExpBottle entity) {
+         super(server, entity);
+     }
+-- 
+2.23.0.windows.1
+
