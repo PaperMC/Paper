@@ -1,4 +1,4 @@
-From 16ba0493c82cadca8a0c4525d1163069d606078d Mon Sep 17 00:00:00 2001
+From 61eaaa9f6903008c1b2cf087f9604f7ff6abb947 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -513,22 +513,39 @@ index 8b3052b11..dc2ff9482 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 34d0ab0d5..4c4b98bae 100644
+index 34d0ab0d5..1e1e3725c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -103,7 +103,9 @@ public class PlayerChunk {
+@@ -103,6 +103,27 @@ public class PlayerChunk {
          return this.entityTickingFuture;
      }
  
--    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
-+    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() {return this.b();} //Paper OBFHELPER
++    //Paper start ticket level pp-view-dist
++    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingChunkFuture() { return this.b(); } //Paper OBFHELPER
++    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } //Paper OBFHELPER
 +
-+        public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
++    @Nullable
++    public Chunk getEntityTickingChunk() {
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getEntityTickingChunkFuture();
++        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
++
++        return either == null ? null : either.left().orElse(null);
++    }
++
++    @Nullable
++    public Chunk getTickingChunk() {
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getTickingFuture();
++        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
++
++        return either == null ? null : either.left().orElse(null);
++    }
++    //Paper end
++
+     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
          return this.fullChunkFuture;
      }
- 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900f..42d4804ba 100644
+index 59e74900f..84fd8bac6 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,30 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -582,7 +599,12 @@ index 59e74900f..42d4804ba 100644
  
      protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
          if (entityplayer.world == this.world) {
-@@ -970,6 +973,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -966,10 +969,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 PlayerChunk playerchunk = this.getVisibleChunk(chunkcoordintpair.pair());
+ 
+                 if (playerchunk != null) {
+-                    Chunk chunk = playerchunk.getChunk();
++                    Chunk chunk = playerchunk.getTickingChunk(); //for clarification
  
                      if (chunk != null) {
                          this.a(entityplayer, apacket, chunk);
@@ -720,7 +742,7 @@ index 59e74900f..42d4804ba 100644
 +            //Paper start ticket level pp-view-dist
 +            PlayerChunk playerchunk = this.getVisibleChunk(chunkcoordintpair.pair());
 +            //check ticking chunk
-+            if(playerchunk == null || playerchunk.getChunk() == null) return false;
++            if(playerchunk == null || playerchunk.getTickingChunk() == null) return false;
 +            return i > entityplayer.getTrackViewDistance() ? false : !flag || i == entityplayer.getTrackViewDistance();
 +            //Paper end
          });
@@ -735,7 +757,7 @@ index 59e74900f..42d4804ba 100644
              this.a(entityplayer, false);
              ObjectIterator objectiterator = this.trackedEntities.values().iterator();
  
-@@ -1612,23 +1640,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1612,23 +1640,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
          }
  
@@ -751,10 +773,9 @@ index 59e74900f..42d4804ba 100644
 +                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(this.tracker.chunkX, this.tracker.chunkZ);
 +                PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
 +                //get entity ticking chunk
-+                Optional<Chunk> optional = ((Either) playerchunk.getEntityTickingFuture().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
  
 -                if (flag) {
-+                if (flag && optional.isPresent()) {
++                if (flag &&  playerchunk != null && (playerchunk.getEntityTickingChunk() != null)) {
                      boolean flag1 = this.tracker.attachedToPlayer;
  
                      if (!flag1) {
