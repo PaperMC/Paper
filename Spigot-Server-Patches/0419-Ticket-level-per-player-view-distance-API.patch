@@ -1,4 +1,4 @@
-From 91818b248c910e2f695a6c0cf67b14c8ccb4aec9 Mon Sep 17 00:00:00 2001
+From 10e5c8a84497925d1f53cf2f903401f65815644f Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -6,11 +6,13 @@ Subject: [PATCH] Ticket level per-player view distance API
 This PR implements the per-player view distance API at the ticket level.
 This somewhat clean solution comes from the result of many complicated ones (and research).
 The view distance will determine how far the player can add tickets to chunks.
-The tracking view distance will determine how far the player can see/load chunks with tickets.
+The tracking view distance will determine how far the player can track chunks.
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
 
-We also implement proper area maps that may be used for significant
-optimizations (some which have been implemented)
+The added class calculates a player ticket attached area map, a player tracked
+area map that excludes chunks with no tickets attached, as well as as a binary
+update queue simultaneously, through an efficient although specific coordinate
+compression algorithm.
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 index ddec62fbf..0a5a099b4 100644
@@ -725,7 +727,7 @@ index 8b3052b11..dc2ff9482 100644
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 34d0ab0d5..1e1e3725c 100644
+index 34d0ab0d5..47592917f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -103,6 +103,27 @@ public class PlayerChunk {
@@ -734,7 +736,7 @@ index 34d0ab0d5..1e1e3725c 100644
  
 +    //Paper start ticket level pp-view-dist
 +    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingChunkFuture() { return this.b(); } //Paper OBFHELPER
-+    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } //Paper OBFHELPER
++    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingChunkFuture() { return this.a(); } //Paper OBFHELPER
 +
 +    @Nullable
 +    public Chunk getEntityTickingChunk() {
@@ -746,7 +748,7 @@ index 34d0ab0d5..1e1e3725c 100644
 +
 +    @Nullable
 +    public Chunk getTickingChunk() {
-+        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getTickingFuture();
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.getTickingChunkFuture();
 +        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
 +
 +        return either == null ? null : either.left().orElse(null);
