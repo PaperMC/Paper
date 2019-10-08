@@ -1,4 +1,4 @@
-From 17a2d990233524957c58247d0167b9abbf6ddc36 Mon Sep 17 00:00:00 2001
+From 6076ff9c284bae70e45bb5c56ef55cfddbf89d29 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -60,10 +60,10 @@ index 9ebd7ecb7..c8a297c2d 100644
      }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java
 new file mode 100644
-index 000000000..e596b10ed
+index 000000000..29734b0fd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,257 @@
 +package com.destroystokyo.paper.util;
 +
 +import it.unimi.dsi.fastutil.ints.*;
@@ -94,12 +94,9 @@ index 000000000..e596b10ed
 +  using coordinate compression we graph overlapping squares & squares that need action to compressed cells accordingly
 +  we extract the corner coordinates of each filled cell that requires an action, loop through the coordinates and add the pos pairs accordingly to our update queue
 +
-+  in the update queue handling, we attach all updates to the default queue (before the midpoint)
-+  we also handle everything the default queue does not handle (past the midpoint)
++  we also simultaneously calculate the area map in the same iteration for maximum efficiency
 +
-+  we must attach updates in this manner to maintain the integrity of the priority queue sorter/throttler by using default level values
-+
-+ */
++*/
 +
 +/**
 + * This class calculates a player attached area map as well
@@ -117,7 +114,7 @@ index 000000000..e596b10ed
 +
 +    public final Long2ObjectMap<ObjectSet<EntityPlayer>> areaMap = new Long2ObjectOpenHashMap<>();
 +
-+    class Square {
++    private class Square {
 +        public int x, z, u, v, action;
 +        public Square(int x1, int z1, int u1, int v1, int action1) {
 +            x = x1; z = z1; u = u1; v = v1; action = action1;
@@ -133,7 +130,7 @@ index 000000000..e596b10ed
 +        Square currSqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
 +        Square old = this.squares.get(entityplayer.getUniqueID().hashCode());
 +        boolean flag = false;
-+        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, -2));
++        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
 +
 +        if (old == null || old == this.squares.defaultReturnValue()) {  flag = true; old = currSqr; }
 +        Square lastSqr = new Square(old.x, old.z, old.u, old.v, old.action);
@@ -151,7 +148,7 @@ index 000000000..e596b10ed
 +
 +        //if both the player's last square and new square overlap, form intersect square and add that to process
 +        if (lastSqr.x < currSqr.u && lastSqr.u > currSqr.x && lastSqr.z < currSqr.v && lastSqr.v > currSqr.z && !flag) {
-+            Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), 0);
++            Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), -2);
 +            toproc.add(ovdsqr);
 +            row.add(ovdsqr.z); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
 +        }
@@ -325,7 +322,7 @@ index 000000000..e596b10ed
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..6e5c5ed26 100644
+index 63a688725..252aa343f 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,7 @@ public abstract class ChunkMapDistance {
@@ -390,7 +387,7 @@ index 63a688725..6e5c5ed26 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,13 +440,38 @@ public abstract class ChunkMapDistance {
+@@ -430,13 +440,46 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -410,6 +407,14 @@ index 63a688725..6e5c5ed26 100644
                  this.g.clear();
              }
  
++            /*
++              in the above update queue handling, we attach all updates to the default queue (before the midpoint)
++              below, we run all updates that the default queue does not handle (past the midpoint)
++
++              we must attach updates in this manner to maintain the integrity of the priority queue sorter/throttler by using default level values
++
++             */
++
 +            if (!ChunkMapDistance.this.getPlayerTicketAreaMap().getUpdates().isEmpty()) {
 +                ObjectIterator<it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry> updates = ChunkMapDistance.this.getPlayerTicketAreaMap().getUpdates().long2ByteEntrySet().iterator();
 +
