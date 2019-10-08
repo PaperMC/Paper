@@ -1,4 +1,4 @@
-From 871e0d9ea9873f26ac23c4e7c89f05f1c2ba75f2 Mon Sep 17 00:00:00 2001
+From a3d2ce6e51496c745cab4de5b6cd257c7dc8acd4 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -59,7 +59,7 @@ index 9ebd7ecb7..c8a297c2d 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..562b7dc47 100644
+index 63a688725..a68518b99 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,8 @@ public abstract class ChunkMapDistance {
@@ -216,7 +216,7 @@ index 63a688725..562b7dc47 100644
 +
 +        /*
 +           no need for extra classes or fancy storages/sets bloat,
-+           just raw low-level efficient olymp style algorithm to calculate area map & player ticket map simultaneously
++           just raw low-level efficient olymp style algorithm to calculate area map & queue player ticket updates simultaneously
 +        */
 +
 +        //here we also update the area map alongside the player ticket queue
@@ -553,7 +553,7 @@ index 34d0ab0d5..1e1e3725c 100644
          return this.fullChunkFuture;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900f..8ace4eacb 100644
+index 59e74900f..3cfeaa798 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,30 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -765,12 +765,7 @@ index 59e74900f..8ace4eacb 100644
              this.a(entityplayer, false);
              ObjectIterator objectiterator = this.trackedEntities.values().iterator();
  
-@@ -1612,23 +1640,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
- 
-         }
- 
--        public void updatePlayer(EntityPlayer entityplayer) {
-+            public void updatePlayer(EntityPlayer entityplayer) {
+@@ -1616,19 +1644,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (entityplayer != this.tracker) {
                  Vec3D vec3d = (new Vec3D(entityplayer.locX, entityplayer.locY, entityplayer.locZ)).d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
@@ -780,10 +775,11 @@ index 59e74900f..8ace4eacb 100644
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
 +                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(this.tracker.chunkX, this.tracker.chunkZ);
 +                PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
-+                //get entity ticking chunk
++                //untrack if chunk is not entity ticking,
++                //as the default tracking range check - 1 only operates correctly when all view distances are equal and constant
  
 -                if (flag) {
-+                if (flag &&  playerchunk != null && (playerchunk.getEntityTickingChunk() != null)) {
++                if (flag && playerchunk != null && (playerchunk.getEntityTickingChunk() != null)) {
                      boolean flag1 = this.tracker.attachedToPlayer;
  
                      if (!flag1) {
