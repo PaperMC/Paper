@@ -1,4 +1,4 @@
-From 43e1a4031fcb5c6d054db9643fa21b5f6c2b83d7 Mon Sep 17 00:00:00 2001
+From 16ba0493c82cadca8a0c4525d1163069d606078d Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -512,11 +512,26 @@ index 8b3052b11..dc2ff9482 100644
                      // Paper end
                      double deltaX = this.locX - player.locX;
                      double deltaZ = this.locZ - player.locZ;
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 34d0ab0d5..4c4b98bae 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -103,7 +103,9 @@ public class PlayerChunk {
+         return this.entityTickingFuture;
+     }
+ 
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
++    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() {return this.b();} //Paper OBFHELPER
++
++        public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
+         return this.fullChunkFuture;
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900f..e145cdbbe 100644
+index 59e74900f..42d4804ba 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -935,37 +935,40 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -935,30 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      protected void setViewDistance(int i) {
          int j = MathHelper.clamp(i + 1, 3, 33);
@@ -567,24 +582,17 @@ index 59e74900f..e145cdbbe 100644
  
      protected void sendChunk(EntityPlayer entityplayer, ChunkCoordIntPair chunkcoordintpair, Packet<?>[] apacket, boolean flag, boolean flag1) {
          if (entityplayer.world == this.world) {
-             if (flag1 && !flag) {
-                 PlayerChunk playerchunk = this.getVisibleChunk(chunkcoordintpair.pair());
- 
--                if (playerchunk != null) {
-+                if (playerchunk != null && playerchunk.getTicketLevel() <= 32) { //Paper ticket level pp-view-dist
-                     Chunk chunk = playerchunk.getChunk();
+@@ -970,6 +973,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                      if (chunk != null) {
-@@ -973,6 +976,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         this.a(entityplayer, apacket, chunk);
++                    } else {
++                        //send unload for non ticking chunks (> 32)
++                        entityplayer.a(chunkcoordintpair); //Paper ticket level pp-view-dist
                      }
  
                      PacketDebug.a(this.world, chunkcoordintpair);
-+                } else {
-+                    entityplayer.a(chunkcoordintpair); //Paper ticket level pp-view-dist
-                 }
-             }
- 
-@@ -1201,29 +1206,38 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1201,29 +1207,38 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair, boolean reducedRange) {
@@ -634,7 +642,7 @@ index 59e74900f..e145cdbbe 100644
      }
  
      private boolean b(EntityPlayer entityplayer) {
-@@ -1251,8 +1265,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1251,8 +1266,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              }
          }
  
@@ -648,7 +656,7 @@ index 59e74900f..e145cdbbe 100644
                  ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
  
                  this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag, flag);
-@@ -1320,18 +1337,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1320,18 +1338,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          int k1;
          int l1;
  
@@ -677,7 +685,7 @@ index 59e74900f..e145cdbbe 100644
                      this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
                  }
              }
-@@ -1340,8 +1359,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1340,8 +1360,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              boolean flag5;
              boolean flag6;
  
@@ -690,7 +698,7 @@ index 59e74900f..e145cdbbe 100644
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = true;
                      flag6 = false;
-@@ -1349,8 +1370,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1349,8 +1371,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  }
              }
  
@@ -703,7 +711,7 @@ index 59e74900f..e145cdbbe 100644
                      chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
                      flag5 = false;
                      flag6 = true;
-@@ -1365,8 +1388,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1365,8 +1389,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
          return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
              int i = b(chunkcoordintpair, entityplayer, true);
@@ -711,13 +719,14 @@ index 59e74900f..e145cdbbe 100644
 -            return i > this.viewDistance ? false : !flag || i == this.viewDistance;
 +            //Paper start ticket level pp-view-dist
 +            PlayerChunk playerchunk = this.getVisibleChunk(chunkcoordintpair.pair());
-+            if(playerchunk != null && playerchunk.getTicketLevel() > 32) return false;
++            //check ticking chunk
++            if(playerchunk == null || playerchunk.getChunk() == null) return false;
 +            return i > entityplayer.getTrackViewDistance() ? false : !flag || i == entityplayer.getTrackViewDistance();
 +            //Paper end
          });
      }
  
-@@ -1411,7 +1437,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1411,7 +1439,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          org.spigotmc.AsyncCatcher.catchOp("entity untrack"); // Spigot
          if (entity instanceof EntityPlayer) {
              EntityPlayer entityplayer = (EntityPlayer) entity;
@@ -726,7 +735,7 @@ index 59e74900f..e145cdbbe 100644
              this.a(entityplayer, false);
              ObjectIterator objectiterator = this.trackedEntities.values().iterator();
  
-@@ -1612,23 +1638,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1612,23 +1640,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
          }
  
@@ -741,9 +750,11 @@ index 59e74900f..e145cdbbe 100644
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
 +                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(this.tracker.chunkX, this.tracker.chunkZ);
 +                PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
++                //get entity ticking chunk
++                Optional<Chunk> optional = ((Either) playerchunk.getEntityTickingFuture().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
  
 -                if (flag) {
-+                if (flag && playerchunk != null && playerchunk.getChunk() != null && playerchunk.getTicketLevel() <= 31) {
++                if (flag && optional.isPresent()) {
                      boolean flag1 = this.tracker.attachedToPlayer;
  
                      if (!flag1) {
