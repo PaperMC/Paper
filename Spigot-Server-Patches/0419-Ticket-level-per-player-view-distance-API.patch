@@ -1,4 +1,4 @@
-From 61eaaa9f6903008c1b2cf087f9604f7ff6abb947 Mon Sep 17 00:00:00 2001
+From 871e0d9ea9873f26ac23c4e7c89f05f1c2ba75f2 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -59,7 +59,7 @@ index 9ebd7ecb7..c8a297c2d 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..b3777a703 100644
+index 63a688725..562b7dc47 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -43,6 +43,8 @@ public abstract class ChunkMapDistance {
@@ -67,7 +67,7 @@ index 63a688725..b3777a703 100644
      private final Executor m;
      private long currentTick;
 +    private ChunkMapDistance.c getPlayerTicketTracker() {return this.g;} //Paper OBFHELPER
-+    public final Long2ObjectMap<ObjectSet<EntityPlayer>> attached = new Long2ObjectOpenHashMap<>(); //Paper ticket level pp-view-dist
++    public final Long2ObjectMap<ObjectSet<EntityPlayer>> areaMap = new Long2ObjectOpenHashMap<>(); //Paper ticket level pp-view-dist
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
@@ -144,7 +144,7 @@ index 63a688725..b3777a703 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,14 +453,250 @@ public abstract class ChunkMapDistance {
+@@ -430,14 +453,258 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -188,6 +188,7 @@ index 63a688725..b3777a703 100644
 +             *
 +             * we must attach updates in this manner to maintain the integrity of the priority queue sorter/throttler by using default level values
 +             *
++             *
 +             * slicklibro
 +             **/
 +
@@ -212,6 +213,13 @@ index 63a688725..b3777a703 100644
 +        }
 +
 +        //Paper start ticket level pp-view-dist
++
++        /*
++           no need for extra classes or fancy storages/sets bloat,
++           just raw low-level efficient olymp style algorithm to calculate area map & player ticket map simultaneously
++        */
++
++        //here we also update the area map alongside the player ticket queue
 +        public void update(EntityPlayer entityplayer, long i) {
 +            int cx = ChunkCoordIntPair.getX(i);
 +            int cz = ChunkCoordIntPair.getZ(i);
@@ -383,14 +391,14 @@ index 63a688725..b3777a703 100644
 +        }
 +
 +        private void attach(long l, EntityPlayer player) {
-+            ChunkMapDistance.this.attached.computeIfAbsent(l, l2 -> new ObjectOpenHashSet<>()).add(player);
++            ChunkMapDistance.this.areaMap.computeIfAbsent(l, l2 -> new ObjectOpenHashSet<>()).add(player);
 +        }
 +
 +        private void detach(long l, EntityPlayer player) {
-+            ObjectSet objectSet = (ObjectSet)ChunkMapDistance.this.attached.get(l);
++            ObjectSet objectSet = (ObjectSet)ChunkMapDistance.this.areaMap.get(l);
 +            if(objectSet != null) {
 +                objectSet.remove(player);
-+                if (objectSet.isEmpty()) ChunkMapDistance.this.attached.remove(l);
++                if (objectSet.isEmpty()) ChunkMapDistance.this.areaMap.remove(l);
 +            }
          }
 +        //Paper end
@@ -545,7 +553,7 @@ index 34d0ab0d5..1e1e3725c 100644
          return this.fullChunkFuture;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900f..84fd8bac6 100644
+index 59e74900f..8ace4eacb 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -935,30 +935,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -629,7 +637,7 @@ index 59e74900f..84fd8bac6 100644
 -
 -        return !this.chunkDistanceManager.d(i) ? true : this.playerMap.a(i).noneMatch((entityplayer) -> {
 +        //Paper start ticket level pp-view-dist
-+        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> playerset = this.chunkDistanceManager.attached.get(i);
++        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> playerset = this.chunkDistanceManager.areaMap.get(i);
 +        if(playerset == null || playerset.isEmpty()) return true;
 +        if(!this.chunkDistanceManager.naturalSpawnChunksHave(i)) return true;
 +
