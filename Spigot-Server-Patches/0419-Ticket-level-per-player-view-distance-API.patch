@@ -1,4 +1,4 @@
-From 0952663fc4a60feb48ff1b02449605eff2406a67 Mon Sep 17 00:00:00 2001
+From 91818b248c910e2f695a6c0cf67b14c8ccb4aec9 Mon Sep 17 00:00:00 2001
 From: slicklibro <slicklibro@gmail.com>
 Date: Fri, 20 Sep 2019 17:16:14 +1200
 Subject: [PATCH] Ticket level per-player view distance API
@@ -8,6 +8,9 @@ This somewhat clean solution comes from the result of many complicated ones (and
 The view distance will determine how far the player can add tickets to chunks.
 The tracking view distance will determine how far the player can see/load chunks with tickets.
 All chunks with player tickets within this range will also be served by the server, allowing shared view distance from other players without impacting performance.
+
+We also implement proper area maps that may be used for significant
+optimizations (some which have been implemented)
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 index ddec62fbf..0a5a099b4 100644
@@ -56,10 +59,10 @@ index 9ebd7ecb7..c3342846d 100644
  
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java
 new file mode 100644
-index 000000000..c4f6c68b0
+index 000000000..a9fa61bd4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerTicketAreaMap.java
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,391 @@
 +package com.destroystokyo.paper.util;
 +
 +import it.unimi.dsi.fastutil.ints.*;
@@ -94,22 +97,35 @@ index 000000000..c4f6c68b0
 +*/
 +
 +/**
-+ * This class calculates a player attached area map as well
-+ * as a binary update queue simultaneously,
-+ * through an efficient although specific coordinate compression algorithm.
++ * This class calculates a player ticket attached area map, a player tracked area map that excludes chunks with no tickets attached, as well as
++ * as a binary update queue simultaneously, through an efficient although specific coordinate compression algorithm.
 + *
 + * @author slicklibro */
 +
 +public class PlayerTicketAreaMap {
 +
-+    public static final int ADD = 1;
-+    public static final int REMOVE = -1;
++    //byte constants, these can be anything but 0
++    public static final byte ADD = 1;
++    public static final byte REMOVE = -1;
++    public static final byte EXISTING = -2;
++    public static final byte TRACK = -3;
++    public static final byte UNTRACK = -4;
++    public static final byte OVERLAP = -5;
++    public static final byte TRACK_OVERLAP = -6;
++    public static final byte TRACK_EXISTING = -7;
++
 +    private final Int2ObjectMap<Square> squares = new Int2ObjectOpenHashMap<>();
++    private final Int2ObjectMap<Square> trackSquares = new Int2ObjectOpenHashMap<>();
++
 +    private Long2ByteMap toUpdate = new Long2ByteOpenHashMap();
 +
++    //players mapped to chunks that should be ticketed
 +    public final Long2ObjectMap<ObjectSet<EntityPlayer>> areaMap = new Long2ObjectOpenHashMap<>();
 +
-+    private class Square {
++    //players mapped to chunks that should be ticketed within their tracking range
++    public final Long2ObjectMap<ObjectSet<EntityPlayer>> areaMapTracked = new Long2ObjectOpenHashMap<>();
++
++    public class Square {
 +        public int x, z, u, v, action;
 +        public Square(int x1, int z1, int u1, int v1, int action1) {
 +            x = x1; z = z1; u = u1; v = v1; action = action1;
@@ -121,11 +137,12 @@ index 000000000..c4f6c68b0
 +        int cz = ChunkCoordIntPair.getZ(chunkPair);
 +        int pvd = entityplayer.getViewDistance() - 2;
 +
-+        //algorithm that graphs coordinate compressed map of squares overlapping current player's squares that need to be updated, as well as any squares that need to be purged
-+        Square currSqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0);
-+        Square old = this.squares.get(entityplayer.getUniqueID().hashCode());
 +        boolean flag = false;
-+        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, 0));
++
++        //algorithm that graphs coordinate compressed map of squares overlapping current player's squares that need to be updated, as well as any squares that need to be purged
++        Square currSqr = new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, EXISTING);
++        Square old = this.squares.get(entityplayer.getUniqueID().hashCode());
++        this.squares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - pvd, cz - pvd, cx + pvd + 1, cz + pvd + 1, EXISTING));
 +
 +        if (old == null || old == this.squares.defaultReturnValue()) {  flag = true; old = currSqr; }
 +        Square lastSqr = new Square(old.x, old.z, old.u, old.v, old.action);
@@ -143,10 +160,22 @@ index 000000000..c4f6c68b0
 +
 +        //if both the player's last square and new square overlap, form intersect square and add that to process
 +        if (lastSqr.x < currSqr.u && lastSqr.u > currSqr.x && lastSqr.z < currSqr.v && lastSqr.v > currSqr.z && !flag) {
-+            Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), -2);
++            Square ovdsqr = new Square(Math.max(lastSqr.x, currSqr.x), Math.max(lastSqr.z, currSqr.z), Math.min(lastSqr.u, currSqr.u), Math.min(lastSqr.v, currSqr.v), OVERLAP);
 +            toproc.add(ovdsqr);
 +            row.add(ovdsqr.z); row.add(ovdsqr.v); col.add(ovdsqr.x); col.add(ovdsqr.u);
 +        }
++
++        //handle tracking
++        int trackPvd = entityplayer.getTrackViewDistance() - 2;
++
++        boolean flagTrack = false;
++
++        Square currTrackSqr = new Square(cx - trackPvd, cz - trackPvd, cx + trackPvd + 1, cz + trackPvd + 1, TRACK_EXISTING);
++        Square oldTrackSqr = this.trackSquares.get(entityplayer.getUniqueID().hashCode());
++        this.trackSquares.put(entityplayer.getUniqueID().hashCode(), new Square(cx - trackPvd, cz - trackPvd, cx + trackPvd + 1, cz + trackPvd + 1, TRACK_EXISTING));
++
++        if (oldTrackSqr == null || oldTrackSqr == this.squares.defaultReturnValue()) {  flagTrack = true; oldTrackSqr = currSqr; }
++        Square lastTrackSqr = new Square(oldTrackSqr.x, oldTrackSqr.z, oldTrackSqr.u, oldTrackSqr.v, oldTrackSqr.action);
 +
 +        //iterate through all squares and only add squares that overlap the last/curr squares to process
 +        ObjectIterator<Int2ObjectMap.Entry<Square>> sqriterator = this.squares.int2ObjectEntrySet().iterator();
@@ -157,25 +186,58 @@ index 000000000..c4f6c68b0
 +            Square sqr = e.getValue();
 +            if (uid == entityplayer.getUniqueID().hashCode()) continue;
 +            //check if square overlaps, if so add it to process
-+            if ((sqr.x < currSqr.u && sqr.u > currSqr.x && sqr.z < currSqr.v && sqr.v > currSqr.z) ||
++            if ((sqr.x < currTrackSqr.u && sqr.u > currTrackSqr.x && sqr.z < currTrackSqr.v && sqr.v > currTrackSqr.z) ||
++                (sqr.x < lastTrackSqr.u && sqr.u > lastTrackSqr.x && sqr.z < lastTrackSqr.v && sqr.v > lastTrackSqr.z) ||
++                (sqr.x < currSqr.u && sqr.u > currSqr.x && sqr.z < currSqr.v && sqr.v > currSqr.z) ||
 +                (sqr.x < lastSqr.u && sqr.u > lastSqr.x && sqr.z < lastSqr.v && sqr.v > lastSqr.z)) {
++
 +                toproc.add(sqr);
 +                row.add(sqr.z); row.add(sqr.v); col.add(sqr.x); col.add(sqr.u);
 +            }
 +        }
 +
++        //add tracking squares afterwards
++        lastTrackSqr.action = UNTRACK; currTrackSqr.action = TRACK;
++        toproc.add(lastTrackSqr); toproc.add(currTrackSqr);
++        row.add(lastTrackSqr.z); row.add(lastTrackSqr.v); col.add(lastTrackSqr.x); col.add(lastTrackSqr.u);
++        row.add(currTrackSqr.z); row.add(currTrackSqr.v); col.add(currTrackSqr.x); col.add(currTrackSqr.u);
++
++        if (lastTrackSqr.x < currTrackSqr.u && lastTrackSqr.u > currTrackSqr.x && lastTrackSqr.z < currTrackSqr.v && lastTrackSqr.v > currTrackSqr.z && !flagTrack) {
++            Square trackOvdSqr = new Square(Math.max(lastTrackSqr.x, currTrackSqr.x), Math.max(lastTrackSqr.z, currTrackSqr.z), Math.min(lastTrackSqr.u, currTrackSqr.u), Math.min(lastTrackSqr.v, currTrackSqr.v), TRACK_OVERLAP);
++            toproc.add(trackOvdSqr);
++            row.add(trackOvdSqr.z); row.add(trackOvdSqr.v); col.add(trackOvdSqr.x); col.add(trackOvdSqr.u);
++        }
++
++
 +        ObjectListIterator<Square> it = toproc.iterator();
 +        //coordinate compress & fill map with squares to process (in correct order to form overlapped map)
 +        int[][] grid = new int[row.size()][col.size()];
 +        int[][] attachGrid = new int[row.size()][col.size()];
++        int[][] attachTrackGrid = new int[row.size()][col.size()];
 +
 +        while (it.hasNext()) {
 +            Square sqr = it.next();
 +            for (int s = row.headSet(sqr.z).size(); s < row.headSet(sqr.v).size(); s++) {
 +                for (int t = col.headSet(sqr.x).size(); t < col.headSet(sqr.u).size(); t++) {
-+                    grid[s][t] = sqr.action;
-+                    if(sqr.action != 0) {
++                    if(sqr.action == ADD || sqr.action == REMOVE || sqr.action == OVERLAP) {
 +                        attachGrid[s][t] = sqr.action;
++                    }
++
++                    if(sqr.action == TRACK || sqr.action == UNTRACK || sqr.action == TRACK_OVERLAP) {
++                        attachTrackGrid[s][t] = sqr.action;
++                        //do not track cells without tickets
++                        if(grid[s][t] == 0 || grid[s][t] == REMOVE) {
++                            attachTrackGrid[s][t] = UNTRACK;
++                        }
++
++                        if(sqr.action == TRACK_OVERLAP || sqr.action == TRACK) {
++                            if(grid[s][t] == EXISTING || grid[s][t] == ADD) {
++                                attachTrackGrid[s][t] = TRACK;
++                            }
++                        }
++
++                    } else {
++                        grid[s][t] = sqr.action;
 +                    }
 +                }
 +            }
@@ -217,6 +279,22 @@ index 000000000..c4f6c68b0
 +                        }
 +                    }
 +                }
++                if(attachTrackGrid[s][t] == TRACK) {
++                    for (int x = cl[t]; x < cl[t + 1]; x++) {
++                        for (int z = rw[s]; z < rw[s + 1]; z++) {
++                            long pair = ChunkCoordIntPair.asLong(x, z);
++                            this.attachTrack(pair, entityplayer);
++                        }
++                    }
++                } else if (attachTrackGrid[s][t] == UNTRACK) {
++                    for (int x = cl[t]; x < cl[t + 1]; x++) {
++                        for (int z = rw[s]; z < rw[s + 1]; z++) {
++                            long pair = ChunkCoordIntPair.asLong(x, z);
++                            this.detachTrack(pair, entityplayer);
++                        }
++                    }
++                }
++
 +            }
 +
 +        }
@@ -226,8 +304,8 @@ index 000000000..c4f6c68b0
 +    public void removePlayer(EntityPlayer entityplayer) {
 +        //similar to above, this time dealing with full removal
 +        Square remSqr = this.squares.remove(entityplayer.getUniqueID().hashCode());
-+        if(remSqr != null && remSqr != this.squares.defaultReturnValue()) {
-+
++        Square remTrackSqr = this.trackSquares.remove(entityplayer.getUniqueID().hashCode());
++        if(remSqr != null && remSqr != this.squares.defaultReturnValue() && remTrackSqr != null && remTrackSqr != this.trackSquares.defaultReturnValue()) {
 +            IntSortedSet row = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
 +            IntSortedSet col = new IntRBTreeSet(IntComparators.NATURAL_COMPARATOR);
 +            ObjectList<Square> toproc = new ObjectArrayList<>();
@@ -246,18 +324,27 @@ index 000000000..c4f6c68b0
 +                }
 +            }
 +
++            remTrackSqr.action = UNTRACK;
++            toproc.add(remTrackSqr);
++            row.add(remTrackSqr.z); row.add(remTrackSqr.v); col.add(remTrackSqr.x); col.add(remTrackSqr.u);
++
 +            ObjectListIterator<Square> it = toproc.iterator();
 +
 +            int[][] grid = new int[row.size()][col.size()];
 +            int[][] attachGrid = new int[row.size()][col.size()];
++            int[][] attachTrackGrid = new int[row.size()][col.size()];
 +
 +            while (it.hasNext()) {
 +                Square sqr = it.next();
 +                for (int s = row.headSet(sqr.z).size(); s < row.headSet(sqr.v).size(); s++) {
 +                    for (int t = col.headSet(sqr.x).size(); t < col.headSet(sqr.u).size(); t++) {
-+                        grid[s][t] = sqr.action;
-+                        if(sqr.action != 0) {
++                        if(sqr.action == REMOVE) {
 +                            attachGrid[s][t] = sqr.action;
++                        }
++                        if(sqr.action == UNTRACK) {
++                            attachTrackGrid[s][t] = sqr.action;
++                        } else {
++                            grid[s][t] = sqr.action;
 +                        }
 +                    }
 +                }
@@ -282,9 +369,18 @@ index 000000000..c4f6c68b0
 +                            }
 +                        }
 +                    }
++                    if (attachTrackGrid[s][t] == UNTRACK) {
++                        for (int x = cl[t]; x < cl[t + 1]; x++) {
++                            for (int z = rw[s]; z < rw[s + 1]; z++) {
++                                long pair = ChunkCoordIntPair.asLong(x, z);
++                                this.detachTrack(pair, entityplayer);
++                            }
++                        }
++                    }
 +                }
 +            }
 +        }
++
 +    }
 +
 +    public byte removeUpdate(long pair) {
@@ -300,18 +396,33 @@ index 000000000..c4f6c68b0
 +    }
 +
 +    @Nullable
-+    public ObjectSet<EntityPlayer> getPlayersInRange(long pair) {
++    public ObjectSet<EntityPlayer> getPlayersTicketing(long pair) {
 +        return this.areaMap.get(pair);
 +    }
 +
 +    @Nullable
-+    public ObjectSet<EntityPlayer> getPlayersInRange(int chunkX, int chunkZ) {
-+        return this.getPlayersInRange(ChunkCoordIntPair.asLong(chunkX, chunkZ));
++    public ObjectSet<EntityPlayer> getPlayersTicketing(int chunkX, int chunkZ) {
++        return this.getPlayersTicketing(ChunkCoordIntPair.asLong(chunkX, chunkZ));
 +    }
 +
 +    @Nullable
-+    public ObjectSet<EntityPlayer> getPlayersInRange(ChunkCoordIntPair chunkCoordIntPair) {
-+        return this.getPlayersInRange(chunkCoordIntPair.x, chunkCoordIntPair.z);
++    public ObjectSet<EntityPlayer> getPlayersTicketing(ChunkCoordIntPair chunkCoordIntPair) {
++        return this.getPlayersTicketing(chunkCoordIntPair.x, chunkCoordIntPair.z);
++    }
++
++    @Nullable
++    public ObjectSet<EntityPlayer> getPlayersTracking(long pair) {
++        return this.areaMapTracked.get(pair);
++    }
++
++    @Nullable
++    public ObjectSet<EntityPlayer> getPlayersTracking(int chunkX, int chunkZ) {
++        return this.getPlayersTracking(ChunkCoordIntPair.asLong(chunkX, chunkZ));
++    }
++
++    @Nullable
++    public ObjectSet<EntityPlayer> getPlayersTracking(ChunkCoordIntPair chunkCoordIntPair) {
++        return this.getPlayersTracking(chunkCoordIntPair.x, chunkCoordIntPair.z);
 +    }
 +
 +    public int size() {
@@ -330,43 +441,72 @@ index 000000000..c4f6c68b0
 +        }
 +    }
 +
++    private void attachTrack(long l, EntityPlayer player) {
++        this.areaMapTracked.computeIfAbsent(l, l2 -> new ObjectOpenHashSet<>()).add(player);
++    }
++
++    private void detachTrack(long l, EntityPlayer player) {
++        ObjectSet objectSet = (ObjectSet)this.areaMapTracked.get(l);
++        if(objectSet != null) {
++            objectSet.remove(player);
++            if (objectSet.isEmpty()) this.areaMapTracked.remove(l);
++        }
++    }
++
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 63a688725..d6957959d 100644
+index 63a688725..191bede32 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -43,6 +43,11 @@ public abstract class ChunkMapDistance {
+@@ -1,7 +1,6 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.ImmutableList;
+-import com.google.common.collect.Sets;
+ import com.mojang.datafixers.util.Either;
+ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+@@ -20,7 +19,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+-import java.util.Set;
++
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+ import javax.annotation.Nullable;
+@@ -43,6 +42,11 @@ public abstract class ChunkMapDistance {
      private final LongSet l = new LongOpenHashSet();
      private final Executor m;
      private long currentTick;
 +    //Paper start ticket level pp-view-dist
 +    protected abstract com.destroystokyo.paper.util.PlayerTicketAreaMap getPlayerTicketAreaMap();
-+    protected abstract void updatePlayerTicket(EntityPlayer player, long pair);
-+    protected abstract void removePlayerTicket(EntityPlayer player);
++    protected abstract void updatePlayerTicketAreaMap(EntityPlayer player, long pair);
++    protected abstract void removePlayerTicketAreaMap(EntityPlayer player);
 +    //Paper end
  
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
-@@ -234,6 +239,7 @@ public abstract class ChunkMapDistance {
+@@ -234,6 +238,7 @@ public abstract class ChunkMapDistance {
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
-+        this.updatePlayerTicket(entityplayer, i); //Paper ticket level pp-view-dist
++        this.updatePlayerTicketAreaMap(entityplayer, i); //Paper ticket level pp-view-dist
          this.f.b(i, 0, true);
          this.g.b(i, 0, true);
      }
-@@ -251,6 +257,10 @@ public abstract class ChunkMapDistance {
+@@ -251,6 +256,10 @@ public abstract class ChunkMapDistance {
  
      }
  
 +    public void fullRemove(EntityPlayer player) {
-+        this.removePlayerTicket(player); //Paper ticket level pp-view-dist
++        this.removePlayerTicketAreaMap(player); //Paper ticket level pp-view-dist
 +    }
 +
      protected String c(long i) {
          ObjectSortedSet<Ticket<?>> objectsortedset = (ObjectSortedSet) this.tickets.get(i);
          String s;
-@@ -278,6 +288,10 @@ public abstract class ChunkMapDistance {
+@@ -278,6 +287,10 @@ public abstract class ChunkMapDistance {
          return this.f.a.containsKey(i);
      }
  
@@ -377,7 +517,7 @@ index 63a688725..d6957959d 100644
      public String c() {
          return this.i.a();
      }
-@@ -372,20 +386,20 @@ public abstract class ChunkMapDistance {
+@@ -372,20 +385,20 @@ public abstract class ChunkMapDistance {
                  byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
                  long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
  
@@ -401,7 +541,7 @@ index 63a688725..d6957959d 100644
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
                              } else {
-@@ -430,13 +444,46 @@ public abstract class ChunkMapDistance {
+@@ -430,13 +443,46 @@ public abstract class ChunkMapDistance {
                              }
  
                          });
@@ -451,7 +591,7 @@ index 63a688725..d6957959d 100644
  
          private boolean c(int i) {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e7539dd79..502a7f06f 100644
+index e7539dd79..f06be7b16 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -557,11 +557,10 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -476,7 +616,7 @@ index e7539dd79..502a7f06f 100644
 -                                        for (EntityPlayer entityplayer : this.playerChunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
 -                                            minDiff = Math.min(limit - this.playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
 +                                        //Paper start ticket level pp-view-dist
-+                                        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> players = this.playerChunkMap.playerTicketAreaMap.getPlayersInRange(chunk.getPos());
++                                        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> players = this.playerChunkMap.playerTicketAreaMap.getPlayersTracking(chunk.getPos());
 +                                        if(players != null) {
 +                                            for (EntityPlayer entityplayer : players) {
 +                                                if(entityplayer.isSpectator() || !entityplayer.affectsSpawning) continue;
@@ -617,7 +757,7 @@ index 34d0ab0d5..1e1e3725c 100644
          return this.fullChunkFuture;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 59e74900f..a53816b08 100644
+index 59e74900f..380159b0f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -4,10 +4,7 @@ import co.aikar.timings.Timing; // Paper
@@ -666,7 +806,7 @@ index 59e74900f..a53816b08 100644
 -        for (EntityPlayer player : this.playerMobDistanceMap.getPlayersInRange(chunkX, chunkZ)) {
 -            ++player.mobCounts[index];
 +        //Paper start ticket level pp-view-dist
-+        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> players = this.playerTicketAreaMap.getPlayersInRange(chunkX, chunkZ);
++        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> players = this.playerTicketAreaMap.getPlayersTracking(chunkX, chunkZ);
 +        if(players != null) {
 +            for (EntityPlayer player : players) {
 +                if(player.isSpectator() || !player.affectsSpawning) continue;
@@ -757,7 +897,7 @@ index 59e74900f..a53816b08 100644
 -
 -        return !this.chunkDistanceManager.d(i) ? true : this.playerMap.a(i).noneMatch((entityplayer) -> {
 +        //Paper start ticket level pp-view-dist
-+        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> playerset = this.playerTicketAreaMap.getPlayersInRange(i);
++        it.unimi.dsi.fastutil.objects.ObjectSet<EntityPlayer> playerset = this.playerTicketAreaMap.getPlayersTracking(i);
 +        if(playerset == null || playerset.isEmpty()) return true;
 +        if(!this.chunkDistanceManager.naturalSpawnChunksHave(i)) return true;
 +
@@ -925,14 +1065,14 @@ index 59e74900f..a53816b08 100644
 +        }
 +
 +        @Override
-+        protected void updatePlayerTicket(EntityPlayer player, long pair) {
++        protected void updatePlayerTicketAreaMap(EntityPlayer player, long pair) {
 +            try(co.aikar.timings.Timing ignored = PlayerChunkMap.this.world.timings.playerTicketAreaMapUpdate.startTiming()) {
 +                PlayerChunkMap.this.playerTicketAreaMap.updatePlayer(player, pair);
 +            }
 +        }
 +
 +        @Override
-+        protected void removePlayerTicket(EntityPlayer player) {
++        protected void removePlayerTicketAreaMap(EntityPlayer player) {
 +            try(co.aikar.timings.Timing ignored = PlayerChunkMap.this.world.timings.playerTicketAreaMapRemove.startTiming()) {
 +                PlayerChunkMap.this.playerTicketAreaMap.removePlayer(player);
 +            }
