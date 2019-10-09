@@ -532,7 +532,7 @@
      }
  
      @Override
-@@ -770,6 +1039,21 @@
+@@ -770,6 +1039,24 @@
              this.nextContainerCounter();
              Container container = itileinventory.createMenu(this.containerCounter, this.inventory, this);
  
@@ -546,6 +546,9 @@
 +                    // SPIGOT-5263 - close chest if cancelled
 +                    if (itileinventory instanceof IInventory) {
 +                        ((IInventory) itileinventory).closeContainer(this);
++                    } else if (itileinventory instanceof BlockChest.DoubleInventory) {
++                        // SPIGOT-5355 - double chests too :(
++                        ((BlockChest.DoubleInventory) itileinventory).inventorylargechest.closeContainer(this);
 +                    }
 +                    return OptionalInt.empty();
 +                }
@@ -554,7 +557,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).a(EnumChatFormat.RED), true);
-@@ -777,9 +1061,11 @@
+@@ -777,9 +1064,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -568,7 +571,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -792,13 +1078,24 @@
+@@ -792,13 +1081,24 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -595,7 +598,7 @@
          this.activeContainer.addSlotListener(this);
      }
  
-@@ -843,6 +1140,11 @@
+@@ -843,6 +1143,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -607,7 +610,7 @@
      }
  
      @Override
-@@ -852,6 +1154,7 @@
+@@ -852,6 +1157,7 @@
  
      @Override
      public void closeInventory() {
@@ -615,7 +618,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.m();
      }
-@@ -886,7 +1189,7 @@
+@@ -886,7 +1192,7 @@
      @Override
      public void a(Statistic<?> statistic, int i) {
          this.serverStatisticManager.b(this, statistic, i);
@@ -624,7 +627,7 @@
              scoreboardscore.addScore(i);
          });
      }
-@@ -894,7 +1197,7 @@
+@@ -894,7 +1200,7 @@
      @Override
      public void a(Statistic<?> statistic) {
          this.serverStatisticManager.setStatistic(this, statistic, 0);
@@ -633,7 +636,7 @@
      }
  
      @Override
-@@ -943,7 +1246,16 @@
+@@ -943,7 +1249,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -650,7 +653,7 @@
  
      @Override
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
-@@ -998,12 +1310,14 @@
+@@ -998,12 +1313,14 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -666,7 +669,7 @@
      }
  
      @Override
-@@ -1065,6 +1379,18 @@
+@@ -1065,6 +1382,18 @@
  
      @Override
      public void a(EnumGamemode enumgamemode) {
@@ -685,7 +688,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -1115,6 +1441,17 @@
+@@ -1115,6 +1444,17 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -703,7 +706,7 @@
          this.locale = packetplayinsettings.b();
          this.ck = packetplayinsettings.d();
          this.cl = packetplayinsettings.e();
-@@ -1151,13 +1488,13 @@
+@@ -1151,13 +1491,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[]{entity.getId()}));
          } else {
@@ -719,7 +722,7 @@
      }
  
      @Override
-@@ -1181,7 +1518,7 @@
+@@ -1181,7 +1521,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -728,7 +731,7 @@
          }
  
      }
-@@ -1210,7 +1547,7 @@
+@@ -1210,7 +1550,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -737,7 +740,7 @@
      }
  
      @Override
-@@ -1228,21 +1565,33 @@
+@@ -1228,21 +1568,33 @@
      }
  
      public void J() {
@@ -771,7 +774,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1265,6 +1614,9 @@
+@@ -1265,6 +1617,9 @@
              this.server.getPlayerList().a(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
@@ -781,7 +784,7 @@
  
      }
  
-@@ -1316,4 +1668,144 @@
+@@ -1316,4 +1671,144 @@
              return entityitem;
          }
      }
