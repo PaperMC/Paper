@@ -561,4 +561,9 @@ public class PaperWorldConfig {
     private void generatorSettings() {
         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
     }
+
+    public boolean disablePillagerPatrols = false;
+    private void pillagerSettings() {
+        disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
+    }
 }

@@ -10,6 +10,7 @@ public class MobSpawnerPatrol implements MobSpawner {
 
     @Override
     public int a(WorldServer worldserver, boolean flag, boolean flag1) {
+        if (worldserver.paperConfig.disablePillagerPatrols) return 0; // Paper
         if (!flag) {
             return 0;
         } else if (!worldserver.getGameRules().getBoolean(GameRules.DO_PATROL_SPAWNING)) {
