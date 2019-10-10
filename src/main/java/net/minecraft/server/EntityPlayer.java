@@ -943,6 +943,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 this.lastHealthSent = -1.0F;
                 this.lastFoodSent = -1;
 
+            setSneaking(false); // Paper - fix MC-10657
+
                 // CraftBukkit start
                 PlayerChangedWorldEvent changeEvent = new PlayerChangedWorldEvent(this.getBukkitEntity(), worldserver1.getWorld());
                 this.world.getServer().getPluginManager().callEvent(changeEvent);
