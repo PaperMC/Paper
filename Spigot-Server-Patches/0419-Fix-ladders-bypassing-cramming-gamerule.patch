@@ -1,0 +1,90 @@
+From a36bbf34c90071cc1cdda2ba0c6bb5757f15341a Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Wed, 9 Oct 2019 22:09:52 -0500
+Subject: [PATCH] Fix ladders bypassing cramming gamerule
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 61eeb6747..307d522f2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -369,6 +369,11 @@ public class PaperConfig {
+         }
+     }
+ 
++    public static boolean fixLaddersBypassingCrammingRule = true;
++    private static void fixLaddersBypassingCrammingRule() {
++        fixLaddersBypassingCrammingRule = getBoolean("settings.fix-ladders-bypassing-cramming-rule", fixLaddersBypassingCrammingRule);
++    }
++
+     public static boolean velocitySupport;
+     public static boolean velocityOnlineMode;
+     public static byte[] velocitySecretKey;
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index e8def7f81..4764b4596 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1516,6 +1516,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
+     public boolean isCollidable() {
++        // Paper start
++        return isCollidable(false);
++    }
++
++    public boolean isCollidable(boolean ignoreClimbing) {
++        // Paper end
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index f675ad2f5..984c45e03 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2598,7 +2598,7 @@ public abstract class EntityLiving extends Entity {
+     protected void doTick() {}
+ 
+     protected void collideNearby() {
+-        List<Entity> list = this.world.getEntities(this, this.getBoundingBox(), IEntitySelector.a(this));
++        List<Entity> list = this.world.getEntities(this, this.getBoundingBox(), IEntitySelector.a(this, com.destroystokyo.paper.PaperConfig.fixLaddersBypassingCrammingRule)); // Paper
+ 
+         if (!list.isEmpty()) {
+             int i = this.world.getGameRules().getInt(GameRules.MAX_ENTITY_CRAMMING);
+@@ -2727,8 +2727,10 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     @Override
+-    public boolean isCollidable() {
+-        return this.isAlive() && !this.isClimbing() && this.collides; // CraftBukkit
++    // Paper start
++    public boolean isCollidable(boolean ignoreClimbing) {
++        return this.isAlive() && (ignoreClimbing || !isClimbing()) && this.collides; // CraftBukkit
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 56739e6ed..3863090c3 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -33,11 +33,16 @@ public final class IEntitySelector {
+     }
+ 
+     public static Predicate<Entity> a(Entity entity) {
++        // Paper start
++        return a(entity, false);
++    }
++    public static Predicate<Entity> a(Entity entity, boolean ignoreClimbing) {
++        // Paper end
+         ScoreboardTeamBase scoreboardteambase = entity.getScoreboardTeam();
+         ScoreboardTeamBase.EnumTeamPush scoreboardteambase_enumteampush = scoreboardteambase == null ? ScoreboardTeamBase.EnumTeamPush.ALWAYS : scoreboardteambase.getCollisionRule();
+ 
+         return (Predicate) (scoreboardteambase_enumteampush == ScoreboardTeamBase.EnumTeamPush.NEVER ? Predicates.alwaysFalse() : IEntitySelector.f.and((entity1) -> {
+-            if (!entity1.isCollidable()) {
++            if (!entity1.isCollidable(ignoreClimbing)) { // Paper
+                 return false;
+             } else if (entity.world.isClientSide && (!(entity1 instanceof EntityHuman) || !((EntityHuman) entity1).dG())) {
+                 return false;
+-- 
+2.23.0.rc1
+
