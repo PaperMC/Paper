@@ -223,7 +223,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaPotion || isStewEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaSuspiciousStew || isStewEmpty());
     }
 
     @Override

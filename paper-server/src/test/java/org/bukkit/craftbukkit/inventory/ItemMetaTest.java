@@ -405,6 +405,10 @@ public class ItemMetaTest extends AbstractTestingBase {
         final ItemStack blank = new ItemStack(Material.STONE);
         final ItemStack craftBlank = CraftItemStack.asCraftCopy(blank);
 
+        // Check that equality and similarity works for each meta implementation
+        assertThat(name, provider.stack(), is(provider.stack()));
+        assertThat(name, provider.stack().isSimilar(provider.stack()), is(true));
+
         downCastTest(name, provider.stack(), blank);
         blank.setItemMeta(blank.getItemMeta());
         downCastTest(name, provider.stack(), blank);
