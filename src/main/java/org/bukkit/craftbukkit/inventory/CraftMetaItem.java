@@ -675,7 +675,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         NBTTagList tagList = new NBTTagList();
         for (IChatBaseComponent value : list) {
             // SPIGOT-5342 - horrible hack as 0 version does not go through the Mojang updater
-            tagList.add(new NBTTagString(0 <= version || version >= 1803 ? CraftChatMessage.toJSON(value) : CraftChatMessage.fromComponent(value, EnumChatFormat.DARK_PURPLE))); // SPIGOT-4935
+            tagList.add(new NBTTagString(version <= 0 || version >= 1803 ? CraftChatMessage.toJSON(value) : CraftChatMessage.fromComponent(value, EnumChatFormat.DARK_PURPLE))); // SPIGOT-4935
         }
 
         return tagList;
