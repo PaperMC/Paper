@@ -1,4 +1,4 @@
-From 4ba2f464ac38d9b7346b8015c8ce6cb74084fc03 Mon Sep 17 00:00:00 2001
+From c0fa09963c0103859d8d2409ef8c8ad323c56402 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 19 Jul 2019 03:29:14 -0700
 Subject: [PATCH] Reduce sync loads
@@ -11,7 +11,7 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 09efbf725..132397b3f 100644
+index 09efbf7250..132397b3f3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -1,9 +1,13 @@
@@ -91,7 +91,7 @@ index 09efbf725..132397b3f 100644
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 000000000..59aec1032
+index 0000000000..59aec10329
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 @@ -0,0 +1,172 @@
@@ -268,7 +268,7 @@ index 000000000..59aec1032
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index f793ba08e..c8451afec 100644
+index 277c2245d7..8d7971ad80 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -280,6 +280,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -280,7 +280,7 @@ index f793ba08e..c8451afec 100644
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b81b37445..9d29fc8ca 100644
+index b81b37445c..9d29fc8ca4 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1195,14 +1195,14 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
@@ -328,7 +328,7 @@ index b81b37445..9d29fc8ca 100644
                  if (chunk != null) {
                      chunk.a(oclass, axisalignedbb, list, predicate);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0c1f4e6e1..845575f52 100644
+index 0c1f4e6e1e..bc2942fe83 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -150,6 +150,12 @@ public class WorldServer extends World {
@@ -338,12 +338,12 @@ index 0c1f4e6e1..845575f52 100644
 +    // Paper start
 +    @Override
 +    public boolean isChunkLoaded(int x, int z) {
-+        return this.getChunkProvider().getChunkAtIfCachedImmediately(x, z) != null;
++        return this.getChunkProvider().getChunkAtIfLoadedImmediately(x, z) != null;
 +    }
 +    // Paper end
  
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 -- 
-2.23.0
+2.22.1
 
