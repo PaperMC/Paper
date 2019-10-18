@@ -40,7 +40,7 @@ public interface Firework extends Entity {
      *
      * A firework which was not shot at an angle will fly straight upwards.
      *
-     * @param shotAtAngle
+     * @param shotAtAngle the new shotAtAngle
      */
     void setShotAtAngle(boolean shotAtAngle);
 }
