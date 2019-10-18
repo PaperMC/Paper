@@ -660,7 +660,7 @@ public class CraftBlock implements Block {
         Vec3D startPos = new Vec3D(start.getX(), start.getY(), start.getZ());
         Vec3D endPos = new Vec3D(start.getX() + dir.getX(), start.getY() + dir.getY(), start.getZ() + dir.getZ());
 
-        MovingObjectPosition nmsHitResult = world.rayTrace(new RayTrace(startPos, endPos, RayTrace.BlockCollisionOption.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null));
+        MovingObjectPosition nmsHitResult = world.rayTraceBlock(new RayTrace(startPos, endPos, RayTrace.BlockCollisionOption.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), null), position);
         return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);
     }
 
