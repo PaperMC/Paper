@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import net.minecraft.server.GameProfileBanEntry;
 import net.minecraft.server.GameProfileBanList;
@@ -25,7 +26,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public org.bukkit.BanEntry getBanEntry(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        GameProfile profile = getProfile(target);
         if (profile == null) {
             return null;
         }
@@ -42,7 +43,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
         Validate.notNull(target, "Ban target cannot be null");
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        GameProfile profile = getProfile(target);
         if (profile == null) {
             return null;
         }
@@ -78,7 +79,7 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public boolean isBanned(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        GameProfile profile = getProfile(target);
         if (profile == null) {
             return false;
         }
@@ -90,7 +91,19 @@ public class CraftProfileBanList implements org.bukkit.BanList {
     public void pardon(String target) {
         Validate.notNull(target, "Target cannot be null");
 
-        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        GameProfile profile = getProfile(target);
         list.remove(profile);
+    }
+
+    private GameProfile getProfile(String target) {
+        UUID uuid = null;
+
+        try {
+            uuid = UUID.fromString(target);
+        } catch (IllegalArgumentException ex) {
+            //
+        }
+
+        return (uuid != null) ? MinecraftServer.getServer().getUserCache().a(uuid) : MinecraftServer.getServer().getUserCache().getProfile(target);
     }
 }
