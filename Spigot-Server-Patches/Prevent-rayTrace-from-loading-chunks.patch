@@ -7,16 +7,16 @@ ray tracing into an unloaded chunk should be treated as a miss
 this saves a ton of lag for when AI tries to raytrace near unloaded chunks.
 
 diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
-index 577b227758..c5586e44d4 100644
+index 0dff023529..29cdc00875 100644
 --- a/src/main/java/net/minecraft/server/IBlockAccess.java
 +++ b/src/main/java/net/minecraft/server/IBlockAccess.java
 @@ -0,0 +0,0 @@ public interface IBlockAccess {
  
-     default MovingObjectPositionBlock rayTrace(RayTrace raytrace) {
-         return (MovingObjectPositionBlock) a(raytrace, (raytrace1, blockposition) -> {
+     // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
+     default MovingObjectPositionBlock rayTraceBlock(RayTrace raytrace1, BlockPosition blockposition) {
 -            IBlockData iblockdata = this.getType(blockposition);
 +            // Paper start - Prevent raytrace from loading chunks
-+            IBlockData iblockdata = ((World)this).getTypeIfLoaded(blockposition);
++            IBlockData iblockdata = this.getTypeIfLoaded(blockposition);
 +            if (iblockdata == null) {
 +                // copied the last function parameter (listed below)
 +                Vec3D vec3d = raytrace1.b().d(raytrace1.a());
