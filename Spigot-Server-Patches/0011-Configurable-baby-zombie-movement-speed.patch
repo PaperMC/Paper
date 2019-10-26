@@ -1,26 +1,31 @@
-From 21e836a230f6b4ef85345c5faf0bd367259b1113 Mon Sep 17 00:00:00 2001
+From 3cd98352d4db9cbebceb1a2f4e4b6c68e5c519cc Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 13:09:16 -0600
 Subject: [PATCH] Configurable baby zombie movement speed
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 098bd3fba..55d8e74f8 100644
+index 098bd3fba..1aa046bfa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -73,4 +73,10 @@ public class PaperWorldConfig {
+@@ -73,4 +73,15 @@ public class PaperWorldConfig {
          log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight);
  
      }
 +
-+    public double babyZombieMovementSpeed;
-+    private void babyZombieMovementSpeed() {
-+        babyZombieMovementSpeed = getDouble("baby-zombie-movement-speed", 0.5D); // Player moves at 0.1F, for reference
-+        log("Baby zombies will move at the speed of " + babyZombieMovementSpeed);
++    public double babyZombieMovementModifier;
++    private void babyZombieMovementModifier() {
++        babyZombieMovementModifier = getDouble("baby-zombie-movement-modifier", 0.5D);
++        if (PaperConfig.version < 19) {
++            babyZombieMovementModifier = getDouble("baby-zombie-movement-speed", 0.5D);
++            set("baby-zombie-movement-modifier", babyZombieMovementModifier);
++        }
++
++        log("Baby zombies will move at the speed of " + babyZombieMovementModifier);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
-index b8761e706..a3af14630 100644
+index b8761e706..4d4e8d022 100644
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
 @@ -21,7 +21,7 @@ public class EntityZombie extends EntityMonster {
@@ -28,7 +33,7 @@ index b8761e706..a3af14630 100644
      protected static final IAttribute d = (new AttributeRanged((IAttribute) null, "zombie.spawnReinforcements", 0.0D, 0.0D, 1.0D)).a("Spawn Reinforcements Chance");
      private static final UUID b = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
 -    private static final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", 0.5D, AttributeModifier.Operation.MULTIPLY_BASE);
-+    private final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", world.paperConfig.babyZombieMovementSpeed, AttributeModifier.Operation.MULTIPLY_BASE); private final AttributeModifier babyModifier = this.c; // Paper - remove static - Make baby speed configurable
++    private final AttributeModifier c = new AttributeModifier(EntityZombie.b, "Baby speed boost", world.paperConfig.babyZombieMovementModifier, AttributeModifier.Operation.MULTIPLY_BASE); private final AttributeModifier babyModifier = this.c; // Paper - remove static - Make baby speed configurable
      private static final DataWatcherObject<Boolean> bz = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Integer> bA = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
      public static final DataWatcherObject<Boolean> DROWN_CONVERTING = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
@@ -45,5 +50,5 @@ index b8761e706..a3af14630 100644
          }
  
 -- 
-2.22.0
+2.23.0
 
