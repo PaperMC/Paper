@@ -1,0 +1,90 @@
+From 7e4009bedffd141240f04867e52d6f1283709f3a Mon Sep 17 00:00:00 2001
+From: BrodyBeckwith <brody@beckwith.dev>
+Date: Mon, 28 Oct 2019 19:21:31 -0400
+Subject: [PATCH] Allow chunks to use the persistent data API
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 98cc4efc..edac4113 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -18,6 +18,7 @@ import java.util.function.Function;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.craftbukkit.CraftChunk;
+ 
+ public class ChunkRegionLoader {
+ 
+@@ -168,6 +169,7 @@ public class ChunkRegionLoader {
+             }
+ 
+             object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, abiomebase, chunkconverter, (TickList) object1, (TickList) object2, l, achunksection, (chunk) -> {
++                ((CraftChunk) chunk.getBukkitChunk()).readBukkitValues(nbttagcompound1); // Paper - Read persistent data from NBT
+                 loadEntities(nbttagcompound1, chunk);
+             });
+         } else {
+@@ -467,6 +469,8 @@ public class ChunkRegionLoader {
+                 }
+             }
+ 
++            ((CraftChunk) chunk.getBukkitChunk()).storeBukkitValues(nbttagcompound1); // Paper - Save persistent data to NBT
++
+             // Paper start - move entities to the correct chunk
+             for (Entity entity : toUpdate) {
+                 worldserver.entityJoinedWorld(entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 373bea4b..8be88542 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -28,8 +28,11 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.Entity;
++import org.bukkit.persistence.PersistentDataContainer;
+ import org.bukkit.plugin.Plugin;
+ 
+ public class CraftChunk implements Chunk {
+@@ -39,6 +42,8 @@ public class CraftChunk implements Chunk {
+     private final int z;
+     private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0).getBlocks();
+     private static final byte[] emptyLight = new byte[2048];
++    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
++    private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
+ 
+     public CraftChunk(net.minecraft.server.Chunk chunk) {
+         this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+@@ -357,6 +362,26 @@ public class CraftChunk implements Chunk {
+         return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.MOTION_BLOCKING), biome, biomeTemp);
+     }
+ 
++    // Paper start
++    @Override
++    public PersistentDataContainer getPersistentDataContainer() {
++        return this.persistentDataContainer;
++    }
++
++    public void storeBukkitValues(NBTTagCompound nbtTagCompound) {
++        if (!this.persistentDataContainer.isEmpty()) {
++            nbtTagCompound.set("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
++        }
++    }
++
++    public void readBukkitValues(NBTTagCompound nbtTagCompound) {
++        NBTTagCompound base = nbtTagCompound.getCompound("PublicBukkitValues");
++        if (base != null) {
++            this.persistentDataContainer.putAll(base);
++        }
++    }
++    // Paper end
++
+     private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
+         BiomeBase[] biomes = chunkmanager.getBiomeBlock(chunkX, chunkZ, 16, 16);
+         float[] temps = new float[biomes.length];
+-- 
+2.20.1.windows.1
+
