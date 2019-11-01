@@ -1,0 +1,146 @@
+From 65aa39f83ef6c98ef302097163d9e64461b1754c Mon Sep 17 00:00:00 2001
+From: Rodney_Mc_Kay <herr-fant@web.de>
+Date: Fri, 1 Nov 2019 15:55:27 +0100
+Subject: [PATCH] Fix spawn rates and add customization options
+
+This patch intends to fix the spawn rates for water and ambient mobs. This has been broken by Bukkit 1.13
+because of unclear terminology between animals and peaceful mobs. The terminology used in this patch is
+that a peaceful mob is everything that is not hostile and an animal is just sheep, pigs, etc. In vanilla
+all all mobs except animals spawn every tick, but Bukkit forced all peaceful mobs to spawn at the animal
+cycle, which is 400x slower than their normal tick delay per spawn, which is 1.
+
+This patch adds obfuscation helpers to EnumCreatureType to prevent further confusion and adds configuration
+options to override the Bukkit "ticks-per-spawn" and replace them by customly definable ones.
+
+Note that this bug has already been fixed in Bukkit 1.14.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index b8131abae..079b9e43c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -613,4 +613,27 @@ public class PaperWorldConfig {
+             log("Using improved mob spawn limits (Only Natural Spawns impact spawn limits for more natural spawns)");
+         }
+     }
++
++    public boolean overrideBukkitSpawnRates;
++    public int ticksPerMonsterSpawn;
++    public int ticksPerAnimalSpawn;
++    public int ticksPerWaterMobSpawn;
++    public int ticksPerAmbientMobSpawn;
++    private void spawnRates() {
++        overrideBukkitSpawnRates = getBoolean("override-bukkit-spawn-rates", true);
++        if (overrideBukkitSpawnRates) {
++            ticksPerMonsterSpawn = getInt("ticks-per-spawns.monster", 1);
++            ticksPerAnimalSpawn = getInt("ticks-per-spawns.animal", 400);
++            ticksPerWaterMobSpawn = getInt("ticks-per-spawns.water-mobs", 1);
++            ticksPerAmbientMobSpawn = getInt("ticks-per-spawns.ambient-mobs", 1);
++
++            log("Bukkit spawn rates are overriden and have NO EFFECT! Using paper spawn rates:");
++            log("- Monsters: " + ticksPerMonsterSpawn + " ticks per spawns");
++            log("- Animals: " + ticksPerAnimalSpawn + " ticks per spawns");
++            log("- Water Mobs: " + ticksPerWaterMobSpawn + " ticks per spawns");
++            log("- Ambient Mobs: " + ticksPerAmbientMobSpawn + " ticks per spawns");
++        } else {
++            log("Using spawn rates as defined by Bukkit. Note that spawn rates specified in paper.yml are invalid unless you turn on \"override-bukkit-spawn-rates\"!");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
+index 42f6a6a93..cab4db152 100644
+--- a/src/main/java/net/minecraft/server/EnumCreatureType.java
++++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
+@@ -18,6 +18,11 @@ public enum EnumCreatureType {
+ 
+     public boolean matches(Entity entity) { return innerClass().isAssignableFrom(entity.getClass()); } // Paper
+     public Class<? extends IAnimal> innerClass() { return this.a(); } // Paper - OBFHELPER
++
++    public boolean isPeaceful() { return this.g; } // Paper - OBFHELPER
++
++    public boolean isAnimal() { return this.h; } // Paper - OBFHELPER
++
+     public Class<? extends IAnimal> a() {
+         return this.e;
+     }
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index cb656a222..ddf76ea99 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -24,8 +24,10 @@ public final class SpawnerCreature {
+ 
+     public SpawnerCreature() {}
+ 
+-    public int a(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
+-        if (!flag && !flag1) {
++    // Paper start - Allow for mob specific spawn rate customization
++    public int a(WorldServer worldserver, boolean spawnMonsters, boolean spawnAnimals, boolean spawnWaterMobs, boolean spawnAmbientMobs) {
++        if (!spawnMonsters && !spawnAnimals && !spawnWaterMobs && spawnAmbientMobs) {
++    // Paper end
+             return 0;
+         } else {
+             this.c.clear();
+@@ -90,20 +92,26 @@ public final class SpawnerCreature {
+             for (int k1 = 0; k1 < j; ++k1) {
+                 EnumCreatureType enumcreaturetype = aenumcreaturetype[k1];
+ 
++                boolean shouldSpawn = false; // Paper - Add spawn detection for each mob type
++
+                // CraftBukkit start - Use per-world spawn limits
+                 int limit = enumcreaturetype.b();
+                 switch (enumcreaturetype) {
+                     case MONSTER:
+                         limit = worldserver.getWorld().getMonsterSpawnLimit();
++                        shouldSpawn = spawnMonsters;
+                         break;
+                     case CREATURE:
+                         limit = worldserver.getWorld().getAnimalSpawnLimit();
++                        shouldSpawn = spawnAnimals;
+                         break;
+                     case WATER_CREATURE:
+                         limit = worldserver.getWorld().getWaterAnimalSpawnLimit();
++                        shouldSpawn = spawnWaterMobs;
+                         break;
+                     case AMBIENT:
+                         limit = worldserver.getWorld().getAmbientSpawnLimit();
++                        shouldSpawn = spawnAmbientMobs;
+                         break;
+                 }
+ 
+@@ -112,7 +120,7 @@ public final class SpawnerCreature {
+                 }
+                 // CraftBukkit end
+ 
+-                if ((!enumcreaturetype.c() || flag1) && (enumcreaturetype.c() || flag) && (!enumcreaturetype.d() || flag2)) {
++                if (shouldSpawn) { // Paper - Add spawn rate customized to paper spawns
+                     k = limit * i / SpawnerCreature.b; // CraftBukkit - use per-world limits
+                     int l1 = ((com.destroystokyo.paper.PaperWorldEntityList) worldserver.entityList).getCreatureCount(enumcreaturetype); // Paper - entity count cache
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index ee071ba2f..a6d057539 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -271,7 +271,20 @@ public class WorldServer extends World implements IAsyncTaskHandler {
+         long time = this.worldData.getTime();
+         if (this.getGameRules().getBoolean("doMobSpawning") && this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES && (this.allowMonsters || this.allowAnimals) && (this instanceof WorldServer && this.players.size() > 0)) {
+             timings.mobSpawn.startTiming(); // Spigot
+-            this.spawnerCreature.a(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L), this.worldData.getTime() % 400L == 0L);
++            // Paper start - Apply custom spawn rates
++            if (paperConfig.overrideBukkitSpawnRates) {
++                boolean spawnMonsters = this.allowMonsters && (time % this.paperConfig.ticksPerMonsterSpawn == 0);
++                boolean spawnAmbientMobs = this.allowAnimals && (time % this.paperConfig.ticksPerAmbientMobSpawn == 0);
++                boolean spawnWaterMobs = this.allowAnimals && (time % this.paperConfig.ticksPerWaterMobSpawn == 0);
++                boolean spawnAnimals = this.allowAnimals && (time % this.paperConfig.ticksPerAnimalSpawn == 0);
++                this.spawnerCreature.a(this, spawnMonsters, spawnAnimals, spawnWaterMobs, spawnAmbientMobs);
++            } else {
++                boolean spawnMonsters = this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L);
++                boolean spawnPeacefulMobs = this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L);
++                boolean spawnAnimals = time % 400L == 0L;
++                this.spawnerCreature.a(this, spawnMonsters, spawnPeacefulMobs && spawnAnimals, spawnPeacefulMobs, spawnPeacefulMobs);
++            }
++            // Paper end
+             this.getChunkProvider().a(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L));
+             timings.mobSpawn.stopTiming(); // Spigot
+             // CraftBukkit end
+-- 
+2.18.0.windows.1
+
