@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: wea_ondara <wea_ondara@alpenblock.net>
+Date: Sat, 2 Nov 2019 22:25:40 +0100
+Subject: [PATCH] Fix serialization of colors from components
+
+This patch fixes the serialization of display names, item lores and
+other things which use strings with color codes. The old implementation
+deleted the color codes at the beginning of the resulting string if it
+matched the default color passed to the conversion function. This
+resulted in items having a black display name losing the black color
+code in the beginning of the text when the item was serialized (e.g.
+saving an ItemStack in a Yaml config).
+
+Spigot has now made the issue worse and expanded the scope to more places.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+@@ -0,0 +0,0 @@ public final class CraftChatMessage {
+         if (component == null) return "";
+         StringBuilder out = new StringBuilder();
+ 
++        // Paper start - fix deletion of color codes at the beginning of result string
++        boolean first = true;
+         for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
+             ChatModifier modi = c.getChatModifier();
+-            out.append(modi.getColor() == null ? defaultColor : modi.getColor());
++            if (first) {
++                if (modi.getColor() != null) {
++                    out.append(modi.getColor());
++                }
++                first = false;
++            } else {
++                out.append(modi.getColor() == null ? defaultColor : modi.getColor());
++            }
++            // Paper end
+             if (modi.isBold()) {
+                 out.append(EnumChatFormat.BOLD);
+             }
+@@ -0,0 +0,0 @@ public final class CraftChatMessage {
+             }
+             out.append(c.getText());
+         }
+-        return out.toString().replaceFirst("^(" + defaultColor + ")*", "");
++        return out.toString(); // Paper - fix deletion of color codes at the beginning of result string
+     }
+ 
+     public static IChatBaseComponent fixComponent(IChatBaseComponent component) {
