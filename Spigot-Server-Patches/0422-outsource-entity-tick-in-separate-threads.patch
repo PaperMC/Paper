@@ -1,0 +1,376 @@
+From 2c57d40e9fd3782dae1944b1835b988a6bc5b2d3 Mon Sep 17 00:00:00 2001
+From: Bloodrayne1995 <Bloodrayne1995@live.de>
+Date: Sat, 2 Nov 2019 21:17:43 +0100
+Subject: [PATCH] outsource entity tick in separate threads
+
+This is just an idea how it could work. I`m not really sure if it works.
+I`m a newbie at minecraft server development.
+
+The normal behavior:
+Every tick-Call on WorldServer goes through his entitylist and execute its
+tick-method. This could be very laggy at a specific count of entities.
+
+My patch or my idea changes this behaviour:
+At the creating a WorldServer instance it defines a local object of the
+class AsyncTickManager. This manager prepares a configurable amount of
+AsyncTickTasks (at least one).
+If the option "settings.async-ticks.use" is true, every tick-Call on
+a WorldServer instance goes through its list of entity and queue them
+in the instance of AsyncTickManager.
+This instance distribute this entity to its AsyncTickTask instances.
+After the queueing action it calls the startTick-method of
+AsyncTickManager. This calls the startTick method of all tasks.
+As mentioned above: I`m not really sure if it works.
+
+I meantioned configurable values. These values are:
+- settings.async-ticks.use (boolean): use this new tick behavior.
+Default: false
+- settings.async-ticks.count-task (int): count of AsyncTickTasks per
+world. Default: 1
+
+Not patch related note:
+This is my first patch for such a huge project. I don`t know if I
+did all things right.
+I tried to do my best according the CONTRIBUTING.md on GitHub.
+
+If I forgot something or if you need some informations, don`t hesitate
+to write me a PN on GitHub.
+Greetings
+Bloodrayne1995
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 93c0c422..502bc04e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -449,4 +449,23 @@ public class PaperConfig {
+             */
+         }
+     }
++
++    // PAPER start
++    /*
++        Added configuration values for AsyncTicks
++     */
++    public static boolean useAsyncTicks = false;
++    private static void useAsyncTicks(){
++        useAsyncTicks = getBoolean("settings.async-ticks.use",false);
++    }
++
++    public static int asyncTicksTaskCount = 1;
++    private static void asyncTicksTaskCount(){
++        asyncTicksTaskCount = getInt("settings.async-ticks.count-task",1);
++    }
++
++
++    //PAPER end
++
++
+ }
+diff --git a/src/main/java/de/eonadev/AsyncTickManager.java b/src/main/java/de/eonadev/AsyncTickManager.java
+new file mode 100644
+index 00000000..ec0dd0ec
+--- /dev/null
++++ b/src/main/java/de/eonadev/AsyncTickManager.java
+@@ -0,0 +1,92 @@
++package de.eonadev;
++
++import com.destroystokyo.paper.PaperConfig;
++import net.minecraft.server.Entity;
++import net.minecraft.server.WorldServer;
++
++import java.util.ArrayList;
++
++
++/**
++ * Provides operations for ticking entities in separate threads
++ * @author Bloodrayne1995
++ */
++public class AsyncTickManager {
++
++    /**
++     * WorldServer-instance this Manager handles
++     */
++    private WorldServer baseWorld = null;
++
++    /**
++     * List of AsyncTickTask instances.
++     */
++    private ArrayList<AsyncTickTask> tasks = new ArrayList<>();
++
++    /**
++     * Used for queueing entities in the specific AsyncTickTask instance
++     */
++    private int current_task = 0;
++
++    /**
++     * How many tasks should be running. This is per world. If max_task = 2 and count worlds are 5, there will be 10 Threads only for ticking entities
++     * Note: This can be optimized like 4 Threads for all worlds, but these changes here are only a idea I got
++     */
++    private int max_task = 1;
++
++    /**
++     * Creates a new instance with the given WorldServer
++     * @param world WorldServer instance this manager shall handle
++     */
++    public AsyncTickManager(WorldServer world){
++        baseWorld = world;
++    }
++
++    /**
++     * Prepare this manager. Create multiple AsyncTickTask instances and add them to list
++     */
++    public void prepareManager(){
++        // Read config
++        max_task = PaperConfig.asyncTicksTaskCount;
++
++        // Check if count task is not 0 or lower. if it is, it will be set to 1
++        if (max_task <= 0){
++            max_task = 1;
++        }
++
++        // Create AsyncTickTasks and add them to the list
++        for(int i = 0; i < max_task; i++){
++            tasks.add(new AsyncTickTask(baseWorld));
++        }
++    }
++
++    /**
++     * Queue an entity to a specific tick task
++     * @param entity The entity which shall be queued
++     */
++    public void queueEntity(Entity entity){
++        /*
++            If the current task value is higher than the max task value,
++            the current task will be 0 to start at the first task
++         */
++        if(current_task >= max_task){
++            current_task = 0;
++        }
++
++        // Add entity to current task
++        tasks.get(current_task).addEntity(entity);
++
++        // Increment current_task. the next call of queueEntity will add the entity to the next task
++        current_task++;
++    }
++
++    /**
++     * Let the AsyncTickTasks do their work
++     */
++    public void startTick(){
++        for (AsyncTickTask t:tasks
++             ) {
++            t.startTick();
++        }
++    }
++}
+diff --git a/src/main/java/de/eonadev/AsyncTickTask.java b/src/main/java/de/eonadev/AsyncTickTask.java
+new file mode 100644
+index 00000000..a1f5b54d
+--- /dev/null
++++ b/src/main/java/de/eonadev/AsyncTickTask.java
+@@ -0,0 +1,98 @@
++package de.eonadev;
++
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++import com.destroystokyo.paper.exception.ServerInternalException;
++import net.minecraft.server.Entity;
++import net.minecraft.server.WorldServer;
++import org.bukkit.Server;
++
++import java.util.ArrayList;
++import java.util.function.Consumer;
++
++/**
++ * Handles ticking of an entity in a separate thread
++ * @author Bloodrayne1995
++ */
++public class AsyncTickTask implements Runnable{
++
++    /**
++     * List of entities to tick
++     */
++    private ArrayList<Entity> my_entities = new ArrayList<>();
++
++    /**
++     * Current WorldServer instance
++     */
++    private WorldServer my_world = null;
++
++    /**
++     * Creates a new instance with the given WorldServer instance
++     * @param world WorldServer instance which shall be handled
++     */
++    public  AsyncTickTask(WorldServer world){
++        my_world = world;
++    }
++
++    /**
++     * Add an entity to the list
++     * @param entity entity to add
++     */
++    public void addEntity(Entity entity){
++        my_entities.add(entity);
++    }
++
++    /**
++     * Start the tick of each entity in list in a separate thread
++     */
++    public void startTick(){
++        Thread a = new Thread(this);
++        a.setName("AsyncTicks-Task: World=" + my_world.getWorld().getName());
++        a.start();
++    }
++
++
++    /**
++     * Tick-method for each entity
++     */
++    @Override
++    public void run() {
++        for (Entity x:my_entities
++             ) {
++            if(x == null){
++                continue;
++            }
++            this.a((entity1) -> {
++                ++x.ticksLived;
++                x.tick();
++            }, x);
++            if(x.dead){
++                //TODO: Queue to remove
++                my_world.removeEntity(x);
++            }
++        }
++
++        //Clear entities for next tick
++        my_entities.clear();
++    }
++
++    /**
++     * Don`t know what this do, but it was used before and it was a paper modification.
++     * So I copied this here, to use it in my task and don`t modify the given exception handling
++     * @param consumer
++     * @param entity
++     */
++    public void a(Consumer<Entity> consumer, Entity entity) {
++        try {
++            consumer.accept(entity);
++        } catch (Throwable throwable) {
++            // Paper start - Prevent tile entity and entity crashes
++            String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX + "," + entity.locY + "," + entity.locZ;
++            System.err.println(msg);
++            throwable.printStackTrace();
++            my_world.getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
++            entity.dead = true;
++            return;
++            // Paper end
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5b18f4bd..73d81cb7 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -3,11 +3,13 @@ package net.minecraft.server;
+ import co.aikar.timings.TimingHistory;
+ import co.aikar.timings.Timings;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.destroystokyo.paper.PaperWorldConfig;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Queues;
+ import com.google.common.collect.Sets;
++import de.eonadev.AsyncTickManager;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+@@ -72,6 +74,13 @@ public class WorldServer extends World {
+     @Nullable
+     private final MobSpawnerTrader mobSpawnerTrader;
+ 
++    // PAPER start - declare global instance of AsyncTickManager
++    /*
++        This instance will be used for queuing entities for ticking
++     */
++    private AsyncTickManager aTickManager = null;
++    // PAPER end
++
+     // CraftBukkit start
+     private int tickPosition;
+     boolean hasPhysicsEvent = true; // Paper
+@@ -199,10 +208,19 @@ public class WorldServer extends World {
+             this.getWorldData().setGameType(minecraftserver.getGamemode());
+         }
+ 
++
+         this.mobSpawnerTrader = this.worldProvider.getDimensionManager().getType() == DimensionManager.OVERWORLD ? new MobSpawnerTrader(this) : null; // CraftBukkit - getType()
+         this.getServer().addWorld(this.getWorld()); // CraftBukkit
+ 
+         this.asyncChunkTaskManager = new com.destroystokyo.paper.io.chunk.ChunkTaskManager(this); // Paper
++
++        // PAPER start - Async Ticking
++        /*
++            make a new instance and prepare the manager
++         */
++        this.aTickManager = new AsyncTickManager(this);
++        this.aTickManager.prepareManager();
++        // PAPER end
+     }
+ 
+     // CraftBukkit start
+@@ -421,21 +439,43 @@ public class WorldServer extends World {
+ 
+             Entity entity;
+ 
++
+             for (i = 0; i < this.globalEntityList.size(); ++i) {
+                 entity = (Entity) this.globalEntityList.get(i);
+                 // CraftBukkit start - Fixed an NPE
+                 if (entity == null) {
+                     continue;
+                 }
+-                // CraftBukkit end
+-                this.a((entity1) -> {
+-                    ++entity1.ticksLived;
+-                    entity1.tick();
+-                }, entity);
+-                if (entity.dead) {
+-                    this.globalEntityList.remove(i--);
++
++                // PAPER start
++                /*
++                    Let entities tick in a separate thread.
++                    if this is not activated, it will do the normal behavior like before
++                 */
++                if(PaperConfig.useAsyncTicks){
++                    this.aTickManager.queueEntity(entity); // PAPER Queue Entity for ticking
++                }else{
++                    // CraftBukkit end
++                    this.a((entity1) -> {
++                        ++entity1.ticksLived;
++                        entity1.tick();
++                    }, entity);
++                    if (entity.dead) {
++                        this.globalEntityList.remove(i--);
++                    }
+                 }
++                // PAPER end
++            }
++
++            // PAPER start - Tell the AsyncTickManager to tick the entities
++            if(PaperConfig.useAsyncTicks){
++                this.aTickManager.startTick();
+             }
++            // PAPER end
++
++            //PAPER end - Async Ticks
++
++
+ 
+             gameprofilerfiller.exitEnter("regular");
+             this.tickingEntities = true;
+-- 
+2.17.1.windows.2
+
