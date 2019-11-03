@@ -1,0 +1,267 @@
+From 07c9abdfbdf49ddd7b196852030bec7f48cd8a3f Mon Sep 17 00:00:00 2001
+From: BrodyBeckwith <brody@beckwith.dev>
+Date: Sun, 3 Nov 2019 13:28:28 -0500
+Subject: [PATCH] Allow chunks and blocks to save persistent data
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockPiston.java b/src/main/java/net/minecraft/server/BlockPiston.java
+index de804348..2cd63b0d 100644
+--- a/src/main/java/net/minecraft/server/BlockPiston.java
++++ b/src/main/java/net/minecraft/server/BlockPiston.java
+@@ -362,10 +362,15 @@ public class BlockPiston extends BlockDirectional {
+             for (k = list.size() - 1; k >= 0; --k) {
+                 blockposition3 = (BlockPosition) list.get(k);
+                 iblockdata = world.getType(blockposition3);
++                CraftBlock originalBlock = (CraftBlock) bblock.getWorld().getBlockAt(blockposition3.getX(), blockposition3.getY(), blockposition3.getZ()); // Paper - Get the block being moved
+                 blockposition3 = blockposition3.shift(enumdirection1);
+                 set.remove(blockposition3);
+                 world.setTypeAndData(blockposition3, (IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPiston.FACING, enumdirection), 68);
+                 world.setTileEntity(blockposition3, BlockPistonMoving.a((IBlockData) list1.get(k), enumdirection, flag, false));
++                // Paper start - Move persistent block data if pushed by a piston
++                ((CraftBlock) bblock.getWorld().getBlockAt(blockposition3.getX(), blockposition3.getY(), blockposition3.getZ())).setPersistentDataContainer(originalBlock.getPersistentDataContainer());
++                originalBlock.destroyPersistentDataContainer();
++                // Paper end
+                 --j;
+                 aiblockdata[j] = iblockdata;
+             }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 67dc837f..90238834 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -323,6 +323,12 @@ public class Chunk implements IChunkAccess {
+             this.sections[j >> 4] = chunksection;
+         }
+ 
++        // Paper start - remove persistent data if we are setting to air
++        if (iblockdata.isAir()) {
++            ((org.bukkit.craftbukkit.block.CraftBlock) MCUtil.toBukkitBlock(this.world, blockposition)).destroyPersistentDataContainer();
++        }
++        // Paper end
++
+         boolean flag1 = chunksection.c();
+         IBlockData iblockdata1 = chunksection.setType(i, j & 15, k, iblockdata);
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 98cc4efc..dee810e8 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -169,6 +169,7 @@ public class ChunkRegionLoader {
+ 
+             object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, abiomebase, chunkconverter, (TickList) object1, (TickList) object2, l, achunksection, (chunk) -> {
+                 loadEntities(nbttagcompound1, chunk);
++                ((org.bukkit.craftbukkit.CraftChunk) chunk.getBukkitChunk()).readBukkitValues(nbttagcompound1); // Paper - Load persistent data from NBT
+             });
+         } else {
+             ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray
+@@ -473,6 +474,8 @@ public class ChunkRegionLoader {
+             }
+             // Paper end
+ 
++            ((org.bukkit.craftbukkit.CraftChunk) chunk.getBukkitChunk()).storeBukkitValues(nbttagcompound1); // Paper - Store persistent data to NBT
++
+         } else {
+             ProtoChunk protochunk = (ProtoChunk) ichunkaccess;
+ 
+diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
+index d3d61074..4e33c8c9 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCache.java
++++ b/src/main/java/net/minecraft/server/RegionFileCache.java
+@@ -119,7 +119,7 @@ public abstract class RegionFileCache implements AutoCloseable {
+             regionfile.setStatus(chunk.x, chunk.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
+             regionfile.setOversized(chunkX, chunkZ, false);
+         } catch (RegionFile.ChunkTooLargeException ignored) {
+-            printOversizedLog("ChunkTooLarge! Someone is trying to duplicate.", regionfile.file, chunkX, chunkZ);
++            printOversizedLog("ChunkTooLarge! Too much data is being saved to this chunk. This can be a sign of someone attempting to duplicate or a plugin writing too much persistent data.", regionfile.file, chunkX, chunkZ);
+             // Clone as we are now modifying it, don't want to corrupt the pending save state
+             nbttagcompound = nbttagcompound.clone();
+             // Filter out TileEntities and Entities
+@@ -152,11 +152,36 @@ public abstract class RegionFileCache implements AutoCloseable {
+         NBTTagCompound level = chunk.getCompound("Level");
+         filterChunkList(level, oversizedLevel, "Entities");
+         filterChunkList(level, oversizedLevel, "TileEntities");
++
++        NBTTagCompound oversizedPublicBukkitValues = new NBTTagCompound();
++        NBTTagCompound publicBukkitValues = level.getCompound("PublicBukkitValues");
++        filterChunkCompound(publicBukkitValues, oversizedPublicBukkitValues, "PersistentChunkContainer");
++        filterChunkCompound(publicBukkitValues, oversizedPublicBukkitValues, "PersistentBlockContainerMap");
++        oversizedLevel.set("PublicBukkitValues", oversizedPublicBukkitValues);
++
+         NBTTagCompound oversized = new NBTTagCompound();
+         oversized.set("Level", oversizedLevel);
+         return oversized;
+     }
+ 
++    private static void filterChunkCompound(NBTTagCompound level, NBTTagCompound extra, String key) {
++        NBTTagCompound levelCompound = level.getCompound(key);
++        NBTTagCompound extraCompound = extra.getCompound(key);
++        final int[] totalSize = {0};
++        levelCompound.map.entrySet().removeIf(entry -> {
++            int nbtSize = getNBTSize(entry.getValue());
++            if (nbtSize > SIZE_THRESHOLD || (SIZE_THRESHOLD == OVERZEALOUS_THRESHOLD && totalSize[0] > OVERZEALOUS_TOTAL_THRESHOLD)) {
++                extraCompound.set(entry.getKey(), entry.getValue());
++                return true;
++            } else  {
++                totalSize[0] += nbtSize;
++                return false;
++            }
++        });
++        level.set(key, levelCompound);
++        extra.set(key, extraCompound);
++    }
++
+     private static void filterChunkList(NBTTagCompound level, NBTTagCompound extra, String key) {
+         NBTTagList list = level.getList(key, 10);
+         NBTTagList newList = extra.getList(key, 10);
+@@ -199,9 +224,13 @@ public abstract class RegionFileCache implements AutoCloseable {
+                 }
+                 NBTTagCompound oversizedLevel = oversizedData.getCompound("Level");
+                 NBTTagCompound level = chunk.getCompound("Level");
++                NBTTagCompound oversizedPublicBukkitValues = oversizedLevel.getCompound("PublicBukkitValues");
++                NBTTagCompound publicBukkitValues =  level.getCompound("PublicBukkitValues");
+ 
+                 mergeChunkList(level, oversizedLevel, "Entities");
+                 mergeChunkList(level, oversizedLevel, "TileEntities");
++                mergeChunkCompound(publicBukkitValues, oversizedPublicBukkitValues, "PersistentChunkContainer");
++                mergeChunkCompound(publicBukkitValues, oversizedPublicBukkitValues, "PersistentBlockContainerMap");
+ 
+                 chunk.set("Level", level);
+ 
+@@ -213,6 +242,16 @@ public abstract class RegionFileCache implements AutoCloseable {
+         }
+     }
+ 
++    private static void mergeChunkCompound(NBTTagCompound level, NBTTagCompound oversizedLevel, String key) {
++        NBTTagCompound levelCompound = level.getCompound(key);
++        NBTTagCompound oversizedCompound = oversizedLevel.getCompound(key);
++
++        if (!oversizedCompound.isEmpty()) {
++            levelCompound.map.putAll(oversizedCompound.map);
++            level.set(key, levelCompound);
++        }
++    }
++
+     private static void mergeChunkList(NBTTagCompound level, NBTTagCompound oversizedLevel, String key) {
+         NBTTagList levelList = level.getList(key, 10);
+         NBTTagList oversizedList = oversizedLevel.getList(key, 10);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 373bea4b..fb65c45e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -40,6 +40,12 @@ public class CraftChunk implements Chunk {
+     private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0).getBlocks();
+     private static final byte[] emptyLight = new byte[2048];
+ 
++    // Paper start
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    private final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    public final it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap<org.bukkit.persistence.PersistentDataContainer> blockContainerMap = new it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap<>();
++    // Paper end
++
+     public CraftChunk(net.minecraft.server.Chunk chunk) {
+         this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+ 
+@@ -357,6 +363,65 @@ public class CraftChunk implements Chunk {
+         return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.MOTION_BLOCKING), biome, biomeTemp);
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() {
++        return this.persistentDataContainer;
++    }
++
++    @Override
++    public java.util.Map<Short, org.bukkit.persistence.PersistentDataContainer> getPersistentBlockContainerMap() {
++        return this.blockContainerMap;
++    }
++
++    public void storeBukkitValues(NBTTagCompound nbtTagCompound) {
++        NBTTagCompound persistentBase = new NBTTagCompound();
++
++        if (!this.persistentDataContainer.isEmpty()) {
++            persistentBase.set("PersistentChunkContainer", this.persistentDataContainer.toTagCompound());
++        }
++
++        NBTTagCompound persistentBlockContainerMapBase = new NBTTagCompound();
++        this.blockContainerMap.short2ObjectEntrySet().fastForEach(craftPersistentDataContainerEntry ->
++        {
++            if (craftPersistentDataContainerEntry.getValue().isEmpty()) return;
++            persistentBlockContainerMapBase.set(String.valueOf(craftPersistentDataContainerEntry.getShortKey()), ((org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer)craftPersistentDataContainerEntry.getValue()).toTagCompound());
++        });
++        persistentBase.set("PersistentBlockContainerMap", persistentBlockContainerMapBase);
++
++        if (!persistentBase.map.isEmpty()) {
++            nbtTagCompound.set("PublicBukkitValues", persistentBase);
++        }
++    }
++
++    public void readBukkitValues(NBTTagCompound nbtTagCompound) {
++        NBTTagCompound persistentBase = nbtTagCompound.getCompound("PublicBukkitValues");
++        if (persistentBase == null) return;
++
++        NBTTagCompound persistentChunkContainerBase = persistentBase.getCompound("PersistentChunkContainer");
++        if (persistentChunkContainerBase != null) {
++            this.persistentDataContainer.putAll(persistentChunkContainerBase);
++        }
++
++        NBTTagCompound persistentBlockContainerMapBase = persistentBase.getCompound("PersistentBlockContainerMap");
++        if (persistentBlockContainerMapBase != null) {
++            persistentBlockContainerMapBase.map.forEach((key, value) -> {
++                if (value.getTypeId() != 10) {
++                    return;
++                }
++
++                org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer craftPersistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++                craftPersistentDataContainer.putAll(((NBTTagCompound) value));
++                if (craftPersistentDataContainer.isEmpty()) {
++                    return;
++                }
++
++                this.blockContainerMap.put(Short.valueOf(key).shortValue(), craftPersistentDataContainer);
++            });
++        }
++    }
++    // Paper end
++
+     private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
+         BiomeBase[] biomes = chunkmanager.getBiomeBlock(chunkX, chunkZ, 16, 16);
+         float[] temps = new float[biomes.length];
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index fc65cef6..5dc9adfd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -695,5 +695,31 @@ public class CraftBlock implements Block {
+     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
+         return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMSBlock().getBlockData().getStepSound());
+     }
++
++    @Override
++    public org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() throws UnsupportedOperationException {
++        if (this.getType() == Material.AIR) {
++            throw new UnsupportedOperationException();
++        }
++
++        short relativeKey = this.getChunkRelativeKey();
++        org.bukkit.craftbukkit.CraftChunk craftChunk = ((org.bukkit.craftbukkit.CraftChunk) this.getChunk());
++        org.bukkit.persistence.PersistentDataContainer craftPersistentDataContainer = craftChunk.blockContainerMap.getOrDefault(relativeKey, null);
++
++        if (craftPersistentDataContainer == null) {
++            craftPersistentDataContainer = craftChunk.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
++            craftChunk.blockContainerMap.put(relativeKey, craftPersistentDataContainer);
++        }
++
++        return craftPersistentDataContainer;
++    }
++
++    public void setPersistentDataContainer(org.bukkit.persistence.PersistentDataContainer persistentDataContainer) {
++        ((org.bukkit.craftbukkit.CraftChunk) this.getChunk()).blockContainerMap.put(this.getChunkRelativeKey(), persistentDataContainer);
++    }
++
++    public void destroyPersistentDataContainer() {
++        ((org.bukkit.craftbukkit.CraftChunk) this.getChunk()).blockContainerMap.remove(this.getChunkRelativeKey());
++    }
+     // Paper end
+ }
+-- 
+2.20.1.windows.1
+

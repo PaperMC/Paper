@@ -1,0 +1,146 @@
+From da82cd7843ba85c744fe60b3a9047bbcf0587f43 Mon Sep 17 00:00:00 2001
+From: BrodyBeckwith <brody@beckwith.dev>
+Date: Sun, 3 Nov 2019 13:29:42 -0500
+Subject: [PATCH] Allow chunks and blocks to save persistent data
+
+
+diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
+index 7909caef..0f971c39 100644
+--- a/src/main/java/org/bukkit/Chunk.java
++++ b/src/main/java/org/bukkit/Chunk.java
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a chunk of blocks
+  */
+-public interface Chunk {
++public interface Chunk extends org.bukkit.persistence.PersistentDataHolder { // Paper
+ 
+     /**
+      * Gets the X-coordinate of this chunk
+@@ -161,6 +161,18 @@ public interface Chunk {
+      */
+     boolean unload();
+ 
++    /**
++     * Gets a map of this chunk's relative block locations packed and their
++     * corresponding persistent data containers.
++     *
++     * @return map of relative block locations to their persistent containers.
++     * @see Block#getChunkRelativeKeyX(short)
++     * @see Block#getChunkRelativeKeyY(short)
++     * @see Block#getChunkRelativeKeyZ(short)
++     */
++    @NotNull
++    java.util.Map<Short, org.bukkit.persistence.PersistentDataContainer> getPersistentBlockContainerMap();
++
+     /**
+      * Checks if this chunk can spawn slimes without being a swamp biome.
+      *
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index 038de5a6..7c3515e2 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
+  * (i.e. lighting and power) may not be able to be safely accessed during world
+  * generation when used in cases like BlockPhysicsEvent!!!!
+  */
+-public interface Block extends Metadatable {
++public interface Block extends Metadatable, org.bukkit.persistence.PersistentDataHolder { // Paper
+ 
+     /**
+      * Gets the metadata for this block
+@@ -217,6 +217,77 @@ public interface Block extends Metadatable {
+     public static int getBlockKeyZ(long packed) {
+         return (int) ((packed << 10) >> 37);
+     }
++
++    /**
++     * Returns this block's chunk relative coordinates packed into a short value.
++     * Computed via: {@code Block.getChunkRelativeKey(this.getX(), this.getY(), this.getZ())}
++     * @see Block#getChunkRelativeKey(int, int, int)
++     * @return This block's chunk relative coordinates packed into a short value.
++     */
++    default short getChunkRelativeKey() {
++        return Block.getChunkRelativeKey(this.getX(), this.getY(), this.getZ());
++    }
++
++    /**
++     * Returns the specified block coordinates converted to their relative location
++     * in a chunk packed into a short value.
++     * <p>
++     * The return value can be computed as follows:
++     * <br>
++     * {@code short value = (short) ((short)(x & 15) | ((short)(z & 15) << 4) | ((short)(y & 255) << 8));}
++     * </p>
++     *
++     * <p>
++     * And may be unpacked as follows:
++     * <br>
++     * {@code int x = (packed & 15);}
++     * <br>
++     * {@code int y = (packed >>> 8) & 255;}
++     * <br>
++     * {@code int z = (packed >>> 4) & 15;}
++     * </p>
++     *
++     * @return This block's x, y, and z chunk relative coordinates packed into a short value.
++     */
++    static short getChunkRelativeKey(int x, int y, int z) {
++        if (y > 255) {
++            y = 255;
++        }
++        else if (y < 0) {
++            y = 0;
++        }
++        return (short) ((short)(x & 15) | ((short)(z & 15) << 4) | ((short)(y & 255) << 8));
++    }
++
++    /**
++     * Returns the x component from the packed value.
++     * @param packed The packed value, as computed by {@link Block#getChunkRelativeKey(int, int, int)}
++     * @see Block#getChunkRelativeKey(int, int, int)
++     * @return The x component from the packed value.
++     */
++    static int getChunkRelativeKeyX(short packed) {
++        return (packed & 15);
++    }
++
++    /**
++     * Returns the y component from the packed value.
++     * @param packed The packed value, as computed by {@link Block#getChunkRelativeKey(int, int, int)}
++     * @see Block#getChunkRelativeKey(int, int, int)
++     * @return The y component from the packed value.
++     */
++    static int getChunkRelativeKeyY(short packed) {
++        return (packed >>> 8) & 255;
++    }
++
++    /**
++     * Returns the z component from the packed value.
++     * @param packed The packed value, as computed by {@link Block#getChunkRelativeKey(int, int, int)}
++     * @see Block#getChunkRelativeKey(int, int, int)
++     * @return The z component from the packed value.
++     */
++    static int getChunkRelativeKeyZ(short packed) {
++        return (packed >>> 4) & 15;
++    }
+     // Paper End
+ 
+     /**
+@@ -539,5 +610,13 @@ public interface Block extends Metadatable {
+      */
+     @NotNull
+     com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup();
++
++    /**
++     * {@inheritDoc}
++     *
++     * @throws UnsupportedOperationException if the block is of type air
++     */
++    @NotNull
++    org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() throws UnsupportedOperationException;
+     // Paper end
+ }
+-- 
+2.20.1.windows.1
+
