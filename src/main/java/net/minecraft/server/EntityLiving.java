@@ -2049,6 +2049,7 @@ public abstract class EntityLiving extends Entity {
         return predicate.test(this.getItemInMainHand().getItem()) || predicate.test(this.getItemInOffHand().getItem());
     }
 
+    public final ItemStack getItemInHand(EnumHand enumhand) { return this.b(enumhand); } // Paper - OBFHELPER
     public ItemStack b(EnumHand enumhand) {
         if (enumhand == EnumHand.MAIN_HAND) {
             return this.getEquipment(EnumItemSlot.MAINHAND);

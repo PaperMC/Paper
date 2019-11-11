@@ -1473,6 +1473,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
                 return;
             }
+            // Paper start
+            itemstack = this.player.getItemInHand(enumhand);
+            if (itemstack.isEmpty()) return;
+            // Paper end
             EnumInteractionResult enuminteractionresult = this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand);
 
             if (enuminteractionresult.b()) {
