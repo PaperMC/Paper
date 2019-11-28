@@ -108,16 +108,17 @@
                  this.die();
                  this.a((Entity) null);
              }
-@@ -139,6 +175,21 @@
+@@ -139,6 +175,22 @@
              return false;
          } else {
              if (!this.dead && !this.world.isClientSide) {
 +                // CraftBukkit start - fire break events
-+                HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.DEFAULT);
-+                if (damagesource.getEntity() != null) {
-+                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damagesource.getEntity() == null ? null : damagesource.getEntity().getBukkitEntity(), damagesource.isExplosion() ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
-+                } else if (damagesource.isExplosion()) {
-+                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.EXPLOSION);
++                Entity damager = (damagesource instanceof EntityDamageSourceIndirect) ? ((EntityDamageSourceIndirect) damagesource).getProximateDamageSource() : damagesource.getEntity();
++                HangingBreakEvent event;
++                if (damager != null) {
++                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), damagesource.isExplosion() ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
++                } else {
++                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), damagesource.isExplosion() ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.DEFAULT);
 +                }
 +
 +                this.world.getServer().getPluginManager().callEvent(event);
@@ -130,7 +131,7 @@
                  this.die();
                  this.velocityChanged();
                  this.a(damagesource.getEntity());
-@@ -151,6 +202,18 @@
+@@ -151,6 +203,18 @@
      @Override
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
          if (!this.world.isClientSide && !this.dead && vec3d.g() > 0.0D) {
@@ -149,7 +150,7 @@
              this.die();
              this.a((Entity) null);
          }
-@@ -159,7 +222,7 @@
+@@ -159,7 +223,7 @@
  
      @Override
      public void f(double d0, double d1, double d2) {
