@@ -191,7 +191,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (meta instanceof CraftMetaSkull) {
             CraftMetaSkull that = (CraftMetaSkull) meta;
 
-            return (this.hasOwner() ? that.hasOwner() && this.profile.equals(that.profile) : !that.hasOwner());
+            // SPIGOT-5403: equals does not check properties
+            return (this.profile != null ? that.profile != null && this.profile.equals(that.profile) && this.profile.getProperties().equals(that.profile.getProperties()) : that.profile == null);
         }
         return true;
     }
