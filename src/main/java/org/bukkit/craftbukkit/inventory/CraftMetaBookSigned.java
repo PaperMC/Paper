@@ -56,14 +56,10 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
         if (hasTitle()) {
             itemData.setString(BOOK_TITLE.NBT, this.title);
-        } else {
-            itemData.setString(BOOK_TITLE.NBT, " ");
         }
 
         if (hasAuthor()) {
             itemData.setString(BOOK_AUTHOR.NBT, this.author);
-        } else {
-            itemData.setString(BOOK_AUTHOR.NBT, " ");
         }
 
         if (hasPages()) {
@@ -79,8 +75,6 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
 
         if (generation != null) {
             itemData.setInt(GENERATION.NBT, generation);
-        } else {
-            itemData.setInt(GENERATION.NBT, 0);
         }
     }
 
