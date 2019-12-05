@@ -33,7 +33,7 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1ad6d6483..acc84eec1 100644
+index cf9470057..2cf5ef8b7 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -105,7 +105,7 @@ index f87514a20..55c73ffca 100644
          this.uniqueID = uuid;
          this.ap = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 6379d2d84..67d011745 100644
+index db938da25..82b7d328a 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@
@@ -138,15 +138,30 @@ index 6379d2d84..67d011745 100644
                      for (int j = 0; j < i; ++j) {
                          List<Entity> entityslice = aentityslice[j]; // Spigot
 -                        Iterator iterator = entityslice.iterator();
- 
+-
 -                        while (iterator.hasNext()) {
 -                            Entity entity = (Entity) iterator.next();
+-                            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
+-                            boolean needsRemoval = false;
+-                            if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
+-                                entity.die();
+-                                needsRemoval = true;
+-                            }
+ 
+-                            if (!(entity instanceof EntityHuman) && (needsRemoval || !this.world.addEntityChunk(entity))) {
 +                        // Paper start
 +                        PaperWorldConfig.DuplicateUUIDMode mode = world.paperConfig.duplicateUUIDMode;
 +                        if (mode == PaperWorldConfig.DuplicateUUIDMode.WARN || mode == PaperWorldConfig.DuplicateUUIDMode.DELETE || mode == PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN) {
 +                            Map<UUID, Entity> thisChunk = new HashMap<>();
 +                            for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
 +                                Entity entity = iterator.next();
++
++                                // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
++                                if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
++                                    entity.die();
++                                }
+                                 // CraftBukkit end
++
 +                                if (entity.dead || entity.valid) continue;
 +                                Entity other = ((WorldServer) world).getEntity(entity.uniqueID);
 +                                if (other == null || other.dead) {
@@ -180,9 +195,7 @@ index 6379d2d84..67d011745 100644
 +                                            break;
 +                                    }
 +                                }
-+
- 
--                            if (!(entity instanceof EntityHuman) && !this.world.addEntityChunk(entity)) {
++                                // Paper end
 +                            if (!(entity instanceof EntityHuman) && (entity.dead || !this.world.addEntityChunk(entity))) { // Paper
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
