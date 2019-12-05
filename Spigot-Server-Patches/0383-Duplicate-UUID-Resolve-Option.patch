@@ -1,4 +1,4 @@
-From 18d82f31c755d23c045283654eb024db32a8eeff Mon Sep 17 00:00:00 2001
+From 8b9d55b7935238a4142c03140a818bbdfc72dc5e Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 21 Jul 2018 14:27:34 -0400
 Subject: [PATCH] Duplicate UUID Resolve Option
@@ -33,7 +33,7 @@ But for those who are ok with leaving this inconsistent behavior, you may use WA
 It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 1ad6d6483..acc84eec1 100644
+index cf9470057..2cf5ef8b7 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -449,4 +449,43 @@ public class PaperWorldConfig {
@@ -105,7 +105,7 @@ index f87514a20..55c73ffca 100644
          this.uniqueID = uuid;
          this.ap = this.uniqueID.toString();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 6379d2d84..67d011745 100644
+index db938da25..82b7d328a 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -1,6 +1,7 @@
@@ -133,20 +133,35 @@ index 6379d2d84..67d011745 100644
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.CompletionException;
  import java.util.concurrent.Executor;
-@@ -593,12 +597,49 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -593,19 +597,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                      for (int j = 0; j < i; ++j) {
                          List<Entity> entityslice = aentityslice[j]; // Spigot
 -                        Iterator iterator = entityslice.iterator();
- 
+-
 -                        while (iterator.hasNext()) {
 -                            Entity entity = (Entity) iterator.next();
+-                            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
+-                            boolean needsRemoval = false;
+-                            if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
+-                                entity.die();
+-                                needsRemoval = true;
+-                            }
+ 
+-                            if (!(entity instanceof EntityHuman) && (needsRemoval || !this.world.addEntityChunk(entity))) {
 +                        // Paper start
 +                        PaperWorldConfig.DuplicateUUIDMode mode = world.paperConfig.duplicateUUIDMode;
 +                        if (mode == PaperWorldConfig.DuplicateUUIDMode.WARN || mode == PaperWorldConfig.DuplicateUUIDMode.DELETE || mode == PaperWorldConfig.DuplicateUUIDMode.SAFE_REGEN) {
 +                            Map<UUID, Entity> thisChunk = new HashMap<>();
 +                            for (Iterator<Entity> iterator = ((List<Entity>) entityslice).iterator(); iterator.hasNext(); ) {
 +                                Entity entity = iterator.next();
++
++                                // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
++                                if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
++                                    entity.die();
++                                }
+                                 // CraftBukkit end
++
 +                                if (entity.dead || entity.valid) continue;
 +                                Entity other = ((WorldServer) world).getEntity(entity.uniqueID);
 +                                if (other == null || other.dead) {
@@ -180,14 +195,12 @@ index 6379d2d84..67d011745 100644
 +                                            break;
 +                                    }
 +                                }
-+
- 
--                            if (!(entity instanceof EntityHuman) && !this.world.addEntityChunk(entity)) {
++                                // Paper end
 +                            if (!(entity instanceof EntityHuman) && (entity.dead || !this.world.addEntityChunk(entity))) { // Paper
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -606,6 +647,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -613,6 +653,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                                  }
                              }
                          }
@@ -244,5 +257,5 @@ index cc2c13990..29bb795f7 100644
                  logger.error("Overwrote an existing entity " + old + " with " + entity);
                  if (DEBUG_ENTITIES) {
 -- 
-2.23.0
+2.24.0
 

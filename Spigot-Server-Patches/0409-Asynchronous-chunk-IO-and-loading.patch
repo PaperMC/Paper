@@ -1,4 +1,4 @@
-From 7245bd98a8538578656b46e9fdba082d409dc0cf Mon Sep 17 00:00:00 2001
+From f50b22a006bec81218b6cdaa1f7162cc17d9d74b Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -121,7 +121,7 @@ tasks required to be executed by the chunk load task (i.e lighting
 and some poi tasks).
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 3a79cde595..8de6c4816c 100644
+index 3a79cde59..8de6c4816 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -63,6 +63,17 @@ public class WorldTimingsHandler {
@@ -161,7 +161,7 @@ index 3a79cde595..8de6c4816c 100644
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index c88b5e9dd6..93c0c422da 100644
+index c88b5e9dd..93c0c422d 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,5 +1,6 @@
@@ -237,7 +237,7 @@ index c88b5e9dd6..93c0c422da 100644
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-index 23626bef3a..1edcecd2ee 100644
+index 23626bef3..1edcecd2e 100644
 --- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 @@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
@@ -318,7 +318,7 @@ index 23626bef3a..1edcecd2ee 100644
  
 diff --git a/src/main/java/com/destroystokyo/paper/io/IOUtil.java b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
 new file mode 100644
-index 0000000000..5af0ac3d9e
+index 000000000..5af0ac3d9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/IOUtil.java
 @@ -0,0 +1,62 @@
@@ -386,7 +386,7 @@ index 0000000000..5af0ac3d9e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
 new file mode 100644
-index 0000000000..4f10a8311e
+index 000000000..4f10a8311
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/PaperFileIOThread.java
 @@ -0,0 +1,661 @@
@@ -1053,7 +1053,7 @@ index 0000000000..4f10a8311e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 new file mode 100644
-index 0000000000..78bd238f4c
+index 000000000..78bd238f4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 @@ -0,0 +1,276 @@
@@ -1335,7 +1335,7 @@ index 0000000000..78bd238f4c
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 new file mode 100644
-index 0000000000..ee906b594b
+index 000000000..ee906b594
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/QueueExecutorThread.java
 @@ -0,0 +1,241 @@
@@ -1582,7 +1582,7 @@ index 0000000000..ee906b594b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000..305da47868
+index 000000000..305da4786
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 @@ -0,0 +1,149 @@
@@ -1737,7 +1737,7 @@ index 0000000000..305da47868
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 new file mode 100644
-index 0000000000..60312b85f9
+index 000000000..60312b85f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkSaveTask.java
 @@ -0,0 +1,112 @@
@@ -1855,7 +1855,7 @@ index 0000000000..60312b85f9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
 new file mode 100644
-index 0000000000..1dfa8abfd8
+index 000000000..1dfa8abfd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTask.java
 @@ -0,0 +1,40 @@
@@ -1901,7 +1901,7 @@ index 0000000000..1dfa8abfd8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..59d73bfad7
+index 000000000..59d73bfad
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +1,453 @@
@@ -2359,7 +2359,7 @@ index 0000000000..59d73bfad7
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 56761afdf4..277c2245d7 100644
+index 56761afdf..277c2245d 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -124,11 +124,137 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2529,7 +2529,7 @@ index 56761afdf4..277c2245d7 100644
          } finally {
              playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index a028074112..98cc4efcf5 100644
+index a02807411..98cc4efcf 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -2798,7 +2798,7 @@ index a028074112..98cc4efcf5 100644
  
          nbttagcompound1.set("PostProcessing", a(ichunkaccess.l()));
 diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
-index e324989b46..abb0d69d2f 100644
+index e324989b4..abb0d69d2 100644
 --- a/src/main/java/net/minecraft/server/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/server/ChunkStatus.java
 @@ -153,6 +153,7 @@ public class ChunkStatus {
@@ -2810,7 +2810,7 @@ index e324989b46..abb0d69d2f 100644
          return ChunkStatus.r.getInt(chunkstatus.c());
      }
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index d521d25cf5..84024e6ba4 100644
+index d521d25cf..84024e6ba 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -91,7 +91,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
@@ -2823,7 +2823,7 @@ index d521d25cf5..84024e6ba4 100644
              ;
          }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 3f14392e6e..39f6ddb1d2 100644
+index 3f14392e6..39f6ddb1d 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -3,6 +3,10 @@ package net.minecraft.server;
@@ -2895,7 +2895,7 @@ index 3f14392e6e..39f6ddb1d2 100644
  
      }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 23d1935dd5..14f8b61042 100644
+index 23d1935dd..14f8b6104 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -530,4 +530,9 @@ public final class MCUtil {
@@ -2909,7 +2909,7 @@ index 23d1935dd5..14f8b61042 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5238a1a7ca..0b00581382 100644
+index 5238a1a7c..0b0058138 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -780,6 +780,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -2921,7 +2921,7 @@ index 5238a1a7ca..0b00581382 100644
  
      public String getServerIp() {
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
-index cafb5d8830..53a290e8b5 100644
+index cafb5d883..53a290e8b 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -4,7 +4,7 @@ import java.util.Comparator;
@@ -2943,7 +2943,7 @@ index cafb5d8830..53a290e8b5 100644
          this.e = t0;
          this.b = i;
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
-index 90c096876e..eb2c061550 100644
+index 90c096876..eb2c06155 100644
 --- a/src/main/java/net/minecraft/server/NibbleArray.java
 +++ b/src/main/java/net/minecraft/server/NibbleArray.java
 @@ -71,6 +71,7 @@ public class NibbleArray {
@@ -2955,7 +2955,7 @@ index 90c096876e..eb2c061550 100644
          return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index af934ef8bc..34d0ab0d5e 100644
+index af934ef8b..34d0ab0d5 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -310,7 +310,7 @@ public class PlayerChunk {
@@ -2981,7 +2981,7 @@ index af934ef8bc..34d0ab0d5e 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index fd0d2b6e67..31d106f951 100644
+index a5df9fee6..6b36bbe87 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -62,7 +62,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3242,7 +3242,7 @@ index fd0d2b6e67..31d106f951 100644
      }
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> b(PlayerChunk playerchunk, ChunkStatus chunkstatus) {
-@@ -746,18 +838,43 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -752,18 +844,43 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return this.v.get();
      }
  
@@ -3294,7 +3294,7 @@ index fd0d2b6e67..31d106f951 100644
  
              ichunkaccess.setLastSaved(this.world.getTime());
              ichunkaccess.setNeedsSaving(false);
-@@ -768,27 +885,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -774,27 +891,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  NBTTagCompound nbttagcompound;
  
                  if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
@@ -3331,7 +3331,7 @@ index fd0d2b6e67..31d106f951 100644
      }
  
      protected void setViewDistance(int i) {
-@@ -892,6 +1015,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -898,6 +1021,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          }
      }
  
@@ -3374,7 +3374,7 @@ index fd0d2b6e67..31d106f951 100644
      @Nullable
      public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
-@@ -914,12 +1073,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -920,12 +1079,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      // Paper start - chunk status cache "api"
      public ChunkStatus getChunkStatusOnDiskIfCached(ChunkCoordIntPair chunkPos) {
@@ -3417,7 +3417,7 @@ index fd0d2b6e67..31d106f951 100644
          RegionFile regionFile = this.getRegionFile(chunkPos, false);
  
          if (!regionFile.chunkExists(chunkPos)) {
-@@ -931,18 +1120,56 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -937,18 +1126,56 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          if (status != null) {
              return status;
          }
@@ -3476,7 +3476,7 @@ index fd0d2b6e67..31d106f951 100644
      public IChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
          PlayerChunk chunkHolder = this.pendingUnload.get(ChunkCoordIntPair.pair(chunkX, chunkZ));
          return chunkHolder == null ? null : chunkHolder.getAvailableChunkNow();
-@@ -1290,6 +1517,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1296,6 +1523,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
@@ -3485,7 +3485,7 @@ index fd0d2b6e67..31d106f951 100644
          return this.n;
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index a8c8ace46c..22144eb002 100644
+index a8c8ace46..22144eb00 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -343,7 +343,7 @@ public class RegionFile implements AutoCloseable {
@@ -3498,7 +3498,7 @@ index a8c8ace46c..22144eb002 100644
          this.b.close();
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index d2b3289450..d3d6107422 100644
+index d2b328945..d3d610742 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -48,13 +48,13 @@ public abstract class RegionFileCache implements AutoCloseable {
@@ -3527,7 +3527,7 @@ index d2b3289450..d3d6107422 100644
          RegionFile regionfile = a(pos, true);
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index 4b3e0c0f01..04b7dab646 100644
+index 4b3e0c0f0..04b7dab64 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
 +++ b/src/main/java/net/minecraft/server/RegionFileSection.java
 @@ -24,7 +24,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
@@ -3629,7 +3629,7 @@ index 4b3e0c0f01..04b7dab646 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
-index 9c114d2d37..e3150f85a5 100644
+index 9c114d2d3..e3150f85a 100644
 --- a/src/main/java/net/minecraft/server/TicketType.java
 +++ b/src/main/java/net/minecraft/server/TicketType.java
 @@ -22,6 +22,7 @@ public class TicketType<T> {
@@ -3641,7 +3641,7 @@ index 9c114d2d37..e3150f85a5 100644
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index 3169590641..0e98b7803b 100644
+index 316959064..0e98b7803 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
 @@ -20,8 +20,16 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
@@ -3730,7 +3730,7 @@ index 3169590641..0e98b7803b 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 1330956655..5e0f6a105d 100644
+index 133095665..5e0f6a105 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -79,6 +79,79 @@ public class WorldServer extends World {
@@ -3823,7 +3823,7 @@ index 1330956655..5e0f6a105d 100644
  
      // CraftBukkit start
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 2227de3bf1..243722b672 100644
+index 2227de3bf..243722b67 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -554,22 +554,23 @@ public class CraftWorld implements World {
@@ -3885,7 +3885,7 @@ index 2227de3bf1..243722b672 100644
      @Override
      public int getViewDistance() {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a1d93200e6..6ca0ebfdee 100644
+index a1d93200e..6ca0ebfde 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -6,6 +6,7 @@ import java.lang.management.ThreadInfo;
