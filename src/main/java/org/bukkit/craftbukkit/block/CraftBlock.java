@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.minecraft.server.AxisAlignedBB;
@@ -141,10 +142,6 @@ public class CraftBlock implements Block {
         world.setTypeAndData(position, CraftMagicNumbers.getBlock(getType(), data), flag);
     }
 
-    private IBlockData getData0() {
-        return world.getType(position);
-    }
-
     @Override
     public byte getData() {
         IBlockData blockData = world.getType(position);
@@ -153,7 +150,7 @@ public class CraftBlock implements Block {
 
     @Override
     public BlockData getBlockData() {
-       return CraftBlockData.fromData(getData0());
+       return CraftBlockData.fromData(getNMS());
     }
 
     @Override
@@ -612,8 +609,16 @@ public class CraftBlock implements Block {
 
     @Override
     public Collection<ItemStack> getDrops(ItemStack item) {
-        return net.minecraft.server.Block.getDrops(getNMS(), (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), null, CraftItemStack.asNMSCopy(item))
-                .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+        IBlockData iblockdata = getNMS();
+        net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
+
+        // Modelled off EntityHuman#hasBlock
+        if (iblockdata.getMaterial().isAlwaysDestroyable() || nms.b(iblockdata)) {
+            return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), null, nms)
+                    .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -638,7 +643,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isPassable() {
-        return this.getData0().getCollisionShape(world, position).isEmpty();
+        return this.getNMS().getCollisionShape(world, position).isEmpty();
     }
 
     @Override
@@ -666,7 +671,7 @@ public class CraftBlock implements Block {
 
     @Override
     public BoundingBox getBoundingBox() {
-        VoxelShape shape = getData0().getShape(world, position);
+        VoxelShape shape = getNMS().getShape(world, position);
 
         if (shape.isEmpty()) {
             return new BoundingBox(); // Return an empty bounding box if the block has no dimension
