@@ -1,7 +1,6 @@
 package org.bukkit.event.block;
 
 import java.util.List;
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Item;
@@ -24,11 +23,7 @@ import org.jetbrains.annotations.NotNull;
  * The Block is already broken as this event is called, so #getBlock() will be
  * AIR in most cases. Use #getBlockState() for more Information about the broken
  * block.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class BlockDropItemEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

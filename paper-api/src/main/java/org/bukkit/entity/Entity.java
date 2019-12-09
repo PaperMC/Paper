@@ -113,9 +113,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param yaw the yaw
      * @param pitch the pitch
      * @throws UnsupportedOperationException if used for players
-     * @deprecated draft API
      */
-    @Deprecated
     public void setRotation(float yaw, float pitch);
 
     /**
