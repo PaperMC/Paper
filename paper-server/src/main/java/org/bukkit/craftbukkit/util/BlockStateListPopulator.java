@@ -33,7 +33,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     @Override
     public Fluid getFluid(BlockPosition bp) {
         CraftBlockState state = list.get(bp);
-        return (state != null) ? state.getHandle().p() : world.getFluid(bp);
+        return (state != null) ? state.getHandle().getFluid() : world.getFluid(bp);
     }
 
     @Override

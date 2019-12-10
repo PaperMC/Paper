@@ -11,17 +11,17 @@
 +
  public class EntityWolf extends EntityTameableAnimal {
  
-     private static final DataWatcherObject<Float> DATA_HEALTH = DataWatcher.a(EntityWolf.class, DataWatcherRegistry.c);
-@@ -42,7 +47,7 @@
+     private static final DataWatcherObject<Boolean> bA = DataWatcher.a(EntityWolf.class, DataWatcherRegistry.i);
+@@ -41,7 +46,7 @@
          this.goalSelector.a(10, new PathfinderGoalRandomLookaround(this));
          this.targetSelector.a(1, new PathfinderGoalOwnerHurtByTarget(this));
          this.targetSelector.a(2, new PathfinderGoalOwnerHurtTarget(this));
 -        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
 +        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a(new Class[0])); // CraftBukkit - decompile error
-         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityAnimal.class, false, EntityWolf.bC));
-         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityTurtle.class, false, EntityTurtle.bz));
+         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityAnimal.class, false, EntityWolf.bz));
+         this.targetSelector.a(4, new PathfinderGoalRandomTargetNonTamed<>(this, EntityTurtle.class, false, EntityTurtle.bw));
          this.targetSelector.a(5, new PathfinderGoalNearestAttackableTarget<>(this, EntitySkeletonAbstract.class, false));
-@@ -61,6 +66,22 @@
+@@ -60,6 +65,22 @@
          this.getAttributeMap().b(GenericAttributes.ATTACK_DAMAGE).setValue(2.0D);
      }
  
@@ -44,7 +44,7 @@
      @Override
      public void setGoalTarget(@Nullable EntityLiving entityliving) {
          super.setGoalTarget(entityliving);
-@@ -101,6 +122,11 @@
+@@ -94,6 +115,11 @@
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
          this.setAngry(nbttagcompound.getBoolean("Angry"));
@@ -56,7 +56,7 @@
          if (nbttagcompound.hasKeyOfType("CollarColor", 99)) {
              this.setCollarColor(EnumColor.fromColorIndex(nbttagcompound.getInt("CollarColor")));
          }
-@@ -137,7 +163,7 @@
+@@ -130,7 +156,7 @@
              this.world.broadcastEntityEffect(this, (byte) 8);
          }
  
@@ -65,7 +65,7 @@
              this.setAngry(false);
          }
  
-@@ -217,7 +243,8 @@
+@@ -210,7 +236,8 @@
              Entity entity = damagesource.getEntity();
  
              if (this.goalSit != null) {
@@ -75,37 +75,39 @@
              }
  
              if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
-@@ -264,7 +291,7 @@
-                             itemstack.subtract(1);
-                         }
- 
--                        this.heal((float) item.getFoodInfo().getNutrition());
-+                        this.heal((float) item.getFoodInfo().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
-                         return true;
+@@ -237,7 +264,7 @@
+         super.setTamed(flag);
+         if (flag) {
+             this.getAttributeInstance(GenericAttributes.MAX_HEALTH).setValue(20.0D);
+-            this.setHealth(20.0F);
++            this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
+         } else {
+             this.getAttributeInstance(GenericAttributes.MAX_HEALTH).setValue(8.0D);
+         }
+@@ -261,7 +288,7 @@
+                         itemstack.subtract(1);
                      }
-                 } else if (item instanceof ItemDye) {
-@@ -285,7 +312,7 @@
-                 this.goalSit.setSitting(!this.isSitting());
-                 this.jumping = false;
-                 this.navigation.o();
--                this.setGoalTarget((EntityLiving) null);
-+                this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
-             }
-         } else if (item == Items.BONE && !this.isAngry()) {
-             if (!entityhuman.abilities.canInstantlyBuild) {
-@@ -293,12 +320,13 @@
-             }
  
-             if (!this.world.isClientSide) {
+-                    this.heal((float) item.getFoodInfo().getNutrition());
++                    this.heal((float) item.getFoodInfo().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+                     return true;
+                 }
+ 
+@@ -290,14 +317,15 @@
+                     this.goalSit.setSitting(!this.isSitting());
+                     this.jumping = false;
+                     this.navigation.o();
+-                    this.setGoalTarget((EntityLiving) null);
++                    this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
+                 }
+             } else if (item == Items.BONE && !this.isAngry()) {
+                 if (!entityhuman.abilities.canInstantlyBuild) {
+                     itemstack.subtract(1);
+                 }
+ 
 -                if (this.random.nextInt(3) == 0) {
 +                // CraftBukkit - added event call and isCancelled check.
 +                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                      this.tame(entityhuman);
                      this.navigation.o();
                      this.setGoalTarget((EntityLiving) null);
-                     this.goalSit.setSitting(true);
--                    this.setHealth(20.0F);
-+                    this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
-                     this.r(true);
-                     this.world.broadcastEntityEffect(this, (byte) 7);
-                 } else {

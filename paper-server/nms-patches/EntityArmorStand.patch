@@ -15,7 +15,7 @@
 +
  public class EntityArmorStand extends EntityLiving {
  
-     private static final Vector3f bu = new Vector3f(0.0F, 0.0F, 0.0F);
+     private static final Vector3f br = new Vector3f(0.0F, 0.0F, 0.0F);
 @@ -53,6 +62,13 @@
          this.setPosition(d0, d1, d2);
      }
@@ -28,31 +28,31 @@
 +    // CraftBukkit end
 +
      @Override
-     public void updateSize() {
-         double d0 = this.locX;
-@@ -374,6 +390,21 @@
-         if (itemstack1.isEmpty() || (this.bE & 1 << enumitemslot.c() + 8) == 0) {
-             if (!itemstack1.isEmpty() || (this.bE & 1 << enumitemslot.c() + 16) == 0) {
-                 ItemStack itemstack2;
-+                // CraftBukkit start
-+                org.bukkit.inventory.ItemStack armorStandItem = CraftItemStack.asCraftMirror(itemstack1);
-+                org.bukkit.inventory.ItemStack playerHeldItem = CraftItemStack.asCraftMirror(itemstack);
+     public boolean bt() {
+         return !this.isMarker() && super.bt();
+@@ -386,6 +402,21 @@
+             return false;
+         } else {
+             ItemStack itemstack2;
++            // CraftBukkit start
++            org.bukkit.inventory.ItemStack armorStandItem = CraftItemStack.asCraftMirror(itemstack1);
++            org.bukkit.inventory.ItemStack playerHeldItem = CraftItemStack.asCraftMirror(itemstack);
 +
-+                Player player = (Player) entityhuman.getBukkitEntity();
-+                ArmorStand self = (ArmorStand) this.getBukkitEntity();
++            Player player = (Player) entityhuman.getBukkitEntity();
++            ArmorStand self = (ArmorStand) this.getBukkitEntity();
 +
-+                EquipmentSlot slot = CraftEquipmentSlot.getSlot(enumitemslot);
-+                PlayerArmorStandManipulateEvent armorStandManipulateEvent = new PlayerArmorStandManipulateEvent(player,self,playerHeldItem,armorStandItem,slot);
-+                this.world.getServer().getPluginManager().callEvent(armorStandManipulateEvent);
++            EquipmentSlot slot = CraftEquipmentSlot.getSlot(enumitemslot);
++            PlayerArmorStandManipulateEvent armorStandManipulateEvent = new PlayerArmorStandManipulateEvent(player,self,playerHeldItem,armorStandItem,slot);
++            this.world.getServer().getPluginManager().callEvent(armorStandManipulateEvent);
 +
-+                if (armorStandManipulateEvent.isCancelled()) {
-+                    return;
-+                }
-+                // CraftBukkit end
++            if (armorStandManipulateEvent.isCancelled()) {
++                return true;
++            }
++            // CraftBukkit end
  
-                 if (entityhuman.abilities.canInstantlyBuild && itemstack1.isEmpty() && !itemstack.isEmpty()) {
-                     itemstack2 = itemstack.cloneItemStack();
-@@ -398,12 +429,22 @@
+             if (entityhuman.abilities.canInstantlyBuild && itemstack1.isEmpty() && !itemstack.isEmpty()) {
+                 itemstack2 = itemstack.cloneItemStack();
+@@ -414,12 +445,22 @@
      public boolean damageEntity(DamageSource damagesource, float f) {
          if (!this.world.isClientSide && !this.dead) {
              if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
@@ -64,10 +64,10 @@
 +                // CraftBukkit end
 +                this.killEntity(); // CraftBukkit - this.die() -> this.killEntity()
                  return false;
--            } else if (!this.isInvulnerable(damagesource) && !this.bD && !this.isMarker()) {
-+            } else if (!this.isInvulnerable(damagesource) && (true || !this.bD) && !this.isMarker()) { // CraftBukkit
+-            } else if (!this.isInvulnerable(damagesource) && !this.armorStandInvisible && !this.isMarker()) {
++            } else if (!this.isInvulnerable(damagesource) && (true || !this.armorStandInvisible) && !this.isMarker()) { // CraftBukkit
 +                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, true, this.bD)) { // PAIL: armorStandInvisible
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, true, this.armorStandInvisible)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
@@ -78,7 +78,7 @@
                      return false;
                  } else if (DamageSource.FIRE.equals(damagesource)) {
                      if (this.isBurning()) {
-@@ -428,7 +469,7 @@
+@@ -444,7 +485,7 @@
                      } else if (damagesource.v()) {
                          this.F();
                          this.D();
@@ -87,7 +87,7 @@
                          return flag1;
                      } else {
                          long i = this.world.getTime();
-@@ -439,7 +480,7 @@
+@@ -455,7 +496,7 @@
                          } else {
                              this.f(damagesource);
                              this.D();
@@ -96,7 +96,7 @@
                          }
  
                          return true;
-@@ -466,7 +507,7 @@
+@@ -482,7 +523,7 @@
          f1 -= f;
          if (f1 <= 0.5F) {
              this.g(damagesource);
@@ -105,7 +105,7 @@
          } else {
              this.setHealth(f1);
          }
-@@ -474,13 +515,13 @@
+@@ -490,13 +531,13 @@
      }
  
      private void f(DamageSource damagesource) {
@@ -121,7 +121,7 @@
  
          ItemStack itemstack;
          int i;
-@@ -488,7 +529,7 @@
+@@ -504,7 +545,7 @@
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -130,7 +130,7 @@
                  this.handItems.set(i, ItemStack.a);
              }
          }
-@@ -496,10 +537,11 @@
+@@ -512,10 +553,11 @@
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -143,7 +143,7 @@
  
      }
  
-@@ -600,8 +642,16 @@
+@@ -616,8 +658,16 @@
          return this.isSmall();
      }
  

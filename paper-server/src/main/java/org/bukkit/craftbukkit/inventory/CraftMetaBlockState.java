@@ -10,6 +10,7 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityBanner;
 import net.minecraft.server.TileEntityBarrel;
 import net.minecraft.server.TileEntityBeacon;
+import net.minecraft.server.TileEntityBeehive;
 import net.minecraft.server.TileEntityBell;
 import net.minecraft.server.TileEntityBlastFurnace;
 import net.minecraft.server.TileEntityBrewingStand;
@@ -42,6 +43,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.block.CraftBanner;
 import org.bukkit.craftbukkit.block.CraftBarrel;
 import org.bukkit.craftbukkit.block.CraftBeacon;
+import org.bukkit.craftbukkit.block.CraftBeehive;
 import org.bukkit.craftbukkit.block.CraftBell;
 import org.bukkit.craftbukkit.block.CraftBlastFurnace;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
@@ -238,6 +240,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case JIGSAW:
             case LECTERN:
             case SMOKER:
+            case BEEHIVE:
                 return true;
         }
         return false;
@@ -500,6 +503,11 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntitySmoker();
             }
             return new CraftSmoker(material, (TileEntitySmoker) te);
+        case BEEHIVE:
+            if (te == null){
+                te = new TileEntityBeehive();
+            }
+            return new CraftBeehive(material, (TileEntityBeehive) te);
         default:
             throw new IllegalStateException("Missing blockState for " + material);
         }
@@ -665,6 +673,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case SMOKER:
             valid = blockState instanceof CraftSmoker;
             break;
+        case BEEHIVE:
+            valid = blockState instanceof CraftBeehive;
         default:
             valid = false;
             break;

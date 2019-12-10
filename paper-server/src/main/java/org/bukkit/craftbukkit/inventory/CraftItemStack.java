@@ -392,6 +392,7 @@ public final class CraftItemStack extends ItemStack {
             case YELLOW_WALL_BANNER:
                 return new CraftMetaBanner(item.getTag());
             case BAT_SPAWN_EGG:
+            case BEE_SPAWN_EGG:
             case BLAZE_SPAWN_EGG:
             case CAT_SPAWN_EGG:
             case CAVE_SPIDER_SPAWN_EGG:
@@ -509,6 +510,7 @@ public final class CraftItemStack extends ItemStack {
             case JIGSAW:
             case LECTERN:
             case SMOKER:
+            case BEEHIVE:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());
@@ -556,6 +558,10 @@ public final class CraftItemStack extends ItemStack {
 
         ((CraftMetaItem) itemMeta).applyToItem(tag);
         item.convertStack(((CraftMetaItem) itemMeta).getVersion());
+        // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
+        if (item.getItem() != null && item.getItem().usesDurability()) {
+            item.setDamage(item.getDamage());
+        }
 
         return true;
     }

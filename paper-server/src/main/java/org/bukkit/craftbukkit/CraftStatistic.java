@@ -91,7 +91,9 @@ public enum CraftStatistic {
     INTERACT_WITH_STONECUTTER(StatisticList.INTERACT_WITH_STONECUTTER),
     BELL_RING(StatisticList.BELL_RING),
     RAID_TRIGGER(StatisticList.RAID_TRIGGER),
-    RAID_WIN(StatisticList.RAID_WIN);
+    RAID_WIN(StatisticList.RAID_WIN),
+    INTERACT_WITH_ANVIL(StatisticList.INTERACT_WITH_ANVIL),
+    INTERACT_WITH_GRINDSTONE(StatisticList.INTERACT_WITH_GRINDSTONE);
     private final MinecraftKey minecraftKey;
     private final org.bukkit.Statistic bukkit;
     private static final BiMap<MinecraftKey, org.bukkit.Statistic> statistics;

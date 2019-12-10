@@ -392,6 +392,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.server.BlockBannerWall.class, org.bukkit.craftbukkit.block.impl.CraftBannerWall::new);
         register(net.minecraft.server.BlockBarrel.class, org.bukkit.craftbukkit.block.impl.CraftBarrel::new);
         register(net.minecraft.server.BlockBed.class, org.bukkit.craftbukkit.block.impl.CraftBed::new);
+        register(net.minecraft.server.BlockBeehive.class, org.bukkit.craftbukkit.block.impl.CraftBeehive::new);
         register(net.minecraft.server.BlockBeetroot.class, org.bukkit.craftbukkit.block.impl.CraftBeetroot::new);
         register(net.minecraft.server.BlockBell.class, org.bukkit.craftbukkit.block.impl.CraftBell::new);
         register(net.minecraft.server.BlockBlastFurnace.class, org.bukkit.craftbukkit.block.impl.CraftBlastFurnace::new);

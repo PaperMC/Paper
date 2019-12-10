@@ -84,6 +84,10 @@ public enum CraftParticle {
     FALLING_LAVA("falling_lava"),
     LANDING_LAVA("landing_lava"),
     FALLING_WATER("falling_water"),
+    DRIPPING_HONEY("dripping_honey"),
+    FALLING_HONEY("falling_honey"),
+    LANDING_HONEY("landing_honey"),
+    FALLING_NECTAR("falling_nectar"),
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK("block"),
     LEGACY_BLOCK_DUST("block"),

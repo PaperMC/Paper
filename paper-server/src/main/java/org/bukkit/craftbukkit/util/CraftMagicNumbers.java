@@ -188,12 +188,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "11ae498d9cf909730659b6357e7c2afa";
+        return "e50e3dd1d07234cc9c09cb516a951227";
     }
 
     @Override
     public int getDataVersion() {
-        return SharedConstants.a().getWorldVersion();
+        return SharedConstants.getGameVersion().getWorldVersion();
     }
 
     @Override
@@ -247,7 +247,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return file.delete();
     }
 
-    private static final List<String> SUPPORTED_API = Arrays.asList("1.13", "1.14");
+    private static final List<String> SUPPORTED_API = Arrays.asList("1.13", "1.14", "1.15");
 
     @Override
     public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {

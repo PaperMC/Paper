@@ -94,7 +94,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return false;
         }
 
-        getHandle().e(position); // PAIL rename sleep
+        getHandle().entitySleep(position);
         return true;
     }
 
@@ -102,7 +102,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void wakeup() {
         Preconditions.checkState(isSleeping(), "Cannot wakeup if not sleeping");
 
-        getHandle().dy(); // PAIL rename wakeup
+        getHandle().entityWakeup();
     }
 
     public static Profession nmsToBukkitProfession(VillagerProfession nms) {

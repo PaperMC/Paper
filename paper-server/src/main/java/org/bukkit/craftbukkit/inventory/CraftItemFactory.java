@@ -141,6 +141,7 @@ public final class CraftItemFactory implements ItemFactory {
         case YELLOW_WALL_BANNER:
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
         case BAT_SPAWN_EGG:
+        case BEE_SPAWN_EGG:
         case BLAZE_SPAWN_EGG:
         case CAT_SPAWN_EGG:
         case CAVE_SPIDER_SPAWN_EGG:
@@ -258,6 +259,7 @@ public final class CraftItemFactory implements ItemFactory {
         case JIGSAW:
         case LECTERN:
         case SMOKER:
+        case BEEHIVE:
           return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);

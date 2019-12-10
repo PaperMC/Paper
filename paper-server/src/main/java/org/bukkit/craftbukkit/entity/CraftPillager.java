@@ -30,6 +30,6 @@ public class CraftPillager extends CraftIllager implements Pillager {
 
     @Override
     public Inventory getInventory() {
-        return new CraftInventory(getHandle().getInventory());
+        return new CraftInventory(getHandle().inventory);
     }
 }

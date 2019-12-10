@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory.util;
 
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.DimensionManager;
 import net.minecraft.server.IInventory;
 import net.minecraft.server.MinecraftServer;
@@ -49,7 +50,7 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         @Override
         public IInventory getTileEntity() {
             TileEntityFurnace furnace = new TileEntityFurnaceFurnace();
-            furnace.setWorld(MinecraftServer.getServer().getWorldServer(DimensionManager.OVERWORLD)); // TODO: customize this if required
+            furnace.setLocation(MinecraftServer.getServer().getWorldServer(DimensionManager.OVERWORLD), BlockPosition.ZERO); // TODO: customize this if required
             return furnace;
         }
 

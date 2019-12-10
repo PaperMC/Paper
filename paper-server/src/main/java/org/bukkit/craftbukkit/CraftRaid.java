@@ -24,40 +24,40 @@ public final class CraftRaid implements Raid {
 
     @Override
     public boolean isStarted() {
-        return handle.j(); // PAIL rename isStarted
+        return handle.isStarted();
     }
 
     @Override
     public long getActiveTicks() {
-        return handle.i;
+        return handle.ticksActive;
     }
 
     @Override
     public int getBadOmenLevel() {
-        return handle.o;
+        return handle.badOmenLevel;
     }
 
     @Override
     public void setBadOmenLevel(int badOmenLevel) {
-        int max = handle.l(); // PAIL rename getMaxBadOmenLevel
+        int max = handle.getMaxBadOmenLevel();
         Preconditions.checkArgument(0 <= badOmenLevel && badOmenLevel <= max, "Bad Omen level must be between 0 and %s", max);
-        handle.o = badOmenLevel;
+        handle.badOmenLevel = badOmenLevel;
     }
 
     @Override
     public Location getLocation() {
-        BlockPosition pos = handle.t(); // PAIL rename getCenterLocation
-        World world = handle.i(); // PAIL rename getWorld
+        BlockPosition pos = handle.getCenter();
+        World world = handle.getWorld();
         return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
     }
 
     @Override
     public RaidStatus getStatus() {
-        if (handle.d()) { // PAIL rename isStopped
+        if (handle.isStopped()) {
             return RaidStatus.STOPPED;
-        } else if (handle.e()) { // PAIL rename isVictory
+        } else if (handle.isVictory()) {
             return RaidStatus.VICTORY;
-        } else if (handle.f()) { // PAIL rename isLoss
+        } else if (handle.isLoss()) {
             return RaidStatus.LOSS;
         } else {
             return RaidStatus.ONGOING;
@@ -66,27 +66,27 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getSpawnedGroups() {
-        return handle.k(); // PAIL rename countSpawnedGroups
+        return handle.getGroupsSpawned();
     }
 
     @Override
     public int getTotalGroups() {
-        return handle.v + (handle.o > 1 ? 1 : 0);
+        return handle.numGroups + (handle.badOmenLevel > 1 ? 1 : 0);
     }
 
     @Override
     public int getTotalWaves() {
-        return handle.v;
+        return handle.numGroups;
     }
 
     @Override
     public float getTotalHealth() {
-        return handle.q(); // PAIL rename sumMobHealth
+        return handle.sumMobHealth();
     }
 
     @Override
     public Set<UUID> getHeroes() {
-        return Collections.unmodifiableSet(handle.h);
+        return Collections.unmodifiableSet(handle.heroes);
     }
 
     @Override

@@ -110,29 +110,29 @@ public final class CraftPersistentDataTypeRegistry {
             Primitives
          */
         if (Objects.equals(Byte.class, type)) {
-            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::new, NBTTagByte::asByte);
+            return createAdapter(Byte.class, NBTTagByte.class, NBTTagByte::a, NBTTagByte::asByte);
         }
         if (Objects.equals(Short.class, type)) {
-            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::new, NBTTagShort::asShort);
+            return createAdapter(Short.class, NBTTagShort.class, NBTTagShort::a, NBTTagShort::asShort);
         }
         if (Objects.equals(Integer.class, type)) {
-            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::new, NBTTagInt::asInt);
+            return createAdapter(Integer.class, NBTTagInt.class, NBTTagInt::a, NBTTagInt::asInt);
         }
         if (Objects.equals(Long.class, type)) {
-            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::new, NBTTagLong::asLong);
+            return createAdapter(Long.class, NBTTagLong.class, NBTTagLong::a, NBTTagLong::asLong);
         }
         if (Objects.equals(Float.class, type)) {
-            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::new, NBTTagFloat::asFloat);
+            return createAdapter(Float.class, NBTTagFloat.class, NBTTagFloat::a, NBTTagFloat::asFloat);
         }
         if (Objects.equals(Double.class, type)) {
-            return createAdapter(Double.class, NBTTagDouble.class, NBTTagDouble::new, NBTTagDouble::asDouble);
+            return createAdapter(Double.class, NBTTagDouble.class, NBTTagDouble::a, NBTTagDouble::asDouble);
         }
 
         /*
             String
          */
         if (Objects.equals(String.class, type)) {
-            return createAdapter(String.class, NBTTagString.class, NBTTagString::new, NBTTagString::asString);
+            return createAdapter(String.class, NBTTagString.class, NBTTagString::a, NBTTagString::asString);
         }
 
         /*

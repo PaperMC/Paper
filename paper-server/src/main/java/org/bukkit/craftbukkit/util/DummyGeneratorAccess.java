@@ -5,13 +5,13 @@ import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BiomeManager;
 import net.minecraft.server.Block;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChunkStatus;
 import net.minecraft.server.DifficultyDamageScaler;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EnumSkyBlock;
 import net.minecraft.server.Fluid;
 import net.minecraft.server.FluidType;
 import net.minecraft.server.GeneratorAccess;
@@ -19,6 +19,7 @@ import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.IChunkProvider;
+import net.minecraft.server.LightEngine;
 import net.minecraft.server.ParticleParam;
 import net.minecraft.server.SoundCategory;
 import net.minecraft.server.SoundEffect;
@@ -112,17 +113,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public int getLightLevel(BlockPosition bp, int i) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public IChunkAccess getChunkAt(int i, int i1, ChunkStatus cs, boolean bln) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public BlockPosition getHighestBlockYAt(HeightMap.Type type, BlockPosition bp) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -137,12 +128,17 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public WorldBorder getWorldBorder() {
+    public BiomeManager d() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public boolean e() {
+    public BiomeBase a(int i, int i1, int i2) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean p_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -157,27 +153,27 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public BiomeBase getBiome(BlockPosition bp) {
+    public LightEngine e() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public int getBrightness(EnumSkyBlock esb, BlockPosition bp) {
+    public TileEntity getTileEntity(BlockPosition blockposition) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public TileEntity getTileEntity(BlockPosition bp) {
+    public IBlockData getType(BlockPosition blockposition) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public IBlockData getType(BlockPosition bp) {
+    public Fluid getFluid(BlockPosition blockposition) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public Fluid getFluid(BlockPosition bp) {
+    public WorldBorder getWorldBorder() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -197,7 +193,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public boolean b(BlockPosition blockposition, boolean flag) {
+    public boolean a(BlockPosition blockposition, boolean flag, Entity entity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

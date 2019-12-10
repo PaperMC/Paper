@@ -64,7 +64,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
         IBlockData nms = ((CraftBlockData) block).getState();
         for (DataPaletteBlock<IBlockData> palette : blockids) {
-            if (palette.a(nms)) {
+            if (palette.contains(nms)) {
                 return true;
             }
         }
