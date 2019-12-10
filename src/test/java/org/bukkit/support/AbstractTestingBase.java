@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.EnumResourcePackType;
+import net.minecraft.server.LootPredicateManager;
 import net.minecraft.server.LootTableRegistry;
 import net.minecraft.server.ResourceManager;
 import net.minecraft.server.ResourcePackVanilla;
@@ -37,7 +38,7 @@ public abstract class AbstractTestingBase {
         ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, Thread.currentThread());
         // add tags and loot tables for unit tests
         resourceManager.a(TAG_REGISTRY = new TagRegistry());
-        resourceManager.a(LOOT_TABLE_REGISTRY = new LootTableRegistry());
+        resourceManager.a(LOOT_TABLE_REGISTRY = new LootTableRegistry(new LootPredicateManager()));
         // Register vanilla pack
         resourceManager.a(MoreExecutors.directExecutor(), MoreExecutors.directExecutor(), Collections.singletonList(new ResourcePackVanilla("minecraft")), CompletableFuture.completedFuture(Unit.INSTANCE)).join();
 

@@ -12,8 +12,8 @@
 +
  public abstract class EntityArrow extends Entity implements IProjectile {
  
-     private static final DataWatcherObject<Byte> ar = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
-@@ -252,6 +258,7 @@
+     private static final DataWatcherObject<Byte> ao = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
+@@ -255,6 +261,7 @@
      }
  
      protected void a(MovingObjectPosition movingobjectposition) {
@@ -21,10 +21,10 @@
          MovingObjectPosition.EnumMovingObjectType movingobjectposition_enummovingobjecttype = movingobjectposition.getType();
  
          if (movingobjectposition_enummovingobjecttype == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
-@@ -334,7 +341,13 @@
+@@ -336,7 +343,13 @@
          int j = entity.ad();
  
-         if (this.isBurning() && !(entity instanceof EntityEnderman)) {
+         if (this.isBurning() && !flag) {
 -            entity.setOnFire(5);
 +            // CraftBukkit start
 +            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
@@ -36,7 +36,7 @@
          }
  
          if (entity.damageEntity(damagesource, (float) i)) {
-@@ -471,6 +484,7 @@
+@@ -477,6 +490,7 @@
  
      public void setShooter(@Nullable Entity entity) {
          this.shooter = entity == null ? null : entity.getUniqueID();
@@ -44,14 +44,14 @@
          if (entity instanceof EntityHuman) {
              this.fromPlayer = ((EntityHuman) entity).abilities.canInstantlyBuild ? EntityArrow.PickupStatus.CREATIVE_ONLY : EntityArrow.PickupStatus.ALLOWED;
          }
-@@ -485,9 +499,23 @@
+@@ -491,9 +505,23 @@
      @Override
      public void pickup(EntityHuman entityhuman) {
          if (!this.world.isClientSide && (this.inGround || this.v()) && this.shake <= 0) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getItemStack();
 +            if (this.fromPlayer == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.inventory.canHold(itemstack) > 0) {
-+                EntityItem item = new EntityItem(this.world, this.locX, this.locY, this.locZ, itemstack);
++                EntityItem item = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), itemstack);
 +                PlayerPickupArrowEvent event = new PlayerPickupArrowEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), new org.bukkit.craftbukkit.entity.CraftItem(this.world.getServer(), this, item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
 +                this.world.getServer().getPluginManager().callEvent(event);

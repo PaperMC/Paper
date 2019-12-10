@@ -21,9 +21,10 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+import net.minecraft.server.ArraySetSorted;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BiomeDecoratorGroups;
 import net.minecraft.server.BlockChorusFlower;
 import net.minecraft.server.BlockDiodeAbstract;
 import net.minecraft.server.BlockPosition;
@@ -88,7 +89,6 @@ import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
-import net.minecraft.server.WorldGenHugeMushroomConfiguration;
 import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
@@ -133,6 +133,7 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Bat;
+import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Cat;
@@ -345,7 +346,7 @@ public class CraftWorld implements World {
     @Override
     public boolean isChunkGenerated(int x, int z) {
         try {
-            return isChunkLoaded(x, z) || world.getChunkProvider().playerChunkMap.chunkExists(new ChunkCoordIntPair(x, z));
+            return isChunkLoaded(x, z) || world.getChunkProvider().playerChunkMap.read(new ChunkCoordIntPair(x, z)) != null;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -514,7 +515,7 @@ public class CraftWorld implements World {
     @Override
     public Collection<Plugin> getPluginChunkTickets(int x, int z) {
         ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
-        ObjectSortedSet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkCoordIntPair.pair(x, z));
+        ArraySetSorted<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkCoordIntPair.pair(x, z));
 
         if (tickets == null) {
             return Collections.emptyList();
@@ -535,9 +536,9 @@ public class CraftWorld implements World {
         Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
         ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
 
-        for (Long2ObjectMap.Entry<ObjectSortedSet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
+        for (Long2ObjectMap.Entry<ArraySetSorted<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
             long chunkKey = chunkTickets.getLongKey();
-            ObjectSortedSet<Ticket<?>> tickets = chunkTickets.getValue();
+            ArraySetSorted<Ticket<?>> tickets = chunkTickets.getValue();
 
             Chunk chunk = null;
             for (Ticket<?> ticket : tickets) {
@@ -657,54 +658,67 @@ public class CraftWorld implements World {
         BlockPosition pos = new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         net.minecraft.server.WorldGenerator gen;
-        net.minecraft.server.WorldGenFeatureConfiguration conf = new WorldGenFeatureEmptyConfiguration();
+        net.minecraft.server.WorldGenFeatureConfiguration conf;
         switch (type) {
-            case BIG_TREE:
+        case BIG_TREE:
             gen = WorldGenerator.FANCY_TREE;
+            conf = BiomeDecoratorGroups.FANCY_TREE;
             break;
         case BIRCH:
-            gen = WorldGenerator.BIRCH_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.BIRCH_TREE;
             break;
         case REDWOOD:
-            gen = WorldGenerator.SPRUCE_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.SPRUCE_TREE;
             break;
         case TALL_REDWOOD:
-            gen = WorldGenerator.PINE_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.PINE_TREE;
             break;
         case JUNGLE:
             gen = WorldGenerator.MEGA_JUNGLE_TREE;
+            conf = BiomeDecoratorGroups.MEGA_JUNGLE_TREE;
             break;
         case SMALL_JUNGLE:
-            gen = WorldGenerator.JUNGLE_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.JUNGLE_TREE_NOVINE;
             break;
         case COCOA_TREE:
-            gen = WorldGenerator.MEGA_JUNGLE_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.JUNGLE_TREE;
             break;
         case JUNGLE_BUSH:
             gen = WorldGenerator.JUNGLE_GROUND_BUSH;
+            conf = BiomeDecoratorGroups.JUNGLE_BUSH;
             break;
         case RED_MUSHROOM:
             gen = WorldGenerator.HUGE_RED_MUSHROOM;
-            conf = new WorldGenHugeMushroomConfiguration(true);
+            conf = BiomeDecoratorGroups.HUGE_RED_MUSHROOM;
             break;
         case BROWN_MUSHROOM:
             gen = WorldGenerator.HUGE_BROWN_MUSHROOM;
-            conf = new WorldGenHugeMushroomConfiguration(true);
+            conf = BiomeDecoratorGroups.HUGE_BROWN_MUSHROOM;
             break;
         case SWAMP:
-            gen = WorldGenerator.SWAMP_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.SWAMP_TREE;
             break;
         case ACACIA:
-            gen = WorldGenerator.SAVANNA_TREE;
+            gen = WorldGenerator.ACACIA_TREE;
+            conf = BiomeDecoratorGroups.ACACIA_TREE;
             break;
         case DARK_OAK:
             gen = WorldGenerator.DARK_OAK_TREE;
+            conf = BiomeDecoratorGroups.DARK_OAK_TREE;
             break;
         case MEGA_REDWOOD:
-            gen = WorldGenerator.MEGA_PINE_TREE;
+            gen = WorldGenerator.MEGA_SPRUCE_TREE;
+            conf = BiomeDecoratorGroups.MEGA_PINE_TREE;
             break;
         case TALL_BIRCH:
-            gen = WorldGenerator.SUPER_BIRCH_TREE;
+            gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.TALL_BIRCH_TREE;
             break;
         case CHORUS_PLANT:
             ((BlockChorusFlower) Blocks.CHORUS_FLOWER).a(world, pos, rand, 8);
@@ -712,6 +726,7 @@ public class CraftWorld implements World {
         case TREE:
         default:
             gen = WorldGenerator.NORMAL_TREE;
+            conf = BiomeDecoratorGroups.NORMAL_TREE;
             break;
         }
 
@@ -889,8 +904,7 @@ public class CraftWorld implements World {
             net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(new BlockPosition(x, 0, z));
 
             if (chunk != null) {
-                BiomeBase[] biomevals = chunk.getBiomeIndex();
-                biomevals[((z & 0xF) << 4) | (x & 0xF)] = bb;
+                chunk.getBiomeIndex().setBiome(x, 0, z, bb);
 
                 chunk.markDirty(); // SPIGOT-2890
             }
@@ -1620,6 +1634,8 @@ public class CraftWorld implements World {
                 entity = EntityTypes.PANDA.a(world);
             } else if (Fox.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.FOX.a(world);
+            } else if (Bee.class.isAssignableFrom(clazz)) {
+                entity = EntityTypes.BEE.a(world);
             }
 
             if (entity != null) {
@@ -2172,14 +2188,14 @@ public class CraftWorld implements World {
         Validate.notNull(location, "Location cannot be null");
         Validate.isTrue(radius >= 0, "Radius cannot be negative");
 
-        PersistentRaid persistentRaid = world.C(); // PAIL rename getPersistentRaid
-        net.minecraft.server.Raid raid = persistentRaid.a(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), radius * radius); // PAIL rename getNearbyRaid
+        PersistentRaid persistentRaid = world.getPersistentRaid();
+        net.minecraft.server.Raid raid = persistentRaid.getNearbyRaid(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), radius * radius);
         return (raid == null) ? null : new CraftRaid(raid);
     }
 
     @Override
     public List<Raid> getRaids() {
-        PersistentRaid persistentRaid = world.C(); // PAIL rename getPersistentRaid
-        return persistentRaid.a.values().stream().map(CraftRaid::new).collect(Collectors.toList());
+        PersistentRaid persistentRaid = world.getPersistentRaid();
+        return persistentRaid.raids.values().stream().map(CraftRaid::new).collect(Collectors.toList());
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/CommandDispatcher.java
 +++ b/net/minecraft/server/CommandDispatcher.java
-@@ -17,12 +17,21 @@
+@@ -19,12 +19,21 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -23,7 +23,7 @@
          CommandAdvancement.a(this.b);
          CommandExecute.a(this.b);
          CommandBossBar.a(this.b);
-@@ -93,14 +102,59 @@
+@@ -100,14 +109,59 @@
          }
  
          this.b.findAmbiguities((commandnode, commandnode1, commandnode2, collection) -> {
@@ -84,7 +84,7 @@
          StringReader stringreader = new StringReader(s);
  
          if (stringreader.canRead() && stringreader.peek() == '/') {
-@@ -112,7 +166,6 @@
+@@ -119,7 +173,6 @@
          byte b0;
  
          try {
@@ -92,7 +92,7 @@
              ChatComponentText chatcomponenttext;
  
              try {
-@@ -121,52 +174,56 @@
+@@ -128,58 +181,62 @@
                  return i;
              } catch (CommandException commandexception) {
                  commandlistenerwrapper.sendFailureMessage(commandexception.a());
@@ -144,39 +144,49 @@
              } catch (Exception exception) {
 -                chatcomponenttext = new ChatComponentText;
 -            }
--
--            chatcomponenttext.<init>(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
--            ChatComponentText chatcomponenttext1 = chatcomponenttext;
 +                ChatMessage chatmessage1 = new ChatMessage("command.failed", new Object[0]);
  
--            if (CommandDispatcher.LOGGER.isDebugEnabled()) {
--                StackTraceElement[] astacktraceelement = exception.getStackTrace();
+-            chatcomponenttext.<init>(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+-            ChatComponentText chatcomponenttext1 = chatcomponenttext;
 +                chatcomponenttext = new ChatComponentText(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
 +                if (CommandDispatcher.LOGGER.isDebugEnabled()) {
++                    CommandDispatcher.LOGGER.error("Command exception: {}", s, exception);
 +                    StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
--                for(int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
--                    chatcomponenttext1.a("\n\n").a(astacktraceelement[k].getMethodName()).a("\n ").a(astacktraceelement[k].getFileName()).a(":").a(String.valueOf(astacktraceelement[k].getLineNumber()));
+-            if (CommandDispatcher.LOGGER.isDebugEnabled()) {
+-                CommandDispatcher.LOGGER.error("Command exception: {}", s, exception);
+-                StackTraceElement[] astacktraceelement = exception.getStackTrace();
 +                    for (int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
 +                        chatcomponenttext.a("\n\n" + astacktraceelement[k].getMethodName() + "\n " + astacktraceelement[k].getFileName() + ":" + astacktraceelement[k].getLineNumber());
 +                    }
++                }
+ 
+-                for(int k = 0; k < Math.min(astacktraceelement.length, 3); ++k) {
+-                    chatcomponenttext1.a("\n\n").a(astacktraceelement[k].getMethodName()).a("\n ").a(astacktraceelement[k].getFileName()).a(":").a(String.valueOf(astacktraceelement[k].getLineNumber()));
++                chatmessage1.getChatModifier().setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext));
++                commandlistenerwrapper.sendFailureMessage(chatmessage1);
++                if (SharedConstants.b) {
++                    commandlistenerwrapper.sendFailureMessage(new ChatComponentText(SystemUtils.d(exception)));
++                    CommandDispatcher.LOGGER.error("'" + s + "' threw an exception", exception);
                  }
 -            }
  
 -            commandlistenerwrapper.sendFailureMessage((new ChatMessage("command.failed", new Object[0])).a((chatmodifier) -> {
 -                chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext1));
 -            }));
--            b0 = 0;
-+                chatmessage1.getChatModifier().setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, chatcomponenttext));
-+                commandlistenerwrapper.sendFailureMessage(chatmessage1);
+-            if (SharedConstants.b) {
+-                commandlistenerwrapper.sendFailureMessage(new ChatComponentText(SystemUtils.d(exception)));
+-                CommandDispatcher.LOGGER.error("'" + s + "' threw an exception", exception);
+-            }
 +                byte b1 = 0;
-+
+ 
+-            b0 = 0;
 +                return b1;
 +            }
          } finally {
              commandlistenerwrapper.getServer().getMethodProfiler().exit();
          }
-@@ -175,11 +232,36 @@
+@@ -188,11 +245,36 @@
      }
  
      public void a(EntityPlayer entityplayer) {
@@ -214,7 +224,7 @@
          entityplayer.playerConnection.sendPacket(new PacketPlayOutCommands(rootcommandnode));
      }
  
-@@ -190,7 +272,7 @@
+@@ -203,7 +285,7 @@
              CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
  
              if (commandnode2.canUse(commandlistenerwrapper)) {
@@ -223,7 +233,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -213,7 +295,7 @@
+@@ -226,7 +308,7 @@
                      argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
                  }
  

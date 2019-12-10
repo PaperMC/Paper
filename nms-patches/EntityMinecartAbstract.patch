@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityMinecartAbstract.java
 +++ b/net/minecraft/server/EntityMinecartAbstract.java
-@@ -4,6 +4,15 @@
- import java.util.List;
+@@ -8,6 +8,15 @@
+ import java.util.Map;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
@@ -16,9 +16,18 @@
  public abstract class EntityMinecartAbstract extends Entity {
  
      private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
-@@ -21,6 +30,17 @@
-     private double ax;
-     private double ay;
+@@ -17,7 +26,7 @@
+     private static final DataWatcherObject<Integer> f = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
+     private static final DataWatcherObject<Boolean> g = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.i);
+     private boolean ao;
+-    private static final Map<BlockPropertyTrackPosition, Pair<BaseBlockPosition, BaseBlockPosition>> ap = (Map) SystemUtils.a((Object) Maps.newEnumMap(BlockPropertyTrackPosition.class), (enummap) -> {
++    private static final Map<BlockPropertyTrackPosition, Pair<BaseBlockPosition, BaseBlockPosition>> ap = (Map) SystemUtils.a(Maps.newEnumMap(BlockPropertyTrackPosition.class), (enummap) -> { // CraftBukkit - decompile error
+         BaseBlockPosition baseblockposition = EnumDirection.WEST.p();
+         BaseBlockPosition baseblockposition1 = EnumDirection.EAST.p();
+         BaseBlockPosition baseblockposition2 = EnumDirection.NORTH.p();
+@@ -45,6 +54,17 @@
+     private double au;
+     private double av;
  
 +    // CraftBukkit start
 +    public boolean slowWhenEmpty = true;
@@ -34,7 +43,7 @@
      protected EntityMinecartAbstract(EntityTypes<?> entitytypes, World world) {
          super(entitytypes, world);
          this.i = true;
-@@ -76,6 +96,19 @@
+@@ -100,6 +120,19 @@
              if (this.isInvulnerable(damagesource)) {
                  return false;
              } else {
@@ -54,7 +63,7 @@
                  this.d(-this.n());
                  this.c(10);
                  this.velocityChanged();
-@@ -83,6 +116,15 @@
+@@ -107,6 +140,15 @@
                  boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
  
                  if (flag || this.getDamage() > 40.0F) {
@@ -70,14 +79,14 @@
                      this.ejectPassengers();
                      if (flag && !this.hasCustomName()) {
                          this.die();
-@@ -124,6 +166,14 @@
+@@ -152,6 +194,14 @@
  
      @Override
      public void tick() {
 +        // CraftBukkit start
-+        double prevX = this.locX;
-+        double prevY = this.locY;
-+        double prevZ = this.locZ;
++        double prevX = this.locX();
++        double prevY = this.locY();
++        double prevZ = this.locZ();
 +        float prevYaw = this.yaw;
 +        float prevPitch = this.pitch;
 +        // CraftBukkit end
@@ -85,23 +94,23 @@
          if (this.getType() > 0) {
              this.c(this.getType() - 1);
          }
-@@ -136,7 +186,7 @@
+@@ -164,7 +214,7 @@
              this.af();
          }
  
 -        this.doPortalTick();
 +        // this.doPortalTick(); // CraftBukkit - handled in postTick
          if (this.world.isClientSide) {
-             if (this.at > 0) {
-                 double d0 = this.locX + (this.au - this.locX) / (double) this.at;
-@@ -202,6 +252,18 @@
+             if (this.aq > 0) {
+                 double d0 = this.locX() + (this.ar - this.locX()) / (double) this.aq;
+@@ -227,6 +277,18 @@
              }
  
              this.setYawPitch(this.yaw, this.pitch);
 +            // CraftBukkit start
 +            org.bukkit.World bworld = this.world.getWorld();
 +            Location from = new Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
-+            Location to = new Location(bworld, this.locX, this.locY, this.locZ, this.yaw, this.pitch);
++            Location to = new Location(bworld, this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
 +            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
 +            this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
@@ -113,7 +122,7 @@
              if (this.getMinecartType() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && b(this.getMot()) > 0.01D) {
                  List<Entity> list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D), IEntitySelector.a(this));
  
-@@ -210,8 +272,24 @@
+@@ -235,8 +297,24 @@
                          Entity entity = (Entity) list.get(l);
  
                          if (!(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && !(entity instanceof EntityMinecartAbstract) && !this.isVehicle() && !entity.isPassenger()) {
@@ -138,7 +147,7 @@
                              entity.collide(this);
                          }
                      }
-@@ -223,6 +301,14 @@
+@@ -248,6 +326,14 @@
                      Entity entity1 = (Entity) iterator.next();
  
                      if (!this.w(entity1) && entity1.isCollidable() && entity1 instanceof EntityMinecartAbstract) {
@@ -153,7 +162,7 @@
                          entity1.collide(this);
                      }
                  }
-@@ -233,7 +319,7 @@
+@@ -258,7 +344,7 @@
      }
  
      protected double getMaxSpeed() {
@@ -162,7 +171,7 @@
      }
  
      public void a(int i, int j, int k, boolean flag) {}
-@@ -244,12 +330,16 @@
+@@ -269,12 +355,16 @@
  
          this.setMot(MathHelper.a(vec3d.x, -d0, d0), vec3d.y, MathHelper.a(vec3d.z, -d0, d0));
          if (this.onGround) {
@@ -181,7 +190,7 @@
          }
  
      }
-@@ -433,7 +523,7 @@
+@@ -461,7 +551,7 @@
      }
  
      protected void decelerate() {
@@ -190,7 +199,7 @@
  
          this.setMot(this.getMot().d(d0, 0.0D, d0));
      }
-@@ -516,6 +606,14 @@
+@@ -544,6 +634,14 @@
          if (!this.world.isClientSide) {
              if (!entity.noclip && !this.noclip) {
                  if (!this.w(entity)) {
@@ -202,10 +211,10 @@
 +                        return;
 +                    }
 +                    // CraftBukkit end
-                     double d0 = entity.locX - this.locX;
-                     double d1 = entity.locZ - this.locZ;
+                     double d0 = entity.locX() - this.locX();
+                     double d1 = entity.locZ() - this.locZ();
                      double d2 = d0 * d0 + d1 * d1;
-@@ -651,4 +749,26 @@
+@@ -679,4 +777,26 @@
  
          private EnumMinecartType() {}
      }

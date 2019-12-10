@@ -457,6 +457,8 @@ public class CraftBlock implements Block {
             return new CraftLectern(this);
         case SMOKER:
             return new CraftSmoker(this);
+        case BEEHIVE:
+            return new CraftBeehive(this);
         default:
             TileEntity tileEntity = world.getTileEntity(position);
             if (tileEntity != null) {
@@ -613,7 +615,7 @@ public class CraftBlock implements Block {
         net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
-        if (iblockdata.getMaterial().isAlwaysDestroyable() || nms.b(iblockdata)) {
+        if (iblockdata.getMaterial().isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
             return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), null, nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {

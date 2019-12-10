@@ -25,7 +25,7 @@ public class ItemFactoryTest extends AbstractTestingBase {
                 continue;
             }
 
-            final Class<?> clazz = Class.forName(entryName.substring(0, entryName.length() - ".class".length()).replace('/', '.'));
+            final Class<?> clazz = Class.forName(entryName.substring(0, entryName.length() - ".class".length()).replace('/', '.'), false, ClassLoader.getSystemClassLoader());
             assertThat(entryName, clazz, is(not(nullValue())));
             for (final Field field : clazz.getDeclaredFields()) {
                 if (IAttribute.class.isAssignableFrom(field.getType()) && Modifier.isStatic(field.getModifiers())) {

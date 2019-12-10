@@ -150,7 +150,7 @@ public class CraftContainer extends Container {
             case LOOM:
                 return Containers.LOOM;
             case CARTOGRAPHY:
-                return Containers.CARTOGRAPHY;
+                return Containers.CARTOGRAPHY_TABLE;
             case GRINDSTONE:
                 return Containers.GRINDSTONE;
             case STONECUTTER:

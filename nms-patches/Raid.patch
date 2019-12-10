@@ -1,68 +1,41 @@
 --- a/net/minecraft/server/Raid.java
 +++ b/net/minecraft/server/Raid.java
-@@ -26,21 +26,21 @@
-     private static final IChatBaseComponent e = Raid.a.g().a(" - ").addSibling(Raid.c);
-     private final Map<Integer, EntityRaider> f = Maps.newHashMap();
-     private final Map<Integer, Set<EntityRaider>> g = Maps.newHashMap();
--    private final Set<UUID> h = Sets.newHashSet();
--    private long i;
-+    public final Set<UUID> h = Sets.newHashSet(); // PAIL rename heroes, private -> public
-+    public long i; // PAIL rename activeTicks, private -> public
-     private BlockPosition j;
-     private final WorldServer k;
-     private boolean l;
-     private final int m;
--    private float n;
--    private int o;
-+    public float n; // PAIL rename originTotalHealth, private -> public
-+    public int o; // PAIL rename badOmenLevel, private -> public
-     private boolean p;
-     private int q;
-     private final BossBattleServer r;
-     private int s;
-     private int t;
-     private final Random u;
--    private final int v;
-+    public final int v; // PAIL rename totalWaves, private -> public
-     private Raid.Status w;
-     private int x;
-     private Optional<BlockPosition> y;
 @@ -114,6 +114,12 @@
-         return this.w == Raid.Status.LOSS;
+         return this.status == Raid.Status.LOSS;
      }
  
 +    // CraftBukkit start
 +    public boolean isInProgress() {
-+        return this.w == Status.ONGOING;
++        return this.status == Status.ONGOING;
 +    }
 +    // CraftBukkit end
 +
-     public World i() {
-         return this.k;
+     public World getWorld() {
+         return this.world;
      }
 @@ -189,6 +195,7 @@
  
-                 this.p = this.k.isLoaded(this.j);
-                 if (this.k.getDifficulty() == EnumDifficulty.PEACEFUL) {
+                 this.active = this.world.isLoaded(this.center);
+                 if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.PEACE); // CraftBukkit
-                     this.n();
+                     this.stop();
                      return;
                  }
 @@ -208,13 +215,16 @@
-                 if (!this.k.b_(this.j)) {
-                     if (this.q > 0) {
-                         this.w = Raid.Status.LOSS;
+                 if (!this.world.b_(this.center)) {
+                     if (this.groupsSpawned > 0) {
+                         this.status = Raid.Status.LOSS;
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidFinishEvent(this, new java.util.ArrayList<>()); // CraftBukkit
                      } else {
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.NOT_IN_VILLAGE); // CraftBukkit
-                         this.n();
+                         this.stop();
                      }
                  }
  
-                 ++this.i;
-                 if (this.i >= 48000L) {
+                 ++this.ticksActive;
+                 if (this.ticksActive >= 48000L) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.TIMEOUT); // CraftBukkit
-                     this.n();
+                     this.stop();
                      return;
                  }
 @@ -288,6 +298,7 @@
@@ -70,17 +43,17 @@
  
                      if (j > 3) {
 +                        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.UNSPAWNABLE);  // CraftBukkit
-                         this.n();
+                         this.stop();
                          break;
                      }
 @@ -300,6 +311,7 @@
-                         this.w = Raid.Status.VICTORY;
-                         Iterator iterator = this.h.iterator();
+                         this.status = Raid.Status.VICTORY;
+                         Iterator iterator = this.heroes.iterator();
  
 +                        List<org.bukkit.entity.Player> winners = new java.util.ArrayList<>(); // CraftBukkit
                          while (iterator.hasNext()) {
                              UUID uuid = (UUID) iterator.next();
-                             Entity entity = this.k.getEntity(uuid);
+                             Entity entity = this.world.getEntity(uuid);
 @@ -313,9 +325,11 @@
  
                                      entityplayer.a(StatisticList.RAID_WIN);
@@ -98,10 +71,10 @@
                  ++this.x;
                  if (this.x >= 600) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.FINISHED); // CraftBukkit
-                     this.n();
+                     this.stop();
                      return;
                  }
-@@ -456,6 +471,10 @@
+@@ -457,6 +472,10 @@
          Raid.Wave[] araid_wave = Raid.Wave.f;
          int j = araid_wave.length;
  
@@ -111,8 +84,8 @@
 +        // CraftBukkit end
          for (int k = 0; k < j; ++k) {
              Raid.Wave raid_wave = araid_wave[k];
-             int l = this.a(raid_wave, i, flag1) + this.a(raid_wave, this.u, i, difficultydamagescaler, flag1);
-@@ -468,9 +487,11 @@
+             int l = this.a(raid_wave, i, flag1) + this.a(raid_wave, this.random, i, difficultydamagescaler, flag1);
+@@ -469,9 +488,11 @@
                      entityraider.setPatrolLeader(true);
                      this.a(i, entityraider);
                      flag = true;
@@ -124,7 +97,7 @@
                  if (raid_wave.g == EntityTypes.RAVAGER) {
                      EntityRaider entityraider1 = null;
  
-@@ -489,6 +510,7 @@
+@@ -490,6 +511,7 @@
                          this.a(i, entityraider1, blockposition, false);
                          entityraider1.setPositionRotation(blockposition, 0.0F, 0.0F);
                          entityraider1.startRiding(entityraider);
@@ -132,30 +105,30 @@
                      }
                  }
              }
-@@ -498,6 +520,7 @@
-         ++this.q;
-         this.p();
+@@ -499,6 +521,7 @@
+         ++this.groupsSpawned;
+         this.updateProgress();
          this.H();
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callRaidSpawnWaveEvent(this, leader, raiders); // CraftBukkit
      }
  
      public void a(int i, EntityRaider entityraider, @Nullable BlockPosition blockposition, boolean flag) {
-@@ -513,7 +536,7 @@
-                 entityraider.prepare(this.k, this.k.getDamageScaler(blockposition), EnumMobSpawn.EVENT, (GroupDataEntity) null, (NBTTagCompound) null);
+@@ -514,7 +537,7 @@
+                 entityraider.prepare(this.world, this.world.getDamageScaler(blockposition), EnumMobSpawn.EVENT, (GroupDataEntity) null, (NBTTagCompound) null);
                  entityraider.a(i, false);
                  entityraider.onGround = true;
--                this.k.addEntity(entityraider);
-+                this.k.addEntity(entityraider, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.RAID); // CraftBukkit
+-                this.world.addEntity(entityraider);
++                this.world.addEntity(entityraider, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.RAID); // CraftBukkit
              }
          }
  
-@@ -759,6 +782,12 @@
-         this.h.add(entity.getUniqueID());
+@@ -760,6 +783,12 @@
+         this.heroes.add(entity.getUniqueID());
      }
  
 +    // CraftBukkit start - a method to get all raiders
 +    public java.util.Collection<EntityRaider> getRaiders() {
-+        return this.g.values().stream().flatMap(Set::stream).collect(java.util.stream.Collectors.toSet());
++        return this.raiders.values().stream().flatMap(Set::stream).collect(java.util.stream.Collectors.toSet());
 +    }
 +    // CraftBukkit end
 +

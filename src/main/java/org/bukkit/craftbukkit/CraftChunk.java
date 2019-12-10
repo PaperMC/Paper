@@ -203,14 +203,14 @@ public class CraftChunk implements Chunk {
 
     @Override
     public long getInhabitedTime() {
-        return getHandle().q();
+        return getHandle().getInhabitedTime();
     }
 
     @Override
     public void setInhabitedTime(long ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks cannot be negative");
 
-        getHandle().b(ticks);
+        getHandle().setInhabitedTime(ticks);
     }
 
     @Override
@@ -219,7 +219,7 @@ public class CraftChunk implements Chunk {
 
         IBlockData nms = ((CraftBlockData) block).getState();
         for (ChunkSection section : getHandle().getSections()) {
-            if (section != null && section.getBlocks().a(nms)) {
+            if (section != null && section.getBlocks().contains(nms)) {
                 return true;
             }
         }
@@ -291,7 +291,7 @@ public class CraftChunk implements Chunk {
             if (includeBiome) {
                 biome = new BiomeBase[256];
                 for (int i = 0; i < 256; i++) {
-                    biome[i] = chunk.getBiome(new BlockPosition(i & 0xF, 0, i >> 4));
+                    biome[i] = chunk.getBiomeIndex().getBiome(i & 0xF, 0, i >> 4);
                 }
             }
 
@@ -351,11 +351,10 @@ public class CraftChunk implements Chunk {
     }
 
     private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
-        BiomeBase[] biomes = chunkmanager.getBiomeBlock(chunkX, chunkZ, 16, 16);
-        float[] temps = new float[biomes.length];
+        float[] temps = new float[256];
 
-        for (int i = 0; i < biomes.length; i++) {
-            float temp = biomes[i].getTemperature(); // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
+        for (int i = 0; i < 256; i++) {
+            float temp = chunkmanager.getBiome((chunkX << 4) + (i & 0xF), 0, (chunkZ << 4) + (i >> 4)).getTemperature(); // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
 
             if (temp > 1F) {
                 temp = 1F;

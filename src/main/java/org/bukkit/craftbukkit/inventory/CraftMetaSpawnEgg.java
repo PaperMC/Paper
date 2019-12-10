@@ -111,6 +111,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     boolean applicableTo(Material type) {
         switch (type) {
             case BAT_SPAWN_EGG:
+            case BEE_SPAWN_EGG:
             case BLAZE_SPAWN_EGG:
             case CAT_SPAWN_EGG:
             case CAVE_SPIDER_SPAWN_EGG:

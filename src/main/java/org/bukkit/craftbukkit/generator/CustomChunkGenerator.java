@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BiomeManager;
+import net.minecraft.server.BiomeStorage;
 import net.minecraft.server.Block;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChunkSection;
@@ -16,6 +18,7 @@ import net.minecraft.server.ITileEntity;
 import net.minecraft.server.MobSpawnerCat;
 import net.minecraft.server.MobSpawnerPatrol;
 import net.minecraft.server.MobSpawnerPhantom;
+import net.minecraft.server.ProtoChunk;
 import net.minecraft.server.RegionLimitedWorldAccess;
 import net.minecraft.server.StructureGenerator;
 import net.minecraft.server.TileEntity;
@@ -43,16 +46,16 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     private final VillageSiege villageSiege = new VillageSiege();
 
     private static class CustomBiomeGrid implements BiomeGrid {
-        BiomeBase[] biome;
+        BiomeStorage biome;
 
         @Override
         public Biome getBiome(int x, int z) {
-            return CraftBlock.biomeBaseToBiome(biome[(z << 4) | x]);
+            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, 0, z));
         }
 
         @Override
         public void setBiome(int x, int z, Biome bio) {
-            biome[(z << 4) | x] = CraftBlock.biomeToBiomeBase(bio);
+            biome.setBiome(x, 0, z, CraftBlock.biomeToBiomeBase(bio));
         }
     }
 
@@ -66,14 +69,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public void buildBase(IChunkAccess ichunkaccess) {
+    public void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess) {
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
         random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
         // Get default biome data for chunk
         CustomBiomeGrid biomegrid = new CustomBiomeGrid();
-        biomegrid.biome = this.getWorldChunkManager().getBiomeBlock(x << 4, z << 4, 16, 16);
+        biomegrid.biome = new BiomeStorage(ichunkaccess.getPos(), this.getWorldChunkManager());
 
         ChunkData data;
         if (generator.isParallelCapable()) {
@@ -102,7 +105,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         }
 
         // Set biome grid
-        ichunkaccess.a(biomegrid.biome);
+        ((ProtoChunk) ichunkaccess).a(biomegrid.biome);
 
         if (craftData.getTiles() != null) {
             for (BlockPosition pos : craftData.getTiles()) {
@@ -120,7 +123,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public void doCarving(IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
+    public void doCarving(BiomeManager biomemanager, IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
     }
 
     @Override

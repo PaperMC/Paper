@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/EntityItem.java
 +++ b/net/minecraft/server/EntityItem.java
-@@ -4,6 +4,10 @@
- import java.util.List;
+@@ -5,6 +5,10 @@
+ import java.util.Objects;
  import java.util.UUID;
  import javax.annotation.Nullable;
 +// CraftBukkit start
@@ -11,7 +11,7 @@
  
  public class EntityItem extends Entity {
  
-@@ -14,6 +18,7 @@
+@@ -15,6 +19,7 @@
      private UUID thrower;
      private UUID owner;
      public final float b;
@@ -19,7 +19,7 @@
  
      public EntityItem(EntityTypes<? extends EntityItem> entitytypes, World world) {
          super(entitytypes, world);
-@@ -49,9 +54,12 @@
+@@ -50,9 +55,12 @@
              this.die();
          } else {
              super.tick();
@@ -33,9 +33,9 @@
 +            this.lastTick = MinecraftServer.currentTick;
 +            // CraftBukkit end
  
-             this.lastX = this.locX;
-             this.lastY = this.locY;
-@@ -101,9 +109,11 @@
+             this.lastX = this.locX();
+             this.lastY = this.locY();
+@@ -102,9 +110,11 @@
                  }
              }
  
@@ -45,9 +45,9 @@
              }
 +            // Craftbukkit end */
  
-             this.impulse |= this.ay();
+             this.impulse |= this.aC();
              if (!this.world.isClientSide) {
-@@ -115,6 +125,12 @@
+@@ -116,6 +126,12 @@
              }
  
              if (!this.world.isClientSide && this.age >= 6000) {
@@ -60,23 +60,20 @@
                  this.die();
              }
  
-@@ -175,13 +191,14 @@
+@@ -185,10 +201,11 @@
+     private static void a(EntityItem entityitem, ItemStack itemstack, ItemStack itemstack1) {
+         ItemStack itemstack2 = a(itemstack, itemstack1, 64);
+ 
+-        entityitem.setItemStack(itemstack2);
++        if (!itemstack2.isEmpty()) entityitem.setItemStack(itemstack2); // CraftBukkit - don't set empty stacks
      }
  
      private static void a(EntityItem entityitem, ItemStack itemstack, EntityItem entityitem1, ItemStack itemstack1) {
 +        if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemMergeEvent(entityitem1, entityitem).isCancelled()) return; // CraftBukkit
-         int i = Math.min(itemstack.getMaxStackSize() - itemstack.getCount(), itemstack1.getCount());
-         ItemStack itemstack2 = itemstack.cloneItemStack();
- 
-         itemstack2.add(i);
-         entityitem.setItemStack(itemstack2);
-         itemstack1.subtract(i);
--        entityitem1.setItemStack(itemstack1);
-+        if (!itemstack1.isEmpty()) entityitem1.setItemStack(itemstack1); // CraftBukkit - don't set empty stacks
+         a(entityitem, itemstack, itemstack1);
          entityitem.pickupDelay = Math.max(entityitem.pickupDelay, entityitem1.pickupDelay);
          entityitem.age = Math.min(entityitem.age, entityitem1.age);
-         if (itemstack1.isEmpty()) {
-@@ -195,7 +212,7 @@
+@@ -199,7 +216,7 @@
      }
  
      @Override
@@ -85,7 +82,7 @@
          this.damageEntity(DamageSource.FIRE, (float) i);
      }
  
-@@ -206,6 +223,11 @@
+@@ -210,6 +227,11 @@
          } else if (!this.getItemStack().isEmpty() && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
              return false;
          } else {
@@ -97,7 +94,7 @@
              this.velocityChanged();
              this.f = (int) ((float) this.f - f);
              if (this.f <= 0) {
-@@ -267,6 +289,40 @@
+@@ -271,6 +293,40 @@
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
  
@@ -135,10 +132,10 @@
 +            }
 +            // CraftBukkit end
 +
-             if (this.pickupDelay == 0 && (this.owner == null || 6000 - this.age <= 200 || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
+             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
                  entityhuman.receive(this, i);
                  if (itemstack.isEmpty()) {
-@@ -309,7 +365,9 @@
+@@ -313,7 +369,9 @@
      }
  
      public void setItemStack(ItemStack itemstack) {

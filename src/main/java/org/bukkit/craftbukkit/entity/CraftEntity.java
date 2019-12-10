@@ -16,6 +16,7 @@ import net.minecraft.server.EntityAreaEffectCloud;
 import net.minecraft.server.EntityArmorStand;
 import net.minecraft.server.EntityArrow;
 import net.minecraft.server.EntityBat;
+import net.minecraft.server.EntityBee;
 import net.minecraft.server.EntityBlaze;
 import net.minecraft.server.EntityBoat;
 import net.minecraft.server.EntityCat;
@@ -232,6 +233,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntityOcelot) { return new CraftOcelot(server, (EntityOcelot) entity); }
                     else if (entity instanceof EntityPanda) { return new CraftPanda(server, (EntityPanda) entity); }
                     else if (entity instanceof EntityFox) { return new CraftFox(server, (EntityFox) entity); }
+                    else if (entity instanceof EntityBee) { return new CraftBee(server, (EntityBee) entity); }
                     else  { return new CraftAnimals(server, (EntityAnimal) entity); }
                 }
                 // Monsters
@@ -372,16 +374,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Location getLocation() {
-        return new Location(getWorld(), entity.locX, entity.locY, entity.locZ, entity.getBukkitYaw(), entity.pitch);
+        return new Location(getWorld(), entity.locX(), entity.locY(), entity.locZ(), entity.getBukkitYaw(), entity.pitch);
     }
 
     @Override
     public Location getLocation(Location loc) {
         if (loc != null) {
             loc.setWorld(getWorld());
-            loc.setX(entity.locX);
-            loc.setY(entity.locY);
-            loc.setZ(entity.locZ);
+            loc.setX(entity.locX());
+            loc.setY(entity.locY());
+            loc.setZ(entity.locZ());
             loc.setYaw(entity.getBukkitYaw());
             loc.setPitch(entity.pitch);
         }

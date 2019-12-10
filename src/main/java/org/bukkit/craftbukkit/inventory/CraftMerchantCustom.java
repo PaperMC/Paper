@@ -90,16 +90,16 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void s(int i) {
+        public void setExperience(int i) {
         }
 
         @Override
-        public boolean ea() {
+        public boolean isRegularVillager() {
             return false; // is-regular-villager flag (hides some gui elements: xp bar, name suffix)
         }
 
         @Override
-        public SoundEffect eb() {
+        public SoundEffect getTradeSound() {
             return SoundEffects.ENTITY_VILLAGER_YES;
         }
     }

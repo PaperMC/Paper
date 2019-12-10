@@ -164,9 +164,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public void setBedSpawnLocation(Location location, boolean override) {
         if (location == null) {
-            getHandle().setRespawnPosition(null, override);
+            getHandle().setRespawnPosition(null, override, false);
         } else {
-            getHandle().setRespawnPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
+            getHandle().setRespawnPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override, false);
             getHandle().spawnWorld = location.getWorld().getName();
         }
     }
@@ -198,7 +198,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public void wakeup(boolean setSpawnLocation) {
         Preconditions.checkState(isSleeping(), "Cannot wakeup if not sleeping");
 
-        getHandle().wakeup(true, true, setSpawnLocation);
+        getHandle().wakeup(true, setSpawnLocation);
     }
 
     @Override
@@ -335,7 +335,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             if (iinventory instanceof TileEntity) {
                 TileEntity te = (TileEntity) iinventory;
                 if (!te.hasWorld()) {
-                    te.setWorld(getHandle().world);
+                    te.setLocation(getHandle().world, getHandle().getChunkCoordinates());
                 }
             }
         }
@@ -473,7 +473,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 openCustomInventory(inventory, player, Containers.LOOM);
                 break;
             case CARTOGRAPHY:
-                openCustomInventory(inventory, player, Containers.CARTOGRAPHY);
+                openCustomInventory(inventory, player, Containers.CARTOGRAPHY_TABLE);
                 break;
             case GRINDSTONE:
                 openCustomInventory(inventory, player, Containers.GRINDSTONE);

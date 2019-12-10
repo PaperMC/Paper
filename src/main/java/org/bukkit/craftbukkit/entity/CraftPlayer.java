@@ -66,7 +66,6 @@ import net.minecraft.server.WhiteListEntry;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.Validate;
-import org.bukkit.Achievement;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -711,21 +710,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean isSleepingIgnored() {
         return getHandle().fauxSleeping;
-    }
-
-    @Override
-    public void awardAchievement(Achievement achievement) {
-        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
-    }
-
-    @Override
-    public void removeAchievement(Achievement achievement) {
-        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
-    }
-
-    @Override
-    public boolean hasAchievement(Achievement achievement) {
-        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
 
     @Override

@@ -1,28 +1,28 @@
 --- a/net/minecraft/server/RegionFileCache.java
 +++ b/net/minecraft/server/RegionFileCache.java
 @@ -18,7 +18,7 @@
-         this.a = file;
+         this.b = file;
      }
  
--    private RegionFile a(ChunkCoordIntPair chunkcoordintpair) throws IOException {
-+    private RegionFile a(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
+-    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
          long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
  
 @@ -34,6 +34,7 @@
              }
  
-             File file = new File(this.a, "r." + chunkcoordintpair.getRegionX() + "." + chunkcoordintpair.getRegionZ() + ".mca");
+             File file = new File(this.b, "r." + chunkcoordintpair.getRegionX() + "." + chunkcoordintpair.getRegionZ() + ".mca");
 +            if (existingOnly && !file.exists()) return null; // CraftBukkit
-             RegionFile regionfile1 = new RegionFile(file);
+             RegionFile regionfile1 = new RegionFile(file, this.b);
  
              this.cache.putAndMoveToFirst(i, regionfile1);
 @@ -43,7 +44,7 @@
  
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
--        RegionFile regionfile = this.a(chunkcoordintpair);
-+        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+-        RegionFile regionfile = this.getFile(chunkcoordintpair);
++        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
          DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
          Throwable throwable = null;
  
@@ -30,8 +30,8 @@
      }
  
      protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
--        RegionFile regionfile = this.a(chunkcoordintpair);
-+        RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
+-        RegionFile regionfile = this.getFile(chunkcoordintpair);
++        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
          DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
          Throwable throwable = null;
  
@@ -42,9 +42,9 @@
 +
 +    // CraftBukkit start
 +    public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
-+        RegionFile regionfile = a(pos, true);
++        RegionFile regionfile = getFile(pos, true);
 +
-+        return regionfile != null ? regionfile.d(pos) : false;
++        return regionfile != null ? regionfile.chunkExists(pos) : false;
 +    }
 +    // CraftBukkit end
  }

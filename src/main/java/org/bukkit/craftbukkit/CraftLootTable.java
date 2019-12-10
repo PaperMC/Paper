@@ -74,7 +74,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
-        if (getHandle() != LootTable.a) { // PAIL - empty
+        if (getHandle() != LootTable.EMPTY) {
             // builder.luck(context.getLuck());
 
             if (context.getLootedEntity() != null) {

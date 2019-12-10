@@ -104,6 +104,6 @@ public class CraftProfileBanList implements org.bukkit.BanList {
             //
         }
 
-        return (uuid != null) ? MinecraftServer.getServer().getUserCache().a(uuid) : MinecraftServer.getServer().getUserCache().getProfile(target);
+        return (uuid != null) ? MinecraftServer.getServer().getUserCache().getProfile(uuid) : MinecraftServer.getServer().getUserCache().getProfile(target);
     }
 }

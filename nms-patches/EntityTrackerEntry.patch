@@ -34,14 +34,14 @@
 +            this.broadcastIncludingSelf(new PacketPlayOutMount(this.tracker)); // CraftBukkit
          }
  
--        if (this.tracker instanceof EntityItemFrame && this.n % 10 == 0) {
+-        if (this.tracker instanceof EntityItemFrame && this.tickCounter % 10 == 0) {
 +        // PAIL : rename
-+        if (this.tracker instanceof EntityItemFrame /*&& this.n % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
++        if (this.tracker instanceof EntityItemFrame /*&& this.tickCounter % 10 == 0*/) { // CraftBukkit - Moved below, should always enter this block
              EntityItemFrame entityitemframe = (EntityItemFrame) this.tracker;
              ItemStack itemstack = entityitemframe.getItem();
  
 -            if (itemstack.getItem() instanceof ItemWorldMap) {
-+            if (this.n % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.n % 10 logic here so item frames do not enter the other blocks
++            if (this.tickCounter % 10 == 0 && itemstack.getItem() instanceof ItemWorldMap) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
                  WorldMap worldmap = ItemWorldMap.getSavedMap(itemstack, this.b);
 -                Iterator iterator = this.b.getPlayers().iterator();
 +                Iterator iterator = this.trackedPlayers.iterator(); // CraftBukkit
@@ -49,7 +49,7 @@
                  while (iterator.hasNext()) {
                      EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 @@ -104,6 +114,17 @@
-                 boolean flag2 = flag1 || this.n % 60 == 0;
+                 boolean flag2 = flag1 || this.tickCounter % 60 == 0;
                  boolean flag3 = Math.abs(i - this.yRot) >= 1 || Math.abs(j - this.xRot) >= 1;
  
 +                // CraftBukkit start - Code moved from below
@@ -63,7 +63,7 @@
 +                }
 +                // CraftBukkit end
 +
-                 if (this.n > 0 || this.tracker instanceof EntityArrow) {
+                 if (this.tickCounter > 0 || this.tracker instanceof EntityArrow) {
                      long k = PacketPlayOutEntity.a(vec3d.x);
                      long l = PacketPlayOutEntity.a(vec3d.y);
 @@ -142,6 +163,7 @@
@@ -84,7 +84,7 @@
              }
 @@ -165,7 +188,27 @@
  
-         ++this.n;
+         ++this.tickCounter;
          if (this.tracker.velocityChanged) {
 -            this.broadcastIncludingSelf(new PacketPlayOutEntityVelocity(this.tracker));
 +            // CraftBukkit start - Create PlayerVelocity event
@@ -131,7 +131,7 @@
 +            // CraftBukkit end
          }
  
-         Packet<?> packet = this.tracker.N();
+         Packet<?> packet = this.tracker.L();
 @@ -204,6 +250,12 @@
              AttributeMapServer attributemapserver = (AttributeMapServer) ((EntityLiving) this.tracker).getAttributeMap();
              Collection<AttributeInstance> collection = attributemapserver.c();
@@ -157,7 +157,7 @@
          if (this.tracker instanceof EntityLiving) {
              EntityLiving entityliving = (EntityLiving) this.tracker;
              Iterator iterator = entityliving.getEffects().iterator();
-@@ -265,6 +322,11 @@
+@@ -273,6 +330,11 @@
              Set<AttributeInstance> set = attributemapserver.getAttributes();
  
              if (!set.isEmpty()) {

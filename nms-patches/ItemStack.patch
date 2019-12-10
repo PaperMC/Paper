@@ -25,7 +25,7 @@
  public final class ItemStack {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -50,23 +68,42 @@
+@@ -54,23 +72,42 @@
          this.checkEmpty();
      }
  
@@ -71,7 +71,7 @@
          this.checkEmpty();
      }
  
-@@ -96,7 +133,7 @@
+@@ -100,7 +137,7 @@
          return this.h ? Items.AIR : this.item;
      }
  
@@ -80,7 +80,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -104,12 +141,153 @@
+@@ -108,12 +145,153 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().t(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -235,29 +235,7 @@
  
              return enuminteractionresult;
          }
-@@ -133,7 +311,7 @@
-         nbttagcompound.setString("id", minecraftkey == null ? "minecraft:air" : minecraftkey.toString());
-         nbttagcompound.setByte("Count", (byte) this.count);
-         if (this.tag != null) {
--            nbttagcompound.set("tag", this.tag);
-+            nbttagcompound.set("tag", this.tag.clone()); // CraftBukkit - make defensive copy, data is going to another thread
-         }
- 
-         return nbttagcompound;
-@@ -166,6 +344,12 @@
-     }
- 
-     public void setDamage(int i) {
-+        // CraftBukkit start - remove Damage tag if 0
-+        if (i <= 0) {
-+            this.removeTag("Damage");
-+            return;
-+        }
-+        // CraftBukkit end
-         this.getOrCreateTag().setInt("Damage", Math.max(0, i));
-     }
- 
-@@ -190,6 +374,21 @@
+@@ -194,6 +372,21 @@
                  }
  
                  i -= k;
@@ -279,7 +257,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -211,6 +410,11 @@
+@@ -215,6 +408,11 @@
                  if (this.isDamaged(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -291,7 +269,7 @@
  
                      this.subtract(1);
                      if (t0 instanceof EntityHuman) {
-@@ -338,6 +542,17 @@
+@@ -346,6 +544,17 @@
          return this.tag;
      }
  
@@ -309,7 +287,19 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -482,6 +697,12 @@
+@@ -386,6 +595,11 @@
+ 
+     public void setTag(@Nullable NBTTagCompound nbttagcompound) {
+         this.tag = nbttagcompound;
++        // CraftBukkit start - ensure null tags do not get inappropriately used (SpigotCraft#463)
++        if (this.tag == null && this.item != null && this.item.usesDurability()) {
++            this.setDamage(this.getDamage());
++        }
++        // CraftBukkit end
+     }
+ 
+     public IChatBaseComponent getName() {
+@@ -494,6 +708,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -322,7 +312,16 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -524,6 +745,13 @@
+@@ -516,7 +736,7 @@
+             object = this.getItem().a(enumitemslot);
+         }
+ 
+-        ((Multimap) object).values().forEach((attributemodifier1) -> {
++        ((Multimap<String, AttributeModifier>) object).values().forEach((attributemodifier1) -> { // CraftBukkit - decompile error
+             attributemodifier1.a(false);
+         });
+         return (Multimap) object;
+@@ -539,6 +759,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
