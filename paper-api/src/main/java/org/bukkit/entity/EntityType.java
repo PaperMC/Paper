@@ -260,6 +260,7 @@ public enum EntityType implements Keyed {
     TRADER_LLAMA("trader_llama", TraderLlama.class, -1),
     WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
     FOX("fox", Fox.class, -1),
+    BEE("bee", Bee.class, -1),
     /**
      * A fishing line and bobber.
      */

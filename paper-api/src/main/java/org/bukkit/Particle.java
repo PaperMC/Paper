@@ -68,6 +68,10 @@ public enum Particle {
     FALLING_LAVA,
     LANDING_LAVA,
     FALLING_WATER,
+    DRIPPING_HONEY,
+    FALLING_HONEY,
+    LANDING_HONEY,
+    FALLING_NECTAR,
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK(MaterialData.class),
     LEGACY_BLOCK_DUST(MaterialData.class),

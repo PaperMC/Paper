@@ -121,6 +121,31 @@ public final class GameRule<T> {
      */
     public static final GameRule<Boolean> DISABLE_RAIDS = new GameRule<>("disableRaids", Boolean.class);
 
+    /**
+     * Whether phantoms will appear without sleeping or not.
+     */
+    public static final GameRule<Boolean> DO_INSOMNIA = new GameRule<>("doInsomnia", Boolean.class);
+
+    /**
+     * Whether clients will respawn immediately after death or not.
+     */
+    public static final GameRule<Boolean> DO_IMMEDIATE_RESPAWN = new GameRule<>("doImmediateRespawn", Boolean.class);
+
+    /**
+     * Whether drowning damage is enabled or not.
+     */
+    public static final GameRule<Boolean> DROWNING_DAMAGE = new GameRule<>("drowningDamage", Boolean.class);
+
+    /**
+     * Whether fall damage is enabled or not.
+     */
+    public static final GameRule<Boolean> FALL_DAMAGE = new GameRule<>("fallDamage", Boolean.class);
+
+    /**
+     * Whether fire damage is enabled or not.
+     */
+    public static final GameRule<Boolean> FIRE_DAMAGE = new GameRule<>("fireDamage", Boolean.class);
+
     // Numerical rules
     /**
      * How often a random block tick occurs (such as plant growth, leaf decay,

@@ -299,24 +299,18 @@ public interface Server extends PluginMessageRecipient {
      * <p>
      * This method may not return objects for offline players.
      *
-     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
-     *     guaranteed to be unique
      * @param name the name to look up
      * @return a player if one was found, null otherwise
      */
-    @Deprecated
     @Nullable
     public Player getPlayer(@NotNull String name);
 
     /**
      * Gets the player with the exact given name, case insensitive.
      *
-     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
-     *     guaranteed to be unique
      * @param name Exact name of the player to retrieve
      * @return a player object if one was found, null otherwise
      */
-    @Deprecated
     @Nullable
     public Player getPlayerExact(@NotNull String name);
 
@@ -327,12 +321,9 @@ public interface Server extends PluginMessageRecipient {
      * This list is not sorted in any particular order. If an exact match is
      * found, the returned list will only contain a single result.
      *
-     * @deprecated Use {@link #getPlayer(UUID)} as player names are no longer
-     *     guaranteed to be unique
      * @param name the (partial) name to match
      * @return list of all possible players
      */
-    @Deprecated
     @NotNull
     public List<Player> matchPlayer(@NotNull String name);
 
