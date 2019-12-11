@@ -1,0 +1,87 @@
+From ea817a1e785ca6f37864a8d6f05700b020fd05aa Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 19 Aug 2016 01:52:56 +0100
+Subject: [PATCH] Optimise BlockState's hashCode/equals
+
+These are singleton "single instance" objects. We can rely on
+object identity checks safely.
+
+Use a simpler optimized hashcode
+
+diff --git a/src/main/java/net/minecraft/server/BlockState.java b/src/main/java/net/minecraft/server/BlockState.java
+index 0ce77d923..00e67b567 100644
+--- a/src/main/java/net/minecraft/server/BlockState.java
++++ b/src/main/java/net/minecraft/server/BlockState.java
+@@ -28,23 +28,13 @@ public abstract class BlockState<T extends Comparable<T>> implements IBlockState
+     }
+ 
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (!(object instanceof BlockState)) {
+-            return false;
+-        } else {
+-            BlockState<?> blockstate = (BlockState) object;
+-
+-            return this.a.equals(blockstate.a) && this.b.equals(blockstate.b);
+-        }
++        return this == object; // Paper - only one instance per configuration
+     }
+ 
++    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
++    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
+     public final int hashCode() {
+-        if (this.c == null) {
+-            this.c = this.c();
+-        }
+-
+-        return this.c;
++        return this.hashCode; // Paper - only one instance per configuration
+     }
+ 
+     public int c() {
+diff --git a/src/main/java/net/minecraft/server/BlockStateBoolean.java b/src/main/java/net/minecraft/server/BlockStateBoolean.java
+index d8738447d..7ca302b52 100644
+--- a/src/main/java/net/minecraft/server/BlockStateBoolean.java
++++ b/src/main/java/net/minecraft/server/BlockStateBoolean.java
+@@ -30,8 +30,7 @@ public class BlockStateBoolean extends BlockState<Boolean> {
+         return obool.toString();
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateBoolean && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
+index 1486d460c..7cdadc6b6 100644
+--- a/src/main/java/net/minecraft/server/BlockStateEnum.java
++++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
+@@ -49,8 +49,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+         return ((INamable) t0).getName();
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateEnum && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/server/BlockStateInteger.java b/src/main/java/net/minecraft/server/BlockStateInteger.java
+index 6f35c365f..0499a7170 100644
+--- a/src/main/java/net/minecraft/server/BlockStateInteger.java
++++ b/src/main/java/net/minecraft/server/BlockStateInteger.java
+@@ -38,8 +38,7 @@ public class BlockStateInteger extends BlockState<Integer> {
+         return this.a;
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper
+         if (this == object) {
+             return true;
+         } else if (object instanceof BlockStateInteger && super.equals(object)) {
+-- 
+2.17.1
+
