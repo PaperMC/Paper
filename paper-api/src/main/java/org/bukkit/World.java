@@ -1278,9 +1278,22 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
      * @return Biome of the requested block
+     * @deprecated biomes are now 3-dimensional
      */
     @NotNull
+    @Deprecated
     Biome getBiome(int x, int z);
+
+    /**
+     * Gets the biome for the given block coordinates.
+     *
+     * @param x X coordinate of the block
+     * @param y Y coordinate of the block
+     * @param z Z coordinate of the block
+     * @return Biome of the requested block
+     */
+    @NotNull
+    Biome getBiome(int x, int y, int z);
 
     /**
      * Sets the biome for the given block coordinates
@@ -1288,8 +1301,20 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
      * @param bio new Biome type for this block
+     * @deprecated biomes are now 3-dimensional
      */
+    @Deprecated
     void setBiome(int x, int z, @NotNull Biome bio);
+
+    /**
+     * Sets the biome for the given block coordinates
+     *
+     * @param x X coordinate of the block
+     * @param y Y coordinate of the block
+     * @param z Z coordinate of the block
+     * @param bio new Biome type for this block
+     */
+    void setBiome(int x, int y, int z, @NotNull Biome bio);
 
     /**
      * Gets the temperature for the given block coordinates.
@@ -1303,8 +1328,26 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
      * @return Temperature of the requested block
+     * @deprecated biomes are now 3-dimensional
      */
+    @Deprecated
     public double getTemperature(int x, int z);
+
+    /**
+     * Gets the temperature for the given block coordinates.
+     * <p>
+     * It is safe to run this method when the block does not exist, it will
+     * not create the block.
+     * <p>
+     * This method will return the raw temperature without adjusting for block
+     * height effects.
+     *
+     * @param x X coordinate of the block
+     * @param y Y coordinate of the block
+     * @param z Z coordinate of the block
+     * @return Temperature of the requested block
+     */
+    public double getTemperature(int x, int y, int z);
 
     /**
      * Gets the humidity for the given block coordinates.
@@ -1315,8 +1358,23 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
      * @return Humidity of the requested block
+     * @deprecated biomes are now 3-dimensional
      */
+    @Deprecated
     public double getHumidity(int x, int z);
+
+    /**
+     * Gets the humidity for the given block coordinates.
+     * <p>
+     * It is safe to run this method when the block does not exist, it will
+     * not create the block.
+     *
+     * @param x X coordinate of the block
+     * @param y Y coordinate of the block
+     * @param z Z coordinate of the block
+     * @return Humidity of the requested block
+     */
+    public double getHumidity(int x, int y, int z);
 
     /**
      * Gets the maximum height of this world.

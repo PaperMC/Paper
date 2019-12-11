@@ -104,18 +104,43 @@ public interface ChunkSnapshot {
      * @param x X-coordinate (0-15)
      * @param z Z-coordinate (0-15)
      * @return Biome at given coordinate
+     * @deprecated biomes are now 3-dimensional
      */
     @NotNull
+    @Deprecated
     Biome getBiome(int x, int z);
 
     /**
-     * Get raw biome temperature (0.0-1.0) at given coordinate
+     * Get biome at given coordinates
+     *
+     * @param x X-coordinate (0-15)
+     * @param y Y-coordinate (0-255)
+     * @param z Z-coordinate (0-15)
+     * @return Biome at given coordinate
+     */
+    @NotNull
+    Biome getBiome(int x, int y, int z);
+
+    /**
+     * Get raw biome temperature at given coordinates
      *
      * @param x X-coordinate (0-15)
      * @param z Z-coordinate (0-15)
      * @return temperature at given coordinate
+     * @deprecated biomes are now 3-dimensional
      */
+    @Deprecated
     double getRawBiomeTemperature(int x, int z);
+
+    /**
+     * Get raw biome temperature at given coordinates
+     *
+     * @param x X-coordinate (0-15)
+     * @param y Y-coordinate (0-15)
+     * @param z Z-coordinate (0-15)
+     * @return temperature at given coordinate
+     */
+    double getRawBiomeTemperature(int x, int y, int z);
 
     /**
      * Get world full time when chunk snapshot was captured
