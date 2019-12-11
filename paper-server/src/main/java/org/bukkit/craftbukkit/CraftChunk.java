@@ -5,8 +5,10 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BiomeStorage;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
+import net.minecraft.server.ChunkCoordIntPair;
 import net.minecraft.server.ChunkSection;
 import net.minecraft.server.DataPaletteBlock;
 import net.minecraft.server.EnumSkyBlock;
@@ -282,55 +284,22 @@ public class CraftChunk implements Chunk {
             hmap.a(chunk.heightMap.get(HeightMap.Type.MOTION_BLOCKING).a());
         }
 
-        BiomeBase[] biome = null;
-        double[] biomeTemp = null;
+        BiomeStorage biome = null;
 
-        if (includeBiome || includeBiomeTempRain) {
-            WorldChunkManager wcm = worldServer.getChunkProvider().getChunkGenerator().getWorldChunkManager();
-
-            if (includeBiome) {
-                biome = new BiomeBase[256];
-                for (int i = 0; i < 256; i++) {
-                    biome[i] = chunk.getBiomeIndex().getBiome(i & 0xF, 0, i >> 4);
-                }
-            }
-
-            if (includeBiomeTempRain) {
-                biomeTemp = new double[256];
-                float[] dat = getTemperatures(wcm, getX() << 4, getZ() << 4);
-
-                for (int i = 0; i < 256; i++) {
-                    biomeTemp[i] = dat[i];
-                }
-            }
+        if (includeBiome|| includeBiomeTempRain) {
+            biome = chunk.getBiomeIndex().b();
         }
 
         World world = getWorld();
-        return new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, biome, biomeTemp);
+        return new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, biome);
     }
 
     public static ChunkSnapshot getEmptyChunkSnapshot(int x, int z, CraftWorld world, boolean includeBiome, boolean includeBiomeTempRain) {
-        BiomeBase[] biome = null;
-        double[] biomeTemp = null;
+        BiomeStorage biome = null;
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = world.getHandle().getChunkProvider().getChunkGenerator().getWorldChunkManager();
-
-            if (includeBiome) {
-                biome = new BiomeBase[256];
-                for (int i = 0; i < 256; i++) {
-                    biome[i] = world.getHandle().getBiome(new BlockPosition((x << 4) + (i & 0xF), 0, (z << 4) + (i >> 4)));
-                }
-            }
-
-            if (includeBiomeTempRain) {
-                biomeTemp = new double[256];
-                float[] dat = getTemperatures(wcm, x << 4, z << 4);
-
-                for (int i = 0; i < 256; i++) {
-                    biomeTemp[i] = dat[i];
-                }
-            }
+            biome = new BiomeStorage(new ChunkCoordIntPair(x, z), wcm);
         }
 
         /* Fill with empty data */
@@ -347,23 +316,7 @@ public class CraftChunk implements Chunk {
             empty[i] = true;
         }
 
-        return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.MOTION_BLOCKING), biome, biomeTemp);
-    }
-
-    private static float[] getTemperatures(WorldChunkManager chunkmanager, int chunkX, int chunkZ) {
-        float[] temps = new float[256];
-
-        for (int i = 0; i < 256; i++) {
-            float temp = chunkmanager.getBiome((chunkX << 4) + (i & 0xF), 0, (chunkZ << 4) + (i >> 4)).getTemperature(); // Vanilla of olde: ((int) biomes[i].temperature * 65536.0F) / 65536.0F
-
-            if (temp > 1F) {
-                temp = 1F;
-            }
-
-            temps[i] = temp;
-        }
-
-        return temps;
+        return new CraftChunkSnapshot(x, z, world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(null, HeightMap.Type.MOTION_BLOCKING), biome);
     }
 
     static void validateChunkCoordinates(int x, int y, int z) {

@@ -45,16 +45,33 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     private final MobSpawnerCat mobSpawnerCat = new MobSpawnerCat();
     private final VillageSiege villageSiege = new VillageSiege();
 
-    private static class CustomBiomeGrid implements BiomeGrid {
-        BiomeStorage biome;
+    private class CustomBiomeGrid implements BiomeGrid {
+
+        private final BiomeStorage biome;
+
+        public CustomBiomeGrid(BiomeStorage biome) {
+            this.biome = biome;
+        }
 
         @Override
         public Biome getBiome(int x, int z) {
-            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, 0, z));
+            return getBiome(x, 0, z);
         }
 
         @Override
         public void setBiome(int x, int z, Biome bio) {
+            for (int y = 0; y < world.getWorld().getMaxHeight(); y++) {
+                setBiome(x, y, z, bio);
+            }
+        }
+
+        @Override
+        public Biome getBiome(int x, int y, int z) {
+            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, 0, z));
+        }
+
+        @Override
+        public void setBiome(int x, int y, int z, Biome bio) {
             biome.setBiome(x, 0, z, CraftBlock.biomeToBiomeBase(bio));
         }
     }
@@ -75,8 +92,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         random.setSeed((long) x * 341873128712L + (long) z * 132897987541L);
 
         // Get default biome data for chunk
-        CustomBiomeGrid biomegrid = new CustomBiomeGrid();
-        biomegrid.biome = new BiomeStorage(ichunkaccess.getPos(), this.getWorldChunkManager());
+        CustomBiomeGrid biomegrid = new CustomBiomeGrid(new BiomeStorage(ichunkaccess.getPos(), this.getWorldChunkManager()));
 
         ChunkData data;
         if (generator.isParallelCapable()) {
