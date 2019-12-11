@@ -67,12 +67,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
         @Override
         public Biome getBiome(int x, int y, int z) {
-            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, 0, z));
+            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, y, z));
         }
 
         @Override
         public void setBiome(int x, int y, int z, Biome bio) {
-            biome.setBiome(x, 0, z, CraftBlock.biomeToBiomeBase(bio));
+            biome.setBiome(x, y, z, CraftBlock.biomeToBiomeBase(bio));
         }
     }
 
