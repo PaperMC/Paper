@@ -473,12 +473,12 @@ public class CraftBlock implements Block {
 
     @Override
     public Biome getBiome() {
-        return getWorld().getBiome(getX(), getZ());
+        return getWorld().getBiome(getX(), getY(), getZ());
     }
 
     @Override
     public void setBiome(Biome bio) {
-        getWorld().setBiome(getX(), getZ(), bio);
+        getWorld().setBiome(getX(), getY(), getZ(), bio);
     }
 
     public static Biome biomeBaseToBiome(BiomeBase base) {
@@ -504,7 +504,7 @@ public class CraftBlock implements Block {
 
     @Override
     public double getHumidity() {
-        return getWorld().getHumidity(getX(), getZ());
+        return getWorld().getHumidity(getX(), getY(), getZ());
     }
 
     @Override

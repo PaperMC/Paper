@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BiomeBase;
+import net.minecraft.server.BiomeStorage;
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.DataPaletteBlock;
 import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
@@ -26,10 +27,9 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final boolean[] empty;
     private final HeightMap hmap; // Height map
     private final long captureFulltime;
-    private final BiomeBase[] biome;
-    private final double[] biomeTemp;
+    private final BiomeStorage biome;
 
-    CraftChunkSnapshot(int x, int z, String wname, long wtime, DataPaletteBlock<IBlockData>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, HeightMap hmap, BiomeBase[] biome, double[] biomeTemp) {
+    CraftChunkSnapshot(int x, int z, String wname, long wtime, DataPaletteBlock<IBlockData>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, HeightMap hmap, BiomeStorage biome) {
         this.x = x;
         this.z = z;
         this.worldname = wname;
@@ -40,7 +40,6 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         this.empty = sectionEmpty;
         this.hmap = hmap;
         this.biome = biome;
-        this.biomeTemp = biomeTemp;
     }
 
     @Override
@@ -119,18 +118,28 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
 
     @Override
     public final Biome getBiome(int x, int z) {
-        Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
-        CraftChunk.validateChunkCoordinates(x, 0, z);
+        return getBiome(x, 0, z);
+    }
 
-        return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
+    @Override
+    public final Biome getBiome(int x, int y, int z) {
+        Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
+        return CraftBlock.biomeBaseToBiome(biome.getBiome(x, y, z));
     }
 
     @Override
     public final double getRawBiomeTemperature(int x, int z) {
-        Preconditions.checkState(biomeTemp != null, "ChunkSnapshot created without biome temperatures. Please call getSnapshot with includeBiomeTempRain=true");
-        CraftChunk.validateChunkCoordinates(x, 0, z);
+        return getRawBiomeTemperature(x, 0, z);
+    }
 
-        return biomeTemp[z << 4 | x];
+    @Override
+    public final double getRawBiomeTemperature(int x, int y, int z) {
+        Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
+        CraftChunk.validateChunkCoordinates(x, y, z);
+
+        return biome.getBiome(x, y, z).getAdjustedTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
     @Override

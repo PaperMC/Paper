@@ -894,17 +894,30 @@ public class CraftWorld implements World {
 
     @Override
     public Biome getBiome(int x, int z) {
-        return CraftBlock.biomeBaseToBiome(this.world.getBiome(new BlockPosition(x, 0, z)));
+        return getBiome(x, 0, z);
+    }
+
+    @Override
+    public Biome getBiome(int x, int y, int z) {
+        return CraftBlock.biomeBaseToBiome(this.world.getBiome(new BlockPosition(x, y, z)));
     }
 
     @Override
     public void setBiome(int x, int z, Biome bio) {
+        for (int y = 0; y < getMaxHeight(); y++) {
+            setBiome(x, y, z, bio);
+        }
+    }
+
+    @Override
+    public void setBiome(int x, int y, int z, Biome bio) {
         BiomeBase bb = CraftBlock.biomeToBiomeBase(bio);
-        if (this.world.isLoaded(new BlockPosition(x, 0, z))) {
-            net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(new BlockPosition(x, 0, z));
+        BlockPosition pos = new BlockPosition(x, 0, z);
+        if (this.world.isLoaded(pos)) {
+            net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(pos);
 
             if (chunk != null) {
-                chunk.getBiomeIndex().setBiome(x, 0, z, bb);
+                chunk.getBiomeIndex().setBiome(x, y, z, bb);
 
                 chunk.markDirty(); // SPIGOT-2890
             }
@@ -913,12 +926,23 @@ public class CraftWorld implements World {
 
     @Override
     public double getTemperature(int x, int z) {
-        return this.world.getBiome(new BlockPosition(x, 0, z)).getTemperature();
+        return getTemperature(x, 0, z);
+    }
+
+    @Override
+    public double getTemperature(int x, int y, int z) {
+        BlockPosition pos = new BlockPosition(x, y, z);
+        return this.world.getBiome(pos).getAdjustedTemperature(pos);
     }
 
     @Override
     public double getHumidity(int x, int z) {
-        return this.world.getBiome(new BlockPosition(x, 0, z)).getHumidity();
+        return getHumidity(x, 0, z);
+    }
+
+    @Override
+    public double getHumidity(int x, int y, int z) {
+        return this.world.getBiome(new BlockPosition(x, y, z)).getHumidity();
     }
 
     @Override
