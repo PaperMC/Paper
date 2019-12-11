@@ -1,0 +1,49 @@
+From d564e48afbfbcf86f14ef7d91940a5fc82b7b9ee Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 May 2017 06:26:09 -0500
+Subject: [PATCH] PlayerPickupItemEvent#setFlyAtPlayer
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index 9973fc0b1..4b2e19f30 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -322,6 +322,7 @@ public class EntityItem extends Entity {
+             // CraftBukkit start - fire PlayerPickupItemEvent
+             int canHold = entityhuman.inventory.canHold(itemstack);
+             int remaining = i - canHold;
++            boolean flyAtPlayer = false; // Paper
+ 
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+@@ -329,8 +330,14 @@ public class EntityItem extends Entity {
+                 PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                 playerEvent.setCancelled(!entityhuman.canPickUpLoot);
+                 this.world.getServer().getPluginManager().callEvent(playerEvent);
++                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
+                 if (playerEvent.isCancelled()) {
+                     itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    // Paper Start
++                    if (flyAtPlayer) {
++                        entityhuman.receive(this, i);
++                    }
++                    // Paper End
+                     return;
+                 }
+ 
+@@ -354,7 +361,11 @@ public class EntityItem extends Entity {
+             // CraftBukkit end
+ 
+             if (this.pickupDelay == 0 && (this.owner == null || this.owner.equals(entityhuman.getUniqueID())) && entityhuman.inventory.pickup(itemstack)) {
+-                entityhuman.receive(this, i);
++                // Paper Start
++                if (flyAtPlayer) {
++                    entityhuman.receive(this, i);
++                }
++                // Paper End
+                 if (itemstack.isEmpty()) {
+                     this.die();
+                     itemstack.setCount(i);
+-- 
+2.17.1
+

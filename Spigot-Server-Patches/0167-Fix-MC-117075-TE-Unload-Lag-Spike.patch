@@ -1,0 +1,26 @@
+From cb98e4077354d4495e2a641196c2b4e4fee88bd9 Mon Sep 17 00:00:00 2001
+From: mezz <tehgeek@gmail.com>
+Date: Wed, 9 Aug 2017 17:51:22 -0500
+Subject: [PATCH] Fix MC-117075: TE Unload Lag Spike
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 312e32f1b..8cbad8362 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -654,7 +654,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         gameprofilerfiller.enter("blockEntities");
+         timings.tileEntityTick.startTiming(); // Spigot
+         if (!this.tileEntityListUnload.isEmpty()) {
+-            this.tileEntityListTick.removeAll(this.tileEntityListUnload);
++            // Paper start - Use alternate implementation with faster contains
++            java.util.Set<TileEntity> toRemove = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++            toRemove.addAll(tileEntityListUnload);
++            this.tileEntityListTick.removeAll(toRemove);
++            // Paper end
+             //this.tileEntityList.removeAll(this.tileEntityListUnload); // Paper - remove unused list
+             this.tileEntityListUnload.clear();
+         }
+-- 
+2.17.1
+
