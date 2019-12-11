@@ -1,4 +1,4 @@
-From de45b3395d8c937c9c5a38717db7edda3f800c6a Mon Sep 17 00:00:00 2001
+From 568ef66bc6542fa409549a32853318be49f874da Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 02:07:55 -0600
 Subject: [PATCH] Optimize isValidLocation, getType and getBlockData for inling
@@ -12,12 +12,12 @@ Replace all calls to the new place to the unnecessary forward.
 Optimize getType and getBlockData to manually inline and optimize the calls
 
 diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-index 2852a17f23..7cb46d7a9c 100644
+index a3b5793e4..71089442c 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -10,6 +10,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-     private final int a;
+@@ -13,6 +13,14 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
      private final int b;
+     @Deprecated
      private final int c;
 +    // Paper start
 +    public boolean isValidLocation() {
@@ -30,29 +30,8 @@ index 2852a17f23..7cb46d7a9c 100644
  
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
-diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 2613de6624..2eabaaeba2 100644
---- a/src/main/java/net/minecraft/server/BlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -339,6 +339,16 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         protected int b;
-         protected int c;
-         protected int d;
-+        // Paper start
-+        @Override
-+        public boolean isValidLocation() {
-+            return b >= -30000000 && d >= -30000000 && b < 30000000 && d < 30000000 && c >= 0 && c < 256;
-+        }
-+        @Override
-+        public boolean isInvalidYLocation() {
-+            return c < 0 || c >= 256;
-+        }
-+        // Paper end
- 
-         public MutableBlockPosition() {
-             this(0, 0, 0);
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 4aaf20dfcb..591c823b39 100644
+index be32b31e7..fd9ba8232 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -203,12 +203,24 @@ public class Chunk implements IChunkAccess {
@@ -85,7 +64,7 @@ index 4aaf20dfcb..591c823b39 100644
              IBlockData iblockdata = null;
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index f4605e3937..c4c181c1d5 100644
+index 652067757..0d5deee36 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -9,7 +9,7 @@ public class ChunkSection {
@@ -93,28 +72,28 @@ index f4605e3937..c4c181c1d5 100644
      private short tickingBlockCount;
      private short e;
 -    private final DataPaletteBlock<IBlockData> blockIds;
-+    final DataPaletteBlock<IBlockData> blockIds; // Paper - package
++    final DataPaletteBlock<IBlockData> blockIds;
  
      public ChunkSection(int i) {
          this(i, (short) 0, (short) 0, (short) 0);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 769d59271a..822db5d4c0 100644
+index 4feb3e9d8..182376a0a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -197,11 +197,11 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -183,11 +183,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      }
  
      public static boolean isValidLocation(BlockPosition blockposition) {
 -        return !isOutsideWorld(blockposition) && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000;
-+        return blockposition.isValidLocation(); // Paper
++        return blockposition.isValidLocation();
      }
  
      public static boolean isOutsideWorld(BlockPosition blockposition) {
 -        return b(blockposition.getY());
-+        return blockposition.isInvalidYLocation(); // Paper
++        return blockposition.isInvalidYLocation();
      }
  
      public static boolean b(int i) {
 -- 
-2.22.0
+2.24.0
 

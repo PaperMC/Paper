@@ -1,4 +1,4 @@
-From a7a3c92a8a4cc9c19e672c543cc83faad68ef8ba Mon Sep 17 00:00:00 2001
+From 2b1430ab1613161342f8b5cc8ea1e19ee5f90d0a Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 03:15:41 -0600
 Subject: [PATCH] Add exception reporting event
@@ -49,7 +49,7 @@ index 000000000..f699ce18c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 46635a530..6c13ae3ba 100644
+index f62429277..be32b31e7 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -1,5 +1,6 @@
@@ -59,7 +59,7 @@ index 46635a530..6c13ae3ba 100644
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-@@ -511,10 +512,15 @@ public class Chunk implements IChunkAccess {
+@@ -505,10 +506,15 @@ public class Chunk implements IChunkAccess {
              this.tileEntities.remove(blockposition);
              // Paper end
          } else {
@@ -80,7 +80,7 @@ index 46635a530..6c13ae3ba 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 15480a8df..0e8f08569 100644
+index 459baf26d..038b7b68d 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -15,6 +15,9 @@ import java.util.function.BooleanSupplier;
@@ -94,7 +94,7 @@ index 15480a8df..0e8f08569 100644
  public class ChunkProviderServer extends IChunkProvider {
  
 diff --git a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
-index 2cb0962ff..21a8ed323 100644
+index c9c2b0025..1422503e1 100644
 --- a/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 +++ b/src/main/java/net/minecraft/server/NameReferencingFileConverter.java
 @@ -1,5 +1,6 @@
@@ -121,10 +121,10 @@ index 2cb0962ff..21a8ed323 100644
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 04a65b487..b65f4226b 100644
+index 25eb8f648..1d4eddd93 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -688,6 +688,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -690,6 +690,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  this.world.checkSession();
              } catch (ExceptionWorldConflict exceptionworldconflict) {
                  PlayerChunkMap.LOGGER.error("Couldn't save chunk; already in use by another instance of Minecraft?", exceptionworldconflict);
@@ -132,7 +132,7 @@ index 04a65b487..b65f4226b 100644
                  return false;
              }
  
-@@ -715,6 +716,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -717,6 +718,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return true;
              } catch (Exception exception) {
                  PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
@@ -141,34 +141,27 @@ index 04a65b487..b65f4226b 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 8b17dde50..d6cecfc09 100644
+index 64be7cb97..515cc034e 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -1,5 +1,6 @@
- package net.minecraft.server;
- 
-+import com.destroystokyo.paper.exception.ServerInternalException;
- import com.google.common.collect.Lists;
- import java.io.BufferedInputStream;
- import java.io.BufferedOutputStream;
-@@ -142,6 +143,7 @@ public class RegionFile implements AutoCloseable {
+@@ -240,6 +240,7 @@ public class RegionFile implements AutoCloseable {
+                     return true;
                  }
+             } catch (IOException ioexception) {
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper
+                 return false;
              }
-         } catch (IOException ioexception) {
-+            ServerInternalException.reportInternalException(ioexception); // Paper
-             return null;
          }
-     }
-@@ -262,6 +264,7 @@ public class RegionFile implements AutoCloseable {
-             // this.b(chunkcoordintpair, (int) (SystemUtils.getTimeMillis() / 1000L)); // Spigot - move this into writeChunk
-         } catch (IOException ioexception) {
-             ioexception.printStackTrace();
-+            ServerInternalException.reportInternalException(ioexception); // Paper
-         }
- 
-     }
+@@ -308,6 +309,7 @@ public class RegionFile implements AutoCloseable {
+             filechannel.write(bytebuffer);
+         } catch (Throwable throwable1) {
+             throwable = throwable1;
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper
+             throw throwable1;
+         } finally {
+             if (filechannel != null) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index fc2bb1d69..9c065c999 100644
+index 8ba344df6..02157d051 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
@@ -196,7 +189,7 @@ index fc2bb1d69..9c065c999 100644
                              }
  
 diff --git a/src/main/java/net/minecraft/server/VillageSiege.java b/src/main/java/net/minecraft/server/VillageSiege.java
-index a58d3ba4c..6e4c5d4d8 100644
+index a8d1a0727..90e863280 100644
 --- a/src/main/java/net/minecraft/server/VillageSiege.java
 +++ b/src/main/java/net/minecraft/server/VillageSiege.java
 @@ -1,5 +1,7 @@
@@ -216,7 +209,7 @@ index a58d3ba4c..6e4c5d4d8 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 76704abda..ce723c62e 100644
+index 464a8da31..5d8404f8a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -2,6 +2,9 @@ package net.minecraft.server;
@@ -229,7 +222,7 @@ index 76704abda..ce723c62e 100644
  import com.google.common.collect.Lists;
  import java.io.IOException;
  import java.util.Collection;
-@@ -715,8 +718,11 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -688,8 +691,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                          gameprofilerfiller.exit();
                      } catch (Throwable throwable) {
                          // Paper start - Prevent tile entity and entity crashes
@@ -242,12 +235,12 @@ index 76704abda..ce723c62e 100644
                          tilesThisCycle--;
                          this.tileEntityListTick.remove(tileTickPosition--);
                          continue;
-@@ -787,8 +793,10 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -760,8 +766,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              consumer.accept(entity);
          } catch (Throwable throwable) {
              // Paper start - Prevent tile entity and entity crashes
--            System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX + "," + entity.locY + "," + entity.locZ);
-+            String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX + "," + entity.locY + "," + entity.locZ;
+-            System.err.println("Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ());
++            String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
 +            System.err.println(msg);
              throwable.printStackTrace();
 +            getServer().getPluginManager().callEvent(new ServerExceptionEvent(new ServerInternalException(msg, throwable)));
@@ -255,7 +248,7 @@ index 76704abda..ce723c62e 100644
              return;
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
-index f5f540032..00e9a1735 100644
+index 19e68a783..a2a25cf6a 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
 +++ b/src/main/java/net/minecraft/server/WorldPersistentData.java
 @@ -121,6 +121,7 @@ public class WorldPersistentData {

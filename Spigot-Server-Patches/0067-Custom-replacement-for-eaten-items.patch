@@ -1,49 +1,46 @@
-From 86eb3bc68d65c0bb4cd7005648825ece1e7239a8 Mon Sep 17 00:00:00 2001
+From b6694f092eb5700091be881e5bf8b231aaf1d2ef Mon Sep 17 00:00:00 2001
 From: Jedediah Smith <jedediah@silencegreys.com>
 Date: Sun, 21 Jun 2015 15:07:20 -0400
 Subject: [PATCH] Custom replacement for eaten items
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index c335a20fa9..adacb1847c 100644
+index 6e8adb65c..14097275c 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -2818,12 +2818,13 @@ public abstract class EntityLiving extends Entity {
+@@ -2894,9 +2894,10 @@ public abstract class EntityLiving extends Entity {
+                 this.b(this.activeItem, 16);
+                 // CraftBukkit start - fire PlayerItemConsumeEvent
+                 ItemStack itemstack;
++                PlayerItemConsumeEvent event = null; // Paper
+                 if (this instanceof EntityPlayer) {
+                     org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
+-                    PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
++                    event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem); // Paper
+                     world.getServer().getPluginManager().callEvent(event);
  
-     protected void q() {
-         if (!this.activeItem.isEmpty() && this.isHandRaised()) {
-+            PlayerItemConsumeEvent event = null; // Paper
-             this.b(this.activeItem, 16);
-             // CraftBukkit start - fire PlayerItemConsumeEvent
-             ItemStack itemstack;
-             if (this instanceof EntityPlayer) {
-                 org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
--                PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
-+                event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem); // Paper
-                 world.getServer().getPluginManager().callEvent(event);
+                     if (event.isCancelled()) {
+@@ -2911,9 +2912,20 @@ public abstract class EntityLiving extends Entity {
+                     itemstack = this.activeItem.a(this.world, this);
+                 }
  
-                 if (event.isCancelled()) {
-@@ -2838,9 +2839,20 @@ public abstract class EntityLiving extends Entity {
-                 itemstack = this.activeItem.a(this.world, this);
++                // Paper start - save the default replacement item and change it if necessary
++                final ItemStack defaultReplacement = itemstack;
++                if (event != null && event.getReplacement() != null) {
++                    itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++                }
++                // Paper end
+                 this.a(this.getRaisedHand(), itemstack);
+                 // CraftBukkit end
+                 this.dH();
++                // Paper start - if the replacement is anything but the default, update the client inventory
++                if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                    ((EntityPlayer) this).getBukkitEntity().updateInventory();
++                }
++                // Paper end
              }
  
-+            // Paper start - save the default replacement item and change it if necessary
-+            final ItemStack defaultReplacement = itemstack;
-+            if (event != null && event.getReplacement() != null) {
-+                itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
-+            }
-+            // Paper end
-             this.a(this.getRaisedHand(), itemstack);
-             // CraftBukkit end
-             this.dp();
-+            // Paper start - if the replacement is anything but the default, update the client inventory
-+            if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
-+                ((EntityPlayer) this).getBukkitEntity().updateInventory();
-+            }
-+            // Paper end
          }
- 
-     }
 -- 
-2.22.0
+2.24.0
 

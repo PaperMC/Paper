@@ -1,4 +1,4 @@
-From 067640ae81f0a55d2a5deb5a9703b7c7a39629ff Mon Sep 17 00:00:00 2001
+From 54b3a7993832da083470c8918749a25d2ce762fb Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 17 Apr 2016 17:27:09 -0400
 Subject: [PATCH] Prevent Fire from loading chunks
@@ -7,7 +7,7 @@ This causes the nether to spam unload/reload chunks, plus overall
 bad behavior.
 
 diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
-index 81e9717ae..49e3d7284 100644
+index 2909f78f8..9cf7d0b9e 100644
 --- a/src/main/java/net/minecraft/server/BlockFire.java
 +++ b/src/main/java/net/minecraft/server/BlockFire.java
 @@ -163,6 +163,7 @@ public class BlockFire extends Block {
@@ -15,20 +15,20 @@ index 81e9717ae..49e3d7284 100644
  
                                  blockposition_mutableblockposition.g(blockposition).e(l, j1, i1);
 +                                if (!world.isLoaded(blockposition_mutableblockposition)) continue; // Paper
-                                 int l1 = this.a((IWorldReader) world, (BlockPosition) blockposition_mutableblockposition);
+                                 int l1 = this.a((IWorldReader) worldserver, (BlockPosition) blockposition_mutableblockposition);
  
                                  if (l1 > 0) {
 @@ -208,10 +209,16 @@ public class BlockFire extends Block {
      }
  
      private void a(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
--        int k = this.q(world.getType(blockposition));
+-        int k = this.i(world.getType(blockposition));
 +        // Paper start
 +        final IBlockData iblockdata = world.getTypeIfLoaded(blockposition);
 +        if (iblockdata == null) {
 +            return;
 +        }
-+        int k = this.q(iblockdata);
++        int k = this.i(iblockdata);
 +        // Paper end
  
          if (random.nextInt(i) < k) {
@@ -53,5 +53,5 @@ index 81e9717ae..49e3d7284 100644
              }
  
 -- 
-2.22.0
+2.24.0
 

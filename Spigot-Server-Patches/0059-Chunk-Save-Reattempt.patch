@@ -1,4 +1,4 @@
-From 6951163f41c48961ff495eadbc07949a8ae88979 Mon Sep 17 00:00:00 2001
+From 994f6f6f791b76504dc1feeb6051a421a1606aea Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 4 Mar 2013 23:46:10 -0500
 Subject: [PATCH] Chunk Save Reattempt
@@ -6,32 +6,31 @@ Subject: [PATCH] Chunk Save Reattempt
 We commonly have "Stream Closed" errors on chunk saving, so this code should re-try to save the chunk in the event of failure and hopefully prevent rollbacks.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index d6cecfc09b..fb529eac91 100644
+index 515cc034e..5d2cbbad2 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -263,8 +263,7 @@ public class RegionFile implements AutoCloseable {
- 
-             // this.b(chunkcoordintpair, (int) (SystemUtils.getTimeMillis() / 1000L)); // Spigot - move this into writeChunk
-         } catch (IOException ioexception) {
--            ioexception.printStackTrace();
--            ServerInternalException.reportInternalException(ioexception); // Paper
-+            com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
+@@ -240,7 +240,7 @@ public class RegionFile implements AutoCloseable {
+                     return true;
+                 }
+             } catch (IOException ioexception) {
+-                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(ioexception); // Paper - we want the upper try/catch to retry this
+                 return false;
+             }
          }
- 
-     }
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 84fe9ee3bf..1ea9e5bb43 100644
+index a7f19c849..2fe27b460 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
-@@ -79,6 +79,7 @@ public abstract class RegionFileCache implements AutoCloseable {
-     }
+@@ -80,6 +80,7 @@ public final class RegionFileCache implements AutoCloseable {
  
      protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
+         RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
 +        int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
-         RegionFile regionfile = this.a(chunkcoordintpair, false); // CraftBukkit
          DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
          Throwable throwable = null;
-@@ -103,6 +104,18 @@ public abstract class RegionFileCache implements AutoCloseable {
+ 
+@@ -103,6 +104,18 @@ public final class RegionFileCache implements AutoCloseable {
  
          }
  
@@ -51,5 +50,5 @@ index 84fe9ee3bf..1ea9e5bb43 100644
  
      public void close() throws IOException {
 -- 
-2.22.0
+2.24.0
 

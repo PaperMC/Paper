@@ -1,4 +1,4 @@
-From 9c94c4d666dd012a9143703a7e8c4f5f727fc684 Mon Sep 17 00:00:00 2001
+From 733d2f61b89c8b2061a6352570870c6444b609d8 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 28 May 2015 23:00:19 -0400
 Subject: [PATCH] Handle Item Meta Inconsistencies
@@ -18,7 +18,7 @@ For consistency, the old API methods now forward to use the
 ItemMeta API equivalents, and should deprecate the old API's.
 
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 9ebfbff46b..b1dfd64d15 100644
+index 8e8fab497..0a1596ff0 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -7,6 +7,8 @@ import com.mojang.brigadier.StringReader;
@@ -30,10 +30,10 @@ index 9ebfbff46b..b1dfd64d15 100644
  import java.util.Locale;
  import java.util.Objects;
  import java.util.Random;
-@@ -66,6 +68,22 @@ public final class ItemStack {
-         decimalformat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
+@@ -67,6 +69,23 @@ public final class ItemStack {
          return decimalformat;
      }
+ 
 +    // Paper start
 +    private static final java.util.Comparator<? super NBTTagCompound> enchantSorter = java.util.Comparator.comparing(o -> o.getString("id"));
 +    private void processEnchantOrder(NBTTagCompound tag) {
@@ -50,10 +50,11 @@ index 9ebfbff46b..b1dfd64d15 100644
 +        } catch (Exception ignored) {}
 +    }
 +    // Paper end
- 
++
      public ItemStack(IMaterial imaterial) {
          this(imaterial, 1);
-@@ -100,6 +118,7 @@ public final class ItemStack {
+     }
+@@ -104,6 +123,7 @@ public final class ItemStack {
          if (nbttagcompound.hasKeyOfType("tag", 10)) {
              // CraftBukkit start - make defensive copy as this data may be coming from the save thread
              this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
@@ -61,15 +62,15 @@ index 9ebfbff46b..b1dfd64d15 100644
              this.getItem().a(this.tag);
              // CraftBukkit end
          }
-@@ -613,6 +632,7 @@ public final class ItemStack {
+@@ -615,6 +635,7 @@ public final class ItemStack {
      // Paper end
      public void setTag(@Nullable NBTTagCompound nbttagcompound) {
          this.tag = nbttagcompound;
 +        processEnchantOrder(this.tag); // Paper
-     }
- 
-     public IChatBaseComponent getName() {
-@@ -689,6 +709,7 @@ public final class ItemStack {
+         // CraftBukkit start - ensure null tags do not get inappropriately used (SpigotCraft#463)
+         if (this.tag == null && this.item != null && this.item.usesDurability()) {
+             this.setDamage(this.getDamage());
+@@ -700,6 +721,7 @@ public final class ItemStack {
          nbttagcompound.setString("id", String.valueOf(IRegistry.ENCHANTMENT.getKey(enchantment)));
          nbttagcompound.setShort("lvl", (short) ((byte) i));
          nbttaglist.add(nbttagcompound);
@@ -78,7 +79,7 @@ index 9ebfbff46b..b1dfd64d15 100644
  
      public boolean hasEnchantments() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index b0f9fa0ecd..9c9852f7a2 100644
+index 15e3edee2..410444747 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -178,28 +178,11 @@ public final class CraftItemStack extends ItemStack {
@@ -115,7 +116,7 @@ index b0f9fa0ecd..9c9852f7a2 100644
      }
  
      static boolean makeTag(net.minecraft.server.ItemStack item) {
-@@ -216,66 +199,32 @@ public final class CraftItemStack extends ItemStack {
+@@ -216,66 +199,33 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public boolean containsEnchantment(Enchantment ench) {
@@ -140,13 +141,7 @@ index b0f9fa0ecd..9c9852f7a2 100644
 -        NBTTagList list = getEnchantmentList(handle), listCopy;
 -        if (list == null) {
 -            return 0;
-+        // Paper start - replace entire method
-+        final ItemMeta itemMeta = getItemMeta();
-+        int level = itemMeta.getEnchantLevel(ench);
-+        if (level > 0) {
-+            itemMeta.removeEnchant(ench);
-+            setItemMeta(itemMeta);
-         }
+-        }
 -        int index = Integer.MIN_VALUE;
 -        int level = Integer.MIN_VALUE;
 -        int size = list.size();
@@ -178,11 +173,17 @@ index b0f9fa0ecd..9c9852f7a2 100644
 -            if (i != index) {
 -                listCopy.add(list.get(i));
 -            }
--        }
++        // Paper start - replace entire method
++        final ItemMeta itemMeta = getItemMeta();
++        int level = itemMeta.getEnchantLevel(ench);
++        if (level > 0) {
++            itemMeta.removeEnchant(ench);
++            setItemMeta(itemMeta);
+         }
 -        handle.getTag().set(ENCHANTMENTS.NBT, listCopy);
--
-         return level;
 +        // Paper end
+ 
+         return level;
      }
  
      @Override
@@ -193,7 +194,7 @@ index b0f9fa0ecd..9c9852f7a2 100644
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.server.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 33c988ead3..479a5686aa 100644
+index 0f901453d..5ee968f2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -204,14 +205,14 @@ index 33c988ead3..479a5686aa 100644
  import com.google.common.collect.Lists;
  import com.google.common.collect.Multimap;
  import com.google.common.collect.SetMultimap;
-@@ -24,6 +25,7 @@ import java.util.ArrayList;
+@@ -23,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
+ import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.Collection;
- import java.util.EnumSet;
 +import java.util.Comparator; // Paper
+ import java.util.EnumSet;
  import java.util.HashMap;
  import java.util.Iterator;
- import java.util.LinkedHashMap;
 @@ -32,6 +34,7 @@ import java.util.Locale;
  import java.util.Map;
  import java.util.NoSuchElementException;
@@ -305,10 +306,11 @@ index 33c988ead3..479a5686aa 100644
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1432,6 +1435,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1431,4 +1434,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             return HANDLED_TAGS;
          }
      }
- 
++
 +    // Paper start
 +    private static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
 +        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
@@ -326,9 +328,7 @@ index 33c988ead3..479a5686aa 100644
 +    }
 +    // Paper end
 +
-     // Spigot start
-     private final Spigot spigot = new Spigot()
-     {
+ }
 -- 
-2.23.0
+2.24.0
 
