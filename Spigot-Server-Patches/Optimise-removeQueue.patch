@@ -4,66 +4,65 @@ Date: Fri, 25 Nov 2016 13:22:40 +0000
 Subject: [PATCH] Optimise removeQueue
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 8ba828a03..170f741d4 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -0,0 +0,0 @@ import com.google.common.collect.Lists;
- import com.mojang.authlib.GameProfile;
- import com.mojang.datafixers.util.Either;
- import io.netty.util.concurrent.Future;
-+import java.util.ArrayDeque; // Paper
- import java.util.Collection;
-+import java.util.Deque; // Paper
- import java.util.Iterator;
- import java.util.List;
- import java.util.OptionalInt;
-@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-     public PlayerConnection playerConnection;
-     public final MinecraftServer server;
-     public final PlayerInteractManager playerInteractManager;
--    public final List<Integer> removeQueue = Lists.newLinkedList();
-+    public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
-     private final AdvancementDataPlayer advancementDataPlayer;
-     private final ServerStatisticManager serverStatisticManager;
-     private float lastHealthScored = Float.MIN_VALUE;
-@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         while (!this.removeQueue.isEmpty()) {
-             int i = Math.min(this.removeQueue.size(), Integer.MAX_VALUE);
-             int[] aint = new int[i];
--            Iterator<Integer> iterator = this.removeQueue.iterator();
-+            //Iterator<Integer> iterator = this.removeQueue.iterator(); // Paper
-             int j = 0;
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index 2480bc64b..3683fa298 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
  
--            while (iterator.hasNext() && j < i) {
-+            // Paper start
-+            /* while (iterator.hasNext() && j < i) {
-                 aint[j++] = (Integer) iterator.next();
-                 iterator.remove();
-+            } */
-+
-+            Integer integer;
-+            while (j < i && (integer = this.removeQueue.poll()) != null) {
-+                aint[j++] = integer.intValue();
-             }
+     }
+ 
++    // Paper start - Cache authenticator threads
++    private static final AtomicInteger threadId = new AtomicInteger(0);
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(
++            r -> new Thread(r, "User Authenticator #" + threadId.incrementAndGet())
++    );
++    // Paper end
+     // Spigot start
+     public void initUUID()
+     {
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic(), this.e));
+         } else {
+             // Spigot start
+-            new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
+-
++            // Paper start - Cache authenticator threads
++            authenticatorPool.execute(new Runnable() {
+                 @Override
+                 public void run() {
+                     try {
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+                         server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + i.getName(), ex);
+                     }
+                 }
+-            }.start();
++            });
 +            // Paper end
- 
-             this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(aint));
+             // Spigot end
          }
-@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         this.lastHealthSent = -1.0F;
-         this.lastFoodSent = -1;
-         // this.recipeBook.a((RecipeBook) entityplayer.recipeBook); // CraftBukkit
--        this.removeQueue.addAll(entityplayer.removeQueue);
-+        // Paper start - Optimize remove queue - vanilla copies player objects, but CB doesn't. This method currently only
-+        // Applies to the same player, so we need to not duplicate our removal queue. The rest of this method does "resetting"
-+        // type logic so it does need to be called, maybe? This is silly.
-+        //this.removeQueue.addAll(entityplayer.removeQueue);
-+        if (this.removeQueue != entityplayer.removeQueue) {
-+            this.removeQueue.addAll(entityplayer.removeQueue);
-+        }
-+        // Paper end
-         this.cp = entityplayer.cp;
-         this.cu = entityplayer.cu;
-         this.setShoulderEntityLeft(entityplayer.getShoulderEntityLeft());
+ 
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+             this.loginKey = packetlogininencryptionbegin.a(privatekey);
+             this.g = LoginListener.EnumProtocolState.AUTHENTICATING;
+             this.networkManager.a(this.loginKey);
+-            Thread thread = new Thread("User Authenticator #" + LoginListener.b.incrementAndGet()) {
++            // Paper start - Cache authenticator threads
++            authenticatorPool.execute(new Runnable() {
+                 public void run() {
+                     GameProfile gameprofile = LoginListener.this.i;
+ 
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+ 
+                     return LoginListener.this.server.X() && socketaddress instanceof InetSocketAddress ? ((InetSocketAddress) socketaddress).getAddress() : null;
+                 }
+-            };
+-
+-            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LoginListener.LOGGER));
+-            thread.start();
++            });
++            // Paper end
+         }
+     }
+ 
 --
