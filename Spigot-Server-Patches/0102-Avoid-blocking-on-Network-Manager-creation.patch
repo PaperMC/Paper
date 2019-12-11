@@ -1,0 +1,47 @@
+From 97be5e03e39b4a76d767df3c495281b54362952b Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 23:19:16 -0400
+Subject: [PATCH] Avoid blocking on Network Manager creation
+
+Per Paper issue 294
+
+diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
+index bd5563577..e6fac155d 100644
+--- a/src/main/java/net/minecraft/server/ServerConnection.java
++++ b/src/main/java/net/minecraft/server/ServerConnection.java
+@@ -39,6 +39,15 @@ public class ServerConnection {
+     public volatile boolean c;
+     private final List<ChannelFuture> f = Collections.synchronizedList(Lists.newArrayList());
+     private final List<NetworkManager> listeningChannels = Collections.synchronizedList(Lists.newArrayList());
++    // Paper start - prevent blocking on adding a new network manager while the server is ticking
++    private final List<NetworkManager> pending = Collections.synchronizedList(Lists.<NetworkManager>newArrayList());
++    private void addPending() {
++        synchronized (pending) {
++            this.listeningChannels.addAll(pending);
++            pending.clear();
++        }
++    }
++    // Paper end
+ 
+     public ServerConnection(MinecraftServer minecraftserver) {
+         this.e = minecraftserver;
+@@ -73,7 +82,7 @@ public class ServerConnection {
+                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(ServerConnection.this)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(EnumProtocolDirection.SERVERBOUND)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(EnumProtocolDirection.CLIENTBOUND));
+                     NetworkManager networkmanager = new NetworkManager(EnumProtocolDirection.SERVERBOUND);
+ 
+-                    ServerConnection.this.listeningChannels.add(networkmanager);
++                    pending.add(networkmanager); // Paper
+                     channel.pipeline().addLast("packet_handler", networkmanager);
+                     networkmanager.setPacketListener(new HandshakeListener(ServerConnection.this.e, networkmanager));
+                 }
+@@ -112,6 +121,7 @@ public class ServerConnection {
+ 
+         synchronized (this.listeningChannels) {
+             // Spigot Start
++            addPending(); // Paper
+             // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
+             if ( org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0 )
+             {
+-- 
+2.17.1
+

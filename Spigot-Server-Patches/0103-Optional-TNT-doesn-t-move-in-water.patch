@@ -1,0 +1,111 @@
+From 446ab7ff2aba9834e4775dd86f62429fac2ef20d Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 22 May 2016 20:20:55 -0500
+Subject: [PATCH] Optional TNT doesn't move in water
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 277f7618e..1dbeb209e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -2,7 +2,6 @@ package com.destroystokyo.paper;
+ 
+ import java.util.List;
+ 
+-import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+ 
+@@ -287,4 +286,14 @@ public class PaperWorldConfig {
+             );
+         }
+     }
++
++    public boolean preventTntFromMovingInWater;
++    private void preventTntFromMovingInWater() {
++        if (PaperConfig.version < 13) {
++            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
++            set("prevent-tnt-from-moving-in-water", oldVal);
++        }
++        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
++        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 2e56c7f57..e04b3f4e2 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -2705,6 +2705,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
+     public boolean bM() {
++        // Paper start
++        return this.pushedByWater();
++    }
++
++    public boolean pushedByWater() {
++        // Paper end
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+index 7625dca00..75193e87d 100644
+--- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+@@ -79,7 +79,27 @@ public class EntityTNTPrimed extends Entity {
+                 this.world.addParticle(Particles.SMOKE, this.locX(), this.locY() + 0.5D, this.locZ(), 0.0D, 0.0D, 0.0D);
+             }
+         }
+-
++        // Paper start - Optional prevent TNT from moving in water
++        if (!this.dead && this.inWater && this.world.paperConfig.preventTntFromMovingInWater) {
++            /*
++             * Author: Jedediah Smith <jedediah@silencegreys.com>
++             */
++            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
++            // This does pretty well at keeping their clients in sync with the server.
++            PlayerChunkMap.EntityTracker ete = this.tracker;
++            if (ete != null) {
++                PacketPlayOutEntityVelocity velocityPacket = new PacketPlayOutEntityVelocity(this);
++                PacketPlayOutEntityTeleport positionPacket = new PacketPlayOutEntityTeleport(this);
++
++                ete.trackedPlayers.stream()
++                    .filter(viewer -> (viewer.locX - this.locX) * (viewer.locY - this.locY) * (viewer.locZ - this.locZ) < 16 * 16)
++                    .forEach(viewer -> {
++                        viewer.playerConnection.sendPacket(velocityPacket);
++                        viewer.playerConnection.sendPacket(positionPacket);
++                    });
++            }
++        }
++        // Paper end
+     }
+ 
+     private void explode() {
+@@ -148,4 +168,11 @@ public class EntityTNTPrimed extends Entity {
+     public Packet<?> L() {
+         return new PacketPlayOutSpawnEntity(this);
+     }
++
++    // Paper start - Optional prevent TNT from moving in water
++    @Override
++    public boolean pushedByWater() {
++        return !world.paperConfig.preventTntFromMovingInWater && super.pushedByWater();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index a13fd9b34..3ff7a7b4a 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -36,7 +36,7 @@ public class EntityTrackerEntry {
+     private boolean q;
+     private boolean r;
+     // CraftBukkit start
+-    private final Set<EntityPlayer> trackedPlayers;
++    final Set<EntityPlayer> trackedPlayers; // Paper - private -> package
+     // Paper start
+     private java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = null;
+ 
+-- 
+2.17.1
+
