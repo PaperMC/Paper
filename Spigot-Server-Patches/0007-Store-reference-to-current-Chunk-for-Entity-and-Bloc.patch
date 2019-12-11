@@ -1,4 +1,4 @@
-From 92d78e2c8e6c305184f27034b3be19a8799aed6e Mon Sep 17 00:00:00 2001
+From 90f7a4116fa55f0b41e47a9702a7eaad2cc67d4d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 02:10:36 -0400
 Subject: [PATCH] Store reference to current Chunk for Entity and Block
@@ -8,12 +8,12 @@ This enables us a fast reference to the entities current chunk instead
 of having to look it up by hashmap lookups.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 1cbcefec58..4836d1f715 100644
+index cfffbd031..125d3acdc 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -29,7 +29,7 @@ public class Chunk implements IChunkAccess {
      private final ChunkSection[] sections;
-     private final BiomeBase[] d;
+     private BiomeStorage d;
      private final Map<BlockPosition, NBTTagCompound> e;
 -    public boolean loaded;
 +    public boolean loaded; public boolean isLoaded() { return loaded; } // Paper - OBFHELPER
@@ -21,7 +21,7 @@ index 1cbcefec58..4836d1f715 100644
      public final Map<HeightMap.Type, HeightMap> heightMap;
      private final ChunkConverter i;
 @@ -55,11 +55,36 @@ public class Chunk implements IChunkAccess {
-         this(world, chunkcoordintpair, abiomebase, ChunkConverter.a, TickListEmpty.b(), TickListEmpty.b(), 0L, (ChunkSection[]) null, (Consumer) null);
+         this(world, chunkcoordintpair, biomestorage, ChunkConverter.a, TickListEmpty.b(), TickListEmpty.b(), 0L, (ChunkSection[]) null, (Consumer) null);
      }
  
 +    // Paper start
@@ -49,7 +49,7 @@ index 1cbcefec58..4836d1f715 100644
 +    }
 +    // Paper end
 +
-     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
+     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
          this.sections = new ChunkSection[16];
          this.e = Maps.newHashMap();
          this.heightMap = Maps.newEnumMap(HeightMap.Type.class);
@@ -58,7 +58,7 @@ index 1cbcefec58..4836d1f715 100644
          this.l = Maps.newHashMap();
          this.m = Maps.newHashMap();
          this.n = new ShortList[16];
-@@ -366,6 +391,7 @@ public class Chunk implements IChunkAccess {
+@@ -361,6 +386,7 @@ public class Chunk implements IChunkAccess {
          }
  
          entity.inChunk = true;
@@ -66,7 +66,7 @@ index 1cbcefec58..4836d1f715 100644
          entity.chunkX = this.loc.x;
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
-@@ -377,6 +403,7 @@ public class Chunk implements IChunkAccess {
+@@ -372,6 +398,7 @@ public class Chunk implements IChunkAccess {
          ((HeightMap) this.heightMap.get(heightmap_type)).a(along);
      }
  
@@ -74,7 +74,7 @@ index 1cbcefec58..4836d1f715 100644
      public void b(Entity entity) {
          this.a(entity, entity.chunkY);
      }
-@@ -389,8 +416,12 @@ public class Chunk implements IChunkAccess {
+@@ -384,8 +411,12 @@ public class Chunk implements IChunkAccess {
          if (i >= this.entitySlices.length) {
              i = this.entitySlices.length - 1;
          }
@@ -90,10 +90,10 @@ index 1cbcefec58..4836d1f715 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 1519e481fb..d4954801cb 100644
+index a203f5d14..2a5e8d34e 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -133,7 +133,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -134,7 +134,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      protected static final DataWatcherObject<EntityPose> POSE = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
@@ -102,7 +102,7 @@ index 1519e481fb..d4954801cb 100644
      public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
      public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
      public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
-@@ -1733,6 +1733,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1709,6 +1709,39 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      // Paper start
@@ -143,7 +143,7 @@ index 1519e481fb..d4954801cb 100644
      private String entityKeyString;
  
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 7f480b3b3e..2efaf516ff 100644
+index 9071bb7ec..820180ab3 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -51,6 +51,15 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -163,10 +163,10 @@ index 7f480b3b3e..2efaf516ff 100644
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index f22959ee15..a98f6f3389 100644
+index 63ecbcd47..c82c21326 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -137,6 +137,7 @@ import net.minecraft.server.EntityZombieVillager;
+@@ -138,6 +138,7 @@ import net.minecraft.server.EntityZombieVillager;
  import net.minecraft.server.EnumChatFormat;
  import net.minecraft.server.IChatBaseComponent;
  import net.minecraft.server.NBTTagCompound;
@@ -174,7 +174,7 @@ index f22959ee15..a98f6f3389 100644
  import org.bukkit.EntityEffect;
  import org.bukkit.Location;
  import org.bukkit.Server;
-@@ -178,6 +179,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -179,6 +180,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          this.entity = entity;
      }
  
@@ -188,5 +188,5 @@ index f22959ee15..a98f6f3389 100644
          /**
           * Order is *EXTREMELY* important -- keep it right! =D
 -- 
-2.22.0
+2.24.0
 
