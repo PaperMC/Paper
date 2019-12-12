@@ -1,0 +1,48 @@
+From fb0baab3741afc9ca8a94a729e69c0d0cd9270de Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Mon, 19 Aug 2019 19:42:35 +0500
+Subject: [PATCH] Prevent consuming the wrong itemstack
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 1b5acf77e..d04ea03bc 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2890,10 +2890,13 @@ public abstract class EntityLiving extends Entity {
+         this.datawatcher.set(EntityLiving.ao, (byte) j);
+     }
+ 
+-    public void c(EnumHand enumhand) {
++    // Paper start -- OBFHELPER and forwarder to method with forceUpdate parameter
++    public void c(EnumHand enumhand) { this.updateActiveItem(enumhand, false); }
++    public void updateActiveItem(EnumHand enumhand, boolean forceUpdate) {
++    // Paper end
+         ItemStack itemstack = this.b(enumhand);
+ 
+-        if (!itemstack.isEmpty() && !this.isHandRaised()) {
++        if (!itemstack.isEmpty() && !this.isHandRaised() || forceUpdate) { // Paper use override flag
+             this.activeItem = itemstack;
+             this.bl = itemstack.k();
+             if (!this.world.isClientSide) {
+@@ -2969,6 +2972,7 @@ public abstract class EntityLiving extends Entity {
+             this.clearActiveItem();
+         } else {
+             if (!this.activeItem.isEmpty() && this.isHandRaised()) {
++                this.updateActiveItem(this.getRaisedHand(), true); // Paper
+                 this.b(this.activeItem, 16);
+                 // CraftBukkit start - fire PlayerItemConsumeEvent
+                 ItemStack itemstack;
+@@ -2999,8 +3003,8 @@ public abstract class EntityLiving extends Entity {
+                 this.a(this.getRaisedHand(), itemstack);
+                 // CraftBukkit end
+                 this.dH();
+-                // Paper start - if the replacement is anything but the default, update the client inventory
+-                if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                // Paper start
++                if (this instanceof EntityPlayer) {
+                     ((EntityPlayer) this).getBukkitEntity().updateInventory();
+                 }
+                 // Paper end
+-- 
+2.24.1
+
