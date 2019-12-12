@@ -1,4 +1,4 @@
-From 9dd828c0ae7071fcab9994e1c2e8c35c2b46b132 Mon Sep 17 00:00:00 2001
+From 5772233362f877a05c3f2ac98a102723e701ea65 Mon Sep 17 00:00:00 2001
 From: stonar96 <minecraft.stonar96@gmail.com>
 Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
@@ -1440,7 +1440,7 @@ index e156804f7..96a785af2 100644
      public void a() {
          this.o();
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 47710067a..654474341 100644
+index 47710067a..ef7ade797 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -1,5 +1,6 @@
@@ -1490,23 +1490,27 @@ index 47710067a..654474341 100644
          this.g = Lists.newArrayList();
          iterator = chunk.getTileEntities().entrySet().iterator();
          int totalSigns = 0; // Paper
-@@ -82,7 +97,15 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -81,9 +96,19 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+                 this.g.add(nbttagcompound);
              }
          }
++        chunk.world.chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo, forceLoad, null); // Paper - Anti-Xray - Modify blocks
++    }
  
 +    // Paper start - Async-Anti-Xray - Getter and Setter for the ready flag
 +    public boolean isReady() {
 +        return this.ready;
-+    }
-+
+     }
+ 
 +    public void setReady(boolean ready) {
 +        this.ready = ready;
-     }
++    }
 +    // Paper end
- 
++
      @Override
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
-@@ -150,6 +173,11 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         this.a = packetdataserializer.readInt();
+@@ -150,6 +175,11 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
  
      public int writeChunk(PacketDataSerializer packetDataSerializer, Chunk chunk, int chunkSectionSelector) { return this.a(packetDataSerializer, chunk, chunkSectionSelector); } // Paper - OBFHELPER
      public int a(PacketDataSerializer packetdataserializer, Chunk chunk, int i) {
@@ -1518,7 +1522,7 @@ index 47710067a..654474341 100644
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
          int k = 0;
-@@ -159,9 +187,12 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -159,7 +189,8 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
  
              if (chunksection != Chunk.a && (!this.f() || !chunksection.c()) && (i & 1 << k) != 0) {
                  j |= 1 << k;
@@ -1527,11 +1531,7 @@ index 47710067a..654474341 100644
 +                chunksection.getBlocks().writeDataPaletteBlock(packetdataserializer, chunkPacketInfo, k); // Paper - Anti-Xray - Add chunk packet info
              }
          }
-+        chunk.world.chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo, forceLoad, null); // Paper - Anti-Xray - Modify blocks
-+    }
  
-         return j;
-     }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
 index 43d9a5634..615d27863 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
