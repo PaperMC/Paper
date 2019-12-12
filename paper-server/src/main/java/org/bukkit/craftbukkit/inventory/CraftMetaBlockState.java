@@ -241,6 +241,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case LECTERN:
             case SMOKER:
             case BEEHIVE:
+            case BEE_NEST:
                 return true;
         }
         return false;
@@ -503,6 +504,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 te = new TileEntitySmoker();
             }
             return new CraftSmoker(material, (TileEntitySmoker) te);
+        case BEE_NEST:
         case BEEHIVE:
             if (te == null){
                 te = new TileEntityBeehive();
@@ -674,7 +676,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             valid = blockState instanceof CraftSmoker;
             break;
         case BEEHIVE:
+        case BEE_NEST:
             valid = blockState instanceof CraftBeehive;
+            break;
         default:
             valid = false;
             break;

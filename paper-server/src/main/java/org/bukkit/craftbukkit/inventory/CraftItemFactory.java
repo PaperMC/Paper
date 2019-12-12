@@ -260,7 +260,8 @@ public final class CraftItemFactory implements ItemFactory {
         case LECTERN:
         case SMOKER:
         case BEEHIVE:
-          return new CraftMetaBlockState(meta, material);
+        case BEE_NEST:
+            return new CraftMetaBlockState(meta, material);
         case TROPICAL_FISH_BUCKET:
             return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
         case CROSSBOW:

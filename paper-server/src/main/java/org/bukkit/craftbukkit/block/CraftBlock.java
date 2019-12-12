@@ -458,6 +458,7 @@ public class CraftBlock implements Block {
         case SMOKER:
             return new CraftSmoker(this);
         case BEEHIVE:
+        case BEE_NEST:
             return new CraftBeehive(this);
         default:
             TileEntity tileEntity = world.getTileEntity(position);

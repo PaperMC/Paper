@@ -511,6 +511,7 @@ public final class CraftItemStack extends ItemStack {
             case LECTERN:
             case SMOKER:
             case BEEHIVE:
+            case BEE_NEST:
                 return new CraftMetaBlockState(item.getTag(), CraftMagicNumbers.getMaterial(item.getItem()));
             case TROPICAL_FISH_BUCKET:
                 return new CraftMetaTropicalFishBucket(item.getTag());
