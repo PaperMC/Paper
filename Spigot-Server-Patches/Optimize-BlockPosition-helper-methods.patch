@@ -6,14 +6,14 @@ Subject: [PATCH] Optimize BlockPosition helper methods
 Resolves #1338
 
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 04f754d2c1..16f0930404 100644
+index 5a505b753..142476395 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
      }
  
      public BlockPosition up() {
--        return this.up(1);
+-        return this.shift(EnumDirection.UP);
 +        return new BlockPosition(this.getX(), this.getY() + 1, this.getZ()); // Paper - Optimize BlockPosition
      }
  
@@ -22,18 +22,20 @@ index 04f754d2c1..16f0930404 100644
 +        return i == 0 ? this : new BlockPosition(this.getX(), this.getY() + i, this.getZ()); // Paper - Optimize BlockPosition
      }
  
+     @Override
      public BlockPosition down() {
--        return this.down(1);
+-        return this.shift(EnumDirection.DOWN);
 +        return new BlockPosition(this.getX(), this.getY() - 1, this.getZ()); // Paper - Optimize BlockPosition
      }
  
+     @Override
      public BlockPosition down(int i) {
 -        return this.shift(EnumDirection.DOWN, i);
 +        return i == 0 ? this : new BlockPosition(this.getX(), this.getY() - i, this.getZ()); // Paper - Optimize BlockPosition
      }
  
      public BlockPosition north() {
--        return this.north(1);
+-        return this.shift(EnumDirection.NORTH);
 +        return new BlockPosition(this.getX(), this.getY(), this.getZ() - 1); // Paper - Optimize BlockPosition
      }
  
@@ -43,7 +45,7 @@ index 04f754d2c1..16f0930404 100644
      }
  
      public BlockPosition south() {
--        return this.south(1);
+-        return this.shift(EnumDirection.SOUTH);
 +        return new BlockPosition(this.getX(), this.getY(), this.getZ() + 1); // Paper - Optimize BlockPosition
      }
  
@@ -53,7 +55,7 @@ index 04f754d2c1..16f0930404 100644
      }
  
      public BlockPosition west() {
--        return this.west(1);
+-        return this.shift(EnumDirection.WEST);
 +        return new BlockPosition(this.getX() - 1, this.getY(), this.getZ()); // Paper - Optimize BlockPosition
      }
  
@@ -63,7 +65,7 @@ index 04f754d2c1..16f0930404 100644
      }
  
      public BlockPosition east() {
--        return this.east(1);
+-        return this.shift(EnumDirection.EAST);
 +        return new BlockPosition(this.getX() + 1, this.getY(), this.getZ()); // Paper - Optimize BlockPosition
      }
  
@@ -73,7 +75,7 @@ index 04f754d2c1..16f0930404 100644
      }
  
      public BlockPosition shift(EnumDirection enumdirection) {
--        return this.shift(enumdirection, 1);
+-        return new BlockPosition(this.getX() + enumdirection.getAdjacentX(), this.getY() + enumdirection.getAdjacentY(), this.getZ() + enumdirection.getAdjacentZ());
 +        // Paper Start - Optimize BlockPosition
 +        switch(enumdirection) {
 +            case UP:
@@ -94,5 +96,5 @@ index 04f754d2c1..16f0930404 100644
 +        // Paper End
      }
  
-     public BlockPosition shift(EnumDirection enumdirection, int i) {
+     @Override
 --

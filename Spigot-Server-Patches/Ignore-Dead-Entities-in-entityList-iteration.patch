@@ -11,7 +11,7 @@ This will ensure that dead entities are skipped from iteration since
 they shouldn't of been in the list in the first place.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index eecf27370b..d704fc79c0 100644
+index eecf27370..d704fc79c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
@@ -23,7 +23,7 @@ index eecf27370b..d704fc79c0 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index a74e389d14..09e010e670 100644
+index b156f5428..c7c600b80 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -37,7 +37,7 @@ index a74e389d14..09e010e670 100644
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
  
              while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
+                 T entity = (T) iterator.next(); // CraftBukkit - decompile error
 +                if (entity.shouldBeRemoved) continue; // Paper
  
                  if ((entitytypes == null || entity.getEntityType() == entitytypes) && entity.getBoundingBox().c(axisalignedbb) && predicate.test(entity)) {
@@ -51,19 +51,19 @@ index a74e389d14..09e010e670 100644
                  if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
                      list.add(t0);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 701090c11e..7d579c119b 100644
+index be8f6ac99..4a931aaf4 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-     public float D;
-     public float E;
-     public float F;
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
 +    public boolean shouldBeRemoved; // Paper
-     public float fallDistance;
-     private float av;
-     private float aw;
+ 
+     public float getBukkitYaw() {
+         return this.yaw;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a5ba64a4c9..6c55ae1a9f 100644
+index 110d6e571..afae55973 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
@@ -92,7 +92,7 @@ index a5ba64a4c9..6c55ae1a9f 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 67137d69c1..01b869a06f 100644
+index 96ff39e13..cc4788c96 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {

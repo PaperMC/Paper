@@ -5,32 +5,30 @@ Subject: [PATCH] Configurable speed for water flowing over lava
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 269c1ace4..4a4e9d715 100644
+index 80d66c647..e49318a19 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         }
+         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
      }
- 
++
 +    public int waterOverLavaFlowSpeed;
 +    private void waterOverLavaFlowSpeed() {
 +        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
 +        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
 +    }
-+
-     public boolean armorStandTick = true;
-     private void armorStandTick() {
-         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
+ }
 diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
-index cccdd1398..56bf0b1d8 100644
+index f56e14e1e..6d351f097 100644
 --- a/src/main/java/net/minecraft/server/BlockFluids.java
 +++ b/src/main/java/net/minecraft/server/BlockFluids.java
 @@ -0,0 +0,0 @@ public class BlockFluids extends Block implements IFluidSource {
      @Override
      public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
          if (this.a(world, blockposition, iblockdata)) {
--            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.a((IWorldReader) world));
-+            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.getFlowSpeed(world, blockposition)); // Paper
+-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
          }
  
      }
@@ -51,15 +49,16 @@ index cccdd1398..56bf0b1d8 100644
 +    }
 +    // Paper end
 +
++
      @Override
      public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
-         if (iblockdata.p().isSource() || iblockdata1.p().isSource()) {
+         if (iblockdata.getFluid().isSource() || iblockdata1.getFluid().isSource()) {
 @@ -0,0 +0,0 @@ public class BlockFluids extends Block implements IFluidSource {
      @Override
      public void doPhysics(IBlockData iblockdata, World world, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
          if (this.a(world, blockposition, iblockdata)) {
--            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.a((IWorldReader) world));
-+            world.getFluidTickList().a(blockposition, iblockdata.p().getType(), this.getFlowSpeed(world, blockposition)); // Paper
+-            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.a((IWorldReader) world));
++            world.getFluidTickList().a(blockposition, iblockdata.getFluid().getType(), this.getFlowSpeed(world, blockposition)); // Paper
          }
  
      }
