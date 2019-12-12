@@ -1,4 +1,4 @@
-From 837594c940509612179c1fa1c2ca6be6c39d9b7e Mon Sep 17 00:00:00 2001
+From 19caf0f475af73934d0bf85cd718375b5f952518 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -1250,7 +1250,7 @@ index 66f74c106..542262fc8 100644
              CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index ecb356013..c38963526 100644
+index ecb356013..e4eee465a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1,6 +1,8 @@
@@ -1270,7 +1270,7 @@ index ecb356013..c38963526 100644
  import org.bukkit.craftbukkit.event.CraftEventFactory;
  import org.bukkit.event.entity.CreatureSpawnEvent;
  import org.bukkit.event.server.MapInitializeEvent;
-@@ -96,11 +97,16 @@ public class WorldServer extends World {
+@@ -96,10 +97,10 @@ public class WorldServer extends World {
          // CraftBukkit end
          this.nextTickListBlock = new TickListServer<>(this, (block) -> {
              return block == null || block.getBlockData().isAir();
@@ -1278,17 +1278,12 @@ index ecb356013..c38963526 100644
 +        }, IRegistry.BLOCK::getKey, IRegistry.BLOCK::get, this::b, "Blocks"); // Paper - Timings
          this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
              return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-+<<<<<<< HEAD
-         }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a);
-         this.navigators = Sets.newHashSet();
-+=======
+-        }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a);
 +        }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
-+        this.H = Sets.newHashSet();
-+>>>>>>> Timings v2
+         this.navigators = Sets.newHashSet();
          this.I = new ObjectLinkedOpenHashSet();
          this.dataManager = worldnbtstorage;
-         this.server = minecraftserver;
-@@ -296,20 +302,28 @@ public class WorldServer extends World {
+@@ -296,20 +297,24 @@ public class WorldServer extends World {
          this.N();
          this.a();
          gameprofilerfiller.exitEnter("chunkSource");
@@ -1306,12 +1301,8 @@ index ecb356013..c38963526 100644
 +        timings.scheduledBlocks.stopTiming(); // Spigot
  
          gameprofilerfiller.exitEnter("raid");
-+<<<<<<< HEAD
-         this.persistentRaid.a();
-+=======
 +        this.timings.raids.startTiming(); // Paper - timings
-+        this.c.a();
-+>>>>>>> Timings v2
+         this.persistentRaid.a();
          if (this.mobSpawnerTrader != null) {
              this.mobSpawnerTrader.a();
          }
@@ -1319,7 +1310,7 @@ index ecb356013..c38963526 100644
  
          gameprofilerfiller.exitEnter("blockEvents");
          timings.doSounds.startTiming(); // Spigot
-@@ -352,6 +366,7 @@ public class WorldServer extends World {
+@@ -352,6 +357,7 @@ public class WorldServer extends World {
  
              org.spigotmc.ActivationRange.activateEntities(this); // Spigot
              timings.entityTick.startTiming(); // Spigot
@@ -1327,7 +1318,7 @@ index ecb356013..c38963526 100644
              while (objectiterator.hasNext()) {
                  Entry<Entity> entry = (Entry) objectiterator.next();
                  Entity entity1 = (Entity) entry.getValue();
-@@ -384,6 +399,7 @@ public class WorldServer extends World {
+@@ -384,6 +390,7 @@ public class WorldServer extends World {
                  gameprofilerfiller.enter("tick");
                  if (!entity1.dead && !(entity1 instanceof EntityComplexPart)) {
                      this.a(this::entityJoinedWorld, entity1);
@@ -1335,7 +1326,7 @@ index ecb356013..c38963526 100644
                  }
  
                  gameprofilerfiller.exit();
-@@ -400,9 +416,11 @@ public class WorldServer extends World {
+@@ -400,9 +407,11 @@ public class WorldServer extends World {
  
              this.tickingEntities = false;
  
@@ -1347,7 +1338,7 @@ index ecb356013..c38963526 100644
  
              gameprofilerfiller.exit();
              timings.tickEntities.stopTiming(); // Spigot
-@@ -467,6 +485,7 @@ public class WorldServer extends World {
+@@ -467,6 +476,7 @@ public class WorldServer extends World {
          }
  
          gameprofilerfiller.exitEnter("tickBlocks");
@@ -1355,7 +1346,7 @@ index ecb356013..c38963526 100644
          if (i > 0) {
              ChunkSection[] achunksection = chunk.getSections();
              int l = achunksection.length;
-@@ -498,7 +517,7 @@ public class WorldServer extends World {
+@@ -498,7 +508,7 @@ public class WorldServer extends World {
                  }
              }
          }
@@ -1364,7 +1355,7 @@ index ecb356013..c38963526 100644
          gameprofilerfiller.exit();
      }
  
-@@ -780,6 +799,7 @@ public class WorldServer extends World {
+@@ -780,6 +790,7 @@ public class WorldServer extends World {
  
          if (!flag1) {
              org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
@@ -1372,7 +1363,7 @@ index ecb356013..c38963526 100644
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
              }
-@@ -789,7 +809,10 @@ public class WorldServer extends World {
+@@ -789,7 +800,10 @@ public class WorldServer extends World {
                  iprogressupdate.c(new ChatMessage("menu.savingChunks", new Object[0]));
              }
  
@@ -1849,5 +1840,5 @@ index ca7789b5e..442383969 100644
      }
  }
 -- 
-2.24.0
+2.24.1
 
