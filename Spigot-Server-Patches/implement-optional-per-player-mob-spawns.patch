@@ -5,12 +5,12 @@ Subject: [PATCH] implement optional per player mob spawns
 
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 8de6c4816..ddec62fbf 100644
+index 3a79cde59..431534f4f 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -0,0 +0,0 @@ public class WorldTimingsHandler {
-     public final Timing chunkUnloadPOISerialization;
-     public final Timing chunkUnloadDataSave;
+     public final Timing chunkRangeCheckBig;
+     public final Timing chunkRangeCheckSmall;
  
 +    public final Timing playerMobDistanceMapUpdate;
 +
@@ -18,16 +18,16 @@ index 8de6c4816..ddec62fbf 100644
          String name = server.worldData.getName() +" - ";
  
 @@ -0,0 +0,0 @@ public class WorldTimingsHandler {
-         chunkUnloadPrepareSave = Timings.ofSafe(name + "Chunk unload - Async Save Prepare");
-         chunkUnloadPOISerialization = Timings.ofSafe(name + "Chunk unload - POI Data Serialization");
-         chunkUnloadDataSave = Timings.ofSafe(name + "Chunk unload - Data Serialization");
+         miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
+         chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
+         chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +
 +        playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
      }
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index b1ad22c9f..09c8ea2ed 100644
+index d0f5b2ab7..f63525d67 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -547,7 +547,7 @@ index 000000000..4f13d3ff8
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 8d7971ad8..e7539dd79 100644
+index f138b112f..109c6ada8 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -579,7 +579,7 @@ index 8d7971ad8..e7539dd79 100644
                                      int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
 -                                    if (object2intmap.getInt(enumcreaturetype) <= k1) {
--                                        SpawnerCreature.a(enumcreaturetype, (World) this.world, chunk, blockposition);
+-                                        SpawnerCreature.a(enumcreaturetype, this.world, chunk, blockposition);
 +                                    // Paper start - only allow spawns upto the limit per chunk and update count afterwards
 +                                    int currEntityCount = worldMobCount[enumcreaturetype.ordinal()];
 +                                    int difference = k1 - currEntityCount;
@@ -601,7 +601,7 @@ index 8d7971ad8..e7539dd79 100644
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 106b1ffe0..fa79d0bed 100644
+index ca2398386..19ba79c65 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -625,33 +625,33 @@ index 106b1ffe0..fa79d0bed 100644
  
      // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         this.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(chunkcoordintpair.x, chunkcoordintpair.z));
+ 
      }
  
-+    public SectionPosition getPlayerMapSection() { return this.M(); } // Paper - OBFHELPER
-     public SectionPosition M() {
-         return this.cv;
++    public SectionPosition getPlayerMapSection() { return this.K(); } // Paper - OBFHELPER
+     public SectionPosition K() {
+         return this.cs;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index a7fc34f85..612b9b7e3 100644
+index d49ad0308..2fb04e3e9 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
-         return this.be;
+         return this.bf;
      }
  
 +    public EnumCreatureType getEnumCreatureType() { return this.e(); } // Paper - OBFHELPER
      public EnumCreatureType e() {
-         return this.ba;
+         return this.bb;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 31d106f95..59e74900f 100644
+index fc6436c4f..67a909859 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      private final PlayerMap playerMap;
      public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
-     private final Queue<Runnable> A;
+     private final Queue<Runnable> z;
 -    private int viewDistance;
 +    int viewDistance; // Paper - private -> package private
 +    public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
@@ -659,8 +659,8 @@ index 31d106f95..59e74900f 100644
      // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
      public final CallbackExecutor callbackExecutor = new CallbackExecutor();
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         this.m = supplier;
-         this.n = new VillagePlace(new File(this.x, "poi"), datafixer, this.world); // Paper
+         this.l = supplier;
+         this.m = new VillagePlace(new File(this.w, "poi"), datafixer);
          this.setViewDistance(i);
 +        this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
 +    }
@@ -684,7 +684,7 @@ index 31d106f95..59e74900f 100644
  
      private static double a(ChunkCoordIntPair chunkcoordintpair, Entity entity) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index c6ea37ffb..9d4a96ae4 100644
+index bcca7faed..57ce02a97 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
@@ -700,15 +700,15 @@ index c6ea37ffb..9d4a96ae4 100644
      private static final Logger LOGGER = LogManager.getLogger();
  
 +    // Paper start - add maxSpawns parameter and return spawned mobs
-     public static void a(EnumCreatureType enumcreaturetype, World world, Chunk chunk, BlockPosition blockposition) {
-+        spawnMobs(enumcreaturetype, world, chunk, blockposition, Integer.MAX_VALUE, null);
+     public static void a(EnumCreatureType enumcreaturetype, WorldServer worldserver, Chunk chunk, BlockPosition blockposition) {
++        spawnMobs(enumcreaturetype, worldserver, chunk, blockposition, Integer.MAX_VALUE, null);
 +    }
-+    public static int spawnMobs(EnumCreatureType enumcreaturetype, World world, Chunk chunk, BlockPosition blockposition, int maxSpawns, Consumer<Entity> trackEntity) {
++    public static int spawnMobs(EnumCreatureType enumcreaturetype, WorldServer worldserver, Chunk chunk, BlockPosition blockposition, int maxSpawns, Consumer<Entity> trackEntity) {
 +        // Paper end
-         ChunkGenerator<?> chunkgenerator = world.getChunkProvider().getChunkGenerator();
+         ChunkGenerator<?> chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
 -        int i = 0;
 +        int i = 0; // Paper - force diff on name change
-         BlockPosition blockposition1 = getRandomPosition(world, chunk);
+         BlockPosition blockposition1 = getRandomPosition(worldserver, chunk);
          int j = blockposition1.getX();
          int k = blockposition1.getY();
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
@@ -728,11 +728,11 @@ index c6ea37ffb..9d4a96ae4 100644
 +                                                            return i; // Paper
                                                          }
  
-                                                         entityinsentient.setPositionRotation((double) f, (double) k, (double) f1, world.random.nextFloat() * 360.0F, 0.0F);
+                                                         entityinsentient.setPositionRotation((double) f, (double) k, (double) f1, worldserver.random.nextFloat() * 360.0F, 0.0F);
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
-                                                             groupdataentity = entityinsentient.prepare(world, world.getDamageScaler(new BlockPosition(entityinsentient)), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
+                                                             groupdataentity = entityinsentient.prepare(worldserver, worldserver.getDamageScaler(new BlockPosition(entityinsentient)), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
                                                              // CraftBukkit start
-                                                             if (world.addEntity(entityinsentient, SpawnReason.NATURAL)) {
+                                                             if (worldserver.addEntity(entityinsentient, SpawnReason.NATURAL)) {
 -                                                                ++i;
 +                                                                ++i; // Paper - force diff on name change
                                                                  ++i2;
@@ -742,7 +742,7 @@ index c6ea37ffb..9d4a96ae4 100644
                                                              }
 +                                                            if (i >= maxSpawns) { return i; } // Paper
                                                              // CraftBukkit end
-                                                             if (i >= entityinsentient.dC()) {
+                                                             if (i >= entityinsentient.getMaxSpawnGroup()) {
 -                                                                return;
 +                                                                return i; // Paper
                                                              }
@@ -757,7 +757,7 @@ index c6ea37ffb..9d4a96ae4 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 71939e808..bd1e4dbae 100644
+index 7b89b509a..fd42390d4 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {

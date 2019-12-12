@@ -5,10 +5,10 @@ Subject: [PATCH] Fix some generation concurrency issues
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e3b4e30e6..10c149fae 100644
+index 10bb06489..9ad76ab32 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      private int tileTickPosition;
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
      public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
@@ -33,7 +33,7 @@ index e3b4e30e6..10c149fae 100644
      public CraftWorld getWorld() {
          return this.world;
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-index ddf726867..c2188ceef 100644
+index b34a0683a..e002ed53f 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
 +++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -42,20 +42,20 @@ index ddf726867..c2188ceef 100644
  
 +    /* // Paper start - no shared state
      private boolean a;
-     private ChunkCoordIntPair[] aS;
-     private final List<StructureStart> aT = Lists.newArrayList();
-     private long aU;
-+     */
+     private ChunkCoordIntPair[] aq;
+     private final List<StructureStart> ar = Lists.newArrayList();
+     private long as;
++    */
  
      public WorldGenStronghold(Function<Dynamic<?>, ? extends WorldGenFeatureEmptyConfiguration> function) {
          super(function);
 @@ -0,0 +0,0 @@ public class WorldGenStronghold extends StructureGenerator<WorldGenFeatureEmptyC
  
      @Override
-     public boolean a(ChunkGenerator<?> chunkgenerator, Random random, int i, int j) {
+     public boolean a(BiomeManager biomemanager, ChunkGenerator<?> chunkgenerator, Random random, int i, int j, BiomeBase biomebase) {
 +        // Paper start
 +        /*
-         if (this.aU != chunkgenerator.getSeed()) {
+         if (this.as != chunkgenerator.getSeed()) {
              this.d();
          }
 +        */
@@ -71,7 +71,7 @@ index ddf726867..c2188ceef 100644
 +        }}
 +        // Paper end
  
--        ChunkCoordIntPair[] achunkcoordintpair = this.aS;
+-        ChunkCoordIntPair[] achunkcoordintpair = this.aq;
 +        ChunkCoordIntPair[] achunkcoordintpair = world.strongholdCoords; // Paper
          int k = achunkcoordintpair.length;
  
@@ -82,9 +82,9 @@ index ddf726867..c2188ceef 100644
      private void d() {
 +        /* // Paper
          this.a = false;
-         this.aS = null;
-         this.aT.clear();
-+         */ // Paper
+         this.aq = null;
+         this.ar.clear();
++        */ // Paper
      }
  
      @Override
@@ -101,7 +101,7 @@ index ddf726867..c2188ceef 100644
          } else {
 +            // Paper start - no shared state
 +            /*
-             if (this.aU != world.getSeed()) {
+             if (this.as != world.getSeed()) {
                  this.d();
              }
 +             */
@@ -120,7 +120,7 @@ index ddf726867..c2188ceef 100644
              BlockPosition blockposition1 = null;
              BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
              double d0 = Double.MAX_VALUE;
--            ChunkCoordIntPair[] achunkcoordintpair = this.aS;
+-            ChunkCoordIntPair[] achunkcoordintpair = this.aq;
 +            ChunkCoordIntPair[] achunkcoordintpair = world.strongholdCoords; // Paper
              int j = achunkcoordintpair.length;
  
@@ -129,8 +129,8 @@ index ddf726867..c2188ceef 100644
      }
  
      private void a(ChunkGenerator<?> chunkgenerator) {
--        this.aU = chunkgenerator.getSeed();
-+        //this.aU = chunkgenerator.getSeed(); // Paper
+-        this.as = chunkgenerator.getSeed();
++        //this.as = chunkgenerator.getSeed(); // Paper
          List<BiomeBase> list = Lists.newArrayList();
          Iterator iterator = IRegistry.BIOME.iterator();
  
@@ -138,17 +138,17 @@ index ddf726867..c2188ceef 100644
          int j = chunkgenerator.getSettings().f();
          int k = chunkgenerator.getSettings().g();
  
--        this.aS = new ChunkCoordIntPair[j];
+-        this.aq = new ChunkCoordIntPair[j];
 +        ChunkCoordIntPair[] strongholdCoords = chunkgenerator.getWorld().strongholdCoords = new ChunkCoordIntPair[j]; // Paper
          int l = 0;
--        Iterator iterator1 = this.aT.iterator();
+-        Iterator iterator1 = this.ar.iterator();
 +        Iterator iterator1 = chunkgenerator.getWorld().strongholdStuctures.iterator(); // Paper
  
          while (iterator1.hasNext()) {
              StructureStart structurestart = (StructureStart) iterator1.next();
  
--            if (l < this.aS.length) {
--                this.aS[l++] = new ChunkCoordIntPair(structurestart.f(), structurestart.g());
+-            if (l < this.aq.length) {
+-                this.aq[l++] = new ChunkCoordIntPair(structurestart.f(), structurestart.g());
 +            if (l < strongholdCoords.length) { // Paper
 +                strongholdCoords[l++] = new ChunkCoordIntPair(structurestart.f(), structurestart.g()); // Paper
              }
@@ -158,12 +158,12 @@ index ddf726867..c2188ceef 100644
          double d0 = random.nextDouble() * 3.141592653589793D * 2.0D;
          int i1 = l;
  
--        if (l < this.aS.length) {
+-        if (l < this.aq.length) {
 +        if (l < strongholdCoords.length) { // Paper
              int j1 = 0;
              int k1 = 0;
  
--            for (int l1 = 0; l1 < this.aS.length; ++l1) {
+-            for (int l1 = 0; l1 < this.aq.length; ++l1) {
 +            for (int l1 = 0; l1 < strongholdCoords.length; ++l1) { // Paper
                  double d1 = (double) (4 * i + i * k1 * 6) + (random.nextDouble() - 0.5D) * (double) i * 2.5D;
                  int i2 = (int) Math.round(Math.cos(d0) * d1);
@@ -172,7 +172,7 @@ index ddf726867..c2188ceef 100644
                  }
  
                  if (l1 >= i1) {
--                    this.aS[l1] = new ChunkCoordIntPair(i2, j2);
+-                    this.aq[l1] = new ChunkCoordIntPair(i2, j2);
 +                    strongholdCoords[l1] = new ChunkCoordIntPair(i2, j2); // Paper
                  }
  
@@ -181,8 +181,8 @@ index ddf726867..c2188ceef 100644
                      ++k1;
                      j1 = 0;
                      k += 2 * k / (k1 + 1);
--                    k = Math.min(k, this.aS.length - l1);
-+                    k = Math.min(k, strongholdCoords.length - l1);
+-                    k = Math.min(k, this.aq.length - l1);
++                    k = Math.min(k, strongholdCoords.length - l1); // Paper
                      d0 += random.nextDouble() * 3.141592653589793D * 2.0D;
                  }
              }
@@ -190,7 +190,7 @@ index ddf726867..c2188ceef 100644
                  this.a(chunkgenerator.getSeaLevel(), this.d, 10);
              } while (this.b.isEmpty() || worldgenstrongholdpieces_worldgenstrongholdstart.b == null);
  
--            ((WorldGenStronghold) this.k()).aT.add(this);
+-            ((WorldGenStronghold) this.l()).ar.add(this);
 +            chunkgenerator.getWorld().strongholdStuctures.add(this); // Paper - this worries me, this is never cleared, even in vanilla (world seed never changes "world", and that appears to be the only relevant world)
          }
      }

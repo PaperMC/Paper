@@ -6,12 +6,12 @@ Subject: [PATCH] Add option to prevent players from moving into unloaded
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 3b24fbdbf..c7ff264cb 100644
+index fe3e78f36..4bcba0a2b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
-         this.armorStandTick = this.getBoolean("armor-stands-tick", this.armorStandTick);
-         log("ArmorStand ticking is " + (this.armorStandTick ? "enabled" : "disabled") + " by default");
+         waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
+         log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
      }
 +
 +    public boolean preventMovingIntoUnloadedChunks = false;
@@ -20,7 +20,7 @@ index 3b24fbdbf..c7ff264cb 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index a814d8cae..b0fd4d800 100644
+index 77c375f71..ccad0a601 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -38,14 +38,14 @@ index a814d8cae..b0fd4d800 100644
                  // CraftBukkit end
                      PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getDisplayName().getString(), this.player.getDisplayName().getString(), d6, d7, d8);
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
-                         double d1 = this.player.locY;
-                         double d2 = this.player.locZ;
-                         double d3 = this.player.locY;
--                        double d4 = packetplayinflying.a(this.player.locX);
-+                        double d4 = packetplayinflying.a(this.player.locX);double toX = d4; // Paper - OBFHELPER
-                         double d5 = packetplayinflying.b(this.player.locY);
--                        double d6 = packetplayinflying.c(this.player.locZ);
-+                        double d6 = packetplayinflying.c(this.player.locZ);double toZ = d6; // Paper - OBFHELPER
+                         double d1 = this.player.locY();
+                         double d2 = this.player.locZ();
+                         double d3 = this.player.locY();
+-                        double d4 = packetplayinflying.a(this.player.locX());
++                        double d4 = packetplayinflying.a(this.player.locX());double toX = d4; // Paper - OBFHELPER
+                         double d5 = packetplayinflying.b(this.player.locY());
+-                        double d6 = packetplayinflying.c(this.player.locZ());
++                        double d6 = packetplayinflying.c(this.player.locZ());double toZ = d6; // Paper - OBFHELPER
                          float f = packetplayinflying.a(this.player.yaw);
                          float f1 = packetplayinflying.b(this.player.pitch);
                          double d7 = d4 - this.l;
@@ -54,8 +54,8 @@ index a814d8cae..b0fd4d800 100644
                                  speed = player.abilities.walkSpeed * 10f;
                              }
 +                            // Paper start - Prevent moving into unloaded chunks
-+                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX != toX || this.player.locZ != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4)) {
-+                                this.internalTeleport(this.player.locX, this.player.locY, this.player.locZ, this.player.yaw, this.player.pitch, Collections.emptySet());
++                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4)) {
++                                this.internalTeleport(this.player.locX(), this.player.locY(), this.player.locZ(), this.player.yaw, this.player.pitch, Collections.emptySet());
 +                                return;
 +                            }
 +                            // Paper end

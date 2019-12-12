@@ -14,7 +14,7 @@ And since minecart hoppers are used _very_ rarely near we can avoid alot of sear
 Combined, this adds up a lot.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index d604f96c1..67dc837f4 100644
+index 863a2222f..f2a04cb6a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
@@ -27,7 +27,7 @@ index d604f96c1..67dc837f4 100644
 +    private final int[] inventoryEntityCounts = new int[16];
      // Paper end
  
-     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeBase[] abiomebase, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
+     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
@@ -55,22 +55,6 @@ index d604f96c1..67dc837f4 100644
          this.markDirty(); // Paper
          // Paper end
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-         for (int k = i; k <= j; ++k) {
-             Iterator iterator = this.entitySlices[k].iterator(); // Spigot
- 
-+            // Paper start - Don't search for inventories if we have none, and that is all we want
-+            /*
-+             * We check if they want inventories by seeing if it is the static `IEntitySelector.c`
-+             *
-+             * Make sure the inventory selector stays in sync.
-+             * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
-+             */
-+            if (predicate == IEntitySelector.isInventory() && inventoryEntityCounts[k] <= 0) continue;
-+            // Paper end
-             while (iterator.hasNext()) {
-                 Entity entity = (Entity) iterator.next();
-                 if (entity.shouldBeRemoved) continue; // Paper
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          i = MathHelper.clamp(i, 0, this.entitySlices.length - 1);
          j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
  
@@ -88,9 +72,20 @@ index d604f96c1..67dc837f4 100644
 +            if (counts != null && counts[k] <= 0) continue; // Paper - Don't check a chunk if it doesn't have the type we are looking for
              Iterator iterator = this.entitySlices[k].iterator(); // Spigot
  
++            // Paper start - Don't search for inventories if we have none, and that is all we want
++            /*
++             * We check if they want inventories by seeing if it is the static `IEntitySelector.c`
++             *
++             * Make sure the inventory selector stays in sync.
++             * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
++             */
++            if (predicate == IEntitySelector.isInventory() && inventoryEntityCounts[k] <= 0) continue;
++            // Paper end
              while (iterator.hasNext()) {
+                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
+                 if (t0.shouldBeRemoved) continue; // Paper
 diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
-index 56488b78d..56739e6ed 100644
+index 498f38109..a2d1ef360 100644
 --- a/src/main/java/net/minecraft/server/IEntitySelector.java
 +++ b/src/main/java/net/minecraft/server/IEntitySelector.java
 @@ -0,0 +0,0 @@ public final class IEntitySelector {
