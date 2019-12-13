@@ -1,4 +1,4 @@
-From 207bb124c37c659b47420cfbd7e924e5e3149e55 Mon Sep 17 00:00:00 2001
+From cabe477c5c143734d6b8242e4ab82203ca85a2b6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
@@ -134,6 +134,28 @@ index 2dd27edc8..6def3616e 100644
          }));
          CraftingManager.LOGGER.info("Loaded {} recipes", map1.size());
      }
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index f2c0e06ba..909d13c42 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -376,7 +376,7 @@ public class EnderDragonBattle {
+ 
+     private void a(BlockPosition blockposition) {
+         this.d.triggerEffect(3000, blockposition, 0);
+-        WorldGenerator.END_GATEWAY.b((WorldGenFeatureConfiguration) WorldGenEndGatewayConfiguration.a()).a(this.d, this.d.getChunkProvider().getChunkGenerator(), new Random(), blockposition);
++        WorldGenerator.END_GATEWAY.b(WorldGenEndGatewayConfiguration.a()).a(this.d, this.d.getChunkProvider().getChunkGenerator(), new Random(), blockposition); // Paper - decompile fix
+     }
+ 
+     private void a(boolean flag) {
+@@ -388,7 +388,7 @@ public class EnderDragonBattle {
+             }
+         }
+ 
+-        worldgenendtrophy.b((WorldGenFeatureConfiguration) WorldGenFeatureConfiguration.e).a(this.d, this.d.getChunkProvider().getChunkGenerator(), new Random(), this.o);
++        worldgenendtrophy.b(WorldGenFeatureConfiguration.e).a(this.d, this.d.getChunkProvider().getChunkGenerator(), new Random(), this.o); // Paper - decompile fix
+     }
+ 
+     private EntityEnderDragon o() {
 diff --git a/src/main/java/net/minecraft/server/EntityVindicator.java b/src/main/java/net/minecraft/server/EntityVindicator.java
 index 7d44348c7..73ecdd22e 100644
 --- a/src/main/java/net/minecraft/server/EntityVindicator.java
@@ -178,7 +200,7 @@ index 1f3ea23ae..b098d86e3 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 3be9efd22..8d9b9af9b 100644
+index 3be9efd22..3a1ad2346 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
 @@ -281,12 +281,12 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
@@ -204,7 +226,7 @@ index 3be9efd22..8d9b9af9b 100644
 +                this.f = new VoxelShape[a.length]; // Paper - decompile fix
                  VoxelShape voxelshape = block.i(iblockdata, BlockAccessAir.INSTANCE, BlockPosition.ZERO);
 -                EnumDirection[] aenumdirection = IBlockData.a.a;
-+                EnumDirection[] aenumdirection = IBlockData.a.a; // Paper - decompile fix
++                EnumDirection[] aenumdirection = a; // Paper - decompile fix
  
                  i = aenumdirection.length;
  
@@ -359,6 +381,41 @@ index 829a7ae0a..8b9e47b4c 100644
  
      default String asString() {
          return this.toString();
+diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
+index 22035b6c0..5406f4c40 100644
+--- a/src/main/java/net/minecraft/server/NBTTagList.java
++++ b/src/main/java/net/minecraft/server/NBTTagList.java
+@@ -51,7 +51,7 @@ public class NBTTagList extends NBTList<NBTBase> {
+             return "TAG_List";
+         }
+     };
+-    private static final ByteSet b = new ByteOpenHashSet(Arrays.asList(1, 2, 3, 4, 5, 6));
++    private static final ByteSet b = new ByteOpenHashSet(Arrays.asList((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6)); // Paper - decompiler fix
+     private final List<NBTBase> list;
+     private byte type;
+ 
+diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
+index 8471920b8..e9c405fb5 100644
+--- a/src/main/java/net/minecraft/server/NextTickListEntry.java
++++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
+@@ -37,13 +37,13 @@ public class NextTickListEntry<T> {
+         return this.a.hashCode();
+     }
+ 
+-    public static <T> Comparator<NextTickListEntry<T>> a() {
++    public static <T> Comparator<Object> a() { // Paper - decompile fix
+         return Comparator.comparingLong((nextticklistentry) -> {
+-            return nextticklistentry.b;
++            return ((NextTickListEntry<T>) nextticklistentry).b; // Paper - decompile fix
+         }).thenComparing((nextticklistentry) -> {
+-            return nextticklistentry.c;
++            return ((NextTickListEntry<T>) nextticklistentry).c; // Paper - decompile fix
+         }).thenComparingLong((nextticklistentry) -> {
+-            return nextticklistentry.f;
++            return ((NextTickListEntry<T>) nextticklistentry).f; // Paper - decompile fix
+         });
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
 index 737afc7d7..db9f0196b 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
@@ -565,5 +622,5 @@ index 55fe7625a..19e68a783 100644
  
                  t0.a(nbttagcompound.getCompound("data"));
 -- 
-2.24.1
+2.24.0
 

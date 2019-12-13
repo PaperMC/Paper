@@ -1,4 +1,4 @@
-From 36505b571ac2b7a8b2353960f29c818d5e880384 Mon Sep 17 00:00:00 2001
+From 9dff654d99e1c5c0d31a9974dfe1b2b8314ae3dc Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
 Subject: [PATCH] incremental chunk saving
@@ -149,7 +149,7 @@ index 827831aab..4379434f6 100644
          if (flag) {
              List<PlayerChunk> list = (List) this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList());
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c28c0431a..0fd3cb54b 100644
+index c28c0431a..4bfa6ea0e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -791,11 +791,44 @@ public class WorldServer extends World {
@@ -166,7 +166,7 @@ index c28c0431a..0fd3cb54b 100644
 +
 +        try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) {
 +            if (doFull) {
-+                this.k_();
++                this.saveData();
 +            }
 +
 +            timings.worldSaveChunks.startTiming(); // Paper
@@ -180,9 +180,9 @@ index c28c0431a..0fd3cb54b 100644
 +                WorldServer worldserver1 = this;
 +                WorldData worlddata = worldserver1.getWorldData();
 +
-+                worldserver1.getWorldBorder().a(worlddata);
-+                worlddata.c(this.server.getBossBattleCustomData().c());
-+                worldserver1.getDataManager().saveWorldData(worlddata, this.server.getPlayerList().r());
++                worldserver1.getWorldBorder().save(worlddata);
++                worlddata.setCustomBossEvents(this.server.getBossBattleCustomData().save());
++                worldserver1.getDataManager().saveWorldData(worlddata, this.server.getPlayerList().save());
 +                // CraftBukkit end
 +            }
 +        }
@@ -198,6 +198,14 @@ index c28c0431a..0fd3cb54b 100644
              try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
+@@ -822,6 +855,7 @@ public class WorldServer extends World {
+         // CraftBukkit end
+     }
+ 
++    protected void saveData() throws ExceptionWorldConflict { this.m_(); } // Paper - OBFHELPER
+     protected void m_() throws ExceptionWorldConflict {
+         this.checkSession();
+         this.worldProvider.i();
 -- 
-2.24.1
+2.24.0
 
