@@ -200,12 +200,12 @@ index 4379434f6..8e2208422 100644
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
          // Spigot start
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 5d2cbbad2..7eb87c517 100644
+index ebb1b6b8b..e28fea44e 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     private final IntBuffer h;
      private final RegionFileBitSet freeSectors;
+     public final File file;
  
 +    // Paper start - Cache chunk status
 +    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
@@ -249,7 +249,7 @@ index 5d2cbbad2..7eb87c517 100644
              this.c();
          } finally {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 57ce53cfd..1a6be7c6d 100644
+index b3d1bb5fd..e07ae9854 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public final class RegionFileCache implements AutoCloseable {
@@ -272,12 +272,14 @@ index 57ce53cfd..1a6be7c6d 100644
  
          try {
              NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
+-            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // We don't do this anymore
 +            regionfile.setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
++            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false);
          } catch (Throwable throwable1) {
              throwable = throwable1;
              throw throwable1;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b1ae19be7..7d509856b 100644
+index ceb638c98..b824518a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ import java.util.Objects;
