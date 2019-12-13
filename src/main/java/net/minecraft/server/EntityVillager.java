@@ -551,7 +551,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
 
     @Override
     public void die(DamageSource damagesource) {
-        EntityVillager.LOGGER.info("Villager {} died, message: '{}'", this, damagesource.getLocalizedDeathMessage(this).getString());
+        if (org.spigotmc.SpigotConfig.logVillagerDeaths) EntityVillager.LOGGER.info("Villager {} died, message: '{}'", this, damagesource.getLocalizedDeathMessage(this).getString()); // Spigot
         Entity entity = damagesource.getEntity();
 
         if (entity != null) {
