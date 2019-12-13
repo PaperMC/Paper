@@ -58,7 +58,11 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             type = CraftPotionUtil.toBukkit(tag.getString(DEFAULT_POTION.NBT));
         }
         if (tag.hasKey(POTION_COLOR.NBT)) {
-            color = Color.fromRGB(tag.getInt(POTION_COLOR.NBT));
+            try {
+                color = Color.fromRGB(tag.getInt(POTION_COLOR.NBT));
+            } catch (IllegalArgumentException ex) {
+                // Invalid colour
+            }
         }
         if (tag.hasKey(POTION_EFFECTS.NBT)) {
             NBTTagList list = tag.getList(POTION_EFFECTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);

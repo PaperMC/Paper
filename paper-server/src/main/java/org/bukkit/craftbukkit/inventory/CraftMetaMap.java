@@ -63,7 +63,11 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
             }
 
             if (display.hasKey(MAP_COLOR.NBT)) {
-                color = Color.fromRGB(display.getInt(MAP_COLOR.NBT));
+                try {
+                    color = Color.fromRGB(display.getInt(MAP_COLOR.NBT));
+                } catch (IllegalArgumentException ex) {
+                    // Invalid colour
+                }
             }
         }
     }
