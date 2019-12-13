@@ -703,6 +703,15 @@
                      ServerPlayer entityplayer = (ServerPlayer) this;
  
                      entityplayer.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+@@ -1477,7 +1742,7 @@
+             }
+ 
+             if (!this.level().isClientSide && this.hasCustomName()) {
+-                LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
++                if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
+             }
+ 
+             this.dead = true;
 @@ -1512,14 +1777,22 @@
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
@@ -894,7 +903,7 @@
 +        };
 +        float freezingModifier = freezing.apply((double) f).floatValue();
 +        f += freezingModifier;
-+
+ 
 +        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -924,7 +933,7 @@
 +        };
 +        float armorModifier = armor.apply((double) f).floatValue();
 +        f += armorModifier;
- 
++
 +        com.google.common.base.Function<Double, Double> resistance = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
@@ -1103,19 +1112,19 @@
                      this.setHealth(0.0F);
                      this.die(this.damageSources().generic());
                  }
-@@ -2181,6 +2672,12 @@
-     public abstract Iterable<ItemStack> getArmorSlots();
+@@ -2182,6 +2673,12 @@
  
      public abstract ItemStack getItemBySlot(EquipmentSlot slot);
-+
+ 
 +    // CraftBukkit start
 +    public void setItemSlot(EquipmentSlot enumitemslot, ItemStack itemstack, boolean silent) {
 +        this.setItemSlot(enumitemslot, itemstack);
 +    }
 +    // CraftBukkit end
- 
++
      public abstract void setItemSlot(EquipmentSlot slot, ItemStack stack);
  
+     public Iterable<ItemStack> getHandSlots() {
 @@ -2494,7 +2991,7 @@
  
      }
@@ -1301,7 +1310,7 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
- 
++
 +                        if (event.isCancelled()) {
 +                            // Update client
 +                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
@@ -1312,7 +1321,7 @@
 +                            entityPlayer.getBukkitEntity().updateScaledHealth();
 +                            return;
 +                        }
-+
+ 
 +                        itemstack = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
 +                    } else {
 +                        itemstack = this.useItem.finishUsingItem(this.level(), this);

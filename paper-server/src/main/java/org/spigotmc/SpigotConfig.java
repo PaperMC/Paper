@@ -389,4 +389,11 @@ public class SpigotConfig
         SpigotConfig.disableAdvancementSaving = SpigotConfig.getBoolean("advancements.disable-saving", false);
         SpigotConfig.disabledAdvancements = SpigotConfig.getList("advancements.disabled", Arrays.asList(new String[]{"minecraft:story/disabled"}));
     }
+
+    public static boolean logVillagerDeaths;
+    public static boolean logNamedDeaths;
+    private static void logDeaths() {
+        SpigotConfig.logVillagerDeaths = SpigotConfig.getBoolean("settings.log-villager-deaths", true);
+        SpigotConfig.logNamedDeaths = SpigotConfig.getBoolean("settings.log-named-deaths", true);
+    }
 }
