@@ -1,0 +1,38 @@
+From cb0fd78af1de7f392b3f0eb9806baca978e20b89 Mon Sep 17 00:00:00 2001
+From: Lukasz Derlatka <toranktto@gmail.com>
+Date: Mon, 11 Nov 2019 16:08:13 +0100
+Subject: [PATCH] Fix AssertionError when player hand set to empty type
+
+Fixes an AssertionError when setting the player's item in hand to null or a new ItemStack of Air in PlayerInteractEvent
+Fixes GH-2718
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index e3c562a63..80219f2df 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1886,6 +1886,7 @@ public abstract class EntityLiving extends Entity {
+         return this.getEquipment(EnumItemSlot.OFFHAND);
+     }
+ 
++    public ItemStack getItemInHand(EnumHand enumhand) { return this.b(enumhand); } // Paper - OBFHELPER
+     public ItemStack b(EnumHand enumhand) {
+         if (enumhand == EnumHand.MAIN_HAND) {
+             return this.getEquipment(EnumItemSlot.MAINHAND);
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 8c54022e0..c559a7b95 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1429,6 +1429,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             if (cancelled) {
+                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
+             } else {
++                // Paper start
++                itemstack = this.player.getItemInHand(enumhand);
++                if (itemstack.isEmpty()) return;
++                // Paper end
+                 this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand);
+             }
+             // CraftBukkit end
+-- 
+2.24.1
+

@@ -1,0 +1,62 @@
+From dc069e1a6668c0e44a93eef06e15d919abdc74ca Mon Sep 17 00:00:00 2001
+From: miclebrick <miclebrick@outlook.com>
+Date: Thu, 23 Aug 2018 11:45:32 -0400
+Subject: [PATCH] Optimize CraftBlockData Creation
+
+Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
+and cloning it when one is needed.
+
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index 9ab57be85..c1ff62aa5 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
+ import com.mojang.datafixers.Dynamic;
+ import com.mojang.datafixers.types.DynamicOps;
+ import com.mojang.datafixers.util.Pair;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++
+ import java.util.Arrays;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -38,6 +40,15 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return (Block) this.a;
+     }
+ 
++    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++    private CraftBlockData cachedCraftBlockData;
++
++    public CraftBlockData createCraftBlockData() {
++        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
++        return (CraftBlockData) cachedCraftBlockData.clone();
++    }
++    // Paper end
++
+     public Material getMaterial() {
+         return this.getBlock().k(this);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index e371e7f6d..32e1e7e20 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -549,7 +549,17 @@ public class CraftBlockData implements BlockData {
+         return craft;
+     }
+ 
++    // Paper start - optimize creating BlockData to not need a map lookup
++    static {
++        // Initialize cached data for all IBlockData instances after registration
++        Block.REGISTRY_ID.iterator().forEachRemaining(IBlockData::createCraftBlockData);
++    }
+     public static CraftBlockData fromData(IBlockData data) {
++        return data.createCraftBlockData();
++    }
++
++    public static CraftBlockData createData(IBlockData data) {
++        // Paper end
+         return MAP.getOrDefault(data.getBlock().getClass(), CraftBlockData::new).apply(data);
+     }
+ }
+-- 
+2.24.1
+
