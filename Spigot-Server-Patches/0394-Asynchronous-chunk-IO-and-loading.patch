@@ -1,4 +1,4 @@
-From 2569817269d8854ce427a42e1880785f5ab7cf26 Mon Sep 17 00:00:00 2001
+From 783755ca4f609df8e98ca724b6efa576e29bd117 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -2827,7 +2827,7 @@ index 721021791..f7156acb8 100644
              ;
          }
 diff --git a/src/main/java/net/minecraft/server/IChunkLoader.java b/src/main/java/net/minecraft/server/IChunkLoader.java
-index 2f95174fc..756af4b83 100644
+index 2f95174fc..134c76065 100644
 --- a/src/main/java/net/minecraft/server/IChunkLoader.java
 +++ b/src/main/java/net/minecraft/server/IChunkLoader.java
 @@ -3,37 +3,49 @@ package net.minecraft.server;
@@ -2917,11 +2917,22 @@ index 2f95174fc..756af4b83 100644
 -
 -    public void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) {
 -        this.a.a(chunkcoordintpair, nbttagcompound);
--        if (this.c != null) {
++//    Paper start - nuke IOWorker
++//    @Nullable
++//    public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
++//        return this.a.a(chunkcoordintpair);
++//    }
++//
++    public void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { write(chunkcoordintpair, nbttagcompound); } // Paper OBFHELPER
++    public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { // Paper - OBFHELPER - (Switched around for safety)
++        super.write(chunkcoordintpair, nbttagcompound);
+         if (this.c != null) {
 -            this.c.a(chunkcoordintpair.pair());
--        }
--
--    }
++            synchronized (this.persistentDataLock) { // Paper - Async chunk loading
++            this.c.a(chunkcoordintpair.pair()); } // Paper - Async chunk loading}
+         }
+ 
+     }
 -
 -    public void i() {
 -        this.a.a().join();
@@ -2930,21 +2941,6 @@ index 2f95174fc..756af4b83 100644
 -    public void close() throws IOException {
 -        this.a.close();
 -    }
-+//    Paper start - nuke IOWorker
-+//    @Nullable
-+//    public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
-+//        return this.a.a(chunkcoordintpair);
-+//    }
-+//
-+    public void a(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { write(chunkcoordintpair, nbttagcompound); } // Paper OBFHELPER
-+//    public void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException { // Paper - OBFHELPER - (Switched around for safety)
-+//        this.a.a(chunkcoordintpair, nbttagcompound);
-+//        if (this.c != null) {
-+//            synchronized (this.persistentDataLock) { // Paper - Async chunk loading
-+//            this.c.a(chunkcoordintpair.pair()); } // Paper - Async chunk loading}
-+//        }
-+//
-+//    }
 +//
 +//    public void i() {
 +//        this.a.a().join();
@@ -3550,9 +3546,18 @@ index 6a54ccb86..fce37d0d6 100644
          return this.m;
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 7eb87c517..551e91869 100644
+index 7eb87c517..b252684c2 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -218,7 +218,7 @@ public class RegionFile implements AutoCloseable {
+         return (i + 4096 - 1) / 4096;
+     }
+ 
+-    public boolean b(ChunkCoordIntPair chunkcoordintpair) {
++    public synchronized boolean b(ChunkCoordIntPair chunkcoordintpair) { // Paper - synchronized
+         int i = this.getOffset(chunkcoordintpair);
+ 
+         if (i == 0) {
 @@ -373,7 +373,7 @@ public class RegionFile implements AutoCloseable {
          return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
      }
@@ -3563,7 +3568,7 @@ index 7eb87c517..551e91869 100644
          try {
              this.c();
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index 1a6be7c6d..8d188117c 100644
+index 1a6be7c6d..386f47dc8 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -9,7 +9,7 @@ import java.io.File;
@@ -3575,7 +3580,7 @@ index 1a6be7c6d..8d188117c 100644
  
      public final Long2ObjectLinkedOpenHashMap<RegionFile> cache = new Long2ObjectLinkedOpenHashMap();
      private final File b;
-@@ -20,7 +20,7 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -20,12 +20,12 @@ public final class RegionFileCache implements AutoCloseable {
  
  
      // Paper start
@@ -3584,6 +3589,21 @@ index 1a6be7c6d..8d188117c 100644
          return this.cache.getAndMoveToFirst(ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
      }
  
+     // Paper end
+-    public RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public
++    public synchronized RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public, synchronize
+         long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+         RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
+ 
+@@ -126,7 +126,7 @@ public final class RegionFileCache implements AutoCloseable {
+         // Paper end
+     }
+ 
+-    public void close() throws IOException {
++    public synchronized void close() throws IOException { // Paper -> synchronized
+         ObjectIterator objectiterator = this.cache.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
 @@ -138,7 +138,7 @@ public final class RegionFileCache implements AutoCloseable {
      }
  
