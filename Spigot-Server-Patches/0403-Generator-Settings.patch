@@ -1,0 +1,56 @@
+From d68a253b65cf8d1ade79d29176abd91db9a7f1db Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 02:17:54 -0600
+Subject: [PATCH] Generator Settings
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index f63525d67..fd9bedf5a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -625,4 +625,9 @@ public class PaperWorldConfig {
+     private void perPlayerMobSpawns() {
+         perPlayerMobSpawns = getBoolean("per-player-mob-spawns", false);
+     }
++
++    public boolean generateFlatBedrock;
++    private void generatorSettings() {
++        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
+index af81a8414..2268fbdd8 100644
+--- a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
++++ b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
+@@ -211,8 +211,8 @@ public abstract class ChunkGeneratorAbstract<T extends GeneratorSettingsDefault>
+         int i = ichunkaccess.getPos().d();
+         int j = ichunkaccess.getPos().e();
+         T t0 = this.getSettings();
+-        int k = t0.u();
+-        int l = t0.t();
++        int k = t0.u(); final int floorHeight = k; // Paper
++        int l = t0.t(); final int roofHeight = l; // Paper
+         Iterator iterator = BlockPosition.b(i, 0, j, i + 15, 0, j + 15).iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -221,7 +221,7 @@ public abstract class ChunkGeneratorAbstract<T extends GeneratorSettingsDefault>
+ 
+             if (l > 0) {
+                 for (i1 = l; i1 >= l - 4; --i1) {
+-                    if (i1 >= l - random.nextInt(5)) {
++                    if (i1 >= (getWorld().paperConfig.generateFlatBedrock ? roofHeight : l - random.nextInt(5))) { // Paper - Configurable flat bedrock roof
+                         ichunkaccess.setType(blockposition_mutableblockposition.d(blockposition.getX(), i1, blockposition.getZ()), Blocks.BEDROCK.getBlockData(), false);
+                     }
+                 }
+@@ -229,7 +229,7 @@ public abstract class ChunkGeneratorAbstract<T extends GeneratorSettingsDefault>
+ 
+             if (k < 256) {
+                 for (i1 = k + 4; i1 >= k; --i1) {
+-                    if (i1 <= k + random.nextInt(5)) {
++                    if (i1 <= (getWorld().paperConfig.generateFlatBedrock ? floorHeight : k + random.nextInt(5))) { // Paper - Configurable flat bedrock floor
+                         ichunkaccess.setType(blockposition_mutableblockposition.d(blockposition.getX(), i1, blockposition.getZ()), Blocks.BEDROCK.getBlockData(), false);
+                     }
+                 }
+-- 
+2.24.1
+
