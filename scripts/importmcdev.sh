@@ -93,6 +93,7 @@ done
 # we do not need any lines added to this file for NMS
 
 # import FileName
+import EntityFireballFireball
 
 
 
