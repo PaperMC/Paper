@@ -348,6 +348,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
         return new com.destroystokyo.paper.PaperVersionFetcher();
     }
+
+    @Override
+    public boolean isSupportedApiVersion(String apiVersion) {
+        return apiVersion != null && SUPPORTED_API.contains(apiVersion);
+    }
     // Paper end
 
     /**
