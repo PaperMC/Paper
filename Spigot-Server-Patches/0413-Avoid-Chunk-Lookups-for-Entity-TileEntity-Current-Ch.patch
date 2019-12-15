@@ -14,31 +14,34 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 
-
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index e3de63489..0e9530ea5 100644
+index 985f30372..67159b8a8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -762,7 +762,8 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -776,7 +776,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              if (!tileentity.isRemoved() && tileentity.hasWorld()) {
                  BlockPosition blockposition = tileentity.getPosition();
  
 -                if (this.chunkProvider.a(blockposition) && this.getWorldBorder().a(blockposition)) {
-+                Chunk currentChunk = tileentity.getCurrentChunk(); // Paper
-+                if (currentChunk != null && this.getWorldBorder().a(blockposition)) { // Paper
++                if (tileentity.getCurrentChunk() != null && this.getWorldBorder().a(blockposition)) { // Paper
                      try {
                          gameprofilerfiller.a(() -> {
-                             return String.valueOf(TileEntityTypes.a(tileentity.q()));
-@@ -801,7 +802,7 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+                             return String.valueOf(TileEntityTypes.a(tileentity.getTileType()));
+@@ -815,8 +815,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                  this.tileEntityListTick.remove(tileTickPosition--);
                  // Spigot end
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
 -                if (this.isLoaded(tileentity.getPosition())) {
-+                if (tileentity.getCurrentChunk() != null ) { // Paper - avoid lookups
-                     this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
+-                    this.getChunkAtWorldCoords(tileentity.getPosition()).removeTileEntity(tileentity.getPosition());
++                // Paper start - use local chunk reference
++                Chunk chunk = tileentity.getCurrentChunk();
++                if (chunk != null) {
++                    chunk.removeTileEntity(tileentity.getPosition());
++                // Paper end
                  }
              }
-@@ -822,8 +823,9 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+         }
+@@ -836,8 +839,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                      }
                      // CraftBukkit end */
  
@@ -46,24 +49,14 @@ index e3de63489..0e9530ea5 100644
 -                        Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
 +                    Chunk chunk = tileentity1.getCurrentChunk(); // Paper
 +                    if (chunk != null) { // Paper
-+                        //Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition()); // Paper
                          IBlockData iblockdata = chunk.getType(tileentity1.getPosition());
  
                          chunk.setTileEntity(tileentity1.getPosition(), tileentity1);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 067379252..340460a33 100644
+index 83fb8737a..c473c7d16 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1061,7 +1061,7 @@ public class WorldServer extends World {
-         }
- 
-         this.entitiesByUUID.remove(entity.getUniqueID());
--        this.getChunkProvider().removeEntity(entity);
-+        this.getChunkProvider().removeEntity(entity); // Paper
-         if (entity instanceof EntityPlayer) {
-             EntityPlayer entityplayer = (EntityPlayer) entity;
- 
-@@ -1121,9 +1121,12 @@ public class WorldServer extends World {
+@@ -1384,9 +1384,12 @@ public class WorldServer extends World {
      }
  
      private void removeEntityFromChunk(Entity entity) {
@@ -74,10 +67,10 @@ index 067379252..340460a33 100644
 +        // Paper start
  
 -        if (ichunkaccess instanceof Chunk) {
-+        if (ichunkaccess != null) {
++        if (ichunkaccess != null) { // Paper
              ((Chunk) ichunkaccess).b(entity);
          }
  
 -- 
-2.21.0
+2.22.0
 
