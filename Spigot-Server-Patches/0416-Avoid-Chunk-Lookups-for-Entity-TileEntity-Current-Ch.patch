@@ -1,4 +1,4 @@
-From 404c8ec69e874c98023af9914dd56c7863dbc99a Mon Sep 17 00:00:00 2001
+From e9ded59f2d2f5dfeaa0c9997ba6478a3f7b1bc59 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 03:39:51 -0400
 Subject: [PATCH] Avoid Chunk Lookups for Entity/TileEntity Current Chunk
@@ -14,10 +14,10 @@ to the object directly on the Entity/TileEntity object we can directly grab.
 Use that local value instead to reduce lookups in many hot places.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 985f30372..67159b8a8 100644
+index 0baa884bbf..373ea71e64 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -776,7 +776,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -784,7 +784,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              if (!tileentity.isRemoved() && tileentity.hasWorld()) {
                  BlockPosition blockposition = tileentity.getPosition();
  
@@ -26,7 +26,7 @@ index 985f30372..67159b8a8 100644
                      try {
                          gameprofilerfiller.a(() -> {
                              return String.valueOf(TileEntityTypes.a(tileentity.getTileType()));
-@@ -815,8 +815,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -823,8 +823,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                  this.tileEntityListTick.remove(tileTickPosition--);
                  // Spigot end
                  //this.tileEntityList.remove(tileentity); // Paper - remove unused list
@@ -40,7 +40,7 @@ index 985f30372..67159b8a8 100644
                  }
              }
          }
-@@ -836,8 +839,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -844,8 +847,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                      }
                      // CraftBukkit end */
  
@@ -52,10 +52,10 @@ index 985f30372..67159b8a8 100644
  
                          chunk.setTileEntity(tileentity1.getPosition(), tileentity1);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 83fb8737a..c473c7d16 100644
+index 3739a95c5a..1e00908671 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1384,9 +1384,12 @@ public class WorldServer extends World {
+@@ -1390,9 +1390,12 @@ public class WorldServer extends World {
      }
  
      private void removeEntityFromChunk(Entity entity) {
