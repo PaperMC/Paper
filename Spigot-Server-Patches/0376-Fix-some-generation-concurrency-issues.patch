@@ -1,11 +1,11 @@
-From 456b08a9c36183ca6be42b2bf40f5c43a34162cb Mon Sep 17 00:00:00 2001
+From 2658c1b132e2176ce72f91f6670923ad8349f757 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Fri, 24 May 2019 07:53:16 +0100
 Subject: [PATCH] Fix some generation concurrency issues
 
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9889b0543..e80cb3b97 100644
+index 66e1745836..d7a7720996 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -100,6 +100,23 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -32,8 +32,34 @@ index 9889b0543..e80cb3b97 100644
  
      public CraftWorld getWorld() {
          return this.world;
+diff --git a/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java b/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
+index 22e14fe1e9..e2af6d43b2 100644
+--- a/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
++++ b/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
+@@ -23,18 +23,18 @@ public class WorldGenFeatureStateProviderWeighted extends WorldGenFeatureStatePr
+         this(new WeightedList<>(dynamic.get("entries").orElseEmptyList(), IBlockData::a));
+     }
+ 
+-    public WorldGenFeatureStateProviderWeighted a(IBlockData iblockdata, int i) {
++    public synchronized WorldGenFeatureStateProviderWeighted a(IBlockData iblockdata, int i) { // Paper
+         this.b.a(iblockdata, i);
+         return this;
+     }
+ 
+     @Override
+-    public IBlockData a(Random random, BlockPosition blockposition) {
++    public synchronized IBlockData a(Random random, BlockPosition blockposition) { // Paper
+         return (IBlockData) this.b.b(random);
+     }
+ 
+     @Override
+-    public <T> T a(DynamicOps<T> dynamicops) {
++    public synchronized <T> T a(DynamicOps<T> dynamicops) { // Paper
+         Builder<T, T> builder = ImmutableMap.builder();
+ 
+         builder.put(dynamicops.createString("type"), dynamicops.createString(IRegistry.t.getKey(this.a).toString())).put(dynamicops.createString("entries"), this.b.a(dynamicops, (iblockdata) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldGenStronghold.java b/src/main/java/net/minecraft/server/WorldGenStronghold.java
-index b34a0683a..e002ed53f 100644
+index b34a0683a1..e002ed53f6 100644
 --- a/src/main/java/net/minecraft/server/WorldGenStronghold.java
 +++ b/src/main/java/net/minecraft/server/WorldGenStronghold.java
 @@ -10,10 +10,12 @@ import javax.annotation.Nullable;
