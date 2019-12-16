@@ -1,0 +1,99 @@
+From b995eb601a68f80e691beb7f081f21f46984b650 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <mail@moep.tv>
+Date: Sun, 15 Sep 2019 11:32:32 -0500
+Subject: [PATCH] Fix zero-tick instant grow farms MC-113809
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 33e251c87f..c0af1aaf3b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -564,6 +564,11 @@ public class PaperWorldConfig {
+         disableRelativeProjectileVelocity = getBoolean("game-mechanics.disable-relative-projectile-velocity", false);
+     }
+ 
++    public boolean fixZeroTickInstantGrowFarms = true;
++    private void fixZeroTickInstantGrowFarms() {
++        fixZeroTickInstantGrowFarms = getBoolean("fix-zero-tick-instant-grow-farms", fixZeroTickInstantGrowFarms);
++    }
++
+     public boolean altItemDespawnRateEnabled;
+     public Map<Material, Integer> altItemDespawnRateMap;
+     private void altItemDespawnRate() {
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 46490a9430..54a61283e6 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -46,6 +46,7 @@ public class Block implements IMaterial {
+     private final float g;
+     protected final BlockStateList<Block, IBlockData> blockStateList;
+     private IBlockData blockData;
++    public boolean randomTick = false; // Paper - fix MC-113809
+     protected final boolean v;
+     private final boolean i;
+     private final boolean j;
+diff --git a/src/main/java/net/minecraft/server/BlockBamboo.java b/src/main/java/net/minecraft/server/BlockBamboo.java
+index c482aad3e3..02c548dd9c 100644
+--- a/src/main/java/net/minecraft/server/BlockBamboo.java
++++ b/src/main/java/net/minecraft/server/BlockBamboo.java
+@@ -85,6 +85,7 @@ public class BlockBamboo extends Block implements IBlockFragilePlantElement {
+         if (!iblockdata.canPlace(worldserver, blockposition)) {
+             worldserver.b(blockposition, true);
+         } else if ((Integer) iblockdata.get(BlockBamboo.f) == 0) {
++            if (worldserver.paperConfig.fixZeroTickInstantGrowFarms && !randomTick) return; // Paper - fix MC-113809
+             if (random.nextInt(Math.max(1, (int) (100.0F / worldserver.spigotConfig.bambooModifier) * 3)) == 0 && worldserver.isEmpty(blockposition.up()) && worldserver.getLightLevel(blockposition.up(), 0) >= 9) { // Spigot
+                 int i = this.b(worldserver, blockposition) + 1;
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockCactus.java b/src/main/java/net/minecraft/server/BlockCactus.java
+index e0974e256f..3524fcb927 100644
+--- a/src/main/java/net/minecraft/server/BlockCactus.java
++++ b/src/main/java/net/minecraft/server/BlockCactus.java
+@@ -21,6 +21,7 @@ public class BlockCactus extends Block {
+         if (!iblockdata.canPlace(worldserver, blockposition)) {
+             worldserver.b(blockposition, true);
+         } else {
++            if (worldserver.paperConfig.fixZeroTickInstantGrowFarms && !randomTick) return; // Paper - fix MC-113809
+             BlockPosition blockposition1 = blockposition.up();
+ 
+             if (worldserver.isEmpty(blockposition1)) {
+diff --git a/src/main/java/net/minecraft/server/BlockChorusFlower.java b/src/main/java/net/minecraft/server/BlockChorusFlower.java
+index d70b52cadf..b624cf3804 100644
+--- a/src/main/java/net/minecraft/server/BlockChorusFlower.java
++++ b/src/main/java/net/minecraft/server/BlockChorusFlower.java
+@@ -22,6 +22,7 @@ public class BlockChorusFlower extends Block {
+         if (!iblockdata.canPlace(worldserver, blockposition)) {
+             worldserver.b(blockposition, true);
+         } else {
++            if (worldserver.paperConfig.fixZeroTickInstantGrowFarms && !randomTick) return; // Paper - fix MC-113809
+             BlockPosition blockposition1 = blockposition.up();
+ 
+             if (worldserver.isEmpty(blockposition1) && blockposition1.getY() < 256) {
+diff --git a/src/main/java/net/minecraft/server/BlockReed.java b/src/main/java/net/minecraft/server/BlockReed.java
+index 55b07444e1..3bc3c5aa29 100644
+--- a/src/main/java/net/minecraft/server/BlockReed.java
++++ b/src/main/java/net/minecraft/server/BlockReed.java
+@@ -23,6 +23,7 @@ public class BlockReed extends Block {
+         if (!iblockdata.canPlace(worldserver, blockposition)) {
+             worldserver.b(blockposition, true);
+         } else if (worldserver.isEmpty(blockposition.up())) {
++            if (worldserver.paperConfig.fixZeroTickInstantGrowFarms && !randomTick) return; // Paper - fix MC-113809
+             int i;
+ 
+             for (i = 1; worldserver.getType(blockposition.down(i)).getBlock() == this; ++i) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 919472370d..3739a95c5a 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -581,7 +581,9 @@ public class WorldServer extends World {
+                         IBlockData iblockdata = chunksection.getType(blockposition2.getX() - j, blockposition2.getY() - j1, blockposition2.getZ() - k);
+ 
+                         if (iblockdata.q()) {
++                            iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
+                             iblockdata.b(this, blockposition2, this.random);
++                            iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
+                         }
+ 
+                         Fluid fluid = iblockdata.getFluid();
+-- 
+2.24.1
+
