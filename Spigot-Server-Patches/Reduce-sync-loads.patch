@@ -11,7 +11,7 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 09efbf725..132397b3f 100644
+index 09efbf7250..132397b3f3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +0,0 @@
@@ -91,7 +91,7 @@ index 09efbf725..132397b3f 100644
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 000000000..59aec1032
+index 0000000000..59aec10329
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 @@ -0,0 +0,0 @@
@@ -268,7 +268,7 @@ index 000000000..59aec1032
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 277c2245d..8d7971ad8 100644
+index 1f6b1c4f16..58654f4538 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -280,27 +280,10 @@ index 277c2245d..8d7971ad8 100644
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b81b37445..9d29fc8ca 100644
+index f701e079db..0baa884bbf 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
-     }
- 
-     public boolean n(BlockPosition blockposition) {
--        return isOutsideWorld(blockposition) ? false : this.chunkProvider.b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-+        return isOutsideWorld(blockposition) ? false : this.isLoaded(blockposition); // Paper - reduce sync loads
-     }
- 
-     public boolean a(BlockPosition blockposition, Entity entity) {
-         if (isOutsideWorld(blockposition)) {
-             return false;
-         } else {
--            IChunkAccess ichunkaccess = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
-+            IChunkAccess ichunkaccess = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper - reduce sync loads
- 
-             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity);
-         }
-@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 <= j; ++i1) {
              for (int j1 = k; j1 <= l; ++j1) {
@@ -309,7 +292,7 @@ index b81b37445..9d29fc8ca 100644
  
                  if (chunk != null) {
                      chunk.a(entity, axisalignedbb, list, predicate);
-@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 < j; ++i1) {
              for (int j1 = k; j1 < l; ++j1) {
@@ -318,7 +301,7 @@ index b81b37445..9d29fc8ca 100644
  
                  if (chunk != null) {
                      chunk.a(entitytypes, axisalignedbb, list, predicate);
-@@ -0,0 +0,0 @@ public abstract class World implements IIBlockAccess, GeneratorAccess, AutoClose
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 < j; ++i1) {
              for (int j1 = k; j1 < l; ++j1) {
@@ -328,7 +311,7 @@ index b81b37445..9d29fc8ca 100644
                  if (chunk != null) {
                      chunk.a(oclass, axisalignedbb, list, predicate);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3a6745dcc..b7878201b 100644
+index 59b2fc6297..9aaa28e6cd 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
