@@ -1,0 +1,58 @@
+From a7de9681908350f748dcb6e52078bbd34ac04bfc Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 1 Jan 2019 02:22:01 -0800
+Subject: [PATCH] Add Heightmap API
+
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index a99b2405c9..1846aacc9a 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -594,8 +594,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         }
+     }
+ 
+-    @Override
+-    public int a(HeightMap.Type heightmap_type, int i, int j) {
++    public final int getHighestBlockY(final HeightMap.Type heightmap, final int x, final int z) { return this.a(heightmap, x, z); } // Paper - OBFHELPER
++    @Override public int a(HeightMap.Type heightmap_type, int i, int j) { // Paper - OBFHELPER
+         int k;
+ 
+         if (i >= -30000000 && j >= -30000000 && i < 30000000 && j < 30000000) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index aec657952c..38f61fddfd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -340,6 +340,29 @@ public class CraftWorld implements World {
+         return world.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(x, 0, z)).getY();
+     }
+ 
++    // Paper start - Implement heightmap api
++    @Override
++    public int getHighestBlockYAt(final int x, final int z, final com.destroystokyo.paper.HeightmapType heightmap) throws UnsupportedOperationException {
++        this.getChunkAt(x >> 4, z >> 4); // heightmap will ret 0 on unloaded areas
++
++        switch (heightmap) {
++            case LIGHT_BLOCKING:
++                throw new UnsupportedOperationException(); // TODO
++                //return this.world.getHighestBlockY(HeightMap.Type.LIGHT_BLOCKING, x, z);
++            case ANY:
++                return this.world.getHighestBlockY(HeightMap.Type.WORLD_SURFACE, x, z);
++            case SOLID:
++                return this.world.getHighestBlockY(HeightMap.Type.OCEAN_FLOOR, x, z);
++            case SOLID_OR_LIQUID:
++                return this.world.getHighestBlockY(HeightMap.Type.MOTION_BLOCKING, x, z);
++            case SOLID_OR_LIQUID_NO_LEAVES:
++                return this.world.getHighestBlockY(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, x, z);
++            default:
++                throw new UnsupportedOperationException();
++        }
++    }
++    // Paper end
++
+     @Override
+     public Location getSpawnLocation() {
+         BlockPosition spawn = world.getSpawn();
+-- 
+2.24.1
+

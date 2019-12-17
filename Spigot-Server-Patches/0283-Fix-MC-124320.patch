@@ -1,0 +1,53 @@
+From 2f971f57477b2d3bd4581d61d01dc50bc43c2734 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Thu, 23 Aug 2018 09:25:30 -0500
+Subject: [PATCH] Fix MC-124320
+
+
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 3e4fc4ee5e..2262a82532 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -170,6 +170,7 @@ public class Block implements IMaterial {
+         return tag.isTagged(this);
+     }
+ 
++    public static IBlockData getValidBlockForPosition(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) { return Block.b(iblockdata, generatoraccess, blockposition); } // Paper - OBFHELPER
+     public static IBlockData b(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
+         IBlockData iblockdata1 = iblockdata;
+         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
+diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
+index 607d6da6a4..9783576e38 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderman.java
++++ b/src/main/java/net/minecraft/server/EntityEnderman.java
+@@ -354,8 +354,9 @@ public class EntityEnderman extends EntityMonster {
+             if (block.a(TagsBlock.ENDERMAN_HOLDABLE) && flag) {
+                 // CraftBukkit start - Pickup event
+                 if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
+-                    this.enderman.setCarried(iblockdata);
++                    //this.enderman.setCarried(iblockdata); // Paper - moved down
+                     world.a(blockposition, false);
++                    this.enderman.setCarried(Block.getValidBlockForPosition(iblockdata, this.enderman.world, blockposition)); // Paper - Fix MC-124320
+                 }
+                 // CraftBukkit end
+             }
+@@ -365,6 +366,7 @@ public class EntityEnderman extends EntityMonster {
+ 
+     static class PathfinderGoalEndermanPlaceBlock extends PathfinderGoal {
+ 
++        private EntityEnderman getEnderman() { return this.a; } // Paper - OBFHELPER
+         private final EntityEnderman a;
+ 
+         public PathfinderGoalEndermanPlaceBlock(EntityEnderman entityenderman) {
+@@ -387,7 +389,7 @@ public class EntityEnderman extends EntityMonster {
+             IBlockData iblockdata = world.getType(blockposition);
+             BlockPosition blockposition1 = blockposition.down();
+             IBlockData iblockdata1 = world.getType(blockposition1);
+-            IBlockData iblockdata2 = this.a.getCarried();
++            IBlockData iblockdata2 = Block.getValidBlockForPosition(getEnderman().getCarried(), getEnderman().world, blockposition); // Paper - Fix MC-124320
+ 
+             if (iblockdata2 != null && this.a(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
+                 // CraftBukkit start - Place event
+-- 
+2.24.1
+

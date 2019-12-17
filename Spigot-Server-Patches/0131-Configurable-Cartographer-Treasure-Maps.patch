@@ -1,0 +1,46 @@
+From 40a5fa15dcb0bc09af143775aa33c0728975b72f Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:26:27 -0500
+Subject: [PATCH] Configurable Cartographer Treasure Maps
+
+Allow configuring for cartographers to return the same map location
+
+Also allow turning off treasure maps all together as they can eat up Map ID's
+which are limited in quantity.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ba8edcf7ef..bf11448bcd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -310,4 +310,14 @@ public class PaperWorldConfig {
+             Bukkit.getLogger().warning("Spawn Egg and Armor Stand NBT filtering disabled, this is a potential security risk");
+         }
+     }
++
++    public boolean enableTreasureMaps = true;
++    public boolean treasureMapsAlreadyDiscovered = false;
++    private void treasureMapsAlreadyDiscovered() {
++        enableTreasureMaps = getBoolean("enable-treasure-maps", true);
++        treasureMapsAlreadyDiscovered = getBoolean("treasure-maps-return-already-discovered", false);
++        if (treasureMapsAlreadyDiscovered) {
++            log("Treasure Maps will return already discovered locations");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/VillagerTrades.java b/src/main/java/net/minecraft/server/VillagerTrades.java
+index 3bcf0b385d..4764ffef77 100644
+--- a/src/main/java/net/minecraft/server/VillagerTrades.java
++++ b/src/main/java/net/minecraft/server/VillagerTrades.java
+@@ -92,7 +92,8 @@ public class VillagerTrades {
+                 return null;
+             } else {
+                 WorldServer worldserver = (WorldServer) entity.world;
+-                BlockPosition blockposition = worldserver.a(this.b, new BlockPosition(entity), 100, true);
++                if (!worldserver.paperConfig.enableTreasureMaps) return null; //Paper
++                BlockPosition blockposition = worldserver.a(this.b, new BlockPosition(entity), 100, !worldserver.paperConfig.treasureMapsAlreadyDiscovered); //Paper
+ 
+                 if (blockposition != null) {
+                     ItemStack itemstack = ItemWorldMap.createFilledMapView(worldserver, blockposition.getX(), blockposition.getZ(), (byte) 2, true, true);
+-- 
+2.24.1
+

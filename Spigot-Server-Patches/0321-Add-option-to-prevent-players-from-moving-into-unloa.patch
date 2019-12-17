@@ -1,0 +1,67 @@
+From fa52d846a4cf65b435f06e72fb0da2bc057a6d7d Mon Sep 17 00:00:00 2001
+From: Gabriele C <sgdc3.mail@gmail.com>
+Date: Mon, 22 Oct 2018 17:34:10 +0200
+Subject: [PATCH] Add option to prevent players from moving into unloaded
+ chunks #1551
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7dda0803c4..dd5e263d71 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -425,4 +425,9 @@ public class PaperWorldConfig {
+         waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
+         log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
+     }
++
++    public boolean preventMovingIntoUnloadedChunks = false;
++    private void preventMovingIntoUnloadedChunks() {
++        preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 77c375f71b..ccad0a601c 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -351,6 +351,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 }
+                 speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
+ 
++                // Paper start - Prevent moving into unloaded chunks
++                if (player.world.paperConfig.preventMovingIntoUnloadedChunks && worldserver.getChunkIfLoadedImmediately((int) Math.floor(packetplayinvehiclemove.getX()) >> 4, (int) Math.floor(packetplayinvehiclemove.getZ()) >> 4) == null) {
++                    this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
++                    return;
++                }
++                // Paper end
++
+                 if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isExemptPlayer()) {
+                 // CraftBukkit end
+                     PlayerConnection.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", entity.getDisplayName().getString(), this.player.getDisplayName().getString(), d6, d7, d8);
+@@ -900,9 +907,9 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                         double d1 = this.player.locY();
+                         double d2 = this.player.locZ();
+                         double d3 = this.player.locY();
+-                        double d4 = packetplayinflying.a(this.player.locX());
++                        double d4 = packetplayinflying.a(this.player.locX());double toX = d4; // Paper - OBFHELPER
+                         double d5 = packetplayinflying.b(this.player.locY());
+-                        double d6 = packetplayinflying.c(this.player.locZ());
++                        double d6 = packetplayinflying.c(this.player.locZ());double toZ = d6; // Paper - OBFHELPER
+                         float f = packetplayinflying.a(this.player.yaw);
+                         float f1 = packetplayinflying.b(this.player.pitch);
+                         double d7 = d4 - this.l;
+@@ -941,6 +948,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                             } else {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
++                            // Paper start - Prevent moving into unloaded chunks
++                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4)) {
++                                this.internalTeleport(this.player.locX(), this.player.locY(), this.player.locZ(), this.player.yaw, this.player.pitch, Collections.emptySet());
++                                return;
++                            }
++                            // Paper end
+ 
+                             if (!this.player.H() && (!this.player.getWorldServer().getGameRules().getBoolean(GameRules.DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isGliding())) {
+                                 float f2 = this.player.isGliding() ? 300.0F : 100.0F;
+-- 
+2.24.1
+

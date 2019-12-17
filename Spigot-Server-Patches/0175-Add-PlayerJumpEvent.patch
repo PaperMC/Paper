@@ -1,0 +1,58 @@
+From 44f20e09eafe43f04041c71d71da4ff084354300 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Thu, 28 Sep 2017 17:21:44 -0400
+Subject: [PATCH] Add PlayerJumpEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 01ab2e1516..399724d6ac 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -58,6 +58,8 @@ import org.bukkit.inventory.CraftingInventory;
+ import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.util.NumberConversions;
++import com.destroystokyo.paper.event.player.IllegalPacketEvent; // Paper
++import com.destroystokyo.paper.event.player.PlayerJumpEvent; // Paper
+ import co.aikar.timings.MinecraftTimings; // Paper
+ // CraftBukkit end
+ 
+@@ -925,7 +927,34 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                             }
+ 
+                             if (this.player.onGround && !packetplayinflying.b() && d8 > 0.0D) {
+-                                this.player.jump();
++                                // Paper start - Add player jump event
++                                Player player = this.getPlayer();
++                                Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
++                                Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
++
++                                // If the packet contains movement information then we update the To location with the correct XYZ.
++                                if (packetplayinflying.hasPos) {
++                                    to.setX(packetplayinflying.x);
++                                    to.setY(packetplayinflying.y);
++                                    to.setZ(packetplayinflying.z);
++                                }
++
++                                // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
++                                if (packetplayinflying.hasLook) {
++                                    to.setYaw(packetplayinflying.yaw);
++                                    to.setPitch(packetplayinflying.pitch);
++                                }
++
++                                PlayerJumpEvent event = new PlayerJumpEvent(player, from, to);
++
++                                if (event.callEvent()) {
++                                    this.player.jump();
++                                } else {
++                                    from = event.getFrom();
++                                    this.internalTeleport(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch(), Collections.emptySet());
++                                    return;
++                                }
++                                // Paper end
+                             }
+ 
+                             this.player.move(EnumMoveType.PLAYER, new Vec3D(d7, d8, d9));
+-- 
+2.24.1
+

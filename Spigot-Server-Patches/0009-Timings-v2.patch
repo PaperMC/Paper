@@ -1,4 +1,4 @@
-From 19caf0f475af73934d0bf85cd718375b5f952518 Mon Sep 17 00:00:00 2001
+From 477a2ecc887625d1f34ed0d559958abe1a38b477 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 000000000..c6818bc86
+index 000000000..69e26a826
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,141 @@
 +package co.aikar.timings;
 +
 +import com.google.common.collect.MapMaker;
@@ -79,10 +79,16 @@ index 000000000..c6818bc86
 +            plugin = TimingsManager.getPluginByClassloader(taskClass);
 +        }
 +
-+        final String taskname = taskNameCache.computeIfAbsent(taskClass, clazz ->
-+                clazz.isAnonymousClass() || clazz.isLocalClass()
-+                        ? clazz.getName()
-+                        : clazz.getCanonicalName());
++        final String taskname = taskNameCache.computeIfAbsent(taskClass, clazz -> {
++            try {
++                return clazz.isAnonymousClass() || clazz.isLocalClass()
++                           ? clazz.getName()
++                           : clazz.getCanonicalName();
++            } catch (Throwable ex) {
++                new Exception("Error occurred detecting class name", ex).printStackTrace();
++                return "MangledClassFile";
++            }
++        });
 +
 +        StringBuilder name = new StringBuilder(64);
 +        name.append("Task: ").append(taskname);
@@ -1195,7 +1201,7 @@ index 820180ab3..fa6400dcc 100644
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 66f74c106..542262fc8 100644
+index 526466c2e..36ed7a7a0 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,5 +1,7 @@
