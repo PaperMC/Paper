@@ -1,0 +1,28 @@
+From 06c6112105ac757d5db6b2f487c6f51b8187123a Mon Sep 17 00:00:00 2001
+From: cryptite <cryptite@gmail.com>
+Date: Tue, 17 Dec 2019 15:29:44 -0600
+Subject: [PATCH] Disable sending CommandMap to players on world change
+
+Often, but not 100% of the time, the server will reconstruct and recalculate the Command Map sent to players
+when they change worlds. This is often laggy; worse-so depending on the extent of the tab-completed commands to be sent.
+In our case, the map sent to the player on login is sufficient and is not tossed by the client for world changes.
+
+As a result, we opt not to send this on world change and this prevents a fairly heavy, and consistent main-thread
+lagspike whenever players change worlds, which can be a lot.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 7b79ee4fe..d3456f485 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -712,7 +712,7 @@ public abstract class PlayerList {
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutExperience(entityplayer1.exp, entityplayer1.expTotal, entityplayer1.expLevel));
+         this.a(entityplayer1, worldserver);
+-        this.d(entityplayer1);
++//        this.d(entityplayer1); //Paper - Disable sending CommandMap to players on world change
+         if (!entityplayer.playerConnection.isDisconnected()) {
+             worldserver.addPlayerRespawn(entityplayer1);
+             this.players.add(entityplayer1);
+-- 
+2.21.0.windows.1
+
