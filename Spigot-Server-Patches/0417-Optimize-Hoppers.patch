@@ -1,4 +1,4 @@
-From 60247c09b44d1c036e2dd565c37d04da1995c0fd Mon Sep 17 00:00:00 2001
+From 8716aca4baf2fa14e669d507740c59a94b2b1b8a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -29,7 +29,7 @@ index dbc645ebb..43486a594 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index d891e7b0e..df85f9df0 100644
+index 1be4cd163..182633bca 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -482,11 +482,12 @@ public final class ItemStack {
@@ -37,9 +37,10 @@ index d891e7b0e..df85f9df0 100644
      }
  
 -    public ItemStack cloneItemStack() {
+-        if (this.isEmpty()) {
 +    public ItemStack cloneItemStack() { return cloneItemStack(false); } // Paper
 +    public ItemStack cloneItemStack(boolean origItem) { // Paper
-         if (this.isEmpty()) {
++        if (!origItem && this.isEmpty()) { // Paper
              return ItemStack.a;
          } else {
 -            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
@@ -80,10 +81,10 @@ index 958279249..a8e64dfda 100644
              this.world.b(this.position, this);
              if (!this.c.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index e08faf538..e7cf14d10 100644
+index e08faf538..5dded0abe 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
-@@ -168,6 +168,158 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -168,6 +168,160 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          return false;
      }
  
@@ -118,6 +119,7 @@ index e08faf538..e7cf14d10 100644
 +                final int remaining = itemstack2.getCount();
 +                if (remaining != moved) {
 +                    origItemStack = origItemStack.cloneItemStack(true);
++                    origItemStack.setCount(origCount);
 +                    if (!origItemStack.isEmpty()) {
 +                        origItemStack.setCount(origCount - moved + remaining);
 +                    }
@@ -157,6 +159,7 @@ index e08faf538..e7cf14d10 100644
 +        final int remaining = itemstack2.getCount();
 +        if (remaining != moved) {
 +            origItemStack = origItemStack.cloneItemStack(true);
++            origItemStack.setCount(origCount);
 +            if (!origItemStack.isEmpty()) {
 +                origItemStack.setCount(origCount - moved + remaining);
 +            }
@@ -242,7 +245,7 @@ index e08faf538..e7cf14d10 100644
      private boolean j() {
          IInventory iinventory = this.k();
  
-@@ -179,6 +331,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -179,6 +333,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              if (this.b(iinventory, enumdirection)) {
                  return false;
              } else {
@@ -250,7 +253,7 @@ index e08faf538..e7cf14d10 100644
                  for (int i = 0; i < this.getSize(); ++i) {
                      if (!this.getItem(i).isEmpty()) {
                          ItemStack itemstack = this.getItem(i).cloneItemStack();
-@@ -216,7 +369,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -216,7 +371,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
                      }
                  }
  
@@ -259,7 +262,7 @@ index e08faf538..e7cf14d10 100644
              }
          }
      }
-@@ -246,6 +399,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -246,6 +401,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              EnumDirection enumdirection = EnumDirection.DOWN;
  
              return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
@@ -267,7 +270,7 @@ index e08faf538..e7cf14d10 100644
                  return a(ihopper, iinventory, i, enumdirection);
              });
          } else {
-@@ -269,6 +423,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -269,6 +425,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          ItemStack itemstack = iinventory.getItem(i);
  
          if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
@@ -275,7 +278,7 @@ index e08faf538..e7cf14d10 100644
              ItemStack itemstack1 = itemstack.cloneItemStack();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
-@@ -305,7 +460,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -305,7 +462,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              }
  
              itemstack1.subtract(origCount - itemstack2.getCount()); // Spigot
@@ -284,7 +287,7 @@ index e08faf538..e7cf14d10 100644
          }
  
          return false;
-@@ -314,7 +469,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -314,7 +471,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      public static boolean a(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
          // CraftBukkit start
@@ -293,7 +296,7 @@ index e08faf538..e7cf14d10 100644
          entityitem.world.getServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -368,7 +523,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -368,7 +525,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              boolean flag1 = iinventory1.isNotEmpty();
  
              if (itemstack1.isEmpty()) {
@@ -304,5 +307,5 @@ index e08faf538..e7cf14d10 100644
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
 -- 
-2.22.0
+2.22.0.windows.1
 
