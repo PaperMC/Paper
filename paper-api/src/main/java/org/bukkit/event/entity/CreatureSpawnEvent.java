@@ -170,6 +170,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         PATROL,
         /**
+         * When a bee is released from a beehive/bee nest
+         */
+        BEEHIVE,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
