@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * Triggered when a entity is created in the world by a player "placing" an item
  * on a block.
  * <br>
- * Note that this event is currently only fired for three specific placements:
- * armor stands, minecarts, and end crystals.
+ * Note that this event is currently only fired for four specific placements:
+ * armor stands, boats, minecarts, and end crystals.
  *
  * @deprecated draft API
  */
