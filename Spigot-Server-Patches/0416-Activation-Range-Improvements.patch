@@ -1,4 +1,4 @@
-From 9774a065b6b25c4e092b91463a7f1a0125ab9ee5 Mon Sep 17 00:00:00 2001
+From d79df9f9beb57badf14555a65694a078695b3505 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 13 May 2016 01:38:06 -0400
 Subject: [PATCH] Activation Range Improvements
@@ -164,39 +164,29 @@ index 44bb18c59..f8944f860 100644
          this.d.stream().filter((pathfindergoalwrapped) -> {
              return pathfindergoalwrapped.j() == pathfindergoal;
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index f86404f83..04ac90ba7 100644
+index f86404f83..bd7d44f1d 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -17,8 +17,10 @@ import net.minecraft.server.EntityFallingBlock; // Paper
- import net.minecraft.server.EntityFireball;
- import net.minecraft.server.EntityFireworks;
- import net.minecraft.server.EntityHuman;
-+import net.minecraft.server.EntityInsentient;
- import net.minecraft.server.EntityLightning;
- import net.minecraft.server.EntityLiving;
-+import net.minecraft.server.EntityLlama;
- import net.minecraft.server.EntityMonster;
- import net.minecraft.server.EntityProjectile;
- import net.minecraft.server.EntityRaider;
-@@ -28,6 +30,7 @@ import net.minecraft.server.EntitySlime;
- import net.minecraft.server.EntityTNTPrimed;
- import net.minecraft.server.EntityThrownTrident;
- import net.minecraft.server.EntityVillager;
-+import net.minecraft.server.EntityWaterAnimal;
- import net.minecraft.server.EntityWither;
- import net.minecraft.server.MathHelper;
+@@ -33,12 +33,18 @@ import net.minecraft.server.MathHelper;
  import net.minecraft.server.MinecraftServer;
-@@ -42,7 +45,8 @@ public class ActivationRange
+ import net.minecraft.server.World;
+ import co.aikar.timings.MinecraftTimings;
++// Paper start
++import net.minecraft.server.EntityInsentient;
++import net.minecraft.server.EntityLlama;
++import net.minecraft.server.EntityWaterAnimal;
++// Paper end
+ 
+ public class ActivationRange
+ {
+ 
+     public enum ActivationType
+     {
++        WATER, // Paper
          MONSTER,
          ANIMAL,
          RAIDER,
--        MISC;
-+        MISC,
-+        WATER;
- 
-         AxisAlignedBB boundingBox = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
-     }
-@@ -58,6 +62,7 @@ public class ActivationRange
+@@ -58,6 +64,7 @@ public class ActivationRange
       */
      public static ActivationType initializeEntityActivationType(Entity entity)
      {
@@ -204,7 +194,7 @@ index f86404f83..04ac90ba7 100644
          if ( entity instanceof EntityRaider )
          {
              return ActivationType.RAIDER;
-@@ -86,6 +91,7 @@ public class ActivationRange
+@@ -86,6 +93,7 @@ public class ActivationRange
                  || ( entity.activationType == ActivationType.RAIDER && config.raiderActivationRange == 0 )
                  || ( entity.activationType == ActivationType.ANIMAL && config.animalActivationRange == 0 )
                  || ( entity.activationType == ActivationType.MONSTER && config.monsterActivationRange == 0 )
@@ -212,7 +202,7 @@ index f86404f83..04ac90ba7 100644
                  || entity instanceof EntityHuman
                  || entity instanceof EntityProjectile
                  || entity instanceof EntityEnderDragon
-@@ -118,6 +124,7 @@ public class ActivationRange
+@@ -118,6 +126,7 @@ public class ActivationRange
          final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
          final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
@@ -220,16 +210,16 @@ index f86404f83..04ac90ba7 100644
  
          int maxRange = Math.max( monsterActivationRange, animalActivationRange );
          maxRange = Math.max( maxRange, raiderActivationRange );
-@@ -133,6 +140,8 @@ public class ActivationRange
+@@ -133,6 +142,8 @@ public class ActivationRange
              ActivationType.RAIDER.boundingBox = player.getBoundingBox().grow( raiderActivationRange, 256, raiderActivationRange );
              ActivationType.ANIMAL.boundingBox = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
              ActivationType.MONSTER.boundingBox = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
-+            ActivationType.WATER.boundingBox = player.getBoundingBox().grow( waterActivationRange, 256, waterActivationRange );
++            ActivationType.WATER.boundingBox = player.getBoundingBox().grow( waterActivationRange, 256, waterActivationRange ); // Paper
 +
  
              int i = MathHelper.floor( maxBB.minX / 16.0D );
              int j = MathHelper.floor( maxBB.maxX / 16.0D );
-@@ -212,7 +221,7 @@ public class ActivationRange
+@@ -212,7 +223,7 @@ public class ActivationRange
              {
                  return true;
              }
@@ -238,7 +228,7 @@ index f86404f83..04ac90ba7 100644
              {
                  return true;
              }
-@@ -220,6 +229,12 @@ public class ActivationRange
+@@ -220,6 +231,12 @@ public class ActivationRange
              {
                  return true;
              }
@@ -251,11 +241,11 @@ index f86404f83..04ac90ba7 100644
              if ( entity instanceof EntityAnimal )
              {
                  EntityAnimal animal = (EntityAnimal) entity;
-@@ -266,9 +281,13 @@ public class ActivationRange
+@@ -266,9 +283,13 @@ public class ActivationRange
                      entity.activatedTick = MinecraftServer.currentTick + 20;
                  }
                  isActive = true;
-+                // Paper start
++            // Paper start
 +            } else if (entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks()) {
 +                isActive = true;
              }
