@@ -342,9 +342,13 @@ public class CraftEventFactory {
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(ItemActionContext itemactioncontext, Entity entity) {
-        Player who = (itemactioncontext.getEntity() == null) ? null : (Player) itemactioncontext.getEntity().getBukkitEntity();
-        org.bukkit.block.Block blockClicked = CraftBlock.at(itemactioncontext.getWorld(), itemactioncontext.getClickPosition());
-        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(itemactioncontext.getClickedFace());
+        return callEntityPlaceEvent(itemactioncontext.getWorld(), itemactioncontext.getClickPosition(), itemactioncontext.getClickedFace(), itemactioncontext.getEntity(), entity);
+    }
+
+    public static EntityPlaceEvent callEntityPlaceEvent(World world, BlockPosition clickPosition, EnumDirection clickedFace, EntityHuman human, Entity entity) {
+        Player who = (human == null) ? null : (Player) human.getBukkitEntity();
+        org.bukkit.block.Block blockClicked = CraftBlock.at(world, clickPosition);
+        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
         EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace);
         entity.world.getServer().getPluginManager().callEvent(event);
