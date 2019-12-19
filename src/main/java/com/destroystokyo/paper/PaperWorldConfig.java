@@ -566,4 +566,9 @@ public class PaperWorldConfig {
     private void pillagerSettings() {
         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
     }
+
+    public boolean entitiesTargetWithFollowRange = false;
+    private void entitiesTargetWithFollowRange() {
+        entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
+    }
 }

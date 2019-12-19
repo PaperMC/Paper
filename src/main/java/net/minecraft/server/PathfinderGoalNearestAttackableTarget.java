@@ -25,6 +25,7 @@ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> exten
         this.b = i;
         this.a(EnumSet.of(PathfinderGoal.Type.TARGET));
         this.d = (new PathfinderTargetCondition()).a(this.k()).a(predicate);
+        if (entityinsentient.world.paperConfig.entitiesTargetWithFollowRange) this.d.useFollowRange(); // Paper
     }
 
     @Override

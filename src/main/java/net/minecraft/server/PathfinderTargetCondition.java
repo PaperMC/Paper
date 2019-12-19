@@ -80,7 +80,7 @@ public class PathfinderTargetCondition {
 
                 if (this.b > 0.0D) {
                     double d0 = this.g ? entityliving1.A(entityliving) : 1.0D;
-                    double d1 = Math.max(this.b * d0, 2.0D);
+                    double d1 = Math.max((useFollowRange ? getFollowRange(entityliving) : this.b) * d0, 2.0D); // Paper
                     double d2 = entityliving.h(entityliving1.locX(), entityliving1.locY(), entityliving1.locZ());
 
                     if (d2 > d1 * d1) {
@@ -96,4 +96,18 @@ public class PathfinderTargetCondition {
             return true;
         }
     }
+
+    // Paper start
+    private boolean useFollowRange = false;
+
+    public PathfinderTargetCondition useFollowRange() {
+        this.useFollowRange = true;
+        return this;
+    }
+
+    private double getFollowRange(EntityLiving entityliving) {
+        AttributeModifiable attributeinstance = entityliving.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
+        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
+    }
+    // Paper end
 }
