@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/WorldServer.java
 +++ b/net/minecraft/server/WorldServer.java
-@@ -36,6 +36,16 @@
+@@ -36,6 +36,17 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -12,12 +12,13 @@
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.server.MapInitializeEvent;
 +import org.bukkit.event.weather.LightningStrikeEvent;
++import org.bukkit.event.world.TimeSkipEvent;
 +// CraftBukkit end
 +
  public class WorldServer extends World {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -60,12 +70,29 @@
+@@ -60,12 +71,29 @@
      @Nullable
      private final MobSpawnerTrader mobSpawnerTrader;
  
@@ -50,15 +51,15 @@
          this.nextTickListBlock = new TickListServer<>(this, (block) -> {
              return block == null || block.getBlockData().isAir();
          }, IRegistry.BLOCK::getKey, IRegistry.BLOCK::get, this::b);
-@@ -87,9 +114,44 @@
+@@ -87,8 +115,43 @@
              this.getWorldData().setGameType(minecraftserver.getGamemode());
          }
  
 -        this.mobSpawnerTrader = this.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD ? new MobSpawnerTrader(this) : null;
 +        this.mobSpawnerTrader = this.worldProvider.getDimensionManager().getType() == DimensionManager.OVERWORLD ? new MobSpawnerTrader(this) : null; // CraftBukkit - getType()
 +        this.getServer().addWorld(this.getWorld()); // CraftBukkit
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    @Override
 +    public TileEntity getTileEntity(BlockPosition pos) {
@@ -90,13 +91,12 @@
 +        } else {
 +            return found;
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public BiomeBase a(int i, int j, int k) {
-         return this.getChunkProvider().getChunkGenerator().getWorldChunkManager().getBiome(i, j, k);
-@@ -169,6 +231,7 @@
+@@ -169,6 +232,7 @@
              this.rainLevel = MathHelper.a(this.rainLevel, 0.0F, 1.0F);
          }
  
@@ -104,7 +104,7 @@
          if (this.lastRainLevel != this.rainLevel) {
              this.server.getPlayerList().a((Packet) (new PacketPlayOutGameStateChange(7, this.rainLevel)), this.worldProvider.getDimensionManager());
          }
-@@ -187,13 +250,34 @@
+@@ -187,22 +251,51 @@
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(7, this.rainLevel));
              this.server.getPlayerList().sendAll(new PacketPlayOutGameStateChange(8, this.thunderLevel));
          }
@@ -138,9 +138,30 @@
 -            return !entityplayer.isSpectator() && !entityplayer.isDeeplySleeping();
 +            return !entityplayer.isSpectator() && !entityplayer.isDeeplySleeping() && !entityplayer.fauxSleeping; // CraftBukkit
          })) {
-             this.C = false;
+-            this.C = false;
++            // CraftBukkit start
++            long l = this.worldData.getDayTime() + 24000L;
++            TimeSkipEvent event = new TimeSkipEvent(this.getWorld(), TimeSkipEvent.SkipReason.NIGHT_SKIP, (l - l % 24000L) - this.getDayTime());
              if (this.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
-@@ -228,7 +312,7 @@
+-                long l = this.worldData.getDayTime() + 24000L;
++                getServer().getPluginManager().callEvent(event);
++                if (!event.isCancelled()) {
++                    this.setDayTime(this.getDayTime() + event.getSkipAmount());
++                }
+ 
+-                this.setDayTime(l - l % 24000L);
+             }
+ 
+-            this.ab();
++            if (!event.isCancelled()) {
++                this.C = false;
++                this.ab();
++            }
++            // CraftBukkit end
+             if (this.getGameRules().getBoolean(GameRules.DO_WEATHER_CYCLE)) {
+                 this.clearWeather();
+             }
+@@ -228,7 +321,7 @@
          this.ad();
          this.ticking = false;
          gameprofilerfiller.exitEnter("entities");
@@ -149,7 +170,7 @@
  
          if (flag3) {
              this.resetEmptyTime();
-@@ -242,6 +326,11 @@
+@@ -242,6 +335,11 @@
  
              for (i = 0; i < this.globalEntityList.size(); ++i) {
                  entity = (Entity) this.globalEntityList.get(i);
@@ -161,7 +182,7 @@
                  this.a((entity1) -> {
                      ++entity1.ticksLived;
                      entity1.tick();
-@@ -260,6 +349,7 @@
+@@ -260,6 +358,7 @@
                  Entity entity1 = (Entity) entry.getValue();
                  Entity entity2 = entity1.getVehicle();
  
@@ -169,7 +190,7 @@
                  if (!this.server.getSpawnAnimals() && (entity1 instanceof EntityAnimal || entity1 instanceof EntityWaterAnimal)) {
                      entity1.die();
                  }
-@@ -267,6 +357,7 @@
+@@ -267,6 +366,7 @@
                  if (!this.server.getSpawnNPCs() && entity1 instanceof NPC) {
                      entity1.die();
                  }
@@ -177,7 +198,7 @@
  
                  gameprofilerfiller.enter("checkDespawn");
                  if (!entity1.dead) {
-@@ -312,7 +403,7 @@
+@@ -312,7 +412,7 @@
      }
  
      private void ab() {
@@ -186,7 +207,7 @@
              entityplayer.wakeup(false, false);
          });
      }
-@@ -339,10 +430,10 @@
+@@ -339,10 +439,10 @@
                      entityhorseskeleton.r(true);
                      entityhorseskeleton.setAgeRaw(0);
                      entityhorseskeleton.setPosition((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
@@ -199,7 +220,7 @@
              }
          }
  
-@@ -353,11 +444,11 @@
+@@ -353,11 +453,11 @@
              BiomeBase biomebase = this.getBiome(blockposition);
  
              if (biomebase.a((IWorldReader) this, blockposition1)) {
@@ -213,7 +234,7 @@
              }
  
              if (flag && this.getBiome(blockposition1).d() == BiomeBase.Precipitation.RAIN) {
-@@ -404,7 +495,7 @@
+@@ -404,7 +504,7 @@
      protected BlockPosition a(BlockPosition blockposition) {
          BlockPosition blockposition1 = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, blockposition);
          AxisAlignedBB axisalignedbb = (new AxisAlignedBB(blockposition1, new BlockPosition(blockposition1.getX(), this.getBuildHeight(), blockposition1.getZ()))).g(3.0D);
@@ -222,7 +243,7 @@
              return entityliving != null && entityliving.isAlive() && this.f(entityliving.getChunkCoordinates());
          });
  
-@@ -433,7 +524,7 @@
+@@ -433,7 +533,7 @@
              while (iterator.hasNext()) {
                  EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
@@ -231,7 +252,7 @@
                      ++i;
                  } else if (entityplayer.isSleeping()) {
                      ++j;
-@@ -451,10 +542,22 @@
+@@ -451,10 +551,22 @@
      }
  
      private void clearWeather() {
@@ -256,7 +277,7 @@
      }
  
      public void resetEmptyTime() {
-@@ -490,6 +593,7 @@
+@@ -490,6 +602,7 @@
                      return IRegistry.ENTITY_TYPE.getKey(entity.getEntityType()).toString();
                  });
                  entity.tick();
@@ -264,7 +285,7 @@
                  this.getMethodProfiler().exit();
              }
  
-@@ -573,6 +677,22 @@
+@@ -573,6 +686,22 @@
              BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
              ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
  
@@ -287,7 +308,7 @@
              if (blockposition == null) {
                  WorldServer.LOGGER.warn("Unable to find spawn biome");
              }
-@@ -625,7 +745,7 @@
+@@ -625,7 +754,7 @@
      }
  
      protected void g() {
@@ -296,7 +317,7 @@
  
          worldgenfeatureconfigured.a(this, this.getChunkProvider().getChunkGenerator(), this.random, new BlockPosition(this.worldData.b(), this.worldData.c(), this.worldData.d()));
      }
-@@ -639,6 +759,7 @@
+@@ -639,6 +768,7 @@
          ChunkProviderServer chunkproviderserver = this.getChunkProvider();
  
          if (!flag1) {
@@ -304,7 +325,7 @@
              if (iprogressupdate != null) {
                  iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
              }
-@@ -650,6 +771,15 @@
+@@ -650,6 +780,15 @@
  
              chunkproviderserver.save(flag);
          }
@@ -320,7 +341,7 @@
      }
  
      protected void m_() throws ExceptionWorldConflict {
-@@ -721,7 +851,8 @@
+@@ -721,7 +860,8 @@
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
  
@@ -330,7 +351,7 @@
                      continue;
                  }
              }
-@@ -738,11 +869,24 @@
+@@ -738,11 +878,24 @@
  
      @Override
      public boolean addEntity(Entity entity) {
@@ -357,7 +378,7 @@
      }
  
      public void addEntityTeleport(Entity entity) {
-@@ -792,13 +936,18 @@
+@@ -792,13 +945,18 @@
          this.registerEntity(entityplayer);
      }
  
@@ -378,7 +399,7 @@
              IChunkAccess ichunkaccess = this.getChunkAt(MathHelper.floor(entity.locX() / 16.0D), MathHelper.floor(entity.locZ() / 16.0D), ChunkStatus.FULL, entity.attachedToPlayer);
  
              if (!(ichunkaccess instanceof Chunk)) {
-@@ -826,7 +975,7 @@
+@@ -826,7 +984,7 @@
          if (entity1 == null) {
              return false;
          } else {
@@ -387,7 +408,7 @@
              return true;
          }
      }
-@@ -877,10 +1026,17 @@
+@@ -877,10 +1035,17 @@
          }
  
          this.getScoreboard().a(entity);
@@ -405,7 +426,7 @@
      }
  
      private void registerEntity(Entity entity) {
-@@ -901,9 +1057,16 @@
+@@ -901,9 +1066,16 @@
  
              this.entitiesByUUID.put(entity.getUniqueID(), entity);
              this.getChunkProvider().addEntity(entity);
@@ -422,7 +443,7 @@
          }
  
      }
-@@ -934,6 +1097,18 @@
+@@ -934,6 +1106,18 @@
      }
  
      public void strikeLightning(EntityLightning entitylightning) {
@@ -441,7 +462,7 @@
          this.globalEntityList.add(entitylightning);
          this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX(), entitylightning.locY(), entitylightning.locZ(), 512.0D, this.worldProvider.getDimensionManager(), new PacketPlayOutSpawnEntityWeather(entitylightning));
      }
-@@ -942,6 +1117,12 @@
+@@ -942,6 +1126,12 @@
      public void a(int i, BlockPosition blockposition, int j) {
          Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
  
@@ -454,7 +475,7 @@
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
  
-@@ -950,6 +1131,12 @@
+@@ -950,6 +1140,12 @@
                  double d1 = (double) blockposition.getY() - entityplayer.locY();
                  double d2 = (double) blockposition.getZ() - entityplayer.locZ();
  
@@ -467,7 +488,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.playerConnection.sendPacket(new PacketPlayOutBlockBreakAnimation(i, blockposition, j));
                  }
-@@ -1010,6 +1197,14 @@
+@@ -1010,6 +1206,14 @@
  
      @Override
      public Explosion createExplosion(@Nullable Entity entity, @Nullable DamageSource damagesource, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
@@ -482,7 +503,7 @@
          Explosion explosion = new Explosion(this, entity, d0, d1, d2, f, flag, explosion_effect);
  
          if (damagesource != null) {
-@@ -1018,6 +1213,8 @@
+@@ -1018,6 +1222,8 @@
  
          explosion.a();
          explosion.a(false);
@@ -491,7 +512,7 @@
          if (explosion_effect == Explosion.Effect.NONE) {
              explosion.clearBlocks();
          }
-@@ -1082,13 +1279,20 @@
+@@ -1082,13 +1288,20 @@
      }
  
      public <T extends ParticleParam> int a(T t0, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
@@ -514,7 +535,7 @@
                  ++j;
              }
          }
-@@ -1170,7 +1374,13 @@
+@@ -1170,7 +1383,13 @@
      @Override
      public WorldMap a(String s) {
          return (WorldMap) this.getMinecraftServer().getWorldServer(DimensionManager.OVERWORLD).getWorldPersistentData().b(() -> {

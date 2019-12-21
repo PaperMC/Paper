@@ -246,6 +246,7 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.world.SpawnChangeEvent;
+import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.ItemStack;
@@ -798,7 +799,14 @@ public class CraftWorld implements World {
 
     @Override
     public void setFullTime(long time) {
-        world.setDayTime(time);
+        // Notify anyone who's listening
+        TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - world.getDayTime());
+        server.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+
+        world.setDayTime(world.getDayTime() + event.getSkipAmount());
 
         // Forces the client to update to the new time immediately
         for (Player p : getPlayers()) {
