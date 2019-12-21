@@ -15,6 +15,7 @@ public class TerminalConsoleWriterThread extends Thread {
     private final OutputStream output;
 
     public TerminalConsoleWriterThread(OutputStream output, ConsoleReader reader) {
+        super("TerminalConsoleWriter");
         this.output = output;
         this.reader = reader;
 
