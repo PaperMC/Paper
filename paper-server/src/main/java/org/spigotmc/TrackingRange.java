@@ -7,7 +7,6 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.decoration.Painting;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ghast;
 
 public class TrackingRange
 {
@@ -30,22 +29,21 @@ public class TrackingRange
         if ( entity instanceof ServerPlayer )
         {
             return config.playerTrackingRange;
-        } else if ( entity.activationType == ActivationRange.ActivationType.MONSTER || entity.activationType == ActivationRange.ActivationType.RAIDER )
-        {
-            return config.monsterTrackingRange;
-        } else if ( entity instanceof Ghast )
-        {
-            if ( config.monsterTrackingRange > config.monsterActivationRange )
-            {
+        // Paper start - Simplify and set water mobs to animal tracking range
+        }
+        switch (entity.activationType) {
+            case RAIDER:
+            case MONSTER:
+            case FLYING_MONSTER:
                 return config.monsterTrackingRange;
-            } else
-            {
-                return config.monsterActivationRange;
-            }
-        } else if ( entity.activationType == ActivationRange.ActivationType.ANIMAL )
-        {
-            return config.animalTrackingRange;
-        } else if ( entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb )
+            case WATER:
+            case VILLAGER:
+            case ANIMAL:
+                return config.animalTrackingRange;
+            case MISC:
+        }
+        if ( entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb )
+        // Paper end
         {
             return config.miscTrackingRange;
         } else if ( entity instanceof Display )
@@ -53,6 +51,7 @@ public class TrackingRange
             return config.displayTrackingRange;
         } else
         {
+            if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) return ((net.minecraft.server.level.ServerLevel)(entity.getCommandSenderWorld())).getChunkSource().chunkMap.serverViewDistance; // Paper - enderdragon is exempt
             return config.otherTrackingRange;
         }
     }
