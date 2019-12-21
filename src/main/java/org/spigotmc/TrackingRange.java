@@ -1,6 +1,8 @@
 package org.spigotmc;
 
 import net.minecraft.server.Entity;
+import net.minecraft.server.EntityEnderDragon; // Paper
+import net.minecraft.server.WorldServer; // Paper
 import net.minecraft.server.EntityExperienceOrb;
 import net.minecraft.server.EntityGhast;
 import net.minecraft.server.EntityItem;
@@ -25,26 +27,26 @@ public class TrackingRange
         if ( entity instanceof EntityPlayer )
         {
             return config.playerTrackingRange;
-        }  else if ( entity.activationType == ActivationRange.ActivationType.MONSTER || entity.activationType == ActivationRange.ActivationType.RAIDER )
-        {
-            return config.monsterTrackingRange;
-        } else if ( entity instanceof EntityGhast )
-        {
-            if ( config.monsterTrackingRange > config.monsterActivationRange )
-            {
+        // Paper start - Simplify and set water mobs to animal tracking range
+        }
+        switch (entity.activationType) {
+            case RAIDER:
+            case MONSTER:
+            case FLYING_MONSTER:
                 return config.monsterTrackingRange;
-            } else
-            {
-                return config.monsterActivationRange;
-            }
-        } else if ( entity.activationType == ActivationRange.ActivationType.ANIMAL )
-        {
-            return config.animalTrackingRange;
-        } else if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
+            case WATER:
+            case VILLAGER:
+            case ANIMAL:
+                return config.animalTrackingRange;
+            case MISC:
+        }
+        if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
+        // Paper end
         {
             return config.miscTrackingRange;
         } else
         {
+            if (entity instanceof EntityEnderDragon) return ((WorldServer)(entity.getWorld())).getChunkProvider().playerChunkMap.getLoadViewDistance(); // Paper - enderdragon is exempt
             return config.otherTrackingRange;
         }
     }

@@ -1739,6 +1739,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             while (iterator.hasNext()) {
                 Entity entity = (Entity) iterator.next();
                 int j = entity.getEntityType().getChunkRange() * 16;
+                j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
 
                 if (j > i) {
                     i = j;
