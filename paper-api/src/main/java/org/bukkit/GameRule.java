@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * For more information please visit the
  * <a href="https://minecraft.gamepedia.com/Commands/gamerule">Minecraft
  * Wiki</a>
+ *
+ * @param <T> type of rule (Boolean or Integer)
  */
 public final class GameRule<T> {
 

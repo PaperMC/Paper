@@ -261,6 +261,7 @@ public final class MapCursor {
         }
 
         /**
+         * Gets the internal value of the cursor.
          *
          * @return the value
          * @deprecated Magic value
@@ -271,6 +272,7 @@ public final class MapCursor {
         }
 
         /**
+         * Get a cursor by its internal value.
          *
          * @param value the value
          * @return the matching type

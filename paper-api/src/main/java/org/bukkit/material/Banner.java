@@ -19,7 +19,6 @@ public class Banner extends MaterialData implements Attachable {
     }
 
     /**
-     *
      * @param type the type
      * @param data the raw data value
      * @deprecated Magic value

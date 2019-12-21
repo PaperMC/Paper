@@ -351,10 +351,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param modifier the {@link AttributeModifier} to remove
      * @return if any attribute modifiers were remove
      *
-     * @see AttributeModifier#getUniqueId()
-     *
      * @throws NullPointerException if the Attribute is null
      * @throws NullPointerException if the AttributeModifier is null
+     *
+     * @see AttributeModifier#getUniqueId()
      */
     boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
@@ -380,7 +380,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Internal use only! Do not use under any circumstances!
      *
      * @param version version
-     * @deprecated
+     * @deprecated internal use only
      */
     @Deprecated
     void setVersion(int version);

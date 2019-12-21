@@ -325,6 +325,7 @@ public enum EntityType implements Keyed {
     }
 
     /**
+     * Gets the entity type name.
      *
      * @return the entity type's name
      * @deprecated Magic value
@@ -349,6 +350,7 @@ public enum EntityType implements Keyed {
     }
 
     /**
+     * Gets the entity type id.
      *
      * @return the raw type id
      * @deprecated Magic value
@@ -359,6 +361,7 @@ public enum EntityType implements Keyed {
     }
 
     /**
+     * Gets an entity type from its name.
      *
      * @param name the entity type's name
      * @return the matching entity type or null
@@ -375,6 +378,7 @@ public enum EntityType implements Keyed {
     }
 
     /**
+     * Gets an entity from its id.
      *
      * @param id the raw type id
      * @return the matching entity type or null

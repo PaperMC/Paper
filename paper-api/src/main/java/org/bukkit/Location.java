@@ -449,8 +449,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * function overflows, which will be caused if the length is too long. Not
      * world-aware and orientation independent.
      *
-     * @see Vector
      * @return the magnitude
+     * @see Vector
      */
     public double length() {
         return Math.sqrt(NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z));
@@ -460,8 +460,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * Gets the magnitude of the location squared. Not world-aware and
      * orientation independent.
      *
-     * @see Vector
      * @return the magnitude
+     * @see Vector
      */
     public double lengthSquared() {
         return NumberConversions.square(x) + NumberConversions.square(y) + NumberConversions.square(z);
@@ -474,10 +474,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * be returned if the inner result of the sqrt() function overflows, which
      * will be caused if the distance is too long.
      *
-     * @see Vector
      * @param o The other location
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
+     * @see Vector
      */
     public double distance(@NotNull Location o) {
         return Math.sqrt(distanceSquared(o));
@@ -486,10 +486,10 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Get the squared distance between this location and another.
      *
-     * @see Vector
      * @param o The other location
      * @return the distance
      * @throws IllegalArgumentException for differing worlds
+     * @see Vector
      */
     public double distanceSquared(@NotNull Location o) {
         if (o == null) {
@@ -508,8 +508,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
      * scalar. Not world-aware.
      *
      * @param m The factor
-     * @see Vector
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location multiply(double m) {
@@ -522,8 +522,8 @@ public class Location implements Cloneable, ConfigurationSerializable {
     /**
      * Zero this location's components. Not world-aware.
      *
-     * @see Vector
      * @return the same location
+     * @see Vector
      */
     @NotNull
     public Location zero() {

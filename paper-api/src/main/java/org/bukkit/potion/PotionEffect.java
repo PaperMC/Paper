@@ -144,9 +144,9 @@ public class PotionEffect implements ConfigurationSerializable {
      * Attempts to add the effect represented by this object to the given
      * {@link LivingEntity}.
      *
-     * @see LivingEntity#addPotionEffect(PotionEffect)
      * @param entity The entity to add this effect to
      * @return Whether the effect could be added
+     * @see LivingEntity#addPotionEffect(PotionEffect)
      */
     public boolean apply(@NotNull LivingEntity entity) {
         return entity.addPotionEffect(this);

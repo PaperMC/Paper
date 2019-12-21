@@ -116,6 +116,7 @@ public abstract class InventoryView {
         }
 
         /**
+         * Gets the id of this view.
          *
          * @return the id of this view
          * @deprecated Magic value
@@ -264,7 +265,7 @@ public abstract class InventoryView {
         // Player crafting slots are indexed differently. The matrix is caught by the first return.
         // Creative mode is the same, except that you can't see the crafting slots (but the IDs are still used)
         if (getType() == InventoryType.CRAFTING || getType() == InventoryType.CREATIVE) {
-            /**
+            /*
              * Raw Slots:
              *
              * 5             1  2     0
@@ -277,7 +278,7 @@ public abstract class InventoryView {
              * 36 37 38 39 40 41 42 43 44
              */
 
-            /**
+            /*
              * Converted Slots:
              *
              * 39             1  2     0

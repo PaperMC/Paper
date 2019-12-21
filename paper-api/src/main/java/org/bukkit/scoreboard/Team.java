@@ -241,9 +241,9 @@ public interface Team {
      * Removes the entry from this team.
      *
      * @param entry the entry to remove
+     * @return if the entry was a part of this team
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this team has been unregistered
-     * @return if the entry was a part of this team
      */
     boolean removeEntry(@NotNull String entry) throws IllegalStateException, IllegalArgumentException;
 

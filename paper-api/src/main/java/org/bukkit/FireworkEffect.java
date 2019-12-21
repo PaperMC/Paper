@@ -405,9 +405,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
 
     @Override
     public int hashCode() {
-        /**
-         * TRUE and FALSE as per boolean.hashCode()
-         */
+        // TRUE and FALSE as per boolean.hashCode()
         final int PRIME = 31, TRUE = 1231, FALSE = 1237;
         int hash = 1;
         hash = hash * PRIME + (flicker ? TRUE : FALSE);

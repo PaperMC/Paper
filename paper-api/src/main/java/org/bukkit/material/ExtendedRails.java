@@ -33,6 +33,7 @@ public class ExtendedRails extends Rails {
     }
 
     /**
+     * {@inheritDoc}
      *
      * @deprecated Magic value
      */

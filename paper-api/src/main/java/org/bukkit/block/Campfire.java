@@ -10,26 +10,23 @@ import org.jetbrains.annotations.Nullable;
 public interface Campfire extends TileState {
 
     /**
-     * @see Inventory#getSize()
-     *
      * @return The size of the inventory
+     * @see Inventory#getSize()
      */
     int getSize();
 
     /**
-     * @see Inventory#getItem(int)
-     *
      * @param index The index of the Slot's ItemStack to return
      * @return The ItemStack in the slot
+     * @see Inventory#getItem(int)
      */
     @Nullable
     ItemStack getItem(int index);
 
     /**
-     * @see Inventory#setItem(int, org.bukkit.inventory.ItemStack)
-     *
      * @param index The index where to put the ItemStack
      * @param item The ItemStack to set
+     * @see Inventory#setItem(int, org.bukkit.inventory.ItemStack)
      */
     void setItem(int index, @Nullable ItemStack item);
 

@@ -20,7 +20,9 @@ public class BukkitObjectOutputStream extends ObjectOutputStream {
     /**
      * Constructor provided to mirror super functionality.
      *
-     * @throws IOException if an I/O error occurs while writing stream header
+     * @throws IOException if an I/O error occurs while creating this stream
+     * @throws SecurityException if a security manager exists and denies
+     * enabling subclassing
      * @see ObjectOutputStream#ObjectOutputStream()
      */
     protected BukkitObjectOutputStream() throws IOException, SecurityException {

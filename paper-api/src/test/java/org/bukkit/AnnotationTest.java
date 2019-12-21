@@ -200,6 +200,9 @@ public class AnnotationTest {
     }
 
     /**
+     * Checks if the class is anonymous.
+     *
+     * @param clazz the class to check
      * @return true if given class is anonymous
      */
     private static boolean isAnonymous(@NotNull ClassNode clazz) {

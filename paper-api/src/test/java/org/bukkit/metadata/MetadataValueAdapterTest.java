@@ -65,7 +65,12 @@ public class MetadataValueAdapterTest {
         assertEquals("", simpleValue(null).asString());
     }
 
-    /** Get a fixed value MetadataValue. */
+    /**
+     * Get a fixed value MetadataValue.
+     *
+     * @param value the value to wrap
+     * @return the fixed value
+     */
     private MetadataValue simpleValue(Object value) {
         return new FixedMetadataValue(plugin, value);
     }

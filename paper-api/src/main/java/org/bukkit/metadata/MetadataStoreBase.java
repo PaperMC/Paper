@@ -32,9 +32,9 @@ public abstract class MetadataStoreBase<T> {
      * @param subject The object receiving the metadata.
      * @param metadataKey A unique key to identify this metadata.
      * @param newMetadataValue The metadata value to apply.
-     * @see MetadataStore#setMetadata(Object, String, MetadataValue)
      * @throws IllegalArgumentException If value is null, or the owning plugin
      *     is null
+     * @see MetadataStore#setMetadata(Object, String, MetadataValue)
      */
     public synchronized void setMetadata(@NotNull T subject, @NotNull String metadataKey, @NotNull MetadataValue newMetadataValue) {
         Validate.notNull(newMetadataValue, "Value cannot be null");
@@ -90,9 +90,9 @@ public abstract class MetadataStoreBase<T> {
      * @param metadataKey the unique metadata key identifying the metadata to
      *     remove.
      * @param owningPlugin the plugin attempting to remove a metadata item.
+     * @throws IllegalArgumentException If plugin is null
      * @see MetadataStore#removeMetadata(Object, String,
      *     org.bukkit.plugin.Plugin)
-     * @throws IllegalArgumentException If plugin is null
      */
     public synchronized void removeMetadata(@NotNull T subject, @NotNull String metadataKey, @NotNull Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "Plugin cannot be null");
@@ -114,8 +114,8 @@ public abstract class MetadataStoreBase<T> {
      * be recalculated the next time it is accessed.
      *
      * @param owningPlugin the plugin requesting the invalidation.
-     * @see MetadataStore#invalidateAll(org.bukkit.plugin.Plugin)
      * @throws IllegalArgumentException If plugin is null
+     * @see MetadataStore#invalidateAll(org.bukkit.plugin.Plugin)
      */
     public synchronized void invalidateAll(@NotNull Plugin owningPlugin) {
         Validate.notNull(owningPlugin, "Plugin cannot be null");

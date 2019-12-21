@@ -78,8 +78,8 @@ public interface CreatureSpawner extends TileState {
     /**
      * Set the minimum spawn delay amount (in ticks).
      *
-     * @see #getMinSpawnDelay()
      * @param delay the minimum spawn delay amount
+     * @see #getMinSpawnDelay()
      */
     public void setMinSpawnDelay(int delay);
 
@@ -105,8 +105,8 @@ public interface CreatureSpawner extends TileState {
      * This value <b>must</b> be greater than 0, as well as greater than or
      * equal to {@link #getMinSpawnDelay()}
      *
-     * @see #getMaxSpawnDelay()
      * @param delay the new maximum spawn delay amount
+     * @see #getMaxSpawnDelay()
      */
     public void setMaxSpawnDelay(int delay);
 
@@ -195,8 +195,8 @@ public interface CreatureSpawner extends TileState {
      * Set the new spawn range.
      * <br>
      *
-     * @see #getSpawnRange()
      * @param spawnRange the new spawn range
+     * @see #getSpawnRange()
      */
     public void setSpawnRange(int spawnRange);
 }

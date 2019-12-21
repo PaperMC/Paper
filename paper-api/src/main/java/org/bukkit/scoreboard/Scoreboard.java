@@ -85,6 +85,7 @@ public interface Scoreboard {
      *
      * @param criteria Criteria to search by
      * @return an immutable set of Objectives using the specified Criteria
+     * @throws IllegalArgumentException if criteria is null
      */
     @NotNull
     Set<Objective> getObjectivesByCriteria(@NotNull String criteria) throws IllegalArgumentException;

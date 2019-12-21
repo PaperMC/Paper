@@ -32,7 +32,6 @@ public class BlockCanBuildEvent extends BlockEvent {
     }
 
     /**
-     *
      * @param block the block involved in this event
      * @param player the player placing the block
      * @param type the id of the block to place

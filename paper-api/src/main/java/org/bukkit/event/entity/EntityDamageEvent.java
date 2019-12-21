@@ -77,11 +77,11 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @param type the damage modifier
      * @param damage the scalar value of the damage's modifier
-     * @see #getFinalDamage()
      * @throws IllegalArgumentException if type is null
      * @throws UnsupportedOperationException if the caller does not support
      *     the particular DamageModifier, or to rephrase, when {@link
      *     #isApplicable(DamageModifier)} returns false
+     * @see #getFinalDamage()
      */
     public void setDamage(@NotNull DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
         if (!modifiers.containsKey(type)) {

@@ -20,7 +20,9 @@ public class BukkitObjectInputStream extends ObjectInputStream {
     /**
      * Constructor provided to mirror super functionality.
      *
-     * @throws IOException if an I/O error occurs while reading stream heade
+     * @throws IOException if an I/O error occurs while creating this stream
+     * @throws SecurityException if a security manager exists and denies
+     * enabling subclassing
      * @see ObjectInputStream#ObjectInputStream()
      */
     protected BukkitObjectInputStream() throws IOException, SecurityException {

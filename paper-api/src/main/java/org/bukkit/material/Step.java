@@ -74,16 +74,17 @@ public class Step extends TexturedMaterial {
     }
 
     /**
+     * {@inheritDoc}
      *
      * @deprecated Magic value
      */
-    @Deprecated
     @Override
     protected int getTextureIndex() {
         return getData() & 0x7;
     }
 
     /**
+     * {@inheritDoc}
      *
      * @deprecated Magic value
      */

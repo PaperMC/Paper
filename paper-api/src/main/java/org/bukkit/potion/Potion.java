@@ -117,8 +117,8 @@ public class Potion {
      * Applies the effects that would be applied by this potion to the given
      * {@link LivingEntity}.
      *
-     * @see LivingEntity#addPotionEffects(Collection)
      * @param to The entity to apply the effects to
+     * @see LivingEntity#addPotionEffects(Collection)
      */
     public void apply(@NotNull LivingEntity to) {
         Validate.notNull(to, "entity cannot be null");
@@ -281,6 +281,7 @@ public class Potion {
     private static final int TIER_SHIFT = 5;
 
     /**
+     * Gets the potion from its damage value.
      *
      * @param damage the damage value
      * @return the produced potion
@@ -382,6 +383,7 @@ public class Potion {
     }
 
     /**
+     * Gets the potion from its name id.
      *
      * @return the name id
      * @deprecated Non-functional
