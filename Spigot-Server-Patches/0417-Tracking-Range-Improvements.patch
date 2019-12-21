@@ -1,0 +1,64 @@
+From 4ef1788fd4f13d61cf83a054b220a564bfe9c010 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Sat, 21 Dec 2019 15:22:09 -0500
+Subject: [PATCH] Tracking Range Improvements
+
+Sets tracking range of watermobs to animals instead of misc and simplifies code
+
+Also ignores Enderdragon, defaulting it to Mojang's setting
+
+diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
+index 6f8e6c1d0..46c33e691 100644
+--- a/src/main/java/org/spigotmc/TrackingRange.java
++++ b/src/main/java/org/spigotmc/TrackingRange.java
+@@ -1,6 +1,7 @@
+ package org.spigotmc;
+ 
+ import net.minecraft.server.Entity;
++import net.minecraft.server.EntityEnderDragon; // Paper
+ import net.minecraft.server.EntityExperienceOrb;
+ import net.minecraft.server.EntityGhast;
+ import net.minecraft.server.EntityItem;
+@@ -25,26 +26,24 @@ public class TrackingRange
+         if ( entity instanceof EntityPlayer )
+         {
+             return config.playerTrackingRange;
+-        }  else if ( entity.activationType == ActivationRange.ActivationType.MONSTER || entity.activationType == ActivationRange.ActivationType.RAIDER )
+-        {
+-            return config.monsterTrackingRange;
+-        } else if ( entity instanceof EntityGhast )
+-        {
+-            if ( config.monsterTrackingRange > config.monsterActivationRange )
+-            {
++        // Paper start - Simplify and set water mobs to animal tracking range
++        }
++        switch (entity.activationType) {
++            case RAIDER:
++            case MONSTER:
+                 return config.monsterTrackingRange;
+-            } else
+-            {
+-                return config.monsterActivationRange;
+-            }
+-        } else if ( entity.activationType == ActivationRange.ActivationType.ANIMAL )
+-        {
+-            return config.animalTrackingRange;
+-        } else if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
++            case WATER:
++            case ANIMAL:
++                return config.animalTrackingRange;
++            case MISC:
++        }
++        if ( entity instanceof EntityItemFrame || entity instanceof EntityPainting || entity instanceof EntityItem || entity instanceof EntityExperienceOrb )
++        // Paper end
+         {
+             return config.miscTrackingRange;
+         } else
+         {
++            if (entity instanceof EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
+             return config.otherTrackingRange;
+         }
+     }
+-- 
+2.22.0
+
