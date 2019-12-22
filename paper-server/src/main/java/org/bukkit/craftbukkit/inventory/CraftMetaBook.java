@@ -163,12 +163,12 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
 
     @Override
     public boolean hasAuthor() {
-        return !Strings.isNullOrEmpty(author);
+        return this.author != null;
     }
 
     @Override
     public boolean hasTitle() {
-        return !Strings.isNullOrEmpty(title);
+        return this.title != null;
     }
 
     @Override
