@@ -54,7 +54,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * This list contains all blocks from the living entity's eye position to
      * target inclusive. This method considers all blocks as 1x1x1 in size.
      *
-     * @param transparent HashSet containing all transparent block Materials (set to
+     * @param transparent Set containing all transparent block Materials (set to
      *     null for only air)
      * @param maxDistance this is the maximum distance to scan (may be limited
      *     by server by at least 100 blocks, no less)
@@ -71,7 +71,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * collision shapes into account, see {@link #getTargetBlockExact(int,
      * FluidCollisionMode)}.
      *
-     * @param transparent HashSet containing all transparent block Materials (set to
+     * @param transparent Set containing all transparent block Materials (set to
      *     null for only air)
      * @param maxDistance this is the maximum distance to scan (may be limited
      *     by server by at least 100 blocks, no less)
@@ -86,7 +86,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * The target block will be the last block in the list. This method
      * considers all blocks as 1x1x1 in size.
      *
-     * @param transparent HashSet containing all transparent block Materials (set to
+     * @param transparent Set containing all transparent block Materials (set to
      *     null for only air)
      * @param maxDistance this is the maximum distance to scan. This may be
      *     further limited by the server, but never to less than 100 blocks
