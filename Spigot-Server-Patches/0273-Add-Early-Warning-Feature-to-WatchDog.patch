@@ -1,4 +1,4 @@
-From 3798c3bcf6c92ae3bf115afd5df33e41b17c07c7 Mon Sep 17 00:00:00 2001
+From a06e7f64ec3e47385a8f00de2dd6a4f01f96089a Mon Sep 17 00:00:00 2001
 From: miclebrick <miclebrick@outlook.com>
 Date: Wed, 8 Aug 2018 15:30:52 -0400
 Subject: [PATCH] Add Early Warning Feature to WatchDog
@@ -9,7 +9,7 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index adef07d4d5..214b577b32 100644
+index adef07d4d..214b577b3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -24,6 +24,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
@@ -36,7 +36,7 @@ index adef07d4d5..214b577b32 100644
      public static int tabSpamLimit = 500;
      private static void tabSpamLimiters() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 97a0a69247..dd2d8712ed 100644
+index e75e976ff..1251f4581 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -869,6 +869,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -48,7 +48,7 @@ index 97a0a69247..dd2d8712ed 100644
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
                  lastTick = start - TICK_TIME; // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 296a11f141..8636283fd1 100644
+index 296a11f14..8636283fd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -758,6 +758,7 @@ public final class CraftServer implements Server {
@@ -68,7 +68,7 @@ index 296a11f141..8636283fd1 100644
  
      @Override
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 1cf214eaca..e66050b87a 100644
+index 1cf214eac..e66050b87 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -225,7 +225,7 @@ public class SpigotConfig
@@ -81,7 +81,7 @@ index 1cf214eaca..e66050b87a 100644
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 9532aada82..a1d93200e6 100644
+index 121c7ff60..07936eeba 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -5,6 +5,7 @@ import java.lang.management.MonitorInfo;
@@ -112,7 +112,7 @@ index 9532aada82..a1d93200e6 100644
      }
  
      private static long monotonicMillis()
-@@ -56,10 +63,17 @@ public class WatchdogThread extends Thread
+@@ -56,10 +63,18 @@ public class WatchdogThread extends Thread
      {
          while ( !stopping )
          {
@@ -127,13 +127,14 @@ index 9532aada82..a1d93200e6 100644
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                // Don't spam early warning dumps
 +                if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
++                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
 +                lastEarlyWarning = currentTime;
 +                if (isLongTimeout) {
 +                // Paper end
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
                  log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
-@@ -89,29 +103,46 @@ public class WatchdogThread extends Thread
+@@ -89,29 +104,46 @@ public class WatchdogThread extends Thread
                      }
                  }
                  // Paper end
@@ -166,7 +167,7 @@ index 9532aada82..a1d93200e6 100644
  
 +                if ( isLongTimeout )
 +                {
-                 if ( restart )
+                 if ( restart && !MinecraftServer.getServer().hasStopped() )
                  {
                      RestartCommand.restart();
                  }

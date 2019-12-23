@@ -1,4 +1,4 @@
-From 28e64d87c6aeed98e0d5d105fe41f7401985658d Mon Sep 17 00:00:00 2001
+From 4b5b983b930189efae55117e5616bb1a973bc064 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -2962,7 +2962,7 @@ index 25a87c2d3..c02c53b50 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f63269157..664c48d68 100644
+index 4eba20b6a..fe24d924e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -788,6 +788,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -3847,10 +3847,10 @@ index c999f8c9b..b59ef1a63 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 049d4ef4e..59b2fc629 100644
+index 90272d0c0..136c18d10 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -81,6 +81,79 @@ public class WorldServer extends World {
+@@ -82,6 +82,79 @@ public class WorldServer extends World {
          return new Throwable(entity + " Added to world at " + new java.util.Date());
      }
  
@@ -3930,7 +3930,7 @@ index 049d4ef4e..59b2fc629 100644
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
          super(worlddata, dimensionmanager, (world, worldprovider) -> {
-@@ -124,6 +197,8 @@ public class WorldServer extends World {
+@@ -125,6 +198,8 @@ public class WorldServer extends World {
  
          this.mobSpawnerTrader = this.worldProvider.getDimensionManager().getType() == DimensionManager.OVERWORLD ? new MobSpawnerTrader(this) : null; // CraftBukkit - getType()
          this.getServer().addWorld(this.getWorld()); // CraftBukkit
@@ -3940,10 +3940,10 @@ index 049d4ef4e..59b2fc629 100644
  
      // CraftBukkit start
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 891ce4977..31667d667 100644
+index ea3526461..7ef0756ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -555,22 +555,23 @@ public class CraftWorld implements World {
+@@ -556,22 +556,23 @@ public class CraftWorld implements World {
                  return true;
              }
  
@@ -3975,7 +3975,7 @@ index 891ce4977..31667d667 100644
  
              // fall through to load
              // we do this so we do not re-read the chunk data on disk
-@@ -2378,6 +2379,25 @@ public class CraftWorld implements World {
+@@ -2386,6 +2387,25 @@ public class CraftWorld implements World {
          return persistentRaid.raids.values().stream().map(CraftRaid::new).collect(Collectors.toList());
      }
  
@@ -4002,7 +4002,7 @@ index 891ce4977..31667d667 100644
      @Override
      public int getViewDistance() {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a1d93200e..6ca0ebfde 100644
+index 07936eeba..fe68df45b 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -6,6 +6,7 @@ import java.lang.management.ThreadInfo;
@@ -4013,7 +4013,7 @@ index a1d93200e..6ca0ebfde 100644
  import net.minecraft.server.MinecraftServer;
  import org.bukkit.Bukkit;
  
-@@ -83,6 +84,7 @@ public class WatchdogThread extends Thread
+@@ -84,6 +85,7 @@ public class WatchdogThread extends Thread
                  log.log( Level.SEVERE, "If you are unsure or still think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" );
                  log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
                  log.log( Level.SEVERE, "Paper version: " + Bukkit.getServer().getVersion() );
@@ -4021,7 +4021,7 @@ index a1d93200e..6ca0ebfde 100644
                  //
                  if ( net.minecraft.server.World.lastPhysicsProblem != null )
                  {
-@@ -111,6 +113,7 @@ public class WatchdogThread extends Thread
+@@ -112,6 +114,7 @@ public class WatchdogThread extends Thread
                  // Paper end - Different message for short timeout
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper

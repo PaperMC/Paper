@@ -1,11 +1,11 @@
-From 213eef20e57994d1827227b529da8058c1ae11b3 Mon Sep 17 00:00:00 2001
+From 56fbbd1827c4153ca6cd35339da70d7d7c17906b Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Mon, 19 Aug 2019 01:27:58 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 8de6c4816c..e25544f116 100644
+index 8de6c4816..e25544f11 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -62,6 +62,7 @@ public class WorldTimingsHandler {
@@ -25,7 +25,7 @@ index 8de6c4816c..e25544f116 100644
          poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
          chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 3dfe54ad3d..02715539ae 100644
+index 3dfe54ad3..02715539a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -611,4 +611,9 @@ public class PaperWorldConfig {
@@ -40,7 +40,7 @@ index 3dfe54ad3d..02715539ae 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 new file mode 100644
-index 0000000000..9ebd7ecb7a
+index 000000000..9ebd7ecb7
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PlayerMobDistanceMap.java
 @@ -0,0 +1,253 @@
@@ -299,7 +299,7 @@ index 0000000000..9ebd7ecb7a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
 new file mode 100644
-index 0000000000..4f13d3ff83
+index 000000000..4f13d3ff8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/PooledHashSets.java
 @@ -0,0 +1,241 @@
@@ -545,7 +545,7 @@ index 0000000000..4f13d3ff83
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 58654f4538..8a35e2994d 100644
+index 58654f453..8a35e2994 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -555,7 +555,22 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -599,7 +599,7 @@ index 58654f4538..8a35e2994d 100644
                                  }
                              }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index ba30730b5a..7fbd390426 100644
+index ba30730b5..7fbd39042 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -80,6 +80,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -631,7 +631,7 @@ index ba30730b5a..7fbd390426 100644
          return this.cs;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index d49ad03089..2fb04e3e93 100644
+index d49ad0308..2fb04e3e9 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -254,6 +254,7 @@ public class EntityTypes<T extends Entity> {
@@ -643,7 +643,7 @@ index d49ad03089..2fb04e3e93 100644
          return this.bb;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index fce37d0d67..b37c1161d1 100644
+index d9faef8a6..b3ccb9a7b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -78,7 +78,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -682,7 +682,7 @@ index fce37d0d67..b37c1161d1 100644
  
      private static double a(ChunkCoordIntPair chunkcoordintpair, Entity entity) {
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index fdac5bb3a2..58bbf2f9d2 100644
+index fdac5bb3a..58bbf2f9d 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -755,10 +755,10 @@ index fdac5bb3a2..58bbf2f9d2 100644
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 219861a2d8..919472370d 100644
+index aad93723e..f2d9392a0 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -1005,7 +1005,20 @@ public class WorldServer extends World {
+@@ -1014,7 +1014,20 @@ public class WorldServer extends World {
      }
  
      public Object2IntMap<EnumCreatureType> l() {
@@ -780,7 +780,7 @@ index 219861a2d8..919472370d 100644
          ObjectIterator objectiterator = this.entitiesById.values().iterator();
  
          while (objectiterator.hasNext()) {
-@@ -1030,11 +1043,16 @@ public class WorldServer extends World {
+@@ -1039,11 +1052,16 @@ public class WorldServer extends World {
                      continue;
                  }
                  // Paper end
