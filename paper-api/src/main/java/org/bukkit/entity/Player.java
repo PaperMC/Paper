@@ -835,6 +835,31 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setTotalExperience(int exp);
 
     /**
+     * Send an experience change.
+     *
+     * This fakes an experience change packet for a user. This will not actually
+     * change the experience points in any way.
+     *
+     * @param progress Experience progress percentage (between 0.0 and 1.0)
+     * @see #setExp(float)
+     */
+    public void sendExperienceChange(float progress);
+
+    /**
+     * Send an experience change.
+     *
+     * This fakes an experience change packet for a user. This will not actually
+     * change the experience points in any way.
+     *
+     * @param progress New experience progress percentage (between 0.0 and 1.0)
+     * @param level New experience level
+     *
+     * @see #setExp(float)
+     * @see #setLevel(int)
+     */
+    public void sendExperienceChange(float progress, int level);
+
+    /**
      * Gets the players current exhaustion level.
      * <p>
      * Exhaustion controls how fast the food level drops. While you have a
