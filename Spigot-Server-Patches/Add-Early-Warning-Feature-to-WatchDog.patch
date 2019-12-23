@@ -9,7 +9,7 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index adef07d4d5..214b577b32 100644
+index adef07d4d..214b577b3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -0,0 +0,0 @@ import org.bukkit.configuration.file.YamlConfiguration;
@@ -36,7 +36,7 @@ index adef07d4d5..214b577b32 100644
      public static int tabSpamLimit = 500;
      private static void tabSpamLimiters() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 97a0a69247..dd2d8712ed 100644
+index e75e976ff..1251f4581 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -48,7 +48,7 @@ index 97a0a69247..dd2d8712ed 100644
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
                  lastTick = start - TICK_TIME; // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 296a11f141..8636283fd1 100644
+index 296a11f14..8636283fd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
@@ -68,7 +68,7 @@ index 296a11f141..8636283fd1 100644
  
      @Override
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 1cf214eaca..e66050b87a 100644
+index 1cf214eac..e66050b87 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -0,0 +0,0 @@ public class SpigotConfig
@@ -81,7 +81,7 @@ index 1cf214eaca..e66050b87a 100644
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 9532aada82..a1d93200e6 100644
+index 121c7ff60..07936eeba 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ import java.lang.management.MonitorInfo;
@@ -127,6 +127,7 @@ index 9532aada82..a1d93200e6 100644
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                // Don't spam early warning dumps
 +                if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
++                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
 +                lastEarlyWarning = currentTime;
 +                if (isLongTimeout) {
 +                // Paper end
@@ -166,7 +167,7 @@ index 9532aada82..a1d93200e6 100644
  
 +                if ( isLongTimeout )
 +                {
-                 if ( restart )
+                 if ( restart && !MinecraftServer.getServer().hasStopped() )
                  {
                      RestartCommand.restart();
                  }
