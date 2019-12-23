@@ -47,6 +47,7 @@ import net.minecraft.server.PacketPlayOutBlockChange;
 import net.minecraft.server.PacketPlayOutChat;
 import net.minecraft.server.PacketPlayOutCustomPayload;
 import net.minecraft.server.PacketPlayOutCustomSoundEffect;
+import net.minecraft.server.PacketPlayOutExperience;
 import net.minecraft.server.PacketPlayOutMap;
 import net.minecraft.server.PacketPlayOutNamedSoundEffect;
 import net.minecraft.server.PacketPlayOutPlayerInfo;
@@ -946,6 +947,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setLevel(int level) {
+        Preconditions.checkArgument(level >= 0, "Experience level must not be negative (%s)", level);
         getHandle().expLevel = level;
         getHandle().lastSentExp = -1;
     }
@@ -957,7 +959,26 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setTotalExperience(int exp) {
+        Preconditions.checkArgument(exp >= 0, "Total experience points must not be negative (%s)", exp);
         getHandle().expTotal = exp;
+    }
+
+    @Override
+    public void sendExperienceChange(float progress) {
+        sendExperienceChange(progress, getLevel());
+    }
+
+    @Override
+    public void sendExperienceChange(float progress, int level) {
+        Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "Experience progress must be between 0.0 and 1.0 (%s)", progress);
+        Preconditions.checkArgument(level >= 0, "Experience level must not be negative (%s)", level);
+
+        if (getHandle().playerConnection == null) {
+            return;
+        }
+
+        PacketPlayOutExperience packet = new PacketPlayOutExperience(progress, getTotalExperience(), level);
+        getHandle().playerConnection.sendPacket(packet);
     }
 
     @Override
