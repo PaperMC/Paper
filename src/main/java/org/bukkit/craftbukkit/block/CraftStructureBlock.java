@@ -105,7 +105,7 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
 
     @Override
     public void setUsageMode(UsageMode mode) {
-        getSnapshot().setUsageMode(BlockPropertyStructureMode.valueOf(mode.name()));
+        getSnapshot().usageMode = BlockPropertyStructureMode.valueOf(mode.name());
     }
 
     @Override
@@ -175,6 +175,14 @@ public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructu
     @Override
     public String getMetadata() {
         return getSnapshot().metadata;
+    }
+
+    @Override
+    protected void applyTo(TileEntityStructure tileEntity) {
+        super.applyTo(tileEntity);
+
+        // Ensure block type is correct
+        tileEntity.setUsageMode(tileEntity.getUsageMode());
     }
 
     private static boolean isBetween(int num, int min, int max) {
