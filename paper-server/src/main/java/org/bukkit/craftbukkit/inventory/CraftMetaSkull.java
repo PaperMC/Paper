@@ -26,6 +26,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     static final int MAX_OWNER_LENGTH = 16;
 
     private GameProfile profile;
+    private NBTTagCompound serializedProfile;
 
     CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
@@ -33,16 +34,16 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             return;
         }
         CraftMetaSkull skullMeta = (CraftMetaSkull) meta;
-        this.profile = skullMeta.profile;
+        this.setProfile(skullMeta.profile);
     }
 
     CraftMetaSkull(NBTTagCompound tag) {
         super(tag);
 
         if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
+            this.setProfile(GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT)));
         } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
-            profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
+            this.setProfile(new GameProfile(null, tag.getString(SKULL_OWNER.NBT)));
         }
     }
 
@@ -58,17 +59,20 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super.deserializeInternal(tag, context);
 
         if (tag.hasKeyOfType(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT));
+            this.setProfile(GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT)));
         }
     }
 
     @Override
     void serializeInternal(final Map<String, NBTBase> internalTags) {
         if (profile != null) {
-            NBTTagCompound nbtData = new NBTTagCompound();
-            GameProfileSerializer.serialize(nbtData, profile);
-            internalTags.put(SKULL_PROFILE.NBT, nbtData);
+            internalTags.put(SKULL_PROFILE.NBT, serializedProfile);
         }
+    }
+
+    private void setProfile(GameProfile profile) {
+        this.profile = profile;
+        this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
     }
 
     @Override
@@ -77,11 +81,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
         if (profile != null) {
             // Fill in textures
-            profile = TileEntitySkull.b(profile);
+            setProfile(TileEntitySkull.b(profile));
 
-            NBTTagCompound owner = new NBTTagCompound();
-            GameProfileSerializer.serialize(owner, profile);
-            tag.set(SKULL_OWNER.NBT, owner);
+            tag.set(SKULL_OWNER.NBT, serializedProfile);
         }
     }
 
@@ -152,9 +154,9 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         }
 
         if (name == null) {
-            profile = null;
+            setProfile(null);
         } else {
-            profile = new GameProfile(null, name);
+            setProfile(new GameProfile(null, name));
         }
 
         return true;
@@ -163,11 +165,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     public boolean setOwningPlayer(OfflinePlayer owner) {
         if (owner == null) {
-            profile = null;
+            setProfile(null);
         } else if (owner instanceof CraftPlayer) {
-            profile = ((CraftPlayer) owner).getProfile();
+            setProfile(((CraftPlayer) owner).getProfile());
         } else {
-            profile = new GameProfile(owner.getUniqueId(), owner.getName());
+            setProfile(new GameProfile(owner.getUniqueId(), owner.getName()));
         }
 
         return true;
@@ -192,7 +194,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             CraftMetaSkull that = (CraftMetaSkull) meta;
 
             // SPIGOT-5403: equals does not check properties
-            return (this.profile != null ? that.profile != null && this.profile.equals(that.profile) && this.profile.getProperties().equals(that.profile.getProperties()) : that.profile == null);
+            return (this.profile != null ? that.profile != null && this.serializedProfile.equals(that.serializedProfile) : that.profile == null);
         }
         return true;
     }
