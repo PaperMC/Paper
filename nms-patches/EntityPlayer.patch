@@ -280,12 +280,14 @@
  
              this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
-@@ -386,11 +562,16 @@
+@@ -386,11 +562,18 @@
          }
  
          this.releaseShoulderEntities();
 -        if (!this.isSpectator()) {
 -            this.d(damagesource);
++        // SPIGOT-5478 must be called manually now
++        this.dropExperience();
 +        // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
 +        if (!event.getKeepInventory()) {
 +            this.inventory.clear();
@@ -300,7 +302,7 @@
          EntityLiving entityliving = this.getKillingEntity();
  
          if (entityliving != null) {
-@@ -416,10 +597,12 @@
+@@ -416,10 +599,12 @@
              String s = this.getName();
              String s1 = entity.getName();
  
@@ -315,7 +317,7 @@
              } else {
                  this.a(StatisticList.MOB_KILLS);
              }
-@@ -437,7 +620,8 @@
+@@ -437,7 +622,8 @@
              int i = scoreboardteam.getColor().b();
  
              if (i >= 0 && i < aiscoreboardcriteria.length) {
@@ -325,7 +327,7 @@
              }
          }
  
-@@ -481,16 +665,26 @@
+@@ -481,16 +667,26 @@
      }
  
      private boolean canPvP() {
@@ -355,7 +357,7 @@
              this.decouple();
              this.getWorldServer().removePlayer(this);
              if (!this.viewingCredits) {
-@@ -503,8 +697,10 @@
+@@ -503,8 +699,10 @@
          } else {
              WorldServer worldserver = this.server.getWorldServer(dimensionmanager1);
  
@@ -367,7 +369,7 @@
              WorldData worlddata = worldserver1.getWorldData();
  
              this.playerConnection.sendPacket(new PacketPlayOutRespawn(dimensionmanager, WorldData.c(worlddata.getSeed()), worlddata.getType(), this.playerInteractManager.getGameMode()));
-@@ -514,6 +710,8 @@
+@@ -514,6 +712,8 @@
              playerlist.d(this);
              worldserver.removePlayer(this);
              this.dead = false;
@@ -376,7 +378,7 @@
              double d0 = this.locX();
              double d1 = this.locY();
              double d2 = this.locZ();
-@@ -523,6 +721,7 @@
+@@ -523,6 +723,7 @@
              float f2 = f1;
  
              worldserver.getMethodProfiler().enter("moving");
@@ -384,7 +386,7 @@
              if (dimensionmanager1 == DimensionManager.OVERWORLD && dimensionmanager == DimensionManager.NETHER) {
                  this.cr = this.getPositionVector();
                  d0 /= 8.0D;
-@@ -540,6 +739,52 @@
+@@ -540,6 +741,52 @@
                  f = 0.0F;
              }
  
@@ -437,7 +439,7 @@
              this.setPositionRotation(d0, d1, d2, f1, f);
              worldserver.getMethodProfiler().exit();
              worldserver.getMethodProfiler().enter("placing");
-@@ -551,12 +796,13 @@
+@@ -551,12 +798,13 @@
              d0 = MathHelper.a(d0, d4, d6);
              d2 = MathHelper.a(d2, d5, d7);
              this.setPositionRotation(d0, d1, d2, f1, f);
@@ -452,7 +454,7 @@
  
                  for (int l = -2; l <= 2; ++l) {
                      for (int i1 = -2; i1 <= 2; ++i1) {
-@@ -566,11 +812,20 @@
+@@ -566,11 +814,20 @@
                              int i2 = k + i1 * 0 - l * 1;
                              boolean flag2 = j1 < 0;
  
@@ -474,7 +476,7 @@
                  this.setPositionRotation((double) i, (double) j, (double) k, f1, 0.0F);
                  this.setMot(Vec3D.a);
              } else if (!worldserver1.getTravelAgent().a(this, f2)) {
-@@ -599,6 +854,11 @@
+@@ -599,6 +856,11 @@
              this.lastSentExp = -1;
              this.lastHealthSent = -1.0F;
              this.lastFoodSent = -1;
@@ -486,7 +488,7 @@
              return this;
          }
      }
-@@ -640,9 +900,16 @@
+@@ -640,9 +902,16 @@
          this.activeContainer.c();
      }
  
@@ -505,7 +507,7 @@
              this.a(StatisticList.SLEEP_IN_BED);
              CriterionTriggers.q.a(this);
          });
-@@ -650,6 +917,7 @@
+@@ -650,6 +919,7 @@
  
      @Override
      public void wakeup(boolean flag, boolean flag1) {
@@ -513,7 +515,7 @@
          if (this.isSleeping()) {
              this.getWorldServer().getChunkProvider().broadcastIncludingSelf(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -723,8 +991,9 @@
+@@ -723,8 +993,9 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -524,7 +526,7 @@
      }
  
      @Override
-@@ -739,6 +1008,24 @@
+@@ -739,6 +1010,24 @@
              this.nextContainerCounter();
              Container container = itileinventory.createMenu(this.containerCounter, this.inventory, this);
  
@@ -549,7 +551,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.a((new ChatMessage("container.spectatorCantOpen", new Object[0])).a(EnumChatFormat.RED), true);
-@@ -746,9 +1033,11 @@
+@@ -746,9 +1035,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -563,7 +565,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -761,13 +1050,24 @@
+@@ -761,13 +1052,24 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -590,7 +592,7 @@
          this.activeContainer.addSlotListener(this);
      }
  
-@@ -812,6 +1112,11 @@
+@@ -812,6 +1114,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -602,7 +604,7 @@
      }
  
      @Override
-@@ -821,6 +1126,7 @@
+@@ -821,6 +1128,7 @@
  
      @Override
      public void closeInventory() {
@@ -610,7 +612,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.m();
      }
-@@ -855,7 +1161,7 @@
+@@ -855,7 +1163,7 @@
      @Override
      public void a(Statistic<?> statistic, int i) {
          this.serverStatisticManager.b(this, statistic, i);
@@ -619,7 +621,7 @@
              scoreboardscore.addScore(i);
          });
      }
-@@ -863,7 +1169,7 @@
+@@ -863,7 +1171,7 @@
      @Override
      public void a(Statistic<?> statistic) {
          this.serverStatisticManager.setStatistic(this, statistic, 0);
@@ -628,7 +630,7 @@
      }
  
      @Override
-@@ -912,7 +1218,16 @@
+@@ -912,7 +1220,16 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -645,7 +647,7 @@
  
      @Override
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
-@@ -967,12 +1282,14 @@
+@@ -967,12 +1284,14 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -661,7 +663,7 @@
      }
  
      @Override
-@@ -1040,6 +1357,18 @@
+@@ -1040,6 +1359,18 @@
  
      @Override
      public void a(EnumGamemode enumgamemode) {
@@ -680,7 +682,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(3, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -1090,6 +1419,17 @@
+@@ -1090,6 +1421,17 @@
      }
  
      public void a(PacketPlayInSettings packetplayinsettings) {
@@ -698,7 +700,7 @@
          this.locale = packetplayinsettings.b();
          this.ch = packetplayinsettings.d();
          this.ci = packetplayinsettings.e();
-@@ -1126,13 +1466,13 @@
+@@ -1126,13 +1468,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[]{entity.getId()}));
          } else {
@@ -714,7 +716,7 @@
      }
  
      @Override
-@@ -1156,7 +1496,7 @@
+@@ -1156,7 +1498,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -723,7 +725,7 @@
          }
  
      }
-@@ -1185,7 +1525,7 @@
+@@ -1185,7 +1527,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -732,7 +734,7 @@
      }
  
      @Override
-@@ -1206,9 +1546,16 @@
+@@ -1206,9 +1548,16 @@
          return this.advancementDataPlayer;
      }
  
@@ -749,7 +751,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1231,6 +1578,9 @@
+@@ -1231,6 +1580,9 @@
              this.server.getPlayerList().a(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
@@ -759,7 +761,7 @@
  
      }
  
-@@ -1285,4 +1635,144 @@
+@@ -1285,4 +1637,144 @@
              return entityitem;
          }
      }
