@@ -24,6 +24,13 @@ public class ChunkRegionLoader {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
+    // Paper start - guard against serializing mismatching coordinates
+    // TODO Note: This needs to be re-checked each update
+    public static ChunkCoordIntPair getChunkCoordinate(NBTTagCompound chunkData) {
+        NBTTagCompound levelData = chunkData.getCompound("Level");
+        return new ChunkCoordIntPair(levelData.getInt("xPos"), levelData.getInt("zPos"));
+    }
+    // Paper end
     // Paper start
     public static final class InProgressChunkHolder {
 
@@ -49,8 +56,8 @@ public class ChunkRegionLoader {
         // Paper end
         ChunkGenerator chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
         WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
-        NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level");
-        ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos"));
+        NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("Level"); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
+        ChunkCoordIntPair chunkcoordintpair1 = new ChunkCoordIntPair(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos")); // Paper - diff on change, see ChunkRegionLoader#getChunkCoordinate
 
         if (!Objects.equals(chunkcoordintpair, chunkcoordintpair1)) {
             ChunkRegionLoader.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", chunkcoordintpair, chunkcoordintpair, chunkcoordintpair1);
