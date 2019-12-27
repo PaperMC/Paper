@@ -134,3 +134,24 @@
          CompoundTag nbttagcompound1 = new CompoundTag();
  
          nbttagcompound1.putString("dimension", worldKey.location().toString());
+@@ -108,8 +172,19 @@
+     }
+ 
+     public CompletableFuture<Void> write(ChunkPos chunkPos, Supplier<CompoundTag> nbtSupplier) {
++        // Paper start - guard against possible chunk pos desync
++        final Supplier<CompoundTag> guardedPosCheck = () -> {
++            CompoundTag nbt = nbtSupplier.get();
++            if (nbt != null && !chunkPos.equals(SerializableChunkData.getChunkCoordinate(nbt))) {
++                final String world = (ChunkStorage.this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap) ChunkStorage.this).level.getWorld().getName() : null;
++                throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkPos
++                    + " but compound says coordinate is " + SerializableChunkData.getChunkCoordinate(nbt) + (world == null ? " for an unknown world" : (" for world: " + world)));
++            }
++            return nbt;
++        };
++        // Paper end - guard against possible chunk pos desync
+         this.handleLegacyStructureIndex(chunkPos);
+-        return this.worker.store(chunkPos, nbtSupplier);
++        return this.worker.store(chunkPos, guardedPosCheck); // Paper - guard against possible chunk pos desync
+     }
+ 
+     protected void handleLegacyStructureIndex(ChunkPos chunkPos) {
