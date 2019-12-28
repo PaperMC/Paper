@@ -1,4 +1,4 @@
-From 0d6bd6ef77c14a6a7d648dc84ac43d675e46973e Mon Sep 17 00:00:00 2001
+From 3e31a6bd943299ecb7653fc5339f72ea8ded85c1 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 19 Jul 2019 03:29:14 -0700
 Subject: [PATCH] Reduce sync loads
@@ -11,7 +11,7 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 09efbf725..132397b3f 100644
+index 09efbf72..132397b3 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -1,9 +1,13 @@
@@ -91,7 +91,7 @@ index 09efbf725..132397b3f 100644
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 000000000..59aec1032
+index 00000000..59aec103
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 @@ -0,0 +1,172 @@
@@ -267,8 +267,21 @@ index 000000000..59aec1032
 +        }
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java b/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
+index 2b19b675..34dd376c 100644
+--- a/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
++++ b/src/main/java/net/minecraft/server/BlockDirtSnowSpreadable.java
+@@ -10,7 +10,7 @@ public abstract class BlockDirtSnowSpreadable extends BlockDirtSnow {
+ 
+     private static boolean b(IBlockData iblockdata, IWorldReader iworldreader, BlockPosition blockposition) {
+         BlockPosition blockposition1 = blockposition.up();
+-        IBlockData iblockdata1 = iworldreader.getType(blockposition1);
++        IBlockData iblockdata1 = iworldreader.getTypeIfLoaded(blockposition1); if(iblockdata1 == null) return false; // Paper - reduce sync loads
+ 
+         if (iblockdata1.getBlock() == Blocks.SNOW && (Integer) iblockdata1.get(BlockSnow.LAYERS) == 1) {
+             return true;
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 1f6b1c4f1..58654f453 100644
+index 1f6b1c4f..58654f45 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -280,6 +280,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -280,7 +293,7 @@ index 1f6b1c4f1..58654f453 100644
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 37604d8cc..5460ace8f 100644
+index 37604d8c..5460ace8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1197,7 +1197,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -311,7 +324,7 @@ index 37604d8cc..5460ace8f 100644
                  if (chunk != null) {
                      chunk.a(oclass, axisalignedbb, list, predicate);
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 136c18d10..14f25caa0 100644
+index 136c18d1..14f25caa 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -154,6 +154,12 @@ public class WorldServer extends World {
@@ -328,5 +341,5 @@ index 136c18d10..14f25caa0 100644
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 -- 
-2.24.1
+2.17.1
 
