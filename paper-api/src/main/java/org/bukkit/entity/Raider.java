@@ -33,4 +33,18 @@ public interface Raider extends Monster {
      * @param leader patrol leader status
      */
     void setPatrolLeader(boolean leader);
+
+    /**
+     * Gets whether this mob can join an active raid.
+     *
+     * @return CanJoinRaid status
+     */
+    boolean isCanJoinRaid();
+
+    /**
+     * Sets whether this mob can join an active raid.
+     *
+     * @param join CanJoinRaid status
+     */
+    void setCanJoinRaid(boolean join);
 }
