@@ -49,4 +49,14 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
     public void setPatrolLeader(boolean leader) {
         getHandle().setPatrolLeader(leader);
     }
+
+    @Override
+    public boolean isCanJoinRaid() {
+        return getHandle().eD();
+    }
+
+    @Override
+    public void setCanJoinRaid(boolean join) {
+        getHandle().u(join);
+    }
 }
