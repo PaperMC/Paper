@@ -1,0 +1,260 @@
+From 1a394761f4526a0537843eb0e0100b54df025bf4 Mon Sep 17 00:00:00 2001
+From: egg82 <eggys82@gmail.com>
+Date: Tue, 31 Dec 2019 19:25:48 -0700
+Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
+
+Zstd using zstd-jni: https://github.com/luben/zstd-jni
+LZ4 using lz4-java: https://github.com/lz4/lz4-java
+
+New compression only happens when a chunk is saved, so running a force-upgrade may be desirable.
+
+New config option for the compression method to use.
+There's a new option in PaperConfig (heavy compression) for Zstd which defaults to false.
+
+Since the patch hooks Mojang's versioning system for new compression methods, it
+should be internally consistent, easily-updatable, and reversible with a force-upgrade.
+
+This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
+
+diff --git a/pom.xml b/pom.xml
+index 495e11f0..87574cad 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -106,6 +106,18 @@
+             <version>5.1.48</version>
+             <scope>runtime</scope>
+         </dependency>
++        <!-- Paper start - add LZ4 & ZSTD compression -->
++        <dependency>
++            <groupId>org.lz4</groupId>
++            <artifactId>lz4-java</artifactId>
++            <version>1.7.0</version>
++        </dependency>
++        <dependency>
++            <groupId>com.github.luben</groupId>
++            <artifactId>zstd-jni</artifactId>
++            <version>1.4.4-3</version>
++        </dependency>
++        <!-- Paper end -->
+         <!-- testing -->
+         <dependency>
+             <groupId>junit</groupId>
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 1d7d1ffb..116546de 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -1,6 +1,7 @@
+ package com.destroystokyo.paper;
+ 
+ import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
++import com.destroystokyo.paper.region.RegionCompressionType;
+ import com.google.common.base.Strings;
+ import com.google.common.base.Throwables;
+ 
+@@ -10,10 +11,7 @@ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ import java.nio.charset.StandardCharsets;
+-import java.util.HashMap;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
++import java.util.*;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+ import java.util.regex.Pattern;
+@@ -425,4 +423,19 @@ public class PaperConfig {
+             */
+         }
+     }
++
++    public static RegionCompressionType regionCompressionMethod = RegionCompressionType.ZLIB;
++    public static boolean regionZstdUseHighCompression = false;
++    private static void regionCompression() {
++        regionCompressionMethod = RegionCompressionType.getFromName(getString("settings.region-compression-method", "zlib"));
++        if (regionCompressionMethod == null) {
++            fatal("Valid values for region-compression-method are: " + String.join(", ", Arrays.copyOf(RegionCompressionType.values(), RegionCompressionType.values().length, String[].class)));
++        } else {
++            log("Using " + (regionCompressionMethod == RegionCompressionType.NONE ? "no" : regionCompressionMethod.getName()) + " compression for region files.");
++            regionZstdUseHighCompression = getBoolean("settings.region-zstd-use-high-compression", false);
++            if (regionCompressionMethod == RegionCompressionType.ZSTD && regionZstdUseHighCompression) {
++                log("Using high compression level for region files. (make my PC hurt)");
++            }
++        }
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
+new file mode 100644
+index 00000000..481d6422
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
+@@ -0,0 +1,40 @@
++package com.destroystokyo.paper.region;
++
++public enum RegionCompressionType {
++    GZIP(1, "gzip"),
++    ZLIB(2, "zlib"),
++    NONE(3, "none"),
++    LZ4(126, "lz4"),
++    ZSTD(127, "zstd");
++
++    private final int type;
++    private final String name;
++    RegionCompressionType(int type, String name) {
++        this.type = type;
++        this.name = name;
++    }
++
++    public int getType() { return type; }
++
++    public String getName() { return name; }
++
++    public static RegionCompressionType getFromName(String name) {
++        for (RegionCompressionType value : values()) {
++            if (value.name.equalsIgnoreCase(name)) {
++                return value;
++            }
++        }
++        return null;
++    }
++
++    public static RegionCompressionType getFromType(int type) {
++        for (RegionCompressionType value : values()) {
++            if (value.type == type) {
++                return value;
++            }
++        }
++        return null;
++    }
++
++    public String toString() { return name; }
++}
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index 0de24c79..eef7f340 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -20,6 +20,8 @@ import java.nio.file.StandardOpenOption;
+ import java.util.zip.InflaterInputStream; // Paper
+ 
+ import javax.annotation.Nullable;
++
++import com.destroystokyo.paper.PaperConfig; // Paper
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -60,8 +62,27 @@ public class RegionFile implements AutoCloseable {
+     }
+     // Paper end
+ 
++    // Paper start - new compression methods
++    private static RegionFileCompression getDefaultCompressionMethod() {
++        switch (PaperConfig.regionCompressionMethod) {
++            case GZIP:
++                return RegionFileCompression.GZIP;
++            case ZLIB:
++                return RegionFileCompression.ZLIB;
++            case NONE:
++                return RegionFileCompression.NONE;
++            case LZ4:
++                return RegionFileCompression.LZ4;
++            case ZSTD:
++                return RegionFileCompression.ZSTD;
++            default:
++                throw new IllegalArgumentException("Cannot get region compression method.");
++        }
++    }
++    // Paper end
++
+     public RegionFile(File file, File file1) throws IOException {
+-        this(file.toPath(), file1.toPath(), RegionFileCompression.b);
++        this(file.toPath(), file1.toPath(), getDefaultCompressionMethod()); // Paper - new compression methods
+     }
+ 
+     public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression) throws IOException {
+diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
+index 3382d678..6552546d 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCompression.java
++++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
+@@ -1,10 +1,10 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.PaperConfig; // Paper
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.OutputStream;
++
++import java.io.*;
+ import java.util.zip.DeflaterOutputStream;
+ import java.util.zip.GZIPInputStream;
+ import java.util.zip.GZIPOutputStream;
+@@ -14,13 +14,64 @@ import javax.annotation.Nullable;
+ public class RegionFileCompression {
+ 
+     private static final Int2ObjectMap<RegionFileCompression> d = new Int2ObjectOpenHashMap();
+-    public static final RegionFileCompression a = a(new RegionFileCompression(1, GZIPInputStream::new, GZIPOutputStream::new));
++    public static final RegionFileCompression a = a(new RegionFileCompression(1, in -> new GZIPInputStream(in, 32 * 1024), out -> new GZIPOutputStream(out, 32 * 1024))); // Paper - optimize method
++    public static final RegionFileCompression GZIP = a; // Paper - OBFHELPER
+     public static final RegionFileCompression b = a(new RegionFileCompression(2, InflaterInputStream::new, DeflaterOutputStream::new));
++    public static final RegionFileCompression ZLIB = b; // Paper - OBFHELPER
+     public static final RegionFileCompression c = a(new RegionFileCompression(3, (inputstream) -> {
+         return inputstream;
+     }, (outputstream) -> {
+         return outputstream;
+     }));
++    public static final RegionFileCompression NONE = c; // Paper - OBFHELPER
++    // Paper start - add new compression methods
++    private static final net.jpountz.lz4.LZ4FastDecompressor lz4Decompressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastDecompressor();
++    private static final net.jpountz.lz4.LZ4Compressor lz4Compressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastCompressor();
++    public static final RegionFileCompression LZ4 = a(new RegionFileCompression(126,
++        in -> new net.jpountz.lz4.LZ4BlockInputStream(in, lz4Decompressor),
++        out -> new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)
++    ));
++
++    private static final com.github.luben.zstd.ZstdDictCompress zstdDictCompressor;
++    private static final com.github.luben.zstd.ZstdDictDecompress zstdDictDecompressor;
++    public static final RegionFileCompression ZSTD;
++
++    static {
++        byte[] zstdDict;
++        try {
++            zstdDict = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict"));
++        } catch (IOException ignored) { zstdDict = new byte[0]; }
++        zstdDictCompressor = new com.github.luben.zstd.ZstdDictCompress(zstdDict, PaperConfig.regionZstdUseHighCompression ? 19 : 1);
++        zstdDictDecompressor = new com.github.luben.zstd.ZstdDictDecompress(zstdDict);
++
++        ZSTD = a(new RegionFileCompression(127,
++            in -> {
++            com.github.luben.zstd.ZstdInputStream retVal = new com.github.luben.zstd.ZstdInputStream(in);
++            retVal.setDict(zstdDictDecompressor);
++            return retVal;
++            },
++            out -> {
++            com.github.luben.zstd.ZstdOutputStream retVal = new com.github.luben.zstd.ZstdOutputStream(out);
++            retVal.setDict(zstdDictCompressor);
++            return retVal;
++            }
++            ));
++    }
++
++    private static byte[] toBytes(InputStream inStream) throws IOException {
++        if (inStream == null) {
++            return new byte[0];
++        }
++        try (ByteArrayOutputStream out = new ByteArrayOutputStream(inStream.available())) {
++            byte[] buffer = new byte[1024 * 64];
++            int bytesRead;
++            while ((bytesRead = inStream.read(buffer)) > 0) {
++                out.write(buffer, 0, bytesRead);
++            }
++            return out.toByteArray();
++        }
++    }
++    // Paper end
+     private final int e;
+     private final RegionFileCompression.a<InputStream> f;
+     private final RegionFileCompression.a<OutputStream> g;
+-- 
+2.20.1
+
