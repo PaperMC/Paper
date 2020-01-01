@@ -1,4 +1,4 @@
-From e2ebd4fbef921e102111cafdd70346fb24e10627 Mon Sep 17 00:00:00 2001
+From dfc8fefecb755fa4c875e5b0b1206ee8ddebd972 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -168,7 +168,7 @@ index 0de24c79..eef7f340 100644
  
      public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
-index 3382d678..e51de219 100644
+index 3382d678..98b5a7fe 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCompression.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
 @@ -1,10 +1,12 @@
@@ -184,21 +184,20 @@ index 3382d678..e51de219 100644
  import java.util.zip.DeflaterOutputStream;
  import java.util.zip.GZIPInputStream;
  import java.util.zip.GZIPOutputStream;
-@@ -14,13 +16,64 @@ import javax.annotation.Nullable;
+@@ -14,13 +16,61 @@ import javax.annotation.Nullable;
  public class RegionFileCompression {
  
      private static final Int2ObjectMap<RegionFileCompression> d = new Int2ObjectOpenHashMap();
 -    public static final RegionFileCompression a = a(new RegionFileCompression(1, GZIPInputStream::new, GZIPOutputStream::new));
-+    public static final RegionFileCompression a = a(new RegionFileCompression(1, in -> new GZIPInputStream(in, 32 * 1024), out -> new GZIPOutputStream(out, 32 * 1024))); // Paper - optimize method
-+    public static final RegionFileCompression GZIP = a; // Paper - OBFHELPER
-     public static final RegionFileCompression b = a(new RegionFileCompression(2, InflaterInputStream::new, DeflaterOutputStream::new));
-+    public static final RegionFileCompression ZLIB = b; // Paper - OBFHELPER
+-    public static final RegionFileCompression b = a(new RegionFileCompression(2, InflaterInputStream::new, DeflaterOutputStream::new));
++    public static final RegionFileCompression a = a(new RegionFileCompression(1, in -> new GZIPInputStream(in, 32 * 1024), out -> new GZIPOutputStream(out, 32 * 1024))); public static final RegionFileCompression GZIP = a; // Paper - OBFHELPER, optimize method
++    public static final RegionFileCompression b = a(new RegionFileCompression(2, InflaterInputStream::new, DeflaterOutputStream::new)); public static final RegionFileCompression ZLIB = b; // Paper - OBFHELPER
      public static final RegionFileCompression c = a(new RegionFileCompression(3, (inputstream) -> {
          return inputstream;
      }, (outputstream) -> {
          return outputstream;
-     }));
-+    public static final RegionFileCompression NONE = c; // Paper - OBFHELPER
+-    }));
++    })); public static final RegionFileCompression NONE = c; // Paper - OBFHELPER
 +    // Paper start - add new compression methods
 +    private static final net.jpountz.lz4.LZ4FastDecompressor lz4Decompressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastDecompressor();
 +    private static final net.jpountz.lz4.LZ4Compressor lz4Compressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastCompressor();
