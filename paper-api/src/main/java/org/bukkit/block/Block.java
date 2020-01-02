@@ -481,6 +481,52 @@ public interface Block extends Metadatable, Translatable {
      */
     boolean breakNaturally(@Nullable ItemStack tool);
 
+    // Paper start
+    /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     *
+     * @param triggerEffect Play the block break particle effect and sound
+     * @return true if the block was destroyed
+     * @see #breakNaturally(boolean, boolean) to trigger exp drops
+     */
+    default boolean breakNaturally(boolean triggerEffect) {
+        return this.breakNaturally(triggerEffect, false);
+    }
+
+    /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     *
+     * @param triggerEffect Play the block break particle effect and sound
+     * @param dropExperience drop exp if the block normally does so
+     * @return true if the block was destroyed
+     */
+    boolean breakNaturally(boolean triggerEffect, boolean dropExperience);
+
+    /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     * with a specific tool
+     *
+     * @param tool The tool or item in hand used for digging
+     * @param triggerEffect Play the block break particle effect and sound
+     * @return true if the block was destroyed
+     * @see #breakNaturally(ItemStack, boolean, boolean) to trigger exp drops
+     */
+    default boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect) {
+        return this.breakNaturally(tool, triggerEffect, false);
+    }
+
+    /**
+     * Breaks the block and spawns item drops as if a player had broken it
+     * with a specific tool
+     *
+     * @param tool The tool or item in hand used for digging
+     * @param triggerEffect Play the block break particle effect and sound
+     * @param dropExperience drop exp if the block normally does so
+     * @return true if the block was destroyed
+     */
+    boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience);
+    // Paper end
+
     /**
      * Simulate bone meal application to this block (if possible).
      *
