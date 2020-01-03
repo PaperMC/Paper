@@ -2250,5 +2250,13 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if server is in the process of being shutdown
      */
     boolean isStopping();
+
+    /**
+     * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
+     *
+     * @return the mob goals manager
+     */
+    @NotNull
+    com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
     // Paper end
 }

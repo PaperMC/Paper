@@ -2584,6 +2584,16 @@ public final class Bukkit {
     public static boolean isStopping() {
         return server.isStopping();
     }
+
+    /**
+     * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
+     *
+     * @return the mob goals manager
+     */
+    @NotNull
+    public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+        return server.getMobGoals();
+    }
     // Paper end
 
     @NotNull
