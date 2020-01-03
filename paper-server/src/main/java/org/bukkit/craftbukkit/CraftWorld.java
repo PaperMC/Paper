@@ -88,7 +88,6 @@ import net.minecraft.server.Ticket;
 import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
-import net.minecraft.server.WorldGenFeatureEmptyConfiguration;
 import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
@@ -1878,6 +1877,16 @@ public class CraftWorld implements World {
     @Override
     public boolean canGenerateStructures() {
         return world.getWorldData().shouldGenerateMapFeatures();
+    }
+
+    @Override
+    public boolean isHardcore() {
+        return world.getWorldData().isHardcore();
+    }
+
+    @Override
+    public void setHardcore(boolean hardcore) {
+        world.getWorldData().g(hardcore);
     }
 
     @Override
