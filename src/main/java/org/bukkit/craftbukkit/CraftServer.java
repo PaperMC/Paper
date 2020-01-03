@@ -910,7 +910,7 @@ public final class CraftServer implements Server {
                 }
             }
         } while(used);
-        boolean hardcore = false;
+        boolean hardcore = creator.hardcore();
 
         WorldNBTStorage sdm = new WorldNBTStorage(getWorldContainer(), name, getServer(), getHandle().getServer().dataConverterManager);
         WorldData worlddata = sdm.getWorldData();
