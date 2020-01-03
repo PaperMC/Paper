@@ -8,11 +8,17 @@ public abstract class PathfinderGoal {
     private final EnumSet<PathfinderGoal.Type> a = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
     private final OptimizedSmallEnumSet<Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
 
-    public PathfinderGoal() {}
+    // Paper start make sure goaltypes is never empty
+    public PathfinderGoal() {
+        if (this.goalTypes.size() == 0) {
+            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
+        }
+    }
+    // paper end
 
-    public abstract boolean a();
+    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} public boolean shouldActivate2() { return a(); } // Paper - OBFHELPER, for both directions...
 
-    public boolean b() {
+    public boolean b() { return this.shouldStayActive(); } public boolean shouldStayActive2() { return b(); } public boolean shouldStayActive() { // Paper - OBFHELPER, for both directions...
         return this.a();
     }
 
@@ -20,19 +26,23 @@ public abstract class PathfinderGoal {
         return true;
     }
 
-    public void c() {}
+    public void c() { this.start(); } public void start() {} // Paper - OBFHELPER
 
     public void d() {
         onTaskReset(); // Paper
     }
     public void onTaskReset() {} // Paper
 
-    public void e() {}
+    public void e() { this.tick(); } public void tick() {} // Paper OBFHELPER
 
-    public void a(EnumSet<PathfinderGoal.Type> enumset) {
+    public void a(EnumSet<PathfinderGoal.Type> enumset) { this.setTypes(enumset); } public void setTypes(EnumSet<PathfinderGoal.Type> enumset) { // Paper - OBFHELPER
         // Paper start - remove streams from pathfindergoalselector
         this.goalTypes.clear();
         this.goalTypes.addAllUnchecked(enumset);
+        // make sure its never empty
+        if (this.goalTypes.size() == 0) {
+            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
+        }
         // Paper end - remove streams from pathfindergoalselector
     }
 
@@ -48,7 +58,7 @@ public abstract class PathfinderGoal {
 
     public static enum Type {
 
-        MOVE, LOOK, JUMP, TARGET;
+        MOVE, LOOK, JUMP, TARGET, UNKNOWN_BEHAVIOR; // Paper - add unknown
 
         private Type() {}
     }

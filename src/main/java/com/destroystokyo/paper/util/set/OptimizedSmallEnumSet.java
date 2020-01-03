@@ -64,4 +64,8 @@ public final class OptimizedSmallEnumSet<E extends Enum<E>> {
     public boolean hasCommonElements(final OptimizedSmallEnumSet<E> other) {
         return (other.backingSet & this.backingSet) != 0;
     }
+
+    public boolean hasElement(final E element) {
+        return (this.backingSet & (1L << element.ordinal())) != 0;
+    }
 }

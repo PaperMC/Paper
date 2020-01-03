@@ -5,8 +5,8 @@ import javax.annotation.Nullable;
 
 public class PathfinderGoalWrapped extends PathfinderGoal {
 
-    private final PathfinderGoal a;
-    private final int b;
+    private final PathfinderGoal a; public PathfinderGoal getGoal() {return a;} // Paper - OBFHELPER
+    private final int b; public int getPriority() {return b;} // Paper - OBFHELPER
     private boolean c;
 
     public PathfinderGoalWrapped(int i, PathfinderGoal pathfindergoal) {

@@ -27,7 +27,7 @@ public class PathfinderGoalSelector {
         }
     };
     private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
-    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet(); private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
+    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet(); public final Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER // Paper - private -> public
     private final Supplier<GameProfilerFiller> e;
     private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
     private final OptimizedSmallEnumSet<PathfinderGoal.Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
@@ -38,7 +38,7 @@ public class PathfinderGoalSelector {
         this.e = supplier;
     }
 
-    public void a(int i, PathfinderGoal pathfindergoal) {
+    public void addGoal(int priority, PathfinderGoal goal) {a(priority, goal);} public void a(int i, PathfinderGoal pathfindergoal) { // Paper - OBFHELPER
         this.d.add(new PathfinderGoalWrapped(i, pathfindergoal));
     }
 
@@ -61,7 +61,7 @@ public class PathfinderGoalSelector {
     }
     // Paper end
 
-    public void a(PathfinderGoal pathfindergoal) {
+    public void removeGoal(PathfinderGoal goal) {a(goal);} public void a(PathfinderGoal pathfindergoal) { // Paper - OBFHELPER
         // Paper start - remove streams from pathfindergoalselector
         for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
             PathfinderGoalWrapped goalWrapped = iterator.next();
@@ -157,6 +157,7 @@ public class PathfinderGoalSelector {
         gameprofilerfiller.exit();
     }
 
+    public final Stream<PathfinderGoalWrapped> getExecutingGoals() { return d(); } // Paper - OBFHELPER
     public Stream<PathfinderGoalWrapped> d() {
         return this.d.stream().filter(PathfinderGoalWrapped::g);
     }
