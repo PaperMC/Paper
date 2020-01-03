@@ -1465,6 +1465,24 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public boolean canGenerateStructures();
 
     /**
+     * Gets whether the world is hardcore or not.
+     *
+     * In a hardcore world the difficulty is locked to hard.
+     *
+     * @return hardcore status
+     */
+    public boolean isHardcore();
+
+    /**
+     * Sets whether the world is hardcore or not.
+     *
+     * In a hardcore world the difficulty is locked to hard.
+     *
+     * @param hardcore Whether the world is hardcore
+     */
+    public void setHardcore(boolean hardcore);
+
+    /**
      * Gets the world's ticks per animal spawns value
      * <p>
      * This value determines how many ticks there are between attempts to
