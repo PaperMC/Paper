@@ -368,6 +368,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         if (!this.hasHivePos()) {
             return false;
         } else {
+            if (world.getChunkIfLoadedImmediately(hivePos.getX() >> 4, hivePos.getZ() >> 4) == null) return true; // Paper - just assume the hive is still there, no need to load the chunk(s)
             TileEntity tileentity = this.world.getTileEntity(this.hivePos);
 
             return tileentity != null && tileentity.getTileType() == TileEntityTypes.BEEHIVE;
