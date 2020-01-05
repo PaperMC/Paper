@@ -72,16 +72,21 @@
                  }
              }
  
-@@ -506,7 +518,7 @@
+@@ -506,7 +518,12 @@
  
      @Nullable
      BeehiveBlockEntity getBeehiveBlockEntity() {
 -        return this.hivePos == null ? null : (this.isTooFarAway(this.hivePos) ? null : (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse((Object) null));
-+        return this.hivePos == null ? null : (this.isTooFarAway(this.hivePos) ? null : (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null)); // CraftBukkit - decompile error
++        // Paper start - move over logic to accommodate isTooFarAway with chunk load check
++        if (this.hivePos != null && !this.isTooFarAway(this.hivePos) && this.level().getChunkIfLoadedImmediately(this.hivePos.getX() >> 4, this.hivePos.getZ() >> 4) != null) {
++            return (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null);
++        }
++        return null;
++        // Paper end
      }
  
      boolean isHiveValid() {
-@@ -671,8 +683,14 @@
+@@ -671,8 +688,14 @@
          if (this.isInvulnerableTo(world, source)) {
              return false;
          } else {
@@ -97,7 +102,7 @@
          }
      }
  
-@@ -1082,7 +1100,7 @@
+@@ -1082,7 +1105,7 @@
  
          BeeGoToHiveGoal() {
              super();
@@ -106,7 +111,7 @@
              this.blacklistedTargets = Lists.newArrayList();
              this.setFlags(EnumSet.of(Goal.Flag.MOVE));
          }
-@@ -1196,7 +1214,7 @@
+@@ -1196,7 +1219,7 @@
  
          BeeGoToKnownFlowerGoal() {
              super();
@@ -115,7 +120,7 @@
              this.setFlags(EnumSet.of(Goal.Flag.MOVE));
          }
  
-@@ -1301,7 +1319,7 @@
+@@ -1301,7 +1324,7 @@
                              }
                          }
  
@@ -124,7 +129,7 @@
                              Bee.this.level().levelEvent(2011, blockposition, 15);
                              Bee.this.level().setBlockAndUpdate(blockposition, iblockdata1);
                              Bee.this.incrementNumCropsGrownSincePollination();
-@@ -1378,7 +1396,7 @@
+@@ -1378,7 +1401,7 @@
          @Override
          protected void alertOther(Mob mob, LivingEntity target) {
              if (mob instanceof Bee && this.mob.hasLineOfSight(target)) {
@@ -133,7 +138,7 @@
              }
  
          }
-@@ -1387,7 +1405,7 @@
+@@ -1387,7 +1410,7 @@
      private static class BeeBecomeAngryTargetGoal extends NearestAttackableTargetGoal<Player> {
  
          BeeBecomeAngryTargetGoal(Bee bee) {
