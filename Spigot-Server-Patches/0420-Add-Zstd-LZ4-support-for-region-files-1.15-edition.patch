@@ -1,4 +1,4 @@
-From 9034fd44ae53086aec5bfb006fb71b1f19c90374 Mon Sep 17 00:00:00 2001
+From f35da28bda553d32cdf4a4976d391b2ab0bb7bc0 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -139,24 +139,29 @@ index 0de24c79..99f0ae22 100644
  
      public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
-index 3382d678..a891b56f 100644
+index 3382d678..940c35e7 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCompression.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
-@@ -1,10 +1,13 @@
+@@ -1,10 +1,18 @@
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.PaperConfig; // Paper
 +import com.destroystokyo.paper.region.RegionCompressionType; // Paper
++import com.google.common.cache.CacheLoader; // Paper
++import com.google.common.cache.LoadingCache; // Paper
++import com.google.common.cache.CacheBuilder; // Paper
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import java.io.EOFException; // Paper
  import java.io.IOException;
  import java.io.InputStream;
  import java.io.OutputStream;
 +import java.io.ByteArrayOutputStream; // Paper
++import java.util.concurrent.ExecutionException; // Paper
  import java.util.zip.DeflaterOutputStream;
  import java.util.zip.GZIPInputStream;
  import java.util.zip.GZIPOutputStream;
-@@ -14,13 +17,78 @@ import javax.annotation.Nullable;
+@@ -14,13 +22,94 @@ import javax.annotation.Nullable;
  public class RegionFileCompression {
  
      private static final Int2ObjectMap<RegionFileCompression> d = new Int2ObjectOpenHashMap();
@@ -178,9 +183,47 @@ index 3382d678..a891b56f 100644
 +        out -> new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)
 +    ));
 +
-+    private static final com.github.luben.zstd.ZstdDictCompress zstdDictCompressor;
-+    private static final com.github.luben.zstd.ZstdDictDecompress zstdDictDecompressor;
-+    public static final RegionFileCompression ZSTD;
++    private static final short CURRENT_ZSTD_VERSION = 0;
++    private static final LoadingCache<Short, byte[]> zstdDicts = CacheBuilder.newBuilder().build(
++        new CacheLoader<Short, byte[]>() {
++            @Override
++            public byte[] load(Short key) throws Exception {
++                byte[] retVal = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict.0." + key));
++                if (retVal == null || retVal.length == 0) {
++                    throw new IOException("Could not get Zstd dictionary for version " + key + ".");
++                }
++                return retVal;
++            }
++        }
++    );
++    public static final RegionFileCompression ZSTD = a(new RegionFileCompression(RegionCompressionType.ZSTD.getType(),
++        in -> {
++            int high = in.read();
++            int low = in.read();
++            if ((high | low) == -1) {
++                throw new EOFException("Zstd dictionary version could not be read from chunk.");
++            }
++            short version = (short) ((high << 8) | low);
++            com.github.luben.zstd.ZstdInputStream retVal = new com.github.luben.zstd.ZstdInputStream(in);
++            try {
++                retVal.setDict(new com.github.luben.zstd.ZstdDictDecompress(zstdDicts.get(version)));
++            } catch (ExecutionException ex) {
++                throw new IOException("Could not get Zstd dictionary for chunk.", ex);
++            }
++            return retVal;
++        },
++        out -> {
++            out.write((CURRENT_ZSTD_VERSION >> 8) & 0xFF);
++            out.write(CURRENT_ZSTD_VERSION & 0xFF);
++            com.github.luben.zstd.ZstdOutputStream retVal = new com.github.luben.zstd.ZstdOutputStream(out);
++            try {
++                retVal.setDict(new com.github.luben.zstd.ZstdDictCompress(zstdDicts.get(CURRENT_ZSTD_VERSION), PaperConfig.regionZstdUseHighCompression ? 19 : 1));
++            } catch (ExecutionException ex) {
++                throw new IOException("Could not get Zstd dictionary for chunk.", ex);
++            }
++            return retVal;
++        }
++    ));
 +
 +    public static RegionFileCompression getDefaultCompressionMethod() {
 +        switch (PaperConfig.regionCompressionMethod) {
@@ -199,31 +242,9 @@ index 3382d678..a891b56f 100644
 +        }
 +    }
 +
-+    static {
-+        byte[] zstdDict;
-+        try {
-+            zstdDict = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict"));
-+        } catch (IOException ignored) { zstdDict = new byte[0]; }
-+        zstdDictCompressor = new com.github.luben.zstd.ZstdDictCompress(zstdDict, PaperConfig.regionZstdUseHighCompression ? 19 : 1);
-+        zstdDictDecompressor = new com.github.luben.zstd.ZstdDictDecompress(zstdDict);
-+
-+        ZSTD = a(new RegionFileCompression(RegionCompressionType.ZSTD.getType(),
-+            in -> {
-+            com.github.luben.zstd.ZstdInputStream retVal = new com.github.luben.zstd.ZstdInputStream(in);
-+            retVal.setDict(zstdDictDecompressor);
-+            return retVal;
-+            },
-+            out -> {
-+            com.github.luben.zstd.ZstdOutputStream retVal = new com.github.luben.zstd.ZstdOutputStream(out);
-+            retVal.setDict(zstdDictCompressor);
-+            return retVal;
-+            }
-+            ));
-+    }
-+
 +    private static byte[] toBytes(InputStream inStream) throws IOException {
 +        if (inStream == null) {
-+            return new byte[0];
++            return null;
 +        }
 +        try (ByteArrayOutputStream out = new ByteArrayOutputStream(inStream.available())) {
 +            byte[] buffer = new byte[1024 * 64];
@@ -238,7 +259,7 @@ index 3382d678..a891b56f 100644
      private final int e;
      private final RegionFileCompression.a<InputStream> f;
      private final RegionFileCompression.a<OutputStream> g;
-diff --git a/src/main/resources/paper.zstd.dict b/src/main/resources/paper.zstd.dict
+diff --git a/src/main/resources/paper.zstd.dict.0 b/src/main/resources/paper.zstd.dict.0
 new file mode 100644
 index 0000000000000000000000000000000000000000..d650345f43b69a15983be84eb5dce7bb05d7d2d6
 GIT binary patch
