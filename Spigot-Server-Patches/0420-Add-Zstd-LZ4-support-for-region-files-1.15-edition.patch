@@ -1,4 +1,4 @@
-From f35da28bda553d32cdf4a4976d391b2ab0bb7bc0 Mon Sep 17 00:00:00 2001
+From 44510941b8e916b4b3d3daccaf8499e6aed2db49 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -17,7 +17,7 @@ should be internally consistent, easily-updatable, and reversible with a force-u
 This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
 
 diff --git a/pom.xml b/pom.xml
-index 495e11f0..87574cad 100644
+index 495e11f0f..87574cad3 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -106,6 +106,18 @@
@@ -40,7 +40,7 @@ index 495e11f0..87574cad 100644
          <dependency>
              <groupId>junit</groupId>
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 1d7d1ffb..ebf831a9 100644
+index 1d7d1ffbf..ebf831a97 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,6 +1,7 @@
@@ -81,7 +81,7 @@ index 1d7d1ffb..ebf831a9 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
 new file mode 100644
-index 00000000..60c1ad91
+index 000000000..60c1ad910
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/region/RegionCompressionType.java
 @@ -0,0 +1,40 @@
@@ -126,7 +126,7 @@ index 00000000..60c1ad91
 +    public String toString() { return name; }
 +}
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 0de24c79..99f0ae22 100644
+index 0de24c792..99f0ae226 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -61,7 +61,7 @@ public class RegionFile implements AutoCloseable {
@@ -139,7 +139,7 @@ index 0de24c79..99f0ae22 100644
  
      public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
-index 3382d678..940c35e7 100644
+index 3382d678e..79a842cdb 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCompression.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
 @@ -1,10 +1,18 @@
@@ -188,7 +188,7 @@ index 3382d678..940c35e7 100644
 +        new CacheLoader<Short, byte[]>() {
 +            @Override
 +            public byte[] load(Short key) throws Exception {
-+                byte[] retVal = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict.0." + key));
++                byte[] retVal = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict." + key));
 +                if (retVal == null || retVal.length == 0) {
 +                    throw new IOException("Could not get Zstd dictionary for version " + key + ".");
 +                }
