@@ -229,9 +229,15 @@ public class WorldCreator {
     }
 
     /**
-     * Sets the generator settings of the world that will be created or loaded
+     * Sets the generator settings of the world that will be created or loaded.
+     * <p>
+     * Currently only {@link WorldType#FLAT} uses these settings, and expects
+     * them to be in JSON format with a valid biome defined. An example valid
+     * configuration is as follows:
+     * <code>{"layers": [{"block": "stone", "height": 1}, {"block": "grass", "height": 1}], "biome":"plains"}</code>
      *
-     * @param generatorSettings The settings that should be used by the generator
+     * @param generatorSettings The settings that should be used by the
+     * generator
      * @return This object, for chaining
      */
     @NotNull
@@ -242,9 +248,10 @@ public class WorldCreator {
     }
 
     /**
-     * Gets the generator settings of the world that will be created or loaded
+     * Gets the generator settings of the world that will be created or loaded.
      *
      * @return The settings that should be used by the generator
+     * @see #generatorSettings(java.lang.String)
      */
     @NotNull
     public String generatorSettings() {
