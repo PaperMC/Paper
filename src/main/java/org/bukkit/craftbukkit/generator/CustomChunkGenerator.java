@@ -178,10 +178,12 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
     @Override
     public void doMobSpawning(WorldServer worldserver, boolean flag, boolean flag1) {
-        this.mobSpawnerPhantom.a(worldserver, flag, flag1);
-        this.mobSpawnerPatrol.a(worldserver, flag, flag1);
-        this.mobSpawnerCat.a(worldserver, flag, flag1);
-        this.villageSiege.a(worldserver, flag, flag1);
+        if (worldserver.getWorldProvider().isOverworld()) {
+            this.mobSpawnerPhantom.a(worldserver, flag, flag1);
+            this.mobSpawnerPatrol.a(worldserver, flag, flag1);
+            this.mobSpawnerCat.a(worldserver, flag, flag1);
+            this.villageSiege.a(worldserver, flag, flag1);
+        }
     }
 
     @Override
