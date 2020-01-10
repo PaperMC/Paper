@@ -2,14 +2,6 @@ Contributing to Paper
 ==========================
 PaperMC has a very lenient policy towards PRs, but would prefer that you try and adhere to the following guidelines.
 
-## A notice on 1.12.2
-While we are continuing to support 1.12.2 through these initial 1.13 versions, we now
-consider it a "stable" version. As such, we will not accept Pull Requests adding major
-new features or any new API to this version. 1.12.2 is now in a "fixes only" state.
-
-Please target major feature additions and API additions to the master branch where we
-are working to make 1.13 the best it can be.
-
 ## Understanding Patches
 Patches to Paper are very simple, but center around the directories 'Paper-API' and 'Paper-Server'
 
