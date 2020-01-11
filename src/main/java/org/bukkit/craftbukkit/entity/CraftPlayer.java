@@ -643,6 +643,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // If this player is riding another entity, we must dismount before teleporting.
         entity.stopRiding();
 
+        // SPIGOT-5509: Wakeup, similar to riding
+        if (this.isSleeping()) {
+            this.wakeup(false);
+        }
+
         // Update the From Location
         from = event.getFrom();
         // Grab the new To Location dependent on whether the event was cancelled.
