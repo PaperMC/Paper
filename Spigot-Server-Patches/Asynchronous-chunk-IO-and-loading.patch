@@ -1901,7 +1901,7 @@ index 000000000..1dfa8abfd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 000000000..59d73bfad
+index 000000000..715a2dd8d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +0,0 @@
@@ -2006,8 +2006,10 @@ index 000000000..59d73bfad
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
 +                } else {
 +                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
++                    net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +                }
 +
 +            }
@@ -3008,9 +3010,28 @@ index ed8c4a87b..996c83263 100644
          return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7a1578afa..0fb9c1e44 100644
+index 7a1578afa..d26365eb1 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         }
+         return null;
+     }
++
++    public ChunkStatus getChunkHolderStatus() {
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
++            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
++            if (either == null || !either.left().isPresent()) {
++                continue;
++            }
++            return curr;
++        }
++        return null;
++    }
+     // Paper end
+ 
+     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 @@ -0,0 +0,0 @@ public class PlayerChunk {
          ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
