@@ -1,0 +1,198 @@
+From 30c5753f9b3a15bf16bc42b4a88ebb30c2d6e01a Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 27 Dec 2019 09:24:31 -0800
+Subject: [PATCH] Add soft async catcher
+
+Must be enabled via flag -Dpaper.strict-thread-checks=true
+
+When plugins disable the async catcher and do really stupid things
+that eventually kill the server we have a real bad time ruling
+that activity out. However, this adds a flag to override the
+enabled flag. Plugin developers that bypass the async catcher
+aren't going to bypass this flag because it's off by default, so
+in their testing they'll never run into it, and anyone dumb enough
+to bypass the async catcher is also dumb enough to ignore this flag.
+Thus this flag will be useful in finding out which plugins are being
+naughty.
+
+The flag is also off by default as to not affect performance in
+inserted code.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index f2a04cb6a..016723962 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -388,6 +388,7 @@ public class Chunk implements IChunkAccess {
+ 
+     @Override
+     public void a(Entity entity) {
++        MinecraftServer.softEnsureTickThread("Async addEntity call to chunk"); // Paper
+         this.q = true;
+         int i = MathHelper.floor(entity.locX() / 16.0D);
+         int j = MathHelper.floor(entity.locZ() / 16.0D);
+@@ -456,6 +457,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public void a(Entity entity, int i) {
++        MinecraftServer.softEnsureTickThread("Async removeEntity call from chunk"); // Paper
+         if (i < 0) {
+             i = 0;
+         }
+@@ -676,6 +678,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public void a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, List<Entity> list, @Nullable Predicate<? super Entity> predicate) {
++        MinecraftServer.softEnsureTickThread("Async getEntities call on chunk"); // Paper
+         int i = MathHelper.floor((axisalignedbb.minY - 2.0D) / 16.0D);
+         int j = MathHelper.floor((axisalignedbb.maxY + 2.0D) / 16.0D);
+ 
+@@ -715,6 +718,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public <T extends Entity> void a(@Nullable EntityTypes<?> entitytypes, AxisAlignedBB axisalignedbb, List<? super T> list, Predicate<? super T> predicate) {
++        MinecraftServer.softEnsureTickThread("Async getEntities call on chunk"); // Paper
+         int i = MathHelper.floor((axisalignedbb.minY - 2.0D) / 16.0D);
+         int j = MathHelper.floor((axisalignedbb.maxY + 2.0D) / 16.0D);
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 8c1945687..b849f457b 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -53,6 +53,7 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     protected void purgeTickets() {
++        MinecraftServer.softEnsureTickThread("Async purge tickets call"); // Paper
+         ++this.currentTick;
+         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
+ 
+@@ -85,6 +86,7 @@ public abstract class ChunkMapDistance {
+     protected abstract PlayerChunk a(long i, int j, @Nullable PlayerChunk playerchunk, int k);
+ 
+     public boolean a(PlayerChunkMap playerchunkmap) {
++        MinecraftServer.softEnsureTickThread("Async map distance update"); // Paper
+         this.f.a();
+         this.g.a();
+         int i = Integer.MAX_VALUE - this.e.a(Integer.MAX_VALUE);
+@@ -136,6 +138,7 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     private boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
++        MinecraftServer.softEnsureTickThread("Async add ticket call"); // Paper
+         ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
+         int j = a(arraysetsorted);
+         Ticket<?> ticket1 = (Ticket) arraysetsorted.a(ticket); // CraftBukkit - decompile error
+@@ -149,6 +152,7 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
++        MinecraftServer.softEnsureTickThread("Async remove ticket call"); // Paper
+         ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
+ 
+         boolean removed = false; // CraftBukkit
+@@ -214,6 +218,7 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     public void a(SectionPosition sectionposition, EntityPlayer entityplayer) {
++        MinecraftServer.softEnsureTickThread("Async player add"); // Paper
+         long i = sectionposition.u().pair();
+ 
+         ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
+@@ -224,6 +229,7 @@ public abstract class ChunkMapDistance {
+     }
+ 
+     public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
++        MinecraftServer.softEnsureTickThread("Async player add"); // Paper
+         long i = sectionposition.u().pair();
+         ObjectSet<EntityPlayer> objectset = (ObjectSet) this.c.get(i);
+ 
+@@ -269,6 +275,7 @@ public abstract class ChunkMapDistance {
+ 
+     // CraftBukkit start
+     public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
++        MinecraftServer.softEnsureTickThread("Async ticket remove"); // Paper
+         Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
+ 
+         for (java.util.Iterator<ArraySetSorted<Ticket<?>>> iterator = this.tickets.values().iterator(); iterator.hasNext();) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0365cebcf..98dccd70c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -181,6 +181,29 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
+ 
++    // Paper start
++    public static final boolean STRICT_THREAD_CHECKS = Boolean.getBoolean("paper.strict-thread-checks"); // false by default
++
++    static {
++        if (STRICT_THREAD_CHECKS) {
++            MinecraftServer.LOGGER.warn("Strict thread checks enabled");
++        }
++    }
++
++    public static void softEnsureTickThread(final String reason) {
++        if (!STRICT_THREAD_CHECKS) {
++            return;
++        }
++        ensureTickThread(reason);
++    }
++
++    public static void ensureTickThread(final String reason) {
++        if (MinecraftServer.getServer() != null && MinecraftServer.getServer().serverThread != Thread.currentThread()) {
++            throw new IllegalStateException(reason);
++        }
++    }
++    // Paper end
++
+     public MinecraftServer(OptionSet options, Proxy proxy, DataFixer datafixer, CommandDispatcher commanddispatcher, YggdrasilAuthenticationService yggdrasilauthenticationservice, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, String s) {
+         super("Server");
+         this.ae = new ResourceManager(EnumResourcePackType.SERVER_DATA, this.serverThread);
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index f8a65b3df..3fb07415f 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -279,6 +279,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     @Nullable
+     private PlayerChunk a(long i, int j, @Nullable PlayerChunk playerchunk, int k) {
++        MinecraftServer.softEnsureTickThread("Async chunk holder ticket update"); // Paper
+         if (k > PlayerChunkMap.GOLDEN_TICKET && j > PlayerChunkMap.GOLDEN_TICKET) {
+             return playerchunk;
+         } else {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 5460ace8f..b95e10722 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -338,6 +338,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+     @Override
+     public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
++        MinecraftServer.softEnsureTickThread("Async set type call"); // Paper
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
+             CraftBlockState blockstate = null;
+@@ -442,6 +443,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+     // CraftBukkit start - Split off from above in order to directly send client and physic updates
+     public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, IBlockData oldBlock, IBlockData newBlock, IBlockData actualBlock, int i) {
++        MinecraftServer.softEnsureTickThread("Async notify and update call"); // Paper
+         IBlockData iblockdata = newBlock;
+         IBlockData iblockdata1 = oldBlock;
+         IBlockData iblockdata2 = actualBlock;
+diff --git a/src/main/java/org/spigotmc/AsyncCatcher.java b/src/main/java/org/spigotmc/AsyncCatcher.java
+index 9f7d2ef93..706fadc57 100644
+--- a/src/main/java/org/spigotmc/AsyncCatcher.java
++++ b/src/main/java/org/spigotmc/AsyncCatcher.java
+@@ -10,7 +10,7 @@ public class AsyncCatcher
+ 
+     public static void catchOp(String reason)
+     {
+-        if ( enabled && Thread.currentThread() != MinecraftServer.getServer().serverThread )
++        if ( (enabled || MinecraftServer.STRICT_THREAD_CHECKS) && Thread.currentThread() != MinecraftServer.getServer().serverThread ) // Paper
+         {
+             throw new IllegalStateException( "Asynchronous " + reason + "!" );
+         }
+-- 
+2.24.1.windows.2
+
