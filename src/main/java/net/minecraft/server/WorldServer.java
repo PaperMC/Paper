@@ -173,6 +173,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
     // Paper end
 
+    // Paper start - optimise getPlayerByUUID
+    @Nullable
+    @Override
+    public EntityHuman getPlayerByUUID(UUID uuid) {
+        Entity player = this.entitiesByUUID.get(uuid);
+        return (player instanceof EntityHuman) ? (EntityHuman)player : null;
+    }
+    // Paper end
+
     // Add env and gen to constructor, WorldData -> WorldDataServer
     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor

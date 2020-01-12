@@ -243,6 +243,12 @@ public interface IEntityAccess {
 
     @Nullable
     default EntityHuman b(UUID uuid) {
+        // Paper start - allow WorldServer to override
+        return this.getPlayerByUUID(uuid);
+    }
+    @Nullable
+    default EntityHuman getPlayerByUUID(UUID uuid) {
+        // Paper end
         for (int i = 0; i < this.getPlayers().size(); ++i) {
             EntityHuman entityhuman = (EntityHuman) this.getPlayers().get(i);
 
