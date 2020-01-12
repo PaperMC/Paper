@@ -1,4 +1,4 @@
-From 4208dd633a9e5175b7eb7db8f090e21e35c9dd9d Mon Sep 17 00:00:00 2001
+From d6ca62d0cc96ae7d4d4ae5547bdc75daafe401e6 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1901,10 +1901,10 @@ index 000000000..1dfa8abfd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 000000000..59d73bfad
+index 000000000..715a2dd8d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,453 @@
+@@ -0,0 +1,455 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -2006,8 +2006,10 @@ index 000000000..59d73bfad
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
 +                } else {
 +                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
++                    net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +                }
 +
 +            }
@@ -3008,10 +3010,29 @@ index ed8c4a87b..996c83263 100644
          return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7a1578afa..0fb9c1e44 100644
+index 7a1578afa..d26365eb1 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -310,7 +310,7 @@ public class PlayerChunk {
+@@ -83,6 +83,18 @@ public class PlayerChunk {
+         }
+         return null;
+     }
++
++    public ChunkStatus getChunkHolderStatus() {
++        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
++            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
++            if (either == null || !either.left().isPresent()) {
++                continue;
++            }
++            return curr;
++        }
++        return null;
++    }
+     // Paper end
+ 
+     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
+@@ -310,7 +322,7 @@ public class PlayerChunk {
          ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= PlayerChunkMap.GOLDEN_TICKET;
@@ -3020,7 +3041,7 @@ index 7a1578afa..0fb9c1e44 100644
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
          // CraftBukkit start
-@@ -340,6 +340,12 @@ public class PlayerChunk {
+@@ -340,6 +352,12 @@ public class PlayerChunk {
                  }
              });
  
@@ -4114,5 +4135,5 @@ index 07936eeba..fe68df45b 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 -- 
-2.24.1
+2.24.1.windows.2
 
