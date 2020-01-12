@@ -1,24 +1,122 @@
 --- a/net/minecraft/server/PortalTravelAgent.java
 +++ b/net/minecraft/server/PortalTravelAgent.java
-@@ -43,7 +43,7 @@
+@@ -17,13 +17,20 @@
+         this.b = new Random(worldserver.getSeed());
+     }
+ 
+-    public boolean a(Entity entity, float f) {
++    public boolean a(Entity entity, float f) { // PAIL: rename to findAndTeleport
++        // CraftBukkit start
++        return findAndTeleport(entity, new BlockPosition(entity), f, 128, false) != null;
++    }
++
++    public ShapeDetector.Shape findAndTeleport(Entity entity, BlockPosition findPosition, float f, int searchRadius, boolean searchOnly) {
++        // CraftBukkit end
+         Vec3D vec3d = entity.getPortalOffset();
+         EnumDirection enumdirection = entity.getPortalDirection();
+-        ShapeDetector.Shape shapedetector_shape = this.a(new BlockPosition(entity), entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman);
++        ShapeDetector.Shape shapedetector_shape = this.findPortal(findPosition, entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman, searchRadius); // CraftBukkit - add location and searchRadius
++        if (searchOnly) return shapedetector_shape; // CraftBukkit - optional teleporting
+ 
+         if (shapedetector_shape == null) {
+-            return false;
++            return null; // CraftBukkit - return shape
+         } else {
+             Vec3D vec3d1 = shapedetector_shape.position;
+             Vec3D vec3d2 = shapedetector_shape.velocity;
+@@ -31,19 +38,26 @@
+             entity.setMot(vec3d2);
+             entity.yaw = f + (float) shapedetector_shape.yaw;
+             entity.b(vec3d1.x, vec3d1.y, vec3d1.z);
+-            return true;
++            return shapedetector_shape; // CraftBukkit - return shape
+         }
+     }
+ 
+     @Nullable
+-    public ShapeDetector.Shape a(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag) {
++    public ShapeDetector.Shape a(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag) { // PAIL: rename to findPortal, d0 = portal offset x, d1 = portal offset z, flag = instanceof EntityHuman
++        // CraftBukkit start
++        return findPortal(blockposition, vec3d, enumdirection, d0, d1, flag, 128);
++    }
++
++    @Nullable
++    public ShapeDetector.Shape findPortal(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag, int searchRadius) {
++        // CraftBukkit end
+         VillagePlace villageplace = this.world.B();
+ 
+         villageplace.a(this.world, blockposition, 128);
          List<VillagePlaceRecord> list = (List) villageplace.b((villageplacetype) -> {
              return villageplacetype == VillagePlaceType.u;
-         }, blockposition, 128, VillagePlace.Occupancy.ANY).collect(Collectors.toList());
+-        }, blockposition, 128, VillagePlace.Occupancy.ANY).collect(Collectors.toList());
 -        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.comparingDouble((villageplacerecord) -> {
++        }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
 +        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.<VillagePlaceRecord>comparingDouble((villageplacerecord) -> { // CraftBukkit - decompile error
              return villageplacerecord.f().m(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
              return villageplacerecord.f().getY();
-@@ -56,7 +56,7 @@
+@@ -56,15 +70,23 @@
              ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection = BlockPortal.c((GeneratorAccess) this.world, blockposition1);
  
              return shapedetector_shapedetectorcollection.a(enumdirection, blockposition1, d1, vec3d, d0);
 -        }).orElse((Object) null);
 +        }).orElse(null); // CraftBukkit - decompile error
++    }
++
++    public boolean a(Entity entity) { // PAIL: rename to createPortal
++        // CraftBukkit start - providable position and creation radius
++        return createPortal(entity, new BlockPosition(entity), 16);
      }
  
-     public boolean a(Entity entity) {
-@@ -197,6 +197,7 @@
+-    public boolean a(Entity entity) {
++    public boolean createPortal(Entity entity, BlockPosition createPosition, int createRadius) {
++        // CraftBukkit end
+         boolean flag = true;
+         double d0 = -1.0D;
+-        int i = MathHelper.floor(entity.locX());
+-        int j = MathHelper.floor(entity.locY());
+-        int k = MathHelper.floor(entity.locZ());
++        // CraftBukkit start - providable position
++        int i = createPosition.getX();
++        int j = createPosition.getY();
++        int k = createPosition.getZ();
++        // CraftBukkit end
+         int l = i;
+         int i1 = j;
+         int j1 = k;
+@@ -88,11 +110,11 @@
+         double d3;
+         double d4;
+ 
+-        for (i2 = i - 16; i2 <= i + 16; ++i2) {
+-            d1 = (double) i2 + 0.5D - entity.locX();
++        for (i2 = i - createRadius; i2 <= i + createRadius; ++i2) { // CraftBukkit - createRadius
++            d1 = (double) i2 + 0.5D - createPosition.getX(); // CraftBukkit - providable position
+ 
+-            for (j2 = k - 16; j2 <= k + 16; ++j2) {
+-                d2 = (double) j2 + 0.5D - entity.locZ();
++            for (j2 = k - createRadius; j2 <= k + createRadius; ++j2) { // CraftBukkit - createRadius
++                d2 = (double) j2 + 0.5D - createPosition.getZ(); // CraftBukkit - providable position
+ 
+                 label257:
+                 for (k2 = this.world.getHeight() - 1; k2 >= 0; --k2) {
+@@ -140,11 +162,11 @@
+         }
+ 
+         if (d0 < 0.0D) {
+-            for (i2 = i - 16; i2 <= i + 16; ++i2) {
+-                d1 = (double) i2 + 0.5D - entity.locX();
++            for (i2 = i - createRadius; i2 <= i + createRadius; ++i2) { // CraftBukkit - createRadius
++                d1 = (double) i2 + 0.5D - createPosition.getX(); // CraftBukkit - providable position
+ 
+-                for (j2 = k - 16; j2 <= k + 16; ++j2) {
+-                    d2 = (double) j2 + 0.5D - entity.locZ();
++                for (j2 = k - createRadius; j2 <= k + createRadius; ++j2) { // CraftBukkit - createRadius
++                    d2 = (double) j2 + 0.5D - createPosition.getZ(); // CraftBukkit - providable position
+ 
+                     label205:
+                     for (k2 = this.world.getHeight() - 1; k2 >= 0; --k2) {
+@@ -197,6 +219,7 @@
              l5 = -l5;
          }
  
@@ -26,7 +124,7 @@
          if (d0 < 0.0D) {
              i1 = MathHelper.clamp(i1, 70, this.world.getHeight() - 10);
              j5 = i1;
-@@ -210,7 +211,7 @@
+@@ -210,7 +233,7 @@
                          boolean flag1 = l2 < 0;
  
                          blockposition_mutableblockposition.d(j3, l3, i4);
@@ -35,7 +133,7 @@
                      }
                  }
              }
-@@ -220,7 +221,7 @@
+@@ -220,7 +243,7 @@
              for (i3 = -1; i3 < 4; ++i3) {
                  if (k2 == -1 || k2 == 2 || i3 == -1 || i3 == 3) {
                      blockposition_mutableblockposition.d(i5 + k2 * k5, j5 + i3, j2 + k2 * l5);
@@ -44,7 +142,7 @@
                  }
              }
          }
-@@ -230,10 +231,19 @@
+@@ -230,10 +253,19 @@
          for (i3 = 0; i3 < 2; ++i3) {
              for (l2 = 0; l2 < 3; ++l2) {
                  blockposition_mutableblockposition.d(i5 + i3 * k5, j5 + l2, j2 + i3 * l5);
