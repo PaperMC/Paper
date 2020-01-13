@@ -1,4 +1,4 @@
-From bcee42af70c3b249f85bf943af8a718d0be31b76 Mon Sep 17 00:00:00 2001
+From 944fc0cd274f7b65641b90b1a7d14ff885b93c00 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sun, 5 Jan 2020 17:17:41 -0800
 Subject: [PATCH] Flush packets async
@@ -7,10 +7,10 @@ Apparently sendPacket took 50% of the timings for entity tracker
 update, so offload that to the packet flusher thread.
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 96a785af2..bf2281f79 100644
+index 96a785af2..88dc9eb83 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -66,6 +66,45 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -66,6 +66,68 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush");
      // Paper end
  
@@ -18,29 +18,52 @@ index 96a785af2..bf2281f79 100644
 +    static final class PacketFlusher extends Thread {
 +
 +        public final java.util.Set<NetworkManager> needsUpdating = java.util.concurrent.ConcurrentHashMap.newKeySet();
++        private volatile boolean parked;
 +
 +        @Override
 +        public void run() {
 +            java.util.ArrayDeque<NetworkManager> keep = new java.util.ArrayDeque<>();
-+            for (;;) {
-+                for (java.util.Iterator<NetworkManager> iterator = this.needsUpdating.iterator(); iterator.hasNext();) {
++            main_loop: for (;;) {
++                for (java.util.Iterator<NetworkManager> iterator = this.needsUpdating.iterator(); iterator.hasNext(); ) {
 +                    NetworkManager needsUpdate = iterator.next();
 +                    iterator.remove();
 +
-+                    if (!needsUpdate.sendPacketQueue()) {
-+                        keep.add(needsUpdate);
++                    try {
++                        if (!needsUpdate.sendPacketQueue()) {
++                            keep.add(needsUpdate);
++                        }
++                    } catch (Throwable thr) {
++                        MinecraftServer.LOGGER.error("Failed to flush packet queue", thr);
 +                    }
 +                }
 +
-+                if (this.needsUpdating.isEmpty()) {
-+                    try {
-+                        Thread.sleep(1);
-+                    } catch (InterruptedException ex) {}
++                if (!keep.isEmpty()) {
++                    for (int i = 0, len = keep.size(); i < len; ++i) {
++                        this.needsUpdating.add(keep.poll());
++                    }
++                    // not likely the packets are ready after 0.1ms
++                    this.parked = true;
++                    java.util.concurrent.locks.LockSupport.parkNanos(1000 * 1000); // 1e6, 1.0ms, 1000us
++                    this.parked = false;
++                    continue main_loop;
 +                }
 +
-+                for (int i = 0, len = keep.size(); i < len; ++i) {
-+                    this.needsUpdating.add(keep.poll());
++                this.parked = true;
++                while (this.parked) {
++                    if (!this.needsUpdating.isEmpty()) {
++                        this.parked = false;
++                        continue main_loop;
++                    }
++                    java.util.concurrent.locks.LockSupport.park();
 +                }
++            }
++        }
++
++        public void needsFlushing(final NetworkManager networkManager) {
++            this.needsUpdating.add(networkManager);
++            if (this.parked) {
++                this.parked = false;
++                java.util.concurrent.locks.LockSupport.unpark(this);
 +            }
 +        }
 +    }
@@ -56,7 +79,7 @@ index 96a785af2..bf2281f79 100644
      public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
          this.h = enumprotocoldirection;
      }
-@@ -164,11 +203,12 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -164,11 +226,12 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
@@ -66,10 +89,10 @@ index 96a785af2..bf2281f79 100644
              this.b(packet, genericfuturelistener);
          } else {
              this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
-+            PACKET_FLUSHER.needsUpdating.add(this); // Paper - this is the packet flusher's job now
++            PACKET_FLUSHER.needsFlushing(this); // Paper - this is the packet flusher's job now
          }
  
      }
 -- 
-2.24.1
+2.24.1.windows.2
 
