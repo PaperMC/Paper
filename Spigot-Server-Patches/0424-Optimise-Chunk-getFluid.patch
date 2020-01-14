@@ -1,0 +1,65 @@
+From 7c8788180a5deecd8847e7ccac268966d50da3b1 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 14 Jan 2020 14:59:08 -0800
+Subject: [PATCH] Optimise Chunk#getFluid
+
+Removing the try catch and generally reducing ops should make it
+faster on its own, however removing the try catch makes it
+easier to inline due to code size
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index f2a04cb6a..35db5dd10 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -278,17 +278,20 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public Fluid a(int i, int j, int k) {
+-        try {
+-            if (j >= 0 && j >> 4 < this.sections.length) {
+-                ChunkSection chunksection = this.sections[j >> 4];
+-
+-                if (!ChunkSection.a(chunksection)) {
+-                    return chunksection.b(i & 15, j & 15, k & 15);
++        //try {  // Paper - remove try catch
++        // Paper start - reduce the number of ops in this call
++        int index = j >> 4;
++            if (index >= 0 && index < this.sections.length) {
++                ChunkSection chunksection = this.sections[index];
++
++                if (chunksection != null) {
++                    return chunksection.blockIds.a((j & 15) << 8 | (k & 15) << 4 | i & 15).getFluid();
+                 }
++                // Paper end
+             }
+ 
+             return FluidTypes.EMPTY.h();
+-        } catch (Throwable throwable) {
++        /*} catch (Throwable throwable) { // Paper - remove try catch
+             CrashReport crashreport = CrashReport.a(throwable, "Getting fluid state");
+             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being got");
+ 
+@@ -297,6 +300,7 @@ public class Chunk implements IChunkAccess {
+             });
+             throw new ReportedException(crashreport);
+         }
++         */  // Paper - remove try catch
+     }
+ 
+     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index 4526527ac..e53bf8434 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -38,7 +38,7 @@ public class ChunkSection {
+     }
+ 
+     public Fluid b(int i, int j, int k) {
+-        return ((IBlockData) this.blockIds.a(i, j, k)).getFluid();
++        return ((IBlockData) this.blockIds.a(i, j, k)).getFluid(); // Paper - diff on change - we expect this to be effectively just getType(x, y, z).getFluid(). If this changes we need to check other patches that use IBlockData#getFluid.
+     }
+ 
+     public void a() {
+-- 
+2.25.0
+
