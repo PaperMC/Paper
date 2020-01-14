@@ -1,11 +1,11 @@
-From c75146afc87f1c47c4ccab14de486163cf7385aa Mon Sep 17 00:00:00 2001
+From 210cf7b13fab9c83e8f3b10b80a8aea5a4e0affd Mon Sep 17 00:00:00 2001
 From: Draycia <lonelyyordle@gmail.com>
 Date: Tue, 14 Jan 2020 05:37:05 -0800
 Subject: [PATCH] Use result of setItemStack in PlayerBucketEmptyEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 80219f2d..c8184f94 100644
+index 80219f2df..c8184f94e 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -1897,6 +1897,7 @@ public abstract class EntityLiving extends Entity {
@@ -17,10 +17,17 @@ index 80219f2d..c8184f94 100644
          if (enumhand == EnumHand.MAIN_HAND) {
              this.setSlot(EnumItemSlot.MAINHAND, itemstack);
 diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
-index 0ff92aea..168b5e80 100644
+index 0ff92aea5..498cd4d24 100644
 --- a/src/main/java/net/minecraft/server/ItemBucket.java
 +++ b/src/main/java/net/minecraft/server/ItemBucket.java
-@@ -140,6 +140,7 @@ public class ItemBucket extends Item {
+@@ -134,12 +134,13 @@ public class ItemBucket extends Item {
+             } else {
+                 // CraftBukkit start
+                 if (entityhuman != null) {
+-                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, entityhuman.isCreative() ? entityhuman.getItemInHand(enumhand) : itemstack, enumhand); // Paper - 2651: Prevents creative players from having their buckets modified
+                     if (event.isCancelled()) {
+                         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
                          ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
                          return false;
                      }
@@ -28,6 +35,19 @@ index 0ff92aea..168b5e80 100644
                  }
                  // CraftBukkit end
                  if (world.worldProvider.isNether() && this.fluidType.a(TagsFluid.WATER)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index c0fd2948e..aed1cca44 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -377,7 +377,7 @@ public class CraftEventFactory {
+     }
+ 
+     public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, EnumHand enumHand) {
+-        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
++        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, itemstack.getItem(), enumHand); // Paper - don't forcefully set to bucket
+     }
+ 
+     public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
 -- 
 2.24.0
 
