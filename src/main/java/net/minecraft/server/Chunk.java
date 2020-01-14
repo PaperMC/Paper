@@ -386,17 +386,20 @@ public class Chunk implements IChunkAccess {
     }
 
     public Fluid a(int i, int j, int k) {
-        try {
-            if (j >= 0 && j >> 4 < this.sections.length) {
-                ChunkSection chunksection = this.sections[j >> 4];
+        //try {  // Paper - remove try catch
+        // Paper start - reduce the number of ops in this call
+        int index = j >> 4;
+            if (index >= 0 && index < this.sections.length) {
+                ChunkSection chunksection = this.sections[index];
 
-                if (!ChunkSection.a(chunksection)) {
-                    return chunksection.b(i & 15, j & 15, k & 15);
+                if (chunksection != null) {
+                    return chunksection.blockIds.a((j & 15) << 8 | (k & 15) << 4 | i & 15).getFluid();
                 }
+                // Paper end
             }
 
             return FluidTypes.EMPTY.h();
-        } catch (Throwable throwable) {
+        /*} catch (Throwable throwable) { // Paper - remove try catch
             CrashReport crashreport = CrashReport.a(throwable, "Getting fluid state");
             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being got");
 
@@ -405,6 +408,7 @@ public class Chunk implements IChunkAccess {
             });
             throw new ReportedException(crashreport);
         }
+         */  // Paper - remove try catch
     }
 
     // CraftBukkit start

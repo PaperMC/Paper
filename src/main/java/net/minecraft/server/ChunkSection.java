@@ -38,7 +38,7 @@ public class ChunkSection {
     }
 
     public Fluid b(int i, int j, int k) {
-        return ((IBlockData) this.blockIds.a(i, j, k)).getFluid();
+        return ((IBlockData) this.blockIds.a(i, j, k)).getFluid(); // Paper - diff on change - we expect this to be effectively just getType(x, y, z).getFluid(). If this changes we need to check other patches that use IBlockData#getFluid.
     }
 
     public void a() {
