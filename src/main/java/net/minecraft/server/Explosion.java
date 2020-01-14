@@ -125,7 +125,7 @@ public class Explosion {
                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
                             BlockPosition blockposition = new BlockPosition(d4, d5, d6);
                             IBlockData iblockdata = this.world.getType(blockposition);
-                            Fluid fluid = this.world.getFluid(blockposition);
+                            Fluid fluid = iblockdata.getFluid(); // Paper
                             Optional<Float> optional = this.l.a(this, this.world, blockposition, iblockdata, fluid);
 
                             if (optional.isPresent()) {
