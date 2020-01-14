@@ -32,7 +32,8 @@ public class BehaviorSleep extends Behavior<EntityLiving> {
                     }
                 }
 
-                IBlockData iblockdata = worldserver.getType(globalpos.getBlockPosition());
+                IBlockData iblockdata = worldserver.getTypeIfLoaded(globalpos.getBlockPosition()); // Paper
+                if (iblockdata == null) { return false; } // Paper
 
                 return globalpos.getBlockPosition().a((IPosition) entityliving.getPositionVector(), 2.0D) && iblockdata.getBlock().a((Tag) TagsBlock.BEDS) && !(Boolean) iblockdata.get(BlockBed.OCCUPIED);
             }
