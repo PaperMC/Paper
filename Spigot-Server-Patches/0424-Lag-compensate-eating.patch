@@ -1,0 +1,87 @@
+From 87c14a596917328424dc5f9319d8ca44f5d8c533 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 14 Jan 2020 15:28:28 -0800
+Subject: [PATCH] Lag compensate eating
+
+When the server is lagging, players will wait longer when eating.
+Change to also use a time check instead if it passes.
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 80219f2df..1c93f1fbc 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -113,7 +113,7 @@ public abstract class EntityLiving extends Entity {
+     private int jumpTicks;
+     private float bD;
+     public ItemStack activeItem; // Paper - public
+-    protected int bl;
++    protected int bl; protected final int getEatTimeTicks() { return this.bl; } protected final void setEatTimeTicks(int value) { this.bl = value; } // Paper - OBFHELPER
+     protected int bm;
+     private BlockPosition bE;
+     private DamageSource bF;
+@@ -2842,6 +2842,10 @@ public abstract class EntityLiving extends Entity {
+         return ((Byte) this.datawatcher.get(EntityLiving.ao) & 2) > 0 ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
+     }
+ 
++    // Paper start - lag compensate eating
++    protected long eatStartTime;
++    protected int totalEatTimeTicks;
++    // Paper end
+     private void o() {
+         if (this.isHandRaised()) {
+             if (ItemStack.d(this.b(this.getRaisedHand()), this.activeItem)) {
+@@ -2850,7 +2854,14 @@ public abstract class EntityLiving extends Entity {
+                     this.b(this.activeItem, 5);
+                 }
+ 
+-                if (--this.bl == 0 && !this.world.isClientSide && !this.activeItem.m()) {
++
++                // Paper start - lag compensate eating
++                // we add 1 to the expected time to avoid lag compensating when we should not
++                boolean shouldLagCompensate
++                    = this.activeItem.getItem().isFood() && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1 + this.totalEatTimeTicks) * 50 * (1000 * 1000));
++                if ((--this.bl == 0 || shouldLagCompensate) && !this.world.isClientSide && !this.activeItem.m()) {
++                    this.setEatTimeTicks(0);
++                    // Paper end
+                     this.q();
+                 }
+             } else {
+@@ -2900,7 +2911,10 @@ public abstract class EntityLiving extends Entity {
+ 
+         if (!itemstack.isEmpty() && !this.isHandRaised() || forceUpdate) { // Paper use override flag
+             this.activeItem = itemstack;
+-            this.bl = itemstack.k();
++            // Paper start - lag compensate eating
++            this.bl = this.totalEatTimeTicks = itemstack.k();
++            this.eatStartTime = System.nanoTime();
++            // Paper end
+             if (!this.world.isClientSide) {
+                 this.c(1, true);
+                 this.c(2, enumhand == EnumHand.OFF_HAND);
+@@ -2924,7 +2938,10 @@ public abstract class EntityLiving extends Entity {
+                 }
+             } else if (!this.isHandRaised() && !this.activeItem.isEmpty()) {
+                 this.activeItem = ItemStack.a;
+-                this.bl = 0;
++                // Paper start - lag compensate eating
++                this.bl = this.totalEatTimeTicks = 0;
++                this.eatStartTime = -1L;
++                // Paper end
+             }
+         }
+ 
+@@ -3046,7 +3063,10 @@ public abstract class EntityLiving extends Entity {
+         }
+ 
+         this.activeItem = ItemStack.a;
+-        this.bl = 0;
++        // Paper start - lag compensate eating
++        this.bl = this.totalEatTimeTicks = 0;
++        this.eatStartTime = -1L;
++        // Paper end
+     }
+ 
+     public boolean isBlocking() {
+-- 
+2.25.0
+
