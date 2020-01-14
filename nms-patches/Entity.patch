@@ -598,7 +598,7 @@
      }
  
      public void j(boolean flag) {
-@@ -2042,33 +2383,66 @@
+@@ -2042,33 +2383,60 @@
  
      @Nullable
      public Entity a(DimensionManager dimensionmanager) {
@@ -630,34 +630,30 @@
              float f = 0.0F;
 -            BlockPosition blockposition;
 +            BlockPosition blockposition = location; // CraftBukkit
-+
-+            // CraftBukkit start - EntityPortalEvent
-+            // SPIGOT-5136 - don't fire event for CraftEntity.teleport
-+            int searchRadius = 128;
-+            if (location == null) {
-+                Location enter = this.getBukkitEntity().getLocation();
-+                Location exit = new Location(worldserver1.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+
-+                EntityPortalEvent event = new EntityPortalEvent(this.getBukkitEntity(), enter, exit, searchRadius);
-+                event.getEntity().getServer().getPluginManager().callEvent(event);
-+                if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !this.isAlive()) {
-+                    return null;
-+                }
-+
-+                exit = event.getTo();
-+                worldserver1 = ((CraftWorld) exit.getWorld()).getHandle();
-+                blockposition = new BlockPosition(exit.getX(), exit.getY(), exit.getZ());
-+                searchRadius = event.getSearchRadius();
-+            }
-+            // CraftBukkit end
  
 -            if (dimensionmanager1 == DimensionManager.THE_END && dimensionmanager == DimensionManager.OVERWORLD) {
+-                blockposition = worldserver1.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver1.getSpawn());
+-            } else if (dimensionmanager == DimensionManager.THE_END) {
+-                blockposition = worldserver1.getDimensionSpawn();
 +        if (blockposition == null) { // CraftBukkit
 +            if (dimensionmanager1.getType() == DimensionManager.THE_END && dimensionmanager == DimensionManager.OVERWORLD) { // CraftBukkit
-                 blockposition = worldserver1.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver1.getSpawn());
--            } else if (dimensionmanager == DimensionManager.THE_END) {
++                // CraftBukkit start
++                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver1, worldserver1.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver1.getSpawn()), 0);
++                if (event == null) {
++                    return null;
++                }
++                worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
++                blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
++                // CraftBukkit end
 +            } else if (dimensionmanager.getType() == DimensionManager.THE_END) { // CraftBukkit
-                 blockposition = worldserver1.getDimensionSpawn();
++                // CraftBukkit start
++                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver1, worldserver1.getDimensionSpawn() != null ? worldserver1.getDimensionSpawn() : worldserver1.getSpawn(), 0);
++                if (event == null) {
++                    return null;
++                }
++                worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
++                blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
++                // CraftBukkit end
              } else {
                  double d0 = this.locX();
                  double d1 = this.locZ();
@@ -672,16 +668,25 @@
                      d0 *= 8.0D;
                      d1 *= 8.0D;
                  }
-@@ -2083,7 +2457,7 @@
+@@ -2083,7 +2451,16 @@
                  Vec3D vec3d1 = this.getPortalOffset();
  
                  blockposition = new BlockPosition(d0, this.locY(), d1);
 -                ShapeDetector.Shape shapedetector_shape = worldserver1.getTravelAgent().a(blockposition, vec3d, this.getPortalDirection(), vec3d1.x, vec3d1.y, this instanceof EntityHuman);
++                // CraftBukkit start
++                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver1, blockposition, 128);
++                if (event == null) {
++                    return null;
++                }
++                worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
++                blockposition = new BlockPosition(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
++                int searchRadius = event.getSearchRadius();
++                // CraftBukkit end
 +                ShapeDetector.Shape shapedetector_shape = worldserver1.getTravelAgent().findPortal(blockposition, vec3d, this.getPortalDirection(), vec3d1.x, vec3d1.y, this instanceof EntityHuman, searchRadius); // CraftBukkit - search radius
  
                  if (shapedetector_shape == null) {
                      return null;
-@@ -2093,6 +2467,13 @@
+@@ -2093,6 +2470,13 @@
                  vec3d = shapedetector_shape.velocity;
                  f = (float) shapedetector_shape.yaw;
              }
@@ -695,7 +700,7 @@
  
              this.world.getMethodProfiler().exitEnter("reloading");
              Entity entity = this.getEntityType().a((World) worldserver1);
-@@ -2102,6 +2483,14 @@
+@@ -2102,6 +2486,14 @@
                  entity.setPositionRotation(blockposition, entity.yaw + f, entity.pitch);
                  entity.setMot(vec3d);
                  worldserver1.addEntityTeleport(entity);
@@ -710,7 +715,7 @@
              }
  
              this.dead = true;
-@@ -2308,7 +2697,26 @@
+@@ -2308,7 +2700,26 @@
      }
  
      public void a(AxisAlignedBB axisalignedbb) {
