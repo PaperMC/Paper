@@ -14,7 +14,13 @@ public enum EnchantmentTarget {
     ALL {
         @Override
         public boolean includes(@NotNull Material item) {
-            return true;
+            for (EnchantmentTarget target : EnchantmentTarget.values()) {
+                if (target != this && target.includes(item)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     },
 
@@ -83,7 +89,8 @@ public enum EnchantmentTarget {
                 || item.equals(Material.CHAINMAIL_HELMET)
                 || item.equals(Material.DIAMOND_HELMET)
                 || item.equals(Material.IRON_HELMET)
-                || item.equals(Material.GOLDEN_HELMET);
+                || item.equals(Material.GOLDEN_HELMET)
+                || item.equals(Material.TURTLE_HELMET);
         }
     },
 
@@ -102,8 +109,7 @@ public enum EnchantmentTarget {
     },
 
     /**
-     * Allows the Enchantment to be placed on tools (spades, pickaxe, hoes,
-     * axes)
+     * Allows the Enchantment to be placed on tools (spades, pickaxe, axes)
      */
     TOOL {
         @Override
@@ -118,18 +124,11 @@ public enum EnchantmentTarget {
                 || item.equals(Material.IRON_PICKAXE)
                 || item.equals(Material.DIAMOND_PICKAXE)
                 || item.equals(Material.GOLDEN_PICKAXE)
-                || item.equals(Material.WOODEN_HOE)
-                || item.equals(Material.STONE_HOE)
-                || item.equals(Material.IRON_HOE)
-                || item.equals(Material.DIAMOND_HOE)
-                || item.equals(Material.GOLDEN_HOE)
                 || item.equals(Material.WOODEN_AXE)
                 || item.equals(Material.STONE_AXE)
                 || item.equals(Material.IRON_AXE)
                 || item.equals(Material.DIAMOND_AXE)
-                || item.equals(Material.GOLDEN_AXE)
-                || item.equals(Material.SHEARS)
-                || item.equals(Material.FLINT_AND_STEEL);
+                || item.equals(Material.GOLDEN_AXE);
         }
     },
 
@@ -171,7 +170,6 @@ public enum EnchantmentTarget {
         public boolean includes(@NotNull Material item) {
             return ARMOR.includes(item)
                     || item.equals(Material.ELYTRA)
-                    || item.equals(Material.PUMPKIN)
                     || item.equals(Material.CARVED_PUMPKIN)
                     || item.equals(Material.JACK_O_LANTERN)
                     || item.equals(Material.SKELETON_SKULL)
