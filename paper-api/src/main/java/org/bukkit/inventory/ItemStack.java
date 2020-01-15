@@ -68,7 +68,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     @Deprecated
     public ItemStack(@NotNull final Material type, final int amount, final short damage, @Nullable final Byte data) {
         Validate.notNull(type, "Material cannot be null");
-        Validate.isTrue(type.isItem(), "Material must be an item: ", type);
         this.type = type;
         this.amount = amount;
         if (damage != 0) {
@@ -117,7 +116,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     @Utility
     public void setType(@NotNull Material type) {
         Validate.notNull(type, "Material cannot be null");
-        Validate.isTrue(type.isItem(), "Material must be an item: ", type);
         this.type = type;
         if (this.meta != null) {
             this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
