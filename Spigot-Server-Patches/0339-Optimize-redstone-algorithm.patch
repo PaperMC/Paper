@@ -1,4 +1,4 @@
-From 0834959b160570b5a53a63d118ae4c460e857aed Mon Sep 17 00:00:00 2001
+From 0eed64a22346b109b59a6ed9c885b2426f86bfb9 Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Optimize redstone algorithm
@@ -19,7 +19,7 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index c7ff264cb..1ad6d6483 100644
+index e26aadfb0..cf9470057 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -439,4 +439,14 @@ public class PaperWorldConfig {
@@ -39,10 +39,10 @@ index c7ff264cb..1ad6d6483 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 000000000..cf5661f1c
+index 000000000..b69803cbf
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
-@@ -0,0 +1,912 @@
+@@ -0,0 +1,915 @@
 +package com.destroystokyo.paper.util;
 +
 +import java.util.List;
@@ -938,8 +938,11 @@ index 000000000..cf5661f1c
 +            // and set it in the world.
 +            // Possible optimization:  Don't commit state changes to the world until they
 +            // need to be known by some nearby non-redstone-wire block.
-+            state = state.set(BlockRedstoneWire.POWER, Integer.valueOf(j));
-+            worldIn.setTypeAndData(upd.self, state, 2);
++            BlockPosition pos = new BlockPosition(upd.self.getX(), upd.self.getY(), upd.self.getZ());
++            if (wire.canPlace(null, worldIn, pos)) {
++                state = state.set(BlockRedstoneWire.POWER, Integer.valueOf(j));
++                worldIn.setTypeAndData(upd.self, state, 2);
++            }
 +        }
 +
 +        return state;
@@ -1144,5 +1147,5 @@ index dc0d89ee6..6189935bd 100644
          int i = 0;
          EnumDirection[] aenumdirection = World.a;
 -- 
-2.23.0
+2.24.1
 
