@@ -1,4 +1,4 @@
-From 210cf7b13fab9c83e8f3b10b80a8aea5a4e0affd Mon Sep 17 00:00:00 2001
+From 3540b3f5e56446d07bff84ed0f1f9a6434e32ff3 Mon Sep 17 00:00:00 2001
 From: Draycia <lonelyyordle@gmail.com>
 Date: Tue, 14 Jan 2020 05:37:05 -0800
 Subject: [PATCH] Use result of setItemStack in PlayerBucketEmptyEvent
@@ -17,26 +17,19 @@ index 80219f2df..c8184f94e 100644
          if (enumhand == EnumHand.MAIN_HAND) {
              this.setSlot(EnumItemSlot.MAINHAND, itemstack);
 diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
-index 0ff92aea5..498cd4d24 100644
+index 0ff92aea5..fe4a99917 100644
 --- a/src/main/java/net/minecraft/server/ItemBucket.java
 +++ b/src/main/java/net/minecraft/server/ItemBucket.java
-@@ -134,12 +134,13 @@ public class ItemBucket extends Item {
-             } else {
-                 // CraftBukkit start
-                 if (entityhuman != null) {
--                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
-+                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, entityhuman.isCreative() ? entityhuman.getItemInHand(enumhand) : itemstack, enumhand); // Paper - 2651: Prevents creative players from having their buckets modified
-                     if (event.isCancelled()) {
-                         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
+@@ -140,6 +140,7 @@ public class ItemBucket extends Item {
                          ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
                          return false;
                      }
-+                    entityhuman.setItemInHand(enumhand, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack())); // Paper - 2651: set item in hand if event isn't cancelled
++                    itemstack = CraftItemStack.asNMSCopy(event.getItemStack()); // Paper - 2651: set item in hand if event isn't cancelled
                  }
                  // CraftBukkit end
                  if (world.worldProvider.isNether() && this.fluidType.a(TagsFluid.WATER)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c0fd2948e..aed1cca44 100644
+index c0fd2948e..4d07d3e89 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -377,7 +377,7 @@ public class CraftEventFactory {
@@ -44,7 +37,7 @@ index c0fd2948e..aed1cca44 100644
  
      public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, EnumHand enumHand) {
 -        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, Items.BUCKET, enumHand);
-+        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, itemstack.getItem(), enumHand); // Paper - don't forcefully set to bucket
++        return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemstack, who.isCreative() ? itemstack.getItem() : Items.BUCKET, enumHand); // Paper - don't forcefully set to bucket
      }
  
      public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
