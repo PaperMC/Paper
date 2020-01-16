@@ -1,0 +1,230 @@
+From c1c989d63974c8d869fe99c33bdcd41c57e250ae Mon Sep 17 00:00:00 2001
+From: PixelLima <pixellima@outlook.com>
+Date: Wed, 15 Jan 2020 17:51:48 +0000
+Subject: [PATCH] Add support for brigadier commands
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/command/PaperBrigadierTabExecutor.java b/src/main/java/com/destroystokyo/paper/command/PaperBrigadierTabExecutor.java
+new file mode 100644
+index 000000000..0ab2b1714
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/command/PaperBrigadierTabExecutor.java
+@@ -0,0 +1,64 @@
++package com.destroystokyo.paper.command;
++
++import com.mojang.brigadier.ParseResults;
++import net.minecraft.server.CommandDispatcher;
++import net.minecraft.server.CommandListenerWrapper;
++import org.apache.commons.lang.Validate;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class PaperBrigadierTabExecutor implements BrigadierTabExecutor {
++
++    private CommandDispatcher dispatcher;
++
++    public PaperBrigadierTabExecutor(CommandDispatcher dispatcher) {
++        this.dispatcher = dispatcher;
++    }
++
++    @Override
++    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
++        if (!(command instanceof BrigadierCommand))
++            return true;
++        
++        if (!command.testPermission(sender)) 
++            return true;
++
++        CommandListenerWrapper icommandlistener = VanillaCommandWrapper.getListener(sender);
++        dispatcher.a(icommandlistener, VanillaCommandWrapper.toDispatcher(args, command.getName()), VanillaCommandWrapper.toDispatcher(args, label));
++        return true;
++    }
++
++    @Override
++    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
++        Validate.notNull(sender, "Sender cannot be null");
++        Validate.notNull(args, "Arguments cannot be null");
++        Validate.notNull(alias, "Alias cannot be null");
++        
++        if (!(command instanceof BrigadierCommand))
++            return null;
++
++        CommandListenerWrapper icommandlistener = VanillaCommandWrapper.getListener(sender);
++        ParseResults<CommandListenerWrapper> parsed = dispatcher.a().parse(VanillaCommandWrapper.toDispatcher(args, command.getName()), icommandlistener);
++
++        List<String> results = new ArrayList<>();
++        dispatcher.a().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
++            suggestions.getList().forEach((s) -> results.add(s.getText()));
++        });
++        
++        return results;
++    }
++
++    public void setDispatcher(CommandDispatcher dispatcher) {
++        if (dispatcher != null)
++            this.dispatcher = dispatcher;
++    }
++
++    @Override
++    public com.mojang.brigadier.CommandDispatcher<CommandSource> getCommandDispatcher() {
++        return (com.mojang.brigadier.CommandDispatcher) this.dispatcher.a();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/CommandListenerWrapper.java b/src/main/java/net/minecraft/server/CommandListenerWrapper.java
+index 0b23a0548..b870fbd89 100644
+--- a/src/main/java/net/minecraft/server/CommandListenerWrapper.java
++++ b/src/main/java/net/minecraft/server/CommandListenerWrapper.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.command.CommandSource;
+ import com.google.common.collect.Lists;
+ import com.mojang.brigadier.ResultConsumer;
+ import com.mojang.brigadier.context.CommandContext;
+@@ -8,6 +9,9 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import com.mojang.brigadier.suggestion.Suggestions;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+ import com.mojang.brigadier.tree.CommandNode;
++import org.bukkit.Location;
++import org.bukkit.command.CommandSender;
++
+ import java.util.Collection;
+ import java.util.Iterator;
+ import java.util.concurrent.CompletableFuture;
+@@ -15,7 +19,7 @@ import java.util.function.BinaryOperator;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ 
+-public class CommandListenerWrapper implements ICompletionProvider {
++public class CommandListenerWrapper implements ICompletionProvider, CommandSource { // Paper - Implemented CommandSource in order to add support for brigadier commands
+ 
+     public static final SimpleCommandExceptionType a = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.player", new Object[0]));
+     public static final SimpleCommandExceptionType b = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.entity", new Object[0]));
+@@ -33,6 +37,7 @@ public class CommandListenerWrapper implements ICompletionProvider {
+     private final ArgumentAnchor.Anchor m;
+     private final Vec2F n;
+     public CommandNode currentCommand; // CraftBukkit
++    public Location location; // Paper - Add support for brigadier commands
+ 
+     public CommandListenerWrapper(ICommandListener icommandlistener, Vec3D vec3d, Vec2F vec2f, WorldServer worldserver, int i, String s, IChatBaseComponent ichatbasecomponent, MinecraftServer minecraftserver, @Nullable Entity entity) {
+         this(icommandlistener, vec3d, vec2f, worldserver, i, s, ichatbasecomponent, minecraftserver, entity, false, (commandcontext, flag, j) -> {
+@@ -52,6 +57,8 @@ public class CommandListenerWrapper implements ICompletionProvider {
+         this.l = resultconsumer;
+         this.m = argumentanchor_anchor;
+         this.n = vec2f;
++
++        this.location = new org.bukkit.Location(getWorld().getWorld(), getPosition().x, getPosition().y, getPosition().z, i().i, i().j);
+     }
+ 
+     public CommandListenerWrapper a(Entity entity) {
+@@ -255,4 +262,36 @@ public class CommandListenerWrapper implements ICompletionProvider {
+         return base.getBukkitSender(this);
+     }
+     // CraftBukkit end
++
++    // Paper start - Implement CommandSource in order to support brigadier command
++    @Override
++    public org.bukkit.entity.Entity getExecutingEntity() {
++        if (getEntity() == null)
++            return null;
++
++        return getEntity().getBukkitEntity();
++    }
++
++    @Override
++    public CommandSender getSender() {
++        return getBukkitSender();
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.location;
++    }
++
++    @Override
++    public Anchor getAnchor() {
++        switch (k()) {
++            case EYES:
++                return Anchor.EYES;
++            case FEET:
++                return Anchor.FEET;
++        }
++        return null;
++    }
++
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ee5c57ca2..60a7ccdd8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit;
+ 
++import com.destroystokyo.paper.command.BrigadierCommand;
++import com.destroystokyo.paper.command.PaperBrigadierTabExecutor;
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Function;
+ import com.google.common.base.Preconditions;
+@@ -237,6 +239,7 @@ public final class CraftServer implements Server {
+     private final List<CraftPlayer> playerView;
+     public int reloadCount;
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
++    private final PaperBrigadierTabExecutor brigadierTabExecutor; // Paper - Add support for brigadier commands
+ 
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+@@ -256,6 +259,8 @@ public final class CraftServer implements Server {
+ 
+         Bukkit.setServer(this);
+ 
++        BrigadierCommand.setBrigadierTabExecutor(brigadierTabExecutor = new PaperBrigadierTabExecutor(console.commandDispatcher)); // Paper - Add support for brigadier commands
++
+         // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
+         Enchantments.DAMAGE_ALL.getClass();
+         org.bukkit.enchantments.Enchantment.stopAcceptingRegistrations();
+@@ -424,13 +429,22 @@ public final class CraftServer implements Server {
+         // Clear existing commands
+         CommandDispatcher dispatcher = console.commandDispatcher = new CommandDispatcher();
+ 
++        brigadierTabExecutor.setDispatcher(dispatcher); // Paper - Add support for brigadier commands
++
+         // Register all commands, vanilla ones will be using the old dispatcher references
+         for (Map.Entry<String, Command> entry : commandMap.getKnownCommands().entrySet()) {
+             String label = entry.getKey();
+             Command command = entry.getValue();
+ 
+-            if (command instanceof VanillaCommandWrapper) {
+-                LiteralCommandNode<CommandListenerWrapper> node = (LiteralCommandNode<CommandListenerWrapper>) ((VanillaCommandWrapper) command).vanillaCommand;
++            // Paper start - Add support for brigadier commands
++            if (command instanceof VanillaCommandWrapper || command instanceof BrigadierCommand) {
++                LiteralCommandNode<CommandListenerWrapper> node;
++                if (command instanceof  VanillaCommandWrapper)
++                    node = (LiteralCommandNode<CommandListenerWrapper>) ((VanillaCommandWrapper) command).vanillaCommand;
++                else
++                    node = (LiteralCommandNode) ((BrigadierCommand) command).getNode();
++                // Paper end
++
+                 if (!node.getLiteral().equals(label)) {
+                     LiteralCommandNode<CommandListenerWrapper> clone = new LiteralCommandNode(label, node.getCommand(), node.getRequirement(), node.getRedirect(), node.getRedirectModifier(), node.isFork());
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+index a3ae4a9ff..d665e3c86 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+@@ -90,7 +90,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+         return "minecraft.command." + ((vanillaCommand.getRedirect() == null) ? vanillaCommand.getName() : vanillaCommand.getRedirect().getName());
+     }
+ 
+-    private String toDispatcher(String[] args, String name) {
++    public static String toDispatcher(String[] args, String name) { // Paper - Add support for brigadier commands
+         return "/" + name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
+     }
+ }
+-- 
+2.24.1.windows.2
+

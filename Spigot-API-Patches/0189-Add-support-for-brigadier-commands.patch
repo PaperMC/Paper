@@ -1,0 +1,288 @@
+From a4f4469b20ec2bea6eb21f2ef3e418d136f2ebb9 Mon Sep 17 00:00:00 2001
+From: PixelLima <pixellima@outlook.com>
+Date: Mon, 13 Jan 2020 18:53:10 +0000
+Subject: [PATCH] Add support for brigadier commands
+
+
+diff --git a/pom.xml b/pom.xml
+index 252ddd22..c01732a8 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -39,6 +39,12 @@
+             <id>sonatype</id>
+             <url>https://oss.sonatype.org/content/groups/public/</url>
+         </repository>
++        <!-- Paper - Add support for brigadier commands -->
++        <repository>
++            <id>minecraft-libraries</id>
++            <name>Minecraft Libraries</name>
++            <url>https://libraries.minecraft.net</url>
++        </repository>
+     </repositories>
+ 
+     <pluginRepositories>
+@@ -146,6 +152,12 @@
+             <artifactId>asm-commons</artifactId>
+             <version>7.1</version>
+         </dependency>
++        <!-- Paper - Add support for brigadier commands -->
++        <dependency>
++            <groupId>com.mojang</groupId>
++            <artifactId>brigadier</artifactId>
++            <version>1.0.17</version>
++        </dependency>
+     </dependencies>
+ 
+     <build>
+diff --git a/src/main/java/com/destroystokyo/paper/command/BrigadierCommand.java b/src/main/java/com/destroystokyo/paper/command/BrigadierCommand.java
+new file mode 100644
+index 00000000..d793e2b9
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/command/BrigadierCommand.java
+@@ -0,0 +1,125 @@
++package com.destroystokyo.paper.command;
++
++import com.google.common.collect.ImmutableList;
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.command.PluginIdentifiableCommand;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.List;
++
++/**
++ * Represents a command that holds a {@link CommandNode}. Enables the full use of Minecraft's implementation of Brigadier.
++ */
++public class BrigadierCommand extends Command implements PluginIdentifiableCommand {
++
++    private static BrigadierTabExecutor brigadierTabExecutor;
++
++    private final Plugin plugin;
++    private final CommandNode<CommandSource> node;
++
++    public BrigadierCommand(@NotNull Plugin plugin, @NotNull CommandNode<CommandSource> node) {
++        super(node.getName());
++
++        if (!(node instanceof LiteralCommandNode))
++            throw new IllegalArgumentException("Node must be a LiteralCommandNode.");
++
++        this.plugin = plugin;
++        this.node = node;
++    }
++
++    public BrigadierCommand(@NotNull Plugin plugin, @NotNull CommandNode<CommandSource> node, @Nullable String description, @Nullable String usageMessage, @NotNull List<String> aliases) {
++        this(plugin, node);
++        this.description = (description == null) ? "" : description;
++        this.usageMessage = (usageMessage == null) ? "/" + node.getName() : usageMessage;
++        this.setAliases(aliases);
++    }
++
++    /**
++     * Gets the owner of this command.
++     *
++     * @return Plugin that owns this command.
++     */
++    @NotNull
++    @Override
++    public Plugin getPlugin() {
++        return plugin;
++    }
++
++    /**
++     * Gets the node held by this instance.
++     *
++     * @return The node held by this instance.
++     */
++    @NotNull
++    public CommandNode<CommandSource> getNode() {
++        return node;
++    }
++
++    /**
++     * Executes the command, returning its success
++     *
++     * @param sender Source object which is executing this command
++     * @param commandLabel The alias of the command used
++     * @param args All arguments passed to the command, split via ' '
++     * @return true if the command was successful, otherwise false
++     */
++    @Override
++    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
++        return brigadierTabExecutor != null && brigadierTabExecutor.onCommand(sender, this, commandLabel, args);
++    }
++
++    /**
++     * Executed on tab completion for this command, returning a list of
++     * options the player can tab through.
++     *
++     * @param sender Source object which is executing this command
++     * @param alias the alias being used
++     * @param args All arguments passed to the command, split via ' '
++     * @return a list of tab-completions for the specified arguments. This
++     *     will never be null. List may be immutable.
++     * @throws IllegalArgumentException if sender, alias, or args is null
++     */
++    @NotNull
++    @Override
++    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
++        if (brigadierTabExecutor != null) {
++            List<String> result = brigadierTabExecutor.onTabComplete(sender, this, alias, args);
++            if (result != null)
++                return result;
++        }
++        return ImmutableList.of();
++    }
++
++    /**
++     * Attempts to set the {@link BrigadierTabExecutor} singleton.
++     * <p>
++     * This cannot be done if the BrigadierTabExecutor is already set.
++     *
++     * @param brigadierTabExecutor BrigadierTabExecutor instance
++     */
++    public static void setBrigadierTabExecutor(@NotNull BrigadierTabExecutor brigadierTabExecutor) {
++        if (BrigadierCommand.brigadierTabExecutor != null) {
++            throw new UnsupportedOperationException("Cannot redefine the tab executor for brigadier commands.");
++        }
++
++        BrigadierCommand.brigadierTabExecutor = brigadierTabExecutor;
++    }
++
++    /**
++     * Register the node to the {@link CommandDispatcher}
++     *
++     * @deprecated This method is not meant to be used by plugins.
++     */
++    @Deprecated
++    public void registerNode() {
++        if (brigadierTabExecutor.getCommandDispatcher() != null && isRegistered() && brigadierTabExecutor.getCommandDispatcher().getRoot().getChild(node.getName()) == null) {
++            brigadierTabExecutor.getCommandDispatcher().getRoot().addChild(this.node);
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/command/BrigadierTabExecutor.java b/src/main/java/com/destroystokyo/paper/command/BrigadierTabExecutor.java
+new file mode 100644
+index 00000000..da5eded1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/command/BrigadierTabExecutor.java
+@@ -0,0 +1,19 @@
++package com.destroystokyo.paper.command;
++
++import com.mojang.brigadier.CommandDispatcher;
++import org.bukkit.command.TabExecutor;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents a {@link TabExecutor} that is linked to a {@link CommandDispatcher}.
++ */
++public interface BrigadierTabExecutor extends TabExecutor {
++
++    /**
++     * Get the {@link CommandDispatcher} linked to this instance.
++     *
++     * @return The command dispatcher linked to this instance.
++     */
++    @Nullable
++    CommandDispatcher<CommandSource> getCommandDispatcher();
++}
+diff --git a/src/main/java/com/destroystokyo/paper/command/CommandSource.java b/src/main/java/com/destroystokyo/paper/command/CommandSource.java
+new file mode 100644
+index 00000000..403ff327
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/command/CommandSource.java
+@@ -0,0 +1,62 @@
++package com.destroystokyo.paper.command;
++
++import org.bukkit.Location;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents the context of the execution of a {@link BrigadierCommand}.
++ */
++public interface CommandSource {
++
++    /**
++     * Get the sender of the command.
++     *
++     * @return The sender of the command.
++     */
++    @NotNull
++    CommandSender getSender();
++
++    /**
++     * Get the executing entity of the command.
++     * <p>
++     * This can be changed by running '/execute as <entity> run ...'
++     * or other commands that change the context's executing entity.
++     *
++     * @return The executing entity of the command.
++     */
++    @Nullable
++    Entity getExecutingEntity();
++
++    /**
++     * Get the location (world, x, y, z, pitch, yaw) of the command context.
++     * <p>
++     * This can be changed by running '/execute at <entity> run ...'
++     * or '/execute positioned <x> <y> <z> run ...' or '/execute in <world> run ...'
++     * or other commands that change the context's world, position or rotation.
++     *
++     * @return The location of the command context.
++     */
++    @NotNull
++    Location getLocation();
++
++    /**
++     * Get the {@link Anchor} of the command context.
++     * <p>
++     * This can be changed by running '/execute anchored <feet|eyes> run ...'
++     * or other commands that change the context's anchor.
++     *
++     * @return The anchor of the command context.
++     */
++    @NotNull
++    Anchor getAnchor();
++
++    /**
++     * Enumeration of the different anchor types that a command context can have.
++     */
++    public enum Anchor {
++        FEET, EYES;
++    }
++}
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index 460fda05..45a81e2b 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -9,6 +9,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+ 
++import com.destroystokyo.paper.command.BrigadierCommand;
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerCommandException;
+ import com.destroystokyo.paper.exception.ServerTabCompleteException;
+@@ -90,6 +91,12 @@ public class SimpleCommandMap implements CommandMap {
+         // Register to us so further updates of the commands label and aliases are postponed until its reregistered
+         command.register(this);
+ 
++        // Paper start - Add support for brigadier commands
++        if(command instanceof BrigadierCommand) {
++            ((BrigadierCommand) command).registerNode();
++        }
++        // Paper end
++
+         return registered;
+     }
+ 
+-- 
+2.24.1.windows.2
+
