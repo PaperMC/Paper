@@ -1,4 +1,4 @@
-From c35e3b1680cee2b646dc744795fe7de0cd849848 Mon Sep 17 00:00:00 2001
+From 10146dc6f626382cb631f4d411734d0dadded36f Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Wed, 15 Jan 2020 22:50:39 -0800
 Subject: [PATCH] Fix incorrect implementation of PlayerBucketFillEvent for
@@ -11,7 +11,7 @@ getItemStack is defined to be the item in the player's hand after
 the event, and setItemStack should update it
 
 diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
-index 0ff92aea5..7768df80f 100644
+index 0ff92aea5..d025e8a44 100644
 --- a/src/main/java/net/minecraft/server/ItemBucket.java
 +++ b/src/main/java/net/minecraft/server/ItemBucket.java
 @@ -41,7 +41,7 @@ public class ItemBucket extends Item {
@@ -19,7 +19,7 @@ index 0ff92aea5..7768df80f 100644
                          // CraftBukkit start
                          FluidType dummyFluid = ((IFluidSource) iblockdata.getBlock()).removeFluid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
 -                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.a(), enumhand);
-+                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, entityhuman.isCreative() ? itemstack.getItem() : dummyFluid.a(), enumhand); // Paper - correct result item for creative player
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, entityhuman.isCreative() ? itemstack : new ItemStack(dummyFluid.a()), enumhand); // Paper - correct result item for creative player
  
                          if (event.isCancelled()) {
                              ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
@@ -32,6 +32,33 @@ index 0ff92aea5..7768df80f 100644
          } else {
              itemstack.subtract(1);
              if (itemstack.isEmpty()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 39ce40bd5..15f28b7af 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -385,10 +385,21 @@ public class CraftEventFactory {
+         return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
+     }
+ 
++    // Paper start - Add full ItemStack parameter so we can keep meta
++    public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, ItemStack bucket, EnumHand enumHand) {
++        return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket, enumHand);
++    }
++    // Paper end
++
+     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item, EnumHand enumHand) {
++        // Paper end
++        // Paper start - Add full ItemStack parameter so we can keep meta
++        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, new ItemStack(item), enumHand);
++    }
++    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, ItemStack newItem, EnumHand enumHand) {
+         // Paper end
+         Player player = (Player) who.getBukkitEntity();
+-        CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
++        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(newItem.cloneItemStack()); // Paper - need to clone because prev. event item was NOT a mirror, so changes did NOT modify the item in the player's hand
+         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
+ 
+         CraftServer craftServer = (CraftServer) player.getServer();
 -- 
 2.25.0.windows.1
 
