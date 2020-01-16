@@ -1,0 +1,37 @@
+From c35e3b1680cee2b646dc744795fe7de0cd849848 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Jan 2020 22:50:39 -0800
+Subject: [PATCH] Fix incorrect implementation of PlayerBucketFillEvent for
+ creative players
+
+setItemStack would not work and getItemStack would return the
+wrong item
+
+getItemStack is defined to be the item in the player's hand after
+the event, and setItemStack should update it
+
+diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
+index 0ff92aea5..7768df80f 100644
+--- a/src/main/java/net/minecraft/server/ItemBucket.java
++++ b/src/main/java/net/minecraft/server/ItemBucket.java
+@@ -41,7 +41,7 @@ public class ItemBucket extends Item {
+                     if (iblockdata.getBlock() instanceof IFluidSource) {
+                         // CraftBukkit start
+                         FluidType dummyFluid = ((IFluidSource) iblockdata.getBlock()).removeFluid(DummyGeneratorAccess.INSTANCE, blockposition, iblockdata);
+-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.a(), enumhand);
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(world, entityhuman, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, entityhuman.isCreative() ? itemstack.getItem() : dummyFluid.a(), enumhand); // Paper - correct result item for creative player
+ 
+                         if (event.isCancelled()) {
+                             ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
+@@ -96,7 +96,7 @@ public class ItemBucket extends Item {
+     // CraftBukkit - added ob.ItemStack result - TODO: Is this... the right way to handle this?
+     private ItemStack a(ItemStack itemstack, EntityHuman entityhuman, Item item, org.bukkit.inventory.ItemStack result) {
+         if (entityhuman.abilities.canInstantlyBuild) {
+-            return itemstack;
++            return CraftItemStack.asNMSCopy(result); // Paper - correctly update result item for creative players
+         } else {
+             itemstack.subtract(1);
+             if (itemstack.isEmpty()) {
+-- 
+2.25.0.windows.1
+
