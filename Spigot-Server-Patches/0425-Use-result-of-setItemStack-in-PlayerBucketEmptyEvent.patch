@@ -1,4 +1,4 @@
-From 48645338cba36baadd48871d52565dd0f6cebe8d Mon Sep 17 00:00:00 2001
+From dda1ff9c1f7f140334acb511538db216a17f3581 Mon Sep 17 00:00:00 2001
 From: Draycia <lonelyyordle@gmail.com>
 Date: Tue, 14 Jan 2020 05:37:05 -0800
 Subject: [PATCH] Use result of setItemStack in PlayerBucketEmptyEvent
@@ -8,8 +8,21 @@ setItemStack was not functional in the PlayerBucketEmptyEvent
 server was set to assume the result is always BUCKET when
 player is in survival
 
+diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
+index 0ff92aea5..8c02e64c1 100644
+--- a/src/main/java/net/minecraft/server/ItemBucket.java
++++ b/src/main/java/net/minecraft/server/ItemBucket.java
+@@ -134,7 +134,7 @@ public class ItemBucket extends Item {
+             } else {
+                 // CraftBukkit start
+                 if (entityhuman != null) {
+-                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(world, entityhuman, blockposition, clicked, enumdirection, itemstack, entityhuman.isCreative() ? itemstack : new ItemStack(Items.BUCKET), enumhand);
+                     if (event.isCancelled()) {
+                         ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
+                         ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c0fd2948e..355804b5b 100644
+index c0fd2948e..ef59616e2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -376,8 +376,14 @@ public class CraftEventFactory {
@@ -28,15 +41,17 @@ index c0fd2948e..355804b5b 100644
      }
  
      public static PlayerBucketFillEvent callPlayerBucketFillEvent(World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket, EnumHand enumHand) {
-@@ -386,8 +392,13 @@ public class CraftEventFactory {
+@@ -385,9 +391,15 @@ public class CraftEventFactory {
+     }
  
      private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item, EnumHand enumHand) {
-         // Paper end
++        // Paper end
 +        // Paper start - Add full ItemStack parameter so we can keep meta
 +        return getPlayerBucketEvent(isFilling, world, who, changed, clicked, clickedFace, itemstack, new ItemStack(item), enumHand);
 +    }
 +
 +    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, World world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, ItemStack newItem, EnumHand enumHand) {
+         // Paper end
          Player player = (Player) who.getBukkitEntity();
 -        CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
 +        CraftItemStack itemInHand = CraftItemStack.asCraftMirror(newItem.cloneItemStack()); // Paper - need to clone because prev. event item was NOT a mirror, so changes did NOT modify the item in the player's hand
