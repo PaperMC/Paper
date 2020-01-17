@@ -89,7 +89,7 @@ public class EntityItem extends Entity {
                 }
             }
 
-            if (!this.onGround || c(this.getMot()) > 9.999999747378752E-6D || (this.ticksLived + this.getId()) % 4 == 0) {
+            if (!this.onGround || c(this.getMot()) > 9.999999747378752E-6D || this.ticksLived % 4 == 0) { // Paper - Ensure checking item movement is always offset from Spigot's entity activation range check
                 this.move(EnumMoveType.SELF, this.getMot());
                 float f1 = 0.98F;
 
