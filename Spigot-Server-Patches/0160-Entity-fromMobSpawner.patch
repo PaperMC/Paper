@@ -1,0 +1,68 @@
+From 320aa57d604f28bc1f678be85099222483c4dba7 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 18 Jun 2017 18:17:05 -0500
+Subject: [PATCH] Entity#fromMobSpawner()
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index fcfe8f550d..7c4ab7fe72 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -189,6 +189,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public final boolean defaultActivationState;
+     public long activatedTick = Integer.MIN_VALUE;
+     public boolean fromMobSpawner;
++    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+@@ -1621,6 +1622,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (this.origin != null) {
+                 nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
+             }
++            // Save entity's from mob spawner status
++            if (spawnedViaMobSpawner) {
++                nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -1741,6 +1746,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (!originTag.isEmpty()) {
+                 origin = new Location(world.getWorld(), originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
+             }
++
++            spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+             // Paper end
+ 
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+index deb32db2b2..8384a2cbf8 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+@@ -134,6 +134,7 @@ public abstract class MobSpawnerAbstract {
+                                 ((EntityInsentient) entity).prepare(world, world.getDamageScaler(new BlockPosition(entity)), EnumMobSpawn.SPAWNER, (GroupDataEntity) null, (NBTTagCompound) null);
+                             }
+                         }
++                        entity.spawnedViaMobSpawner = true; // Paper
+                         // Spigot Start
+                         if ( entity.world.spigotConfig.nerfSpawnerMobs )
+                         {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index bb07dec3c8..495a7c464f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1045,5 +1045,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         Location origin = getHandle().origin;
+         return origin == null ? null : origin.clone();
+     }
++
++    @Override
++    public boolean fromMobSpawner() {
++        return getHandle().spawnedViaMobSpawner;
++    }
+     // Paper end
+ }
+-- 
+2.24.1
+
