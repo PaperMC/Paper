@@ -352,7 +352,7 @@ public interface IDispenseBehavior {
                 }
 
                 itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
-                EntityFireworks entityfireworks = new EntityFireworks(isourceblock.getWorld(), itemstack, isourceblock.getX(), isourceblock.getY(), isourceblock.getX(), true);
+                EntityFireworks entityfireworks = new EntityFireworks(isourceblock.getWorld(), itemstack1, isourceblock.getX(), isourceblock.getY(), isourceblock.getX(), true); // Paper - GH-2871 - fix last firework in stack having no effects when dispensed
 
                 IDispenseBehavior.a(isourceblock, entityfireworks, enumdirection);
                 entityfireworks.shoot((double) enumdirection.getAdjacentX(), (double) enumdirection.getAdjacentY(), (double) enumdirection.getAdjacentZ(), 0.5F, 1.0F);
