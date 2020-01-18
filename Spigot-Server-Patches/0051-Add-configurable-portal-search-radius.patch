@@ -1,21 +1,23 @@
-From 8436a8ff5cd80197bd581cd6aed2ae34a2c931f1 Mon Sep 17 00:00:00 2001
+From 9331a06c96c797e2ddbf697c45a5f2f70bbc4f1e Mon Sep 17 00:00:00 2001
 From: Joseph Hirschfeld <joe@ibj.io>
 Date: Thu, 3 Mar 2016 02:46:17 -0600
 Subject: [PATCH] Add configurable portal search radius
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 62e793b71..5de4ec052 100644
+index 62e793b71..cd47a4ca0 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -191,4 +191,9 @@ public class PaperWorldConfig {
+@@ -191,4 +191,11 @@ public class PaperWorldConfig {
      private void allChunksAreSlimeChunks() {
          allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
      }
 +
 +    public int portalSearchRadius;
++    public int portalCreateRadius;
 +    private void portalSearchRadius() {
 +        portalSearchRadius = getInt("portal-search-radius", 128);
++        portalCreateRadius = getInt("portal-create-radius", 16);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
@@ -31,6 +33,21 @@ index 4fcba0c0d..6314c4a19 100644
                  if (event == null) {
                      return null;
                  }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ab2d8015a..586c9c8ce 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -751,7 +751,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             // CraftBukkit start
+             Location enter = this.getBukkitEntity().getLocation();
+             Location exit = (worldserver1 == null) ? null : new Location(worldserver1.getWorld(), d0, d1, d2, f1, f);
+-            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, dimensionmanager.getType() == DimensionManager.THE_END ? 0 : 16);
++            int configuredSearchRadius = (worldserver1 == null ? worldserver : worldserver1).paperConfig.portalSearchRadius;
++            int configuredCreateRadius = (worldserver1 == null ? worldserver : worldserver1).paperConfig.portalCreateRadius;
++            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, configuredSearchRadius, true, dimensionmanager.getType() == DimensionManager.THE_END ? 0 : configuredCreateRadius); // Paper - configurable portal search radius
+             Bukkit.getServer().getPluginManager().callEvent(event);
+             if (event.isCancelled() || event.getTo() == null) {
+                 return null;
 diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
 index 503e3016a..b5f224e3b 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
@@ -54,5 +71,5 @@ index 503e3016a..b5f224e3b 100644
              return villageplacetype == VillagePlaceType.u;
          }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
 -- 
-2.24.1
+2.25.0.windows.1
 
