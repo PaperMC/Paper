@@ -1,4 +1,4 @@
-From 29a2f309aea598a80e985ea30edb30292b6ea269 Mon Sep 17 00:00:00 2001
+From 26f5826c5245d39eecedf101d197add8a74ed659 Mon Sep 17 00:00:00 2001
 From: Rodney_Mc_Kay <herr-fant@web.de>
 Date: Fri, 1 Nov 2019 15:55:27 +0100
 Subject: [PATCH] Fix spawn rates and add customization options
@@ -47,36 +47,30 @@ index b8131abae..079b9e43c 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/EnumCreatureType.java b/src/main/java/net/minecraft/server/EnumCreatureType.java
-index 42f6a6a93..fd2599247 100644
+index 42f6a6a93..14f3bbcad 100644
 --- a/src/main/java/net/minecraft/server/EnumCreatureType.java
 +++ b/src/main/java/net/minecraft/server/EnumCreatureType.java
-@@ -18,6 +18,7 @@ public enum EnumCreatureType {
-
-     public boolean matches(Entity entity) { return innerClass().isAssignableFrom(entity.getClass()); } // Paper
-     public Class<? extends IAnimal> innerClass() { return this.a(); } // Paper - OBFHELPER
-+
-     public Class<? extends IAnimal> a() {
-         return this.e;
+@@ -26,10 +26,12 @@ public enum EnumCreatureType {
+         return this.f;
      }
-@@ -29,8 +30,10 @@ public enum EnumCreatureType {
+ 
++    public boolean isPeaceful() { return this.g; } // Paper - OBFHELPER
      public boolean c() {
          return this.g;
      }
-+    public boolean isPeaceful() { return this.g; } // Paper - OBFHELPER
-
+ 
++    public boolean isAnimal() { return this.h; } // Paper - OBFHELPER
      public boolean d() {
          return this.h;
      }
-+    public boolean isAnimal() { return this.h; } // Paper - OBFHELPER
- }
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
 index cb656a222..ddf76ea99 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -24,8 +24,10 @@ public final class SpawnerCreature {
-
+ 
      public SpawnerCreature() {}
-
+ 
 -    public int a(WorldServer worldserver, boolean flag, boolean flag1, boolean flag2) {
 -        if (!flag && !flag1) {
 +    // Paper start - Allow for mob specific spawn rate customization
@@ -89,7 +83,7 @@ index cb656a222..ddf76ea99 100644
 @@ -90,20 +92,26 @@ public final class SpawnerCreature {
              for (int k1 = 0; k1 < j; ++k1) {
                  EnumCreatureType enumcreaturetype = aenumcreaturetype[k1];
-
+ 
 +                boolean shouldSpawn = false; // Paper - Add spawn detection for each mob type
 +
                 // CraftBukkit start - Use per-world spawn limits
@@ -112,16 +106,16 @@ index cb656a222..ddf76ea99 100644
 +                        shouldSpawn = spawnAmbientMobs;
                          break;
                  }
-
+ 
 @@ -112,7 +120,7 @@ public final class SpawnerCreature {
                  }
                  // CraftBukkit end
-
+ 
 -                if ((!enumcreaturetype.c() || flag1) && (enumcreaturetype.c() || flag) && (!enumcreaturetype.d() || flag2)) {
 +                if (shouldSpawn) { // Paper - Add spawn rate customized to paper spawns
                      k = limit * i / SpawnerCreature.b; // CraftBukkit - use per-world limits
                      int l1 = ((com.destroystokyo.paper.PaperWorldEntityList) worldserver.entityList).getCreatureCount(enumcreaturetype); // Paper - entity count cache
-
+ 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 8af540192..c2ea0379c 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
@@ -148,5 +142,6 @@ index 8af540192..c2ea0379c 100644
              this.getChunkProvider().a(this, this.allowMonsters && (this.ticksPerMonsterSpawns != 0 && time % this.ticksPerMonsterSpawns == 0L), this.allowAnimals && (this.ticksPerAnimalSpawns != 0 && time % this.ticksPerAnimalSpawns == 0L));
              timings.mobSpawn.stopTiming(); // Spigot
              // CraftBukkit end
---
+-- 
 2.18.0.windows.1
+
