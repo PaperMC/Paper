@@ -46,7 +46,7 @@ function applyPatch {
         echo "  Using workaround for Windows ARG_MAX constraint"
         find "$basedir/${what_name}-Patches/"*.patch -print0 | xargs -0 $applycmd
     else
-        $applycmd "$basedir/${what_name}-Patches/"*.patch
+        $applycmd "$basedir/${what_name}-Patches/"*.patch --3way
     fi
 
     if [ "$?" != "0" ]; then

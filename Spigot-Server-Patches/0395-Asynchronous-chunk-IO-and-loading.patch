@@ -1,4 +1,4 @@
-From d6ca62d0cc96ae7d4d4ae5547bdc75daafe401e6 Mon Sep 17 00:00:00 2001
+From 5ad26e00ba8d556de076a3a70bab771d7ba8bc7a Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -1901,10 +1901,10 @@ index 000000000..1dfa8abfd
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 000000000..715a2dd8d
+index 000000000..59d73bfad
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,453 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -2006,10 +2006,8 @@ index 000000000..715a2dd8d
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
 +                } else {
 +                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
-+                    net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
 +                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +                }
 +
 +            }
@@ -3010,29 +3008,10 @@ index ed8c4a87b..996c83263 100644
          return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 7a1578afa..d26365eb1 100644
+index 7a1578afa..0fb9c1e44 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -83,6 +83,18 @@ public class PlayerChunk {
-         }
-         return null;
-     }
-+
-+    public ChunkStatus getChunkHolderStatus() {
-+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getPreviousStatus(); curr != next; curr = next, next = next.getPreviousStatus()) {
-+            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getStatusFutureUnchecked(curr);
-+            Either<IChunkAccess, PlayerChunk.Failure> either = future.getNow(null);
-+            if (either == null || !either.left().isPresent()) {
-+                continue;
-+            }
-+            return curr;
-+        }
-+        return null;
-+    }
-     // Paper end
- 
-     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
-@@ -310,7 +322,7 @@ public class PlayerChunk {
+@@ -310,7 +310,7 @@ public class PlayerChunk {
          ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
          boolean flag = this.oldTicketLevel <= PlayerChunkMap.GOLDEN_TICKET;
@@ -3041,7 +3020,7 @@ index 7a1578afa..d26365eb1 100644
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
          // CraftBukkit start
-@@ -340,6 +352,12 @@ public class PlayerChunk {
+@@ -340,6 +340,12 @@ public class PlayerChunk {
                  }
              });
  
@@ -3055,7 +3034,7 @@ index 7a1578afa..d26365eb1 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 3825520fa..0ad11ba68 100644
+index 3825520fa..d9faef8a6 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -63,7 +63,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3449,16 +3428,14 @@ index 3825520fa..0ad11ba68 100644
      @Nullable
      public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
-@@ -925,33 +1085,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -925,33 +1085,53 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      // Paper start - chunk status cache "api"
      public ChunkStatus getChunkStatusOnDiskIfCached(ChunkCoordIntPair chunkPos) {
 -        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getRegionFileIfLoaded(chunkPos);
-+        synchronized (this) { // Paper
 +        RegionFile regionFile = this.getRegionFileIfLoaded(chunkPos);
  
          return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
-+        } // Paper
      }
  
      public ChunkStatus getChunkStatusOnDisk(ChunkCoordIntPair chunkPos) throws IOException {
@@ -3516,7 +3493,7 @@ index 3825520fa..0ad11ba68 100644
      }
  
      public IChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
-@@ -960,6 +1142,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -960,6 +1140,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
      // Paper end
  
@@ -3556,7 +3533,7 @@ index 3825520fa..0ad11ba68 100644
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
          // Spigot start
          return isOutsideOfRange(chunkcoordintpair, false);
-@@ -1304,6 +1519,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1304,6 +1517,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
@@ -3565,19 +3542,10 @@ index 3825520fa..0ad11ba68 100644
          return this.m;
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index d37abf2cf..df728e2c0 100644
+index d37abf2cf..0de24c792 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
-@@ -36,6 +36,8 @@ public class RegionFile implements AutoCloseable {
-     private final RegionFileBitSet freeSectors;
-     public final File file;
- 
-+    public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
-+
-     // Paper start - Cache chunk status
-     private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
- 
-@@ -224,7 +226,7 @@ public class RegionFile implements AutoCloseable {
+@@ -224,7 +224,7 @@ public class RegionFile implements AutoCloseable {
          return (i + 4096 - 1) / 4096;
      }
  
@@ -3586,31 +3554,17 @@ index d37abf2cf..df728e2c0 100644
          int i = this.getOffset(chunkcoordintpair);
  
          if (i == 0) {
-@@ -380,6 +382,11 @@ public class RegionFile implements AutoCloseable {
+@@ -379,7 +379,7 @@ public class RegionFile implements AutoCloseable {
+         return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
      }
  
-     public void close() throws IOException {
-+        // Paper start - Prevent regionfiles from being closed during use
-+        this.fileLock.lock();
-+        synchronized (this) {
-+        try {
-+        // Paper end
+-    public void close() throws IOException {
++    public synchronized void close() throws IOException { // Paper - Synchronized
          this.closed = true; // Paper
          try {
              this.c();
-@@ -394,6 +401,10 @@ public class RegionFile implements AutoCloseable {
-                 }
-             }
-         }
-+        } finally { // Paper start - Prevent regionfiles from being closed during use
-+            this.fileLock.unlock();
-+        }
-+        } // Paper end
- 
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index e07ae9854..0f201000f 100644
+index e07ae9854..d927f9321 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -9,7 +9,7 @@ import java.io.File;
@@ -3622,7 +3576,7 @@ index e07ae9854..0f201000f 100644
  
      public final Long2ObjectLinkedOpenHashMap<RegionFile> cache = new Long2ObjectLinkedOpenHashMap();
      private final File b;
-@@ -20,16 +20,27 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -20,12 +20,12 @@ public final class RegionFileCache implements AutoCloseable {
  
  
      // Paper start
@@ -3634,70 +3588,11 @@ index e07ae9854..0f201000f 100644
      // Paper end
 -    public RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public
 +    public synchronized RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - private >  public, synchronize
-+        // Paper start - add lock parameter
-+        return this.getFile(chunkcoordintpair, existingOnly, false);
-+    }
-+    public synchronized RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
-+        // Paper end
          long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
  
-         if (regionfile != null) {
-+            // Paper start
-+            if (lock) {
-+                // must be in this synchronized block
-+                regionfile.fileLock.lock();
-+            }
-+            // Paper end
-             return regionfile;
-         } else {
-             if (this.cache.size() >= com.destroystokyo.paper.PaperConfig.regionFileCacheSize) { // Paper - configurable
-@@ -45,6 +56,12 @@ public final class RegionFileCache implements AutoCloseable {
-             RegionFile regionfile1 = new RegionFile(file, this.b);
- 
-             this.cache.putAndMoveToFirst(i, regionfile1);
-+            // Paper start
-+            if (lock) {
-+                // must be in this synchronized block
-+                regionfile1.fileLock.lock();
-+            }
-+            // Paper end
-             return regionfile1;
-         }
-     }
-@@ -119,7 +136,8 @@ public final class RegionFileCache implements AutoCloseable {
- 
-     @Nullable
-     public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // CraftBukkit // Paper
-+        try { // Paper
-         DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
-         // Paper start
-         if (regionfile.isOversized(chunkcoordintpair.x, chunkcoordintpair.z)) {
-@@ -157,10 +175,14 @@ public final class RegionFileCache implements AutoCloseable {
-         }
- 
-         return nbttagcompound;
-+        } finally { // Paper start
-+            regionfile.fileLock.unlock();
-+        } // Paper end
-     }
- 
-     protected void write(ChunkCoordIntPair chunkcoordintpair, NBTTagCompound nbttagcompound) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // CraftBukkit // Paper
-+        try { // Paper
-         int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
-         DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
-         Throwable throwable = null;
-@@ -199,9 +221,12 @@ public final class RegionFileCache implements AutoCloseable {
-             MinecraftServer.LOGGER.error("Failed to save chunk", laste);
-         }
+@@ -201,7 +201,7 @@ public final class RegionFileCache implements AutoCloseable {
          // Paper end
-+        } finally { // Paper start
-+            regionfile.fileLock.unlock();
-+        } // Paper end
      }
  
 -    public void close() throws IOException {
@@ -3705,7 +3600,7 @@ index e07ae9854..0f201000f 100644
          ObjectIterator objectiterator = this.cache.values().iterator();
  
          while (objectiterator.hasNext()) {
-@@ -213,7 +238,7 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -213,7 +213,7 @@ public final class RegionFileCache implements AutoCloseable {
      }
  
      // CraftBukkit start
@@ -4135,5 +4030,5 @@ index 07936eeba..fe68df45b 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 -- 
-2.24.1.windows.2
+2.20.1
 
