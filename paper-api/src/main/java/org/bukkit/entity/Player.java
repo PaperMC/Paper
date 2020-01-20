@@ -818,7 +818,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the players total experience points.
      * <br>
      * This refers to the total amount of experience the player has collected
-     * over time and is only displayed as the player's "score" upon dying.
+     * over time and is not currently displayed to the client.
      *
      * @return Current total experience points
      */
@@ -828,7 +828,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Sets the players current experience points.
      * <br>
      * This refers to the total amount of experience the player has collected
-     * over time and is only displayed as the player's "score" upon dying.
+     * over time and is not currently displayed to the client.
      *
      * @param exp New total experience points
      */
