@@ -1,0 +1,281 @@
+From d79df9f9beb57badf14555a65694a078695b3505 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 13 May 2016 01:38:06 -0400
+Subject: [PATCH] Activation Range Improvements
+
+Optimizes performance of Activation Range
+
+Fixes and adds new Immunities to improve gameplay behavior
+
+Adds water Mobs to activation range config and nerfs fish
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index f0d1a5b14..c993a5522 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -554,6 +554,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             this.recalcPosition();
+         } else {
+             if (enummovetype == EnumMoveType.PISTON) {
++                this.activatedTick = MinecraftServer.currentTick + 20; // Paper
+                 vec3d = this.a(vec3d);
+                 if (vec3d.equals(Vec3D.a)) {
+                     return;
+diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
+index b40c8d2f8..4eda13075 100644
+--- a/src/main/java/net/minecraft/server/EntityCreature.java
++++ b/src/main/java/net/minecraft/server/EntityCreature.java
+@@ -7,6 +7,7 @@ import org.bukkit.event.entity.EntityUnleashEvent;
+ public abstract class EntityCreature extends EntityInsentient {
+ 
+     public org.bukkit.craftbukkit.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
++    public BlockPosition movingTarget = null; public BlockPosition getMovingTarget() { return movingTarget; } // Paper
+ 
+     protected EntityCreature(EntityTypes<? extends EntityCreature> entitytypes, World world) {
+         super(entitytypes, world);
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 6bad1687f..fb395bbb5 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -112,6 +112,17 @@ public abstract class EntityInsentient extends EntityLiving {
+         return this.lookController;
+     }
+ 
++    // Paper start
++    @Override
++    public void inactiveTick() {
++        super.inactiveTick();
++        this.goalSelector.inactiveTick();
++        if (this.targetSelector.inactiveTick()) {
++            this.targetSelector.doTick();
++        }
++    }
++    // Paper end
++
+     public ControllerMove getControllerMove() {
+         if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {
+             EntityInsentient entityinsentient = (EntityInsentient) this.getVehicle();
+diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
+index 6d4d41c88..193dbfc5f 100644
+--- a/src/main/java/net/minecraft/server/EntityLlama.java
++++ b/src/main/java/net/minecraft/server/EntityLlama.java
+@@ -382,6 +382,7 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
+         return this.bK != null;
+     }
+ 
++    public boolean inCaravan() { return this.fd(); } // Paper - OBFHELPER
+     public boolean fd() {
+         return this.bJ != null;
+     }
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
+index f22f12eeb..bdb90a346 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoal.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
+@@ -20,7 +20,10 @@ public abstract class PathfinderGoal {
+ 
+     public void c() {}
+ 
+-    public void d() {}
++    public void d() {
++        onTaskReset(); // Paper
++    }
++    public void onTaskReset() {} // Paper
+ 
+     public void e() {}
+ 
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
+index 41fb166ce..e93129f0b 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalGotoTarget.java
+@@ -4,12 +4,12 @@ import java.util.EnumSet;
+ 
+ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
+ 
+-    protected final EntityCreature a;
++    protected final EntityCreature a;public EntityCreature getEntity() { return a; } // Paper - OBFHELPER
+     public final double b;
+     protected int c;
+     protected int d;
+     private int g;
+-    protected BlockPosition e;
++    protected BlockPosition e; public BlockPosition getTarget() { return e; } public void setTarget(BlockPosition pos) { this.e = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
+     private boolean h;
+     private final int i;
+     private final int j;
+@@ -18,6 +18,13 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
+     public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i) {
+         this(entitycreature, d0, i, 1);
+     }
++    // Paper start - activation range improvements
++    @Override
++    public void onTaskReset() {
++        super.onTaskReset();
++        setTarget(BlockPosition.ZERO);
++    }
++    // Paper end
+ 
+     public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i, int j) {
+         this.e = BlockPosition.ZERO;
+@@ -100,6 +107,7 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
+                         blockposition_mutableblockposition.g(blockposition).e(i1, k - 1, j1);
+                         if (this.a.a((BlockPosition) blockposition_mutableblockposition) && this.a(this.a.world, blockposition_mutableblockposition)) {
+                             this.e = blockposition_mutableblockposition;
++                            setTarget(blockposition_mutableblockposition.immutableCopy()); // Paper
+                             return true;
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
+index 44bb18c59..f8944f860 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
+@@ -24,10 +24,11 @@ public class PathfinderGoalSelector {
+         }
+     };
+     private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
+-    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();
++    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();private Set<PathfinderGoalWrapped> getExecutingTasks() { return d; }// Paper - OBFHELPER
+     private final GameProfilerFiller e;
+     private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class);
+-    private int g = 3;
++    private int g = 3;private int getTickRate() { return g; } // Paper - OBFHELPER
++    private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
+ 
+     public PathfinderGoalSelector(GameProfilerFiller gameprofilerfiller) {
+         this.e = gameprofilerfiller;
+@@ -37,6 +38,20 @@ public class PathfinderGoalSelector {
+         this.d.add(new PathfinderGoalWrapped(i, pathfindergoal));
+     }
+ 
++    // Paper start
++    public boolean inactiveTick() {
++        if (getCurRate() % getTickRate() != 0) {
++            incRate();
++            return false;
++        } else {
++            return true;
++        }
++    }
++    public boolean hasTasks() {
++        return !getExecutingTasks().isEmpty();
++    }
++    // Paper end
++
+     public void a(PathfinderGoal pathfindergoal) {
+         this.d.stream().filter((pathfindergoalwrapped) -> {
+             return pathfindergoalwrapped.j() == pathfindergoal;
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index f86404f83..bd7d44f1d 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -33,12 +33,18 @@ import net.minecraft.server.MathHelper;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.World;
+ import co.aikar.timings.MinecraftTimings;
++// Paper start
++import net.minecraft.server.EntityInsentient;
++import net.minecraft.server.EntityLlama;
++import net.minecraft.server.EntityWaterAnimal;
++// Paper end
+ 
+ public class ActivationRange
+ {
+ 
+     public enum ActivationType
+     {
++        WATER, // Paper
+         MONSTER,
+         ANIMAL,
+         RAIDER,
+@@ -58,6 +64,7 @@ public class ActivationRange
+      */
+     public static ActivationType initializeEntityActivationType(Entity entity)
+     {
++        if (entity instanceof EntityWaterAnimal) { return ActivationType.WATER; } // Paper
+         if ( entity instanceof EntityRaider )
+         {
+             return ActivationType.RAIDER;
+@@ -86,6 +93,7 @@ public class ActivationRange
+                 || ( entity.activationType == ActivationType.RAIDER && config.raiderActivationRange == 0 )
+                 || ( entity.activationType == ActivationType.ANIMAL && config.animalActivationRange == 0 )
+                 || ( entity.activationType == ActivationType.MONSTER && config.monsterActivationRange == 0 )
++                || ( entity.activationType == ActivationType.WATER && config.waterActivationRange == 0 ) // Paper
+                 || entity instanceof EntityHuman
+                 || entity instanceof EntityProjectile
+                 || entity instanceof EntityEnderDragon
+@@ -118,6 +126,7 @@ public class ActivationRange
+         final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
+         final int animalActivationRange = world.spigotConfig.animalActivationRange;
+         final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
++        final int waterActivationRange = world.spigotConfig.waterActivationRange; // Paper
+ 
+         int maxRange = Math.max( monsterActivationRange, animalActivationRange );
+         maxRange = Math.max( maxRange, raiderActivationRange );
+@@ -133,6 +142,8 @@ public class ActivationRange
+             ActivationType.RAIDER.boundingBox = player.getBoundingBox().grow( raiderActivationRange, 256, raiderActivationRange );
+             ActivationType.ANIMAL.boundingBox = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
+             ActivationType.MONSTER.boundingBox = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
++            ActivationType.WATER.boundingBox = player.getBoundingBox().grow( waterActivationRange, 256, waterActivationRange ); // Paper
++
+ 
+             int i = MathHelper.floor( maxBB.minX / 16.0D );
+             int j = MathHelper.floor( maxBB.maxX / 16.0D );
+@@ -212,7 +223,7 @@ public class ActivationRange
+             {
+                 return true;
+             }
+-            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() != null )
++            if ( entity instanceof EntityCreature && (( (EntityCreature) entity ).getGoalTarget() != null || ( (EntityCreature) entity ).getMovingTarget() != null)) // Paper
+             {
+                 return true;
+             }
+@@ -220,6 +231,12 @@ public class ActivationRange
+             {
+                 return true;
+             }
++            // Paper start
++            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
++            {
++                return true;
++            }
++            // Paper end
+             if ( entity instanceof EntityAnimal )
+             {
+                 EntityAnimal animal = (EntityAnimal) entity;
+@@ -266,9 +283,13 @@ public class ActivationRange
+                     entity.activatedTick = MinecraftServer.currentTick + 20;
+                 }
+                 isActive = true;
++            // Paper start
++            } else if (entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks()) {
++                isActive = true;
+             }
++            // Paper end
+             // Add a little performance juice to active entities. Skip 1/4 if not immune.
+-        } else if ( !entity.defaultActivationState && entity.ticksLived % 4 == 0 && !checkEntityImmunities( entity ) )
++        } else if ( !entity.defaultActivationState && entity.ticksLived % 4 == 0 && !(entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks()) && !checkEntityImmunities( entity ) ) // Paper - add targetSelector.hasTasks
+         {
+             isActive = false;
+         }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index c2906f20a..885512396 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -180,6 +180,7 @@ public class SpigotWorldConfig
+     public int monsterActivationRange = 32;
+     public int raiderActivationRange = 48;
+     public int miscActivationRange = 16;
++    public int waterActivationRange = 16; // Paper
+     public boolean tickInactiveVillagers = true;
+     private void activationRange()
+     {
+@@ -187,6 +188,7 @@ public class SpigotWorldConfig
+         monsterActivationRange = getInt( "entity-activation-range.monsters", monsterActivationRange );
+         raiderActivationRange = getInt( "entity-activation-range.raiders", raiderActivationRange );
+         miscActivationRange = getInt( "entity-activation-range.misc", miscActivationRange );
++        waterActivationRange = getInt( "entity-activation-range.water", waterActivationRange ); // Paper
+         tickInactiveVillagers = getBoolean( "entity-activation-range.tick-inactive-villagers", tickInactiveVillagers );
+         log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Ra " + raiderActivationRange + " / Mi " + miscActivationRange + " / Tiv " + tickInactiveVillagers );
+     }
+-- 
+2.22.0
+
