@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +293,32 @@
+@@ -258,7 +293,33 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
-+
+ 
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -144,9 +144,10 @@
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
- 
++
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +327,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -175,8 +176,9 @@
          this.stats = server.getPlayerList().getPlayerStats(this);
          this.advancements = server.getPlayerList().getPlayerAdvancements(this);
 -        this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
+-        this.updateOptions(clientOptions);
 +        // this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
-         this.updateOptions(clientOptions);
++        this.updateOptionsNoEvents(clientOptions); // Paper - don't call options events on login
          this.object = null;
 +
 +        // CraftBukkit start
@@ -184,8 +186,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-     }
- 
++    }
++
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    public void resendItemInHands() {
@@ -231,9 +233,9 @@
 +        }
 +
 +        return blockposition;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -484,12 +486,10 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -863,8 +1052,22 @@
- 
-             if (this.tickCount % 20 == 0) {
+@@ -865,6 +1054,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
-+            }
-+
+             }
+ 
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
@@ -498,8 +498,8 @@
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
-             }
- 
++            }
++
 +            if (this.getBukkitEntity().hasClientWorldBorder()) {
 +                ((CraftWorldBorder) this.getBukkitEntity().getWorldBorder()).getHandle().tick();
 +            }
@@ -1356,10 +1356,23 @@
          }
  
      }
-@@ -1878,7 +2385,18 @@
+@@ -1878,7 +2385,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
++        // Paper start - settings event
++        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(this.getBukkitEntity(), Util.make(new java.util.IdentityHashMap<>(), map -> {
++            map.put(com.destroystokyo.paper.ClientOption.LOCALE, clientOptions.language());
++            map.put(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE, clientOptions.viewDistance());
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()));
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED, clientOptions.chatColors());
++            map.put(com.destroystokyo.paper.ClientOption.SKIN_PARTS, new com.destroystokyo.paper.PaperSkinParts(clientOptions.modelCustomisation()));
++            map.put(com.destroystokyo.paper.ClientOption.MAIN_HAND, clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
++            map.put(com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED, clientOptions.textFilteringEnabled());
++            map.put(com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS, clientOptions.allowsListing());
++            map.put(com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY, com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(clientOptions.particleStatus().name()));
++        })).callEvent();
++        // Paper end - settings event
 +        // CraftBukkit start
 +        if (this.getMainArm() != clientOptions.mainHand()) {
 +            PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
@@ -1370,12 +1383,17 @@
 +            this.server.server.getPluginManager().callEvent(event);
 +        }
 +        // CraftBukkit end
++        // Paper start - don't call options events on login
++        this.updateOptionsNoEvents(clientOptions);
++    }
++    public void updateOptionsNoEvents(ClientInformation clientOptions) {
++        // Paper end
          this.language = clientOptions.language();
 +        this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(this.language), java.util.Locale.US); // Paper
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2475,27 @@
+@@ -1957,12 +2493,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1404,7 +1422,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2532,11 @@
+@@ -1999,11 +2550,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1418,7 +1436,7 @@
      }
  
      @Override
-@@ -2046,17 +2579,43 @@
+@@ -2046,17 +2597,43 @@
      }
  
      public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
@@ -1469,7 +1487,7 @@
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2088,18 +2647,44 @@
+@@ -2088,18 +2665,44 @@
      }
  
      @Override
@@ -1518,7 +1536,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2275,9 +2860,15 @@
+@@ -2275,9 +2878,15 @@
  
      @Override
      public void stopRiding() {
@@ -1535,7 +1553,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +2966,12 @@
+@@ -2375,16 +2984,161 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1551,10 +1569,11 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +2980,147 @@
+             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
+ 
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-         }
-     }
++        }
++    }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1579,7 +1598,7 @@
 +    public void setPlayerWeather(WeatherType type, boolean plugin) {
 +        if (!plugin && this.weather != null) {
 +            return;
-+        }
+         }
 +
 +        if (plugin) {
 +            this.weather = type;
@@ -1590,7 +1609,7 @@
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
 +        }
-+    }
+     }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;

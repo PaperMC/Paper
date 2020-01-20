@@ -658,6 +658,30 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message);
         }
     }
+
+    @Override
+    public <T> T getClientOption(com.destroystokyo.paper.ClientOption<T> type) {
+        if (com.destroystokyo.paper.ClientOption.SKIN_PARTS == type) {
+            return type.getType().cast(new com.destroystokyo.paper.PaperSkinParts(this.getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
+        } else if (com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED == type) {
+            return type.getType().cast(this.getHandle().canChatInColor());
+        } else if (com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY == type) {
+            return type.getType().cast(com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(this.getHandle().getChatVisibility().name()));
+        } else if (com.destroystokyo.paper.ClientOption.LOCALE == type) {
+            return type.getType().cast(this.getLocale());
+        } else if (com.destroystokyo.paper.ClientOption.MAIN_HAND == type) {
+            return type.getType().cast(this.getMainHand());
+        } else if (com.destroystokyo.paper.ClientOption.VIEW_DISTANCE == type) {
+            return type.getType().cast(this.getClientViewDistance());
+        } else if (com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED == type) {
+            return type.getType().cast(this.getHandle().isTextFilteringEnabled());
+        } else if (com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS == type) {
+            return type.getType().cast(this.getHandle().allowsListing());
+        } else if (com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY == type) {
+            return type.getType().cast(com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(this.getHandle().particleStatus.name()));
+        }
+        throw new RuntimeException("Unknown settings type");
+    }
     // Paper end
 
     @Override
