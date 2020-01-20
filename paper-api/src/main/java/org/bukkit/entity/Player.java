@@ -3375,6 +3375,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void resetCooldown();
     // Paper end - attack cooldown API
 
+    // Paper start - client option API
+    /**
+     * @return the client option value of the player
+     */
+    <T> @NotNull T getClientOption(com.destroystokyo.paper.@NotNull ClientOption<T> option);
+    // Paper end - client option API
+
     // Spigot start
     public class Spigot extends Entity.Spigot {
 
