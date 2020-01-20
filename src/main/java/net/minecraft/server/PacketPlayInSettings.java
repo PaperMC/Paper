@@ -37,14 +37,17 @@ public class PacketPlayInSettings implements Packet<PacketListenerPlayIn> {
         packetlistenerplayin.a(this);
     }
 
+    public EnumChatVisibility getChatVisibility() { return d(); } // Paper - OBFHELPER
     public EnumChatVisibility d() {
         return this.c;
     }
 
+    public boolean hasChatColorsEnabled() { return e(); } // Paper - OBFHELPER
     public boolean e() {
         return this.d;
     }
 
+    public int getSkinParts() { return f(); } // Paper - OBFHELPER
     public int f() {
         return this.e;
     }

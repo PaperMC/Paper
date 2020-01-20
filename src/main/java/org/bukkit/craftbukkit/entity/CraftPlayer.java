@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.ClientOption.ChatVisibility;
+import com.destroystokyo.paper.PaperSkinParts;
+import com.destroystokyo.paper.ClientOption;
 import com.destroystokyo.paper.Title;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -2033,6 +2036,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setViewDistance(int viewDistance) {
         throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement (There are per world view distances though!)"); // TODO
+    }
+
+    @Override
+    public <T> T getClientOption(ClientOption<T> type) {
+        if(ClientOption.SKIN_PARTS.equals(type)) {
+            return type.getType().cast(new PaperSkinParts(getHandle().getDataWatcher().get(EntityHuman.getSkinPartsWatcher())));
+        } else if(ClientOption.CHAT_COLORS_ENABLED.equals(type)) {
+            return type.getType().cast(getHandle().hasChatColorsEnabled());
+        } else if(ClientOption.CHAT_VISIBILITY.equals(type)) {
+            return type.getType().cast(getHandle().getChatFlags() == null ? ChatVisibility.UNKNOWN : ChatVisibility.valueOf(getHandle().getChatFlags().name()));
+        } else if(ClientOption.LOCALE.equals(type)) {
+            return type.getType().cast(getLocale());
+        } else if(ClientOption.MAIN_HAND.equals(type)) {
+            return type.getType().cast(getMainHand());
+        } else if(ClientOption.VIEW_DISTANCE.equals(type)) {
+            return type.getType().cast(getClientViewDistance());
+        }
+        throw new RuntimeException("Unknown settings type");
     }
     // Paper end
 
