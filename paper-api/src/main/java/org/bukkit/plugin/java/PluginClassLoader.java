@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,6 +75,16 @@ final class PluginClassLoader extends URLClassLoader {
         } catch (InstantiationException ex) {
             throw new InvalidPluginException("Abnormal plugin type", ex);
         }
+    }
+
+    @Override
+    public URL getResource(String name) {
+        return findResource(name);
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
+        return findResources(name);
     }
 
     @Override
