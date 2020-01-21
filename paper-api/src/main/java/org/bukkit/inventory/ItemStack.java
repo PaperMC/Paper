@@ -16,7 +16,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a stack of items
+ * Represents a stack of items.
+ * <p>
+ * <b>IMPORTANT: An <i>Item</i>Stack is only designed to contain <i>items</i>. Do not
+ * use this class to encapsulate Materials for which {@link Material#isItem()}
+ * returns false.</b>
  */
 public class ItemStack implements Cloneable, ConfigurationSerializable {
     private Material type = Material.AIR;
@@ -28,7 +32,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     protected ItemStack() {}
 
     /**
-     * Defaults stack size to 1, with no extra data
+     * Defaults stack size to 1, with no extra data.
+     * <p>
+     * <b>IMPORTANT: An <i>Item</i>Stack is only designed to contain
+     * <i>items</i>. Do not use this class to encapsulate Materials for which
+     * {@link Material#isItem()} returns false.</b>
      *
      * @param type item material
      */
@@ -37,7 +45,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     }
 
     /**
-     * An item stack with no extra data
+     * An item stack with no extra data.
+     * <p>
+     * <b>IMPORTANT: An <i>Item</i>Stack is only designed to contain
+     * <i>items</i>. Do not use this class to encapsulate Materials for which
+     * {@link Material#isItem()} returns false.</b>
      *
      * @param type item material
      * @param amount stack size
@@ -109,7 +121,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
     /**
      * Sets the type of this item
      * <p>
-     * Note that in doing so you will reset the MaterialData for this stack
+     * Note that in doing so you will reset the MaterialData for this stack.
+     * <p>
+     * <b>IMPORTANT: An <i>Item</i>Stack is only designed to contain
+     * <i>items</i>. Do not use this class to encapsulate Materials for which
+     * {@link Material#isItem()} returns false.</b>
      *
      * @param type New type to set the items in this stack to
      */

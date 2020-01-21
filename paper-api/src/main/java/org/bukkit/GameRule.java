@@ -148,6 +148,16 @@ public final class GameRule<T> {
      */
     public static final GameRule<Boolean> FIRE_DAMAGE = new GameRule<>("fireDamage", Boolean.class);
 
+    /**
+     * Whether patrols should naturally spawn.
+     */
+    public static final GameRule<Boolean> DO_PATROL_SPAWNING = new GameRule<>("doPatrolSpawning", Boolean.class);
+
+    /**
+     * Whether traders should naturally spawn.
+     */
+    public static final GameRule<Boolean> DO_TRADER_SPAWNING = new GameRule<>("doTraderSpawning", Boolean.class);
+
     // Numerical rules
     /**
      * How often a random block tick occurs (such as plant growth, leaf decay,
