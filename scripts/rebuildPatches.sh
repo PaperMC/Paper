@@ -59,9 +59,9 @@ function savePatches {
     $gitcmd format-patch --no-stat -N -o "$basedir/${what_name}-Patches/" upstream/upstream >/dev/null
     cd "$basedir"
     $gitcmd add -A "$basedir/${what_name}-Patches"
-    if [ "$nofilter" == "0" ]; then
-        cleanupPatches "$basedir/${what_name}-Patches"
-    fi
+    #if [ "$nofilter" == "0" ]; then
+        #cleanupPatches "$basedir/${what_name}-Patches"
+    #fi
     echo "  Patches saved for $what to $what_name-Patches/"
 }
 
