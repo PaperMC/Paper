@@ -112,6 +112,7 @@ public class Main {
 
                 acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
                 acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                acceptsAll(asList("nogui"), "Disables the graphical console");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 
@@ -177,7 +178,7 @@ public class Main {
                     useConsole = false;
                 }
 
-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new SimpleDateFormat("yyyyMMdd-HHmm").parse(Main.class.getPackage().getImplementationVendor());
 
                     Calendar deadline = Calendar.getInstance();
