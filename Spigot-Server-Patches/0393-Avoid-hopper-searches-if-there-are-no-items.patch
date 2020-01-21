@@ -1,0 +1,101 @@
+From 5d24f3124c215d6c87eea71a31b0aa2cdf9839e3 Mon Sep 17 00:00:00 2001
+From: CullanP <cullanpage@gmail.com>
+Date: Thu, 3 Mar 2016 02:13:38 -0600
+Subject: [PATCH] Avoid hopper searches if there are no items
+
+Hoppers searching for items and minecarts is the most expensive part of hopper ticking.
+We keep track of the number of minecarts and items in a chunk.
+If there are no items in the chunk, we skip searching for items.
+If there are no minecarts in the chunk, we skip searching for them.
+
+Usually hoppers aren't near items, so we can skip most item searches.
+And since minecart hoppers are used _very_ rarely near we can avoid alot of searching there.
+
+Combined, this adds up a lot.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 863a2222..f2a04cb6 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -84,6 +84,10 @@ public class Chunk implements IChunkAccess {
+             return removed;
+         }
+     }
++    // Track the number of minecarts and items
++    // Keep this synced with entitySlices.add() and entitySlices.remove()
++    private final int[] itemCounts = new int[16];
++    private final int[] inventoryEntityCounts = new int[16];
+     // Paper end
+ 
+     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
+@@ -430,6 +434,13 @@ public class Chunk implements IChunkAccess {
+         entity.chunkY = k;
+         entity.chunkZ = this.loc.z;
+         this.entitySlices[k].add(entity);
++        // Paper start
++        if (entity instanceof EntityItem) {
++            itemCounts[k]++;
++        } else if (entity instanceof IInventory) {
++            inventoryEntityCounts[k]++;
++        }
++        // Paper end
+         entity.entitySlice = this.entitySlices[k]; // Paper
+         this.markDirty(); // Paper
+     }
+@@ -460,6 +471,11 @@ public class Chunk implements IChunkAccess {
+         if (!this.entitySlices[i].remove(entity)) {
+             return;
+         }
++        if (entity instanceof EntityItem) {
++            itemCounts[i]--;
++        } else if (entity instanceof IInventory) {
++            inventoryEntityCounts[i]--;
++        }
+         entityCounts.decrement(entity.getMinecraftKeyString());
+         this.markDirty(); // Paper
+         // Paper end
+@@ -727,9 +743,29 @@ public class Chunk implements IChunkAccess {
+         i = MathHelper.clamp(i, 0, this.entitySlices.length - 1);
+         j = MathHelper.clamp(j, 0, this.entitySlices.length - 1);
+ 
++        // Paper start
++        int[] counts;
++        if (EntityItem.class.isAssignableFrom(oclass)) {
++            counts = itemCounts;
++        } else if (IInventory.class.isAssignableFrom(oclass)) {
++            counts = inventoryEntityCounts;
++        } else {
++            counts = null;
++        }
++        // Paper end
+         for (int k = i; k <= j; ++k) {
++            if (counts != null && counts[k] <= 0) continue; // Paper - Don't check a chunk if it doesn't have the type we are looking for
+             Iterator iterator = this.entitySlices[k].iterator(); // Spigot
+ 
++            // Paper start - Don't search for inventories if we have none, and that is all we want
++            /*
++             * We check if they want inventories by seeing if it is the static `IEntitySelector.c`
++             *
++             * Make sure the inventory selector stays in sync.
++             * It should be the one that checks `var1 instanceof IInventory && var1.isAlive()`
++             */
++            if (predicate == IEntitySelector.isInventory() && inventoryEntityCounts[k] <= 0) continue;
++            // Paper end
+             while (iterator.hasNext()) {
+                 T t0 = (T) iterator.next(); // CraftBukkit - decompile error
+                 if (t0.shouldBeRemoved) continue; // Paper
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 498f3810..a2d1ef36 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -11,6 +11,7 @@ public final class IEntitySelector {
+     public static final Predicate<Entity> c = (entity) -> {
+         return entity.isAlive() && !entity.isVehicle() && !entity.isPassenger();
+     };
++    public static final Predicate<Entity> isInventory() { return d; } // Paper - OBFHELPER
+     public static final Predicate<Entity> d = (entity) -> {
+         return entity instanceof IInventory && entity.isAlive();
+     };
+-- 
+2.25.0.windows.1
+

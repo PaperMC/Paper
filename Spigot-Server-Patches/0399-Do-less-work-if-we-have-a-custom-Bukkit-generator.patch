@@ -1,0 +1,49 @@
+From b7d2ad4f2e1262ace603e49902ca6b8f6c18c977 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@burngames.net>
+Date: Sun, 14 Jul 2019 21:05:03 -0500
+Subject: [PATCH] Do less work if we have a custom Bukkit generator
+
+If the Bukkit generator already has a spawn, use it immediately instead
+of spending time generating one that we won't use
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 14f25caa..aad93723 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -797,12 +797,13 @@ public class WorldServer extends World {
+         } else if (this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
+             this.worldData.setSpawn(BlockPosition.ZERO.up());
+         } else {
+-            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
+-            List<BiomeBase> list = worldchunkmanager.a();
+-            Random random = new Random(this.getSeed());
+-            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
+-            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
+-
++//            Paper start - moved down
++//            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
++//            List<BiomeBase> list = worldchunkmanager.a();
++//            Random random = new Random(this.getSeed());
++//            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
++//            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
++//            Paper end
+             // CraftBukkit start
+             if (this.generator != null) {
+                 Random rand = new Random(this.getSeed());
+@@ -819,6 +820,13 @@ public class WorldServer extends World {
+             }
+             // CraftBukkit end
+ 
++            // Paper start - this is useless if craftbukkit returns early
++            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
++            List<BiomeBase> list = worldchunkmanager.a();
++            Random random = new Random(this.getSeed());
++            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
++            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
++            // Paper end
+             if (blockposition == null) {
+                 WorldServer.LOGGER.warn("Unable to find spawn biome");
+             }
+-- 
+2.25.0.windows.1
+
