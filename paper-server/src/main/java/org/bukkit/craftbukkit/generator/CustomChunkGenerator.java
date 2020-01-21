@@ -47,7 +47,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
     private class CustomBiomeGrid implements BiomeGrid {
 
-        private final BiomeStorage biome;
+        private final BiomeStorage biome; // SPIGOT-5529: stored in 4x4 grid
 
         public CustomBiomeGrid(BiomeStorage biome) {
             this.biome = biome;
@@ -60,19 +60,19 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
         @Override
         public void setBiome(int x, int z, Biome bio) {
-            for (int y = 0; y < world.getWorld().getMaxHeight(); y++) {
+            for (int y = 0; y < world.getWorld().getMaxHeight(); y += 4) {
                 setBiome(x, y, z, bio);
             }
         }
 
         @Override
         public Biome getBiome(int x, int y, int z) {
-            return CraftBlock.biomeBaseToBiome(biome.getBiome(x, y, z));
+            return CraftBlock.biomeBaseToBiome(biome.getBiome(x >> 2, y >> 2, z >> 2));
         }
 
         @Override
         public void setBiome(int x, int y, int z, Biome bio) {
-            biome.setBiome(x, y, z, CraftBlock.biomeToBiomeBase(bio));
+            biome.setBiome(x >> 2, y >> 2, z >> 2, CraftBlock.biomeToBiomeBase(bio));
         }
     }
 
