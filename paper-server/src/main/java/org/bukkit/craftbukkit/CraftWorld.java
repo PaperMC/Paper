@@ -718,7 +718,7 @@ public class CraftWorld implements World {
             break;
         case TALL_BIRCH:
             gen = WorldGenerator.NORMAL_TREE;
-            conf = BiomeDecoratorGroups.TALL_BIRCH_TREE;
+            conf = BiomeDecoratorGroups.TALL_BIRCH_TREE_BEES_0002;
             break;
         case CHORUS_PLANT:
             ((BlockChorusFlower) Blocks.CHORUS_FLOWER).a(world, pos, rand, 8);
@@ -1886,7 +1886,7 @@ public class CraftWorld implements World {
 
     @Override
     public void setHardcore(boolean hardcore) {
-        world.getWorldData().g(hardcore);
+        world.getWorldData().setHardcore(hardcore);
     }
 
     @Override

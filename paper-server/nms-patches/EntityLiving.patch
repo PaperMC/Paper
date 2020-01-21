@@ -132,9 +132,9 @@
          try {
              while (iterator.hasNext()) {
                  MobEffectList mobeffectlist = (MobEffectList) iterator.next();
-@@ -511,6 +585,12 @@
- 
-                 if (!mobeffect.tick(this)) {
+@@ -513,6 +587,12 @@
+                     this.a(mobeffect, true);
+                 })) {
                      if (!this.world.isClientSide) {
 +                        // CraftBukkit start
 +                        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect, null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.EXPIRATION);
@@ -145,7 +145,7 @@
                          iterator.remove();
                          this.b(mobeffect);
                      }
-@@ -521,6 +601,17 @@
+@@ -523,6 +603,17 @@
          } catch (ConcurrentModificationException concurrentmodificationexception) {
              ;
          }
@@ -163,7 +163,7 @@
  
          if (this.updateEffects) {
              if (!this.world.isClientSide) {
-@@ -630,7 +721,13 @@
+@@ -632,7 +723,13 @@
          this.datawatcher.set(EntityLiving.e, 0);
      }
  
@@ -177,7 +177,7 @@
          if (this.world.isClientSide) {
              return false;
          } else {
-@@ -639,7 +736,14 @@
+@@ -641,7 +738,14 @@
              boolean flag;
  
              for (flag = false; iterator.hasNext(); flag = true) {
@@ -193,7 +193,7 @@
                  iterator.remove();
              }
  
-@@ -664,18 +768,44 @@
+@@ -666,18 +770,44 @@
          return (MobEffect) this.effects.get(mobeffectlist);
      }
  
@@ -217,7 +217,7 @@
 +            // CraftBukkit start
 +            boolean override = false;
 +            if (mobeffect1 != null) {
-+                override = new MobEffect(mobeffect1).a(mobeffect);
++                override = new MobEffect(mobeffect1).b(mobeffect);
 +            }
 +
 +            EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect1, mobeffect, cause, override);
@@ -230,16 +230,16 @@
                  this.effects.put(mobeffect.getMobEffect(), mobeffect);
                  this.a(mobeffect);
                  return true;
--            } else if (mobeffect1.a(mobeffect)) {
+-            } else if (mobeffect1.b(mobeffect)) {
 +                // CraftBukkit start
 +            } else if (event.isOverride()) {
-+                mobeffect1.a(mobeffect);
++                mobeffect1.b(mobeffect);
                  this.a(mobeffect1, true);
 +                // CraftBukkit end
                  return true;
              } else {
                  return false;
-@@ -699,13 +829,39 @@
+@@ -701,13 +831,39 @@
          return this.getMonsterType() == EnumMonsterType.UNDEAD;
      }
  
@@ -280,7 +280,7 @@
  
          if (mobeffect != null) {
              this.b(mobeffect);
-@@ -742,20 +898,55 @@
+@@ -744,20 +900,55 @@
  
      }
  
@@ -337,7 +337,7 @@
          this.datawatcher.set(EntityLiving.HEALTH, MathHelper.a(f, 0.0F, this.getMaxHealth()));
      }
  
-@@ -765,7 +956,7 @@
+@@ -767,7 +958,7 @@
              return false;
          } else if (this.world.isClientSide) {
              return false;
@@ -346,7 +346,7 @@
              return false;
          } else if (damagesource.isFire() && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -777,17 +968,19 @@
+@@ -779,17 +970,19 @@
              this.ticksFarFromPlayer = 0;
              float f1 = f;
  
@@ -354,7 +354,7 @@
 +            // CraftBukkit - Moved into damageEntity0(DamageSource, float)
 +            if (false && (damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && !this.getEquipment(EnumItemSlot.HEAD).isEmpty()) {
                  this.getEquipment(EnumItemSlot.HEAD).damage((int) (f * 4.0F + this.random.nextFloat() * f * 2.0F), this, (entityliving) -> {
-                     entityliving.c(EnumItemSlot.HEAD);
+                     entityliving.broadcastItemBreak(EnumItemSlot.HEAD);
                  });
                  f *= 0.75F;
              }
@@ -369,7 +369,7 @@
                  this.damageShield(f);
                  f2 = f;
                  f = 0.0F;
-@@ -807,20 +1000,39 @@
+@@ -809,20 +1002,39 @@
  
              if ((float) this.noDamageTicks > 10.0F) {
                  if (f <= this.lastDamage) {
@@ -411,7 +411,7 @@
              this.ax = 0.0F;
              Entity entity1 = damagesource.getEntity();
  
-@@ -941,19 +1153,29 @@
+@@ -943,19 +1155,29 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -445,7 +445,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.b(StatisticList.ITEM_USED.b(Items.TOTEM_OF_UNDYING));
-@@ -961,13 +1183,15 @@
+@@ -963,13 +1185,15 @@
                  }
  
                  this.setHealth(1.0F);
@@ -465,7 +465,7 @@
          }
      }
  
-@@ -1084,28 +1308,48 @@
+@@ -1086,28 +1310,48 @@
  
          boolean flag = this.lastDamageByPlayerTime > 0;
  
@@ -516,7 +516,7 @@
  
      }
  
-@@ -1203,9 +1447,14 @@
+@@ -1205,9 +1449,14 @@
          int i = this.e(f, f1);
  
          if (i > 0) {
@@ -532,7 +532,7 @@
              return true;
          } else {
              return flag;
-@@ -1247,7 +1496,7 @@
+@@ -1249,7 +1498,7 @@
  
      protected float applyArmorModifier(DamageSource damagesource, float f) {
          if (!damagesource.ignoresArmor()) {
@@ -541,7 +541,7 @@
              f = CombatMath.a(f, (float) this.getArmorStrength(), (float) this.getAttributeInstance(GenericAttributes.ARMOR_TOUGHNESS).getValue());
          }
  
-@@ -1260,7 +1509,8 @@
+@@ -1262,7 +1511,8 @@
          } else {
              int i;
  
@@ -551,7 +551,7 @@
                  i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1291,28 +1541,170 @@
+@@ -1293,28 +1543,170 @@
          }
      }
  
@@ -650,7 +650,7 @@
 +            // Apply damage to helmet
 +            if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(EnumItemSlot.HEAD) != null) {
 +                this.getEquipment(EnumItemSlot.HEAD).damage((int) (event.getDamage() * 4.0F + this.random.nextFloat() * event.getDamage() * 2.0F), this, (entityliving) -> {
-+                    entityliving.c(EnumItemSlot.HEAD);
++                    entityliving.broadcastItemBreak(EnumItemSlot.HEAD);
 +                });
 +            }
 +
@@ -732,7 +732,7 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1399,6 +1791,7 @@
+@@ -1401,6 +1793,7 @@
      public AttributeMapBase getAttributeMap() {
          if (this.attributeMap == null) {
              this.attributeMap = new AttributeMapServer();
@@ -740,7 +740,7 @@
          }
  
          return this.attributeMap;
-@@ -1769,6 +2162,7 @@
+@@ -1771,6 +2164,7 @@
                  }
  
                  if (this.onGround && !this.world.isClientSide) {
@@ -748,7 +748,7 @@
                      this.setFlag(7, false);
                  }
              } else {
-@@ -2166,6 +2560,7 @@
+@@ -2168,6 +2562,7 @@
          }
  
          if (!this.world.isClientSide) {
@@ -756,7 +756,7 @@
              this.setFlag(7, flag);
          }
  
-@@ -2294,12 +2689,12 @@
+@@ -2296,12 +2691,12 @@
  
      @Override
      public boolean isInteractable() {
@@ -771,7 +771,7 @@
      }
  
      @Override
-@@ -2482,7 +2877,27 @@
+@@ -2484,7 +2879,27 @@
          } else {
              if (!this.activeItem.isEmpty() && this.isHandRaised()) {
                  this.b(this.activeItem, 16);
@@ -800,7 +800,7 @@
                  this.dH();
              }
  
-@@ -2569,10 +2984,18 @@
+@@ -2571,10 +2986,18 @@
              }
  
              if (flag2) {
@@ -822,7 +822,7 @@
              }
          }
  
-@@ -2659,7 +3082,7 @@
+@@ -2661,7 +3084,7 @@
      }
  
      public void entityWakeup() {
@@ -831,7 +831,7 @@
          World world = this.world;
  
          this.world.getClass();
-@@ -2723,7 +3146,7 @@
+@@ -2725,7 +3148,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getLeft() != null && world.random.nextFloat() < (Float) pair.getRight()) {
