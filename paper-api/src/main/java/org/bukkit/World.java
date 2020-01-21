@@ -60,28 +60,26 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Block getBlockAt(@NotNull Location location);
 
     /**
-     * Gets the y coordinate of the lowest block at this position such that the
-     * block and all blocks above it are transparent for lighting purposes.
+     * Gets the highest non-empty (impassable) coordinate at the given
+     * coordinates.
      *
      * @param x X-coordinate of the blocks
      * @param z Z-coordinate of the blocks
-     * @return Y-coordinate of the described block
+     * @return Y-coordinate of the highest non-empty block
      */
     public int getHighestBlockYAt(int x, int z);
 
     /**
-     * Gets the y coordinate of the lowest block at the given {@link Location}
-     * such that the block and all blocks above it are transparent for lighting
-     * purposes.
+     * Gets the highest non-empty (impassable) coordinate at the given
+     * {@link Location}.
      *
      * @param location Location of the blocks
-     * @return Y-coordinate of the highest non-air block
+     * @return Y-coordinate of the highest non-empty block
      */
     public int getHighestBlockYAt(@NotNull Location location);
 
     /**
-     * Gets the lowest block at the given coordinates such that the block and
-     * all blocks above it are transparent for lighting purposes.
+     * Gets the highest non-empty (impassable) block at the given coordinates.
      *
      * @param x X-coordinate of the block
      * @param z Z-coordinate of the block
@@ -91,8 +89,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Block getHighestBlockAt(int x, int z);
 
     /**
-     * Gets the lowest block at the given {@link Location} such that the block
-     * and all blocks above it are transparent for lighting purposes.
+     * Gets the highest non-empty (impassable) block at the given coordinates.
      *
      * @param location Coordinates to get the highest block
      * @return Highest non-empty block
