@@ -99,7 +99,7 @@ public class LegacyTest extends AbstractTestingBase {
             Assert.assertTrue("Must iterate only legacy materials", material.isLegacy());
         }
 
-        for (Material material : CraftLegacy.modern_values()) {
+        for (Material material : org.bukkit.craftbukkit.util.CraftLegacy.modern_values()) {
             Assert.assertFalse("Must iterate only modern materials", material.isLegacy());
         }
     }
