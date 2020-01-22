@@ -243,10 +243,10 @@ public class Commodore
                                 switch ( name )
                                 {
                                     case "values":
-                                        super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, desc, itf );
+                                        super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/legacy/CraftLegacy", "modern_" + name, desc, itf );
                                         return;
                                     case "ordinal":
-                                        super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "modern_" + name, "(Lorg/bukkit/Material;)I", false );
+                                        super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "modern_" + name, "(Lorg/bukkit/Material;)I", false );
                                         return;
                                 }
                             }
@@ -300,14 +300,14 @@ public class Commodore
                                 case "valueOf":
                                 case "getMaterial":
                                 case "matchMaterial":
-                                    super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/util/CraftLegacy", name, desc, itf );
+                                    super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, desc, itf );
                                     return;
                                 case "ordinal":
-                                    super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "ordinal", "(Lorg/bukkit/Material;)I", false );
+                                    super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "ordinal", "(Lorg/bukkit/Material;)I", false );
                                     return;
                                 case "name":
                                 case "toString":
-                                    super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", name, "(Lorg/bukkit/Material;)Ljava/lang/String;", false );
+                                    super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", name, "(Lorg/bukkit/Material;)Ljava/lang/String;", false );
                                     return;
                             }
                         }
@@ -315,7 +315,7 @@ public class Commodore
                         if ( retType.getSort() == Type.OBJECT && retType.getInternalName().equals( "org/bukkit/Material" ) && owner.startsWith( "org/bukkit" ) )
                         {
                             super.visitMethodInsn( opcode, owner, name, desc, itf );
-                            super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftLegacy", "toLegacy", "(Lorg/bukkit/Material;)Lorg/bukkit/Material;", false );
+                            super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "toLegacy", "(Lorg/bukkit/Material;)Lorg/bukkit/Material;", false );
                             return;
                         }
 
