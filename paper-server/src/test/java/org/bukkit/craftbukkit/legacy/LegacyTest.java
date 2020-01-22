@@ -1,9 +1,9 @@
-package org.bukkit;
+package org.bukkit.craftbukkit.legacy;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import org.bukkit.craftbukkit.util.CraftLegacy;
+import org.bukkit.Material;
 import org.bukkit.material.MaterialData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;

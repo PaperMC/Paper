@@ -1,6 +1,6 @@
-package org.bukkit;
+package org.bukkit.craftbukkit.legacy;
 
-import org.bukkit.craftbukkit.util.CraftEvil;
+import org.bukkit.Material;
 import org.junit.Assert;
 import org.junit.Test;
 

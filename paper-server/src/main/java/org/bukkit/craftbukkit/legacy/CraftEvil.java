@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.util;
+package org.bukkit.craftbukkit.legacy;
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
@@ -16,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
  * @deprecated do not use for any reason
  */
 @Deprecated
-public class CraftEvil {
+public final class CraftEvil {
 
     private static final Int2ObjectMap<Material> byId = new Int2ObjectLinkedOpenHashMap<>();
 
@@ -29,6 +29,10 @@ public class CraftEvil {
             Preconditions.checkState(!byId.containsKey(material.getId()), "Duplicate material ID for", material);
             byId.put(material.getId(), material);
         }
+    }
+
+    private CraftEvil() {
+        //
     }
 
     public static int getBlockTypeIdAt(World world, int x, int y, int z) {
