@@ -1,4 +1,4 @@
-From 44510941b8e916b4b3d3daccaf8499e6aed2db49 Mon Sep 17 00:00:00 2001
+From b34e9d3cedd915851a5f961d6b82a4658edc1b71 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -6,13 +6,14 @@ Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
 Zstd using zstd-jni: https://github.com/luben/zstd-jni
 LZ4 using lz4-java: https://github.com/lz4/lz4-java
 
-New compression only happens when a chunk is saved, so running a force-upgrade may be desirable.
+Added new command-line option, --forceWrite, which will forcibly write the chunk/flush to disk regardless of whether or not the chunk has actually changed in a --forceUpgrade.
+New compression only happens when a chunk is saved, so running a --forceUpgrade AND --forceWrite may be desirable.
 
 New config option for the compression method to use.
 There's a new option in PaperConfig (heavy compression) for Zstd which defaults to false.
 
 Since the patch hooks Mojang's versioning system for new compression methods, it
-should be internally consistent, easily-updatable, and reversible with a force-upgrade.
+should be internally consistent, easily-updatable, and reversible with a --forceUpgrade AND a --forceWrite.
 
 This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
 
@@ -125,6 +126,53 @@ index 000000000..60c1ad910
 +
 +    public String toString() { return name; }
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0365cebcf..0e0686107 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -154,6 +154,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     private boolean as;
+     private boolean forceUpgrade;
+     private boolean eraseCache;
++    private boolean forceWrite = false; // Paper - add forceWrite flag
+     private float av;
+     public final Executor executorService;
+     @Nullable
+@@ -283,7 +284,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             WorldData worlddata = this.getConvertable().b(s); // CraftBukkit
+ 
+             if (worlddata != null) {
+-                WorldUpgrader worldupgrader = new WorldUpgrader(s, this.getConvertable(), worlddata, this.eraseCache); // CraftBukkit
++                WorldUpgrader worldupgrader = new WorldUpgrader(s, this.getConvertable(), worlddata, this.eraseCache, this.forceWrite); // CraftBukkit // Paper - add forceWrite flag
+                 IChatBaseComponent ichatbasecomponent = null;
+ 
+                 while (!worldupgrader.b()) {
+@@ -1392,6 +1393,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 dedicatedserver.setForceUpgrade(true);
+             }
+ 
++            // Paper start - add forceWrite flag
++            if (optionset.has("forceWrite")) {
++                dedicatedserver.setForceWrite(true);
++            }
++            // Paper end
++
+             if (optionset.has("eraseCache")) {
+                 dedicatedserver.setEraseCache(true);
+             }
+@@ -1412,6 +1419,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.forceUpgrade = flag;
+     }
+ 
++    // Paper start - add forceWrite flag
++    protected void setForceWrite(boolean flag) {
++        this.forceWrite = flag;
++    }
++    // Paper end
++
+     protected void setEraseCache(boolean flag) {
+         this.eraseCache = flag;
+     }
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
 index 0de24c792..99f0ae226 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
@@ -259,6 +307,36 @@ index 3382d678e..79a842cdb 100644
      private final int e;
      private final RegionFileCompression.a<InputStream> f;
      private final RegionFileCompression.a<OutputStream> g;
+diff --git a/src/main/java/net/minecraft/server/WorldUpgrader.java b/src/main/java/net/minecraft/server/WorldUpgrader.java
+index 3030c347e..b41fd5e5a 100644
+--- a/src/main/java/net/minecraft/server/WorldUpgrader.java
++++ b/src/main/java/net/minecraft/server/WorldUpgrader.java
+@@ -40,7 +40,16 @@ public class WorldUpgrader {
+     private static final Pattern p = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
+     private final WorldPersistentData q;
+ 
++    // Paper start - add forceWrite flag
++    private boolean forceWrite;
++    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag, boolean forceWrite) {
++        this(s, convertable, worlddata, flag);
++        this.forceWrite = forceWrite;
++    }
++    // Paper end
++
+     public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
++        this.forceWrite = false; // Paper - add forceWrite flag
+         this.c = worlddata.getName();
+         this.d = flag;
+         this.e = convertable.a(s, (MinecraftServer) null);
+@@ -141,7 +150,7 @@ public class WorldUpgrader {
+                                     nbttagcompound2.remove("isLightOn");
+                                 }
+ 
+-                                if (flag2) {
++                                if (flag2 || forceWrite) { // Paper - add forceWrite flag
+                                     ichunkloader.a(chunkcoordintpair, nbttagcompound1);
+                                     flag1 = true;
+                                 }
 diff --git a/src/main/resources/paper.zstd.dict.0 b/src/main/resources/paper.zstd.dict.0
 new file mode 100644
 index 0000000000000000000000000000000000000000..d650345f43b69a15983be84eb5dce7bb05d7d2d6
