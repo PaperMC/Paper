@@ -1,4 +1,4 @@
-From b34e9d3cedd915851a5f961d6b82a4658edc1b71 Mon Sep 17 00:00:00 2001
+From e07e3efb29943017f79ffc68c1c7ca498d6b8052 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -127,14 +127,14 @@ index 000000000..60c1ad910
 +    public String toString() { return name; }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0365cebcf..0e0686107 100644
+index 0365cebcf..39ef95beb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -154,6 +154,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      private boolean as;
      private boolean forceUpgrade;
      private boolean eraseCache;
-+    private boolean forceWrite = false; // Paper - add forceWrite flag
++    private boolean forceWrite; // Paper - add forceWrite flag
      private float av;
      public final Executor executorService;
      @Nullable
@@ -308,27 +308,34 @@ index 3382d678e..79a842cdb 100644
      private final RegionFileCompression.a<InputStream> f;
      private final RegionFileCompression.a<OutputStream> g;
 diff --git a/src/main/java/net/minecraft/server/WorldUpgrader.java b/src/main/java/net/minecraft/server/WorldUpgrader.java
-index 3030c347e..b41fd5e5a 100644
+index 3030c347e..2d8c68806 100644
 --- a/src/main/java/net/minecraft/server/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/server/WorldUpgrader.java
-@@ -40,7 +40,16 @@ public class WorldUpgrader {
+@@ -40,7 +40,10 @@ public class WorldUpgrader {
      private static final Pattern p = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
      private final WorldPersistentData q;
  
+-    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
 +    // Paper start - add forceWrite flag
-+    private boolean forceWrite;
++    private final boolean forceWrite;
 +    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag, boolean forceWrite) {
-+        this(s, convertable, worlddata, flag);
 +        this.forceWrite = forceWrite;
-+    }
-+    // Paper end
-+
-     public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
-+        this.forceWrite = false; // Paper - add forceWrite flag
          this.c = worlddata.getName();
          this.d = flag;
          this.e = convertable.a(s, (MinecraftServer) null);
-@@ -141,7 +150,7 @@ public class WorldUpgrader {
+@@ -56,6 +59,11 @@ public class WorldUpgrader {
+         this.f.start();
+     }
+ 
++    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
++        this(s, convertable, worlddata, flag, false);
++    }
++    // Paper end
++
+     public void a() {
+         this.h = false;
+ 
+@@ -141,7 +149,7 @@ public class WorldUpgrader {
                                      nbttagcompound2.remove("isLightOn");
                                  }
  
