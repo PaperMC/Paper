@@ -1,4 +1,4 @@
-From e07e3efb29943017f79ffc68c1c7ca498d6b8052 Mon Sep 17 00:00:00 2001
+From 89a523c66b849eb46dd6fa6d2b3e5c5484f1c3f9 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -308,34 +308,32 @@ index 3382d678e..79a842cdb 100644
      private final RegionFileCompression.a<InputStream> f;
      private final RegionFileCompression.a<OutputStream> g;
 diff --git a/src/main/java/net/minecraft/server/WorldUpgrader.java b/src/main/java/net/minecraft/server/WorldUpgrader.java
-index 3030c347e..2d8c68806 100644
+index 3030c347e..954316a82 100644
 --- a/src/main/java/net/minecraft/server/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/server/WorldUpgrader.java
-@@ -40,7 +40,10 @@ public class WorldUpgrader {
+@@ -40,7 +40,13 @@ public class WorldUpgrader {
      private static final Pattern p = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
      private final WorldPersistentData q;
  
--    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
 +    // Paper start - add forceWrite flag
 +    private final boolean forceWrite;
+     public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
++        this(s, convertable, worlddata, flag, false);
++    }
 +    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag, boolean forceWrite) {
 +        this.forceWrite = forceWrite;
          this.c = worlddata.getName();
          this.d = flag;
          this.e = convertable.a(s, (MinecraftServer) null);
-@@ -56,6 +59,11 @@ public class WorldUpgrader {
+@@ -55,6 +61,7 @@ public class WorldUpgrader {
+         });
          this.f.start();
      }
- 
-+    public WorldUpgrader(String s, Convertable convertable, WorldData worlddata, boolean flag) {
-+        this(s, convertable, worlddata, flag, false);
-+    }
 +    // Paper end
-+
+ 
      public void a() {
          this.h = false;
- 
-@@ -141,7 +149,7 @@ public class WorldUpgrader {
+@@ -141,7 +148,7 @@ public class WorldUpgrader {
                                      nbttagcompound2.remove("isLightOn");
                                  }
  
