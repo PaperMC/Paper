@@ -273,7 +273,7 @@ public class Commodore
                             newArgs[0] = Type.getObjectType( owner );
                             System.arraycopy( args, 0, newArgs, 1, args.length );
 
-                            super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/util/CraftEvil", name, Type.getMethodDescriptor( retType, newArgs ), false );
+                            super.visitMethodInsn( Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftEvil", name, Type.getMethodDescriptor( retType, newArgs ), false );
                             return;
                         }
 
@@ -290,7 +290,7 @@ public class Commodore
                         {
                             if ( name.equals( "getMaterial" ) && desc.equals( "(I)Lorg/bukkit/Material;" ) )
                             {
-                                super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/util/CraftEvil", name, desc, itf );
+                                super.visitMethodInsn( opcode, "org/bukkit/craftbukkit/legacy/CraftEvil", name, desc, itf );
                                 return;
                             }
 

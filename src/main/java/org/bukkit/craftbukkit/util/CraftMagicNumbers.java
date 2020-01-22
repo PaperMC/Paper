@@ -39,6 +39,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.legacy.CraftLegacy;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
@@ -90,6 +91,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         for (Material material : Material.values()) {
+            if (material.isLegacy()) {
+                continue;
+            }
+
             MinecraftKey key = key(material);
             IRegistry.ITEM.getOptional(key).ifPresent((item) -> {
                 MATERIAL_ITEM.put(material, item);
@@ -117,10 +122,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static MinecraftKey key(Material mat) {
-        if (mat.isLegacy()) {
-            mat = CraftLegacy.fromLegacy(mat);
-        }
-
         return CraftNamespacedKey.toMinecraft(mat.getKey());
     }
     // ========================================================================
@@ -266,7 +267,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         } else {
             if (minimumIndex == -1) {
-                Bukkit.getLogger().log(Level.WARNING, "Plugin " + pdf.getFullName() + " does not specify an api-version.");
+                CraftLegacy.init();
+                Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
             } else {
                 throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
             }

@@ -5,7 +5,6 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 
@@ -32,7 +31,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public Material getMaterial() {
-        return CraftMagicNumbers.getMaterial(getHandle().getBlock()).getItemType();
+        return getBlockData().getMaterial();
     }
 
     @Override
