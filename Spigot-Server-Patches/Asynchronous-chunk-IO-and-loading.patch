@@ -2361,7 +2361,7 @@ index 000000000..715a2dd8d
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e9cd44fae..1f6b1c4f1 100644
+index 761399e28..58299562e 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2812,7 +2812,7 @@ index 134a4f0b7..88f167461 100644
          return ChunkStatus.r.getInt(chunkstatus.c());
      }
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 721021791..f7156acb8 100644
+index 7e5ece9d5..cfe43e882 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -0,0 +0,0 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
@@ -2964,7 +2964,7 @@ index 25a87c2d3..c02c53b50 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4eba20b6a..fe24d924e 100644
+index 6fa08c60b..baeaf772b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -3055,7 +3055,7 @@ index 7a1578afa..d26365eb1 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 3825520fa..0ad11ba68 100644
+index 6728e84b2..8ce6cf8ec 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3257,19 +3257,21 @@ index 3825520fa..0ad11ba68 100644
 +        // Paper start - Async chunk io
 +        final java.util.function.BiFunction<ChunkRegionLoader.InProgressChunkHolder, Throwable, Either<IChunkAccess, PlayerChunk.Failure>> syncLoadComplete = (chunkHolder, ioThrowable) -> {
              try (Timing ignored = this.world.timings.syncChunkLoadTimer.startTimingIfSync()) { // Paper
+                 this.world.getMethodProfiler().c("chunkLoad");
 -                NBTTagCompound nbttagcompound; // Paper
--                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper
--                nbttagcompound = this.readChunkData(chunkcoordintpair);
-+                if (ioThrowable != null) {
-+                    com.destroystokyo.paper.io.IOUtil.rethrow(ioThrowable);
-                 }
- 
+-                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper start - timings
+-                    nbttagcompound = this.readChunkData(chunkcoordintpair);
+-                } // Paper end
+-
 -                if (nbttagcompound != null) {
 -                    boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
 -
 -                    if (flag) {
 -                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
--
++                if (ioThrowable != null) {
++                    com.destroystokyo.paper.io.IOUtil.rethrow(ioThrowable);
++                }
+ 
 -                        protochunk.setLastSaved(this.world.getTime());
 -                        return Either.left(protochunk);
 -                    }
@@ -3387,7 +3389,8 @@ index 3825520fa..0ad11ba68 100644
                          return false;
                      }
                  }
--
+ 
+                 this.world.getMethodProfiler().c("chunkSave");
 +                } // Paper
 +                try (co.aikar.timings.Timing ignored1 = this.world.timings.chunkSaveDataSerialization.startTiming()) { // Paper
                  nbttagcompound = ChunkRegionLoader.saveChunk(this.world, ichunkaccess);
@@ -3952,7 +3955,7 @@ index c999f8c9b..b59ef1a63 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 90272d0c0..136c18d10 100644
+index 691ef0048..541c1535e 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
@@ -4045,7 +4048,7 @@ index 90272d0c0..136c18d10 100644
  
      // CraftBukkit start
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 2a33b90ef..0d036e5d9 100644
+index f56ec3d34..1a6a88b17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {

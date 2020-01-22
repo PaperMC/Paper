@@ -375,13 +375,13 @@ index dcaf3a509..5f9031257 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index c5121d369..459baf26d 100644
+index 9cd21b1ff..99afce39a 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-                 }
              }
  
+             gameprofilerfiller.c("getChunkCacheMiss");
 -            world.timings.syncChunkLoadTimer.startTiming(); // Spigot
              CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
  
@@ -525,7 +525,7 @@ index e16d30f2c..4af5a230b 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/CustomFunction.java b/src/main/java/net/minecraft/server/CustomFunction.java
-index c3218fbc3..94195a7f9 100644
+index 8d7a6d240..707bd2600 100644
 --- a/src/main/java/net/minecraft/server/CustomFunction.java
 +++ b/src/main/java/net/minecraft/server/CustomFunction.java
 @@ -0,0 +0,0 @@ public class CustomFunction {
@@ -552,25 +552,25 @@ index c3218fbc3..94195a7f9 100644
          return this.b;
      }
 diff --git a/src/main/java/net/minecraft/server/CustomFunctionData.java b/src/main/java/net/minecraft/server/CustomFunctionData.java
-index 334de8b04..872a6cbbb 100644
+index ba40d5fbb..ee42e1dfa 100644
 --- a/src/main/java/net/minecraft/server/CustomFunctionData.java
 +++ b/src/main/java/net/minecraft/server/CustomFunctionData.java
 @@ -0,0 +0,0 @@ public class CustomFunctionData implements IResourcePackListener {
- 
-             return 0;
          } else {
+             int j;
+ 
 -            try {
 +            try (co.aikar.timings.Timing timing = customfunction.getTiming().startTiming()) { // Paper
                  this.h = true;
-                 int j = 0;
+                 int k = 0;
                  CustomFunction.c[] acustomfunction_c = customfunction.b();
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 20ed423fa..141673d00 100644
+index 1cde6fc9c..e636433b1 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -0,0 +0,0 @@ import java.util.Collections;
- import java.util.List;
+@@ -0,0 +0,0 @@ import java.util.List;
  import java.util.Locale;
+ import java.util.Optional;
  import java.util.Random;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
@@ -653,7 +653,7 @@ index 20ed423fa..141673d00 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index a7e471066..5ae12e266 100644
+index 3a969d92e..2d8c37d73 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ import org.bukkit.command.CommandSender;
@@ -692,7 +692,7 @@ index a7e471066..5ae12e266 100644
  
      protected BlockPosition ag() {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 138bc38e6..906ca1bfa 100644
+index 1f350e335..35e3f1c78 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.entity.EntityTeleportEvent;
@@ -768,7 +768,7 @@ index 138bc38e6..906ca1bfa 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a389fb5df..49c0764f1 100644
+index b4a0bd795..4dc691775 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -944,7 +944,7 @@ index a389fb5df..49c0764f1 100644
          this.methodProfiler.exit();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index a4b246dc4..cd1579750 100644
+index b5a3b1001..dcfb37004 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@
@@ -962,18 +962,19 @@ index a4b246dc4..cd1579750 100644
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> f(ChunkCoordIntPair chunkcoordintpair) {
          return CompletableFuture.supplyAsync(() -> {
 -            try {
--                NBTTagCompound nbttagcompound = this.readChunkData(chunkcoordintpair);
 +            try (Timing ignored = this.world.timings.syncChunkLoadTimer.startTimingIfSync()) { // Paper
+                 this.world.getMethodProfiler().c("chunkLoad");
+-                NBTTagCompound nbttagcompound = this.readChunkData(chunkcoordintpair);
 +                NBTTagCompound nbttagcompound; // Paper
-+                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper
-+                nbttagcompound = this.readChunkData(chunkcoordintpair);
-+                }
++                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper start - timings
++                    nbttagcompound = this.readChunkData(chunkcoordintpair);
++                } // Paper end
  
                  if (nbttagcompound != null) {
                      boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             return "chunkGenerate " + chunkstatus.d();
          });
- 
          return completablefuture.thenComposeAsync((either) -> {
 -            return (CompletableFuture) either.map((list) -> {
 +            return either.map((list) -> { // Paper - Shut up.
@@ -1201,7 +1202,7 @@ index 820180ab3..fa6400dcc 100644
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9f0fce400..f1860809c 100644
+index 8fc88f162..0087bd9b1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@
@@ -1256,7 +1257,7 @@ index 9f0fce400..f1860809c 100644
              CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c9646ebf7..924dd5e7f 100644
+index 32f8f2aed..bc1ff7d56 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@
@@ -1767,7 +1768,7 @@ index e52ef47b7..3d90b3426 100644
          this.value = value;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index adad3a0fa..7d22aaffb 100644
+index 1860fbb1b..50a69e4cb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
