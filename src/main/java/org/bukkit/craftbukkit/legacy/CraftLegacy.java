@@ -248,20 +248,6 @@ public final class CraftLegacy {
         return name(material);
     }
 
-    public static Material[] modern_values() {
-        Material[] values = Material.values();
-        return Arrays.copyOfRange(values, 0, Material.LEGACY_AIR.ordinal());
-    }
-
-    public static int modern_ordinal(Material material) {
-        if (material.isLegacy()) {
-            // SPIGOT-4002: Fix for eclipse compiler manually compiling in default statements to lookupswitch
-            throw new NoSuchFieldError("Legacy field ordinal: " + material);
-        }
-
-        return material.ordinal();
-    }
-
     public static void init() {
         //
     }
