@@ -101,7 +101,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
         Validate.notNull(stack, "Cannot copy null stack");
         this.type = stack.getType();
         this.amount = stack.getAmount();
-        this.data = stack.getData();
+        if (this.type.isLegacy()) {
+            this.data = stack.getData();
+        }
         if (stack.hasItemMeta()) {
             setItemMeta0(stack.getItemMeta(), type);
         }
