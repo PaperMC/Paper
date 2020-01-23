@@ -1,4 +1,4 @@
-From b4df2071a0d54bd180c785eda8106d3cb52e6119 Mon Sep 17 00:00:00 2001
+From 72590e638de98a0c564588629794672310909e19 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
 Date: Tue, 31 Dec 2019 19:25:48 -0700
 Subject: [PATCH] Add Zstd/LZ4 support for region files (1.15 edition)
@@ -10,7 +10,7 @@ Added new command-line option, --forceWrite, which will forcibly write the chunk
 New compression only happens when a chunk is saved, so running a --forceUpgrade AND --forceWrite may be desirable.
 
 New config option for the compression method to use.
-There's a new option in PaperConfig (heavy compression) for Zstd which defaults to false.
+There's a new option in PaperConfig (compression level) for Zstd which defaults to 6.
 
 Since the patch hooks Mojang's versioning system for new compression methods, it
 should be internally consistent, easily-updatable, and reversible with a --forceUpgrade AND a --forceWrite.
@@ -41,7 +41,7 @@ index 495e11f0f..87574cad3 100644
          <dependency>
              <groupId>junit</groupId>
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 1d7d1ffbf..ebf831a97 100644
+index 1d7d1ffbf..32f5f1293 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,6 +1,7 @@
@@ -60,22 +60,25 @@ index 1d7d1ffbf..ebf831a97 100644
  import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
-@@ -425,4 +427,19 @@ public class PaperConfig {
+@@ -425,4 +427,22 @@ public class PaperConfig {
              */
          }
      }
 +
 +    public static RegionCompressionType regionCompressionMethod = RegionCompressionType.ZLIB;
-+    public static boolean regionZstdUseHighCompression = false;
++    public static int regionCompressionZstdLevel = 6;
 +    private static void regionCompression() {
 +        regionCompressionMethod = RegionCompressionType.getFromName(getString("settings.region-compression-method", "zlib"));
 +        if (regionCompressionMethod == null) {
-+            fatal("Valid values for region-compression-method are: " + String.join(", ", Arrays.copyOf(RegionCompressionType.values(), RegionCompressionType.values().length, String[].class)));
++            fatal("Valid values for settings.region-compression-method are: " + String.join(", ", Arrays.copyOf(RegionCompressionType.values(), RegionCompressionType.values().length, String[].class)));
 +        } else {
 +            log("Using " + (regionCompressionMethod == RegionCompressionType.NONE ? "no" : regionCompressionMethod.getName()) + " compression for region files.");
-+            regionZstdUseHighCompression = getBoolean("settings.region-zstd-use-high-compression", false);
-+            if (regionCompressionMethod == RegionCompressionType.ZSTD && regionZstdUseHighCompression) {
-+                log("Using high compression level for region files. (make my PC hurt)");
++            regionCompressionZstdLevel = getInt("settings.region-compression-zstd-level", 6);
++            if (regionCompressionZstdLevel < com.github.luben.zstd.Zstd.minCompressionLevel() || regionCompressionZstdLevel > com.github.luben.zstd.Zstd.maxCompressionLevel()) {
++                fatal("Valid values for settings.region-compression-zstd-level are from " + com.github.luben.zstd.Zstd.minCompressionLevel() + " to " + com.github.luben.zstd.Zstd.maxCompressionLevel());
++            }
++            if (regionCompressionMethod == RegionCompressionType.ZSTD) {
++                log("Using level " + regionCompressionZstdLevel + " for Zstd compression. (make my PC hurt)");
 +            }
 +        }
 +    }
@@ -187,7 +190,7 @@ index 0de24c792..99f0ae226 100644
  
      public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression) throws IOException {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
-index 3382d678e..79a842cdb 100644
+index 3382d678e..d6815eb20 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCompression.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
 @@ -1,10 +1,18 @@
@@ -265,7 +268,7 @@ index 3382d678e..79a842cdb 100644
 +            out.write(CURRENT_ZSTD_VERSION & 0xFF);
 +            com.github.luben.zstd.ZstdOutputStream retVal = new com.github.luben.zstd.ZstdOutputStream(out);
 +            try {
-+                retVal.setDict(new com.github.luben.zstd.ZstdDictCompress(zstdDicts.get(CURRENT_ZSTD_VERSION), PaperConfig.regionZstdUseHighCompression ? 19 : 1));
++                retVal.setDict(new com.github.luben.zstd.ZstdDictCompress(zstdDicts.get(CURRENT_ZSTD_VERSION), PaperConfig.regionCompressionZstdLevel));
 +            } catch (ExecutionException ex) {
 +                throw new IOException("Could not get Zstd dictionary for chunk.", ex);
 +            }
