@@ -184,11 +184,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
      * @param data New MaterialData for this item
      */
     public void setData(@Nullable MaterialData data) {
-        Material mat = Bukkit.getUnsafe().toLegacy(getType());
-
-        if (data == null || mat == null || mat.getData() == null) {
+        if (data == null) {
             this.data = data;
         } else {
+            Material mat = Bukkit.getUnsafe().toLegacy(getType());
+
             if ((data.getClass() == mat.getData()) || (data.getClass() == MaterialData.class)) {
                 this.data = data;
             } else {
