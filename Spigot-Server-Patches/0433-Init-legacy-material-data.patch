@@ -1,0 +1,40 @@
+From 18d1e63fe8d950682ad5dbc1a17f9e546b04e80a Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 23 Jan 2020 21:30:07 +0000
+Subject: [PATCH] Init legacy material data
+
+This fixes an issue with plugins using legacy materials, spigot does
+not populate the bukkit registry properly, leading to NPEs when using
+outdated plugins. This patch should likely be dropped when spigot fixes
+their legacy data usage....
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 6a6e4fe486..8d93ad6b45 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -91,10 +91,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         }
+ 
+         for (Material material : Material.values()) {
+-            if (material.isLegacy()) {
+-                continue;
+-            }
+-
+             MinecraftKey key = key(material);
+             IRegistry.ITEM.getOptional(key).ifPresent((item) -> {
+                 MATERIAL_ITEM.put(material, item);
+@@ -122,6 +118,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     }
+ 
+     public static MinecraftKey key(Material mat) {
++        // Paper start
++        if (mat.isLegacy()) {
++            mat = CraftLegacy.fromLegacy(mat);
++        }
++        // Paper end
+         return CraftNamespacedKey.toMinecraft(mat.getKey());
+     }
+     // ========================================================================
+-- 
+2.25.0
+
