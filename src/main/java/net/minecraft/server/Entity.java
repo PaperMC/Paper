@@ -2634,6 +2634,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             BlockPosition blockposition1;
 
             if (flag1) {
+                // Paper start - Ensure spawn chunk is always loaded before calculating Y coordinate
+                this.world.getChunkAtWorldCoords(this.world.getSpawn());
+                // Paper end
                 blockposition1 = WorldServer.a;
             } else {
                 blockposition1 = worldserver.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSpawn());
