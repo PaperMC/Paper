@@ -71,7 +71,9 @@ public class PluginManagerTest {
                     } catch (Throwable ex) {
                         store.value = ex;
                     }
-                }});
+                }
+            }
+        );
         secondThread.start();
         secondThread.join();
         if (store.value != null) {

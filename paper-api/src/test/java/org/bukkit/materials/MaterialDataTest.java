@@ -25,50 +25,45 @@ import org.junit.Test;
 public class MaterialDataTest {
 
     @Test
-    public void testDoor()
-    {
+    public void testDoor() {
         @SuppressWarnings("deprecation")
         Door door = new Door();
-        assertThat("Constructed with default door type",door.getItemType(),equalTo(Material.LEGACY_WOODEN_DOOR));
-        assertThat("Constructed with default top or bottom",door.isTopHalf(),equalTo(false));
-        assertThat("Constructed with default direction",door.getFacing(),equalTo(BlockFace.WEST));
-        assertThat("Constructed with default open state",door.isOpen(),equalTo(false));
+        assertThat("Constructed with default door type", door.getItemType(), equalTo(Material.LEGACY_WOODEN_DOOR));
+        assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
+        assertThat("Constructed with default direction", door.getFacing(), equalTo(BlockFace.WEST));
+        assertThat("Constructed with default open state", door.isOpen(), equalTo(false));
 
-        Material[] types = new Material[] { Material.LEGACY_WOODEN_DOOR,
-                Material.LEGACY_IRON_DOOR_BLOCK, Material.LEGACY_SPRUCE_DOOR,
-                Material.LEGACY_BIRCH_DOOR, Material.LEGACY_JUNGLE_DOOR,
-                Material.LEGACY_ACACIA_DOOR, Material.LEGACY_DARK_OAK_DOOR };
-        BlockFace[] directions = new BlockFace[] { BlockFace.WEST, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH };
-        boolean[] openStates = new boolean[] {false, true};
-        boolean[] hingeStates = new boolean[] {false, true};
-        for(Material type : types)
-        {
+        Material[] types = new Material[]{Material.LEGACY_WOODEN_DOOR,
+            Material.LEGACY_IRON_DOOR_BLOCK, Material.LEGACY_SPRUCE_DOOR,
+            Material.LEGACY_BIRCH_DOOR, Material.LEGACY_JUNGLE_DOOR,
+            Material.LEGACY_ACACIA_DOOR, Material.LEGACY_DARK_OAK_DOOR};
+        BlockFace[] directions = new BlockFace[]{BlockFace.WEST, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH};
+        boolean[] openStates = new boolean[]{false, true};
+        boolean[] hingeStates = new boolean[]{false, true};
+        for (Material type : types) {
             // Test bottom half
-            for(BlockFace facing : directions)
-            {
-                door = new Door(type,facing);
-                assertThat("Constructed with correct door type",door.getItemType(),equalTo(type));
-                assertThat("Constructed with default top or bottom",door.isTopHalf(),equalTo(false));
-                assertThat("Constructed with correct direction",door.getFacing(),equalTo(facing));
-                assertThat("Constructed with default open state",door.isOpen(),equalTo(false));
+            for (BlockFace facing : directions) {
+                door = new Door(type, facing);
+                assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
+                assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
+                assertThat("Constructed with correct direction", door.getFacing(), equalTo(facing));
+                assertThat("Constructed with default open state", door.isOpen(), equalTo(false));
 
-                for(boolean openState : openStates)
-                {
-                    door = new Door(type,facing,openState);
-                    assertThat("Constructed with correct door type",door.getItemType(),equalTo(type));
-                    assertThat("Constructed with default top or bottom",door.isTopHalf(),equalTo(false));
-                    assertThat("Constructed with correct direction",door.getFacing(),equalTo(facing));
-                    assertThat("Constructed with correct open state",door.isOpen(),equalTo(openState));
+                for (boolean openState : openStates) {
+                    door = new Door(type, facing, openState);
+                    assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
+                    assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(false));
+                    assertThat("Constructed with correct direction", door.getFacing(), equalTo(facing));
+                    assertThat("Constructed with correct open state", door.isOpen(), equalTo(openState));
                 }
             }
 
             // Test top half
-            for(boolean hingeState : hingeStates)
-            {
-                door = new Door(type,hingeState);
-                assertThat("Constructed with correct door type",door.getItemType(),equalTo(type));
-                assertThat("Constructed with default top or bottom",door.isTopHalf(),equalTo(true));
-                assertThat("Constructed with correct direction",door.getHinge(),equalTo(hingeState));
+            for (boolean hingeState : hingeStates) {
+                door = new Door(type, hingeState);
+                assertThat("Constructed with correct door type", door.getItemType(), equalTo(type));
+                assertThat("Constructed with default top or bottom", door.isTopHalf(), equalTo(true));
+                assertThat("Constructed with correct direction", door.getHinge(), equalTo(hingeState));
             }
         }
     }
@@ -242,10 +237,10 @@ public class MaterialDataTest {
 
     @Test
     public void testMushroom() {
-        Material[] mushroomTypes = new Material[] { Material.LEGACY_HUGE_MUSHROOM_1, Material.LEGACY_HUGE_MUSHROOM_2 };
-        BlockFace[] setFaces = new BlockFace[] { BlockFace.SELF, BlockFace.UP, BlockFace.NORTH,
-                BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH_EAST, BlockFace.NORTH_WEST,
-                BlockFace.SOUTH_EAST, BlockFace.SOUTH_WEST };
+        Material[] mushroomTypes = new Material[]{Material.LEGACY_HUGE_MUSHROOM_1, Material.LEGACY_HUGE_MUSHROOM_2};
+        BlockFace[] setFaces = new BlockFace[]{BlockFace.SELF, BlockFace.UP, BlockFace.NORTH,
+            BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH_EAST, BlockFace.NORTH_WEST,
+            BlockFace.SOUTH_EAST, BlockFace.SOUTH_WEST};
         MushroomBlockTexture[] textures = MushroomBlockTexture.values();
         for (Material type : mushroomTypes) {
             Mushroom mushroom = new Mushroom(type);
@@ -280,7 +275,7 @@ public class MaterialDataTest {
         }
 
         // The crops which fully implement all crop states
-        Material[] allCrops = new Material[] {Material.LEGACY_CROPS, Material.LEGACY_CARROT, Material.LEGACY_POTATO};
+        Material[] allCrops = new Material[]{Material.LEGACY_CROPS, Material.LEGACY_CARROT, Material.LEGACY_POTATO};
         for (Material crop : allCrops) {
             crops = new Crops(crop);
             assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(crop));
@@ -295,7 +290,7 @@ public class MaterialDataTest {
 
         // Beetroot are crops too, but they only have four states
         // Setting different crop states for beetroot will return the following when retrieved back
-        CropState[] beetrootStates = new CropState[] {CropState.SEEDED, CropState.SEEDED, CropState.SMALL, CropState.SMALL, CropState.TALL, CropState.TALL, CropState.RIPE, CropState.RIPE};
+        CropState[] beetrootStates = new CropState[]{CropState.SEEDED, CropState.SEEDED, CropState.SMALL, CropState.SMALL, CropState.TALL, CropState.TALL, CropState.RIPE, CropState.RIPE};
         assertThat("Beetroot state translations match size", beetrootStates.length, equalTo(allStates.length));
         crops = new Crops(Material.LEGACY_BEETROOT_BLOCK);
         assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(Material.LEGACY_BEETROOT_BLOCK));
@@ -312,7 +307,7 @@ public class MaterialDataTest {
         assertThat("Constructed with correct crops type", crops.getItemType(), equalTo(warts.getItemType()));
         assertThat("Constructed with default crop state", crops.getState(), equalTo(CropState.SEEDED));
         assertThat("Constructed with default wart state", warts.getState(), equalTo(NetherWartsState.SEEDED));
-        allStates = new CropState[] {CropState.SEEDED, CropState.SMALL, CropState.TALL, CropState.RIPE};
+        allStates = new CropState[]{CropState.SEEDED, CropState.SMALL, CropState.TALL, CropState.RIPE};
         NetherWartsState[] allWartStates = NetherWartsState.values();
         assertThat("Nether Warts state translations match size", allWartStates.length, equalTo(allStates.length));
         for (int s = 0; s < allStates.length; s++) {
@@ -332,9 +327,9 @@ public class MaterialDataTest {
         assertThat("Constructed with default delay", diode.getDelay(), equalTo(1));
         assertThat("Constructed with default direction", diode.getFacing(), equalTo(BlockFace.NORTH));
 
-        BlockFace[] directions = new BlockFace[] {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
-        int[] delays = new int[] {1, 2, 3, 4};
-        boolean[] states = new boolean[] {false, true};
+        BlockFace[] directions = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+        int[] delays = new int[]{1, 2, 3, 4};
+        boolean[] states = new boolean[]{false, true};
         for (BlockFace direction : directions) {
             diode = new Diode(direction);
             assertThat("Constructed with default diode state", diode.getItemType(), equalTo(Material.LEGACY_DIODE_BLOCK_OFF));
@@ -367,9 +362,9 @@ public class MaterialDataTest {
         assertThat("Constructed with default mode", comparator.isSubtractionMode(), equalTo(false));
         assertThat("Constructed with default direction", comparator.getFacing(), equalTo(BlockFace.NORTH));
 
-        BlockFace[] directions = new BlockFace[] {BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
-        boolean[] modes = new boolean[] {false, true};
-        boolean[] states = new boolean[] {false, true};
+        BlockFace[] directions = new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+        boolean[] modes = new boolean[]{false, true};
+        boolean[] states = new boolean[]{false, true};
         for (BlockFace direction : directions) {
             comparator = new Comparator(direction);
             assertThat("Constructed with default comparator state", comparator.getItemType(), equalTo(Material.LEGACY_REDSTONE_COMPARATOR_OFF));
@@ -393,7 +388,7 @@ public class MaterialDataTest {
                     assertThat("Constructed with correct direction", comparator.getFacing(), equalTo(direction));
 
                     // Check if the game sets the fourth bit, that block data is still interpreted correctly
-                    comparator.setData((byte)((comparator.getData() & 0x7) | 0x8));
+                    comparator.setData((byte) ((comparator.getData() & 0x7) | 0x8));
                     assertThat("Constructed with correct comparator state", comparator.getItemType(), equalTo(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF));
                     assertThat("Constructed with correct powered", comparator.isPowered(), equalTo(state));
                     assertThat("Constructed with correct being powered", comparator.isBeingPowered(), equalTo(true));
@@ -412,15 +407,15 @@ public class MaterialDataTest {
         assertThat("Constructed with default powered state", hopper.isPowered(), equalTo(false));
         assertThat("Constructed with default direction", hopper.getFacing(), equalTo(BlockFace.DOWN));
 
-        BlockFace[] directions = new BlockFace[] {BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST};
-        boolean[] activeStates = new boolean[] {true, false};
+        BlockFace[] directions = new BlockFace[]{BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST};
+        boolean[] activeStates = new boolean[]{true, false};
         for (BlockFace direction : directions) {
             hopper = new Hopper(direction);
             assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.LEGACY_HOPPER));
             assertThat("Constructed with default active state", hopper.isActive(), equalTo(true));
             assertThat("Constructed with correct powered state", hopper.isPowered(), equalTo(false));
             assertThat("Constructed with correct direction", hopper.getFacing(), equalTo(direction));
-            for(boolean isActive : activeStates) {
+            for (boolean isActive : activeStates) {
                 hopper = new Hopper(direction, isActive);
                 assertThat("Constructed with default hopper type", hopper.getItemType(), equalTo(Material.LEGACY_HOPPER));
                 assertThat("Constructed with correct active state", hopper.isActive(), equalTo(isActive));

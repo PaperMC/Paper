@@ -263,5 +263,5 @@ public enum Effect {
     /**
      * Represents the type of an effect.
      */
-    public enum Type {SOUND, VISUAL}
+    public enum Type { SOUND, VISUAL }
 }

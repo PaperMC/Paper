@@ -31,7 +31,7 @@ public class TimingsCommand extends BukkitCommand {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
         if (!testPermission(sender)) return true;
-        if (args.length != 1)  {
+        if (args.length != 1) {
             sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
             return false;
         }
@@ -73,8 +73,9 @@ public class TimingsCommand extends BukkitCommand {
                     if (separate) {
                         fileNames.println(pluginIdx + " " + plugin.getDescription().getFullName());
                         fileTimings.println("Plugin " + pluginIdx);
+                    } else {
+                        fileTimings.println(plugin.getDescription().getFullName());
                     }
-                    else fileTimings.println(plugin.getDescription().getFullName());
                     for (RegisteredListener listener : HandlerList.getRegisteredListeners(plugin)) {
                         if (listener instanceof TimedRegisteredListener) {
                             TimedRegisteredListener trl = (TimedRegisteredListener) listener;

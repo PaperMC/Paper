@@ -36,56 +36,56 @@ public class LocationTest {
      */
     private static final double HALF_HALF_UNIT = Math.sqrt(1 / 4f);
 
-    @Parameters(name= "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static List<Object[]> data() {
         Random RANDOM = new Random(1L); // Test is deterministic
         int r = 0;
         return ImmutableList.<Object[]>of(
-            new Object[] { "X",
+            new Object[]{"X",
                 1, 0, 0,
                 270, 0
             },
-            new Object[] { "-X",
+            new Object[]{"-X",
                 -1, 0, 0,
                 90, 0
             },
-            new Object[] { "Z",
+            new Object[]{"Z",
                 0, 0, 1,
                 0, 0
             },
-            new Object[] { "-Z",
+            new Object[]{"-Z",
                 0, 0, -1,
                 180, 0
             },
-            new Object[] { "Y",
+            new Object[]{"Y",
                 0, 1, 0,
                 0, -90 // Zero is here as a "default" value
             },
-            new Object[] { "-Y",
+            new Object[]{"-Y",
                 0, -1, 0,
                 0, 90 // Zero is here as a "default" value
             },
-            new Object[] { "X Z",
+            new Object[]{"X Z",
                 HALF_UNIT, 0, HALF_UNIT,
                 (270 + 360) / 2, 0
             },
-            new Object[] { "X -Z",
+            new Object[]{"X -Z",
                 HALF_UNIT, 0, -HALF_UNIT,
                 (270 + 180) / 2, 0
             },
-            new Object[] { "-X -Z",
+            new Object[]{"-X -Z",
                 -HALF_UNIT, 0, -HALF_UNIT,
                 (90 + 180) / 2, 0
             },
-            new Object[] { "-X Z",
+            new Object[]{"-X Z",
                 -HALF_UNIT, 0, HALF_UNIT,
                 (90 + 0) / 2, 0
             },
-            new Object[] { "X Y Z",
+            new Object[]{"X Y Z",
                 HALF_HALF_UNIT, HALF_UNIT, HALF_HALF_UNIT,
                 (270 + 360) / 2, -45
             },
-            new Object[] { "-X -Y -Z",
+            new Object[]{"-X -Y -Z",
                 -HALF_HALF_UNIT, -HALF_UNIT, -HALF_HALF_UNIT,
                 (90 + 180) / 2, 45
             },
@@ -140,7 +140,7 @@ public class LocationTest {
             location.setDirection(vector);
         }
 
-        return new Object[] { "R" + index,
+        return new Object[]{"R" + index,
             vector.getX(), vector.getY(), vector.getZ(),
             location.getYaw(), location.getPitch()
         };

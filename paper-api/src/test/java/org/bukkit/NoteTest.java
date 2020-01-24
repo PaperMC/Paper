@@ -114,7 +114,7 @@ public class NoteTest {
         assertEquals(note.getOctave(), 2);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testSharpWrapping2() {
         new Note(2, Note.Tone.F, true).sharped();
     }
@@ -122,13 +122,13 @@ public class NoteTest {
     @Test
     public void testHighest() {
         Note note = new Note(2, Note.Tone.F, true);
-        assertEquals(note.getId(), (byte)24);
+        assertEquals(note.getId(), (byte) 24);
     }
 
     @Test
     public void testLowest() {
         Note note = new Note(0, Note.Tone.F, true);
-        assertEquals(note.getId(), (byte)0);
+        assertEquals(note.getId(), (byte) 0);
     }
 
     @Test

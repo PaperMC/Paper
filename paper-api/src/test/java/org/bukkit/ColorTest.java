@@ -26,7 +26,7 @@ public class ColorTest {
         }
     }
 
-    static TestColor[] examples = new TestColor[] {
+    static TestColor[] examples = new TestColor[]{
         /*            0xRRGGBB, 0xBBGGRR, 0xRR, 0xGG, 0xBB */
         new TestColor(0xFFFFFF, 0xFFFFFF, 0xFF, 0xFF, 0xFF),
         new TestColor(0xFFFFAA, 0xAAFFFF, 0xFF, 0xFF, 0xAA),
@@ -98,22 +98,22 @@ public class ColorTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidRGB1() {
         Color.fromRGB(0x01000000);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidRGB2() {
         Color.fromRGB(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidRGB3() {
         Color.fromRGB(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidRGB4() {
         Color.fromRGB(-1);
     }
@@ -129,22 +129,22 @@ public class ColorTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidBGR1() {
         Color.fromBGR(0x01000000);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidBGR2() {
         Color.fromBGR(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidBGR3() {
         Color.fromBGR(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidBGR4() {
         Color.fromBGR(-1);
     }
@@ -160,62 +160,62 @@ public class ColorTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR01() {
         Color.fromRGB(-1, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR02() {
         Color.fromRGB(Integer.MAX_VALUE, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR03() {
         Color.fromRGB(Integer.MIN_VALUE, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR04() {
         Color.fromRGB(0x100, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR05() {
         Color.fromBGR(0x00, 0x00, -1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR06() {
         Color.fromBGR(0x00, 0x00, Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR07() {
         Color.fromBGR(0x00, 0x00, Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR08() {
         Color.fromBGR(0x00, 0x00, 0x100);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR09() {
         Color.WHITE.setRed(-1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR10() {
         Color.WHITE.setRed(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR11() {
         Color.WHITE.setRed(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidR12() {
         Color.WHITE.setRed(0x100);
     }
@@ -231,62 +231,62 @@ public class ColorTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB01() {
         Color.fromRGB(0x00, 0x00, -1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB02() {
         Color.fromRGB(0x00, 0x00, Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB03() {
         Color.fromRGB(0x00, 0x00, Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB04() {
         Color.fromRGB(0x00, 0x00, 0x100);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB05() {
         Color.fromBGR(-1, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB06() {
         Color.fromBGR(Integer.MAX_VALUE, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB07() {
         Color.fromBGR(Integer.MIN_VALUE, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB08() {
         Color.fromBGR(0x100, 0x00, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB09() {
         Color.WHITE.setBlue(-1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB10() {
         Color.WHITE.setBlue(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB11() {
         Color.WHITE.setBlue(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidB12() {
         Color.WHITE.setBlue(0x100);
     }
@@ -302,62 +302,62 @@ public class ColorTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG01() {
         Color.fromRGB(0x00, -1, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG02() {
         Color.fromRGB(0x00, Integer.MAX_VALUE, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG03() {
         Color.fromRGB(0x00, Integer.MIN_VALUE, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG04() {
         Color.fromRGB(0x00, 0x100, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG05() {
         Color.fromBGR(0x00, -1, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG06() {
         Color.fromBGR(0x00, Integer.MAX_VALUE, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG07() {
         Color.fromBGR(0x00, Integer.MIN_VALUE, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG08() {
         Color.fromBGR(0x00, 0x100, 0x00);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG09() {
         Color.WHITE.setGreen(-1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG10() {
         Color.WHITE.setGreen(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG11() {
         Color.WHITE.setGreen(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidG12() {
         Color.WHITE.setGreen(0x100);
     }

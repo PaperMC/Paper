@@ -826,10 +826,10 @@ public class MemorySection implements ConfigurationSection {
     }
 
     protected boolean isPrimitiveWrapper(@Nullable Object input) {
-        return input instanceof Integer || input instanceof Boolean ||
-                input instanceof Character || input instanceof Byte ||
-                input instanceof Short || input instanceof Double ||
-                input instanceof Long || input instanceof Float;
+        return input instanceof Integer || input instanceof Boolean
+                || input instanceof Character || input instanceof Byte
+                || input instanceof Short || input instanceof Double
+                || input instanceof Long || input instanceof Float;
     }
 
     @Nullable

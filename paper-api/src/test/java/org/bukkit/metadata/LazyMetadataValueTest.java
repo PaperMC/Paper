@@ -22,7 +22,7 @@ public class LazyMetadataValueTest {
         double value = 10.5;
         subject = makeSimpleCallable(value);
 
-        assertEquals(value, (Double)subject.value(), 0.01);
+        assertEquals(value, (Double) subject.value(), 0.01);
     }
 
     @Test
@@ -41,7 +41,7 @@ public class LazyMetadataValueTest {
         assertEquals(value, subject.value());
     }
 
-    @Test(expected=MetadataEvaluationException.class)
+    @Test(expected = MetadataEvaluationException.class)
     public void testEvalException() {
         subject = new LazyMetadataValue(plugin, LazyMetadataValue.CacheStrategy.CACHE_AFTER_FIRST_EVAL, new Callable<Object>() {
             @Override

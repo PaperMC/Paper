@@ -329,13 +329,13 @@ public abstract class InventoryView {
     public final InventoryType.SlotType getSlotType(int slot) {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
         if (slot >= 0 && slot < this.getTopInventory().getSize()) {
-            switch(this.getType()) {
+            switch (this.getType()) {
             case BLAST_FURNACE:
             case FURNACE:
             case SMOKER:
                 if (slot == 2) {
                     type = InventoryType.SlotType.RESULT;
-                } else if(slot == 1) {
+                } else if (slot == 1) {
                     type = InventoryType.SlotType.FUEL;
                 } else {
                     type = InventoryType.SlotType.CRAFTING;

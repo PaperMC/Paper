@@ -25,7 +25,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 @RunWith(Parameterized.class)
 public class BukkitObjectStreamTest {
 
-    @Parameters(name= "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static List<Object[]> data() {
         return ImmutableList.<Object[]>of(
             new Object[] {

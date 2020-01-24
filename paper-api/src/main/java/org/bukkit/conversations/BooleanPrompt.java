@@ -17,7 +17,7 @@ public abstract class BooleanPrompt extends ValidatingPrompt {
 
     @Override
     protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
-        String[] accepted = {/* Apache values: */"true", "false", "on", "off", "yes", "no",/* Additional values: */ "y", "n", "1", "0", "right", "wrong", "correct", "incorrect", "valid", "invalid"};
+        String[] accepted = {/* Apache values: */ "true", "false", "on", "off", "yes", "no", /* Additional values: */ "y", "n", "1", "0", "right", "wrong", "correct", "incorrect", "valid", "invalid"};
         return ArrayUtils.contains(accepted, input.toLowerCase());
     }
 

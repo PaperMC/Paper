@@ -18,7 +18,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class BukkitMirrorTest {
 
-    @Parameters(name="{index}: {1}")
+    @Parameters(name = "{index}: {1}")
     public static List<Object[]> data() {
         return Lists.transform(Arrays.asList(Server.class.getDeclaredMethods()), new Function<Method, Object[]>() {
             @Override

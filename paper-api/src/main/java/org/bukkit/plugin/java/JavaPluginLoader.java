@@ -49,7 +49,7 @@ import org.yaml.snakeyaml.error.YAMLException;
  */
 public final class JavaPluginLoader implements PluginLoader {
     final Server server;
-    private final Pattern[] fileFilters = new Pattern[] { Pattern.compile("\\.jar$"), };
+    private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$")};
     private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
 
@@ -288,8 +288,7 @@ public final class JavaPluginLoader implements PluginLoader {
                     plugin.getLogger().log(
                             Level.WARNING,
                             String.format(
-                                    "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated." +
-                                    " \"%s\"; please notify the authors %s.",
+                                    "\"%s\" has registered a listener for %s on method \"%s\", but the event is Deprecated. \"%s\"; please notify the authors %s.",
                                     plugin.getDescription().getFullName(),
                                     clazz.getName(),
                                     method.toGenericString(),
