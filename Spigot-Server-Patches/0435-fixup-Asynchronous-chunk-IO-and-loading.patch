@@ -1,0 +1,58 @@
+From 38603dc24edb4402814cc405239fa7e4bbef244c Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 25 Jan 2020 15:13:35 -0800
+Subject: [PATCH] fixup! Asynchronous chunk IO and loading
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 1df6a1f192..bc0796f6e7 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -338,7 +338,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         shouldSave = ((Chunk) ichunkaccess).lastSaved + world.paperConfig.autoSavePeriod <= world.getTime();
+                     }
+ 
+-                    if (shouldSave && this.saveChunk(ichunkaccess, true)) { // Paper - async chunk io
++                    if (shouldSave && this.saveChunk(ichunkaccess)) {
+                         ++savedThisTick;
+                         playerchunk.m();
+                     }
+@@ -370,7 +370,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     return (IChunkAccess) completablefuture.join();
+                 }).filter((ichunkaccess) -> {
+                     return ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk;
+-                }).filter((chunk) -> this.saveChunk(chunk, true)).forEach((ichunkaccess) -> { // Paper - async io for chunk save
++                }).filter(this::saveChunk).forEach((ichunkaccess) -> {
+                     mutableboolean.setTrue();
+                 });
+             } while (mutableboolean.isTrue());
+@@ -386,7 +386,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
+ 
+                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
+-                    this.saveChunk(ichunkaccess, true); // Paper
++                    this.saveChunk(ichunkaccess);
+                     playerchunk.m();
+                 }
+ 
+@@ -527,7 +527,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         this.asyncSave(ichunkaccess); // Paper - async chunk saving
+                     } catch (Throwable ex) {
+                         LOGGER.fatal("Failed to prepare async save, attempting synchronous save", ex);
+-                        this.saveChunk(ichunkaccess, true);
++                        this.saveChunk(ichunkaccess);
+                     }
+ 
+                     this.lightEngine.a(ichunkaccess.getPos());
+@@ -899,7 +899,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     public boolean saveChunk(IChunkAccess ichunkaccess) {
+         // Paper start - async param
+-        return this.saveChunk(ichunkaccess, false);
++        return this.saveChunk(ichunkaccess, true);
+     }
+     public boolean saveChunk(IChunkAccess ichunkaccess, boolean async) {
+         try (co.aikar.timings.Timing ignored = this.world.timings.chunkSave.startTiming()) {
+-- 
+2.25.0.windows.1
+
