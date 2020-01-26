@@ -153,7 +153,7 @@ public interface BookMeta extends ItemMeta {
 
     /**
      * Clears the existing book pages, and sets the book to use the provided
-     * pages. Maximum 50 pages with 256 characters per page.
+     * pages. Maximum 100 pages with 256 characters per page.
      *
      * @param pages A list of pages to set the book to use
      */
