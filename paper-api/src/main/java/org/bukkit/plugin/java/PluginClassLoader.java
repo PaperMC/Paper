@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.logging.Level;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -101,6 +102,17 @@ final class PluginClassLoader extends URLClassLoader {
         if (result == null) {
             if (checkGlobal) {
                 result = loader.getClassByName(name);
+
+                if (result != null) {
+                    JavaPlugin provider = ((PluginClassLoader) result.getClassLoader()).plugin;
+
+                    if (!description.getDepend().contains(provider.getName())
+                            && !description.getSoftDepend().contains(provider.getName())
+                            && !provider.getDescription().getLoadBefore().contains(description.getName())) {
+
+                        plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, description.getFullName()});
+                    }
+                }
             }
 
             if (result == null) {
