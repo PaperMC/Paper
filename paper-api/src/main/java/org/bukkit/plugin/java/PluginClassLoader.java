@@ -149,9 +149,9 @@ final class PluginClassLoader extends URLClassLoader {
                 if (result != null) {
                     loader.setClass(name, result);
                 }
-            }
 
-            classes.put(name, result);
+                classes.put(name, result);
+            }
         }
 
         return result;
