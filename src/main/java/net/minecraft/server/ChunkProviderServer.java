@@ -448,6 +448,12 @@ public class ChunkProviderServer extends IChunkProvider {
                 return this.getChunkAt(i, j, chunkstatus, flag);
             }, this.serverThreadQueue).join();
         } else {
+            // Paper start - optimise for loaded chunks
+            Chunk ifLoaded = this.getChunkAtIfLoadedMainThread(i, j);
+            if (ifLoaded != null) {
+                return ifLoaded;
+            }
+            // Paper end
             GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
 
             gameprofilerfiller.c("getChunk");
@@ -498,39 +504,7 @@ public class ChunkProviderServer extends IChunkProvider {
         if (Thread.currentThread() != this.serverThread) {
             return null;
         } else {
-            this.world.getMethodProfiler().c("getChunkNow");
-            long k = ChunkCoordIntPair.pair(i, j);
-
-            for (int l = 0; l < 4; ++l) {
-                if (k == this.cachePos[l] && this.cacheStatus[l] == ChunkStatus.FULL) {
-                    IChunkAccess ichunkaccess = this.cacheChunk[l];
-
-                    return ichunkaccess instanceof Chunk ? (Chunk) ichunkaccess : null;
-                }
-            }
-
-            PlayerChunk playerchunk = this.getChunk(k);
-
-            if (playerchunk == null) {
-                return null;
-            } else {
-                Either<IChunkAccess, PlayerChunk.Failure> either = (Either) playerchunk.b(ChunkStatus.FULL).getNow(null); // CraftBukkit - decompile error
-
-                if (either == null) {
-                    return null;
-                } else {
-                    IChunkAccess ichunkaccess1 = (IChunkAccess) either.left().orElse(null); // CraftBukkit - decompile error
-
-                    if (ichunkaccess1 != null) {
-                        this.a(k, ichunkaccess1, ChunkStatus.FULL);
-                        if (ichunkaccess1 instanceof Chunk) {
-                            return (Chunk) ichunkaccess1;
-                        }
-                    }
-
-                    return null;
-                }
-            }
+            return this.getChunkAtIfLoadedMainThread(i, j); // Paper - optimise for loaded chunks
         }
     }
 
