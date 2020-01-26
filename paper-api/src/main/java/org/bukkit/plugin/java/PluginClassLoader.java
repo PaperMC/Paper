@@ -106,7 +106,8 @@ final class PluginClassLoader extends URLClassLoader {
                 if (result != null) {
                     JavaPlugin provider = ((PluginClassLoader) result.getClassLoader()).plugin;
 
-                    if (!description.getDepend().contains(provider.getName())
+                    if (provider != plugin
+                            && !description.getDepend().contains(provider.getName())
                             && !description.getSoftDepend().contains(provider.getName())
                             && !provider.getDescription().getLoadBefore().contains(description.getName())) {
 
