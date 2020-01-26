@@ -37,7 +37,17 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
 
     public EntityBee(EntityTypes<? extends EntityBee> entitytypes, World world) {
         super(entitytypes, world);
-        this.moveController = new ControllerMoveFlying(this, 20, true);
+        // Paper start - apply gravity to bees when they get stuck in the void, fixes MC-167279
+        this.moveController = new ControllerMoveFlying(this, 20, true) {
+            @Override
+            public void tick() {
+                if (getEntity().locY() <= 0) {
+                    getEntity().setNoGravity(false);
+                }
+                super.tick();
+            }
+        };
+        // Paper end
         this.lookController = new EntityBee.j(this);
         this.a(PathType.DANGER_FIRE, -1.0F);
         this.a(PathType.WATER, -1.0F);

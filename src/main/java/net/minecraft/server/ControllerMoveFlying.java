@@ -12,7 +12,7 @@ public class ControllerMoveFlying extends ControllerMove {
     }
 
     @Override
-    public void a() {
+    public void a() { tick(); } public void tick() { // Paper - OBFHELPER
         if (this.h == ControllerMove.Operation.MOVE_TO) {
             this.h = ControllerMove.Operation.WAIT;
             this.a.setNoGravity(true);
