@@ -54,7 +54,7 @@ public interface BookMeta extends ItemMeta {
     /**
      * Sets the title of the book.
      * <p>
-     * Limited to 16 characters. Removes title when given null.
+     * Limited to 32 characters. Removes title when given null.
      *
      * @param title the title to set
      * @return true if the title was successfully set
