@@ -741,7 +741,7 @@ public class CraftWorld implements World {
         world.captureBlockStates = false;
         world.captureTreeGeneration = false;
         if (grownTree) { // Copy block data to delegate
-            for (BlockState blockstate : world.capturedBlockStates) {
+            for (BlockState blockstate : world.capturedBlockStates.values()) {
                 BlockPosition position = ((CraftBlockState) blockstate).getPosition();
                 net.minecraft.server.IBlockData oldBlock = world.getType(position);
                 int flag = ((CraftBlockState) blockstate).getFlag();
