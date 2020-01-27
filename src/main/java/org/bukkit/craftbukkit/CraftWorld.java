@@ -762,11 +762,6 @@ public class CraftWorld implements World {
         return world.worldData.getName();
     }
 
-    @Deprecated
-    public long getId() {
-        return world.worldData.getSeed();
-    }
-
     @Override
     public UUID getUID() {
         return world.getDataManager().getUUID();
