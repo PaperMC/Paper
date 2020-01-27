@@ -31,7 +31,7 @@
          this.propertyManager = dedicatedserversettings;
          this.remoteControlCommandListener = new RemoteControlCommandListener(this);
          Thread thread = new Thread("Server Infinisleeper") {
-@@ -66,13 +79,37 @@
+@@ -66,13 +79,44 @@
      public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -41,6 +41,13 @@
 +                    return;
 +                }
 +                jline.console.ConsoleReader bufferedreader = reader;
++
++                // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
++                try {
++                    System.in.available();
++                } catch (IOException ex) {
++                    return;
++                }
 +                // CraftBukkit end
  
                  String s;
@@ -72,7 +79,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -81,6 +118,27 @@
+@@ -81,6 +125,27 @@
              }
          };
  
@@ -100,7 +107,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -134,6 +192,12 @@
+@@ -134,6 +199,12 @@
              return false;
          }
  
@@ -113,7 +120,7 @@
          if (!this.getOnlineMode()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -148,7 +212,7 @@
+@@ -148,7 +219,7 @@
          if (!NameReferencingFileConverter.e(this)) {
              return false;
          } else {
@@ -122,7 +129,7 @@
              long i = SystemUtils.getMonotonicNanos();
              String s = dedicatedserverproperties.levelSeed;
              String s1 = dedicatedserverproperties.generatorSettings;
-@@ -178,7 +242,13 @@
+@@ -178,7 +249,13 @@
              if (worldtype == WorldType.FLAT) {
                  jsonobject.addProperty("flat_world_options", s1);
              } else if (!s1.isEmpty()) {
@@ -137,7 +144,7 @@
              }
  
              this.a(this.getWorld(), this.getWorld(), j, worldtype, jsonobject);
-@@ -200,6 +270,7 @@
+@@ -200,6 +277,7 @@
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.remoteControlListener = new RemoteControlListener(this);
                  this.remoteControlListener.a();
@@ -145,7 +152,7 @@
              }
  
              if (this.getMaxTickTime() > 0L) {
-@@ -307,6 +378,7 @@
+@@ -307,6 +385,7 @@
              this.remoteStatusListener.b();
          }
  
@@ -153,7 +160,7 @@
      }
  
      @Override
-@@ -340,7 +412,15 @@
+@@ -340,7 +419,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
@@ -170,7 +177,7 @@
          }
  
      }
-@@ -540,14 +620,45 @@
+@@ -540,14 +627,45 @@
  
      @Override
      public String getPlugins() {
@@ -218,7 +225,7 @@
          });
          return this.remoteControlCommandListener.getMessages();
      }
-@@ -568,4 +679,16 @@
+@@ -568,4 +686,16 @@
      public boolean a(GameProfile gameprofile) {
          return false;
      }
