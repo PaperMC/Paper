@@ -1,5 +1,6 @@
 package org.bukkit.plugin.java;
 
+import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
@@ -9,8 +10,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +40,7 @@ final class PluginClassLoader extends URLClassLoader {
     final JavaPlugin plugin;
     private JavaPlugin pluginInit;
     private IllegalStateException pluginState;
-    private final Set<String> seenIllegalAccess = new HashSet<>();
+    private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     static {
         ClassLoader.registerAsParallelCapable();
@@ -107,6 +108,7 @@ final class PluginClassLoader extends URLClassLoader {
 
                 if (result != null) {
                     JavaPlugin provider = ((PluginClassLoader) result.getClassLoader()).plugin;
+                    Preconditions.checkState(provider != null, "Globally provided class %s has no plugin. Perhaps broken reflection is in use.", name);
                     String providerName = provider.getName();
 
                     if (provider != plugin
