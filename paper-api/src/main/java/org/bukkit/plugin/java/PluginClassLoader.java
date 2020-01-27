@@ -10,6 +10,7 @@ import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,7 @@ final class PluginClassLoader extends URLClassLoader {
     final JavaPlugin plugin;
     private JavaPlugin pluginInit;
     private IllegalStateException pluginState;
+    private final Set<String> seenIllegalAccess = new HashSet<>();
 
     static {
         ClassLoader.registerAsParallelCapable();
@@ -105,13 +107,16 @@ final class PluginClassLoader extends URLClassLoader {
 
                 if (result != null) {
                     JavaPlugin provider = ((PluginClassLoader) result.getClassLoader()).plugin;
+                    String providerName = provider.getName();
 
                     if (provider != plugin
-                            && !description.getDepend().contains(provider.getName())
-                            && !description.getSoftDepend().contains(provider.getName())
+                            && !seenIllegalAccess.contains(providerName)
+                            && !description.getDepend().contains(providerName)
+                            && !description.getSoftDepend().contains(providerName)
                             && !provider.getDescription().getLoadBefore().contains(description.getName())) {
 
-                        plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, description.getFullName()});
+                        seenIllegalAccess.add(providerName);
+                        plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getDescription().getFullName()});
                     }
                 }
             }
