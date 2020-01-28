@@ -506,8 +506,6 @@ public final class SimplePluginManager implements PluginManager {
 
     /**
      * Calls an event with the given details.
-     * <p>
-     * This method only synchronizes when the event is not asynchronous.
      *
      * @param event Event details
      */
@@ -520,15 +518,13 @@ public final class SimplePluginManager implements PluginManager {
             if (server.isPrimaryThread()) {
                 throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
             }
-            fireEvent(event);
         } else {
             if (!server.isPrimaryThread()) {
                 throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
             }
-            synchronized (this) {
-                fireEvent(event);
-            }
         }
+
+        fireEvent(event);
     }
 
     private void fireEvent(@NotNull Event event) {
