@@ -4225,11 +4225,16 @@ public enum Material implements Keyed {
     /**
      * Attempts to get the Material with the given name.
      * <p>
-     * This is a normal lookup, names must be the precise name they are given
-     * in the enum.
+     * This is a normal lookup, names must be the precise name they are given in
+     * the enum (but optionally including the LEGACY_PREFIX if legacyName is
+     * true).
+     * <p>
+     * If legacyName is true, then the lookup will be against legacy materials,
+     * but the returned Material will be a modern material (ie this method is
+     * useful for updating stored data).
      *
      * @param name Name of the material to get
-     * @param legacyName whether this is a legacy name
+     * @param legacyName whether this is a legacy name lookup
      * @return Material if found, or null
      */
     @Nullable
@@ -4269,7 +4274,8 @@ public enum Material implements Keyed {
      * an attempt to format it like the enum.
      *
      * @param name Name of the material to get
-     * @param legacyName whether this is a legacy name
+     * @param legacyName whether this is a legacy name (see
+     * {@link #getMaterial(java.lang.String, boolean)}
      * @return Material if found, or null
      */
     @Nullable
