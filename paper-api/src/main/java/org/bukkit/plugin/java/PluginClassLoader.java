@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.SimplePluginManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -113,12 +114,15 @@ final class PluginClassLoader extends URLClassLoader {
 
                     if (provider != plugin
                             && !seenIllegalAccess.contains(providerName)
-                            && !description.getDepend().contains(providerName)
-                            && !description.getSoftDepend().contains(providerName)
-                            && !provider.getDescription().getLoadBefore().contains(description.getName())) {
+                            && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
 
                         seenIllegalAccess.add(providerName);
-                        plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getDescription().getFullName()});
+                        if (plugin != null) {
+                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getDescription().getFullName()});
+                        } else {
+                            // In case the bad access occurs on construction
+                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getDescription().getFullName()});
+                        }
                     }
                 }
             }
