@@ -56,7 +56,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static IBlockData getBlock(Material material, byte data) {
-        return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), getBlock(material), data);
+        return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), data);
     }
 
     public static MaterialData getMaterial(IBlockData data) {
@@ -65,7 +65,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     public static Item getItem(Material material, short data) {
         if (material.isLegacy()) {
-            return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), getItem(material), data);
+            return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), data);
         }
 
         return getItem(material);
@@ -114,10 +114,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     public static Item getItem(Material material) {
+        if (material != null && material.isLegacy()) {
+            material = CraftLegacy.fromLegacy(material);
+        }
+
         return MATERIAL_ITEM.get(material);
     }
 
     public static Block getBlock(Material material) {
+        if (material != null && material.isLegacy()) {
+            material = CraftLegacy.fromLegacy(material);
+        }
+
         return MATERIAL_BLOCK.get(material);
     }
 

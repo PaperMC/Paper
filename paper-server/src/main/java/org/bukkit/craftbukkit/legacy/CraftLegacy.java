@@ -90,7 +90,7 @@ public final class CraftLegacy {
         return (mappedData == null) ? new MaterialData(Material.LEGACY_AIR) : mappedData;
     }
 
-    public static IBlockData fromLegacyData(Material material, Block block, byte data) {
+    public static IBlockData fromLegacyData(Material material, byte data) {
         Preconditions.checkArgument(material.isLegacy(), "fromLegacyData on modern Material");
 
         MaterialData materialData = new MaterialData(material, data);
@@ -107,11 +107,11 @@ public final class CraftLegacy {
             return convertedBlock.getBlockData();
         }
 
-        // Return existing block
-        return block.getBlockData();
+        // Return air
+        return Blocks.AIR.getBlockData();
     }
 
-    public static Item fromLegacyData(Material material, Item item, short data) {
+    public static Item fromLegacyData(Material material, short data) {
         Preconditions.checkArgument(material.isLegacy(), "fromLegacyData on modern Material. Did you forget to define api-version: 1.13 in your plugin.yml?");
 
         MaterialData materialData = new MaterialData(material, (byte) data);
@@ -137,8 +137,8 @@ public final class CraftLegacy {
             }
         }
 
-        // Return existing item
-        return item;
+        // Return air
+        return Items.AIR;
     }
 
     public static byte toLegacyData(IBlockData blockData) {
