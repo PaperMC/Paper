@@ -557,7 +557,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         });
     }
 
-    public void a(Chunk chunk, int i) {
+    // Paper start - optimise random block ticking
+    private final BlockPosition.MutableBlockPosition chunkTickMutablePosition = new BlockPosition.MutableBlockPosition();
+    private final com.destroystokyo.paper.util.math.ThreadUnsafeRandom randomTickRandom = new com.destroystokyo.paper.util.math.ThreadUnsafeRandom();
+    // Paper end
+
+    public void a(Chunk chunk, int i) { final int randomTickSpeed = i; // Paper
         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
         boolean flag = this.isRaining();
         int j = chunkcoordintpair.d();
@@ -565,10 +570,10 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         GameProfilerFiller gameprofilerfiller = this.getMethodProfiler();
 
         gameprofilerfiller.enter("thunder");
-        BlockPosition blockposition;
+        final BlockPosition.MutableBlockPosition blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
 
         if (!this.paperConfig.disableThunder && flag && this.V() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
-            blockposition = this.a(this.a(j, 0, k, 15));
+            blockposition.setValues(this.a(this.a(j, 0, k, 15))); // Paper
             if (this.isRainingAt(blockposition)) {
                 DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
                 boolean flag1 = this.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
@@ -591,59 +596,77 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         }
 
         gameprofilerfiller.exitEnter("iceandsnow");
-        if (!this.paperConfig.disableIceAndSnow && this.random.nextInt(16) == 0) { // Paper - Disable ice and snow
-            blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, this.a(j, 0, k, 15));
-            BlockPosition blockposition1 = blockposition.down();
+        if (!this.paperConfig.disableIceAndSnow && this.randomTickRandom.nextInt(16) == 0) { // Paper - Disable ice and snow // Paper - optimise random ticking
+            // Paper start - optimise chunk ticking
+            this.getRandomBlockPosition(j, 0, k, 15, blockposition);
+            int normalY = chunk.getHighestBlockY(HeightMap.Type.MOTION_BLOCKING, blockposition.getX() & 15, blockposition.getZ() & 15);
+            int downY = normalY - 1;
+            blockposition.setY(normalY);
+            // Paper end
             BiomeBase biomebase = this.getBiome(blockposition);
 
-            if (biomebase.a(this, blockposition1)) {
-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.getBlockData(), null); // CraftBukkit
+            // Paper start - optimise chunk ticking
+            blockposition.setY(downY);
+            if (biomebase.a(this, blockposition)) {
+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.ICE.getBlockData(), null); // CraftBukkit
+                // Paper end
             }
 
+            blockposition.setY(normalY); // Paper
             if (flag && biomebase.b(this, blockposition)) {
                 org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.SNOW.getBlockData(), null); // CraftBukkit
             }
 
-            if (flag && this.getBiome(blockposition1).c() == BiomeBase.Precipitation.RAIN) {
-                this.getType(blockposition1).getBlock().c((World) this, blockposition1);
+            // Paper start - optimise chunk ticking
+            blockposition.setY(downY);
+            if (flag && this.getBiome(blockposition).c() == BiomeBase.Precipitation.RAIN) {
+                chunk.getType(blockposition).getBlock().c((World) this, blockposition);
+                // Paper end
             }
         }
 
-        gameprofilerfiller.exitEnter("tickBlocks");
-        timings.chunkTicksBlocks.startTiming(); // Paper
+        // Paper start - optimise random block ticking
+        gameprofilerfiller.exit();
         if (i > 0) {
-            ChunkSection[] achunksection = chunk.getSections();
-            int l = achunksection.length;
+            gameprofilerfiller.enter("randomTick");
+            timings.chunkTicksBlocks.startTiming(); // Paper
 
-            for (int i1 = 0; i1 < l; ++i1) {
-                ChunkSection chunksection = achunksection[i1];
+            ChunkSection[] sections = chunk.getSections();
 
-                if (chunksection != Chunk.a && chunksection.d()) {
-                    int j1 = chunksection.getYPosition();
+            for (int sectionIndex = 0; sectionIndex < 16; ++sectionIndex) {
+                ChunkSection section = sections[sectionIndex];
+                if (section == null || section.tickingList.size() == 0) {
+                    continue;
+                }
 
-                    for (int k1 = 0; k1 < i; ++k1) {
-                        BlockPosition blockposition2 = this.a(j, j1, k, 15);
+                int yPos = sectionIndex << 4;
 
-                        gameprofilerfiller.enter("randomTick");
-                        IBlockData iblockdata = chunksection.getType(blockposition2.getX() - j, blockposition2.getY() - j1, blockposition2.getZ() - k);
-
-                        if (iblockdata.isTicking()) {
-                            iblockdata.b(this, blockposition2, this.random);
-                        }
-
-                        Fluid fluid = iblockdata.getFluid();
-
-                        if (fluid.f()) {
-                            fluid.b(this, blockposition2, this.random);
-                        }
-
-                        gameprofilerfiller.exit();
+                for (int a = 0; a < randomTickSpeed; ++a) {
+                    int tickingBlocks = section.tickingList.size();
+                    int index = this.randomTickRandom.nextInt(16 * 16 * 16);
+                    if (index >= tickingBlocks) {
+                        continue;
                     }
+
+                    long raw = section.tickingList.getRaw(index);
+                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
+                    int randomX = location & 15;
+                    int randomY = ((location >>> (4 + 4)) & 255) | yPos;
+                    int randomZ = (location >>> 4) & 15;
+
+                    BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
+                    IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
+
+                    iblockdata.b(this, blockposition2, this.randomTickRandom);
+
+                    // We drop the fluid tick since LAVA is ALREADY TICKED by the above method.
+                    // TODO CHECK ON UPDATE
                 }
             }
+            gameprofilerfiller.exit();
+            timings.chunkTicksBlocks.stopTiming(); // Paper
+            // Paper end
         }
-        timings.chunkTicksBlocks.stopTiming(); // Paper
-        gameprofilerfiller.exit();
     }
 
     protected BlockPosition a(BlockPosition blockposition) {

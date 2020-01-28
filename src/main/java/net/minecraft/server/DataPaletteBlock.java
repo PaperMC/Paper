@@ -277,6 +277,14 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         });
     }
 
+    // Paper start
+    public void forEachLocation(DataPaletteBlock.a<T> datapaletteblock_a) {
+        this.getDataBits().forEach((int location, int data) -> {
+            datapaletteblock_a.accept(this.getDataPalette().getObject(data), location);
+        });
+    }
+    // Paper end
+
     @FunctionalInterface
     public interface a<T> {
 

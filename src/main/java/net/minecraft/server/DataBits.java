@@ -111,4 +111,32 @@ public class DataBits {
         }
 
     }
+
+    // Paper start
+    public final void forEach(DataBitConsumer consumer) {
+        int i = 0;
+        long[] along = this.b;
+        int j = along.length;
+
+        for (int k = 0; k < j; ++k) {
+            long l = along[k];
+
+            for (int i1 = 0; i1 < this.f; ++i1) {
+                consumer.accept(i, (int) (l & this.d));
+                l >>= this.c;
+                ++i;
+                if (i >= this.e) {
+                    return;
+                }
+            }
+        }
+    }
+
+    @FunctionalInterface
+    static interface DataBitConsumer {
+
+        void accept(int location, int data);
+
+    }
+    // Paper end
 }

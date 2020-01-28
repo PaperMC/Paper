@@ -28,7 +28,7 @@ public class EntityTurtle extends EntityAnimal {
     }
 
     public void setHomePos(BlockPosition blockposition) {
-        this.datawatcher.set(EntityTurtle.bp, blockposition);
+        this.datawatcher.set(EntityTurtle.bp, blockposition.immutableCopy()); // Paper - called with mutablepos...
     }
 
     public BlockPosition getHomePos() { // Paper - public

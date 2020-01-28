@@ -1408,10 +1408,18 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public abstract ITagRegistry p();
 
     public BlockPosition a(int i, int j, int k, int l) {
+        // Paper start - allow use of mutable pos
+        BlockPosition.MutableBlockPosition ret = new BlockPosition.MutableBlockPosition();
+        this.getRandomBlockPosition(i, j, k, l, ret);
+        return ret.immutableCopy();
+    }
+    public final BlockPosition.MutableBlockPosition getRandomBlockPosition(int i, int j, int k, int l, BlockPosition.MutableBlockPosition out) {
+        // Paper end
         this.n = this.n * 3 + 1013904223;
         int i1 = this.n >> 2;
 
-        return new BlockPosition(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15));
+        out.setValues(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15)); // Paper - change to setValues call
+        return out; // Paper
     }
 
     public boolean isSavingDisabled() {

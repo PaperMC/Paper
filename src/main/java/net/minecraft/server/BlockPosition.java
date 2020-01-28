@@ -462,6 +462,7 @@ public class BlockPosition extends BaseBlockPosition {
             return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
         }
 
+        public final BlockPosition.MutableBlockPosition setValues(final BaseBlockPosition baseblockposition) { return this.g(baseblockposition); } // Paper - OBFHELPER
         public BlockPosition.MutableBlockPosition g(BaseBlockPosition baseblockposition) {
             return this.d(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
         }

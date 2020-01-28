@@ -593,8 +593,8 @@ public class Chunk implements IChunkAccess {
         this.entities.remove(entity); // Paper
     }
 
-    @Override
-    public int getHighestBlock(HeightMap.Type heightmap_type, int i, int j) {
+    public final int getHighestBlockY(HeightMap.Type heightmap_type, int i, int j) { return this.getHighestBlock(heightmap_type, i, j) + 1; } // Paper - sort of an obfhelper, but without -1
+    @Override public int getHighestBlock(HeightMap.Type heightmap_type, int i, int j) { // Paper
         return ((HeightMap) this.heightMap.get(heightmap_type)).a(i & 15, j & 15) - 1;
     }
 
