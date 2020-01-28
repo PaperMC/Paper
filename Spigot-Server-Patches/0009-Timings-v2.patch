@@ -1,4 +1,4 @@
-From 0bc5c16d73d2e593416aef85336d9d001a29c0e7 Mon Sep 17 00:00:00 2001
+From 58a9ac42261c7614a19aef2e5303912a59027b5d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -565,7 +565,7 @@ index ba40d5fbb5..ee42e1dfa4 100644
                  int k = 0;
                  CustomFunction.c[] acustomfunction_c = customfunction.b();
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 1cde6fc9c1..e636433b11 100644
+index 9eed98e379..d6646d7e61 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -20,6 +20,8 @@ import java.util.List;
@@ -586,7 +586,7 @@ index 1cde6fc9c1..e636433b11 100644
  import org.bukkit.event.server.ServerCommandEvent;
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.server.RemoteServerCommandEvent;
-@@ -431,7 +433,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -438,7 +440,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      }
  
      public void handleCommandQueue() {
@@ -595,7 +595,7 @@ index 1cde6fc9c1..e636433b11 100644
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
-@@ -446,7 +448,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -453,7 +455,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              // CraftBukkit end
          }
  
@@ -604,7 +604,7 @@ index 1cde6fc9c1..e636433b11 100644
      }
  
      @Override
-@@ -672,6 +674,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -679,6 +681,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
  
      @Override
      public String executeRemoteCommand(String s) {
@@ -612,7 +612,7 @@ index 1cde6fc9c1..e636433b11 100644
          this.remoteControlCommandListener.clearMessages();
          this.executeSync(() -> {
              // CraftBukkit start - fire RemoteServerCommandEvent
-@@ -680,10 +683,39 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -687,10 +690,39 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
              if (event.isCancelled()) {
                  return;
              }
@@ -653,7 +653,7 @@ index 1cde6fc9c1..e636433b11 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 3a969d92e0..2d8c37d73b 100644
+index 306724e693..5635192f7c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -29,7 +29,8 @@ import org.bukkit.command.CommandSender;
@@ -1202,7 +1202,7 @@ index 820180ab3f..fa6400dccd 100644
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 8fc88f162c..0087bd9b1c 100644
+index 304dfac061..da3eb20d45 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,5 +1,7 @@
@@ -1213,15 +1213,16 @@ index 8fc88f162c..0087bd9b1c 100644
  import com.google.common.collect.Lists;
  import java.io.IOException;
  import java.util.Collection;
-@@ -20,7 +22,6 @@ import java.util.ArrayList;
+@@ -18,7 +20,7 @@ import org.apache.logging.log4j.util.Supplier;
+ import java.util.HashMap;
  import java.util.Map;
  import org.bukkit.Bukkit;
- import org.bukkit.block.BlockState;
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
++import org.bukkit.block.BlockState;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
- import org.bukkit.craftbukkit.block.CraftBlockState;
-@@ -87,7 +88,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ import org.bukkit.craftbukkit.block.CapturedBlockState;
+@@ -71,7 +73,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
  
@@ -1230,7 +1231,7 @@ index 8fc88f162c..0087bd9b1c 100644
      public static BlockPosition lastPhysicsProblem; // Spigot
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
-@@ -150,7 +151,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -134,7 +136,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              public void c(WorldBorder worldborder, double d0) {}
          });
          // CraftBukkit end
@@ -1239,7 +1240,7 @@ index 8fc88f162c..0087bd9b1c 100644
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
-@@ -746,15 +747,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -716,15 +718,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          }
  
          timings.tileEntityPending.stopTiming(); // Spigot
@@ -1847,5 +1848,5 @@ index ca7789b5e0..4423839697 100644
      }
  }
 -- 
-2.25.0.windows.1
+2.25.0
 
