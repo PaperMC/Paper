@@ -1,4 +1,4 @@
-From eb3d377b28cd5a94bf94c5cd58a1eb3447151afd Mon Sep 17 00:00:00 2001
+From 055bd556b5d7128fa7ea173245964782f8a0c688 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 27 Jan 2020 21:28:00 -0800
 Subject: [PATCH] Optimise random block ticking
@@ -154,7 +154,7 @@ index 59d8a8719..674c31400 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 4526527ac..8bfa9c1e4 100644
+index 4526527ac..8b28fb5ee 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -5,12 +5,15 @@ import javax.annotation.Nullable;
@@ -170,7 +170,7 @@ index 4526527ac..8bfa9c1e4 100644
      final DataPaletteBlock<IBlockData> blockIds;
  
 +    Chunk chunk; // Paper
-+    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList();
++    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
 +
      public ChunkSection(int i) {
          // Paper start - add parameters
@@ -213,7 +213,7 @@ index 4526527ac..8bfa9c1e4 100644
              }
          }
  
-@@ -115,23 +135,40 @@ public class ChunkSection {
+@@ -115,23 +135,39 @@ public class ChunkSection {
      }
  
      public void recalcBlockCounts() {
@@ -245,7 +245,6 @@ index 4526527ac..8bfa9c1e4 100644
 +                    if (this.chunk != null) {
 +                        this.chunk.tickingList.add(location + offset, iblockdata);
 +                    }
-+                    this.tickingBlockCount = (short) (this.tickingBlockCount + 1);
 +                    // Paper end
                  }
              }
@@ -408,7 +407,7 @@ index abd8b751b..132b1b429 100644
  
      public boolean isSavingDisabled() {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 6ec394da5..09f33368c 100644
+index 6ec394da5..94299b58a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -532,6 +532,11 @@ public class WorldServer extends World {
@@ -433,7 +432,7 @@ index 6ec394da5..09f33368c 100644
 -        if (!this.paperConfig.disableThunder && flag && this.U() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
 -            blockposition = this.a(this.a(j, 0, k, 15));
 +        if (!this.paperConfig.disableThunder && flag && this.U() && this.randomTickRandom.nextInt(100000) == 0) { // Paper - Disable thunder // Paper - optimise random ticking
-+            blockposition.setValues(this.a(this.getRandomBlockPosition(j, 0, k, 15, blockposition)));
++            blockposition.setValues(this.a(this.getRandomBlockPosition(j, 0, k, 15, blockposition))); // Paper
              if (this.isRainingAt(blockposition)) {
                  DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
                  boolean flag1 = this.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
@@ -491,7 +490,7 @@ index 6ec394da5..09f33368c 100644
 +        // Paper start - optimise random block ticking
 +        gameprofilerfiller.exit();
 +        int blocks = chunk.tickingList.size();
-+        if (i > 0 && blocks > 0) { /* Concrete */
++        if (i > 0 && blocks > 0) {
 +            if ((this.randomTickRandom.nextInt() & (16 * 16 * 256 - 1)) > blocks) {
 +                // we optimise random block ticking by realising that most of the blocks we will try to tick
 +                // are not tickable. Instead we only tick tickable blocks, but only if the above
