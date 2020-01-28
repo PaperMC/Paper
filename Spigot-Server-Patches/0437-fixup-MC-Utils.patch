@@ -1,0 +1,55 @@
+From d3d3a83a034de547902396745311306bfd17102b Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 27 Jan 2020 22:15:20 -0800
+Subject: [PATCH] fixup! MC Utils
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 42c559ad4..71297f95a 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -168,6 +168,20 @@ public class ChunkProviderServer extends IChunkProvider {
+     public Chunk getChunkAtIfCachedImmediately(int x, int z) {
+         long k = ChunkCoordIntPair.pair(x, z);
+ 
++        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
++
++        PlayerChunk playerChunk = this.getChunk(k);
++        if (playerChunk == null) {
++            return null;
++        }
++
++        return playerChunk.getFullChunkIfCached();
++    }
++
++    @Nullable
++    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
++        long k = ChunkCoordIntPair.pair(x, z);
++
+         // Paper start - Optimize getIfLoaded type calls
+         if (Thread.currentThread() == this.serverThread) {
+             return this.getChunkAtIfLoadedMainThread(x, z);
+@@ -192,20 +206,6 @@ public class ChunkProviderServer extends IChunkProvider {
+         // Paper end
+     }
+ 
+-    @Nullable
+-    public Chunk getChunkAtIfLoadedImmediately(int x, int z) {
+-        long k = ChunkCoordIntPair.pair(x, z);
+-
+-        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
+-
+-        PlayerChunk playerChunk = this.getChunk(k);
+-        if (playerChunk == null) {
+-            return null;
+-        }
+-
+-        return playerChunk.getFullChunk();
+-    }
+-
+     @Nullable
+     public IChunkAccess getChunkAtImmediately(int x, int z) {
+         long k = ChunkCoordIntPair.pair(x, z);
+-- 
+2.25.0.windows.1
+
