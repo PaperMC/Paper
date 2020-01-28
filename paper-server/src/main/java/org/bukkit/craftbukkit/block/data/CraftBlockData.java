@@ -260,7 +260,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public String toString() {
-        return "CraftBlockData{" + state.toString() + "}";
+        return "CraftBlockData{" + getAsString() + "}";
     }
 
     // Mimicked from BlockDataAbstract#toString()
