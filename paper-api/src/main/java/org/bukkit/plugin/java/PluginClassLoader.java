@@ -1,6 +1,5 @@
 package org.bukkit.plugin.java;
 
-import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.IOException;
@@ -108,20 +107,18 @@ final class PluginClassLoader extends URLClassLoader {
                 result = loader.getClassByName(name);
 
                 if (result != null) {
-                    JavaPlugin provider = ((PluginClassLoader) result.getClassLoader()).plugin;
-                    Preconditions.checkState(provider != null, "Globally provided class %s has no plugin. Perhaps broken reflection is in use.", name);
-                    String providerName = provider.getName();
+                    PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
 
-                    if (provider != plugin
-                            && !seenIllegalAccess.contains(providerName)
+                    if (provider != description
+                            && !seenIllegalAccess.contains(provider.getName())
                             && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
 
-                        seenIllegalAccess.add(providerName);
+                        seenIllegalAccess.add(provider.getName());
                         if (plugin != null) {
-                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getDescription().getFullName()});
+                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getFullName()});
                         } else {
                             // In case the bad access occurs on construction
-                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getDescription().getFullName()});
+                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getFullName()});
                         }
                     }
                 }

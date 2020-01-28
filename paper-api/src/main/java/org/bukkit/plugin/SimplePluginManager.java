@@ -796,11 +796,11 @@ public final class SimplePluginManager implements PluginManager {
         return new HashSet<Permission>(permissions.values());
     }
 
-    public boolean isTransitiveDepend(@NotNull PluginDescriptionFile plugin, @NotNull Plugin depend) {
+    public boolean isTransitiveDepend(@NotNull PluginDescriptionFile plugin, @NotNull PluginDescriptionFile depend) {
         Preconditions.checkArgument(plugin != null, "plugin");
         Preconditions.checkArgument(depend != null, "depend");
 
-        return Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(depend.getName());
+        return dependencyGraph.nodes().contains(plugin.getName()) && Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(depend.getName());
     }
 
     @Override
