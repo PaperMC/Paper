@@ -4,8 +4,1613 @@ Date: Mon, 28 Mar 2016 20:55:47 -0400
 Subject: [PATCH] MC Utils
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/util/concurrent/WeakSeqLock.java b/src/main/java/com/destroystokyo/paper/util/concurrent/WeakSeqLock.java
+new file mode 100644
+index 0000000000..4029dc68cf
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/concurrent/WeakSeqLock.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.concurrent;
++
++import java.util.concurrent.atomic.AtomicLong;
++
++/**
++ * copied from https://github.com/Spottedleaf/ConcurrentUtil/blob/master/src/main/java/ca/spottedleaf/concurrentutil/lock/WeakSeqLock.java
++ * @author Spottedleaf
++ */
++public final class WeakSeqLock {
++    // TODO when the switch to J11 is made, nuke this class from orbit
++
++    protected final AtomicLong lock = new AtomicLong();
++
++    public WeakSeqLock() {
++        //VarHandle.storeStoreFence(); // warn: usages must be checked to ensure this behaviour isn't needed
++    }
++
++    public void acquireWrite() {
++        // must be release-type write
++        this.lock.lazySet(this.lock.get() + 1);
++    }
++
++    public boolean canRead(final long read) {
++        return (read & 1) == 0;
++    }
++
++    public boolean tryAcquireWrite() {
++        this.acquireWrite();
++        return true;
++    }
++
++    public void releaseWrite() {
++        // must be acquire-type write
++        final long lock = this.lock.get(); // volatile here acts as store-store
++        this.lock.lazySet(lock + 1);
++    }
++
++    public void abortWrite() {
++        // must be acquire-type write
++        final long lock = this.lock.get(); // volatile here acts as store-store
++        this.lock.lazySet(lock ^ 1);
++    }
++
++    public long acquireRead() {
++        int failures = 0;
++        long curr;
++
++        for (curr = this.lock.get(); !this.canRead(curr); curr = this.lock.get()) {
++            // without j11, our only backoff is the yield() call...
++
++            if (++failures > 5_000) { /* TODO determine a threshold */
++                Thread.yield();
++            }
++            /* Better waiting is beyond the scope of this lock; if it is needed the lock is being misused */
++        }
++
++        //VarHandle.loadLoadFence(); // volatile acts as the load-load barrier
++        return curr;
++    }
++
++    public boolean tryReleaseRead(final long read) {
++        return this.lock.get() == read; // volatile acts as the load-load barrier
++    }
++
++    public long getSequentialCounter() {
++        return this.lock.get();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Int.java b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Int.java
+new file mode 100644
+index 0000000000..968c9ed328
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Int.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.map;
++
++import com.destroystokyo.paper.util.concurrent.WeakSeqLock;
++import it.unimi.dsi.fastutil.longs.Long2IntMap;
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
++import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
++import it.unimi.dsi.fastutil.objects.ObjectIterator;
++
++/**
++ * @author Spottedleaf
++ */
++public class QueuedChangesMapLong2Int {
++
++    protected final Long2IntOpenHashMap updatingMap;
++    protected final Long2IntOpenHashMap visibleMap;
++    protected final Long2IntOpenHashMap queuedPuts;
++    protected final LongOpenHashSet queuedRemove;
++
++    protected int queuedDefaultReturnValue;
++
++    // we use a seqlock as writes are not common.
++    protected final WeakSeqLock updatingMapSeqLock = new WeakSeqLock();
++
++    public QueuedChangesMapLong2Int() {
++        this(16, 0.75f);
++    }
++
++    public QueuedChangesMapLong2Int(final int capacity, final float loadFactor) {
++        this.updatingMap = new Long2IntOpenHashMap(capacity, loadFactor);
++        this.visibleMap = new Long2IntOpenHashMap(capacity, loadFactor);
++        this.queuedPuts = new Long2IntOpenHashMap();
++        this.queuedRemove = new LongOpenHashSet();
++    }
++
++    public void queueDefaultReturnValue(final int dfl) {
++        this.queuedDefaultReturnValue = dfl;
++        this.updatingMap.defaultReturnValue(dfl);
++    }
++
++    public int queueUpdate(final long k, final int v) {
++        this.queuedRemove.remove(k);
++        this.queuedPuts.put(k, v);
++
++        return this.updatingMap.put(k, v);
++    }
++
++    public int queueRemove(final long k) {
++        this.queuedPuts.remove(k);
++        this.queuedRemove.add(k);
++
++        return this.updatingMap.remove(k);
++    }
++
++    public int getUpdating(final long k) {
++        return this.updatingMap.get(k);
++    }
++
++    public int getVisible(final long k) {
++        return this.visibleMap.get(k);
++    }
++
++    public int getVisibleAsync(final long k) {
++        long readlock;
++        int ret = 0;
++
++        do {
++            readlock = this.updatingMapSeqLock.acquireRead();
++            try {
++                ret = this.visibleMap.get(k);
++            } catch (final Throwable thr) {
++                if (thr instanceof ThreadDeath) {
++                    throw (ThreadDeath)thr;
++                }
++                // ignore...
++                continue;
++            }
++
++        } while (!this.updatingMapSeqLock.tryReleaseRead(readlock));
++
++        return ret;
++    }
++
++    public boolean performUpdates() {
++        this.updatingMapSeqLock.acquireWrite();
++        this.visibleMap.defaultReturnValue(this.queuedDefaultReturnValue);
++        this.updatingMapSeqLock.releaseWrite();
++
++        if (this.queuedPuts.isEmpty() && this.queuedRemove.isEmpty()) {
++            return false;
++        }
++
++        // update puts
++        final ObjectIterator<Long2IntMap.Entry> iterator0 = this.queuedPuts.long2IntEntrySet().fastIterator();
++        while (iterator0.hasNext()) {
++            final Long2IntMap.Entry entry = iterator0.next();
++            final long key = entry.getLongKey();
++            final int val = entry.getValue();
++
++            this.updatingMapSeqLock.acquireWrite();
++            try {
++                this.visibleMap.put(key, val);
++            } finally {
++                this.updatingMapSeqLock.releaseWrite();
++            }
++        }
++
++        final LongIterator iterator1 = this.queuedRemove.iterator();
++        while (iterator1.hasNext()) {
++            final long key = iterator1.nextLong();
++
++            this.updatingMapSeqLock.acquireWrite();
++            try {
++                this.visibleMap.remove(key);
++            } finally {
++                this.updatingMapSeqLock.releaseWrite();
++            }
++        }
++
++
++        return true;
++    }
++
++    public boolean performUpdatesLockMap() {
++        this.updatingMapSeqLock.acquireWrite();
++        try {
++            this.visibleMap.defaultReturnValue(this.queuedDefaultReturnValue);
++
++            if (this.queuedPuts.isEmpty() && this.queuedRemove.isEmpty()) {
++                return false;
++            }
++
++            // update puts
++            final ObjectIterator<Long2IntMap.Entry> iterator0 = this.queuedPuts.long2IntEntrySet().fastIterator();
++            while (iterator0.hasNext()) {
++                final Long2IntMap.Entry entry = iterator0.next();
++                final long key = entry.getLongKey();
++                final int val = entry.getValue();
++
++                this.visibleMap.put(key, val);
++            }
++
++            final LongIterator iterator1 = this.queuedRemove.iterator();
++            while (iterator1.hasNext()) {
++                final long key = iterator1.nextLong();
++
++                this.visibleMap.remove(key);
++            }
++
++
++            return true;
++        } finally {
++            this.updatingMapSeqLock.releaseWrite();
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java
+new file mode 100644
+index 0000000000..07685b6bd5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.map;
++
++import com.destroystokyo.paper.util.concurrent.WeakSeqLock;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
++
++/**
++ * @author Spottedleaf
++ */
++public class QueuedChangesMapLong2Object<V> {
++
++    protected static final Object REMOVED = new Object();
++
++    protected final Long2ObjectLinkedOpenHashMap<V> updatingMap;
++    protected final Long2ObjectLinkedOpenHashMap<V> visibleMap;
++    protected final Long2ObjectLinkedOpenHashMap<Object> queuedChanges;
++
++    // we use a seqlock as writes are not common.
++    protected final WeakSeqLock updatingMapSeqLock = new WeakSeqLock();
++
++    public QueuedChangesMapLong2Object() {
++        this(16, 0.75f); // dfl for fastutil
++    }
++
++    public QueuedChangesMapLong2Object(final int capacity, final float loadFactor) {
++        this.updatingMap = new Long2ObjectLinkedOpenHashMap<>(capacity, loadFactor);
++        this.visibleMap = new Long2ObjectLinkedOpenHashMap<>(capacity, loadFactor);
++        this.queuedChanges = new Long2ObjectLinkedOpenHashMap<>();
++    }
++
++    public V queueUpdate(final long k, final V value) {
++        this.queuedChanges.put(k, value);
++        return this.updatingMap.put(k, value);
++    }
++
++    public V queueRemove(final long k) {
++        this.queuedChanges.put(k, REMOVED);
++        return this.updatingMap.remove(k);
++    }
++
++    public V getUpdating(final long k) {
++        return this.updatingMap.get(k);
++    }
++
++    public V getVisible(final long k) {
++        return this.visibleMap.get(k);
++    }
++
++    public V getVisibleAsync(final long k) {
++        long readlock;
++        V ret = null;
++
++        do {
++            readlock = this.updatingMapSeqLock.acquireRead();
++
++            try {
++                ret = this.visibleMap.get(k);
++            } catch (final Throwable thr) {
++                if (thr instanceof ThreadDeath) {
++                    throw (ThreadDeath)thr;
++                }
++                // ignore...
++                continue;
++            }
++
++        } while (!this.updatingMapSeqLock.tryReleaseRead(readlock));
++
++        return ret;
++    }
++
++    public Long2ObjectLinkedOpenHashMap<V> getVisibleMap() {
++        return this.visibleMap;
++    }
++
++    public Long2ObjectLinkedOpenHashMap<V> getUpdatingMap() {
++        return this.updatingMap;
++    }
++
++    public int getVisibleSize() {
++        return this.visibleMap.size();
++    }
++
++    public int getVisibleSizeAsync() {
++        long readlock;
++        int ret;
++
++        do {
++            readlock = this.updatingMapSeqLock.acquireRead();
++            ret = this.visibleMap.size();
++        } while (!this.updatingMapSeqLock.tryReleaseRead(readlock));
++
++        return ret;
++    }
++
++    // unlike mojang's impl this cannot be used async since it's not a view of an immutable map
++    public Collection<V> getUpdatingValues() {
++        return this.updatingMap.values();
++    }
++
++    public List<V> getUpdatingValuesCopy() {
++        return new ArrayList<>(this.updatingMap.values());
++    }
++
++    // unlike mojang's impl this cannot be used async since it's not a view of an immutable map
++    public Collection<V> getVisibleValues() {
++        return this.visibleMap.values();
++    }
++
++    public List<V> getVisibleValuesCopy() {
++        return new ArrayList<>(this.visibleMap.values());
++    }
++
++    public boolean performUpdates() {
++        if (this.queuedChanges.isEmpty()) {
++            return false;
++        }
++
++        final ObjectBidirectionalIterator<Long2ObjectMap.Entry<Object>> iterator = this.queuedChanges.long2ObjectEntrySet().fastIterator();
++        while (iterator.hasNext()) {
++            final Long2ObjectMap.Entry<Object> entry = iterator.next();
++            final long key = entry.getLongKey();
++            final Object val = entry.getValue();
++
++            this.updatingMapSeqLock.acquireWrite();
++            try {
++                if (val == REMOVED) {
++                    this.visibleMap.remove(key);
++                } else {
++                    this.visibleMap.put(key, (V)val);
++                }
++            } finally {
++                this.updatingMapSeqLock.releaseWrite();
++            }
++        }
++
++        this.queuedChanges.clear();
++        return true;
++    }
++
++    public boolean performUpdatesLockMap() {
++        if (this.queuedChanges.isEmpty()) {
++            return false;
++        }
++
++        final ObjectBidirectionalIterator<Long2ObjectMap.Entry<Object>> iterator = this.queuedChanges.long2ObjectEntrySet().fastIterator();
++
++        try {
++            this.updatingMapSeqLock.acquireWrite();
++
++            while (iterator.hasNext()) {
++                final Long2ObjectMap.Entry<Object> entry = iterator.next();
++                final long key = entry.getLongKey();
++                final Object val = entry.getValue();
++
++                if (val == REMOVED) {
++                    this.visibleMap.remove(key);
++                } else {
++                    this.visibleMap.put(key, (V)val);
++                }
++            }
++        } finally {
++            this.updatingMapSeqLock.releaseWrite();
++        }
++
++        this.queuedChanges.clear();
++        return true;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/ChunkList.java b/src/main/java/com/destroystokyo/paper/util/maplist/ChunkList.java
+new file mode 100644
+index 0000000000..4ec248adb6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/ChunkList.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
++import net.minecraft.server.Chunk;
++import net.minecraft.server.MCUtil;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.NoSuchElementException;
++
++// list with O(1) remove & contains
++/**
++ * @author Spottedleaf
++ */
++public final class ChunkList implements Iterable<Chunk> {
++
++    protected final Long2IntOpenHashMap chunkToIndex = new Long2IntOpenHashMap();
++    {
++        this.chunkToIndex.defaultReturnValue(Integer.MIN_VALUE);
++    }
++
++    protected Chunk[] chunks = new Chunk[16];
++    protected int count;
++
++    public int size() {
++        return this.count;
++    }
++
++    public boolean contains(final Chunk chunk) {
++        return this.chunkToIndex.containsKey(MCUtil.getCoordinateKey(chunk.getPos()));
++    }
++
++    public boolean remove(final Chunk chunk) {
++        final int index = this.chunkToIndex.remove(MCUtil.getCoordinateKey(chunk.getPos()));
++        if (index == Integer.MIN_VALUE) {
++            return false;
++        }
++
++        // move the entity at the end to this index
++        final int endIndex = --this.count;
++        final Chunk end = this.chunks[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.chunkToIndex.put(MCUtil.getCoordinateKey(end.getPos()), index); // update index
++        }
++        this.chunks[index] = end;
++        this.chunks[endIndex] = null;
++
++        return true;
++    }
++
++    public boolean add(final Chunk chunk) {
++        final int count = this.count;
++        final int currIndex = this.chunkToIndex.putIfAbsent(MCUtil.getCoordinateKey(chunk.getPos()), count);
++
++        if (currIndex != Integer.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        Chunk[] list = this.chunks;
++
++        if (list.length == count) {
++            // resize required
++            list = this.chunks = Arrays.copyOf(list, count * 2); // overflow results in negative
++        }
++
++        list[count] = chunk;
++        this.count = count + 1;
++
++        return true;
++    }
++
++    public Chunk getChecked(final int index) {
++        if (index < 0 || index >= this.count) {
++            throw new IndexOutOfBoundsException("Index: " + index + " is out of bounds, size: " + this.count);
++        }
++        return this.chunks[index];
++    }
++
++    public Chunk getUnchecked(final int index) {
++        return this.chunks[index];
++    }
++
++    public Chunk[] getRawData() {
++        return this.chunks;
++    }
++
++    public void clear() {
++        this.chunkToIndex.clear();
++        Arrays.fill(this.chunks, 0, this.count, null);
++        this.count = 0;
++    }
++
++    @Override
++    public Iterator<Chunk> iterator() {
++        return new Iterator<Chunk>() {
++
++            Chunk lastRet;
++            int current;
++
++            @Override
++            public boolean hasNext() {
++                return this.current < ChunkList.this.count;
++            }
++
++            @Override
++            public Chunk next() {
++                if (this.current >= ChunkList.this.count) {
++                    throw new NoSuchElementException();
++                }
++                return this.lastRet = ChunkList.this.chunks[this.current++];
++            }
++
++            @Override
++            public void remove() {
++                final Chunk lastRet = this.lastRet;
++
++                if (lastRet == null) {
++                    throw new IllegalStateException();
++                }
++                this.lastRet = null;
++
++                ChunkList.this.remove(lastRet);
++                --this.current;
++            }
++        };
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java b/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java
+new file mode 100644
+index 0000000000..f3cb346c9d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
++import net.minecraft.server.Entity;
++import java.util.Arrays;
++import java.util.Iterator;
++import java.util.NoSuchElementException;
++
++// list with O(1) remove & contains
++/**
++ * @author Spottedleaf
++ */
++public final class EntityList implements Iterable<Entity> {
++
++    protected final Int2IntOpenHashMap entityToIndex = new Int2IntOpenHashMap();
++    {
++        this.entityToIndex.defaultReturnValue(Integer.MIN_VALUE);
++    }
++
++    protected Entity[] entities = new Entity[16];
++    protected int count;
++
++    public int size() {
++        return this.count;
++    }
++
++    public boolean contains(final Entity entity) {
++        return this.entityToIndex.containsKey(entity.getId());
++    }
++
++    public boolean remove(final Entity entity) {
++        final int index = this.entityToIndex.remove(entity.getId());
++        if (index == Integer.MIN_VALUE) {
++            return false;
++        }
++
++        // move the entity at the end to this index
++        final int endIndex = --this.count;
++        final Entity end = this.entities[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.entityToIndex.put(end.getId(), index); // update index
++        }
++        this.entities[index] = end;
++        this.entities[endIndex] = null;
++
++        return true;
++    }
++
++    public boolean add(final Entity entity) {
++        final int count = this.count;
++        final int currIndex = this.entityToIndex.putIfAbsent(entity.getId(), count);
++
++        if (currIndex != Integer.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        Entity[] list = this.entities;
++
++        if (list.length == count) {
++            // resize required
++            list = this.entities = Arrays.copyOf(list, count * 2); // overflow results in negative
++        }
++
++        list[count] = entity;
++        this.count = count + 1;
++
++        return true;
++    }
++
++    public Entity getChecked(final int index) {
++        if (index < 0 || index >= this.count) {
++            throw new IndexOutOfBoundsException("Index: " + index + " is out of bounds, size: " + this.count);
++        }
++        return this.entities[index];
++    }
++
++    public Entity getUnchecked(final int index) {
++        return this.entities[index];
++    }
++
++    public Entity[] getRawData() {
++        return this.entities;
++    }
++
++    public void clear() {
++        this.entityToIndex.clear();
++        Arrays.fill(this.entities, 0, this.count, null);
++        this.count = 0;
++    }
++
++    @Override
++    public Iterator<Entity> iterator() {
++        return new Iterator<Entity>() {
++
++            Entity lastRet;
++            int current;
++
++            @Override
++            public boolean hasNext() {
++                return this.current < EntityList.this.count;
++            }
++
++            @Override
++            public Entity next() {
++                if (this.current >= EntityList.this.count) {
++                    throw new NoSuchElementException();
++                }
++                return this.lastRet = EntityList.this.entities[this.current++];
++            }
++
++            @Override
++            public void remove() {
++                final Entity lastRet = this.lastRet;
++
++                if (lastRet == null) {
++                    throw new IllegalStateException();
++                }
++                this.lastRet = null;
++
++                EntityList.this.remove(lastRet);
++                --this.current;
++            }
++        };
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
+new file mode 100644
+index 0000000000..c2f7e4ca0f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.maplist;
++
++import it.unimi.dsi.fastutil.longs.LongIterator;
++import it.unimi.dsi.fastutil.shorts.Short2LongOpenHashMap;
++import net.minecraft.server.ChunkSection;
++import net.minecraft.server.DataPaletteGlobal;
++import net.minecraft.server.IBlockData;
++import java.util.Arrays;
++
++/**
++ * @author Spottedleaf
++ */
++public final class IBlockDataList {
++
++    static final DataPaletteGlobal<IBlockData> GLOBAL_PALETTE = (DataPaletteGlobal)ChunkSection.GLOBAL_PALETTE;
++
++    // map of location -> (index | (location << 16) | (palette id << 32))
++    private final Short2LongOpenHashMap map = new Short2LongOpenHashMap(16, 0.7f);
++    {
++        this.map.defaultReturnValue(Long.MAX_VALUE);
++    }
++
++    private long[] byIndex = new long[16];
++    private int size;
++
++    public static int getLocationKey(final int x, final int y, final int z) {
++        return (x & 15) | (((z & 15) << 4)) | ((y & 255) << (4 + 4));
++    }
++
++    public static IBlockData getBlockDataFromRaw(final long raw) {
++        return GLOBAL_PALETTE.getObject((int)(raw >>> 32));
++    }
++
++    public static int getIndexFromRaw(final long raw) {
++        return (int)(raw & 0xFFFF);
++    }
++
++    public static int getLocationFromRaw(final long raw) {
++        return (int)((raw >>> 16) & 0xFFFF);
++    }
++
++    public static long getRawFromValues(final int index, final int location, final IBlockData data) {
++        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.getOrCreateIdFor(data)) << 32);
++    }
++
++    public static long setIndexRawValues(final long value, final int index) {
++        return value & ~(0xFFFF) | (index);
++    }
++
++    public long add(final int x, final int y, final int z, final IBlockData data) {
++        return this.add(getLocationKey(x, y, z), data);
++    }
++
++    public long add(final int location, final IBlockData data) {
++        final long curr = this.map.get((short)location);
++
++        if (curr == Long.MAX_VALUE) {
++            final int index = this.size++;
++            final long raw = getRawFromValues(index, location, data);
++            this.map.put((short)location, raw);
++
++            if (index >= this.byIndex.length) {
++                this.byIndex = Arrays.copyOf(this.byIndex, this.byIndex.length * 2);
++            }
++
++            this.byIndex[index] = raw;
++            return raw;
++        } else {
++            final int index = getIndexFromRaw(curr);
++            final long raw = this.byIndex[index] = getRawFromValues(index, location, data);
++
++            this.map.put((short)location, raw);
++
++            return raw;
++        }
++    }
++
++    public long remove(final int x, final int y, final int z) {
++        return this.remove(getLocationKey(x, y, z));
++    }
++
++    public long remove(final int location) {
++        final long ret = this.map.remove((short)location);
++        final int index = getIndexFromRaw(ret);
++        if (ret == Long.MAX_VALUE) {
++            return ret;
++        }
++
++        // move the entry at the end to this index
++        final int endIndex = --this.size;
++        final long end = this.byIndex[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.map.put((short)getLocationFromRaw(end), setIndexRawValues(end, index));
++        }
++        this.byIndex[index] = end;
++        this.byIndex[endIndex] = 0L;
++
++        return ret;
++    }
++
++    public int size() {
++        return this.size;
++    }
++
++    public long getRaw(final int index) {
++        return this.byIndex[index];
++    }
++
++    public int getLocation(final int index) {
++        return getLocationFromRaw(this.getRaw(index));
++    }
++
++    public IBlockData getData(final int index) {
++        return getBlockDataFromRaw(this.getRaw(index));
++    }
++
++    public void clear() {
++        this.size = 0;
++        this.map.clear();
++    }
++
++    public LongIterator getRawIterator() {
++        return this.map.values().iterator();
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
+new file mode 100644
+index 0000000000..5a44bc644b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.misc;
++
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
++import net.minecraft.server.ChunkCoordIntPair;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.MinecraftServer;
++import javax.annotation.Nullable;
++import java.util.Iterator;
++
++/**
++ * @author Spottedleaf
++ */
++public abstract class AreaMap<E> {
++
++    /* Tested via https://gist.github.com/Spottedleaf/520419c6f41ef348fe9926ce674b7217 */
++
++    private final Object2LongOpenHashMap<E> objectToLastCoordinate = new Object2LongOpenHashMap<>();
++    private final Object2IntOpenHashMap<E> objectToViewDistance = new Object2IntOpenHashMap<>();
++
++    {
++        this.objectToViewDistance.defaultReturnValue(-1);
++        this.objectToLastCoordinate.defaultReturnValue(Long.MIN_VALUE);
++    }
++
++    // we use linked for better iteration.
++    // map of: coordinate to set of objects in coordinate
++    private final Long2ObjectOpenHashMap<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> areaMap = new Long2ObjectOpenHashMap<>(1024, 0.3f);
++    private final PooledLinkedHashSets<E> pooledHashSets;
++
++    private final ChangeCallback<E> addCallback;
++    private final ChangeCallback<E> removeCallback;
++
++    public AreaMap() {
++        this(new PooledLinkedHashSets<>());
++    }
++
++    // let users define a "global" or "shared" pooled sets if they wish
++    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets) {
++        this(pooledHashSets, null, null);
++    }
++
++    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets, final ChangeCallback<E> addCallback, final ChangeCallback<E> removeCallback) {
++        this.pooledHashSets = pooledHashSets;
++        this.addCallback = addCallback;
++        this.removeCallback = removeCallback;
++    }
++
++    @Nullable
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final long key) {
++        return this.areaMap.get(key);
++    }
++
++    @Nullable
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final ChunkCoordIntPair chunkPos) {
++        return this.getObjectsInRange(chunkPos.x, chunkPos.z);
++    }
++
++    @Nullable
++    public PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getObjectsInRange(final int chunkX, final int chunkZ) {
++        return this.getObjectsInRange(MCUtil.getCoordinateKey(chunkX, chunkZ));
++    }
++
++    // Long.MIN_VALUE indicates the object is not mapped
++    public long getLastCoordinate(final E object) {
++        return this.objectToLastCoordinate.getOrDefault(object, Long.MIN_VALUE);
++    }
++
++    // -1 indicates the object is not mapped
++    public int getLastViewDistance(final E object) {
++        return this.objectToViewDistance.getOrDefault(object, -1);
++    }
++
++    // returns the total number of mapped chunks
++    public int size() {
++        return this.areaMap.size();
++    }
++
++    public void update(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        final int oldDistance = this.objectToViewDistance.put(object, viewDistance);
++        final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
++        if (oldDistance == -1) {
++            this.objectToLastCoordinate.put(object, newPos);
++            this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, viewDistance);
++        } else {
++            this.updateObject(object, this.objectToLastCoordinate.put(object, newPos), newPos, oldDistance, viewDistance);
++        }
++        //this.validate(object, viewDistance);
++    }
++
++    public boolean remove(final E object) {
++        final long position = this.objectToLastCoordinate.removeLong(object);
++        final int viewDistance = this.objectToViewDistance.removeInt(object);
++
++        if (viewDistance == -1) {
++            return false;
++        }
++
++        final int currentX = MCUtil.getCoordinateX(position);
++        final int currentZ = MCUtil.getCoordinateZ(position);
++
++        this.removeObject(object, currentX, currentZ, currentX, currentZ, viewDistance);
++        //this.validate(object, -1);
++        return true;
++    }
++
++    protected abstract PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getEmptySetFor(final E object);
++
++    // expensive op, only for debug
++    private void validate(final E object, final int viewDistance) {
++        int entiesGot = 0;
++        int expectedEntries = (2 * viewDistance + 1);
++        expectedEntries *= expectedEntries;
++        if (viewDistance < 0) {
++            expectedEntries = 0;
++        }
++
++        final long currPosition = this.objectToLastCoordinate.getLong(object);
++
++        final int centerX = MCUtil.getCoordinateX(currPosition);
++        final int centerZ = MCUtil.getCoordinateZ(currPosition);
++
++        for (Iterator<Long2ObjectLinkedOpenHashMap.Entry<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>>> iterator = this.areaMap.long2ObjectEntrySet().fastIterator();
++             iterator.hasNext();) {
++
++            final Long2ObjectLinkedOpenHashMap.Entry<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> entry = iterator.next();
++            final long key = entry.getLongKey();
++            final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> map = entry.getValue();
++
++            if (map.referenceCount == 0) {
++                throw new IllegalStateException("Invalid map");
++            }
++
++            if (map.contains(object)) {
++                ++entiesGot;
++
++                final int chunkX = MCUtil.getCoordinateX(key);
++                final int chunkZ = MCUtil.getCoordinateZ(key);
++
++                final int dist = Math.max(Math.abs(chunkX - centerX), Math.abs(chunkZ - centerZ));
++
++                if (dist > viewDistance) {
++                    throw new IllegalStateException("Expected view distance " + viewDistance + ", got " + dist);
++                }
++            }
++        }
++
++        if (entiesGot != expectedEntries) {
++            throw new IllegalStateException("Expected " + expectedEntries + ", got " + entiesGot);
++        }
++    }
++
++    protected final void addObjectTo(final E object, final int chunkX, final int chunkZ, final int currChunkX,
++                                     final int currChunkZ, final int prevChunkX, final int prevChunkZ) {
++        final long key = MCUtil.getCoordinateKey(chunkX, chunkZ);
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> empty = this.getEmptySetFor(object);
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> current = this.areaMap.putIfAbsent(key, empty);
++
++        if (current != null) {
++            PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> next = this.pooledHashSets.findMapWith(current, object);
++            if (next == current) {
++                throw new IllegalStateException("Expected different map: got " + next.toString());
++            }
++            this.areaMap.put(key, next);
++
++            current = next;
++            // fall through to callback
++        } else {
++            current = empty;
++        }
++
++        if (this.addCallback != null) {
++            try {
++                this.addCallback.accept(object, chunkX, chunkZ, currChunkX, currChunkZ, prevChunkX, prevChunkZ, current);
++            } catch (final Throwable ex) {
++                if (ex instanceof ThreadDeath) {
++                    throw (ThreadDeath)ex;
++                }
++                MinecraftServer.LOGGER.error("Add callback for map threw exception ", ex);
++            }
++        }
++    }
++
++    protected final void removeObjectFrom(final E object, final int chunkX, final int chunkZ, final int currChunkX,
++                                          final int currChunkZ, final int prevChunkX, final int prevChunkZ) {
++        final long key = MCUtil.getCoordinateKey(chunkX, chunkZ);
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> current = this.areaMap.get(key);
++
++        if (current == null) {
++            throw new IllegalStateException("Current map may not be null for " + object + ", (" + chunkX + "," + chunkZ + ")");
++        }
++
++        PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> next = this.pooledHashSets.findMapWithout(current, object);
++
++        if (next == current) {
++            throw new IllegalStateException("Current map [" + next.toString() + "] should have contained " + object + ", (" + chunkX + "," + chunkZ + ")");
++        }
++
++        if (next != null) {
++            this.areaMap.put(key, next);
++        } else {
++            this.areaMap.remove(key);
++        }
++
++        if (this.removeCallback != null) {
++            try {
++                this.removeCallback.accept(object, chunkX, chunkZ, currChunkX, currChunkZ, prevChunkX, prevChunkZ, next);
++            } catch (final Throwable ex) {
++                if (ex instanceof ThreadDeath) {
++                    throw (ThreadDeath)ex;
++                }
++                MinecraftServer.LOGGER.error("Remove callback for map threw exception ", ex);
++            }
++        }
++    }
++
++    private void addObject(final E object, final int chunkX, final int chunkZ, final int prevChunkX, final int prevChunkZ, final int viewDistance) {
++        final int maxX = chunkX + viewDistance;
++        final int maxZ = chunkZ + viewDistance;
++        for (int x = chunkX - viewDistance; x <= maxX; ++x) {
++            for (int z = chunkZ - viewDistance; z <= maxZ; ++z) {
++                this.addObjectTo(object, x, z, chunkX, chunkZ, prevChunkX, prevChunkZ);
++            }
++        }
++    }
++
++    private void removeObject(final E object, final int chunkX, final int chunkZ, final int currentChunkX, final int currentChunkZ, final int viewDistance) {
++        final int maxX = chunkX + viewDistance;
++        final int maxZ = chunkZ + viewDistance;
++        for (int x = chunkX - viewDistance; x <= maxX; ++x) {
++            for (int z = chunkZ - viewDistance; z <= maxZ; ++z) {
++                this.removeObjectFrom(object, x, z, currentChunkX, currentChunkZ, chunkX, chunkZ);
++            }
++        }
++    }
++
++    /* math sign function except 0 returns 1 */
++    protected static int sign(int val) {
++        return 1 | (val >> (Integer.SIZE - 1));
++    }
++
++    protected final void updateObject(final E object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
++        final int toX = MCUtil.getCoordinateX(newPosition);
++        final int toZ = MCUtil.getCoordinateZ(newPosition);
++        final int fromX = MCUtil.getCoordinateX(oldPosition);
++        final int fromZ = MCUtil.getCoordinateZ(oldPosition);
++
++        final int dx = toX - fromX;
++        final int dz = toZ - fromZ;
++
++        final int totalX = Math.abs(fromX - toX);
++        final int totalZ = Math.abs(fromZ - toZ);
++
++        if (Math.max(totalX, totalZ) > (2 * Math.max(newViewDistance, oldViewDistance))) {
++            // teleported?
++            this.removeObject(object, fromX, fromZ, fromX, fromZ, oldViewDistance);
++            this.addObject(object, toX, toZ, fromX, fromZ, newViewDistance);
++            return;
++        }
++
++        if (oldViewDistance != newViewDistance) {
++            // remove loop
++
++            final int oldMaxX = fromX + oldViewDistance;
++            final int oldMaxZ = fromZ + oldViewDistance;
++            for (int currX = fromX - oldViewDistance; currX <= oldMaxX; ++currX) {
++                for (int currZ = fromZ - oldViewDistance; currZ <= oldMaxZ; ++currZ) {
++
++                    // only remove if we're outside the new view distance...
++                    if (Math.max(Math.abs(currX - toX), Math.abs(currZ - toZ)) > newViewDistance) {
++                        this.removeObjectFrom(object, currX, currZ, toX, toZ, fromX, fromZ);
++                    }
++                }
++            }
++
++            // add loop
++
++            final int newMaxX = toX + newViewDistance;
++            final int newMaxZ = toZ + newViewDistance;
++            for (int currX = toX - newViewDistance; currX <= newMaxX; ++currX) {
++                for (int currZ = toZ - newViewDistance; currZ <= newMaxZ; ++currZ) {
++
++                    // only add if we're outside the old view distance...
++                    if (Math.max(Math.abs(currX - fromX), Math.abs(currZ - fromZ)) > oldViewDistance) {
++                        this.addObjectTo(object, currX, currZ, toX, toZ, fromX, fromZ);
++                    }
++                }
++            }
++
++            return;
++        }
++
++        // x axis is width
++        // z axis is height
++        // right refers to the x axis of where we moved
++        // top refers to the z axis of where we moved
++
++        // same view distance
++
++        // used for relative positioning
++        final int up = sign(dz); // 1 if dz >= 0, -1 otherwise
++        final int right = sign(dx); // 1 if dx >= 0, -1 otherwise
++
++        // The area excluded by overlapping the two view distance squares creates four rectangles:
++        // Two on the left, and two on the right. The ones on the left we consider the "removed" section
++        // and on the right the "added" section.
++        // https://i.imgur.com/MrnOBgI.png is a reference image. Note that the outside border is not actually
++        // exclusive to the regions they surround.
++
++        // 4 points of the rectangle
++        int maxX; // exclusive
++        int minX; // inclusive
++        int maxZ; // exclusive
++        int minZ; // inclusive
++
++        if (dx != 0) {
++            // handle right addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX + (oldViewDistance * right) + right; // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addObjectTo(object, currX, currZ, toX, toZ, fromX, fromZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle up addition
++
++            maxX = toX + (oldViewDistance * right) + right; // exclusive
++            minX = toX - (oldViewDistance * right); // inclusive
++            maxZ = toZ + (oldViewDistance * up) + up; // exclusive
++            minZ = fromZ + (oldViewDistance * up) + up; // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.addObjectTo(object, currX, currZ, toX, toZ, fromX, fromZ);
++                }
++            }
++        }
++
++        if (dx != 0) {
++            // handle left removal
++
++            maxX = toX - (oldViewDistance * right); // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = fromZ + (oldViewDistance * up) + up; // exclusive
++            minZ = toZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeObjectFrom(object, currX, currZ, toX, toZ, fromX, fromZ);
++                }
++            }
++        }
++
++        if (dz != 0) {
++            // handle down removal
++
++            maxX = fromX + (oldViewDistance * right) + right; // exclusive
++            minX = fromX - (oldViewDistance * right); // inclusive
++            maxZ = toZ - (oldViewDistance * up); // exclusive
++            minZ = fromZ - (oldViewDistance * up); // inclusive
++
++            for (int currX = minX; currX != maxX; currX += right) {
++                for (int currZ = minZ; currZ != maxZ; currZ += up) {
++                    this.removeObjectFrom(object, currX, currZ, toX, toZ, fromX, fromZ);
++                }
++            }
++        }
++    }
++
++    @FunctionalInterface
++    public static interface ChangeCallback<E> {
++
++        // if there is no previous position, then prevPos = Integer.MIN_VALUE
++        void accept(final E object, final int rangeX, final int rangeZ, final int currPosX, final int currPosZ, final int prevPosX, final int prevPosZ,
++                    final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> newState);
++
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java
+new file mode 100644
+index 0000000000..8a552a87ab
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.misc;
++
++import net.minecraft.server.EntityPlayer;
++
++/**
++ * @author Spottedleaf
++ */
++public final class PlayerAreaMap extends AreaMap<EntityPlayer> {
++
++    public PlayerAreaMap() {
++        super();
++    }
++
++    public PlayerAreaMap(final PooledLinkedHashSets<EntityPlayer> pooledHashSets) {
++        super(pooledHashSets);
++    }
++
++    public PlayerAreaMap(final PooledLinkedHashSets<EntityPlayer> pooledHashSets, final ChangeCallback<EntityPlayer> addCallback,
++                         final ChangeCallback<EntityPlayer> removeCallback) {
++        super(pooledHashSets, addCallback, removeCallback);
++    }
++
++    @Override
++    protected PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getEmptySetFor(final EntityPlayer player) {
++        return player.cachedSingleHashSet;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/misc/PooledLinkedHashSets.java b/src/main/java/com/destroystokyo/paper/util/misc/PooledLinkedHashSets.java
+new file mode 100644
+index 0000000000..5f2d88797d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/misc/PooledLinkedHashSets.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.misc;
++
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
++import java.lang.ref.WeakReference;
++
++/**
++ * @author Spottedleaf
++ */
++public class PooledLinkedHashSets<E> {
++
++    /* Tested via https://gist.github.com/Spottedleaf/a93bb7a8993d6ce142d3efc5932bf573 */
++
++    // we really want to avoid that equals() check as much as possible...
++    protected final Object2ObjectOpenHashMap<PooledObjectLinkedOpenHashSet<E>, PooledObjectLinkedOpenHashSet<E>> mapPool = new Object2ObjectOpenHashMap<>(128, 0.25f);
++
++    protected void decrementReferenceCount(final PooledObjectLinkedOpenHashSet<E> current) {
++        if (current.referenceCount == 0) {
++            throw new IllegalStateException("Cannot decrement reference count for " + current);
++        }
++        if (current.referenceCount == -1 || --current.referenceCount > 0) {
++            return;
++        }
++
++        this.mapPool.remove(current);
++        return;
++    }
++
++    public PooledObjectLinkedOpenHashSet<E> findMapWith(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
++        final PooledObjectLinkedOpenHashSet<E> cached = current.getAddCache(object);
++
++        if (cached != null) {
++            decrementReferenceCount(current);
++
++            if (cached.referenceCount == 0) {
++                // bring the map back from the dead
++                PooledObjectLinkedOpenHashSet<E> contending = this.mapPool.putIfAbsent(cached, cached);
++                if (contending != null) {
++                    // a map already exists with the elements we want
++                    if (contending.referenceCount != -1) {
++                        ++contending.referenceCount;
++                    }
++                    current.updateAddCache(object, contending);
++                    return contending;
++                }
++
++                cached.referenceCount = 1;
++            } else if (cached.referenceCount != -1) {
++                ++cached.referenceCount;
++            }
++
++            return cached;
++        }
++
++        if (!current.add(object)) {
++            return current;
++        }
++
++        // we use get/put since we use a different key on put
++        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
++
++        if (ret == null) {
++            ret = new PooledObjectLinkedOpenHashSet<>(current);
++            current.remove(object);
++            this.mapPool.put(ret, ret);
++            ret.referenceCount = 1;
++        } else {
++            if (ret.referenceCount != -1) {
++                ++ret.referenceCount;
++            }
++            current.remove(object);
++        }
++
++        current.updateAddCache(object, ret);
++
++        decrementReferenceCount(current);
++        return ret;
++    }
++
++    // rets null if current.size() == 1
++    public PooledObjectLinkedOpenHashSet<E> findMapWithout(final PooledObjectLinkedOpenHashSet<E> current, final E object) {
++        if (current.set.size() == 1) {
++            decrementReferenceCount(current);
++            return null;
++        }
++
++        final PooledObjectLinkedOpenHashSet<E> cached = current.getRemoveCache(object);
++
++        if (cached != null) {
++            decrementReferenceCount(current);
++
++            if (cached.referenceCount == 0) {
++                // bring the map back from the dead
++                PooledObjectLinkedOpenHashSet<E> contending = this.mapPool.putIfAbsent(cached, cached);
++                if (contending != null) {
++                    // a map already exists with the elements we want
++                    if (contending.referenceCount != -1) {
++                        ++contending.referenceCount;
++                    }
++                    current.updateRemoveCache(object, contending);
++                    return contending;
++                }
++
++                cached.referenceCount = 1;
++            } else if (cached.referenceCount != -1) {
++                ++cached.referenceCount;
++            }
++
++            return cached;
++        }
++
++        if (!current.remove(object)) {
++            return current;
++        }
++
++        // we use get/put since we use a different key on put
++        PooledObjectLinkedOpenHashSet<E> ret = this.mapPool.get(current);
++
++        if (ret == null) {
++            ret = new PooledObjectLinkedOpenHashSet<>(current);
++            current.add(object);
++            this.mapPool.put(ret, ret);
++            ret.referenceCount = 1;
++        } else {
++            if (ret.referenceCount != -1) {
++                ++ret.referenceCount;
++            }
++            current.add(object);
++        }
++
++        current.updateRemoveCache(object, ret);
++
++        decrementReferenceCount(current);
++        return ret;
++    }
++
++    static final class RawSetObjectLinkedOpenHashSet<E> extends ObjectOpenHashSet<E> {
++
++        public RawSetObjectLinkedOpenHashSet() {
++            super();
++        }
++
++        public RawSetObjectLinkedOpenHashSet(final int capacity) {
++            super(capacity);
++        }
++
++        public RawSetObjectLinkedOpenHashSet(final int capacity, final float loadFactor) {
++            super(capacity, loadFactor);
++        }
++
++        @Override
++        public RawSetObjectLinkedOpenHashSet<E> clone() {
++            return (RawSetObjectLinkedOpenHashSet<E>)super.clone();
++        }
++
++        public E[] getRawSet() {
++            return this.key;
++        }
++    }
++
++    public static final class PooledObjectLinkedOpenHashSet<E> {
++
++        private static final WeakReference NULL_REFERENCE = new WeakReference<>(null);
++
++        final RawSetObjectLinkedOpenHashSet<E> set;
++        int referenceCount; // -1 if special
++        int hash; // optimize hashcode
++
++        // add cache
++        WeakReference<E> lastAddObject = NULL_REFERENCE;
++        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastAddMap = NULL_REFERENCE;
++
++        // remove cache
++        WeakReference<E> lastRemoveObject = NULL_REFERENCE;
++        WeakReference<PooledObjectLinkedOpenHashSet<E>> lastRemoveMap = NULL_REFERENCE;
++
++        public PooledObjectLinkedOpenHashSet(final PooledLinkedHashSets<E> pooledSets) {
++            this.set = new RawSetObjectLinkedOpenHashSet<>(2, 0.8f);
++        }
++
++        public PooledObjectLinkedOpenHashSet(final E single) {
++            this((PooledLinkedHashSets<E>)null);
++            this.referenceCount = -1;
++            this.add(single);
++        }
++
++        public PooledObjectLinkedOpenHashSet(final PooledObjectLinkedOpenHashSet<E> other) {
++            this.set = other.set.clone();
++            this.hash = other.hash;
++        }
++
++        // from https://github.com/Spottedleaf/ConcurrentUtil/blob/master/src/main/java/ca/spottedleaf/concurrentutil/util/IntegerUtil.java
++        // generated by https://github.com/skeeto/hash-prospector
++        private static int hash0(int x) {
++            x *= 0x36935555;
++            x ^= x >>> 16;
++            return x;
++        }
++
++        PooledObjectLinkedOpenHashSet<E> getAddCache(final E element) {
++            final E currentAdd = this.lastAddObject.get();
++
++            if (currentAdd == null || !(currentAdd == element || currentAdd.equals(element))) {
++                return null;
++            }
++
++            return this.lastAddMap.get();
++        }
++
++        PooledObjectLinkedOpenHashSet<E> getRemoveCache(final E element) {
++            final E currentRemove = this.lastRemoveObject.get();
++
++            if (currentRemove == null || !(currentRemove == element || currentRemove.equals(element))) {
++                return null;
++            }
++
++            return this.lastRemoveMap.get();
++        }
++
++        void updateAddCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
++            this.lastAddObject = new WeakReference<>(element);
++            this.lastAddMap = new WeakReference<>(map);
++        }
++
++        void updateRemoveCache(final E element, final PooledObjectLinkedOpenHashSet<E> map) {
++            this.lastRemoveObject = new WeakReference<>(element);
++            this.lastRemoveMap = new WeakReference<>(map);
++        }
++
++        boolean add(final E element) {
++            boolean added =  this.set.add(element);
++
++            if (added) {
++                this.hash += hash0(element.hashCode());
++            }
++
++            return added;
++        }
++
++        boolean remove(Object element) {
++            boolean removed = this.set.remove(element);
++
++            if (removed) {
++                this.hash -= hash0(element.hashCode());
++            }
++
++            return removed;
++        }
++
++        public boolean contains(final Object element) {
++            return this.set.contains(element);
++        }
++
++        public E[] getBackingSet() {
++            return this.set.getRawSet();
++        }
++
++        public int size() {
++            return this.set.size();
++        }
++
++        @Override
++        public int hashCode() {
++            return this.hash;
++        }
++
++        @Override
++        public boolean equals(final Object other) {
++            if (!(other instanceof PooledObjectLinkedOpenHashSet)) {
++                return false;
++            }
++            if (this.referenceCount == 0) {
++                return other == this;
++            } else {
++                if (other == this) {
++                    // Unfortunately we are never equal to our own instance while in use!
++                    return false;
++                }
++                return this.hash == ((PooledObjectLinkedOpenHashSet)other).hash && this.set.equals(((PooledObjectLinkedOpenHashSet)other).set);
++            }
++        }
++
++        @Override
++        public String toString() {
++            return "PooledHashSet: size: " + this.set.size() + ", reference count: " + this.referenceCount + ", hash: " +
++                this.hashCode() + ", identity: " + System.identityHashCode(this) + " map: " + this.set.toString();
++        }
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
+new file mode 100644
+index 0000000000..4d74a7a908
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.set;
++
++import java.util.Collection;
++
++// containing utils to work on small numbers of enums
++public final class OptimizedSmallEnumSet<E extends Enum<E>> {
++
++    private final Class<E> enumClass;
++    private long backingSet;
++
++    public OptimizedSmallEnumSet(final Class<E> clazz) {
++        if (clazz == null) {
++            throw new IllegalArgumentException("Null class");
++        }
++        if (!clazz.isEnum()) {
++            throw new IllegalArgumentException("Class must be enum, not " + clazz.getCanonicalName());
++        }
++        this.enumClass = clazz;
++    }
++
++    public boolean addUnchecked(final E element) {
++        final int ordinal = element.ordinal();
++        final long key = 1L << ordinal;
++
++        final long prev = this.backingSet;
++        this.backingSet = prev | key;
++
++        return (prev & key) == 0;
++    }
++
++    public boolean removeUnchecked(final E element) {
++        final int ordinal = element.ordinal();
++        final long key = 1L << ordinal;
++
++        final long prev = this.backingSet;
++        this.backingSet = prev & ~key;
++
++        return (prev & key) != 0;
++    }
++
++    public void clear() {
++        this.backingSet = 0L;
++    }
++
++    public int size() {
++        return Long.bitCount(this.backingSet);
++    }
++
++    public void addAllUnchecked(final Collection<E> enums) {
++        for (final E element : enums) {
++            if (element == null) {
++                throw new NullPointerException("Null element");
++            }
++            this.backingSet |= (1L << element.ordinal());
++        }
++    }
++
++    public long getBackingSet() {
++        return this.backingSet;
++    }
++
++    public boolean hasCommonElements(final OptimizedSmallEnumSet<E> other) {
++        return (other.backingSet & this.backingSet) != 0;
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/BlockAccessAir.java b/src/main/java/net/minecraft/server/BlockAccessAir.java
-index eff6ebcd3..30cbfc8ea 100644
+index eff6ebcd30..30cbfc8eac 100644
 --- a/src/main/java/net/minecraft/server/BlockAccessAir.java
 +++ b/src/main/java/net/minecraft/server/BlockAccessAir.java
 @@ -0,0 +0,0 @@ public enum BlockAccessAir implements IBlockAccess {
@@ -28,7 +1633,7 @@ index eff6ebcd3..30cbfc8ea 100644
      public IBlockData getType(BlockPosition blockposition) {
          return Blocks.AIR.getBlockData();
 diff --git a/src/main/java/net/minecraft/server/BlockDataAbstract.java b/src/main/java/net/minecraft/server/BlockDataAbstract.java
-index 1cf97cefc..2040f1834 100644
+index 1cf97cefc9..2040f18349 100644
 --- a/src/main/java/net/minecraft/server/BlockDataAbstract.java
 +++ b/src/main/java/net/minecraft/server/BlockDataAbstract.java
 @@ -0,0 +0,0 @@ public abstract class BlockDataAbstract<O, S> implements IBlockDataHolder<S> {
@@ -40,7 +1645,7 @@ index 1cf97cefc..2040f1834 100644
          return this.d.containsKey(iblockstate);
      }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index c88a62f6b..1cdf0346f 100644
+index c88a62f6b7..5dbd3e60fe 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -76,8 +1681,26 @@ index c88a62f6b..1cdf0346f 100644
          public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
              return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
          }
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+             return this.d(this.b + i, this.c + j, this.d + k);
+         }
+ 
++        public final void setX(final int x) { this.o(x); } // Paper - OBFHELPER
+         public void o(int i) {
+             this.b = i;
+         }
+ 
++        public final void setY(final int y) { this.p(y); } // Paper - OBFHELPER
+         public void p(int i) {
+             this.c = i;
+         }
+ 
++        public final void setZ(final int z) { this.q(z); } // Paper - OBFHELPER
+         public void q(int i) {
+             this.d = i;
+         }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 55373cae0..cfffbd031 100644
+index 55373cae07..a263f60d49 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
@@ -89,6 +1712,36 @@ index 55373cae0..cfffbd031 100644
      private final ChunkSection[] sections;
      private BiomeStorage d;
      private final Map<BlockPosition, NBTTagCompound> e;
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+     private Supplier<PlayerChunk.State> u;
+     @Nullable
+     private Consumer<Chunk> v;
+-    private final ChunkCoordIntPair loc;
++    private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
+     private volatile boolean x;
+ 
+     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         this.n = new ShortList[16];
+         this.entitySlices = (List[]) (new List[16]); // Spigot
+         this.world = world;
+-        this.loc = chunkcoordintpair;
++        this.loc = chunkcoordintpair; this.coordinateKey = MCUtil.getCoordinateKey(chunkcoordintpair); // Paper - cache coordinate key
+         this.i = chunkconverter;
+         HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
+         int j = aheightmap_type.length;
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+     public boolean needsDecoration;
+     // CraftBukkit end
+ 
++    // Paper start
++    public final com.destroystokyo.paper.util.maplist.EntityList entities = new com.destroystokyo.paper.util.maplist.EntityList();
++    public PlayerChunk playerChunk;
++    // Paper end
++
+     public Chunk(World world, ProtoChunk protochunk) {
+         this(world, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.p(), protochunk.n(), protochunk.o(), protochunk.getInhabitedTime(), protochunk.getSections(), (Consumer) null);
+         Iterator iterator = protochunk.y().iterator();
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          }
      }
@@ -109,6 +1762,14 @@ index 55373cae0..cfffbd031 100644
      public Fluid getFluid(BlockPosition blockposition) {
          return this.a(blockposition.getX(), blockposition.getY(), blockposition.getZ());
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         entity.chunkX = this.loc.x;
+         entity.chunkY = k;
+         entity.chunkZ = this.loc.z;
++        this.entities.add(entity); // Paper - per chunk entity list
+         this.entitySlices[k].add(entity);
+     }
+ 
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
      }
  
@@ -116,8 +1777,24 @@ index 55373cae0..cfffbd031 100644
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
          // CraftBukkit start
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+     // CraftBukkit start
+     public void loadCallback() {
+         org.bukkit.Server server = this.world.getServer();
++        ((WorldServer)this.world).getChunkProvider().addLoadedChunk(this); // Paper
+         if (server != null) {
+             /*
+              * If it's a new world, the first few chunks are generated inside
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public void unloadCallback() {
++        ((WorldServer)this.world).getChunkProvider().removeLoadedChunk(this); // Paper
+         org.bukkit.Server server = this.world.getServer();
+         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(this.bukkitChunk, this.isNeedsSaving());
+         server.getPluginManager().callEvent(unloadEvent);
 diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
-index 11c4d23ba..53c15c1c0 100644
+index 11c4d23ba9..53c15c1c0b 100644
 --- a/src/main/java/net/minecraft/server/ChunkCache.java
 +++ b/src/main/java/net/minecraft/server/ChunkCache.java
 @@ -0,0 +0,0 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
@@ -151,7 +1828,7 @@ index 11c4d23ba..53c15c1c0 100644
      @Override
      public TileEntity getTileEntity(BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
-index 260644bf0..f2a19acd8 100644
+index 260644bf0b..f2a19acd84 100644
 --- a/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 +++ b/src/main/java/net/minecraft/server/ChunkCoordIntPair.java
 @@ -0,0 +0,0 @@ public class ChunkCoordIntPair {
@@ -166,9 +1843,107 @@ index 260644bf0..f2a19acd8 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e8b7cc06c..9cd21b1ff 100644
+index e8b7cc06c2..d24c8070f4 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+     private final ChunkMapDistance chunkMapDistance;
+     public final ChunkGenerator<?> chunkGenerator;
+     private final WorldServer world;
+-    private final Thread serverThread;
++    public final Thread serverThread; // Paper - private -> public
+     private final LightEngineThreaded lightEngine;
+     private final ChunkProviderServer.a serverThreadQueue;
+     public final PlayerChunkMap playerChunkMap;
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+     private final ChunkStatus[] cacheStatus = new ChunkStatus[4];
+     private final IChunkAccess[] cacheChunk = new IChunkAccess[4];
+ 
++    // Paper start
++    final com.destroystokyo.paper.util.concurrent.WeakSeqLock loadedChunkMapSeqLock = new com.destroystokyo.paper.util.concurrent.WeakSeqLock();
++    final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(8192, 0.5f);
++
++    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
++    private final long[] lastLoadedChunkKeys = new long[4 * 4];
++
++    {
++        java.util.Arrays.fill(this.lastLoadedChunkKeys, MCUtil.INVALID_CHUNK_KEY);
++    }
++
++    private static int getCacheKey(int x, int z) {
++        return x & 3 | ((z & 3) << 2);
++    }
++
++    void addLoadedChunk(Chunk chunk) {
++        this.loadedChunkMapSeqLock.acquireWrite();
++        try {
++            this.loadedChunkMap.put(chunk.coordinateKey, chunk);
++        } finally {
++            this.loadedChunkMapSeqLock.releaseWrite();
++        }
++
++        // rewrite cache if we have to
++        // we do this since we also cache null chunks
++        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++
++        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
++        if (cachedKey == chunk.coordinateKey) {
++            this.lastLoadedChunks[cacheKey] = chunk;
++        }
++    }
++
++    void removeLoadedChunk(Chunk chunk) {
++        this.loadedChunkMapSeqLock.acquireWrite();
++        try {
++            this.loadedChunkMap.remove(chunk.coordinateKey);
++        } finally {
++            this.loadedChunkMapSeqLock.releaseWrite();
++        }
++
++        // rewrite cache if we have to
++        // we do this since we also cache null chunks
++        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++
++        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
++        if (cachedKey == chunk.coordinateKey) {
++            this.lastLoadedChunks[cacheKey] = null;
++        }
++    }
++
++    public Chunk getChunkAtIfLoadedMainThread(int x, int z) {
++        int cacheKey = getCacheKey(x, z);
++        long chunkKey = MCUtil.getCoordinateKey(x, z);
++
++        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
++        if (cachedKey == chunkKey) {
++            return this.lastLoadedChunks[cacheKey];
++        }
++
++        Chunk ret = this.loadedChunkMap.get(chunkKey);
++
++        this.lastLoadedChunkKeys[cacheKey] = chunkKey;
++        this.lastLoadedChunks[cacheKey] = ret;
++
++        return ret;
++    }
++
++    public Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
++        return this.loadedChunkMap.get(MCUtil.getCoordinateKey(x, z));
++    }
++
++    public Chunk getChunkAtMainThread(int x, int z) {
++        Chunk ret = this.getChunkAtIfLoadedMainThread(x, z);
++        if (ret != null) {
++            return ret;
++        }
++        return (Chunk)this.getChunkAt(x, z, ChunkStatus.FULL, true);
++    }
++    // Paper
++
++
+     public ChunkProviderServer(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator<?> chunkgenerator, int i, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
+         this.world = worldserver;
+         this.serverThreadQueue = new ChunkProviderServer.a(worldserver);
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
@@ -179,14 +1954,28 @@ index e8b7cc06c..9cd21b1ff 100644
 +    public Chunk getChunkAtIfCachedImmediately(int x, int z) {
 +        long k = ChunkCoordIntPair.pair(x, z);
 +
-+        // Note: Bypass cache to make this MT-Safe
-+
-+        PlayerChunk playerChunk = this.getChunk(k);
-+        if (playerChunk == null) {
-+            return null;
++        // Paper start - Optimize getIfLoaded type calls
++        if (Thread.currentThread() == this.serverThread) {
++            return this.getChunkAtIfLoadedMainThread(x, z);
 +        }
 +
-+        return playerChunk.getFullChunkIfCached();
++        Chunk ret = null;
++        long readlock;
++        do {
++            readlock = this.loadedChunkMapSeqLock.acquireRead();
++            try {
++                ret = this.loadedChunkMap.get(k);
++            } catch (Throwable thr) {
++                if (thr instanceof ThreadDeath) {
++                    throw (ThreadDeath)thr;
++                }
++                // re-try, this means a CME occurred...
++                continue;
++            }
++        } while (!this.loadedChunkMapSeqLock.tryReleaseRead(readlock));
++
++        return ret;
++        // Paper end
 +    }
 +
 +    @Nullable
@@ -208,7 +1997,7 @@ index e8b7cc06c..9cd21b1ff 100644
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
-index 7ca3a1d0c..2edd9b871 100644
+index 7ca3a1d0c5..2edd9b8714 100644
 --- a/src/main/java/net/minecraft/server/DataBits.java
 +++ b/src/main/java/net/minecraft/server/DataBits.java
 @@ -0,0 +0,0 @@ public class DataBits {
@@ -220,7 +2009,7 @@ index 7ca3a1d0c..2edd9b871 100644
          return this.a;
      }
 diff --git a/src/main/java/net/minecraft/server/DataPalette.java b/src/main/java/net/minecraft/server/DataPalette.java
-index 75ba69886..45403fbe3 100644
+index 75ba698868..45403fbe30 100644
 --- a/src/main/java/net/minecraft/server/DataPalette.java
 +++ b/src/main/java/net/minecraft/server/DataPalette.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -237,7 +2026,7 @@ index 75ba69886..45403fbe3 100644
      T a(int i);
  
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 774a8f543..d5f5a5187 100644
+index 774a8f5434..d5f5a51872 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -0,0 +0,0 @@ import java.util.stream.Collectors;
@@ -279,7 +2068,7 @@ index 774a8f543..d5f5a5187 100644
          this.a();
          packetdataserializer.writeByte(this.i);
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
-index fe69161e5..b40c8d2f8 100644
+index fe69161e5b..b40c8d2f83 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
 +++ b/src/main/java/net/minecraft/server/EntityCreature.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.entity.EntityUnleashEvent;
@@ -292,7 +2081,7 @@ index fe69161e5..b40c8d2f8 100644
          super(entitytypes, world);
      }
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index e1398652a..7ee5eb987 100644
+index e1398652a0..7ee5eb987a 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -304,7 +2093,7 @@ index e1398652a..7ee5eb987 100644
          // CraftBukkit start - fire event
          setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 3b1bcf349..1f350e335 100644
+index 3b1bcf3495..1f350e3352 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
@@ -316,7 +2105,7 @@ index 3b1bcf349..1f350e335 100644
      @Override
      public float getBukkitYaw() {
 diff --git a/src/main/java/net/minecraft/server/EntityMonster.java b/src/main/java/net/minecraft/server/EntityMonster.java
-index 00c3b666d..e5322fbae 100644
+index 00c3b666d7..e5322fbae5 100644
 --- a/src/main/java/net/minecraft/server/EntityMonster.java
 +++ b/src/main/java/net/minecraft/server/EntityMonster.java
 @@ -0,0 +0,0 @@ import java.util.function.Predicate;
@@ -327,8 +2116,30 @@ index 00c3b666d..e5322fbae 100644
      protected EntityMonster(EntityTypes<? extends EntityMonster> entitytypes, World world) {
          super(entitytypes, world);
          this.f = 5;
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ce48210922..57ce9bde64 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public Integer clientViewDistance;
+     // CraftBukkit end
+ 
++    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
++
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super((World) worldserver, gameprofile);
+         playerinteractmanager.player = this;
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.H = 1.0F;
+         this.a(worldserver);
+ 
++        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
++
+         // CraftBukkit start
+         this.displayName = this.getName();
+         this.canPickUpLoot = true;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index f937b7294..cbf0c2f25 100644
+index f937b72945..cbf0c2f25d 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -0,0 +0,0 @@ import com.mojang.datafixers.DataFixUtils;
@@ -351,7 +2162,7 @@ index f937b7294..cbf0c2f25 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 1890c760f..7e5ece9d5 100644
+index 1890c760f9..7e5ece9d50 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -0,0 +0,0 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
@@ -371,7 +2182,7 @@ index 1890c760f..7e5ece9d5 100644
          this.d.add(r0);
          LockSupport.unpark(this.getThread());
 diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
-index 3b0877080..0dff02352 100644
+index 3b08770801..0dff023529 100644
 --- a/src/main/java/net/minecraft/server/IBlockAccess.java
 +++ b/src/main/java/net/minecraft/server/IBlockAccess.java
 @@ -0,0 +0,0 @@ public interface IBlockAccess {
@@ -400,7 +2211,7 @@ index 3b0877080..0dff02352 100644
          return this.getType(blockposition).h();
      }
 diff --git a/src/main/java/net/minecraft/server/IOWorker.java b/src/main/java/net/minecraft/server/IOWorker.java
-index c5658c077..b90baef0f 100644
+index c5658c0779..b90baef0f5 100644
 --- a/src/main/java/net/minecraft/server/IOWorker.java
 +++ b/src/main/java/net/minecraft/server/IOWorker.java
 @@ -0,0 +0,0 @@ public class IOWorker implements AutoCloseable {
@@ -413,7 +2224,7 @@ index c5658c077..b90baef0f 100644
      private boolean g = true;
      private CompletableFuture<Void> h = new CompletableFuture();
 diff --git a/src/main/java/net/minecraft/server/IWorldReader.java b/src/main/java/net/minecraft/server/IWorldReader.java
-index ba315131e..cbe2aa4c0 100644
+index ba315131e1..cbe2aa4c0a 100644
 --- a/src/main/java/net/minecraft/server/IWorldReader.java
 +++ b/src/main/java/net/minecraft/server/IWorldReader.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -425,7 +2236,7 @@ index ba315131e..cbe2aa4c0 100644
      IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
  
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index b5d45b43c..766b1fe13 100644
+index b5d45b43ce..766b1fe13c 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.world.StructureGrowEvent;
@@ -485,7 +2296,7 @@ index b5d45b43c..766b1fe13 100644
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 000000000..628b73a12
+index 0000000000..9fa88d79d8
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -0,0 +0,0 @@
@@ -512,6 +2323,76 @@ index 000000000..628b73a12
 +
 +public final class MCUtil {
 +    private static final Executor asyncExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build());
++
++    public static final long INVALID_CHUNK_KEY = getCoordinateKey(Integer.MAX_VALUE, Integer.MAX_VALUE);
++
++    public static long getCoordinateKey(final BlockPosition blockPos) {
++        return getCoordinateKey(blockPos.getX() >> 4, blockPos.getZ() >> 4);
++    }
++
++    public static long getCoordinateKey(final Entity entity) {
++        return getCoordinateKey(getChunkCoordinate(entity.locX()), getChunkCoordinate(entity.locZ()));
++    }
++
++    public static int fastFloor(double x) {
++        int truncated = (int)x;
++        return x < (double)truncated ? truncated - 1 : truncated;
++    }
++
++    public static int fastFloor(float x) {
++        int truncated = (int)x;
++        return x < (double)truncated ? truncated - 1 : truncated;
++    }
++
++    public static long getCoordinateKey(final ChunkCoordIntPair pair) {
++        return getCoordinateKey(pair.x, pair.z);
++    }
++
++    public static long getCoordinateKey(final int x, final int z) {
++        return ((long)z << 32) | (x & 0xFFFFFFFFL);
++    }
++
++    public static int getCoordinateX(final long key) {
++        return (int)key;
++    }
++
++    public static int getCoordinateZ(final long key) {
++        return (int)(key >>> 32);
++    }
++
++    public static int getChunkCoordinate(final double coordinate) {
++        return MCUtil.fastFloor(coordinate) >> 4;
++    }
++
++    public static int getBlockCoordinate(final double coordinate) {
++        return MCUtil.fastFloor(coordinate);
++    }
++
++    public static long getBlockKey(final int x, final int y, final int z) {
++        return ((long)x & 0x7FFFFFF) | (((long)z & 0x7FFFFFF) << 27) | ((long)y << 54);
++    }
++
++    public static long getBlockKey(final BlockPosition pos) {
++        return getBlockKey(pos.getX(), pos.getY(), pos.getZ());
++    }
++
++    public static long getBlockKey(final Entity entity) {
++        return getBlockKey(getBlockCoordinate(entity.locX()), getBlockCoordinate(entity.locY()), getBlockCoordinate(entity.locZ()));
++    }
++
++    // assumes the sets have the same comparator, and if this comparator is null then assume T is Comparable
++    public static <T> void mergeSortedSets(final java.util.function.Consumer<T> consumer, final java.util.SortedSet<T>...sets) {
++        java.util.Comparator<? super T> comparator = sets[0].comparator();
++        if (comparator == null) {
++            comparator = (java.util.Comparator)java.util.Comparator.naturalOrder();
++        }
++        final it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<T> all = new it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<>(comparator);
++        // note: this is done in log(n!) ~ nlogn time. It could be improved if it were to mimic what mergesort does.
++        for (java.util.SortedSet<T> set : sets) {
++            all.addAll(all);
++        }
++        all.forEach(consumer);
++    }
 +
 +    private MCUtil() {}
 +
@@ -806,7 +2687,7 @@ index 000000000..628b73a12
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
-index e85b24a32..75604dbc6 100644
+index e85b24a327..75604dbc69 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
 +++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
 @@ -0,0 +0,0 @@ public class NBTTagCompound implements NBTBase {
@@ -835,7 +2716,7 @@ index e85b24a32..75604dbc6 100644
          return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
      }
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index 6700582e3..3ccf16636 100644
+index 6700582e36..3ccf166366 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -867,7 +2748,7 @@ index 6700582e3..3ccf16636 100644
          public QueuedPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
              this.a = packet;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index 81b6f4581..d9574a9ac 100644
+index 81b6f4581f..d9574a9ace 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
@@ -879,7 +2760,7 @@ index 81b6f4581..d9574a9ac 100644
          for (int j = 1; j < 5; ++j) {
              if ((i & -1 << j * 7) == 0) {
 diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
-index 90223deae..63c4dbd32 100644
+index 90223deae3..63c4dbd327 100644
 --- a/src/main/java/net/minecraft/server/PacketEncoder.java
 +++ b/src/main/java/net/minecraft/server/PacketEncoder.java
 @@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
@@ -891,7 +2772,7 @@ index 90223deae..63c4dbd32 100644
                          throw new SkipEncodeException(throwable);
                      } else {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 677e3e5f6..3a1d0deb0 100644
+index 677e3e5f68..3a1d0deb0d 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
@@ -912,9 +2793,79 @@ index 677e3e5f6..3a1d0deb0 100644
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 775359146..3c6fe0596 100644
+index 775359146f..3093154bb7 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.a();
+     private static final PlayerChunk.State[] CHUNK_STATES = PlayerChunk.State.values();
+     private final AtomicReferenceArray<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> statusFutures;
+-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture;
+-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture;
+-    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> entityTickingFuture;
++    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> entityTickingFuture; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
+     private CompletableFuture<IChunkAccess> chunkSave;
+     public int oldTicketLevel;
+     private int ticketLevel;
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+     public final PlayerChunk.d players;
+     private boolean hasBeenLoaded;
+ 
++    private final PlayerChunkMap chunkMap; // Paper
++
+     public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
+         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
+         this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         this.ticketLevel = this.oldTicketLevel;
+         this.n = this.oldTicketLevel;
+         this.a(i);
++        this.chunkMap = (PlayerChunkMap)playerchunk_d; // Paper
++    }
++
++    // Paper start
++    @Nullable
++    public final Chunk getEntityTickingChunk() {
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.entityTickingFuture;
++        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
++
++        return either == null ? null : either.left().orElse(null);
++    }
++
++    @Nullable
++    public final Chunk getTickingChunk() {
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.tickingFuture;
++        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
++
++        return either == null ? null : either.left().orElse(null);
++    }
++
++    @Nullable
++    public final Chunk getFullReadyChunk() {
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.fullChunkFuture;
++        Either<Chunk, PlayerChunk.Failure> either = completablefuture.getNow(null);
++
++        return either == null ? null : either.left().orElse(null);
++    }
++
++    public final boolean isEntityTickingReady() {
++        return this.isEntityTickingReady;
+     }
+ 
++    public final boolean isTickingReady() {
++        return this.isTickingReady;
++    }
++
++    public final boolean isFullChunkReady() {
++        return this.isFullChunkReady;
++    }
++    // Paper end
++
+     // CraftBukkit start
+     public Chunk getFullChunk() {
+         if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
 @@ -0,0 +0,0 @@ public class PlayerChunk {
          return either == null ? null : (Chunk) either.left().orElse(null);
      }
@@ -930,8 +2881,140 @@ index 775359146..3c6fe0596 100644
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+ 
+         this.hasBeenLoaded |= flag3;
+         if (!flag2 && flag3) {
+-            this.fullChunkFuture = playerchunkmap.b(this);
++            // Paper start - cache ticking ready status
++            int expectCreateCount = ++this.fullChunkCreateCount;
++            this.fullChunkFuture = playerchunkmap.b(this); this.fullChunkFuture.thenAccept((either) -> {
++                if (either.left().isPresent() && PlayerChunk.this.fullChunkCreateCount == expectCreateCount) {
++                    // note: Here is a very good place to add callbacks to logic waiting on this.
++                    Chunk fullChunk = either.left().get();
++                    PlayerChunk.this.isFullChunkReady = true;
++                    fullChunk.playerChunk = PlayerChunk.this;
++
++
++                }
++            });
++            // Paper end
+             this.a(this.fullChunkFuture);
+         }
+ 
+         if (flag2 && !flag3) {
+             completablefuture = this.fullChunkFuture;
+             this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
++            ++this.fullChunkCreateCount; // Paper - cache ticking ready status
++            this.isFullChunkReady = false; // Paper - cache ticking ready status
+             this.a(((CompletableFuture<Either<Chunk, PlayerChunk.Failure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
+                 playerchunkmap.getClass();
+                 return either1.ifLeft(playerchunkmap::a);
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         boolean flag5 = playerchunk_state1.isAtLeast(PlayerChunk.State.TICKING);
+ 
+         if (!flag4 && flag5) {
+-            this.tickingFuture = playerchunkmap.a(this);
++            // Paper start - cache ticking ready status
++            this.tickingFuture = playerchunkmap.a(this); this.tickingFuture.thenAccept((either) -> {
++                if (either.left().isPresent()) {
++                    // note: Here is a very good place to add callbacks to logic waiting on this.
++                    Chunk tickingChunk = either.left().get();
++                    PlayerChunk.this.isTickingReady = true;
++
++
++
++
++                }
++            });
++            // Paper end
+             this.a(this.tickingFuture);
+         }
+ 
+         if (flag4 && !flag5) {
+-            this.tickingFuture.complete(PlayerChunk.UNLOADED_CHUNK);
++            this.tickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
+             this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+         }
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+                 throw (IllegalStateException) SystemUtils.c(new IllegalStateException());
+             }
+ 
+-            this.entityTickingFuture = playerchunkmap.b(this.location);
++            // Paper start - cache ticking ready status
++            this.entityTickingFuture = playerchunkmap.b(this.location); this.entityTickingFuture.thenAccept((either) -> {
++                if (either.left().isPresent()) {
++                    // note: Here is a very good place to add callbacks to logic waiting on this.
++                    Chunk entityTickingChunk = either.left().get();
++                    PlayerChunk.this.isEntityTickingReady = true;
++
++
++
++
++                }
++            });
++            // Paper end
+             this.a(this.entityTickingFuture);
+         }
+ 
+         if (flag6 && !flag7) {
+-            this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK);
++            this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
+             this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index b5a3b10012..e248893717 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     };
+     // CraftBukkit end
+ 
++    // Paper start - distance maps
++    private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
++
++    void addPlayerToDistanceMaps(EntityPlayer player) {
++        this.updateMaps(player);
++
++
++
++    }
++
++    void removePlayerFromDistanceMaps(EntityPlayer player) {
++
++
++
++
++    }
++
++    void updateMaps(EntityPlayer player) {
++        int chunkX = MCUtil.getChunkCoordinate(player.locX());
++        int chunkZ = MCUtil.getChunkCoordinate(player.locZ());
++
++
++
++
++    }
++
++
++    // Paper end
++
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+         super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
+         this.visibleChunks = this.updatingChunks.clone();
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+         }
+ 
++        this.updateMaps(entityplayer); // Paper - distance maps
++
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index ba0293512..b257e1c4e 100644
+index ba02935128..b257e1c4e9 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -948,7 +3031,7 @@ index ba0293512..b257e1c4e 100644
      private volatile int chatThrottle;
      private static final AtomicIntegerFieldUpdater chatSpamField = AtomicIntegerFieldUpdater.newUpdater(PlayerConnection.class, "chatThrottle");
 diff --git a/src/main/java/net/minecraft/server/PlayerInventory.java b/src/main/java/net/minecraft/server/PlayerInventory.java
-index 08768a3c8..d103cfaac 100644
+index 08768a3c87..d103cfaace 100644
 --- a/src/main/java/net/minecraft/server/PlayerInventory.java
 +++ b/src/main/java/net/minecraft/server/PlayerInventory.java
 @@ -0,0 +0,0 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
@@ -961,7 +3044,7 @@ index 08768a3c8..d103cfaac 100644
      public final EntityHuman player;
      private ItemStack carried;
 diff --git a/src/main/java/net/minecraft/server/PotionUtil.java b/src/main/java/net/minecraft/server/PotionUtil.java
-index b3824898d..bf4172be5 100644
+index b3824898da..bf4172be52 100644
 --- a/src/main/java/net/minecraft/server/PotionUtil.java
 +++ b/src/main/java/net/minecraft/server/PotionUtil.java
 @@ -0,0 +0,0 @@ public class PotionUtil {
@@ -973,7 +3056,7 @@ index b3824898d..bf4172be5 100644
          MinecraftKey minecraftkey = IRegistry.POTION.getKey(potionregistry);
  
 diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index 6e65306a2..39339fa27 100644
+index 6e65306a27..39339fa275 100644
 --- a/src/main/java/net/minecraft/server/ProtoChunk.java
 +++ b/src/main/java/net/minecraft/server/ProtoChunk.java
 @@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
@@ -996,7 +3079,7 @@ index 6e65306a2..39339fa27 100644
      public IBlockData getType(BlockPosition blockposition) {
          int i = blockposition.getY();
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index 7b6e0e86b..187c4e0f5 100644
+index 7b6e0e86b0..187c4e0f58 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
@@ -1008,7 +3091,7 @@ index 7b6e0e86b..187c4e0f5 100644
      public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          int i = this.getOffset(chunkcoordintpair);
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index 8c123f265..9d0e8c2d4 100644
+index 8c123f265e..9d0e8c2d43 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 @@ -0,0 +0,0 @@ public class RegionLimitedWorldAccess implements GeneratorAccess {
@@ -1039,7 +3122,7 @@ index 8c123f265..9d0e8c2d4 100644
      public IBlockData getType(BlockPosition blockposition) {
          return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4).getType(blockposition);
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 4efcb8b59..60948afa4 100644
+index 4efcb8b595..60948afa4e 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
 +++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
 @@ -0,0 +0,0 @@ public class RegistryBlockID<T> implements Registry<T> {
@@ -1051,7 +3134,7 @@ index 4efcb8b59..60948afa4 100644
          return this.b.size();
      }
 diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
-index 7b92ecfff..7e224ebef 100644
+index 7b92ecfff9..7e224ebeff 100644
 --- a/src/main/java/net/minecraft/server/SystemUtils.java
 +++ b/src/main/java/net/minecraft/server/SystemUtils.java
 @@ -0,0 +0,0 @@ public class SystemUtils {
@@ -1064,7 +3147,7 @@ index 7b92ecfff..7e224ebef 100644
  
      public static long getTimeMillis() {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 692f8e4b7..8fc88f162 100644
+index 692f8e4b71..8fc88f162c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -1120,8 +3203,28 @@ index 692f8e4b7..8fc88f162 100644
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 32f8f2aed5..2aaf679df4 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         }
+ 
+         this.registerEntity(entityplayer);
++        this.getChunkProvider().playerChunkMap.addPlayerToDistanceMaps(entityplayer); // Paper - distance maps
+     }
+ 
+     // CraftBukkit start
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+             EntityPlayer entityplayer = (EntityPlayer) entity;
+ 
+             this.players.remove(entityplayer);
++            this.getChunkProvider().playerChunkMap.removePlayerFromDistanceMaps(entityplayer); // Paper - distance maps
+         }
+ 
+         this.getScoreboard().a(entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index e181df6f4..4a9132c70 100644
+index e181df6f4d..4a9132c701 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
@@ -1133,7 +3236,7 @@ index e181df6f4..4a9132c70 100644
      /**
       * Mirror
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
-index d8358a0f0..d0b813008 100644
+index d8358a0f03..d0b813008c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 @@ -0,0 +0,0 @@ public class DummyGeneratorAccess implements GeneratorAccess {
@@ -1159,4 +3262,17 @@ index d8358a0f0..d0b813008 100644
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
+index 1aec70a1f1..f72c13beda 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
+@@ -0,0 +0,0 @@ import java.util.RandomAccess;
+ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable {
+     private static final long serialVersionUID = 8683452581112892191L;
+ 
+-    private transient Object[] data;
++    private transient Object[] data; public final Object[] getRawDataArray() { return this.data; } // Paper - expose for raw get
+     private int size;
+     private int initialCapacity;
+ 
 --
