@@ -1,4 +1,4 @@
-From d9b7412b5f93b09eb3685a630972fa96a13e7665 Mon Sep 17 00:00:00 2001
+From f51ba416eefd643136f51b6a65ce5baf51447bbe Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Thu, 16 Nov 2017 12:12:41 +0000
 Subject: [PATCH] use CB BlockState implementations for captured blocks
@@ -18,18 +18,45 @@ the blockstate that will be valid for restoration, as opposed to dropping
 information on restoration when the event is cancelled.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c065a5f6e1..8b2ee61b3b 100644
+index 361cc6a92e..5a237fa1dd 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -299,7 +299,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -66,7 +66,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+     public boolean captureBlockStates = false;
+     public boolean captureTreeGeneration = false;
+-    public Map<BlockPosition, CapturedBlockState> capturedBlockStates = new HashMap<>();
++    public Map<BlockPosition, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new HashMap<>(); // Paper
+     public Map<BlockPosition, TileEntity> capturedTileEntities = new HashMap<>();
+     public List<EntityItem> captureDrops;
+     public long ticksPerAnimalSpawns;
+@@ -253,7 +253,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
+-            CapturedBlockState blockstate = capturedBlockStates.get(blockposition);
++            CraftBlockState blockstate = capturedBlockStates.get(blockposition);
+             if (blockstate == null) {
+                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);
+                 this.capturedBlockStates.put(blockposition.immutableCopy(), blockstate);
+@@ -272,7 +272,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
              // CraftBukkit start - capture blockstates
-             CraftBlockState blockstate = null;
-             if (this.captureBlockStates) {
--                blockstate = org.bukkit.craftbukkit.block.CraftBlockState.getBlockState(this, blockposition, i);
-+                blockstate = (CraftBlockState) world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
-                 this.capturedBlockStates.add(blockstate);
+             if (this.captureBlockStates && !this.capturedBlockStates.containsKey(blockposition)) {
+-                CapturedBlockState blockstate = CapturedBlockState.getBlockState(this, blockposition, i);
++                CraftBlockState blockstate = (CraftBlockState) world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
+                 this.capturedBlockStates.put(blockposition.immutableCopy(), blockstate);
              }
              // CraftBukkit end
+@@ -539,7 +539,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public IBlockData getType(BlockPosition blockposition) {
+         // CraftBukkit start - tree generation
+         if (captureTreeGeneration) {
+-            CapturedBlockState previous = capturedBlockStates.get(blockposition);
++            CraftBlockState previous = capturedBlockStates.get(blockposition); // Paper
+             if (previous != null) {
+                 return previous.getHandle();
+             }
 -- 
-2.24.1
+2.25.0
 

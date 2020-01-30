@@ -1,4 +1,4 @@
-From 20739b06abb5978e1fb136e7a10ba9314831acc5 Mon Sep 17 00:00:00 2001
+From 3993ccb409951da42b475f821c3e6134b3982777 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 28 Jul 2018 12:18:27 -0400
 Subject: [PATCH] Ignore Dead Entities in entityList iteration
@@ -23,10 +23,10 @@ index eecf27370b..d704fc79c0 100644
                      MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                      ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index b156f5428c..c7c600b80c 100644
+index 2004f7fbe1..7ecff4443a 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -671,6 +671,7 @@ public class Chunk implements IChunkAccess {
+@@ -679,6 +679,7 @@ public class Chunk implements IChunkAccess {
  
                  while (iterator.hasNext()) {
                      Entity entity1 = (Entity) iterator.next();
@@ -34,7 +34,7 @@ index b156f5428c..c7c600b80c 100644
  
                      if (entity1.getBoundingBox().c(axisalignedbb) && entity1 != entity) {
                          if (predicate == null || predicate.test(entity1)) {
-@@ -708,6 +709,7 @@ public class Chunk implements IChunkAccess {
+@@ -716,6 +717,7 @@ public class Chunk implements IChunkAccess {
  
              while (iterator.hasNext()) {
                  T entity = (T) iterator.next(); // CraftBukkit - decompile error
@@ -42,7 +42,7 @@ index b156f5428c..c7c600b80c 100644
  
                  if ((entitytypes == null || entity.getEntityType() == entitytypes) && entity.getBoundingBox().c(axisalignedbb) && predicate.test(entity)) {
                      list.add(entity);
-@@ -729,6 +731,7 @@ public class Chunk implements IChunkAccess {
+@@ -737,6 +739,7 @@ public class Chunk implements IChunkAccess {
  
              while (iterator.hasNext()) {
                  T t0 = (T) iterator.next(); // CraftBukkit - decompile error
@@ -51,7 +51,7 @@ index b156f5428c..c7c600b80c 100644
                  if (oclass.isInstance(t0) && t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) { // Spigot - instance check
                      list.add(t0);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index be8f6ac99f..4a931aaf42 100644
+index 09ec144eb6..4880ece947 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -196,6 +196,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -63,10 +63,10 @@ index be8f6ac99f..4a931aaf42 100644
      public float getBukkitYaw() {
          return this.yaw;
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index aaf35e02f4..71da6f37e1 100644
+index 3d5a50ddcc..12cdb0cc9a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -894,7 +894,7 @@ public class WorldServer extends World {
+@@ -904,7 +904,7 @@ public class WorldServer extends World {
  
          while (objectiterator.hasNext()) {
              Entity entity = (Entity) objectiterator.next();
@@ -75,7 +75,7 @@ index aaf35e02f4..71da6f37e1 100644
              if (entity instanceof EntityInsentient) {
                  EntityInsentient entityinsentient = (EntityInsentient) entity;
  
-@@ -1213,6 +1213,7 @@ public class WorldServer extends World {
+@@ -1225,6 +1225,7 @@ public class WorldServer extends World {
                  entity.origin = entity.getBukkitEntity().getLocation();
              }
              // Paper end
@@ -83,7 +83,7 @@ index aaf35e02f4..71da6f37e1 100644
              new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity()).callEvent(); // Paper - fire while valid
          }
  
-@@ -1225,6 +1226,7 @@ public class WorldServer extends World {
+@@ -1237,6 +1238,7 @@ public class WorldServer extends World {
              this.removeEntityFromChunk(entity);
              this.entitiesById.remove(entity.getId());
              this.unregisterEntity(entity);
@@ -92,10 +92,10 @@ index aaf35e02f4..71da6f37e1 100644
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 3df8c336f8..030d01bd3c 100644
+index 89705e5ffa..fe91e08f22 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1010,6 +1010,7 @@ public class CraftWorld implements World {
+@@ -1005,6 +1005,7 @@ public class CraftWorld implements World {
          for (Object o : world.entitiesById.values()) {
              if (o instanceof net.minecraft.server.Entity) {
                  net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
@@ -103,7 +103,7 @@ index 3df8c336f8..030d01bd3c 100644
                  Entity bukkitEntity = mcEnt.getBukkitEntity();
  
                  // Assuming that bukkitEntity isn't null
-@@ -1029,6 +1030,7 @@ public class CraftWorld implements World {
+@@ -1024,6 +1025,7 @@ public class CraftWorld implements World {
          for (Object o : world.entitiesById.values()) {
              if (o instanceof net.minecraft.server.Entity) {
                  net.minecraft.server.Entity mcEnt = (net.minecraft.server.Entity) o;
@@ -111,7 +111,7 @@ index 3df8c336f8..030d01bd3c 100644
                  Entity bukkitEntity = mcEnt.getBukkitEntity();
  
                  // Assuming that bukkitEntity isn't null
-@@ -1055,6 +1057,7 @@ public class CraftWorld implements World {
+@@ -1050,6 +1052,7 @@ public class CraftWorld implements World {
  
          for (Object entity: world.entitiesById.values()) {
              if (entity instanceof net.minecraft.server.Entity) {
@@ -119,7 +119,7 @@ index 3df8c336f8..030d01bd3c 100644
                  Entity bukkitEntity = ((net.minecraft.server.Entity) entity).getBukkitEntity();
  
                  if (bukkitEntity == null) {
-@@ -1078,6 +1081,7 @@ public class CraftWorld implements World {
+@@ -1073,6 +1076,7 @@ public class CraftWorld implements World {
  
          for (Object entity: world.entitiesById.values()) {
              if (entity instanceof net.minecraft.server.Entity) {
@@ -128,5 +128,5 @@ index 3df8c336f8..030d01bd3c 100644
  
                  if (bukkitEntity == null) {
 -- 
-2.24.1
+2.25.0
 

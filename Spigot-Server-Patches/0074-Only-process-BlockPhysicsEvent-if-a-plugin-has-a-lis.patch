@@ -1,4 +1,4 @@
-From c0ffb2e399cf9413777905bb93594a900b7506ad Mon Sep 17 00:00:00 2001
+From bfa1a2ec2f12d7b6b530b3742b20a3f91f02b5db Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 28 Mar 2016 19:55:45 -0400
 Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
@@ -6,7 +6,7 @@ Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
 Saves on some object allocation and processing when no plugin listens to this
 
 diff --git a/src/main/java/net/minecraft/server/BlockPlant.java b/src/main/java/net/minecraft/server/BlockPlant.java
-index ed1da4f4b..a6891b9fa 100644
+index ed1da4f4ba..a6891b9fa7 100644
 --- a/src/main/java/net/minecraft/server/BlockPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockPlant.java
 @@ -16,7 +16,7 @@ public class BlockPlant extends Block {
@@ -19,7 +19,7 @@ index ed1da4f4b..a6891b9fa 100644
              }
          }
 diff --git a/src/main/java/net/minecraft/server/BlockTallPlant.java b/src/main/java/net/minecraft/server/BlockTallPlant.java
-index 42e86881b..6cdce1158 100644
+index 42e86881bd..6cdce11581 100644
 --- a/src/main/java/net/minecraft/server/BlockTallPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
 @@ -55,7 +55,7 @@ public class BlockTallPlant extends BlockPlant {
@@ -32,10 +32,10 @@ index 42e86881b..6cdce1158 100644
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3f27c1c6c..457eea125 100644
+index 3d580a666b..3094f763ba 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1136,6 +1136,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1142,6 +1142,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
  
@@ -44,10 +44,10 @@ index 3f27c1c6c..457eea125 100644
                  this.methodProfiler.a(() -> {
                      return worldserver.getWorldData().getName() + " " + IRegistry.DIMENSION_TYPE.getKey(worldserver.worldProvider.getDimensionManager());
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index ea2e92967..38ab4628d 100644
+index d81178d26d..528e53fc42 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -390,7 +390,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -363,7 +363,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                  // CraftBukkit start
                  iblockdata1.b(this, blockposition, j); // Don't call an event for the old block to limit event spam
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -56,7 +56,7 @@ index ea2e92967..38ab4628d 100644
                      BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
                      this.getServer().getPluginManager().callEvent(event);
  
-@@ -502,7 +502,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -475,7 +475,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              try {
                  // CraftBukkit start
                  CraftWorld world = ((WorldServer) this).getWorld();
@@ -66,7 +66,7 @@ index ea2e92967..38ab4628d 100644
                      this.getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 5bb94fb5e..354400504 100644
+index 6c2107bd06..4e29746c14 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -75,6 +75,7 @@ public class WorldServer extends World {
@@ -78,5 +78,5 @@ index 5bb94fb5e..354400504 100644
      // Add env and gen to constructor
      public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 -- 
-2.24.1
+2.25.0
 

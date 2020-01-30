@@ -1,4 +1,4 @@
-From 9382064df0fb23829f26cfa668d948625c046239 Mon Sep 17 00:00:00 2001
+From 49f6b5e50f8bb65c54272dda0b98f7afa6b8ad18 Mon Sep 17 00:00:00 2001
 From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Optimize redstone algorithm
@@ -19,10 +19,10 @@ Aside from making the obvious class/function renames and obfhelpers I didn't nee
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index dd5e263d7..357c7cf1d 100644
+index 0862a1d629..4ba72275b9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -430,4 +430,14 @@ public class PaperWorldConfig {
+@@ -432,4 +432,14 @@ public class PaperWorldConfig {
      private void preventMovingIntoUnloadedChunks() {
          preventMovingIntoUnloadedChunks = getBoolean("prevent-moving-into-unloaded-chunks", false);
      }
@@ -39,10 +39,10 @@ index dd5e263d7..357c7cf1d 100644
  }
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 000000000..cf5661f1c
+index 0000000000..b69803cbf2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
-@@ -0,0 +1,912 @@
+@@ -0,0 +1,915 @@
 +package com.destroystokyo.paper.util;
 +
 +import java.util.List;
@@ -938,8 +938,11 @@ index 000000000..cf5661f1c
 +            // and set it in the world.
 +            // Possible optimization:  Don't commit state changes to the world until they
 +            // need to be known by some nearby non-redstone-wire block.
-+            state = state.set(BlockRedstoneWire.POWER, Integer.valueOf(j));
-+            worldIn.setTypeAndData(upd.self, state, 2);
++            BlockPosition pos = new BlockPosition(upd.self.getX(), upd.self.getY(), upd.self.getZ());
++            if (wire.canPlace(null, worldIn, pos)) {
++                state = state.set(BlockRedstoneWire.POWER, Integer.valueOf(j));
++                worldIn.setTypeAndData(upd.self, state, 2);
++            }
 +        }
 +
 +        return state;
@@ -956,7 +959,7 @@ index 000000000..cf5661f1c
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneWire.java b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
-index 5bf2fc0b3..52a4982ec 100644
+index 5bf2fc0b3f..52a4982ecd 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneWire.java
 @@ -1,5 +1,7 @@
@@ -1124,10 +1127,10 @@ index 5bf2fc0b3..52a4982ec 100644
                  c(iblockdata, world, blockposition);
                  world.a(blockposition, false);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b6d904007..697c99d94 100644
+index c7b4734e94..2a1359f7d9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -543,6 +543,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -516,6 +516,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      }
  
@@ -1135,7 +1138,7 @@ index b6d904007..697c99d94 100644
      public void a(BlockPosition blockposition, Block block, BlockPosition blockposition1) {
          if (!this.isClientSide) {
              IBlockData iblockdata = this.getType(blockposition);
-@@ -1298,6 +1299,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -1271,6 +1272,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          return this.getBlockFacePower(blockposition.down(), EnumDirection.DOWN) > 0 ? true : (this.getBlockFacePower(blockposition.up(), EnumDirection.UP) > 0 ? true : (this.getBlockFacePower(blockposition.north(), EnumDirection.NORTH) > 0 ? true : (this.getBlockFacePower(blockposition.south(), EnumDirection.SOUTH) > 0 ? true : (this.getBlockFacePower(blockposition.west(), EnumDirection.WEST) > 0 ? true : this.getBlockFacePower(blockposition.east(), EnumDirection.EAST) > 0))));
      }
  
@@ -1144,5 +1147,5 @@ index b6d904007..697c99d94 100644
          int i = 0;
          EnumDirection[] aenumdirection = World.a;
 -- 
-2.24.1
+2.25.0
 
