@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hazerdous <dransom96@gmail.com>
+Date: Wed, 12 Jun 2019 01:24:34 -0400
+Subject: [PATCH] Monumenta - Clear crafting slots when clearing player
+ inventory
+
+
+diff --git a/src/main/java/net/minecraft/server/ContainerPlayer.java b/src/main/java/net/minecraft/server/ContainerPlayer.java
+index a26ee8e37e84b6a309a05b4cba8c089a3f6c5cce..1710d4dc12d6b413f2dabf2067e8cd7ea388c3e4 100644
+--- a/src/main/java/net/minecraft/server/ContainerPlayer.java
++++ b/src/main/java/net/minecraft/server/ContainerPlayer.java
+@@ -16,7 +16,7 @@ public class ContainerPlayer extends ContainerRecipeBook<InventoryCrafting> {
+     private static final MinecraftKey[] j = new MinecraftKey[]{ContainerPlayer.g, ContainerPlayer.f, ContainerPlayer.e, ContainerPlayer.d};
+     private static final EnumItemSlot[] k = new EnumItemSlot[]{EnumItemSlot.HEAD, EnumItemSlot.CHEST, EnumItemSlot.LEGS, EnumItemSlot.FEET};
+     // CraftBukkit start
+-    private final InventoryCrafting craftInventory;
++    public final InventoryCrafting craftInventory;
+     private final InventoryCraftResult resultInventory;
+     // CraftBukkit end
+     public final boolean i;
+diff --git a/src/main/java/net/minecraft/server/ContainerWorkbench.java b/src/main/java/net/minecraft/server/ContainerWorkbench.java
+index 8ffaba58fb13a33c023d71fdb88a29f98b0d1cea..1ba4f4dc29cc263cca8dccc5dedfb2560d5455fa 100644
+--- a/src/main/java/net/minecraft/server/ContainerWorkbench.java
++++ b/src/main/java/net/minecraft/server/ContainerWorkbench.java
+@@ -8,7 +8,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ 
+ public class ContainerWorkbench extends ContainerRecipeBook<InventoryCrafting> {
+ 
+-    private final InventoryCrafting craftInventory;
++    public final InventoryCrafting craftInventory;
+     private final InventoryCraftResult resultInventory;
+     public final ContainerAccess containerAccess;
+     private final EntityHuman f;
+diff --git a/src/main/java/net/minecraft/server/PlayerInventory.java b/src/main/java/net/minecraft/server/PlayerInventory.java
+index d103cfaace4f42aaad677103f4eef578490699da..17b9e08e3cfd18f6a2047842950c357f3fc84288 100644
+--- a/src/main/java/net/minecraft/server/PlayerInventory.java
++++ b/src/main/java/net/minecraft/server/PlayerInventory.java
+@@ -213,6 +213,31 @@ public class PlayerInventory implements IInventory, INamableTileEntity {
+             }
+         }
+ 
++        InventoryCrafting craftInventory =
++            this.player.activeContainer instanceof ContainerPlayer ? ((ContainerPlayer) this.player.activeContainer).craftInventory :
++            this.player.activeContainer instanceof ContainerWorkbench ? ((ContainerWorkbench) this.player.activeContainer).craftInventory : null;
++        if (craftInventory != null) {
++            for (k = 0; k < craftInventory.getSize(); ++k) {
++                ItemStack itemstack = craftInventory.getItem(k);
++
++                if (!itemstack.isEmpty() && predicate.test(itemstack)) {
++                    int l = i <= 0 ? itemstack.getCount() : Math.min(i - j, itemstack.getCount());
++
++                    j += l;
++                    if (i != 0) {
++                        itemstack.subtract(l);
++                        if (itemstack.isEmpty()) {
++                            craftInventory.setItem(k, ItemStack.a);
++                        }
++
++                        if (i > 0 && j >= i) {
++                            return j;
++                        }
++                    }
++                }
++            }
++        }
++
+         return j;
+     }
+ 

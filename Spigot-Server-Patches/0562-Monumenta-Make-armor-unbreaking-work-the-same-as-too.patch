@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byron Marohn <combustible@live.com>
+Date: Fri, 13 Mar 2020 17:33:42 -0400
+Subject: [PATCH] Monumenta - Make armor unbreaking work the same as tools
+
+Signed-off-by: Byron Marohn <combustible@live.com>
+
+diff --git a/src/main/java/net/minecraft/server/EnchantmentDurability.java b/src/main/java/net/minecraft/server/EnchantmentDurability.java
+index c946326fbc436a9c825625e6f58b8771a05832af..73054160f0f897914e403791227546e04e155915 100644
+--- a/src/main/java/net/minecraft/server/EnchantmentDurability.java
++++ b/src/main/java/net/minecraft/server/EnchantmentDurability.java
+@@ -29,6 +29,7 @@ public class EnchantmentDurability extends Enchantment {
+     }
+ 
+     public static boolean a(ItemStack itemstack, int i, Random random) {
+-        return itemstack.getItem() instanceof ItemArmor && random.nextFloat() < 0.6F ? false : random.nextInt(i + 1) > 0;
++        /* MONUMENTA: All items work like tools for unbreaking */
++        return random.nextInt(i + 1) > 0;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index ea60880c6f15b1a39579896d78cf641563621aa4..71420d7d30b6e986db469948b3baae9c3516802c 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -396,6 +396,12 @@ public final class ItemStack {
+                 j = EnchantmentManager.getEnchantmentLevel(Enchantments.DURABILITY, this);
+                 int k = 0;
+ 
++                /* MONUMENTA:
++                 * Reduce giant spikes of gear damage to make high-damage mobs less destructive to gear
++                 * https://www.wolframalpha.com/input/?i=plot+min%28x%2F8%2B2%2Cx%2F4%29+and+min%28sqrt%28x%29%2Cx%2F4%29+and+x%2F4%2C+x%3D1..40
++                 */
++                i = (int)Math.min(i, Math.sqrt(i * 4));
++
+                 for (int l = 0; j > 0 && l < i; ++l) {
+                     if (EnchantmentDurability.a(this, j, random)) {
+                         ++k;

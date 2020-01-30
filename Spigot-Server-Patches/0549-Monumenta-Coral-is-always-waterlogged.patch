@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byron Marohn <combustible@live.com>
+Date: Mon, 17 Sep 2018 22:03:48 -0400
+Subject: [PATCH] Monumenta - Coral is always waterlogged
+
+NOTE:
+This patch is annoying because Spigot hasn't made any modifications to
+BlockCoralBase. So if this patch breaks, the change to that file is the
+same as the change to BlockCoral.
+
+Signed-off-by: Byron Marohn <combustible@live.com>
+
+diff --git a/src/main/java/net/minecraft/server/BlockCoral.java b/src/main/java/net/minecraft/server/BlockCoral.java
+index 78a7c7377bddc9665be9c85b0da850eb16dbb435..e3b6ec5fdd9537714166bab086fd5fec1149ce50 100644
+--- a/src/main/java/net/minecraft/server/BlockCoral.java
++++ b/src/main/java/net/minecraft/server/BlockCoral.java
+@@ -35,19 +35,7 @@ public class BlockCoral extends Block {
+     }
+ 
+     protected boolean a(IBlockAccess iblockaccess, BlockPosition blockposition) {
+-        EnumDirection[] aenumdirection = EnumDirection.values();
+-        int i = aenumdirection.length;
+-
+-        for (int j = 0; j < i; ++j) {
+-            EnumDirection enumdirection = aenumdirection[j];
+-            Fluid fluid = iblockaccess.getFluid(blockposition.shift(enumdirection));
+-
+-            if (fluid.a(TagsFluid.WATER)) {
+-                return true;
+-            }
+-        }
+-
+-        return false;
++        return true;
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/server/BlockCoralBase.java b/src/main/java/net/minecraft/server/BlockCoralBase.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd059b4e7e5674d004bd0428a230b7bcb987753d
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/BlockCoralBase.java
+@@ -0,0 +1,68 @@
++package net.minecraft.server;
++
++import javax.annotation.Nullable;
++
++public class BlockCoralBase extends Block implements IBlockWaterlogged {
++
++    public static final BlockStateBoolean b = BlockProperties.C;
++    private static final VoxelShape a = Block.a(2.0D, 0.0D, 2.0D, 14.0D, 4.0D, 14.0D);
++
++    protected BlockCoralBase(Block.Info block_info) {
++        super(block_info);
++        this.p((IBlockData) ((IBlockData) this.blockStateList.getBlockData()).set(BlockCoralBase.b, true));
++    }
++
++    protected void a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
++        if (!b_(iblockdata, generatoraccess, blockposition)) {
++            generatoraccess.getBlockTickList().a(blockposition, this, 60 + generatoraccess.getRandom().nextInt(40));
++        }
++
++    }
++
++    protected static boolean b_(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition) {
++        if ((Boolean) iblockdata.get(BlockCoralBase.b)) {
++            return true;
++        } else {
++            return true;
++        }
++    }
++
++    @Nullable
++    @Override
++    public IBlockData getPlacedState(BlockActionContext blockactioncontext) {
++        Fluid fluid = blockactioncontext.getWorld().getFluid(blockactioncontext.getClickPosition());
++
++        return (IBlockData) this.getBlockData().set(BlockCoralBase.b, fluid.a(TagsFluid.WATER) && fluid.g() == 8);
++    }
++
++    @Override
++    public VoxelShape a(IBlockData iblockdata, IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
++        return BlockCoralBase.a;
++    }
++
++    @Override
++    public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
++        if ((Boolean) iblockdata.get(BlockCoralBase.b)) {
++            generatoraccess.getFluidTickList().a(blockposition, FluidTypes.WATER, FluidTypes.WATER.a((IWorldReader) generatoraccess));
++        }
++
++        return enumdirection == EnumDirection.DOWN && !this.canPlace(iblockdata, generatoraccess, blockposition) ? Blocks.AIR.getBlockData() : super.updateState(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++    }
++
++    @Override
++    public boolean canPlace(IBlockData iblockdata, IWorldReader iworldreader, BlockPosition blockposition) {
++        BlockPosition blockposition1 = blockposition.down();
++
++        return iworldreader.getType(blockposition1).d(iworldreader, blockposition1, EnumDirection.UP);
++    }
++
++    @Override
++    protected void a(BlockStateList.a<Block, IBlockData> blockstatelist_a) {
++        blockstatelist_a.a(BlockCoralBase.b);
++    }
++
++    @Override
++    public Fluid a_(IBlockData iblockdata) {
++        return (Boolean) iblockdata.get(BlockCoralBase.b) ? FluidTypes.WATER.a(false) : super.a_(iblockdata);
++    }
++}
