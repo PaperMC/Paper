@@ -1,4 +1,4 @@
-From 983500bf7bfddd932bd04bbd444d6d619fcdc54c Mon Sep 17 00:00:00 2001
+From 288e71dd40b8f092fe2ab91f11a3d5db2dd173ee Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 11 Jan 2020 22:03:34 -0800
 Subject: [PATCH] Delay chunk unloads
@@ -43,7 +43,7 @@ index 55f9f4e6e..c5b5f0d39 100644
          this.a(ChunkCoordIntPair.a, i, j, flag);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 8c1945687..4dc96eb66 100644
+index 8c1945687..196fcc745 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -30,7 +30,7 @@ public abstract class ChunkMapDistance {
@@ -78,9 +78,9 @@ index 8c1945687..4dc96eb66 100644
 +        }
 +    }
 +
-+    private final java.util.function.LongFunction<Ticket<Long>> computeFuntion = (long key) -> {
++    private final java.util.function.LongFunction<Ticket<Long>> computeDelayedUnloadTicket = (long key) -> {
 +        Ticket<Long> ret = new Ticket<>(TicketType.DELAYED_UNLOAD, -1, ++ChunkMapDistance.this.nextUnloadId);
-+        ret.isCached = true;
++        ret.isCachedUnloadTicket = true;
 +        return ret;
 +    };
 +
@@ -89,7 +89,7 @@ index 8c1945687..4dc96eb66 100644
 +        if (removedLevel > lowestLevel) {
 +            return;
 +        }
-+        final Ticket<Long> ticket = this.delayedChunks.computeIfAbsent(chunk, this.computeFuntion);
++        final Ticket<Long> ticket = this.delayedChunks.computeIfAbsent(chunk, this.computeDelayedUnloadTicket);
 +        if (ticket.getTicketLevel() != -1) {
 +            // since we modify data used in sorting, we need to remove before
 +            tickets.remove(ticket);
@@ -118,7 +118,7 @@ index 8c1945687..4dc96eb66 100644
 +                if (ret && ticket.getTicketType() != TicketType.DELAYED_UNLOAD && ticket.getTicketLevel() < tempLevel[0]) {
 +                    tempLevel[0] = ticket.getTicketLevel();
 +                }
-+                if (ticket.getTicketType() == TicketType.DELAYED_UNLOAD && ticket.isCached) {
++                if (ticket.getTicketType() == TicketType.DELAYED_UNLOAD && ticket.isCachedUnloadTicket) {
 +                    this.delayedChunks.remove(entry.getLongKey(), ticket); // clean up ticket...
 +                }
 +                return ret;
@@ -141,7 +141,7 @@ index 8c1945687..4dc96eb66 100644
          return !arraysetsorted.isEmpty() ? ((Ticket) arraysetsorted.b()).b() : PlayerChunkMap.GOLDEN_TICKET + 1;
      }
 diff --git a/src/main/java/net/minecraft/server/Ticket.java b/src/main/java/net/minecraft/server/Ticket.java
-index 7a8397815..28ffe353d 100644
+index 7a8397815..cbe96db8b 100644
 --- a/src/main/java/net/minecraft/server/Ticket.java
 +++ b/src/main/java/net/minecraft/server/Ticket.java
 @@ -5,9 +5,10 @@ import java.util.Objects;
@@ -153,7 +153,7 @@ index 7a8397815..28ffe353d 100644
      public final T identifier; public final T getObjectReason() { return this.identifier; } // Paper - OBFHELPER
 -    private long d; public final long getCreationTick() { return this.d; } // Paper - OBFHELPER
 +    private long d; public final long getCreationTick() { return this.d; } public final void setCreationTick(final long value) { this.d = value; } // Paper - OBFHELPER
-+    boolean isCached; // Paper - delay chunk unloads, this defends against really stupid plugins
++    boolean isCachedUnloadTicket; // Paper - delay chunk unloads, this defends against really stupid plugins by marking our cached tickets
  
      protected Ticket(TicketType<T> tickettype, int i, T t0) {
          this.a = tickettype;
@@ -178,7 +178,7 @@ index 481d95480..ae7ec0536 100644
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 4d7a7a8fe..600661d9e 100644
+index 7654519c9..e8cd85235 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -463,6 +463,7 @@ public class CraftWorld implements World {
@@ -190,5 +190,5 @@ index 4d7a7a8fe..600661d9e 100644
  
          return true;
 -- 
-2.24.1
+2.25.0.windows.1
 
