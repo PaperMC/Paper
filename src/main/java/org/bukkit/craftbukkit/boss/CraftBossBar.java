@@ -166,11 +166,16 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public void addPlayer(Player player) {
+        Preconditions.checkArgument(player != null, "player == null");
+        Preconditions.checkArgument(((CraftPlayer) player).getHandle().playerConnection != null, "player is not fully connected (wait for PlayerJoinEvent)");
+
         handle.addPlayer(((CraftPlayer) player).getHandle());
     }
 
     @Override
     public void removePlayer(Player player) {
+        Preconditions.checkArgument(player != null, "player == null");
+
         handle.removePlayer(((CraftPlayer) player).getHandle());
     }
 
