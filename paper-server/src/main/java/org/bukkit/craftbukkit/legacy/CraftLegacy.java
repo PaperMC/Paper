@@ -23,6 +23,7 @@ import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.Items;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.Material;
@@ -254,6 +255,9 @@ public final class CraftLegacy {
 
     static {
         System.err.println("Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!");
+        if (MinecraftServer.getServer() != null && MinecraftServer.getServer().isDebugging()) {
+            new Exception().printStackTrace();
+        }
 
         SPAWN_EGGS.put((byte) 0, Material.PIG_SPAWN_EGG); // Will be fixed by updateMaterial if possible
 
