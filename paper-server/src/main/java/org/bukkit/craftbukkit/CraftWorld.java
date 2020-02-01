@@ -901,7 +901,7 @@ public class CraftWorld implements World {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBlock.biomeBaseToBiome(this.world.getBiome(new BlockPosition(x, y, z)));
+        return CraftBlock.biomeBaseToBiome(this.world.getBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
@@ -919,7 +919,7 @@ public class CraftWorld implements World {
             net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(pos);
 
             if (chunk != null) {
-                chunk.getBiomeIndex().setBiome(x, y, z, bb);
+                chunk.getBiomeIndex().setBiome(x >> 2, y >> 2, z >> 2, bb);
 
                 chunk.markDirty(); // SPIGOT-2890
             }
@@ -934,7 +934,7 @@ public class CraftWorld implements World {
     @Override
     public double getTemperature(int x, int y, int z) {
         BlockPosition pos = new BlockPosition(x, y, z);
-        return this.world.getBiome(pos).getAdjustedTemperature(pos);
+        return this.world.getBiome(x >> 2, y >> 2, z >> 2).getAdjustedTemperature(pos);
     }
 
     @Override
@@ -944,7 +944,7 @@ public class CraftWorld implements World {
 
     @Override
     public double getHumidity(int x, int y, int z) {
-        return this.world.getBiome(new BlockPosition(x, y, z)).getHumidity();
+        return this.world.getBiome(x >> 2, y >> 2, z >> 2).getHumidity();
     }
 
     @Override
