@@ -126,7 +126,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         CraftChunk.validateChunkCoordinates(x, y, z);
 
-        return CraftBlock.biomeBaseToBiome(biome.getBiome(x, y, z));
+        return CraftBlock.biomeBaseToBiome(biome.getBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
@@ -139,7 +139,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         CraftChunk.validateChunkCoordinates(x, y, z);
 
-        return biome.getBiome(x, y, z).getAdjustedTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
+        return biome.getBiome(x >> 2, y >> 2, z >> 2).getAdjustedTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
     @Override
