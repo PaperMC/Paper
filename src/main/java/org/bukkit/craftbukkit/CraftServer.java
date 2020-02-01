@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import jline.console.ConsoleReader;
 import net.minecraft.server.Advancement;
 import net.minecraft.server.ArgumentEntity;
@@ -58,6 +59,7 @@ import net.minecraft.server.Enchantments;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EnumDifficulty;
 import net.minecraft.server.EnumGamemode;
+import net.minecraft.server.IRecipe;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemWorldMap;
 import net.minecraft.server.Items;
@@ -1115,6 +1117,20 @@ public final class CraftServer implements Server {
     @Override
     public void resetRecipes() {
         console.reload(); // Not ideal but hard to reload a subset of a resource pack
+    }
+
+    @Override
+    public boolean removeRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+
+        MinecraftKey mcKey = CraftNamespacedKey.toMinecraft(recipeKey);
+        for (Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>> recipes : getServer().getCraftingManager().recipes.values()) {
+            if (recipes.remove(mcKey) != null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
