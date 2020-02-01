@@ -675,6 +675,20 @@ public final class Bukkit {
     }
 
     /**
+     * Remove a recipe from the server.
+     *
+     * <b>Note that removing a recipe may cause permanent loss of data
+     * associated with that recipe (eg whether it has been discovered by
+     * players).</b>
+     *
+     * @param key NamespacedKey of recipe to remove.
+     * @return True if recipe was removed
+     */
+    public static boolean removeRecipe(@NotNull NamespacedKey key) {
+        return server.removeRecipe(key);
+    }
+
+    /**
      * Gets a list of command aliases defined in the server properties.
      *
      * @return a map of aliases to command names
