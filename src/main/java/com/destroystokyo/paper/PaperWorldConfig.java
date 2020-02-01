@@ -568,9 +568,20 @@ public class PaperWorldConfig {
     }
 
     public boolean disablePillagerPatrols = false;
+    public double patrolSpawnChance = 0.2;
+    public boolean patrolPerPlayerDelay = false;
+    public int patrolDelay = 12000;
+    public boolean patrolPerPlayerStart = false;
+    public int patrolStartDay = 5;
     private void pillagerSettings() {
         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
+        patrolSpawnChance = getDouble("game-mechanics.pillager-patrols.spawn-chance", patrolSpawnChance);
+        patrolPerPlayerDelay = getBoolean("game-mechanics.pillager-patrols.spawn-delay.per-player", patrolPerPlayerDelay);
+        patrolDelay = getInt("game-mechanics.pillager-patrols.spawn-delay.ticks", patrolDelay);
+        patrolPerPlayerStart = getBoolean("game-mechanics.pillager-patrols.start.per-player", patrolPerPlayerStart);
+        patrolStartDay = getInt("game-mechanics.pillager-patrols.start.day", patrolStartDay);
     }
+
 
     public boolean entitiesTargetWithFollowRange = false;
     private void entitiesTargetWithFollowRange() {

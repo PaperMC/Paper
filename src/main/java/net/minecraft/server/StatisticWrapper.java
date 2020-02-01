@@ -27,6 +27,7 @@ public class StatisticWrapper<T> implements Iterable<Statistic<T>> {
         return this.b.values().iterator();
     }
 
+    public final Statistic<T> get(T t) { return this.b(t); }; // Paper - OBFHELPER
     public Statistic<T> b(T t0) {
         return this.a(t0, Counter.DEFAULT);
     }

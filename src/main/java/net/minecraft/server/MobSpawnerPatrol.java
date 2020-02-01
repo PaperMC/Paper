@@ -4,13 +4,13 @@ import java.util.Random;
 
 public class MobSpawnerPatrol implements MobSpawner {
 
-    private int a;
+    private int a;private int getSpawnDelay() { return a; } private void setSpawnDelay(int spawnDelay) { this.a = spawnDelay; } // Paper - OBFHELPER
 
     public MobSpawnerPatrol() {}
 
     @Override
     public int a(WorldServer worldserver, boolean flag, boolean flag1) {
-        if (worldserver.paperConfig.disablePillagerPatrols) return 0; // Paper
+        if (worldserver.paperConfig.disablePillagerPatrols || worldserver.paperConfig.patrolSpawnChance == 0) return 0; // Paper
         if (!flag) {
             return 0;
         } else if (!worldserver.getGameRules().getBoolean(GameRules.DO_PATROL_SPAWNING)) {
@@ -18,23 +18,51 @@ public class MobSpawnerPatrol implements MobSpawner {
         } else {
             Random random = worldserver.random;
 
-            --this.a;
-            if (this.a > 0) {
+            // Paper start - Patrol settings
+            // Random player selection moved up for per player spawning and configuration
+            int j = worldserver.getPlayers().size();
+            if (j < 1) {
+                return 0;
+            }
+
+            EntityPlayer entityhuman = worldserver.getPlayers().get(random.nextInt(j));
+            if (entityhuman.isSpectator()) {
+                return 0;
+            }
+
+            int patrolSpawnDelay;
+            if (worldserver.paperConfig.patrolPerPlayerDelay) {
+                --entityhuman.patrolSpawnDelay;
+                patrolSpawnDelay = entityhuman.patrolSpawnDelay;
+            } else {
+                setSpawnDelay(getSpawnDelay() - 1);
+                patrolSpawnDelay = getSpawnDelay();
+            }
+
+            if (patrolSpawnDelay > 0) {
                 return 0;
             } else {
-                this.a += 12000 + random.nextInt(1200);
-                long i = worldserver.getDayTime() / 24000L;
+                long days;
+                if (worldserver.paperConfig.patrolPerPlayerStart) {
+                    days = entityhuman.getStatisticManager().getStatisticValue(StatisticList.CUSTOM.get(StatisticList.PLAY_ONE_MINUTE)) / 24000L; // PLAY_ONE_MINUTE is actually counting in ticks, a misnomer by Mojang
+                } else {
+                    days = worldserver.getDayTime() / 24000L;
+                }
+                if (worldserver.paperConfig.patrolPerPlayerDelay) {
+                    entityhuman.patrolSpawnDelay += worldserver.paperConfig.patrolDelay + random.nextInt(1200);
+                } else {
+                    setSpawnDelay(getSpawnDelay() + worldserver.paperConfig.patrolDelay + random.nextInt(1200));
+                }
 
-                if (i >= 5L && worldserver.isDay()) {
-                    if (random.nextInt(5) != 0) {
+                if (days >= worldserver.paperConfig.patrolStartDay && worldserver.isDay()) {
+                    if (random.nextDouble() >= worldserver.paperConfig.patrolSpawnChance) {
+                        // Paper end
                         return 0;
                     } else {
-                        int j = worldserver.getPlayers().size();
 
                         if (j < 1) {
                             return 0;
                         } else {
-                            EntityHuman entityhuman = (EntityHuman) worldserver.getPlayers().get(random.nextInt(j));
 
                             if (entityhuman.isSpectator()) {
                                 return 0;
