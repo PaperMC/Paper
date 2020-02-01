@@ -16,7 +16,7 @@ which results in a hard crash.
 This change removes the synchronize and adds some protection around enable/disable
 
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index a8dbf282..b4069dbf 100644
+index a8dbf282d..b4069dbf3 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ index a8dbf282..b4069dbf 100644
       *
       * @return a new copy of Location containing the position of this entity
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 7453230c..634e51d5 100644
+index 93a8cc13b..8d54d5619 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
@@ -78,13 +78,9 @@ index 7453230c..634e51d5 100644
 -            if (server.isPrimaryThread()) {
 -                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
 -            }
--            fireEvent(event);
 -        } else {
 -            if (!server.isPrimaryThread()) {
 -                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
--            }
--            synchronized (this) {
--                fireEvent(event);
 -            }
 +        // Paper - replace callEvent by merging to below method
 +        if (event.isAsynchronous() && server.isPrimaryThread()) {
@@ -92,14 +88,16 @@ index 7453230c..634e51d5 100644
 +        } else if (!event.isAsynchronous() && !server.isPrimaryThread()) {
 +            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
--    }
  
+-        fireEvent(event);
+-    }
+-
 -    private void fireEvent(@NotNull Event event) {
          HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
  
 diff --git a/src/test/java/org/bukkit/plugin/PluginManagerTest.java b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
-index f188cd4f..1941c9f4 100644
+index f188cd4f3..1941c9f49 100644
 --- a/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 +++ b/src/test/java/org/bukkit/plugin/PluginManagerTest.java
 @@ -0,0 +0,0 @@ public class PluginManagerTest {
