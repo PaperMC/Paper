@@ -41,8 +41,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     private final net.minecraft.server.ChunkGenerator delegate;
     private final ChunkGenerator generator;
     private final WorldServer world;
-    private final long seed;
-    private final Random random;
+    private final Random random = new Random();
 
     private class CustomBiomeGrid implements BiomeGrid {
 
@@ -75,7 +74,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
         }
     }
 
-    public CustomChunkGenerator(World world, long seed, ChunkGenerator generator) {
+    public CustomChunkGenerator(World world, ChunkGenerator generator) {
         super(world, world.worldProvider.getChunkGenerator().getWorldChunkManager(), new GeneratorSettingsDefault());
         switch (world.getWorld().getEnvironment()) {
             case NORMAL:
@@ -93,9 +92,6 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
 
         this.world = (WorldServer) world;
         this.generator = generator;
-        this.seed = seed;
-
-        this.random = new Random(seed);
     }
 
     @Override
