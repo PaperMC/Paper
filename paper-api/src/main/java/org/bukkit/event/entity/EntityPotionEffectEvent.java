@@ -214,6 +214,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         MILK,
         /**
+         * When a player gets bad omen after killing a patrol captain.
+         */
+        PATROL_CAPTAIN,
+        /**
          * When a potion effect is modified through the plugin methods.
          */
         PLUGIN,
@@ -244,6 +248,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When a villager gets regeneration after a trade.
          */
-        VILLAGER_TRADE
+        VILLAGER_TRADE,
+        /**
+         * When an entity comes in contact with a wither rose.
+         */
+        WITHER_ROSE
     }
 }
