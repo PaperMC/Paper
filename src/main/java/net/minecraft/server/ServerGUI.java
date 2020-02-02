@@ -89,7 +89,7 @@ public class ServerGUI extends JComponent {
 
     private JComponent c() {
         JPanel jpanel = new JPanel(new BorderLayout());
-        GuiStatsComponent guistatscomponent = new GuiStatsComponent(this.c);
+        com.destroystokyo.paper.gui.GuiStatsComponent guistatscomponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.c); // Paper
 
         this.e.add(guistatscomponent::a);
         jpanel.add(guistatscomponent, "North");

@@ -106,7 +106,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     private String motd;
     private int F;
     private int G;
-    public final long[] h;
+    public final long[] h; public long[] getTickTimes() { return h; } // Paper - OBFHELPER
     @Nullable
     private KeyPair H;
     @Nullable
