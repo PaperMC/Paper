@@ -291,11 +291,8 @@ public class CraftWorld implements World {
 
     @Override
     public int getHighestBlockYAt(int x, int z) {
-        if (!isChunkLoaded(x >> 4, z >> 4)) {
-            getChunkAt(x >> 4, z >> 4); // Transient load for this tick
-        }
-
-        return world.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, new BlockPosition(x, 0, z)).getY();
+        // Transient load for this tick
+        return world.getChunkAt(x >> 4, z >> 4).a(HeightMap.Type.MOTION_BLOCKING, x, z);
     }
 
     @Override
