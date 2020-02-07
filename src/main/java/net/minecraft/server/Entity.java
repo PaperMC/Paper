@@ -189,6 +189,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     public long activatedTick = Integer.MIN_VALUE;
     public boolean isTemporarilyActive = false; // Paper
     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+    public boolean fromNetherPortal; // Paper
     protected int numCollisions = 0; // Paper
     public void inactiveTick() { }
     // Spigot end
@@ -1603,6 +1604,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             if (spawnedViaMobSpawner) {
                 nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
             }
+            if (fromNetherPortal) {
+                nbttagcompound.setBoolean("Paper.FromNetherPortal", true);
+            }
             // Paper end
             return nbttagcompound;
         } catch (Throwable throwable) {
@@ -1733,6 +1737,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
             }
 
             spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+            fromNetherPortal = nbttagcompound.getBoolean("Paper.FromNetherPortal");
             if (nbttagcompound.hasKey("Paper.SpawnReason")) {
                 String spawnReasonName = nbttagcompound.getString("Paper.SpawnReason");
                 try {

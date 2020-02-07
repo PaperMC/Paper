@@ -44,6 +44,8 @@ public class BlockPortal extends Block {
 
                 if (entity != null) {
                     entity.resetPortalCooldown();
+                    entity.fromNetherPortal = true; // Paper
+                    if (worldserver.paperConfig.nerfNetherPortalPigmen) ((EntityInsentient) entity).aware = false; // Paper
                 }
             }
         }

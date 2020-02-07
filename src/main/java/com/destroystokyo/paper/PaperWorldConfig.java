@@ -580,4 +580,9 @@ public class PaperWorldConfig {
         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
     }
+
+    public boolean nerfNetherPortalPigmen = false;
+    private void nerfNetherPortalPigmen() {
+        nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
+    }
 }
