@@ -1,4 +1,4 @@
-Paper [![Build Status](https://papermc.io/ci/job/Paper-1.14/badge/icon)](https://papermc.io/ci/job/Paper-1.14/)
+Paper [![Build Status](https://papermc.io/ci/job/Paper-1.15/badge/icon)](https://papermc.io/ci/job/Paper-1.15/)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
