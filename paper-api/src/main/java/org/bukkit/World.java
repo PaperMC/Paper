@@ -98,6 +98,57 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Block getHighestBlockAt(@NotNull Location location);
 
     /**
+     * Gets the highest coordinate corresponding to the {@link HeightMap} at the
+     * given coordinates.
+     *
+     * @param x X-coordinate of the blocks
+     * @param z Z-coordinate of the blocks
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     *
+     * @return Y-coordinate of the highest block corresponding to the
+     * {@link HeightMap}
+     */
+    public int getHighestBlockYAt(int x, int z, @NotNull HeightMap heightMap);
+
+    /**
+     * Gets the highest coordinate corresponding to the {@link HeightMap} at the
+     * given {@link Location}.
+     *
+     * @param location Location of the blocks
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     * @return Y-coordinate of the highest block corresponding to the
+     * {@link HeightMap}
+     */
+    public int getHighestBlockYAt(@NotNull Location location, @NotNull HeightMap heightMap);
+
+    /**
+     * Gets the highest block corresponding to the {@link HeightMap} at the
+     * given coordinates.
+     *
+     * @param x X-coordinate of the block
+     * @param z Z-coordinate of the block
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     * @return Highest block corresponding to the {@link HeightMap}
+     */
+    @NotNull
+    public Block getHighestBlockAt(int x, int z, @NotNull HeightMap heightMap);
+
+    /**
+     * Gets the highest block corresponding to the {@link HeightMap} at the
+     * given coordinates.
+     *
+     * @param location Coordinates to get the highest block
+     * @param heightMap the heightMap that is used to determine the highest
+     * point
+     * @return Highest block corresponding to the {@link HeightMap}
+     */
+    @NotNull
+    public Block getHighestBlockAt(@NotNull Location location, @NotNull HeightMap heightMap);
+
+    /**
      * Gets the {@link Chunk} at the given coordinates
      *
      * @param x X-coordinate of the chunk
