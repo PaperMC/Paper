@@ -1,9 +1,48 @@
 --- a/net/minecraft/server/TileEntityBeehive.java
 +++ b/net/minecraft/server/TileEntityBeehive.java
-@@ -108,6 +108,18 @@
+@@ -10,6 +10,7 @@
+     private final List<TileEntityBeehive.HiveBee> bees = Lists.newArrayList();
+     @Nullable
+     public BlockPosition flowerPos = null;
++    public int maxBees = 3; // CraftBukkit - allow setting max amount of bees a hive can hold
+ 
+     public TileEntityBeehive() {
+         super(TileEntityTypes.BEEHIVE);
+@@ -49,7 +50,7 @@
+     }
+ 
+     public boolean isFull() {
+-        return this.bees.size() == 3;
++        return this.bees.size() == this.maxBees; // CraftBukkit
+     }
+ 
+     public void a(@Nullable EntityHuman entityhuman, IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) {
+@@ -77,11 +78,17 @@
+ 
+     }
+ 
+-    private List<Entity> a(IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) {
++    // CraftBukkit start - This allows us to bypass the night/rain/emergency check
++    private List<Entity> a(IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) { // PAIL rename releaseBees
++        return releaseBees(iblockdata, tileentitybeehive_releasestatus, false);
++    }
++
++    public List<Entity> releaseBees(IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus, boolean force) {
+         List<Entity> list = Lists.newArrayList();
+ 
+         this.bees.removeIf((tileentitybeehive_hivebee) -> {
+-            return this.a(iblockdata, tileentitybeehive_hivebee.entityData, list, tileentitybeehive_releasestatus);
++            return this.releaseBee(iblockdata, tileentitybeehive_hivebee.entityData, list, tileentitybeehive_releasestatus, force);
++            // CraftBukkit end
+         });
+         return list;
+     }
+@@ -107,7 +114,19 @@
+     }
  
      public void a(Entity entity, boolean flag, int i) {
-         if (this.bees.size() < 3) {
+-        if (this.bees.size() < 3) {
++        if (this.bees.size() < this.maxBees) { // CraftBukkit
 +            // CraftBukkit start
 +            if (this.world != null) {
 +                org.bukkit.event.entity.EntityEnterBlockEvent event = new org.bukkit.event.entity.EntityEnterBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, getPosition()));
@@ -19,7 +58,26 @@
              entity.stopRiding();
              entity.ejectPassengers();
              NBTTagCompound nbttagcompound = new NBTTagCompound();
-@@ -163,6 +175,7 @@
+@@ -132,10 +151,16 @@
+         }
+     }
+ 
+-    private boolean a(IBlockData iblockdata, NBTTagCompound nbttagcompound, @Nullable List<Entity> list, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) {
++    // CraftBukkit start - This allows us to bypass the night/rain/emergency check
++    private boolean a(IBlockData iblockdata, NBTTagCompound nbttagcompound, @Nullable List<Entity> list, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) { // PAIL rename releaseBee
++        return releaseBee(iblockdata, nbttagcompound, list, tileentitybeehive_releasestatus, false);
++    }
++
++    private boolean releaseBee(IBlockData iblockdata, NBTTagCompound nbttagcompound, @Nullable List<Entity> list, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus, boolean force) {
+         BlockPosition blockposition = this.getPosition();
+ 
+-        if ((this.world.isNight() || this.world.isRaining()) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
++        if (!force && (this.world.isNight() || this.world.isRaining()) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
++            // CraftBukkit end
+             return false;
+         } else {
+             nbttagcompound.remove("Passengers");
+@@ -163,6 +188,7 @@
                      if (!entity.getEntityType().a(TagsEntity.BEEHIVE_INHABITORS)) {
                          return false;
                      } else {
@@ -27,7 +85,7 @@
                          if (entity instanceof EntityBee) {
                              EntityBee entitybee = (EntityBee) entity;
  
-@@ -196,7 +209,7 @@
+@@ -196,7 +222,7 @@
                          BlockPosition blockposition2 = this.getPosition();
  
                          this.world.playSound((EntityHuman) null, (double) blockposition2.getX(), (double) blockposition2.getY(), (double) blockposition2.getZ(), SoundEffects.BLOCK_BEEHIVE_EXIT, SoundCategory.BLOCKS, 1.0F, 1.0F);
@@ -36,7 +94,7 @@
                      }
                  } else {
                      return false;
-@@ -223,6 +236,11 @@
+@@ -223,6 +249,11 @@
                  if (this.a(iblockdata, nbttagcompound, (List) null, tileentitybeehive_releasestatus)) {
                      iterator.remove();
                  }
@@ -48,3 +106,27 @@
              } else {
                  tileentitybeehive_hivebee.ticksInHive++;
              }
+@@ -266,6 +297,11 @@
+             this.flowerPos = GameProfileSerializer.c(nbttagcompound.getCompound("FlowerPos"));
+         }
+ 
++        // CraftBukkit start
++        if (nbttagcompound.hasKey("Bukkit.MaxEntities")) {
++            this.maxBees = nbttagcompound.getInt("Bukkit.MaxEntities");
++        }
++        // CraftBukkit end
+     }
+ 
+     @Override
+@@ -275,6 +311,11 @@
+         if (this.x()) {
+             nbttagcompound.set("FlowerPos", GameProfileSerializer.a(this.flowerPos));
+         }
++        // CraftBukkit start
++        if (this.maxBees != 3) {
++            nbttagcompound.setInt("Bukkit.MaxEntities", this.maxBees);
++        }
++        // CraftBukkit end
+ 
+         return nbttagcompound;
+     }

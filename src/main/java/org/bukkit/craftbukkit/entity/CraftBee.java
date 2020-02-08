@@ -82,4 +82,14 @@ public class CraftBee extends CraftAnimals implements Bee {
     public void setAnger(int anger) {
         getHandle().setAnger(anger);
     }
+
+    @Override
+    public int getCannotEnterHiveTicks() {
+        return getHandle().cannotEnterHiveTicks;
+    }
+
+    @Override
+    public void setCannotEnterHiveTicks(int ticks) {
+        getHandle().setCannotEnterHiveTicks(ticks);
+    }
 }
