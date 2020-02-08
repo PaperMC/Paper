@@ -71,7 +71,6 @@ import net.minecraft.server.ExceptionWorldConflict;
 import net.minecraft.server.Explosion;
 import net.minecraft.server.GameRules;
 import net.minecraft.server.GroupDataEntity;
-import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.MinecraftKey;
@@ -291,8 +290,7 @@ public class CraftWorld implements World {
 
     @Override
     public int getHighestBlockYAt(int x, int z) {
-        // Transient load for this tick
-        return world.getChunkAt(x >> 4, z >> 4).a(HeightMap.Type.MOTION_BLOCKING, x, z);
+        return getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
     }
 
     @Override
@@ -889,6 +887,27 @@ public class CraftWorld implements World {
     @Override
     public Block getHighestBlockAt(Location location) {
         return getHighestBlockAt(location.getBlockX(), location.getBlockZ());
+    }
+
+    @Override
+    public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
+        // Transient load for this tick
+        return world.getChunkAt(x >> 4, z >> 4).a(CraftHeightMap.toNMS(heightMap), x, z);
+    }
+
+    @Override
+    public int getHighestBlockYAt(Location location, org.bukkit.HeightMap heightMap) {
+        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightMap);
+    }
+
+    @Override
+    public Block getHighestBlockAt(int x, int z, org.bukkit.HeightMap heightMap) {
+        return getBlockAt(x, getHighestBlockYAt(x, z, heightMap), z);
+    }
+
+    @Override
+    public Block getHighestBlockAt(Location location, org.bukkit.HeightMap heightMap) {
+        return getHighestBlockAt(location.getBlockX(), location.getBlockZ(), heightMap);
     }
 
     @Override
