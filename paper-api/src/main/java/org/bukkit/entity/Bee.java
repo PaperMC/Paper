@@ -79,4 +79,18 @@ public interface Bee extends Animals {
      * @param anger new anger
      */
     void setAnger(int anger);
+
+    /**
+     * Get the amount of ticks the bee cannot enter the hive for.
+     *
+     * @return Ticks the bee cannot enter a hive for
+     */
+    int getCannotEnterHiveTicks();
+
+    /**
+     * Set the amount of ticks the bee cannot enter a hive for.
+     *
+     * @param ticks Ticks the bee cannot enter a hive for
+     */
+    void setCannotEnterHiveTicks(int ticks);
 }
