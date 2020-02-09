@@ -993,4 +993,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(this.getHandle().getUsedItemHand());
     }
     // Paper end - active item API
+
+    // Paper start - entity jump API
+    @Override
+    public boolean isJumping() {
+        return getHandle().jumping;
+    }
+
+    @Override
+    public void setJumping(boolean jumping) {
+        getHandle().setJumping(jumping);
+        if (jumping && getHandle() instanceof Mob) {
+            // this is needed to actually make a mob jump
+            ((Mob) getHandle()).getJumpControl().jump();
+        }
+    }
+    // Paper end - entity jump API
 }
