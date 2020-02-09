@@ -2764,8 +2764,10 @@ public abstract class EntityLiving extends Entity {
             } else if (this.aP() && (!this.onGround || d7 > d8)) {
                 this.c((Tag) TagsFluid.LAVA);
             } else if ((this.onGround || flag && d7 <= d8) && this.jumpTicks == 0) {
+                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper
                 this.jump();
                 this.jumpTicks = 10;
+                } else { this.setJumping(false); } // Paper - setJumping(false) stops a potential loop
             }
         } else {
             this.jumpTicks = 0;

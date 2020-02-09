@@ -789,5 +789,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public boolean isHandRaised() {
         return getHandle().isHandRaised();
     }
+
+    @Override
+    public boolean isJumping() {
+        return getHandle().jumping;
+    }
+
+    @Override
+    public void setJumping(boolean jumping) {
+        getHandle().setJumping(jumping);
+        if (jumping && getHandle() instanceof EntityInsentient) {
+            // this is needed to actually make a mob jump
+            ((EntityInsentient) getHandle()).getControllerJump().jump();
+        }
+    }
+
     // Paper end
 }

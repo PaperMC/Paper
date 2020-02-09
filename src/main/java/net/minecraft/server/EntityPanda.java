@@ -435,7 +435,9 @@ public class EntityPanda extends EntityAnimal {
             EntityPanda entitypanda = (EntityPanda) iterator.next();
 
             if (!entitypanda.isBaby() && entitypanda.onGround && !entitypanda.isInWater() && entitypanda.fh()) {
+                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper
                 entitypanda.jump();
+                } else { this.setJumping(false); } // Paper - setJumping(false) stops a potential loop
             }
         }
 
