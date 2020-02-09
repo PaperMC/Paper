@@ -1,4 +1,4 @@
-From f0743935ac5697c2da073d00f031343ec6bce59d Mon Sep 17 00:00:00 2001
+From 638353e140a42e689f2364bc9389aff8fc3426b7 Mon Sep 17 00:00:00 2001
 From: cryptite <cryptite@gmail.com>
 Date: Tue, 17 Dec 2019 15:29:44 -0600
 Subject: [PATCH] Dont recalculate permissions on world change
@@ -10,23 +10,33 @@ In our case, the map sent to the player on login is sufficient and is not tossed
 As a result, we opt not to recalculate this on world change and this prevents a fairly heavy, and consistent main-thread
 lagspike whenever players change worlds, which can be a lot.
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 1d7d1ffbf..3eed84f63 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -425,4 +425,10 @@ public class PaperConfig {
+             */
+         }
+     }
++
++    public static boolean recalculatePermsOnWorldChange = true;
++    private void recalculatePermsOnWorldChange() {
++        recalculatePermsOnWorldChange = getBoolean("settings.recalculate-perms-on-world-change", recalculatePermsOnWorldChange);
++    }
++
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index bce502181..8336312b8 100644
+index bce502181..894491e6c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -653,4 +653,10 @@ public class PaperWorldConfig {
+@@ -653,4 +653,5 @@ public class PaperWorldConfig {
          disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
          log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
      }
 +
-+    public boolean recalculatePermsOnWorldChange = true;
-+    private void recalculatePermsOnWorldChange() {
-+        recalculatePermsOnWorldChange = getBoolean("recalculate-perms-on-world-change", recalculatePermsOnWorldChange);
-+    }
-+
  }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 7b79ee4fe..0d110cb4b 100644
+index 7b79ee4fe..f162c963a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -712,7 +712,9 @@ public abstract class PlayerList {
@@ -53,7 +63,7 @@ index 7b79ee4fe..0d110cb4b 100644
          }
  
 -        entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
-+        if(!(movedToWorld && !entityplayer.getWorldServer().paperConfig.recalculatePermsOnWorldChange)) entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit // Paper
++        if(!(movedToWorld && !com.destroystokyo.paper.PaperConfig.recalculatePermsOnWorldChange)) entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit // Paper
          this.server.getCommandDispatcher().a(entityplayer);
      }
  
