@@ -1,7 +1,7 @@
-From 707abbdbec330465f469dbcdb681ba4f40bed7c7 Mon Sep 17 00:00:00 2001
+From d1cf5f168a9ffaf22b7d5e070e2800f33794a995 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Tue, 1 Mar 2016 13:24:16 -0600
-Subject: [PATCH] Allow nerfed mobs to jump
+Subject: [PATCH] Allow nerfed mobs to jump and take water damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -30,8 +30,33 @@ index 2e869004c..8a6856e0f 100644
      public void b() {
          this.b.setJumping(this.a);
          this.a = false;
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 5635192f7..8a58afd1c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1104,6 +1104,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.isInWater() || this.isInRain();
+     }
+ 
++    public boolean isInWaterOrRainOrBubble() { return ay(); } // Paper - OBFHELPER
+     public boolean ay() {
+         return this.isInWater() || this.isInRain() || this.l();
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
+index 1cc66108d..538c2169c 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderman.java
++++ b/src/main/java/net/minecraft/server/EntityEnderman.java
+@@ -171,7 +171,7 @@ public class EntityEnderman extends EntityMonster {
+     @Override
+     protected void mobTick() {
+         if (this.ay()) {
+-            this.damageEntity(DamageSource.DROWN, 1.0F);
++            this.damageEntity(DamageSource.DROWN, 1.0F); // Paper - copied in patch 13 (allow nerfed mobs to jump, float and take water damage)
+         }
+ 
+         if (this.world.isDay() && this.ticksLived >= this.bA + 600) {
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 7ee5eb987..e3603685b 100644
+index 7ee5eb987..68ce38d66 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -32,6 +32,7 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -42,14 +67,17 @@ index 7ee5eb987..e3603685b 100644
      public PathfinderGoalSelector targetSelector;
      private EntityLiving goalTarget;
      private final EntitySenses bw;
-@@ -643,6 +644,12 @@ public abstract class EntityInsentient extends EntityLiving {
+@@ -643,6 +644,15 @@ public abstract class EntityInsentient extends EntityLiving {
          // Spigot Start
          if ( this.fromMobSpawner )
          {
-+            // Paper start - Allow nerfed mobs to jump and float
++            // Paper start - Allow nerfed mobs to jump, float and take water damage
 +            if (goalFloat != null) {
 +                if (goalFloat.validConditions()) goalFloat.update();
 +                this.getControllerJump().jumpIfSet();
++            }
++            if ((this instanceof EntityBlaze || this instanceof EntityEnderman) && isInWaterOrRainOrBubble()) {
++                damageEntity(DamageSource.DROWN, 1.0F);
 +            }
 +            // Paper end
              return;
@@ -81,5 +109,5 @@ index 0f0dc7277..43908b040 100644
      public void e() {
          if (this.a.getRandom().nextFloat() < 0.8F) {
 -- 
-2.25.0.windows.1
+2.25.0
 
