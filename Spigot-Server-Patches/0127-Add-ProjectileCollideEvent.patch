@@ -1,4 +1,4 @@
-From 0cd9a212baf7752ed5a6b1c7a30dae36bdc8305d Mon Sep 17 00:00:00 2001
+From b38e2ce60d5ae0311eb67bc508840ddf27ac1aa2 Mon Sep 17 00:00:00 2001
 From: Techcable <Techcable@outlook.com>
 Date: Fri, 16 Dec 2016 21:25:39 -0600
 Subject: [PATCH] Add ProjectileCollideEvent
@@ -49,14 +49,16 @@ index 078cc2523..6756c79b3 100644
  
                  // CraftBukkit start - Fire ProjectileHitEvent
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 7a8b8b0d6..8ad0d0db1 100644
+index 39e3bd379..0a17715a1 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
-@@ -214,7 +214,16 @@ public class EntityFishingHook extends Entity {
+@@ -214,8 +214,19 @@ public class EntityFishingHook extends Entity {
              return !entity.isSpectator() && (entity.isInteractable() || entity instanceof EntityItem) && (entity != this.owner || this.g >= 5);
          }, RayTrace.BlockCollisionOption.COLLIDER, true);
  
 -        if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
++        if (movingobjectposition != null && movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) { // Paper - add null check in case cancelled
+             org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // CraftBukkit - Call event
 +        // Paper start - Call ProjectileCollideEvent
 +        if (movingobjectposition instanceof MovingObjectPositionEntity) {
 +            com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
@@ -66,10 +68,11 @@ index 7a8b8b0d6..8ad0d0db1 100644
 +        }
 +        // Paper end
 +
-+        if (movingobjectposition != null && movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) { // Paper - add null check in case cancelled
-             org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // Craftbukkit - Call event
++
++            org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // Craftbukkit - Call event
              if (movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
                  this.hooked = ((MovingObjectPositionEntity) movingobjectposition).getEntity();
+                 this.n();
 diff --git a/src/main/java/net/minecraft/server/EntityProjectile.java b/src/main/java/net/minecraft/server/EntityProjectile.java
 index 2e4c9d426..724b78b5d 100644
 --- a/src/main/java/net/minecraft/server/EntityProjectile.java
@@ -114,5 +117,5 @@ index 95973558e..c45b7c15f 100644
          Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
          ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);
 -- 
-2.25.0.windows.1
+2.25.0
 
