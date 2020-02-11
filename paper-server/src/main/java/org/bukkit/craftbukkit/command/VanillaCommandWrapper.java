@@ -91,6 +91,6 @@ public final class VanillaCommandWrapper extends BukkitCommand {
     }
 
     private String toDispatcher(String[] args, String name) {
-        return "/" + name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
+        return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
     }
 }
