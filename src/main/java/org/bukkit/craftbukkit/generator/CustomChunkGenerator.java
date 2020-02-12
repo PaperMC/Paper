@@ -100,11 +100,6 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess) {
-        // Disable vanilla generation
-    }
-
-    @Override
     public <C extends WorldGenFeatureConfiguration> C getFeatureConfiguration(BiomeBase biomebase, StructureGenerator<C> structuregenerator) {
         return (C) delegate.getFeatureConfiguration(biomebase, structuregenerator);
     }
@@ -125,7 +120,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
     }
 
     @Override
-    public void createStructures(BiomeManager biomemanager, IChunkAccess ichunkaccess, net.minecraft.server.ChunkGenerator<?> chunkgenerator, DefinedStructureManager definedstructuremanager) {
+    public void buildBase(RegionLimitedWorldAccess regionlimitedworldaccess, IChunkAccess ichunkaccess) {
         // Call the bukkit ChunkGenerator before structure generation so correct biome information is available.
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
@@ -176,23 +171,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator<GeneratorSettin
                 }
             }
         }
+    }
 
+    @Override
+    public void createStructures(BiomeManager biomemanager, IChunkAccess ichunkaccess, net.minecraft.server.ChunkGenerator<?> chunkgenerator, DefinedStructureManager definedstructuremanager) {
         if (generator.shouldGenerateStructures()) {
-            // Vanilla only uses biome at block 9 (see createStructures).
-            // We don't use BiomeGrid as another aspect of generation may try and get from a chunk somewhere else.
-            final BiomeBase biome = biomegrid.biome.getBiome(9 >> 2, 0, 9 >> 2);
-            delegate.createStructures(new BiomeManager(null, 0, null) {
-
-                @Override
-                public BiomeManager a(WorldChunkManager worldchunkmanager) {
-                    return this;
-                }
-
-                @Override
-                public BiomeBase a(BlockPosition blockposition) {
-                    return biome;
-                }
-            }, ichunkaccess, chunkgenerator, definedstructuremanager);
+            // Still need a way of getting the biome of this chunk to pass to createStructures
+            // Using default biomes for now.
+            delegate.createStructures(biomemanager, ichunkaccess, chunkgenerator, definedstructuremanager);
         }
     }
 
