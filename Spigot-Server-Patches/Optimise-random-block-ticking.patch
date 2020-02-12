@@ -1,0 +1,557 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 27 Jan 2020 21:28:00 -0800
+Subject: [PATCH] Optimise random block ticking
+
+Massive performance improvement for random block ticking.
+The performance increase comes from the fact that the vast
+majority of attempted block ticks (~95% in my testing) fail
+because the randomly selected block is not tickable.
+
+Now only tickable blocks are targeted, however this means that
+the maximum number of block ticks occurs per chunk. However,
+not all chunks are going to be targeted. The percent chance
+of a chunk being targeted is based on how many tickable blocks
+are in the chunk.
+This means that while block ticks are spread out less, the
+total number of blocks ticked per world tick remains the same.
+Therefore, the chance of a random tickable block being ticked
+remains the same.
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
+new file mode 100644
+index 0000000000..3edc8e52e0
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.math;
++
++import java.util.Random;
++
++public final class ThreadUnsafeRandom extends Random {
++
++    // See javadoc and internal comments for java.util.Random where these values come from, how they are used, and the author for them.
++    private static final long multiplier = 0x5DEECE66DL;
++    private static final long addend = 0xBL;
++    private static final long mask = (1L << 48) - 1;
++
++    private static long initialScramble(long seed) {
++        return (seed ^ multiplier) & mask;
++    }
++
++    private long seed;
++
++    @Override
++    public void setSeed(long seed) {
++        // note: called by Random constructor
++        this.seed = initialScramble(seed);
++    }
++
++    @Override
++    protected int next(int bits) {
++        // avoid the expensive CAS logic used by superclass
++        return (int) (((this.seed = this.seed * multiplier + addend) & mask) >>> (48 - bits));
++    }
++
++    // Taken from
++    // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
++    // https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/2016/06/25/fastrange.c
++    // Original license is public domain
++    public static int fastRandomBounded(final long randomInteger, final long limit) {
++        // randomInteger must be [0, pow(2, 32))
++        // limit must be [0, pow(2, 32))
++        return (int)((randomInteger * limit) >>> 32);
++    }
++
++    @Override
++    public int nextInt(int bound) {
++        // yes this breaks random's spec
++        // however there's nothing that uses this class that relies on it
++        return fastRandomBounded(this.next(32) & 0xFFFFFFFFL, bound);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index e29ec958b3..e40375b67a 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+         return iblockdata.d(iblockaccess, blockposition, EnumDirection.UP) && this.n < 14;
+     }
+ 
+-    @Deprecated
+-    public boolean d(IBlockData iblockdata) {
++    public final boolean isAir(IBlockData iblockdata) { return this.d(iblockdata); } // Paper - OBFHELPER
++    @Deprecated public boolean d(IBlockData iblockdata) { // Paper - OBFHELPER
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
+index 6d351f0979..a44f65f40d 100644
+--- a/src/main/java/net/minecraft/server/BlockFluids.java
++++ b/src/main/java/net/minecraft/server/BlockFluids.java
+@@ -0,0 +0,0 @@ public class BlockFluids extends Block implements IFluidSource {
+ 
+     @Override
+     public void b(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
+-        worldserver.getFluid(blockposition).b(worldserver, blockposition, random);
++        iblockdata.getFluid().b(worldserver, blockposition, random); // Paper - avoid getType call
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index e76528f199..e650a2e48d 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+             return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
+         }
+ 
++        public final BlockPosition.MutableBlockPosition setValues(final BaseBlockPosition baseblockposition) { return this.g(baseblockposition); } // Paper - OBFHELPER
+         public BlockPosition.MutableBlockPosition g(BaseBlockPosition baseblockposition) {
+             return this.d(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
+         }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 37b12daff8..2c3ede3fe1 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+     private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
+     private volatile boolean x;
+ 
++    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
++
+     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
+         this(world, chunkcoordintpair, biomestorage, ChunkConverter.a, TickListEmpty.b(), TickListEmpty.b(), 0L, (ChunkSection[]) null, (Consumer) null);
+     }
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         this.v = consumer;
+         if (achunksection != null) {
+             if (this.sections.length == achunksection.length) {
++                // Paper start - maintain a list of ticking blocks in a chunk
++                for (ChunkSection section : achunksection) {
++                    if (section != null) {
++                        section.chunk = this;
++                        int offset = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(0, section.yPos, 0);
++                        for (it.unimi.dsi.fastutil.longs.LongIterator iterator = section.tickingList.getRawIterator(); iterator.hasNext();) {
++                            long raw = iterator.nextLong();
++                            this.tickingList.add(com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw) + offset, com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw));
++                        }
++                    }
++                }
++                // Paper end
+                 System.arraycopy(achunksection, 0, this.sections, 0, this.sections.length);
+             } else {
+                 Chunk.LOGGER.warn("Could not set level chunk sections, array length is {} instead of {}", achunksection.length, this.sections.length);
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         this.entities.remove(entity); // Paper
+     }
+ 
+-    @Override
+-    public int a(HeightMap.Type heightmap_type, int i, int j) {
++    public int getHighestBlockY(HeightMap.Type heightmap_type, int i, int j) { return this.a(heightmap_type, i, j) + 1; } // Paper - sort of an obfhelper, but without -1
++    @Override public int a(HeightMap.Type heightmap_type, int i, int j) { // Paper
+         return ((HeightMap) this.heightMap.get(heightmap_type)).a(i & 15, j & 15) - 1;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+index 4526527aca..8b28fb5ee1 100644
+--- a/src/main/java/net/minecraft/server/ChunkSection.java
++++ b/src/main/java/net/minecraft/server/ChunkSection.java
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ public class ChunkSection {
+ 
+     public static final DataPalette<IBlockData> GLOBAL_PALETTE = new DataPaletteGlobal<>(Block.REGISTRY_ID, Blocks.AIR.getBlockData());
+-    private final int yPos;
++    final int yPos; // Paper - private -> package-private
+     short nonEmptyBlockCount; // Paper - private -> package-private
+-    private short tickingBlockCount;
++    short tickingBlockCount; // Paper - private -> package-private
+     private short e;
+     final DataPaletteBlock<IBlockData> blockIds;
+ 
++    Chunk chunk; // Paper
++    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
++
+     public ChunkSection(int i) {
+         // Paper start - add parameters
+         this(i, (IChunkAccess)null, (IWorldReader)null, true);
+@@ -0,0 +0,0 @@ public class ChunkSection {
+         this.tickingBlockCount = short1;
+         this.e = short2;
+         this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData(), world instanceof GeneratorAccess ? ((GeneratorAccess) world).getMinecraftWorld().chunkPacketBlockController.getPredefinedBlockData(world, chunk, this, initializeBlocks) : null, initializeBlocks); // Paper - Anti-Xray - Add predefined block data
++        // Paper start
++        if (chunk instanceof Chunk) {
++            this.chunk = (Chunk)chunk;
++        }
++        // Paper end
+     }
+ 
+     public IBlockData getType(int i, int j, int k) {
+@@ -0,0 +0,0 @@ public class ChunkSection {
+             --this.nonEmptyBlockCount;
+             if (iblockdata1.q()) {
+                 --this.tickingBlockCount;
++                // Paper start
++                this.tickingList.remove(i, j, k);
++                if (this.chunk != null) {
++                    this.chunk.tickingList.remove(i, j + this.yPos, k);
++                }
++                // Paper end
+             }
+         }
+ 
+@@ -0,0 +0,0 @@ public class ChunkSection {
+             ++this.nonEmptyBlockCount;
+             if (iblockdata.q()) {
+                 ++this.tickingBlockCount;
++                // Paper start
++                this.tickingList.add(i, j, k, iblockdata);
++                if (this.chunk != null) {
++                    this.chunk.tickingList.add(i, j + this.yPos, k, iblockdata);
++                }
++                // Paper end
+             }
+         }
+ 
+@@ -0,0 +0,0 @@ public class ChunkSection {
+     }
+ 
+     public void recalcBlockCounts() {
++        // Paper start
++        int offset = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(0, this.yPos, 0);
++        if (this.chunk != null) {
++            for (it.unimi.dsi.fastutil.longs.LongIterator iterator = this.tickingList.getRawIterator(); iterator.hasNext();) {
++                long raw = iterator.nextLong();
++                this.chunk.tickingList.remove(com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw) + offset);
++            }
++        }
++        this.tickingList.clear();
++        // Paper end
+         this.nonEmptyBlockCount = 0;
+         this.tickingBlockCount = 0;
+         this.e = 0;
+-        this.blockIds.a((iblockdata, i) -> {
++        this.blockIds.forEachLocation((iblockdata, location) -> { // Paper
+             Fluid fluid = iblockdata.getFluid();
+ 
+             if (!iblockdata.isAir()) {
+-                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
+                 if (iblockdata.q()) {
+-                    this.tickingBlockCount = (short) (this.tickingBlockCount + i);
++                    this.tickingBlockCount = (short) (this.tickingBlockCount + 1); // Paper
++                    // Paper start
++                    this.tickingList.add(location, iblockdata);
++                    if (this.chunk != null) {
++                        this.chunk.tickingList.add(location + offset, iblockdata);
++                    }
++                    // Paper end
+                 }
+             }
+ 
+             if (!fluid.isEmpty()) {
+-                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
+                 if (fluid.h()) {
+-                    this.e = (short) (this.e + i);
++                    this.e = (short) (this.e + 1); // Paper
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
+index f9680b6830..a61cffa3f4 100644
+--- a/src/main/java/net/minecraft/server/DataBits.java
++++ b/src/main/java/net/minecraft/server/DataBits.java
+@@ -0,0 +0,0 @@ public class DataBits {
+ 
+         }
+     }
++
++    // Paper start
++    public final void forEach(DataBitConsumer consumer) {
++        // Note: copied from above
++        int i = this.a.length;
++
++        if (i != 0) {
++            int j = 0;
++            long k = this.a[0];
++            long l = i > 1 ? this.a[1] : 0L;
++
++            for (int i1 = 0; i1 < this.d; ++i1) {
++                int j1 = i1 * this.b;
++                int k1 = j1 >> 6;
++                int l1 = (i1 + 1) * this.b - 1 >> 6;
++                int i2 = j1 ^ k1 << 6;
++
++                if (k1 != j) {
++                    k = l;
++                    l = k1 + 1 < i ? this.a[k1 + 1] : 0L;
++                    j = k1;
++                }
++
++                if (k1 == l1) {
++                    consumer.accept(i1, (int) (k >>> i2 & this.c));
++                } else {
++                    int j2 = 64 - i2;
++
++                    consumer.accept(i1, (int) ((k >>> i2 | l << j2) & this.c));
++                }
++            }
++
++        }
++    }
++
++    @FunctionalInterface
++    static interface DataBitConsumer {
++
++        void accept(int location, int data);
++
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 44aed67274..fa664897fb 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+         });
+     }
+ 
++    // Paper start
++    public void forEachLocation(DataPaletteBlock.a<T> datapaletteblock_a) {
++        this.getDataBits().forEach((int location, int data) -> {
++            datapaletteblock_a.accept(this.getDataPalette().getObject(data), location);
++        });
++    }
++    // Paper end
++
+     @FunctionalInterface
+     public interface a<T> {
+ 
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index de43881653..e821c236b4 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+     private IBlockData.a c;
+     private final int d;
+     private final boolean e;
++    private final boolean isAir; // Paper
++    private final boolean isTicking; // Paper
+ 
+     public IBlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
+         super(block, immutablemap);
+         this.d = block.a(this);
+         this.e = block.o(this);
++        this.isAir = this.getBlock().isAir(this); // Paper
++        this.isTicking = this.getBlock().isTicking(this); // Paper
+     }
+ 
+     public void c() {
+@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return this.d;
+     }
+ 
+-    public boolean isAir() {
+-        return this.getBlock().d(this);
++    public final boolean isAir() { // Paper - compile fail if the impl changes
++        return this.isAir; // Paper - improve inlining of isAir
+     }
+ 
+     public MaterialMapColor c(IBlockAccess iblockaccess, BlockPosition blockposition) {
+@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return this.getBlock().a(tag);
+     }
+ 
++    private Fluid fluidData; // Paper - cache result
+     public Fluid getFluid() {
+-        return this.getBlock().a_(this);
++        // Paper start
++        // This can't be done during the constructor, order issues
++        if (this.fluidData != null) {
++            return this.fluidData;
++        }
++        return this.fluidData = this.getBlock().a_(this);
++        // Paper end
+     }
+ 
+     public boolean q() {
+-        return this.getBlock().isTicking(this);
++        return this.isTicking; // Paper
+     }
+ 
+     public final SoundEffectType getStepSound() { return this.r(); } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 9135113884..3c966b4ab6 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public abstract TagRegistry t();
+ 
+     public BlockPosition a(int i, int j, int k, int l) {
++        // Paper start - allow use of mutable pos
++        BlockPosition.MutableBlockPosition ret = new BlockPosition.MutableBlockPosition();
++        this.getRandomBlockPosition(i, j, k, l, ret);
++        return ret.immutableCopy();
++    }
++
++    public final BlockPosition.MutableBlockPosition getRandomBlockPosition(int i, int j, int k, int l, BlockPosition.MutableBlockPosition out) {
++        // Paper end
+         this.i = this.i * 3 + 1013904223;
+         int i1 = this.i >> 2;
+ 
+-        return new BlockPosition(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15));
++        out.setValues(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15)); // Paper - change to setValues call
++        return out; // Paper
+     }
+ 
+     public boolean isSavingDisabled() {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0fed337130..c74b85917a 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         });
+     }
+ 
++    // Paper start - optimise random block ticking
++    private final BlockPosition.MutableBlockPosition chunkTickMutablePosition = new BlockPosition.MutableBlockPosition();
++    private final com.destroystokyo.paper.util.math.ThreadUnsafeRandom randomTickRandom = new com.destroystokyo.paper.util.math.ThreadUnsafeRandom();
++    // Paper end
++
+     public void a(Chunk chunk, int i) {
+         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
+         boolean flag = this.isRaining();
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         GameProfilerFiller gameprofilerfiller = this.getMethodProfiler();
+ 
+         gameprofilerfiller.enter("thunder");
+-        BlockPosition blockposition;
++        final BlockPosition.MutableBlockPosition blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
+ 
+-        if (!this.paperConfig.disableThunder && flag && this.U() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
+-            blockposition = this.a(this.a(j, 0, k, 15));
++        if (!this.paperConfig.disableThunder && flag && this.U() && this.randomTickRandom.nextInt(100000) == 0) { // Paper - Disable thunder // Paper - optimise random ticking
++            blockposition.setValues(this.a(this.getRandomBlockPosition(j, 0, k, 15, blockposition))); // Paper
+             if (this.isRainingAt(blockposition)) {
+                 DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
+                 boolean flag1 = this.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         }
+ 
+         gameprofilerfiller.exitEnter("iceandsnow");
+-        if (!this.paperConfig.disableIceAndSnow && this.random.nextInt(16) == 0) { // Paper - Disable ice and snow
+-            blockposition = this.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING, this.a(j, 0, k, 15));
+-            BlockPosition blockposition1 = blockposition.down();
++        if (!this.paperConfig.disableIceAndSnow && this.randomTickRandom.nextInt(16) == 0) { // Paper - Disable ice and snow // Paper - optimise random ticking
++            // Paper start - optimise chunk ticking
++            this.getRandomBlockPosition(j, 0, k, 15, blockposition);
++            int normalY = chunk.getHighestBlockY(HeightMap.Type.MOTION_BLOCKING, blockposition.getX() & 15, blockposition.getZ() & 15);
++            int downY = normalY - 1;
++            blockposition.setY(normalY);
++            // Paper end
+             BiomeBase biomebase = this.getBiome(blockposition);
+ 
+-            if (biomebase.a((IWorldReader) this, blockposition1)) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.getBlockData(), null); // CraftBukkit
++            // Paper start - optimise chunk ticking
++            blockposition.setY(downY);
++            if (biomebase.a((IWorldReader) this, blockposition)) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.ICE.getBlockData(), null); // CraftBukkit
++                // Paper end
+             }
+ 
++            blockposition.setY(normalY); // Paper
+             if (flag && biomebase.b(this, blockposition)) {
+                 org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.SNOW.getBlockData(), null); // CraftBukkit
+             }
+ 
+-            if (flag && this.getBiome(blockposition1).d() == BiomeBase.Precipitation.RAIN) {
+-                this.getType(blockposition1).getBlock().c((World) this, blockposition1);
++            // Paper start - optimise chunk ticking
++            blockposition.setY(downY);
++            if (flag && this.getBiome(blockposition).d() == BiomeBase.Precipitation.RAIN) {
++                chunk.getType(blockposition).getBlock().c((World) this, blockposition);
++                // Paper end
+             }
+         }
+ 
+-        gameprofilerfiller.exitEnter("tickBlocks");
+-        timings.chunkTicksBlocks.startTiming(); // Paper
+-        if (i > 0) {
+-            ChunkSection[] achunksection = chunk.getSections();
+-            int l = achunksection.length;
+-
+-            for (int i1 = 0; i1 < l; ++i1) {
+-                ChunkSection chunksection = achunksection[i1];
+-
+-                if (chunksection != Chunk.a && chunksection.d()) {
+-                    int j1 = chunksection.getYPosition();
++        // Paper start - optimise random block ticking
++        gameprofilerfiller.exit();
++        int blocks = chunk.tickingList.size();
++        if (i > 0 && blocks > 0) {
++            if ((this.randomTickRandom.nextInt() & (16 * 16 * 256 - 1)) > blocks) {
++                // we optimise random block ticking by realising that most of the blocks we will try to tick
++                // are not tickable. Instead we only tick tickable blocks, but only if the above
++                // statement is true
++                // Note: The number of blocks that get ticked per tick still REMAIN the same.
++                return;
++            }
++            gameprofilerfiller.enter("tickBlocks");
++            timings.chunkTicksBlocks.startTiming(); // Paper
+ 
+-                    for (int k1 = 0; k1 < i; ++k1) {
+-                        BlockPosition blockposition2 = this.a(j, j1, k, 15);
++            int toTick = i << 4; // i * 16
+ 
+-                        gameprofilerfiller.enter("randomTick");
+-                        IBlockData iblockdata = chunksection.getType(blockposition2.getX() - j, blockposition2.getY() - j1, blockposition2.getZ() - k);
++            gameprofilerfiller.enter("randomTick");
++            for (int tick = 0; tick < toTick; ++tick) {
++                int tickingSize = chunk.tickingList.size();
++                if (tickingSize == 0) {
++                    break;
++                }
+ 
+-                        if (iblockdata.q()) {
+-                            iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
+-                            iblockdata.b(this, blockposition2, this.random);
+-                            iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
+-                        }
++                int index = this.randomTickRandom.nextInt(tickingSize);
++                long raw = chunk.tickingList.getRaw(index);
++                int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
++                int randomX = location & 15;
++                int randomY = (location >>> (4 + 4)) & 255;
++                int randomZ = (location >>> 4) & 15;
+ 
+-                        Fluid fluid = iblockdata.getFluid();
++                BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
++                IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
+ 
+-                        if (fluid.h()) {
+-                            fluid.b(this, blockposition2, this.random);
+-                        }
++                iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
++                iblockdata.b(this, blockposition2, this.randomTickRandom);
++                iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
+ 
+-                        gameprofilerfiller.exit();
+-                    }
+-                }
++                // We drop the fluid tick since LAVA is ALREADY TICKED by the above method.
++                // TODO CHECK ON UPDATE
+             }
++
++            gameprofilerfiller.exit();
++            timings.chunkTicksBlocks.stopTiming(); // Paper
++            gameprofilerfiller.exit();
++            // Paper end
+         }
+-        timings.chunkTicksBlocks.stopTiming(); // Paper
+-        gameprofilerfiller.exit();
+     }
+ 
+     protected BlockPosition a(BlockPosition blockposition) {
+--
