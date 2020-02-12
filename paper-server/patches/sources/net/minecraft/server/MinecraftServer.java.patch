@@ -555,10 +555,12 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -427,30 +717,8 @@
-             iworlddataserver.setInitialized(true);
-         }
+@@ -425,32 +715,10 @@
+             }
  
+             iworlddataserver.setInitialized(true);
+-        }
+-
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
@@ -579,8 +581,8 @@
 -                worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(worldserver1.getWorldBorder()));
 -                this.levels.put(resourcekey1, worldserver1);
 -            }
--        }
--
+         }
+ 
 -        worldborder.applySettings(iworlddataserver.getWorldBorder());
      }
 +    // CraftBukkit end
@@ -1029,7 +1031,7 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -1154,24 +1611,55 @@
+@@ -1154,24 +1611,56 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -1069,6 +1071,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
 +            worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
++            worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
  
              gameprofilerfiller.push(() -> {
                  String s = String.valueOf(worldserver);
@@ -1085,7 +1088,7 @@
  
              gameprofilerfiller.push("tick");
  
-@@ -1186,6 +1674,7 @@
+@@ -1186,6 +1675,7 @@
  
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
@@ -1093,7 +1096,7 @@
          }
  
          gameprofilerfiller.popPush("connection");
-@@ -1267,6 +1756,22 @@
+@@ -1267,6 +1757,22 @@
          return (ServerLevel) this.levels.get(key);
      }
  
@@ -1116,7 +1119,7 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1296,7 +1801,7 @@
+@@ -1296,7 +1802,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1125,7 +1128,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1347,7 +1852,7 @@
+@@ -1347,7 +1853,7 @@
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -1134,7 +1137,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1385,11 +1890,14 @@
+@@ -1385,11 +1891,14 @@
          }
      }
  
@@ -1154,7 +1157,7 @@
          }
      }
  
-@@ -1403,7 +1911,7 @@
+@@ -1403,7 +1912,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
@@ -1163,7 +1166,7 @@
          }
  
      }
-@@ -1481,10 +1989,20 @@
+@@ -1481,10 +1990,20 @@
  
      @Override
      public String getMotd() {
@@ -1185,7 +1188,7 @@
          this.motd = motd;
      }
  
-@@ -1507,7 +2025,7 @@
+@@ -1507,7 +2026,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -1194,7 +1197,7 @@
      }
  
      public boolean isReady() {
-@@ -1632,13 +2150,19 @@
+@@ -1632,13 +2151,19 @@
          return this.functionManager;
      }
  
@@ -1216,7 +1219,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2178,7 @@
+@@ -1654,6 +2179,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1224,7 +1227,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1665,6 +2190,8 @@
+@@ -1665,6 +2191,8 @@
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
@@ -1233,7 +1236,7 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,13 +2316,14 @@
+@@ -1789,13 +2317,14 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1249,7 +1252,7 @@
                      entityplayer.connection.disconnect((Component) Component.translatable("multiplayer.disconnect.not_whitelisted"));
                  }
              }
-@@ -1952,7 +2480,7 @@
+@@ -1952,7 +2481,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1258,7 +1261,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2586,7 @@
+@@ -2058,7 +2587,7 @@
              try {
                  label51:
                  {
@@ -1267,7 +1270,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,9 +2633,24 @@
+@@ -2105,9 +2634,24 @@
          if (bufferedwriter != null) {
              bufferedwriter.close();
          }
@@ -1292,7 +1295,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2768,24 @@
+@@ -2225,18 +2769,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1321,7 +1324,7 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2926,32 @@
+@@ -2377,6 +2927,32 @@
      }
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
