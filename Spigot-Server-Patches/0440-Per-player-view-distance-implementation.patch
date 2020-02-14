@@ -1,0 +1,866 @@
+From 5dfec268dd89c95d6bcb223a38593b71ea9dec69 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 14 Feb 2020 02:34:11 -0800
+Subject: [PATCH] Per player view distance implementation
+
+This patch implements CraftPlayer#setViewDistance and
+CraftPlayer#getViewDistance
+
+This patch replaces the existing system to handle player tickets
+and chunk sending to players.
+ Most of the work is pulled by two
+PlayerAreaMap's controlling: a radius for sending chunks and a radius
+for adding player tickets. Currently the difference between the two
+radii is just 1.
+Normal vanilla has a difference of two, but this
+causes issues where outer chunks in the view distance sometimes
+do not send. This is because the outer radius is not guaranteed to
+be at ticket level 32, which is required to be sent to players.
+
+The ticket manager in ChunkMapDistance for players is no longer used and
+is entirely replaced by the ticket distance map. The ticket tracker also
+adds a configurable chunk load rate per player.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 1d7d1ffbf..2244d5826 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -425,4 +425,16 @@ public class PaperConfig {
+             */
+         }
+     }
++
++
++    public static int maxChunkLoadsPerPlayer;
++
++    private static void maxChunkLoadsPerPlayer() {
++        // there is no exact vanilla value. It just pushes chunks as hard as possible at 20tps, and on anything less
++        // than 20 it dials back hard (in my testing, < 10 chunk loads / s compared to 120).
++        maxChunkLoadsPerPlayer = getInt("settings.max-pending-chunk-tickets-per-player", 100);
++        if (maxChunkLoadsPerPlayer <= -1) {
++            maxChunkLoadsPerPlayer = Integer.MAX_VALUE;
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 73d157076..bc5de0356 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -27,12 +27,12 @@ import org.apache.logging.log4j.Logger;
+ public abstract class ChunkMapDistance {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+-    private static final int b = 33 + ChunkStatus.a(ChunkStatus.FULL) - 2;
++    private static final int b = 33 + ChunkStatus.a(ChunkStatus.FULL) - 2; public static int getPlayerTicketLevel() { return ChunkMapDistance.b; } // Paper - OBFHELPER
+     private final Long2ObjectMap<ObjectSet<EntityPlayer>> c = new Long2ObjectOpenHashMap();
+     public final Long2ObjectOpenHashMap<ArraySetSorted<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
+     private final ChunkMapDistance.a e = new ChunkMapDistance.a();
+     private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
+-    private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
++    //private final ChunkMapDistance.c g = new ChunkMapDistance.c(33); // Paper - no longer used
+     private final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.LinkedList<>(); // PAIL pendingChunkUpdates // Paper - use a queue
+     private final ChunkTaskQueueSorter i;
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
+@@ -41,6 +41,11 @@ public abstract class ChunkMapDistance {
+     private final Executor m;
+     private long currentTick;
+ 
++    // Paper start
++    protected PlayerChunkMap chunkMap;
++    protected final ChunkMapDistance.TicketTracker playerTicketHandler = new TicketTracker();
++    // Paper end
++
+     protected ChunkMapDistance(Executor executor, Executor executor1) {
+         executor1.getClass();
+         Mailbox<Runnable> mailbox = Mailbox.a("player ticket throttler", executor1::execute);
+@@ -86,7 +91,7 @@ public abstract class ChunkMapDistance {
+ 
+     public boolean a(PlayerChunkMap playerchunkmap) {
+         this.f.a();
+-        this.g.a();
++        //this.g.a(); // Paper - no longer used
+         int i = Integer.MAX_VALUE - this.e.a(Integer.MAX_VALUE);
+         boolean flag = i != 0;
+ 
+@@ -220,7 +225,7 @@ public abstract class ChunkMapDistance {
+             return new ObjectOpenHashSet();
+         })).add(entityplayer);
+         this.f.b(i, 0, true);
+-        this.g.b(i, 0, true);
++        //this.g.b(i, 0, true); // Paper - no longer used
+     }
+ 
+     public void b(SectionPosition sectionposition, EntityPlayer entityplayer) {
+@@ -231,7 +236,7 @@ public abstract class ChunkMapDistance {
+         if (objectset.isEmpty()) {
+             this.c.remove(i);
+             this.f.b(i, Integer.MAX_VALUE, false);
+-            this.g.b(i, Integer.MAX_VALUE, false);
++            //this.g.b(i, Integer.MAX_VALUE, false); // Paper - no longer used
+         }
+ 
+     }
+@@ -249,9 +254,16 @@ public abstract class ChunkMapDistance {
+         return s;
+     }
+ 
++    protected void setViewDistance(int viewDistance) { this.a(viewDistance); } // Paper - OBFHELPER
+     protected void a(int i) {
+-        this.g.a(i);
++        //this.g.a(i); // Paper - no longer used
++    }
++    // Paper start - per player view distance
++    protected void setGlobalViewDistance(int viewDistance, PlayerChunkMap chunkMap) {
++        this.chunkMap = chunkMap;
++        this.setViewDistance(viewDistance);
+     }
++    // Paper end
+ 
+     public int b() {
+         this.f.a();
+@@ -327,6 +339,199 @@ public abstract class ChunkMapDistance {
+         }
+     }
+ 
++    // Paper start - Per player view distance
++    class TicketTracker {
++
++        static final int LOADED_PLAYER_REFERENCE = -2;
++
++        private final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap chunkReferenceMap = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap(8192, 0.25f);
++        {
++            this.chunkReferenceMap.defaultReturnValue(-1);
++        }
++        private final it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap lastLoadedRadiusByPlayer = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap(512, 0.5f);
++        {
++            this.lastLoadedRadiusByPlayer.defaultReturnValue(-1);
++        }
++
++        private final it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap pendingChunkLoadsByPlayer = new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap(512, 0.5f);
++        private final it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap lastChunkPositionByPlayer = new it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap(512, 0.5f);
++        {
++            this.lastChunkPositionByPlayer.defaultReturnValue(Long.MIN_VALUE);
++        }
++
++        private final java.util.List<EntityPlayer> players = new java.util.ArrayList<>(256);
++
++        private boolean tryQueueChunk(int chunkX, int chunkZ, EntityPlayer player) {
++            long coordinate = MCUtil.getCoordinateKey(chunkX, chunkZ);
++            if (this.chunkReferenceMap.putIfAbsent(coordinate, player.getId()) == -1) {
++                ChunkMapDistance.this.addTicket(coordinate, new Ticket<>(TicketType.PLAYER, ChunkMapDistance.getPlayerTicketLevel(), new ChunkCoordIntPair(chunkX, chunkZ)));
++                return true;
++            }
++            return false;
++        }
++
++        public void tick() {
++            PlayerChunkMap chunkMap = ChunkMapDistance.this.chunkMap;
++            for (EntityPlayer player : this.players) {
++                int playerId = player.getId();
++                int lastLoadedRadius = this.lastLoadedRadiusByPlayer.get(playerId);
++                int pendingChunkLoads = this.pendingChunkLoadsByPlayer.get(playerId);
++                long lastChunkPos = this.lastChunkPositionByPlayer.get(playerId);
++                long currentChunkPos = chunkMap.playerViewDistanceTicketMap.getLastCoordinate(player);
++
++                if (currentChunkPos == Long.MIN_VALUE) {
++                    // not tracking for whatever reason...
++                    continue;
++                }
++
++                int newX = MCUtil.getCoordinateX(currentChunkPos);
++                int newZ = MCUtil.getCoordinateZ(currentChunkPos);
++
++                // handle movement
++                if (currentChunkPos != lastChunkPos) {
++                    this.lastChunkPositionByPlayer.put(playerId, currentChunkPos);
++                    if (lastChunkPos != Long.MIN_VALUE) {
++                        int oldX = MCUtil.getCoordinateX(lastChunkPos);
++                        int oldZ = MCUtil.getCoordinateZ(lastChunkPos);
++
++                        int radiusDiff = Math.max(Math.abs(newX - oldX), Math.abs(newZ - oldZ));
++                        lastLoadedRadius = Math.max(-1, lastLoadedRadius - radiusDiff);
++                        this.lastLoadedRadiusByPlayer.put(playerId, lastLoadedRadius);
++                    }
++                }
++
++                int maxChunkLoads = com.destroystokyo.paper.PaperConfig.maxChunkLoadsPerPlayer; // per-player limits instead of global?
++
++                int radius = lastLoadedRadius + 1;
++                int viewDistance = chunkMap.playerViewDistanceTicketMap.getLastViewDistance(player);
++
++                if (radius > viewDistance) {
++                    // distance map will unload our chunks
++                    this.lastLoadedRadiusByPlayer.put(playerId, viewDistance);
++                    continue;
++                }
++
++                if (pendingChunkLoads >= maxChunkLoads) {
++                    continue;
++                }
++
++                radius_loop:
++                for (; radius <= viewDistance; ++radius) {
++                    for (int offset = 0; offset <= radius; ++offset) {
++                        // try to load the chunks closest to the player by distance
++                        // so instead of going left->right on the x axis, we start at the center of the view distance square
++                        // and go left and right at the same time
++
++                        // try top 2 chunks
++                        // top left
++                        if (this.tryQueueChunk(newX - offset, newZ + radius, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // top right
++                        if (this.tryQueueChunk(newX + offset, newZ + radius, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // try bottom 2 chunks
++
++                        // bottom left
++                        if (this.tryQueueChunk(newX - offset, newZ - radius, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // bottom right
++                        if (this.tryQueueChunk(newX + offset, newZ - radius, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // try left 2 chunks
++
++                        // left down
++                        if (this.tryQueueChunk(newX - radius, newZ - offset, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // left up
++                        if (this.tryQueueChunk(newX - radius, newZ + offset, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // try right 2 chunks
++
++                        // right down
++                        if (this.tryQueueChunk(newX + radius, newZ - offset, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++
++                        // right up
++                        if (this.tryQueueChunk(newX + radius, newZ + offset, player)) {
++                            if (++pendingChunkLoads >= maxChunkLoads) {
++                                break radius_loop;
++                            }
++                        }
++                    }
++                }
++
++                int newLoadedRadius = radius - 1;
++                if (newLoadedRadius != lastLoadedRadius) {
++                    this.lastLoadedRadiusByPlayer.put(playerId, newLoadedRadius);
++                }
++                this.pendingChunkLoadsByPlayer.put(playerId, pendingChunkLoads);
++            }
++        }
++
++        public void addPlayer(EntityPlayer player) {
++            this.players.add(player);
++        }
++
++        public void removePlayer(EntityPlayer player) {
++            this.players.remove(player);
++            this.lastLoadedRadiusByPlayer.remove(player.getId());
++            this.pendingChunkLoadsByPlayer.remove(player.getId());
++            this.lastChunkPositionByPlayer.remove(player.getId());
++        }
++
++        public void onChunkSetEntityTicking(int chunkX, int chunkZ) {
++            long coordinate = MCUtil.getCoordinateKey(chunkX, chunkZ);
++            int playerReference = this.chunkReferenceMap.replace(coordinate, LOADED_PLAYER_REFERENCE);
++            if (playerReference != -1) {
++                this.pendingChunkLoadsByPlayer.computeIfPresent(playerReference, (Integer keyInMap, Integer valueInMap) -> {
++                    return valueInMap - 1;
++                });
++            }
++        }
++
++        // this is invoked if and only if there are no other players in range of the chunk.
++        public void playerMoveOutOfRange(int chunkX, int chunkZ) {
++            long coordinate = MCUtil.getCoordinateKey(chunkX, chunkZ);
++            int playerReference = this.chunkReferenceMap.remove(coordinate);
++            if (playerReference != -1) {
++                if (playerReference != LOADED_PLAYER_REFERENCE) {
++                    this.pendingChunkLoadsByPlayer.computeIfPresent(playerReference, (Integer keyInMap, Integer valueInMap) -> {
++                        return valueInMap - 1;
++                    });
++                }
++                ChunkMapDistance.this.removeTicket(coordinate, new Ticket<>(TicketType.PLAYER, ChunkMapDistance.getPlayerTicketLevel(), new ChunkCoordIntPair(chunkX, chunkZ)));
++            }
++        }
++    }
++    // Paper end - per player view distance
++
+     class c extends ChunkMapDistance.b {
+ 
+         private int e = 0;
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 0de82202e..bff74b212 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -597,6 +597,9 @@ public class ChunkProviderServer extends IChunkProvider {
+         this.chunkMapDistance.purgeTickets();
+         this.tickDistanceManager();
+         this.world.timings.doChunkMap.stopTiming(); // Spigot
++        // Paper start
++        this.playerChunkMap.getChunkMapDistanceManager().playerTicketHandler.tick();
++        // Paper end
+         this.world.getMethodProfiler().exitEnter("chunks");
+         this.world.timings.chunks.startTiming(); // Paper - timings
+         this.tickChunks();
+diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+index af10fc36e..6259622dc 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
++++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
+@@ -579,9 +579,9 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
+                 // CraftBukkit start - Use relative location for far away sounds
+                 // this.world.b(1028, new BlockPosition(this), 0);
+                 // Paper start
+-                int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
++                //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API // Paper - per player view distance
+                 for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
+-                    //final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
++                    final int viewDistance = player.getEffectiveViewDistance(player.getWorldServer().getChunkProvider().playerChunkMap) << 4; // Paper - per player view distance
+                     // Paper end
+                     double deltaX = this.locX() - player.locX();
+                     double deltaZ = this.locZ() - player.locZ();
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 15230a834..abdc34656 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -102,6 +102,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
+ 
++    // Paper start - view distance api
++    public int viewDistance = -1;
++    public int getEffectiveViewDistance(PlayerChunkMap chunkMap) {
++        return this.viewDistance == -1 ? chunkMap.viewDistance : this.viewDistance;
++    }
++    public boolean needsChunkCenterUpdate;
++    // Paper end - view distance api
++
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super((World) worldserver, gameprofile);
+         playerinteractmanager.player = this;
+diff --git a/src/main/java/net/minecraft/server/EntityWither.java b/src/main/java/net/minecraft/server/EntityWither.java
+index 8977c3516..21f25de3b 100644
+--- a/src/main/java/net/minecraft/server/EntityWither.java
++++ b/src/main/java/net/minecraft/server/EntityWither.java
+@@ -208,9 +208,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
+                 // CraftBukkit start - Use relative location for far away sounds
+                 // this.world.b(1023, new BlockPosition(this), 0);
+                 // Paper start
+-                int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API
++                //int viewDistance = ((WorldServer) this.world).spigotConfig.viewDistance * 16; // Paper - updated to use worlds actual view distance incase we have to uncomment this due to removal of player view distance API // Paper - per player view distance
+                 for (EntityPlayer player : ((WorldServer)world).getPlayers()) {
+-                    //final int viewDistance = player.getViewDistance(); // TODO apply view distance api patch
++                    final int viewDistance = player.getEffectiveViewDistance(player.getWorldServer().getChunkProvider().playerChunkMap) << 4; // Paper - per player view distance
+                     // Paper end
+                     double deltaX = this.locX() - player.locX();
+                     double deltaZ = this.locZ() - player.locZ();
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index b82ea26eb..595e9574c 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -304,6 +304,50 @@ public class PlayerChunk {
+     }
+ 
+     private void a(Packet<?> packet, boolean flag) {
++        // Paper start - per player view distance
++        // there can be potential desync with player's last mapped section and the view distance map, so use the
++        // view distance map here.
++        if (this.players instanceof PlayerChunkMap) {
++            PlayerChunkMap chunkMap = ((PlayerChunkMap)this.players);
++            com.destroystokyo.paper.util.misc.PlayerAreaMap viewDistanceMap = ((PlayerChunkMap)this.players).playerViewDistanceBroadcastMap;
++            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = viewDistanceMap.getObjectsInRange(this.location);
++            if (players == null) {
++                return;
++            }
++
++            if (flag) { // flag -> border only
++                Object[] backingSet = players.getBackingSet();
++                for (int i = 0, len = backingSet.length; i < len; ++i) {
++                    Object temp = backingSet[i];
++                    if (!(temp instanceof EntityPlayer)) {
++                        continue;
++                    }
++                    EntityPlayer player = (EntityPlayer)temp;
++                    int viewDistance = viewDistanceMap.getLastViewDistance(player);
++                    long lastPosition = viewDistanceMap.getLastCoordinate(player);
++
++                    int distX = Math.abs(MCUtil.getCoordinateX(lastPosition) - this.location.x);
++                    int distZ = Math.abs(MCUtil.getCoordinateZ(lastPosition) - this.location.z);
++
++                    if (Math.max(distX, distZ) == viewDistance) {
++                        player.playerConnection.sendPacket(packet);
++                    }
++                }
++            } else {
++                Object[] backingSet = players.getBackingSet();
++                for (int i = 0, len = backingSet.length; i < len; ++i) {
++                    Object temp = backingSet[i];
++                    if (!(temp instanceof EntityPlayer)) {
++                        continue;
++                    }
++                    EntityPlayer player = (EntityPlayer)temp;
++                    player.playerConnection.sendPacket(packet);
++                }
++            }
++
++            return;
++        }
++        // Paper end - per player view distance
+         this.players.a(this.location, flag).forEach((entityplayer) -> {
+             entityplayer.playerConnection.sendPacket(packet);
+         });
+@@ -499,6 +543,9 @@ public class PlayerChunk {
+ 
+ 
+ 
++                    // Paper start - per player view distance implementation
++                    PlayerChunk.this.chunkMap.getChunkMapDistanceManager().playerTicketHandler.onChunkSetEntityTicking(this.location.x, this.location.z);
++                    // Paper end - per player view distance implementation
+                 }
+             });
+             // Paper end
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 46d205380..64825175b 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -78,7 +78,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     private final PlayerMap playerMap;
+     public final Int2ObjectMap<PlayerChunkMap.EntityTracker> trackedEntities;
+     private final Queue<Runnable> z;
+-    int viewDistance; // Paper - private -> package private
++    int viewDistance; public final int getViewDistance() { return this.viewDistance; } // Paper - OBFHELPER // Paper - private -> package private
+     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+ 
+     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
+@@ -109,6 +109,31 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     // Paper start - distance maps
+     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+ 
++    // Paper start - per player view distance
++    // we use this map to broadcast chunks to clients
++    // they do not render chunks without having at least neighbours in a 1 chunk radius loaded
++    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceBroadcastMap;
++    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceTicketMap;
++
++    public void updateViewDistance(EntityPlayer player, int viewDistance) {
++        player.viewDistance = viewDistance;
++
++        int chunkX = MCUtil.getChunkCoordinate(player.locX());
++        int chunkZ = MCUtil.getChunkCoordinate(player.locZ());
++
++        int effectiveViewDistance = viewDistance == -1 ? this.viewDistance : viewDistance;
++
++        player.playerConnection.sendPacket(new PacketPlayOutViewDistance(effectiveViewDistance));
++
++        if (!this.cannotLoadChunks(player)) {
++            this.playerViewDistanceTicketMap.update(player, chunkX, chunkZ, effectiveViewDistance);
++        }
++        player.needsChunkCenterUpdate = true;
++        this.playerViewDistanceBroadcastMap.update(player, chunkX, chunkZ, effectiveViewDistance + 1); // clients need chunk neighbours
++        player.needsChunkCenterUpdate = false;
++    }
++    // Paper end - per player view distance
++
+     void addPlayerToDistanceMaps(EntityPlayer player) {
+         this.updateMaps(player);
+ 
+@@ -118,7 +143,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     void removePlayerFromDistanceMaps(EntityPlayer player) {
+ 
+-
++        // Paper start - per player view distance
++        this.playerViewDistanceTicketMap.remove(player);
++        this.playerViewDistanceBroadcastMap.remove(player);
++        // Paper end - per player view distance
+ 
+ 
+     }
+@@ -127,7 +155,16 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         int chunkX = MCUtil.getChunkCoordinate(player.locX());
+         int chunkZ = MCUtil.getChunkCoordinate(player.locZ());
+ 
++        // Paper start - per player view distance
++        int effectiveViewDistance = player.getEffectiveViewDistance(this);
+ 
++        if (!this.cannotLoadChunks(player)) {
++            this.playerViewDistanceTicketMap.update(player, chunkX, chunkZ, effectiveViewDistance);
++        }
++        player.needsChunkCenterUpdate = true;
++        this.playerViewDistanceBroadcastMap.update(player, chunkX, chunkZ, effectiveViewDistance + 1); // clients need chunk neighbours
++        player.needsChunkCenterUpdate = false;
++        // Paper end - per player view distance
+ 
+ 
+     }
+@@ -167,6 +204,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.m = new VillagePlace(new File(this.w, "poi"), datafixer, this.world); // Paper
+         this.setViewDistance(i);
+         this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
++        // Paper start - per player view distance
++        this.playerViewDistanceTicketMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
++                null,
++                (EntityPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
++                 com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> newState) -> {
++                    if (newState != null) {
++                        return;
++                    }
++                    PlayerChunkMap.this.chunkDistanceManager.playerTicketHandler.playerMoveOutOfRange(rangeX, rangeZ);
++                });
++        final Packet[] tempPacket = new Packet[2];
++        this.playerViewDistanceBroadcastMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets,
++                (EntityPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
++                 com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> newState) -> {
++                    if (player.needsChunkCenterUpdate) {
++                        player.needsChunkCenterUpdate = false;
++                        player.playerConnection.sendPacket(new PacketPlayOutViewCentre(currPosX, currPosZ));
++                    }
++                    PlayerChunkMap.this.sendChunk(player, new ChunkCoordIntPair(rangeX, rangeZ), tempPacket, false, true); // unloaded, loaded
++                    java.util.Arrays.fill(tempPacket, null);
++                },
++                (EntityPlayer player, int rangeX, int rangeZ, int currPosX, int currPosZ, int prevPosX, int prevPosZ,
++                 com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> newState) -> {
++                    PlayerChunkMap.this.sendChunk(player, new ChunkCoordIntPair(rangeX, rangeZ), tempPacket, true, false); // unloaded, loaded
++                    java.util.Arrays.fill(tempPacket, null);
++                });
++        // Paper end - per player view distance
+     }
+ 
+     public void updatePlayerMobTypeMap(Entity entity) {
+@@ -905,9 +969,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 this.u.getAndIncrement();
+                 Packet<?>[] apacket = new Packet[2];
+ 
+-                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
+-                    this.a(entityplayer, apacket, chunk);
+-                });
++                // Paper start - per player view distance
++                // there can be potential desync with player's last mapped section and the view distance map, so use the
++                // view distance map here.
++                com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = PlayerChunkMap.this.playerViewDistanceBroadcastMap.getObjectsInRange(chunkcoordintpair);
++                if (players != null) {
++                    Object[] backingSet = players.getBackingSet();
++                    for (int i = 0, len = backingSet.length; i < len; ++i) {
++                        Object temp = backingSet[i];
++                        if (!(temp instanceof EntityPlayer)) {
++                            continue;
++                        }
++                        EntityPlayer player = (EntityPlayer)temp;
++                        this.a(player, apacket, chunk);
++                    }
++                }
++                // Paper end - per player view distance
+                 return Either.left(chunk);
+             });
+         }, (runnable) -> {
+@@ -1012,28 +1089,22 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     protected void setViewDistance(int i) {
+-        int j = MathHelper.clamp(i + 1, 3, 33);
++        int j = MathHelper.clamp(i + 1, 3, 33) - 1; // Paper - we correctly handle view distance, no need to add 1
+ 
+         if (j != this.viewDistance) {
+             int k = this.viewDistance;
+ 
+             this.viewDistance = j;
+-            this.chunkDistanceManager.a(this.viewDistance);
+-            ObjectIterator objectiterator = this.updatingChunks.values().iterator();
+-
+-            while (objectiterator.hasNext()) {
+-                PlayerChunk playerchunk = (PlayerChunk) objectiterator.next();
+-                ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
+-                Packet<?>[] apacket = new Packet[2];
+-
+-                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
+-                    int l = b(chunkcoordintpair, entityplayer, true);
+-                    boolean flag = l <= k;
+-                    boolean flag1 = l <= this.viewDistance;
+-
+-                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
+-                });
++            this.chunkDistanceManager.setGlobalViewDistance(this.viewDistance, this); // Paper - per player view distance
++            // Paper start - view distance map handles this
++            if (this.world != null && this.world.players != null) { // ... called inside constructor, where these may not be initialized
++                for (EntityPlayer player : this.world.players) {
++                    if (player.viewDistance == -1) {
++                        this.updateViewDistance(player, -1);
++                    }
++                }
+             }
++            // Paper end - view distance map handles this
+         }
+ 
+     }
+@@ -1291,6 +1362,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         });
+     }
+ 
++    private boolean cannotLoadChunks(EntityPlayer entityplayer) { return this.b(entityplayer); } // Paper - OBFHELPER
+     private boolean b(EntityPlayer entityplayer) {
+         return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS);
+     }
+@@ -1316,13 +1388,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+         }
+ 
+-        for (int k = i - this.viewDistance; k <= i + this.viewDistance; ++k) {
+-            for (int l = j - this.viewDistance; l <= j + this.viewDistance; ++l) {
+-                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k, l);
+-
+-                this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], !flag, flag);
+-            }
++        // Paper start - view distance map handles this
++        if (flag) {
++            this.updateMaps(entityplayer);
+         }
++        // Paper end - view distance map handles this
+ 
+     }
+ 
+@@ -1330,7 +1400,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         SectionPosition sectionposition = SectionPosition.a((Entity) entityplayer);
+ 
+         entityplayer.a(sectionposition);
+-        entityplayer.playerConnection.sendPacket(new PacketPlayOutViewCentre(sectionposition.a(), sectionposition.c()));
++        //entityplayer.playerConnection.sendPacket(new PacketPlayOutViewCentre(sectionposition.a(), sectionposition.c())); // Paper - distance map handles this now
+         return sectionposition;
+     }
+ 
+@@ -1385,56 +1455,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         int k1;
+         int l1;
+ 
+-        if (Math.abs(i1 - i) <= this.viewDistance * 2 && Math.abs(j1 - j) <= this.viewDistance * 2) {
+-            k1 = Math.min(i, i1) - this.viewDistance;
+-            l1 = Math.min(j, j1) - this.viewDistance;
+-            int i2 = Math.max(i, i1) + this.viewDistance;
+-            int j2 = Math.max(j, j1) + this.viewDistance;
++        // Paper - distance map handles this now
+ 
+-            for (int k2 = k1; k2 <= i2; ++k2) {
+-                for (int l2 = l1; l2 <= j2; ++l2) {
+-                    ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(k2, l2);
+-                    boolean flag3 = a(chunkcoordintpair, i1, j1) <= this.viewDistance;
+-                    boolean flag4 = a(chunkcoordintpair, i, j) <= this.viewDistance;
++        this.updateMaps(entityplayer); // Paper - distance maps
++
++    }
+ 
+-                    this.sendChunk(entityplayer, chunkcoordintpair, new Packet[2], flag3, flag4);
++    @Override
++    public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
++        // Paper start - per player view distance
++        // there can be potential desync with player's last mapped section and the view distance map, so use the
++        // view distance map here.
++        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> inRange = this.playerViewDistanceBroadcastMap.getObjectsInRange(chunkcoordintpair);
++
++        if (inRange == null) {
++            return Stream.empty();
++        }
++        // all current cases are inlined so we wont hit this code, it's just in case plugins or future updates use it
++        List<EntityPlayer> players = new ArrayList<>();
++        Object[] backingSet = inRange.getBackingSet();
++
++        if (flag) { // flag -> border only
++            for (int i = 0, len = backingSet.length; i < len; ++i) {
++                Object temp = backingSet[i];
++                if (!(temp instanceof EntityPlayer)) {
++                    continue;
+                 }
+-            }
+-        } else {
+-            ChunkCoordIntPair chunkcoordintpair1;
+-            boolean flag5;
+-            boolean flag6;
+-
+-            for (k1 = i1 - this.viewDistance; k1 <= i1 + this.viewDistance; ++k1) {
+-                for (l1 = j1 - this.viewDistance; l1 <= j1 + this.viewDistance; ++l1) {
+-                    chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
+-                    flag5 = true;
+-                    flag6 = false;
+-                    this.sendChunk(entityplayer, chunkcoordintpair1, new Packet[2], true, false);
++                EntityPlayer player = (EntityPlayer)temp;
++                int viewDistance = this.playerViewDistanceBroadcastMap.getLastViewDistance(player);
++                long lastPosition = this.playerViewDistanceBroadcastMap.getLastCoordinate(player);
++
++                int distX = Math.abs(MCUtil.getCoordinateX(lastPosition) - chunkcoordintpair.x);
++                int distZ = Math.abs(MCUtil.getCoordinateZ(lastPosition) - chunkcoordintpair.z);
++
++                if (Math.max(distX, distZ) == viewDistance) {
++                    players.add(player);
+                 }
+             }
+-
+-            for (k1 = i - this.viewDistance; k1 <= i + this.viewDistance; ++k1) {
+-                for (l1 = j - this.viewDistance; l1 <= j + this.viewDistance; ++l1) {
+-                    chunkcoordintpair1 = new ChunkCoordIntPair(k1, l1);
+-                    flag5 = false;
+-                    flag6 = true;
+-                    this.sendChunk(entityplayer, chunkcoordintpair1, new Packet[2], false, true);
++        } else {
++            for (int i = 0, len = backingSet.length; i < len; ++i) {
++                Object temp = backingSet[i];
++                if (!(temp instanceof EntityPlayer)) {
++                    continue;
+                 }
++                EntityPlayer player = (EntityPlayer)temp;
++                players.add(player);
+             }
+         }
+ 
+-        this.updateMaps(entityplayer); // Paper - distance maps
+-
+-    }
+-
+-    @Override
+-    public Stream<EntityPlayer> a(ChunkCoordIntPair chunkcoordintpair, boolean flag) {
+-        return this.playerMap.a(chunkcoordintpair.pair()).filter((entityplayer) -> {
+-            int i = b(chunkcoordintpair, entityplayer, true);
+-
+-            return i > this.viewDistance ? false : !flag || i == this.viewDistance;
+-        });
++        return players.stream();
+     }
+ 
+     protected void addEntity(Entity entity) {
+@@ -1686,7 +1755,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
+             if (entityplayer != this.tracker) {
+                 Vec3D vec3d = entityplayer.getPositionVector().d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
+-                int i = Math.min(this.b(), (PlayerChunkMap.this.viewDistance - 1) * 16);
++                int i = Math.min(this.b(), (entityplayer.getEffectiveViewDistance(PlayerChunkMap.this)) * 16);  // Paper - per player view distance
+                 boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
+ 
+                 if (flag) {
+@@ -1697,7 +1766,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
+ 
+                         if (playerchunk != null && playerchunk.getChunk() != null) {
+-                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= PlayerChunkMap.this.viewDistance;
++                            flag1 = PlayerChunkMap.b(chunkcoordintpair, entityplayer, false) <= PlayerChunkMap.this.playerViewDistanceBroadcastMap.getLastViewDistance(entityplayer); // Paper - per player view distance
+                         }
+                     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 7b79ee4fe..6e91459f3 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -156,7 +156,7 @@ public abstract class PlayerList {
+ 
+         // CraftBukkit - getType()
+         // Spigot - view distance
+-        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.spigotConfig.viewDistance, flag1, !flag));
++        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), entityplayer.getEffectiveViewDistance(worldserver.getChunkProvider().playerChunkMap), flag1, !flag)); // Paper - per player view distance
+         entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
+         playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.a, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
+         playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
+@@ -700,7 +700,7 @@ public abstract class PlayerList {
+         WorldData worlddata = worldserver.getWorldData();
+ 
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.worldProvider.getDimensionManager().getType(),  WorldData.c(worldserver.getWorldData().getSeed()), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
+-        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver.spigotConfig.viewDistance)); // Spigot
++        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(entityplayer1.getEffectiveViewDistance(worldserver.getChunkProvider().playerChunkMap))); // Spigot // Paper - per player view distance
+         entityplayer1.spawnIn(worldserver);
+         entityplayer1.dead = false;
+         entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX(), entityplayer1.locY(), entityplayer1.locZ(), entityplayer1.yaw, entityplayer1.pitch));
+@@ -1178,7 +1178,7 @@ public abstract class PlayerList {
+ 
+     public void a(int i) {
+         this.viewDistance = i;
+-        this.sendAll(new PacketPlayOutViewDistance(i));
++        //this.sendAll(new PacketPlayOutViewDistance(i)); // Paper - move into setViewDistance
+         Iterator iterator = this.server.getWorlds().iterator();
+ 
+         while (iterator.hasNext()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index c1acec87f..b666cd22b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1994,12 +1994,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public int getViewDistance() {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
++        return getHandle().viewDistance == -1 ? ((WorldServer)getHandle().world).getChunkProvider().playerChunkMap.getViewDistance() : getHandle().viewDistance; // Paper - per player view distance
+     }
+ 
+     @Override
+     public void setViewDistance(int viewDistance) {
+-        throw new NotImplementedException("Per-Player View Distance APIs need further understanding to properly implement"); // TODO
++        // Paper start - per player view distance
++        if ((viewDistance < 2 || viewDistance > 32) && viewDistance != -1) {
++            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
++        }
++        if (viewDistance != getHandle().viewDistance) {
++            ((WorldServer)getHandle().world).getChunkProvider().playerChunkMap.updateViewDistance(getHandle(), viewDistance);
++        }
++        // Paper end - per player view distance
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 6e165a164..bd4c1dc7b 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -38,6 +38,7 @@ import net.minecraft.server.EntityInsentient;
+ import net.minecraft.server.EntityLlama;
+ import net.minecraft.server.EntityWaterAnimal;
+ // Paper end
++import net.minecraft.server.WorldServer; // Paper
+ 
+ public class ActivationRange
+ {
+@@ -128,14 +129,15 @@ public class ActivationRange
+         final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
+         final int waterActivationRange = world.spigotConfig.waterActivationRange; // Paper
+ 
+-        int maxRange = Math.max( monsterActivationRange, animalActivationRange );
+-        maxRange = Math.max( maxRange, raiderActivationRange );
+-        maxRange = Math.max( maxRange, miscActivationRange );
+-        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
++        // Paper start - per player view distance
++        int maxRangeTemp = Math.max( monsterActivationRange, animalActivationRange );
++        maxRangeTemp = Math.max( maxRangeTemp, raiderActivationRange );
++        maxRangeTemp = Math.max( maxRangeTemp, miscActivationRange );
+ 
+         for ( EntityHuman player : world.getPlayers() )
+         {
+-
++            final int maxRange = Math.min( ( ( player instanceof net.minecraft.server.EntityPlayer ? ((net.minecraft.server.EntityPlayer)player).getEffectiveViewDistance(((WorldServer)world).getChunkProvider().playerChunkMap) : world.spigotConfig.viewDistance ) << 4 ) - 8, maxRangeTemp );
++            // Paper end - per player view distance
+             player.activatedTick = MinecraftServer.currentTick;
+             maxBB = player.getBoundingBox().grow( maxRange, 256, maxRange );
+             ActivationType.MISC.boundingBox = player.getBoundingBox().grow( miscActivationRange, 256, miscActivationRange );
+-- 
+2.25.0
+
