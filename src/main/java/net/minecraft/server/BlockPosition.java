@@ -105,6 +105,7 @@ public class BlockPosition extends BaseBlockPosition {
         return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
     }
 
+    public final BlockPosition add(BaseBlockPosition baseblockposition) { return this.a(baseblockposition); } // Paper - OBFHELPER
     public BlockPosition a(BaseBlockPosition baseblockposition) {
         return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
     }

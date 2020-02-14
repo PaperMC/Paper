@@ -349,6 +349,13 @@ public class PaperConfig {
         maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
     }
 
+    public static boolean useOptimizedTickList = true;
+    private static void useOptimizedTickList() {
+        if (config.contains("settings.use-optimized-ticklist")) { // don't add default, hopefully temporary config
+            useOptimizedTickList = config.getBoolean("settings.use-optimized-ticklist");
+        }
+    }
+
     public static boolean asyncChunks = false;
     private static void asyncChunks() {
         ConfigurationSection section;

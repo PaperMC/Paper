@@ -57,6 +57,8 @@ public class TickListChunk<T> implements TickList<T> {
         return nbttaglist;
     }
 
+    private static final int MAX_TICK_DELAY = Integer.getInteger("paper.ticklist-max-tick-delay", -1).intValue(); // Paper - clean up broken entries
+
     public static <T> TickListChunk<T> a(NBTTagList nbttaglist, Function<T, MinecraftKey> function, Function<MinecraftKey, T> function1) {
         List<TickListChunk.a<T>> list = Lists.newArrayList();
 
@@ -67,7 +69,14 @@ public class TickListChunk<T> implements TickList<T> {
             if (t0 != null) {
                 BlockPosition blockposition = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
 
-                list.add(new TickListChunk.a<>(t0, blockposition, nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p"))));
+                // Paper start - clean up broken entries
+                int delay = nbttagcompound.getInt("t");
+                if (MAX_TICK_DELAY > 0 && delay > MAX_TICK_DELAY) {
+                    MinecraftServer.LOGGER.warn("Dropping tick for pos " + blockposition + ", tick delay " + delay);
+                    continue;
+                }
+                list.add(new TickListChunk.a<>(t0, blockposition, delay, TickListPriority.a(nbttagcompound.getInt("p"))));
+                // Paper end - clean up broken entries
             }
         }
 

@@ -38,7 +38,16 @@ public class TickListServer<T> implements TickList<T> {
     private final co.aikar.timings.Timing timingTicking; // Paper
     // Paper end
 
+    // Paper start
+    protected void nextTick() {}
+    // Paper end
+
     public void b() {
+        // Paper start - allow overriding
+        this.tick();
+    }
+    public void tick() {
+        // Paper end
         int i = this.nextTickList.size();
 
         if (false) { // CraftBukkit
@@ -106,10 +115,20 @@ public class TickListServer<T> implements TickList<T> {
 
     @Override
     public boolean b(BlockPosition blockposition, T t0) {
+        // Paper start - allow overriding
+        return this.isPendingTickThisTick(blockposition, t0);
+    }
+    public boolean isPendingTickThisTick(BlockPosition blockposition, T t0) {
+        // Paper end
         return this.f.contains(new NextTickListEntry<>(blockposition, t0));
     }
 
     public List<NextTickListEntry<T>> a(ChunkCoordIntPair chunkcoordintpair, boolean flag, boolean flag1) {
+        // Paper start - allow overriding
+        return this.getEntriesInChunk(chunkcoordintpair, flag, flag1);
+    }
+    public List<NextTickListEntry<T>> getEntriesInChunk(ChunkCoordIntPair chunkcoordintpair, boolean flag, boolean flag1) {
+        // Paper end
         int i = (chunkcoordintpair.x << 4) - 2;
         int j = i + 16 + 2;
         int k = (chunkcoordintpair.z << 4) - 2;
@@ -119,6 +138,11 @@ public class TickListServer<T> implements TickList<T> {
     }
 
     public List<NextTickListEntry<T>> a(StructureBoundingBox structureboundingbox, boolean flag, boolean flag1) {
+        // Paper start - allow overriding
+        return this.getEntriesInBoundingBox(structureboundingbox, flag, flag1);
+    }
+    public List<NextTickListEntry<T>> getEntriesInBoundingBox(StructureBoundingBox structureboundingbox, boolean flag, boolean flag1) {
+        // Paper end
         List<NextTickListEntry<T>> list = this.a((List) null, this.nextTickList, structureboundingbox, flag);
 
         if (flag && list != null) {
@@ -158,6 +182,11 @@ public class TickListServer<T> implements TickList<T> {
     }
 
     public void a(StructureBoundingBox structureboundingbox, BlockPosition blockposition) {
+        // Paper start - allow overriding
+        this.copy(structureboundingbox, blockposition);
+    }
+    public void copy(StructureBoundingBox structureboundingbox, BlockPosition blockposition) {
+        // Paper end
         List<NextTickListEntry<T>> list = this.a(structureboundingbox, false, false);
         Iterator iterator = list.iterator();
 
@@ -175,11 +204,17 @@ public class TickListServer<T> implements TickList<T> {
     }
 
     public NBTTagList a(ChunkCoordIntPair chunkcoordintpair) {
+        // Paper start - allow overriding
+        return this.serialize(chunkcoordintpair);
+    }
+    public NBTTagList serialize(ChunkCoordIntPair chunkcoordintpair) {
+        // Paper end
         List<NextTickListEntry<T>> list = this.a(chunkcoordintpair, false, true);
 
         return a(this.b, list, this.e.getTime());
     }
 
+    public static <T> NBTTagList serialize(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) { return TickListServer.a(function, iterable, i); } // Paper - OBFHELPER
     private static <T> NBTTagList a(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) {
         NBTTagList nbttaglist = new NBTTagList();
         Iterator iterator = iterable.iterator();
@@ -202,11 +237,21 @@ public class TickListServer<T> implements TickList<T> {
 
     @Override
     public boolean a(BlockPosition blockposition, T t0) {
+        // Paper start - allow overriding
+        return this.isScheduledForTick(blockposition, t0);
+    }
+    public boolean isScheduledForTick(BlockPosition blockposition, T t0) {
+        // Paper end
         return this.nextTickListHash.contains(new NextTickListEntry<>(blockposition, t0));
     }
 
     @Override
     public void a(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
+        // Paper start - allow overriding
+        this.schedule(blockposition, t0, i, ticklistpriority);
+    }
+    public void schedule(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
+        // Paper end
         if (!this.a.test(t0)) {
             this.a(new NextTickListEntry<>(blockposition, t0, (long) i + this.e.getTime(), ticklistpriority));
         }
@@ -222,6 +267,11 @@ public class TickListServer<T> implements TickList<T> {
     }
 
     public int a() {
+        // Paper start - allow overriding
+        return this.getTotalScheduledEntries();
+    }
+    public int getTotalScheduledEntries() {
+        // Paper end
         return this.nextTickListHash.size();
     }
 }

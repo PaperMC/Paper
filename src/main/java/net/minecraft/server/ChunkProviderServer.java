@@ -203,6 +203,13 @@ public class ChunkProviderServer extends IChunkProvider {
     }
     // Paper end
 
+    // Paper start - rewrite ticklistserver
+    public final boolean isTickingReadyMainThread(BlockPosition pos) {
+        PlayerChunk chunk = this.playerChunkMap.getUpdatingChunk(MCUtil.getCoordinateKey(pos));
+        return chunk != null && chunk.isTickingReady();
+    }
+    // Paper end - rewrite ticklistserver
+
     public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
         this.world = worldserver;
         this.serverThreadQueue = new ChunkProviderServer.a(worldserver);

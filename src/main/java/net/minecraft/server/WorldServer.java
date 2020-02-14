@@ -182,6 +182,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
     // Paper end
 
+    // Paper start - rewrite ticklistserver
+    void onChunkSetTicking(int chunkX, int chunkZ) {
+        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
+            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListBlock).onChunkSetTicking(chunkX, chunkZ);
+            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListFluid).onChunkSetTicking(chunkX, chunkZ);
+        }
+    }
+    // Paper end - rewrite ticklistserver
+
     // Add env and gen to constructor, WorldData -> WorldDataServer
     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
@@ -189,12 +198,21 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         convertable = convertable_conversionsession;
         uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());
         // CraftBukkit end
-        this.nextTickListBlock = new TickListServer<>(this, (block) -> {
-            return block == null || block.getBlockData().isAir();
-        }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
-        this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
-            return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-        }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
+        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
+            this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> {
+                return block == null || block.getBlockData().isAir();
+            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
+            this.nextTickListFluid = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> {
+                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
+            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
+        } else {
+            this.nextTickListBlock = new TickListServer<>(this, (block) -> {
+                return block == null || block.getBlockData().isAir();
+            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
+            this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
+                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
+            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
+        }
         this.navigators = Sets.newHashSet();
         this.L = new ObjectLinkedOpenHashSet();
         this.Q = flag1;
@@ -527,7 +545,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (this.Q) {
             long i = this.worldData.getTime() + 1L;
 
-            this.worldDataServer.setTime(i);
+            this.worldDataServer.setTime(i); // Paper - diff on change, we want the below to be ran right after this
+            this.nextTickListBlock.nextTick(); // Paper
+            this.nextTickListFluid.nextTick(); // Paper
             this.worldDataServer.u().a(this.server, i);
             if (this.worldData.q().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
                 this.setDayTime(this.worldData.getDayTime() + 1L);

@@ -4,12 +4,12 @@ import com.google.common.base.MoreObjects;
 
 public class StructureBoundingBox {
 
-    public int a;
-    public int b;
-    public int c;
-    public int d;
-    public int e;
-    public int f;
+    public int a; public final int getMinX() { return this.a; } // Paper - OBFHELPER
+    public int b; public final int getMinY() { return this.b; } // Paper - OBFHELPER
+    public int c; public final int getMinZ() { return this.c; } // Paper - OBFHELPER
+    public int d; public final int getMaxX() { return this.d; } // Paper - OBFHELPER
+    public int e; public final int getMaxY() { return this.e; } // Paper - OBFHELPER
+    public int f; public final int getMaxZ() { return this.f; } // Paper - OBFHELPER
 
     public StructureBoundingBox() {}
 
@@ -88,6 +88,7 @@ public class StructureBoundingBox {
         this.e = 512;
     }
 
+    public final boolean intersects(StructureBoundingBox boundingBox) { return this.b(boundingBox); } // Paper - OBFHELPER
     public boolean b(StructureBoundingBox structureboundingbox) {
         return this.d >= structureboundingbox.a && this.a <= structureboundingbox.d && this.f >= structureboundingbox.c && this.c <= structureboundingbox.f && this.e >= structureboundingbox.b && this.b <= structureboundingbox.e;
     }
@@ -122,6 +123,7 @@ public class StructureBoundingBox {
         this.a(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
     }
 
+    public final boolean hasPoint(BaseBlockPosition baseblockposition) { return this.b(baseblockposition); } // Paper - OBFHELPER
     public boolean b(BaseBlockPosition baseblockposition) {
         return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
     }
