@@ -1,0 +1,211 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: froobynooby <froobynooby@froobworld.com>
+Date: Thu, 20 Feb 2020 15:50:49 +0930
+Subject: [PATCH] Reduce entity tracker updates on move
+
+With this patch, for each player we keep track of a set of
+entities that the player is tracking. This is used to split
+the entity tracker update logic in the movePlayer method in
+PlayerChunkMap in to two parts:
+* Full update: Run through all entity trackers and update them
+* Partial update: Run through all entity trackers for entities
+the player is already tracking and update them
+
+Partial updates will always take less time than full updates,
+usually by a considerable amount if players and entities are
+spread out over the map. Assuming they are evenly spread,
+and given there are x many players, it would be expected to
+take 1/x the time of a full update.
+
+Full updates are only run if the following conditions are met:
+* It has been 20 ticks since the last full update
+* The player has moved over set distance since the last full
+update (distance is configurable)
+
+The motivation for the first condition is that the client
+sends the server its position once a second, which calls
+movePlayer, so at a minimum we want to be sending the player
+an updated set of entities it can see every second.
+
+The motivation for the second condition is that looping
+through every entity in world to check if it is now within
+the tracking range after the player has moved 0.1 blocks is
+largely unnecessary. Checking only after the player has moved
+1 or 2 blocks is far better for performance, and very unlikely
+to give any noticeable side effects.
+
+In testing, this has reduced the time taken for movement
+packet processing by up to 4x. Packet processing for movement
+packets often show up as a major contributor to TPS loss in
+servers with large player counts
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7ca67a4aa5..e93176d8f2 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+     private void zombieVillagerInfectionChance() {
+         zombieVillagerInfectionChance = getDouble("zombie-villager-infection-chance", zombieVillagerInfectionChance);
+     }
++
++    public double trackerUpdateDistance = 1;
++    private void trackerUpdateDistance() {
++        trackerUpdateDistance = getDouble("tracker-update-distance", trackerUpdateDistance);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index e7bfbc3307..43774bc9a5 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public final int[] mobCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
+     public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleMobDistanceMap;
+     // Paper end
++    // Paper start - Reduce entity tracker updates on move
++    public Vec3D lastTrackedPosition = new Vec3D(0, 0, 0);
++    public long lastTrackedTick;
++    // Paper end
+ 
+     // CraftBukkit start
+     public String displayName;
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 57bea926a6..91f4b70117 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+ 
++    // Paper end
++
++    // Paper start - Reduce entity tracker updates on move
++    private double trackerUpdateDistanceSquared;
++    private final Int2ObjectMap<Int2ObjectMap<PlayerChunkMap.EntityTracker>> playerTrackedEntities = new Int2ObjectOpenHashMap<>();
++    private final Int2ObjectMap<Queue<Integer>> playerTrackedEntitiesRemoveQueue = new Int2ObjectOpenHashMap<>();
++
++    void flushRemoveQueue(EntityPlayer entityplayer) {
++        Queue<Integer> removeQueue = getPlayerTrackedEntityMapRemoveQueue(entityplayer.getId());
++        Int2ObjectMap<PlayerChunkMap.EntityTracker> entityMap = getPlayerTrackedEntityMap(entityplayer.getId());
++        for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
++            entityMap.remove(id);
++        }
++    }
++
++    void flushRemoveQueues() {
++        for (Int2ObjectMap.Entry<Queue<Integer>> entry : playerTrackedEntitiesRemoveQueue.int2ObjectEntrySet()) {
++            Int2ObjectMap<EntityTracker> entityMap = getPlayerTrackedEntityMap(entry.getKey());
++            Queue<Integer> removeQueue = entry.getValue();
++            for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
++                entityMap.remove(id);
++            }
++        }
++    }
++
++    Int2ObjectMap<EntityTracker> getPlayerTrackedEntityMap(int id) {
++        return playerTrackedEntities.computeIfAbsent(id, i -> new Int2ObjectOpenHashMap<>());
++    }
++
++    Queue<Integer> getPlayerTrackedEntityMapRemoveQueue(int id) {
++        return playerTrackedEntitiesRemoveQueue.computeIfAbsent(id, i -> new java.util.ArrayDeque<>());
++    }
++
+     // Paper end
+ 
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         this.m = new VillagePlace(new File(this.w, "poi"), datafixer, this.world); // Paper
+         this.setViewDistance(i);
+         this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
++        this.trackerUpdateDistanceSquared = Math.pow(this.world.paperConfig.trackerUpdateDistance, 2); // Paper
+     }
+ 
+     public void updatePlayerMobTypeMap(Entity entity) {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     public void movePlayer(EntityPlayer entityplayer) {
+-        ObjectIterator objectiterator = this.trackedEntities.values().iterator();
++        // Paper start
++        // ObjectIterator objectiterator = this.trackedEntities.values().iterator();
++        ObjectIterator objectiterator;
+ 
++        if (MinecraftServer.currentTick - entityplayer.lastTrackedTick >= 20
++            || entityplayer.lastTrackedPosition.distanceSquared(entityplayer.getPositionVector()) >= trackerUpdateDistanceSquared) {
++            entityplayer.lastTrackedPosition = entityplayer.getPositionVector();
++            entityplayer.lastTrackedTick = MinecraftServer.currentTick;
++            objectiterator = this.trackedEntities.values().iterator(); // Update all entity trackers
++        } else {
++            objectiterator = getPlayerTrackedEntityMap(entityplayer.getId()).values().iterator(); // Only update entity trackers for already tracked entities
++        }
++        // Paper end
+         while (objectiterator.hasNext()) {
+             PlayerChunkMap.EntityTracker playerchunkmap_entitytracker = (PlayerChunkMap.EntityTracker) objectiterator.next();
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 playerchunkmap_entitytracker.updatePlayer(entityplayer);
+             }
+         }
++        flushRemoveQueues(); // Paper
+ 
+         int i = MathHelper.floor(entityplayer.locX()) >> 4;
+         int j = MathHelper.floor(entityplayer.locZ()) >> 4;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+                 playerchunkmap_entitytracker.clear(entityplayer);
+             }
++            // Paper start
++            playerTrackedEntities.remove(entityplayer.getId());
++            playerTrackedEntitiesRemoveQueue.remove(entityplayer.getId());
++            // Paper end
+         }
+ 
+         PlayerChunkMap.EntityTracker playerchunkmap_entitytracker1 = (PlayerChunkMap.EntityTracker) this.trackedEntities.remove(entity.getId());
+ 
+         if (playerchunkmap_entitytracker1 != null) {
+             playerchunkmap_entitytracker1.a();
++            // Paper start
++            for (EntityPlayer player : playerchunkmap_entitytracker1.trackedPlayers) {
++                getPlayerTrackedEntityMap(player.getId()).remove(playerchunkmap_entitytracker1.tracker.getId());
++            }
++            // Paper end
+         }
+         entity.tracker = null; // Paper - We're no longer tracked
+     }
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             }
+             world.timings.tracker2.stopTiming(); // Paper
+         }
+-
++        flushRemoveQueues(); // Paper
+ 
+     }
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 }
+             }
+         }
++        flushRemoveQueue(entityplayer); // Paper
+ 
+         Iterator iterator;
+         Entity entity1;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
+             if (this.trackedPlayers.remove(entityplayer)) {
+                 this.trackerEntry.a(entityplayer);
++                getPlayerTrackedEntityMap(entityplayer.getId()).remove(this.tracker.getId()); // Paper
+             }
+ 
+         }
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+                     if (flag1 && this.trackedPlayerMap.putIfAbsent(entityplayer, true) == null) { // Paper
+                         this.trackerEntry.b(entityplayer);
++                        getPlayerTrackedEntityMap(entityplayer.getId()).put(this.tracker.getId(), this); // Paper
+                     }
+                 } else if (this.trackedPlayers.remove(entityplayer)) {
+                     this.trackerEntry.a(entityplayer);
++                    getPlayerTrackedEntityMapRemoveQueue(entityplayer.getId()).add(this.tracker.getId()); // Paper
+                 }
+ 
+             }
+--
