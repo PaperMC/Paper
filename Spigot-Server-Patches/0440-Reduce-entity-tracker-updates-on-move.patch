@@ -3,6 +3,41 @@ From: froobynooby <froobynooby@froobworld.com>
 Date: Sun, 16 Feb 2020 22:03:33 +0930
 Subject: [PATCH] Reduce entity tracker updates on move
 
+With this patch, for each player we keep track of a set of
+entities that the player is tracking. This is used to split
+the entity tracker update logic in the movePlayer method in
+PlayerChunkMap in to two parts:
+* Full update: Run through all entity trackers and update them
+* Partial update: Run through all entity trackers for entities
+the player is already tracking and update them
+
+Partial updates will always take less time than full updates,
+usually by a considerable amount if players and entities are
+spread out over the map. Assuming they are evenly spread,
+and given there are x many players, it would be expected to
+take 1/x the time of a full update.
+
+Full updates are only run if the following conditions are met:
+* It has been 20 ticks since the last full update
+* The player has moved over set distance since the last full
+update (distance is configurable)
+
+The motivation for the first condition is that the client
+sends the server its position once a second, which calls
+movePlayer, so at a minimum we want to be sending the player
+an updated set of entities it can see every second.
+
+The motivation for the second condition is that looping
+through every entity in world to check if it is now within
+the tracking range after the player has moved 0.1 blocks is
+largely unnecessary. Checking only after the player has moved
+1 or 2 blocks is far better for performance, and very unlikely
+to give any noticeable side effects.
+
+In testing, this has reduced the time taken for movement
+packet processing by up to 4x. Packet processing for movement
+packets often show up as a major contributor to TPS loss in
+servers with large player counts
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index bce502181..e101c1156 100644
