@@ -1,6 +1,6 @@
-From 707b7c13c57aa697b3d87c7b13aafdc907b85ac5 Mon Sep 17 00:00:00 2001
+From 70ac522cf2c350d348e70f6fc87c5837230e84ab Mon Sep 17 00:00:00 2001
 From: froobynooby <froobynooby@froobworld.com>
-Date: Sun, 16 Feb 2020 19:50:10 +0930
+Date: Sun, 16 Feb 2020 22:03:33 +0930
 Subject: [PATCH] Reduce entity tracker updates on move
 
 
@@ -34,22 +34,42 @@ index 15230a834..4bf6db8c2 100644
      // CraftBukkit start
      public String displayName;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 46d205380..34f6aa749 100644
+index 46d205380..2a26f8198 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -80,6 +80,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-     private final Queue<Runnable> z;
-     int viewDistance; // Paper - private -> package private
-     public final com.destroystokyo.paper.util.PlayerMobDistanceMap playerMobDistanceMap; // Paper
+@@ -133,6 +133,31 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+ 
++    // Paper end
++
 +    // Paper start - Reduce entity tracker updates on move
 +    private double trackerUpdateDistanceSquared;
 +    private final Int2ObjectMap<Int2ObjectMap<PlayerChunkMap.EntityTracker>> playerTrackedEntities = new Int2ObjectOpenHashMap();
 +    private final Int2ObjectMap<Queue<Integer>> playerTrackedEntitiesRemoveQueue = new Int2ObjectOpenHashMap();
-+    // Paper end
++
++    void flushRemoveQueue(EntityPlayer entityplayer) {
++        Queue<Integer> removeQueue = playerTrackedEntitiesRemoveQueue.get(entityplayer.getId());
++        Int2ObjectMap<PlayerChunkMap.EntityTracker> entityMap = playerTrackedEntities.get(entityplayer.getId());
++        for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
++            entityMap.remove(id);
++        }
++    }
++
++    void flushRemoveQueues() {
++        for (Int2ObjectMap.Entry<Queue<Integer>> entry : playerTrackedEntitiesRemoveQueue.int2ObjectEntrySet()) {
++            Int2ObjectMap entityMap = playerTrackedEntities.get(entry.getKey());
++            Queue<Integer> removeQueue = entry.getValue();
++            for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
++                entityMap.remove(id);
++            }
++        }
++    }
++
+     // Paper end
  
-     // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
-     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
-@@ -167,6 +172,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+@@ -167,6 +192,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          this.m = new VillagePlace(new File(this.w, "poi"), datafixer, this.world); // Paper
          this.setViewDistance(i);
          this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
@@ -57,7 +77,7 @@ index 46d205380..34f6aa749 100644
      }
  
      public void updatePlayerMobTypeMap(Entity entity) {
-@@ -1335,8 +1341,18 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1335,8 +1361,18 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      public void movePlayer(EntityPlayer entityplayer) {
@@ -77,21 +97,15 @@ index 46d205380..34f6aa749 100644
          while (objectiterator.hasNext()) {
              PlayerChunkMap.EntityTracker playerchunkmap_entitytracker = (PlayerChunkMap.EntityTracker) objectiterator.next();
  
-@@ -1346,6 +1362,13 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1346,6 +1382,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  playerchunkmap_entitytracker.updatePlayer(entityplayer);
              }
          }
-+        // Paper start - Reduce entity tracker updates on move
-+        Queue<Integer> removeQueue = playerTrackedEntitiesRemoveQueue.get(entityplayer.getId());
-+        Int2ObjectMap entityMap = playerTrackedEntities.get(entityplayer.getId());
-+        for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
-+            entityMap.remove(id);
-+        }
-+        // Paper end
++        flushRemoveQueues(); // Paper - Reduce entity tracker updates on move
  
          int i = MathHelper.floor(entityplayer.locX()) >> 4;
          int j = MathHelper.floor(entityplayer.locZ()) >> 4;
-@@ -1456,6 +1479,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1456,6 +1493,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                      playerchunkmap_entitytracker.track(this.world.getPlayers());
                      if (entity instanceof EntityPlayer) {
                          EntityPlayer entityplayer = (EntityPlayer) entity;
@@ -102,7 +116,7 @@ index 46d205380..34f6aa749 100644
  
                          this.a(entityplayer, true);
                          ObjectIterator objectiterator = this.trackedEntities.values().iterator();
-@@ -1487,12 +1514,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1487,12 +1528,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                  playerchunkmap_entitytracker.clear(entityplayer);
              }
@@ -124,23 +138,24 @@ index 46d205380..34f6aa749 100644
          }
          entity.tracker = null; // Paper - We're no longer tracked
      }
-@@ -1533,6 +1569,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1533,7 +1583,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              }
              world.timings.tracker2.stopTiming(); // Paper
          }
-+        // Paper start - Reduce entity tracker updates on move
-+        for (Int2ObjectMap.Entry<Queue<Integer>> entry : playerTrackedEntitiesRemoveQueue.int2ObjectEntrySet()) {
-+            Int2ObjectMap entityMap = playerTrackedEntities.get(entry.getKey());
-+            Queue<Integer> removeQueue = entry.getValue();
-+            for (Integer id = removeQueue.poll(); id != null; id = removeQueue.poll()) {
-+                entityMap.remove(id);
-+            }
-+        }
-+        // Paper end
- 
+-
++        flushRemoveQueues(); // Paper start - Reduce entity tracker updates on move
  
      }
-@@ -1678,6 +1723,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+@@ -1582,6 +1632,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 }
+             }
+         }
++        flushRemoveQueue(entityplayer); // Paper - Reduce entity tracker updates on move
+ 
+         Iterator iterator;
+         Entity entity1;
+@@ -1678,6 +1729,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
              if (this.trackedPlayers.remove(entityplayer)) {
                  this.trackerEntry.a(entityplayer);
@@ -148,7 +163,7 @@ index 46d205380..34f6aa749 100644
              }
  
          }
-@@ -1714,9 +1760,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1714,9 +1766,11 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                      if (flag1 && this.trackedPlayerMap.putIfAbsent(entityplayer, true) == null) { // Paper
                          this.trackerEntry.b(entityplayer);
