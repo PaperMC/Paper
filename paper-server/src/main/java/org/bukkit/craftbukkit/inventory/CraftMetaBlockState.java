@@ -287,6 +287,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 case BLACK_SHULKER_BOX:
                     blockEntityTag.setString("id", "shulker_box");
                     break;
+                case BEE_NEST:
+                case BEEHIVE:
+                    blockEntityTag.setString("id", "beehive");
+                    break;
             }
         }
         TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(blockEntityTag);
