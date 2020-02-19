@@ -25,4 +25,26 @@ public interface Mob extends LivingEntity, Lootable {
      */
     @Nullable
     public LivingEntity getTarget();
+
+    /**
+     * Sets whether this mob is aware of its surroundings.
+     *
+     * Unaware mobs will still move if pushed, attacked, etc. but will not move
+     * or perform any actions on their own. Unaware mobs may also have other
+     * unspecified behaviours disabled, such as drowning.
+     *
+     * @param aware whether the mob is aware
+     */
+    public void setAware(boolean aware);
+
+    /**
+     * Gets whether this mob is aware of its surroundings.
+     *
+     * Unaware mobs will still move if pushed, attacked, etc. but will not move
+     * or perform any actions on their own. Unaware mobs may also have other
+     * unspecified behaviours disabled, such as drowning.
+     *
+     * @return whether the mob is aware
+     */
+    public boolean isAware();
 }

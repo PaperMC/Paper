@@ -443,12 +443,16 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Sets whether an entity will have AI.
      *
+     * The entity will be completely unable to move if it has no AI.
+     *
      * @param ai whether the mob will have AI or not.
      */
     void setAI(boolean ai);
 
     /**
      * Checks whether an entity has AI.
+     *
+     * The entity will be completely unable to move if it has no AI.
      *
      * @return true if the entity has AI, otherwise false.
      */
