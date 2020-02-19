@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Feb 2020 14:36:56 -0600
+Subject: [PATCH] Add option to nerf pigmen from nether portals
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bce502181..7d408542e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
+     }
++
++    public boolean nerfNetherPortalPigmen = false;
++    private void nerfNetherPortalPigmen() {
++        nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockPortal.java b/src/main/java/net/minecraft/server/BlockPortal.java
+index 2dc3ab4cf..5e3ac055d 100644
+--- a/src/main/java/net/minecraft/server/BlockPortal.java
++++ b/src/main/java/net/minecraft/server/BlockPortal.java
+@@ -0,0 +0,0 @@ public class BlockPortal extends Block {
+                 Entity entity = EntityTypes.ZOMBIE_PIGMAN.spawnCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.up(), EnumMobSpawn.STRUCTURE, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+ 
+                 if (entity != null) {
++                    entity.fromNetherPortal = true; // Paper
++                    if (worldserver.paperConfig.nerfNetherPortalPigmen) entity.nerfFromNetherPortal = true; // Paper
+                     entity.portalCooldown = entity.ba();
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index acb7848d8..a855d743a 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public long activatedTick = Integer.MIN_VALUE;
+     public boolean fromMobSpawner;
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
++    public boolean fromNetherPortal; // Paper
++    public boolean nerfFromNetherPortal; // Paper
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
+             }
++            if (fromNetherPortal) {
++                nbttagcompound.setBoolean("Paper.FromNetherPortal", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             }
+ 
+             spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = nbttagcompound.getBoolean("Paper.FromNetherPortal");
++            nerfFromNetherPortal = fromNetherPortal && world.paperConfig.nerfNetherPortalPigmen;
+             if (nbttagcompound.hasKey("Paper.SpawnReason")) {
+                 String spawnReasonName = nbttagcompound.getString("Paper.SpawnReason");
+                 try {
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index e54f1e840..2cee73ace 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
+     protected final void doTick() {
+         ++this.ticksFarFromPlayer;
+         // Spigot Start
+-        if ( this.fromMobSpawner )
++        if ( this.fromMobSpawner || this.nerfFromNetherPortal ) // Paper
+         {
+             // Paper start - Allow nerfed mobs to jump, float and take water damage
+             if (goalFloat != null) {
+--
