@@ -32,6 +32,16 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     }
 
     @Override
+    public void setAware(boolean aware) {
+        getHandle().aware = aware;
+    }
+
+    @Override
+    public boolean isAware() {
+        return getHandle().aware;
+    }
+
+    @Override
     public EntityInsentient getHandle() {
         return (EntityInsentient) entity;
     }

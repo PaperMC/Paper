@@ -28,7 +28,16 @@
      public boolean persistent;
      private final Map<PathType, Float> bB;
      public MinecraftKey lootTableKey;
-@@ -63,6 +75,9 @@
+@@ -40,6 +52,8 @@
+     private BlockPosition bH;
+     private float bI;
+ 
++    public boolean aware = true; // CraftBukkit
++
+     protected EntityInsentient(EntityTypes<? extends EntityInsentient> entitytypes, World world) {
+         super(entitytypes, world);
+         this.bx = NonNullList.a(2, ItemStack.a);
+@@ -63,6 +77,9 @@
              this.initPathfinder();
          }
  
@@ -38,7 +47,7 @@
      }
  
      protected void initPathfinder() {}
-@@ -130,7 +145,38 @@
+@@ -130,7 +147,38 @@
      }
  
      public void setGoalTarget(@Nullable EntityLiving entityliving) {
@@ -77,7 +86,7 @@
      }
  
      @Override
-@@ -348,11 +394,20 @@
+@@ -348,11 +396,20 @@
      @Override
      public void a(NBTTagCompound nbttagcompound) {
          super.a(nbttagcompound);
@@ -100,7 +109,7 @@
          NBTTagList nbttaglist;
          int i;
  
-@@ -406,6 +461,11 @@
+@@ -406,6 +463,11 @@
          super.a(damagesource, flag);
          this.lootTableKey = null;
      }
@@ -112,7 +121,7 @@
  
      @Override
      protected LootTableInfo.Builder a(boolean flag, DamageSource damagesource) {
-@@ -465,11 +525,17 @@
+@@ -465,11 +527,17 @@
          ItemStack itemstack1 = this.getEquipment(enumitemslot);
          boolean flag = this.a(itemstack, itemstack1, enumitemslot);
  
@@ -131,7 +140,7 @@
              }
  
              this.setSlot(enumitemslot, itemstack);
-@@ -554,11 +620,11 @@
+@@ -554,11 +622,11 @@
              if (entityhuman != null) {
                  double d0 = entityhuman.h(this);
  
@@ -145,7 +154,15 @@
                      this.die();
                  } else if (d0 < 1024.0D) {
                      this.ticksFarFromPlayer = 0;
-@@ -951,12 +1017,24 @@
+@@ -573,6 +641,7 @@
+     @Override
+     protected final void doTick() {
+         ++this.ticksFarFromPlayer;
++        if (!this.aware) return; // CraftBukkit
+         this.world.getMethodProfiler().enter("sensing");
+         this.bw.a();
+         this.world.getMethodProfiler().exit();
+@@ -951,12 +1020,24 @@
          if (!this.isAlive()) {
              return false;
          } else if (this.getLeashHolder() == entityhuman) {
@@ -170,7 +187,7 @@
                  this.setLeashHolder(entityhuman, true);
                  itemstack.subtract(1);
                  return true;
-@@ -1002,6 +1080,7 @@
+@@ -1002,6 +1083,7 @@
  
          if (this.leashHolder != null) {
              if (!this.isAlive() || !this.leashHolder.isAlive()) {
@@ -178,7 +195,7 @@
                  this.unleash(true, true);
              }
  
-@@ -1017,7 +1096,9 @@
+@@ -1017,7 +1099,9 @@
  
              this.leashHolder = null;
              if (!this.world.isClientSide && flag1) {
@@ -188,7 +205,7 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1086,6 +1167,7 @@
+@@ -1086,6 +1170,7 @@
  
                  this.setLeashHolder(EntityLeash.a(this.world, blockposition), true);
              } else {
@@ -196,7 +213,7 @@
                  this.unleash(false, true);
              }
  
-@@ -1193,7 +1275,14 @@
+@@ -1193,7 +1278,14 @@
          int i = EnchantmentManager.getFireAspectEnchantmentLevel(this);
  
          if (i > 0) {
@@ -212,3 +229,27 @@
          }
  
          boolean flag = entity.damageEntity(DamageSource.mobAttack(this), f);
+@@ -1252,4 +1344,23 @@
+     public boolean a(Item item) {
+         return this.getItemInMainHand().getItem() == item || this.getItemInOffHand().getItem() == item;
+     }
++
++    // CraftBukkit start
++    @Override
++    public NBTTagCompound save(NBTTagCompound nbttagcompound) {
++        super.save(nbttagcompound);
++
++        nbttagcompound.setBoolean("Bukkit.Aware", this.aware);
++        return nbttagcompound;
++    }
++
++    @Override
++    public void f(NBTTagCompound nbttagcompound) { // PAIL rename load
++        super.f(nbttagcompound);
++
++        if (nbttagcompound.hasKey("Bukkit.Aware")) {
++            this.aware = nbttagcompound.getBoolean("Bukkit.Aware");
++        }
++    }
++    // CraftBukkit end
+ }
