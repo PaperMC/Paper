@@ -459,6 +459,33 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     boolean hasAI();
 
     /**
+     * Makes this entity attack the given entity with a melee attack.
+     *
+     * Attack damage is calculated by the server from the attributes and
+     * equipment of this mob, and knockback is applied to {@code target} as
+     * appropriate.
+     *
+     * @param target entity to attack.
+     */
+    public void attack(@NotNull Entity target);
+
+    /**
+     * Makes this entity swing their main hand.
+     *
+     * This method does nothing if this entity does not have an animation for
+     * swinging their main hand.
+     */
+    public void swingMainHand();
+
+    /**
+     * Makes this entity swing their off hand.
+     *
+     * This method does nothing if this entity does not have an animation for
+     * swinging their off hand.
+     */
+    public void swingOffHand();
+
+    /**
      * Set if this entity will be subject to collisions other entities.
      * <p>
      * Note that collisions are bidirectional, so this method would need to be
