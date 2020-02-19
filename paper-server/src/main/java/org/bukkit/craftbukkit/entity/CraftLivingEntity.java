@@ -32,6 +32,7 @@ import net.minecraft.server.EntityTippedArrow;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
+import net.minecraft.server.EnumHand;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
@@ -581,6 +582,23 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean hasAI() {
         return (this.getHandle() instanceof EntityInsentient) ? !((EntityInsentient) this.getHandle()).isNoAI(): false;
+    }
+
+    @Override
+    public void attack(Entity target) {
+        Preconditions.checkArgument(target != null, "target == null");
+
+        getHandle().B(((CraftEntity) target).getHandle()); // PAIL rename attack
+    }
+
+    @Override
+    public void swingMainHand() {
+        getHandle().a(EnumHand.MAIN_HAND); // PAIL rename swingHand
+    }
+
+    @Override
+    public void swingOffHand() {
+        getHandle().a(EnumHand.OFF_HAND); // PAIL rename swingHand
     }
 
     @Override
