@@ -5,6 +5,19 @@ then
     echo "Please run this script again with the clean decompile sources as an argument. In most cases this will be ../work/decompile-XXXX"
     exit
 fi
+
+# https://stackoverflow.com/a/38595160
+# https://stackoverflow.com/a/800644
+if sed --version >/dev/null 2>&1; then
+  strip_cr() {
+    sed -i -- "s/\r//" "$@"
+  }
+else
+  strip_cr () {
+    sed -i "" "s/$(printf '\r')//" "$@"
+  }
+fi
+
 cb=src/main/java/net/minecraft/server
 nms="$1/net/minecraft/server"
 show_diff_msg=true
@@ -24,8 +37,8 @@ do
     then
         echo "Diffing $file"
     fi
-    sed -i 's/\r//' "$nms/$file"
-	sed -i 's/\r//' "$cb/$file"
+    strip_cr "$nms/$file" > /dev/null
+	strip_cr "$cb/$file" > /dev/null
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
     patchNew=$(diff -u --label a/net/minecraft/server/$file "$nms/$file" --label b/net/minecraft/server/$file "$cb/$file")
     if [ -f "$outName" ]
