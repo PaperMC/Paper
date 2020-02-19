@@ -6,6 +6,18 @@ then
     exit
 fi
 
+# https://stackoverflow.com/a/38595160
+# https://stackoverflow.com/a/800644
+if sed --version >/dev/null 2>&1; then
+  strip_cr() {
+    sed -i -- "s/\r//" "$@"
+  }
+else
+  strip_cr () {
+    sed -i "" "s/$(printf '\r')//" "$@"
+  }
+fi
+
 nms=$1/net/minecraft/server
 cb=src/main/java/net/minecraft/server
 #clean up and rebuild
@@ -17,7 +29,7 @@ do
     file="$(echo $file | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
-    sed -i 's/\r//' "$nms/$file" > /dev/null
+    strip_cr "$nms/$file" > /dev/null
 
     cp "$nms/$file" "$cb/$file"
     patch -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
