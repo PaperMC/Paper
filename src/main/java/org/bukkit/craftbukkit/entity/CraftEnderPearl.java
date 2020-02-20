@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.EntityType;
 
-public class CraftEnderPearl extends CraftProjectile implements EnderPearl {
+public class CraftEnderPearl extends CraftThrowableProjectile implements EnderPearl {
     public CraftEnderPearl(CraftServer server, EntityEnderPearl entity) {
         super(server, entity);
     }

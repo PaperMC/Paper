@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 
-public class CraftEgg extends CraftProjectile implements Egg {
+public class CraftEgg extends CraftThrowableProjectile implements Egg {
     public CraftEgg(CraftServer server, EntityEgg entity) {
         super(server, entity);
     }

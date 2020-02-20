@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.SmallFireball;
 
-public class CraftSmallFireball extends CraftFireball implements SmallFireball {
+public class CraftSmallFireball extends CraftSizedFireball implements SmallFireball {
     public CraftSmallFireball(CraftServer server, EntitySmallFireball entity) {
         super(server, entity);
     }
