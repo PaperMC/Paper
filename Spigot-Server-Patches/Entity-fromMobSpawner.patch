@@ -5,13 +5,13 @@ Subject: [PATCH] Entity#fromMobSpawner()
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9b47da4e8..393f5b2d2 100644
+index 0b08e9b31b..64dc37c70c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
      public long activatedTick = Integer.MIN_VALUE;
-     public boolean fromMobSpawner;
 +    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
      protected int numCollisions = 0; // Paper
      public void inactiveTick() { }
@@ -37,19 +37,19 @@ index 9b47da4e8..393f5b2d2 100644
  
          } catch (Throwable throwable) {
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index deb32db2b..8384a2cbf 100644
+index b249af20c4..ab5d83d34d 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
-                                 ((EntityInsentient) entity).prepare(world, world.getDamageScaler(new BlockPosition(entity)), EnumMobSpawn.SPAWNER, (GroupDataEntity) null, (NBTTagCompound) null);
                              }
+                             // Spigot End
                          }
 +                        entity.spawnedViaMobSpawner = true; // Paper
                          // Spigot Start
-                         if ( entity.world.spigotConfig.nerfSpawnerMobs )
-                         {
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
+                             Entity vehicle = entity.getVehicle();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index bb07dec3c..495a7c464 100644
+index bb07dec3c8..495a7c464f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {

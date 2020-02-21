@@ -5,7 +5,7 @@ Subject: [PATCH] Allow nerfed mobs to jump and take water damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 7d9976ce6..6d6a68cb1 100644
+index 7d9976ce6b..6d6a68cb1b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -19,7 +19,7 @@ index 7d9976ce6..6d6a68cb1 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/ControllerJump.java b/src/main/java/net/minecraft/server/ControllerJump.java
-index 2e869004c..8a6856e0f 100644
+index 2e869004c8..8a6856e0fd 100644
 --- a/src/main/java/net/minecraft/server/ControllerJump.java
 +++ b/src/main/java/net/minecraft/server/ControllerJump.java
 @@ -0,0 +0,0 @@ public class ControllerJump {
@@ -31,7 +31,7 @@ index 2e869004c..8a6856e0f 100644
          this.b.setJumping(this.a);
          this.a = false;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 5635192f7..8a58afd1c 100644
+index 74a4bf9c5c..b109f5ae2c 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -43,7 +43,7 @@ index 5635192f7..8a58afd1c 100644
          return this.isInWater() || this.isInRain() || this.l();
      }
 diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
-index 1cc66108d..538c2169c 100644
+index 1cc66108d0..538c2169cd 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderman.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderman.java
 @@ -0,0 +0,0 @@ public class EntityEnderman extends EntityMonster {
@@ -56,7 +56,7 @@ index 1cc66108d..538c2169c 100644
  
          if (this.world.isDay() && this.ticksLived >= this.bA + 600) {
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 7ee5eb987..68ce38d66 100644
+index 0b06fa2b66..70cd0801dc 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -68,10 +68,11 @@ index 7ee5eb987..68ce38d66 100644
      private EntityLiving goalTarget;
      private final EntitySenses bw;
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
-         // Spigot Start
-         if ( this.fromMobSpawner )
-         {
-+            // Paper start - Allow nerfed mobs to jump, float and take water damage
+     @Override
+     protected final void doTick() {
+         ++this.ticksFarFromPlayer;
+-        if (!this.aware) return; // CraftBukkit
++        if (!this.aware) { // Paper start - Allow nerfed mobs to jump, float and take water damage
 +            if (goalFloat != null) {
 +                if (goalFloat.validConditions()) goalFloat.update();
 +                this.getControllerJump().jumpIfSet();
@@ -79,12 +80,14 @@ index 7ee5eb987..68ce38d66 100644
 +            if ((this instanceof EntityBlaze || this instanceof EntityEnderman) && isInWaterOrRainOrBubble()) {
 +                damageEntity(DamageSource.DROWN, 1.0F);
 +            }
-+            // Paper end
-             return;
-         }
-         // Spigot End
++            return;
++        }
++        // Paper end
+         this.world.getMethodProfiler().enter("sensing");
+         this.bw.a();
+         this.world.getMethodProfiler().exit();
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
-index 0f0dc7277..43908b040 100644
+index 0f0dc7277f..43908b0400 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 @@ -0,0 +0,0 @@ public class PathfinderGoalFloat extends PathfinderGoal {
