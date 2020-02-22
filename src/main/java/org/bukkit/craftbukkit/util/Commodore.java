@@ -173,7 +173,7 @@ public class Commodore
                                 Material.valueOf( "LEGACY_" + name );
                             } catch ( IllegalArgumentException ex )
                             {
-                                throw new AuthorNagException( "No legacy enum constant for " + name + ". Did you forget to define api-version: 1.13 in your plugin.yml?" );
+                                throw new AuthorNagException( "No legacy enum constant for " + name + ". Did you forget to define a modern (1.13+) api-version in your plugin.yml?" );
                             }
 
                             super.visitFieldInsn( opcode, owner, "LEGACY_" + name, desc );
