@@ -118,7 +118,7 @@
          this.conversionTime = ticksUntilWaterConversion;
          this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -267,31 +287,50 @@
+@@ -267,32 +287,51 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
@@ -172,16 +172,17 @@
      public boolean isSunSensitive() {
 -        return true;
 +        return this.shouldBurnInDay; // Paper - Add more Zombie API
-+    }
-+
+     }
+ 
 +    // Paper start - Add more Zombie API
 +    public void setShouldBurnInDay(boolean shouldBurnInDay) {
 +        this.shouldBurnInDay = shouldBurnInDay;
-     }
++    }
 +    // Paper end - Add more Zombie API
- 
++
      @Override
      public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
+         if (!super.hurtServer(world, source, amount)) {
 @@ -323,10 +362,10 @@
  
                      if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
@@ -229,20 +230,32 @@
      }
  
      @Override
-@@ -424,7 +471,12 @@
-         this.inWaterTime = nbt.getInt("InWaterTime");
+@@ -425,6 +472,11 @@
          if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
              this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
-+        }
+         }
 +        // Paper start - Add more Zombie API
 +        if (nbt.contains("Paper.ShouldBurnInDay")) {
 +            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
-         }
++        }
 +        // Paper end - Add more Zombie API
  
      }
  
-@@ -496,7 +548,7 @@
+@@ -432,10 +484,8 @@
+     public boolean killedEntity(ServerLevel world, LivingEntity other) {
+         boolean flag = super.killedEntity(world, other);
+ 
+-        if ((world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager entityvillager) {
+-            if (world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+-                return flag;
+-            }
++        final double fallbackChance = world.getDifficulty() == Difficulty.HARD ? 100d : world.getDifficulty() == Difficulty.NORMAL ? 50d : 0d; // Paper - Configurable chance of villager zombie infection
++        if (this.random.nextDouble() * 100 < world.paperConfig().entities.behavior.zombieVillagerInfectionChance.or(fallbackChance) && other instanceof Villager entityvillager) { // Paper - Configurable chance of villager zombie infection
+ 
+             if (this.convertVillagerToZombieVillager(world, entityvillager)) {
+                 flag = false;
+@@ -496,7 +546,7 @@
                              entitychicken1.finalizeSpawn(world, difficulty, EntitySpawnReason.JOCKEY, (SpawnGroupData) null);
                              entitychicken1.setChickenJockey(true);
                              this.startRiding(entitychicken1);
