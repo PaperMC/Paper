@@ -157,7 +157,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     private ChunkSection getChunkSection(int y, boolean create) {
         ChunkSection section = sections[y >> 4];
         if (create && section == null) {
-            sections[y >> 4] = section = new ChunkSection(y);
+            sections[y >> 4] = section = new ChunkSection(y >> 4 << 4);
         }
         return section;
     }
