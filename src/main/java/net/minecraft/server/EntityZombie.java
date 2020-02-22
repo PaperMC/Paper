@@ -386,10 +386,14 @@ public class EntityZombie extends EntityMonster {
     @Override
     public void a(WorldServer worldserver, EntityLiving entityliving) {
         super.a(worldserver, entityliving);
-        if ((worldserver.getDifficulty() == EnumDifficulty.NORMAL || worldserver.getDifficulty() == EnumDifficulty.HARD) && entityliving instanceof EntityVillager) {
-            if (worldserver.getDifficulty() != EnumDifficulty.HARD && this.random.nextBoolean()) {
+        // Paper start
+        if (world.paperConfig.zombieVillagerInfectionChance != 0.0 && (world.paperConfig.zombieVillagerInfectionChance != -1.0 || worldserver.getDifficulty() == EnumDifficulty.NORMAL || worldserver.getDifficulty() == EnumDifficulty.HARD) && entityliving instanceof EntityVillager) {
+            if (world.paperConfig.zombieVillagerInfectionChance == -1.0 && worldserver.getDifficulty() != EnumDifficulty.HARD && this.random.nextBoolean()) {
                 return;
             }
+            if (world.paperConfig.zombieVillagerInfectionChance != -1.0 && (this.random.nextDouble() * 100.0) > world.paperConfig.zombieVillagerInfectionChance) {
+                return;
+            } // Paper end
 
             EntityVillager entityvillager = (EntityVillager) entityliving;
             // CraftBukkit start

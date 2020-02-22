@@ -590,4 +590,9 @@ public class PaperWorldConfig {
     private void nerfNetherPortalPigmen() {
         nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
     }
+
+    public double zombieVillagerInfectionChance = -1.0;
+    private void zombieVillagerInfectionChance() {
+        zombieVillagerInfectionChance = getDouble("zombie-villager-infection-chance", zombieVillagerInfectionChance);
+    }
 }
