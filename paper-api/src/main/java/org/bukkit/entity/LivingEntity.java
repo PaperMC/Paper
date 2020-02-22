@@ -252,9 +252,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
-     * <p>
-     * Only one potion effect can be present for a given {@link
-     * PotionEffectType}.
      *
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
@@ -270,7 +267,10 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @param force whether conflicting effects should be removed
      * @return whether the effect could be added
+     * @deprecated no need to force since multiple effects of the same type are
+     * now supported.
      */
+    @Deprecated
     public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
 
     /**
