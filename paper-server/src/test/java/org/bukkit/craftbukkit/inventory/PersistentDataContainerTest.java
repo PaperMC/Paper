@@ -310,4 +310,20 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
             return primitive;
         }
     }
+
+    @Test
+    public void testItemMetaClone() {
+        ItemMeta itemMeta = createNewItemMeta();
+        PersistentDataContainer container = itemMeta.getPersistentDataContainer();
+        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.STRING, "notch");
+
+        ItemMeta clonedMeta = itemMeta.clone();
+        PersistentDataContainer clonedContainer = clonedMeta.getPersistentDataContainer();
+
+        assertNotSame(container, clonedContainer);
+        assertEquals(container, clonedContainer);
+
+        clonedContainer.set(VALID_KEY, PersistentDataType.STRING, "dinnerbone");
+        assertNotEquals(container, clonedContainer);
+    }
 }
