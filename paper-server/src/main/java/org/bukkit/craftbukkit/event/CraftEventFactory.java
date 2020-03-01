@@ -411,13 +411,18 @@ public class CraftEventFactory {
         }
 
         org.bukkit.inventory.ItemStack item;
+        // Paper start - add hand to BlockMultiPlaceEvent
+        EquipmentSlot equipmentSlot;
         if (hand == InteractionHand.MAIN_HAND) {
             item = player.getInventory().getItemInMainHand();
+            equipmentSlot = EquipmentSlot.HAND;
         } else {
             item = player.getInventory().getItemInOffHand();
+            equipmentSlot = EquipmentSlot.OFF_HAND;
         }
 
-        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, item, player, canBuild);
+        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, item, player, canBuild, equipmentSlot);
+        // Paper end
         craftServer.getPluginManager().callEvent(event);
 
         return event;
