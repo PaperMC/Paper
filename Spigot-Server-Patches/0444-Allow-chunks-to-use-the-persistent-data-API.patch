@@ -1,0 +1,83 @@
+From a64379eac3ff5f0fb5b8b09329a3f0ac741deb36 Mon Sep 17 00:00:00 2001
+From: BrodyBeckwith <brody@beckwith.dev>
+Date: Sun, 1 Mar 2020 00:49:16 -0500
+Subject: [PATCH] Allow chunks to use the persistent data API
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 4349d22c..da6a5cc7 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -159,6 +159,7 @@ public class ChunkRegionLoader {
+ 
+             object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, (chunk) -> {
+                 loadEntities(nbttagcompound1, chunk);
++                readBukkitValues(nbttagcompound1, chunk); // Paper - Load persistent data from NBT
+             });
+         } else {
+             ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray
+@@ -455,6 +456,8 @@ public class ChunkRegionLoader {
+                 }
+             }
+ 
++            storeBukkitValues(nbttagcompound1, chunk); // Paper - Store persistent data to NBT
++
+             // Paper start - move entities to the correct chunk
+             for (Entity entity : toUpdate) {
+                 worldserver.entityJoinedWorld(entity);
+@@ -583,6 +586,22 @@ public class ChunkRegionLoader {
+ 
+     }
+ 
++    // Paper start - Handle persistent data reading and writing
++    public static void readBukkitValues(NBTTagCompound nbtTagCompound, Chunk chunk) {
++        NBTTagCompound persistentBase = nbtTagCompound.getCompound("BukkitValues");
++        if (persistentBase != null) {
++            ((org.bukkit.craftbukkit.CraftChunk) chunk.getBukkitChunk()).persistentDataContainer.putAll(persistentBase);
++        }
++    }
++
++    public static void storeBukkitValues(NBTTagCompound nbtTagCompound, Chunk chunk) {
++        org.bukkit.craftbukkit.CraftChunk craftChunk = ((org.bukkit.craftbukkit.CraftChunk) chunk.getBukkitChunk());
++        if (!craftChunk.persistentDataContainer.isEmpty()) {
++            nbtTagCompound.set("BukkitValues", craftChunk.persistentDataContainer.toTagCompound());
++        }
++    }
++    // Paper end
++
+     private static NBTTagCompound a(ChunkCoordIntPair chunkcoordintpair, Map<String, StructureStart> map, Map<String, LongSet> map1) {
+         NBTTagCompound nbttagcompound = new NBTTagCompound();
+         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 9cff8b88..49e63317 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -42,6 +42,11 @@ public class CraftChunk implements Chunk {
+     private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0).getBlocks();
+     private static final byte[] emptyLight = new byte[2048];
+ 
++    // Paper start
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++    // Paper end
++
+     public CraftChunk(net.minecraft.server.Chunk chunk) {
+         this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+ 
+@@ -301,6 +306,13 @@ public class CraftChunk implements Chunk {
+         return new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, biome);
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer getPersistentDataContainer() {
++        return this.persistentDataContainer;
++    }
++    // Paper end
++
+     public static ChunkSnapshot getEmptyChunkSnapshot(int x, int z, CraftWorld world, boolean includeBiome, boolean includeBiomeTempRain) {
+         BiomeStorage biome = null;
+ 
+-- 
+2.20.1.windows.1
+
