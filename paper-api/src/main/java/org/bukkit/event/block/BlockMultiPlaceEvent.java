@@ -18,9 +18,17 @@ import org.jetbrains.annotations.NotNull;
 public class BlockMultiPlaceEvent extends BlockPlaceEvent {
     private final List<BlockState> states;
 
+    @Deprecated // Paper
     public BlockMultiPlaceEvent(@NotNull List<BlockState> states, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild) {
-        super(states.get(0).getBlock(), states.get(0), clicked, itemInHand, thePlayer, canBuild);
+        // Paper start - add hand to BlockMultiPlaceEvent
+        this(states, clicked, itemInHand, thePlayer, canBuild, org.bukkit.inventory.EquipmentSlot.HAND);
+    }
+
+
+    public BlockMultiPlaceEvent(@NotNull List<BlockState> states, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild, @NotNull org.bukkit.inventory.EquipmentSlot hand) {
+        super(states.get(0).getBlock(), states.get(0), clicked, itemInHand, thePlayer, canBuild, hand);
         this.states = ImmutableList.copyOf(states);
+        // Paper end
     }
 
     /**
