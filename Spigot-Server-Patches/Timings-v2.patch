@@ -153,7 +153,7 @@ index 0000000000..69e26a8267
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000000..3a79cde595
+index 0000000000..e41083f14c
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -0,0 +0,0 @@
@@ -219,8 +219,7 @@ index 0000000000..3a79cde595
 +
 +
 +    public final Timing miscMobSpawning;
-+    public final Timing chunkRangeCheckBig;
-+    public final Timing chunkRangeCheckSmall;
++    public final Timing chunkInhibitedRangeCheck;
 +
 +    public WorldTimingsHandler(World server) {
 +        String name = server.worldData.getName() +" - ";
@@ -278,9 +277,8 @@ index 0000000000..3a79cde595
 +        countNaturalMobs = Timings.ofSafe(name + "Count natural mobs");
 +
 +
++        chunkInhibitedRangeCheck = Timings.ofSafe(name + "Chunks - Inhibited Range Check");
 +        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
-+        chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
-+        chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +    }
 +
 +    public static Timing getTickList(WorldServer worldserver, String timingsType) {
@@ -375,7 +373,7 @@ index e58dd3e6df..0b32179b79 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index f558ae4417..2107ddc48f 100644
+index f558ae4417..63cb0019b1 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -437,26 +435,12 @@ index f558ae4417..2107ddc48f 100644
                      this.world.getMethodProfiler().exit();
                      ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
  
--                    if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
-+                    // Paper start - timings
-+                    this.world.timings.chunkRangeCheckBig.startTiming();
-+                    // note: this is just a copy of the expression in the if
-+                    boolean bigRadiusOutsideRange = !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair);
-+                    this.world.timings.chunkRangeCheckBig.stopTiming();
-+                    if (bigRadiusOutsideRange) {
++                    this.world.timings.chunkInhibitedRangeCheck.startTiming();
+                     if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
 +                        // Paper end
                          chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
--                        if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
-+                        // Paper start - timings
-+                        this.world.timings.chunkRangeCheckSmall.startTiming();
-+                        // note: this is just a copy of the expression in the if
-+                        boolean smallRadiusOutsideRange = flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true);
-+                        this.world.timings.chunkRangeCheckSmall.stopTiming();
-+                        if (smallRadiusOutsideRange) { // Spigot
-+                            // Paper end
+                         if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
                              this.world.getMethodProfiler().enter("spawner");
-                             this.world.timings.mobSpawn.startTiming(); // Spigot
-                             EnumCreatureType[] aenumcreaturetype1 = aenumcreaturetype;
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
                              this.world.getMethodProfiler().exit();
                          }
@@ -467,6 +451,7 @@ index f558ae4417..2107ddc48f 100644
 -                        this.world.timings.doTickTiles.stopTiming(); // Spigot
 +                        this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
                      }
++                    this.world.timings.chunkInhibitedRangeCheck.stopTiming(); // Paper
                  }
              });
              this.world.getMethodProfiler().enter("customSpawners");
