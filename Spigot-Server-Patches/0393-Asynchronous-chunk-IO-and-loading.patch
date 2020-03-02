@@ -1,4 +1,4 @@
-From 966c7f77bdfad41e7191a805034ed36f70e849e0 Mon Sep 17 00:00:00 2001
+From eaec5bfc7161e0448b6c9ac2d7b4a924338c771c Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -121,12 +121,12 @@ tasks required to be executed by the chunk load task (i.e lighting
 and some poi tasks).
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 3a79cde595..8de6c4816c 100644
+index e41083f14c..8a3f30c36f 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -63,6 +63,17 @@ public class WorldTimingsHandler {
-     public final Timing chunkRangeCheckBig;
-     public final Timing chunkRangeCheckSmall;
+@@ -62,6 +62,17 @@ public class WorldTimingsHandler {
+     public final Timing miscMobSpawning;
+     public final Timing chunkInhibitedRangeCheck;
  
 +    public final Timing poiUnload;
 +    public final Timing chunkUnload;
@@ -142,10 +142,10 @@ index 3a79cde595..8de6c4816c 100644
      public WorldTimingsHandler(World server) {
          String name = server.worldData.getName() +" - ";
  
-@@ -122,6 +133,17 @@ public class WorldTimingsHandler {
+@@ -120,6 +131,17 @@ public class WorldTimingsHandler {
+ 
+         chunkInhibitedRangeCheck = Timings.ofSafe(name + "Chunks - Inhibited Range Check");
          miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
-         chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
-         chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +
 +        poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
 +        chunkUnload = Timings.ofSafe(name + "Chunk unload - Chunk");
@@ -2361,7 +2361,7 @@ index 0000000000..715a2dd8d2
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 296f69a0ac..31377fd4af 100644
+index a57371b08e..e8166bc812 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -218,11 +218,137 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2516,7 +2516,7 @@ index 296f69a0ac..31377fd4af 100644
                  this.world.timings.chunkAwait.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -754,11 +885,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -745,11 +876,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {

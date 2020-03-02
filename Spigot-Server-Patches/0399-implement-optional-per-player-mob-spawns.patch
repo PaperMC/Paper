@@ -1,25 +1,25 @@
-From 9ee9808e7cd582a872291765508cff73f7d80bd5 Mon Sep 17 00:00:00 2001
+From 8b3e0e6199516a840742e4be0f08bde29eaf339a Mon Sep 17 00:00:00 2001
 From: kickash32 <kickash32@gmail.com>
 Date: Mon, 19 Aug 2019 01:27:58 +0500
 Subject: [PATCH] implement optional per player mob spawns
 
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index 8de6c4816c..e25544f116 100644
+index 8a3f30c36f..51281cfa2d 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -62,6 +62,7 @@ public class WorldTimingsHandler {
+@@ -61,6 +61,7 @@ public class WorldTimingsHandler {
+ 
      public final Timing miscMobSpawning;
-     public final Timing chunkRangeCheckBig;
-     public final Timing chunkRangeCheckSmall;
+     public final Timing chunkInhibitedRangeCheck;
 +    public final Timing playerMobDistanceMapUpdate;
  
      public final Timing poiUnload;
      public final Timing chunkUnload;
-@@ -133,6 +134,7 @@ public class WorldTimingsHandler {
+@@ -131,6 +132,7 @@ public class WorldTimingsHandler {
+ 
+         chunkInhibitedRangeCheck = Timings.ofSafe(name + "Chunks - Inhibited Range Check");
          miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
-         chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
-         chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +        playerMobDistanceMapUpdate = Timings.ofSafe(name + "Per Player Mob Spawning - Distance Map Update");
  
          poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
@@ -545,7 +545,7 @@ index 0000000000..4f13d3ff83
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 93b4e6117f..7db96cec40 100644
+index 6adb31d854..a0839ac725 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -654,7 +654,22 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -572,7 +572,7 @@ index 93b4e6117f..7db96cec40 100644
  
              this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
              this.world.getMethodProfiler().exit();
-@@ -728,8 +743,23 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -718,8 +733,23 @@ public class ChunkProviderServer extends IChunkProvider {
                                  if (enumcreaturetype != EnumCreatureType.MISC && (!enumcreaturetype.c() || this.allowAnimals) && (enumcreaturetype.c() || this.allowMonsters) && (!enumcreaturetype.d() || flag2)) {
                                      int k1 = limit * l / ChunkProviderServer.b; // CraftBukkit - use per-world limits
  
