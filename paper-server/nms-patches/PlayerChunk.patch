@@ -46,23 +46,29 @@
  
              if (either == null || either.left().isPresent()) {
                  return completablefuture;
-@@ -278,6 +287,24 @@
+@@ -278,6 +287,30 @@
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET;
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
          PlayerChunk.State playerchunk_state1 = getChunkState(this.ticketLevel);
 +        // CraftBukkit start
 +        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
 +        if (playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && !playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
-+            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAcceptAsync((either) -> {
-+                either.ifLeft((chunkAccess) -> {
-+                    Chunk chunk = (Chunk) chunkAccess;
-+                    // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
-+                    // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
-+                    // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-+                    chunk.setNeedsSaving(true);
-+                    chunk.unloadCallback();
-+                });
-+            }, playerchunkmap.callbackExecutor);
++            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++                Chunk chunk = (Chunk)either.left().orElse(null);
++                if (chunk != null) {
++                    playerchunkmap.callbackExecutor.execute(() -> {
++                        // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
++                        // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
++                        // These actions may however happen deferred, so we manually set the needsSaving flag already here.
++                        chunk.setNeedsSaving(true);
++                        chunk.unloadCallback();
++                    });
++                }
++            }).exceptionally((throwable) -> {
++                // ensure exceptions are printed, by default this is not the case
++                MinecraftServer.LOGGER.fatal("Failed to schedule unload callback for chunk " + PlayerChunk.this.location, throwable);
++                return null;
++            });
 +
 +            // Run callback right away if the future was already done
 +            playerchunkmap.callbackExecutor.run();
@@ -71,7 +77,7 @@
          CompletableFuture completablefuture;
  
          if (flag) {
-@@ -309,7 +336,7 @@
+@@ -309,7 +342,7 @@
          if (flag2 && !flag3) {
              completablefuture = this.fullChunkFuture;
              this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -80,19 +86,25 @@
                  playerchunkmap.getClass();
                  return either1.ifLeft(playerchunkmap::a);
              }));
-@@ -347,6 +374,20 @@
+@@ -347,6 +380,26 @@
  
          this.w.a(this.location, this::k, this.ticketLevel, this::d);
          this.oldTicketLevel = this.ticketLevel;
 +        // CraftBukkit start
 +        // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
 +        if (!playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
-+            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAcceptAsync((either) -> {
-+                either.ifLeft((chunkAccess) -> {
-+                    Chunk chunk = (Chunk) chunkAccess;
-+                    chunk.loadCallback();
-+                });
-+            }, playerchunkmap.callbackExecutor);
++            this.getStatusFutureUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++                Chunk chunk = (Chunk)either.left().orElse(null);
++                if (chunk != null) {
++                    playerchunkmap.callbackExecutor.execute(() -> {
++                        chunk.loadCallback();
++                    });
++                }
++            }).exceptionally((throwable) -> {
++                // ensure exceptions are printed, by default this is not the case
++                MinecraftServer.LOGGER.fatal("Failed to schedule load callback for chunk " + PlayerChunk.this.location, throwable);
++                return null;
++            });
 +
 +            // Run callback right away if the future was already done
 +            playerchunkmap.callbackExecutor.run();
