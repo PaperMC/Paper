@@ -1235,6 +1235,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
     }
 
     private void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<PacketPlayOutPosition.EnumPlayerTeleportFlags> set) {
+        if (player.dead) {
+            LOGGER.info("Attempt to teleport dead player {} restricted", player.getName());
+            return;
+        }
         // CraftBukkit start
         if (Float.isNaN(f)) {
             f = 0;
