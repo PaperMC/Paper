@@ -83,7 +83,7 @@
      public void tick(BooleanSupplier booleansupplier) {
          this.world.getMethodProfiler().enter("purge");
          this.chunkMapDistance.purgeTickets();
-@@ -318,13 +346,13 @@
+@@ -318,13 +346,19 @@
          this.lastTickTime = i;
          WorldData worlddata = this.world.getWorldData();
          boolean flag = worlddata.getType() == WorldType.DEBUG_ALL_BLOCK_STATES;
@@ -95,32 +95,43 @@
              int k = this.world.getGameRules().getInt(GameRules.RANDOM_TICK_SPEED);
              BlockPosition blockposition = this.world.getSpawn();
 -            boolean flag2 = worlddata.getTime() % 400L == 0L;
-+            boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit // PAIL: TODO monster ticks
++            // CraftBukkit start - Other mob type spawn tick rate
++            boolean spawnAnimalThisTick = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L;
++            boolean spawnMonsterThisTick = world.ticksPerMonsterSpawns != 0L && worlddata.getTime() % world.ticksPerMonsterSpawns == 0L;
++            boolean spawnWaterThisTick = world.ticksPerWaterSpawns != 0L && worlddata.getTime() % world.ticksPerWaterSpawns == 0L;
++            boolean spawnAmbientThisTick = world.ticksPerAmbientSpawns != 0L && worlddata.getTime() % world.ticksPerAmbientSpawns == 0L;
++            boolean flag2 = spawnAnimalThisTick;
++            // CraftBukkit end
  
              this.world.getMethodProfiler().enter("naturalSpawnCount");
              int l = this.chunkMapDistance.b();
-@@ -353,8 +381,30 @@
+@@ -353,8 +387,35 @@
                              for (int j1 = 0; j1 < i1; ++j1) {
                                  EnumCreatureType enumcreaturetype = aenumcreaturetype1[j1];
  
 +                                // CraftBukkit start - Use per-world spawn limits
++                                boolean spawnThisTick = true;
 +                                int limit = enumcreaturetype.b();
 +                                switch (enumcreaturetype) {
 +                                    case MONSTER:
++                                        spawnThisTick = spawnMonsterThisTick;
 +                                        limit = world.getWorld().getMonsterSpawnLimit();
 +                                        break;
 +                                    case CREATURE:
++                                        spawnThisTick = spawnAnimalThisTick;
 +                                        limit = world.getWorld().getAnimalSpawnLimit();
 +                                        break;
 +                                    case WATER_CREATURE:
++                                        spawnThisTick = spawnWaterThisTick;
 +                                        limit = world.getWorld().getWaterAnimalSpawnLimit();
 +                                        break;
 +                                    case AMBIENT:
++                                        spawnThisTick = spawnAmbientThisTick;
 +                                        limit = world.getWorld().getAmbientSpawnLimit();
 +                                        break;
 +                                }
 +
-+                                if (limit == 0) {
++                                if (!spawnThisTick || limit == 0) {
 +                                    continue;
 +                                }
 +                                // CraftBukkit end
@@ -131,7 +142,7 @@
  
                                      if (object2intmap.getInt(enumcreaturetype) <= k1) {
                                          SpawnerCreature.a(enumcreaturetype, this.world, chunk, blockposition);
-@@ -507,12 +557,18 @@
+@@ -507,12 +568,18 @@
  
          @Override
          protected boolean executeNext() {
