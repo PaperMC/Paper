@@ -149,6 +149,7 @@ public class BlockTripwireHook extends Block {
 
         this.a(world, blockposition, flag4, flag5, flag2, flag3);
         if (!flag) {
+            if (world.getType(blockposition).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - validate
             world.setTypeAndData(blockposition, (IBlockData) iblockdata3.set(BlockTripwireHook.FACING, enumdirection), 3);
             if (flag1) {
                 this.a(world, blockposition, enumdirection);
