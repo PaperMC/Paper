@@ -18,7 +18,7 @@
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
      protected static final Logger LOGGER = LogManager.getLogger();
-@@ -40,7 +51,39 @@
+@@ -40,7 +51,43 @@
      private final WorldBorder worldBorder;
      private final BiomeManager biomeManager;
  
@@ -36,6 +36,8 @@
 +    public List<EntityItem> captureDrops;
 +    public long ticksPerAnimalSpawns;
 +    public long ticksPerMonsterSpawns;
++    public long ticksPerWaterSpawns;
++    public long ticksPerAmbientSpawns;
 +    public boolean populating;
 +
 +    public CraftWorld getWorld() {
@@ -55,11 +57,13 @@
 +        this.world = new CraftWorld((WorldServer) this, gen, env);
 +        this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 +        this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
++        this.ticksPerWaterSpawns = this.getServer().getTicksPerWaterSpawns(); // CraftBukkit
++        this.ticksPerAmbientSpawns = this.getServer().getTicksPerAmbientSpawns(); // CraftBukkit
 +        // CraftBukkit end
          this.methodProfiler = gameprofilerfiller;
          this.worldData = worlddata;
          this.worldProvider = dimensionmanager.getWorldProvider(this);
-@@ -49,6 +92,35 @@
+@@ -49,6 +96,35 @@
          this.worldBorder = this.worldProvider.getWorldBorder();
          this.serverThread = Thread.currentThread();
          this.biomeManager = new BiomeManager(this, flag ? worlddata.getSeed() : WorldData.c(worlddata.getSeed()), dimensionmanager.getGenLayerZoomer());
@@ -95,7 +99,7 @@
      }
  
      @Override
-@@ -105,6 +177,17 @@
+@@ -105,6 +181,17 @@
  
      @Override
      public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
@@ -113,7 +117,7 @@
          if (isOutsideWorld(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-@@ -112,9 +195,22 @@
+@@ -112,9 +199,22 @@
          } else {
              Chunk chunk = this.getChunkAtWorldCoords(blockposition);
              Block block = iblockdata.getBlock();
@@ -137,7 +141,7 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getType(blockposition);
-@@ -125,6 +221,7 @@
+@@ -125,6 +225,7 @@
                      this.methodProfiler.exit();
                  }
  
@@ -145,7 +149,7 @@
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.b(blockposition, iblockdata1, iblockdata2);
-@@ -151,12 +248,65 @@
+@@ -151,12 +252,65 @@
  
                      this.a(blockposition, iblockdata1, iblockdata2);
                  }
@@ -211,7 +215,7 @@
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -195,6 +345,11 @@
+@@ -195,6 +349,11 @@
      @Override
      public void update(BlockPosition blockposition, Block block) {
          if (this.worldData.getType() != WorldType.DEBUG_ALL_BLOCK_STATES) {
@@ -223,7 +227,7 @@
              this.applyPhysics(blockposition, block);
          }
  
-@@ -243,6 +398,17 @@
+@@ -243,6 +402,17 @@
              IBlockData iblockdata = this.getType(blockposition);
  
              try {
@@ -241,7 +245,7 @@
                  iblockdata.doPhysics(this, blockposition, block, blockposition1, false);
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.a(throwable, "Exception while updating neighbours");
-@@ -285,6 +451,14 @@
+@@ -285,6 +455,14 @@
  
      @Override
      public IBlockData getType(BlockPosition blockposition) {
@@ -256,7 +260,7 @@
          if (isOutsideWorld(blockposition)) {
              return Blocks.VOID_AIR.getBlockData();
          } else {
-@@ -306,11 +480,11 @@
+@@ -306,11 +484,11 @@
      }
  
      public boolean isDay() {
@@ -270,7 +274,7 @@
      }
  
      @Override
-@@ -432,9 +606,11 @@
+@@ -432,9 +610,11 @@
                  TileEntity tileentity1 = (TileEntity) this.tileEntityListPending.get(i);
  
                  if (!tileentity1.isRemoved()) {
@@ -282,7 +286,7 @@
  
                      if (this.isLoaded(tileentity1.getPosition())) {
                          Chunk chunk = this.getChunkAtWorldCoords(tileentity1.getPosition());
-@@ -442,6 +618,12 @@
+@@ -442,6 +622,12 @@
  
                          chunk.setTileEntity(tileentity1.getPosition(), tileentity1);
                          this.notify(tileentity1.getPosition(), iblockdata, iblockdata, 3);
@@ -295,7 +299,7 @@
                      }
                  }
              }
-@@ -606,12 +788,25 @@
+@@ -606,12 +792,25 @@
  
      @Nullable
      @Override
@@ -321,7 +325,7 @@
              TileEntity tileentity = null;
  
              if (this.tickingTileEntities) {
-@@ -646,6 +841,13 @@
+@@ -646,6 +845,13 @@
      public void setTileEntity(BlockPosition blockposition, @Nullable TileEntity tileentity) {
          if (!isOutsideWorld(blockposition)) {
              if (tileentity != null && !tileentity.isRemoved()) {
@@ -335,7 +339,7 @@
                  if (this.tickingTileEntities) {
                      tileentity.setLocation(this, blockposition);
                      Iterator iterator = this.tileEntityListPending.iterator();
-@@ -670,7 +872,7 @@
+@@ -670,7 +876,7 @@
      }
  
      public void removeTileEntity(BlockPosition blockposition) {

@@ -640,6 +640,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public int getTicksPerWaterSpawns() {
+        return this.configuration.getInt("ticks-per.water-spawns");
+    }
+
+    @Override
+    public int getTicksPerAmbientSpawns() {
+        return this.configuration.getInt("ticks-per.ambient-spawns");
+    }
+
+    @Override
     public PluginManager getPluginManager() {
         return pluginManager;
     }
@@ -750,6 +760,18 @@ public final class CraftServer implements Server {
                 world.ticksPerMonsterSpawns = 1;
             } else {
                 world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
+            }
+
+            if (this.getTicksPerWaterSpawns() < 0) {
+                world.ticksPerWaterSpawns = 1;
+            } else {
+                world.ticksPerWaterSpawns = this.getTicksPerWaterSpawns();
+            }
+
+            if (this.getTicksPerAmbientSpawns() < 0) {
+                world.ticksPerAmbientSpawns = 1;
+            } else {
+                world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
             }
         }
 

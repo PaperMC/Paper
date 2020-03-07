@@ -1921,6 +1921,26 @@ public class CraftWorld implements World {
     }
 
     @Override
+    public long getTicksPerWaterSpawns() {
+        return world.ticksPerWaterSpawns;
+    }
+
+    @Override
+    public void setTicksPerWaterSpawns(int ticksPerWaterSpawns) {
+        world.ticksPerWaterSpawns = ticksPerWaterSpawns;
+    }
+
+    @Override
+    public long getTicksPerAmbientSpawns() {
+        return world.ticksPerAmbientSpawns;
+    }
+
+    @Override
+    public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns) {
+        world.ticksPerAmbientSpawns = ticksPerAmbientSpawns;
+    }
+
+    @Override
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
         server.getWorldMetadata().setMetadata(this, metadataKey, newMetadataValue);
     }
