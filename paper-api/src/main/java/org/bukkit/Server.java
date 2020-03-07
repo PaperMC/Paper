@@ -295,6 +295,46 @@ public interface Server extends PluginMessageRecipient {
     public int getTicksPerMonsterSpawns();
 
     /**
+     * Gets the default ticks per water mob spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water mobs
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water mobs
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, water mobs spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per water mobs spawn value
+     */
+    public int getTicksPerWaterSpawns();
+
+    /**
+     * Gets the default ticks per ambient mob spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn ambient mobs
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn ambient mobs
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, ambient mobs spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per ambient mobs spawn value
+     */
+    public int getTicksPerAmbientSpawns();
+
+    /**
      * Gets a player object by the given username.
      * <p>
      * This method may not return objects for offline players.

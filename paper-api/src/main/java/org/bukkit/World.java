@@ -1637,6 +1637,104 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
 
     /**
+     * Gets the world's ticks per water mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn water mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water mobs in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, water mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return The world's ticks per water mob spawns value
+     */
+    public long getTicksPerWaterSpawns();
+
+    /**
+     * Sets the world's ticks per water mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn water mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water mobs in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, water mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param ticksPerWaterSpawns the ticks per water mob spawns value you
+     *     want to set the world to
+     */
+    public void setTicksPerWaterSpawns(int ticksPerWaterSpawns);
+
+    /**
+     * Gets the world's ticks per ambient mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn ambient mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn ambient mobs in
+     *     this world every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn ambient mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, ambient mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return The world's ticks per ambient mob spawns value
+     */
+    public long getTicksPerAmbientSpawns();
+
+    /**
+     * Sets the world's ticks per ambient mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn ambient mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn ambient mobs in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn ambient mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, ambient mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param ticksPerAmbientSpawns the ticks per ambient mob spawns value you
+     *     want to set the world to
+     */
+    public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns);
+
+    /**
      * Gets limit for number of monsters that can spawn in a chunk in this
      * world
      *
