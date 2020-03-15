@@ -64,6 +64,10 @@ import org.yaml.snakeyaml.nodes.Tag;
  *     <td>{@link #getName()}</td>
  *     <td>The unique name of plugin</td>
  * </tr><tr>
+ *     <td><code>provides</code></td>
+ *     <td>{@link #getProvides()}</td>
+ *     <td>The plugin APIs which this plugin provides</td>
+ * </tr><tr>
  *     <td><code>version</code></td>
  *     <td>{@link #getVersion()}</td>
  *     <td>A plugin revision identifier</td>
@@ -130,6 +134,7 @@ import org.yaml.snakeyaml.nodes.Tag;
  * <p>
  * A plugin.yml example:<blockquote><pre>
  *name: Inferno
+ *provides: [Hell]
  *version: 1.4.1
  *description: This plugin is so 31337. You can set yourself on fire.
  *# We could place every author in the authors list, but chose not to for illustrative purposes
@@ -218,6 +223,7 @@ public final class PluginDescriptionFile {
     };
     String rawName = null;
     private String name = null;
+    private List<String> provides = ImmutableList.of();
     private String main = null;
     private String classLoaderOf = null;
     private List<String> depend = ImmutableList.of();
@@ -297,6 +303,37 @@ public final class PluginDescriptionFile {
     @NotNull
     public String getName() {
         return name;
+    }
+
+    /**
+     * Gives the list of other plugin APIs which this plugin provides.
+     * These are usable for other plugins to depend on.
+     * <ul>
+     * <li>Must consist of all alphanumeric characters, underscores, hyphon,
+     *     and period (a-z,A-Z,0-9, _.-). Any other character will cause the
+     *     plugin.yml to fail loading.
+     * <li>A different plugin providing the same one or using it as their name
+     *     will not result in the plugin to fail loading.
+     * <li>Case sensitive.
+     * <li>An entry of this list can be referenced in {@link #getDepend()},
+     *    {@link #getSoftDepend()}, and {@link #getLoadBefore()}.
+     * <li><code>provides</code> must be in <a
+     *     href="http://en.wikipedia.org/wiki/YAML#Lists">YAML list
+     *     format</a>.
+     * </ul>
+     * <p>
+     * In the plugin.yml, this entry is named <code>provides</code>.
+     * <p>
+     * Example:
+     * <blockquote><pre>provides:
+     *- OtherPluginName
+     *- OldPluginName</pre></blockquote>
+     *
+     * @return immutable list of the plugin APIs which this plugin provides
+     */
+    @NotNull
+    public List<String> getProvides() {
+        return provides;
     }
 
     /**
@@ -459,7 +496,7 @@ public final class PluginDescriptionFile {
      *     plugin in the <a
      *     href=https://en.wikipedia.org/wiki/Circular_dependency>network</a>,
      *     all plugins in that network will fail.
-     * <li><code>depend</code> must be in must be in <a
+     * <li><code>depend</code> must be in <a
      *     href="http://en.wikipedia.org/wiki/YAML#Lists">YAML list
      *     format</a>.
      * </ul>
@@ -923,6 +960,8 @@ public final class PluginDescriptionFile {
             throw new InvalidDescriptionException(ex, "name is of wrong type");
         }
 
+        provides = makePluginNameList(map, "provides");
+
         try {
             version = map.get("version").toString();
         } catch (NullPointerException ex) {
@@ -1080,6 +1119,9 @@ public final class PluginDescriptionFile {
         Map<String, Object> map = new HashMap<String, Object>();
 
         map.put("name", name);
+        if (provides != null) {
+            map.put("provides", provides);
+        }
         map.put("main", main);
         map.put("version", version);
         map.put("order", order.toString());

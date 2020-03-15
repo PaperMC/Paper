@@ -123,6 +123,7 @@ public final class SimplePluginManager implements PluginManager {
 
         Map<String, File> plugins = new HashMap<String, File>();
         Set<String> loadedPlugins = new HashSet<String>();
+        Map<String, String> pluginsProvided = new HashMap<>();
         Map<String, Collection<String>> dependencies = new HashMap<String, Collection<String>>();
         Map<String, Collection<String>> softDependencies = new HashMap<String, Collection<String>>();
 
@@ -163,6 +164,38 @@ public final class SimplePluginManager implements PluginManager {
                     replacedFile.getPath(),
                     directory.getPath()
                 ));
+            }
+
+            String removedProvided = pluginsProvided.remove(description.getName());
+            if (removedProvided != null) {
+                server.getLogger().warning(String.format(
+                        "Ambiguous plugin name `%s'. It is also provided by `%s'",
+                        description.getName(),
+                        removedProvided
+                ));
+            }
+
+            for (String provided : description.getProvides()) {
+                File pluginFile = plugins.get(provided);
+                if (pluginFile != null) {
+                    server.getLogger().warning(String.format(
+                            "`%s provides `%s' while this is also the name of `%s' in `%s'",
+                            file.getPath(),
+                            provided,
+                            pluginFile.getPath(),
+                            directory.getPath()
+                    ));
+                } else {
+                    String replacedPlugin = pluginsProvided.put(provided, description.getName());
+                    if (replacedPlugin != null) {
+                        server.getLogger().warning(String.format(
+                                "`%s' is provided by both `%s' and `%s'",
+                                provided,
+                                description.getName(),
+                                replacedPlugin
+                        ));
+                    }
+                }
             }
 
             Collection<String> softDependencySet = description.getSoftDepend();
@@ -224,7 +257,7 @@ public final class SimplePluginManager implements PluginManager {
                             dependencyIterator.remove();
 
                         // We have a dependency not found
-                        } else if (!plugins.containsKey(dependency)) {
+                        } else if (!plugins.containsKey(dependency) && !pluginsProvided.containsKey(dependency)) {
                             missingDependency = false;
                             pluginIterator.remove();
                             softDependencies.remove(plugin);
@@ -249,7 +282,7 @@ public final class SimplePluginManager implements PluginManager {
                         String softDependency = softDependencyIterator.next();
 
                         // Soft depend is no longer around
-                        if (!plugins.containsKey(softDependency)) {
+                        if (!plugins.containsKey(softDependency) && !pluginsProvided.containsKey(softDependency)) {
                             softDependencyIterator.remove();
                         }
                     }
@@ -265,8 +298,14 @@ public final class SimplePluginManager implements PluginManager {
                     missingDependency = false;
 
                     try {
-                        result.add(loadPlugin(file));
-                        loadedPlugins.add(plugin);
+                        Plugin loadedPlugin = loadPlugin(file);
+                        if (loadedPlugin != null) {
+                            result.add(loadedPlugin);
+                            loadedPlugins.add(loadedPlugin.getName());
+                            loadedPlugins.addAll(loadedPlugin.getDescription().getProvides());
+                        } else {
+                            server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'");
+                        }
                         continue;
                     } catch (InvalidPluginException ex) {
                         server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
@@ -290,8 +329,14 @@ public final class SimplePluginManager implements PluginManager {
                         pluginIterator.remove();
 
                         try {
-                            result.add(loadPlugin(file));
-                            loadedPlugins.add(plugin);
+                            Plugin loadedPlugin = loadPlugin(file);
+                            if (loadedPlugin != null) {
+                                result.add(loadedPlugin);
+                                loadedPlugins.add(loadedPlugin.getName());
+                                loadedPlugins.addAll(loadedPlugin.getDescription().getProvides());
+                            } else {
+                                server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'");
+                            }
                             break;
                         } catch (InvalidPluginException ex) {
                             server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
@@ -352,6 +397,9 @@ public final class SimplePluginManager implements PluginManager {
         if (result != null) {
             plugins.add(result);
             lookupNames.put(result.getDescription().getName(), result);
+            for (String provided : result.getDescription().getProvides()) {
+                lookupNames.putIfAbsent(provided, result);
+            }
         }
 
         return result;
@@ -796,7 +844,17 @@ public final class SimplePluginManager implements PluginManager {
         Preconditions.checkArgument(plugin != null, "plugin");
         Preconditions.checkArgument(depend != null, "depend");
 
-        return dependencyGraph.nodes().contains(plugin.getName()) && Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(depend.getName());
+        if (dependencyGraph.nodes().contains(plugin.getName())) {
+            if (Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(depend.getName())) {
+                return true;
+            }
+            for (String provided : depend.getProvides()) {
+                if (Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(provided)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

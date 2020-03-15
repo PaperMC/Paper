@@ -45,6 +45,10 @@ public class PluginsCommand extends BukkitCommand {
 
             pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
             pluginList.append(plugin.getDescription().getName());
+
+            if (plugin.getDescription().getProvides().size() > 0) {
+                pluginList.append(" (").append(String.join(", ", plugin.getDescription().getProvides())).append(")");
+            }
         }
 
         return "(" + plugins.length + "): " + pluginList.toString();
