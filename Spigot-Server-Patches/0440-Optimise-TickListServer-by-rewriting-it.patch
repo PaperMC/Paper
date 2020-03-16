@@ -1,4 +1,4 @@
-From a4c6e31df5df5a4c82923a2f89e35c160726dbe3 Mon Sep 17 00:00:00 2001
+From 06af3647897976cf083244d626a93c6313287916 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 14 Feb 2020 01:24:39 -0800
 Subject: [PATCH] Optimise TickListServer by rewriting it
@@ -37,10 +37,10 @@ to ticking, the items are re-scheduled.
 
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 000000000..f47c37e0e
+index 000000000..666f49fe9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -0,0 +1,551 @@
+@@ -0,0 +1,602 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
 +import net.minecraft.server.MCUtil;
@@ -151,8 +151,6 @@ index 000000000..f47c37e0e
 +                // we dump them to a map to avoid constantly re-scheduling them
 +                this.addToNotTickingReady(entry);
 +            }
-+        } else {
-+            this.onTickEnd(entry);
 +        }
 +    }
 +
@@ -173,6 +171,55 @@ index 000000000..f47c37e0e
 +            }
 +        } else {
 +            this.longScheduled.add(entry);
++        }
++    }
++
++    private void removeEntry(final NextTickListEntry<T> entry) {
++        entry.tickState = STATE_CANCELLED_TICK;
++        // short/long scheduled will skip the entry
++
++        final BlockPosition pos = entry.getPosition();
++        final long blockKey = MCUtil.getBlockKey(pos);
++
++        final ArrayList<NextTickListEntry<T>> currentEntries = this.entriesByBlock.get(blockKey);
++
++        if (currentEntries.size() == 1) {
++            // it should contain our entry
++            this.entriesByBlock.remove(blockKey);
++        } else {
++            // it's more likely that this entry is at the start of the list than the end
++            for (int i = 0, len = currentEntries.size(); i < len; ++i) {
++                final NextTickListEntry<T> currentEntry = currentEntries.get(i);
++                if (currentEntry == entry) {
++                    currentEntries.remove(i);
++                    break;
++                }
++            }
++        }
++
++        final long chunkKey = MCUtil.getCoordinateKey(entry.getPosition());
++
++        ObjectRBTreeSet<NextTickListEntry<T>> set = this.entriesByChunk.get(chunkKey);
++
++        set.remove(entry);
++
++        if (set.isEmpty()) {
++            this.entriesByChunk.remove(chunkKey);
++        }
++
++        ArrayList<NextTickListEntry<T>> pendingTickingLoad = this.pendingChunkTickLoad.get(chunkKey);
++
++        if (pendingTickingLoad != null) {
++            for (int i = 0, len = pendingTickingLoad.size(); i < len; ++i) {
++                if (pendingTickingLoad.get(i) == entry) {
++                    pendingTickingLoad.remove(i);
++                    break;
++                }
++            }
++
++            if (pendingTickingLoad.isEmpty()) {
++                this.pendingChunkTickLoad.remove(chunkKey);
++            }
 +        }
 +    }
 +
@@ -491,12 +538,14 @@ index 000000000..f47c37e0e
 +            }
 +
 +            ret.add(entry);
-+            if (removeReturned) {
-+                // TODO for long scheduled stuff we might want to kill the entry earlier.
-+                entry.tickState = STATE_CANCELLED_TICK;
-+            }
 +            return;
 +        }, TickListServerInterval.ENTRY_COMPARATOR, containingChunks);
++
++        if (removeReturned) {
++            for (NextTickListEntry<T> entry : ret) {
++                this.removeEntry(entry);
++            }
++        }
 +
 +        return ret;
 +    }
@@ -540,9 +589,11 @@ index 000000000..f47c37e0e
 +                continue;
 +            }
 +            ret.add(entry);
-+            if (removeReturned) {
-+                // TODO for long scheduled stuff we might want to kill the entry earlier.
-+                entry.tickState = STATE_CANCELLED_TICK;
++        }
++
++        if (removeReturned) {
++            for (NextTickListEntry<T> entry : ret) {
++                this.removeEntry(entry);
 +            }
 +        }
 +
@@ -1097,5 +1148,5 @@ index c74b85917..3e5ed2bd4 100644
          }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
          this.navigators = Sets.newHashSet();
 -- 
-2.25.0
+2.25.1
 
