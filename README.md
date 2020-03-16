@@ -1,4 +1,4 @@
-Paper [![Build Status](https://papermc.io/ci/job/Paper-1.14/badge/icon)](https://papermc.io/ci/job/Paper-1.14/)
+Paper [![Build Status](https://papermc.io/ci/job/Paper-1.15/badge/icon)](https://papermc.io/ci/job/Paper-1.15/)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
@@ -36,7 +36,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>com.destroystokyo.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.15.1-R0.1-SNAPSHOT</version>
+    <version>1.15.2-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
  </dependency>
  ```
