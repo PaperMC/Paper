@@ -1,4 +1,4 @@
-From a512d032fc82465e76cf0b6f8e67bd5c6fb051ad Mon Sep 17 00:00:00 2001
+From b918e704817561a55e71d2917d958f4386822126 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 14 Jan 2018 17:36:02 -0500
 Subject: [PATCH] PlayerNaturallySpawnCreaturesEvent
@@ -8,11 +8,50 @@ from triggering monster spawns on a server.
 
 Also a highly more effecient way to blanket block spawns in a world
 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index c83e0cd4e..71db32bdd 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -508,6 +508,15 @@ public class ChunkProviderServer extends IChunkProvider {
+ 
+             this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
+             this.world.getMethodProfiler().exit();
++            //Paper start - call player naturally spawn event
++            int chunkRange = world.spigotConfig.mobSpawnRange;
++            chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
++            chunkRange = Math.min(chunkRange, 8);
++            for (EntityPlayer entityPlayer : this.world.players) {
++                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
++                entityPlayer.playerNaturallySpawnedEvent.callEvent();
++            };
++            // Paper end
+             this.playerChunkMap.f().forEach((playerchunk) -> {
+                 Optional<Chunk> optional = ((Either) playerchunk.b().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 1296eb04f..625b68428 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.datafixers.util.Either;
+@@ -89,6 +90,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public boolean sentListPacket = false;
+     public Integer clientViewDistance;
+     // CraftBukkit end
++    public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
+ 
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
+ 
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 936fc4f6b..b5da88587 100644
+index 936fc4f6b..fcf229ad5 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -881,12 +881,24 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -881,12 +881,23 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
          chunkRange = (chunkRange > 8) ? 8 : chunkRange;
  
@@ -28,10 +67,9 @@ index 936fc4f6b..b5da88587 100644
 +            com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
 +            double blockRange = 16384.0D;
 +            if (reducedRange) {
-+                event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityplayer.getBukkitEntity(), (byte) finalChunkRange);
-+                event.callEvent();
++                event = entityplayer.playerNaturallySpawnedEvent;
++                if (event == null || event.isCancelled()) return false;
 +                blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
-+                if (event.isCancelled()) return false;
 +            }
 +
 +            return (!entityplayer.isSpectator() && a(chunkcoordintpair, (Entity) entityplayer) < blockRange); // Spigot

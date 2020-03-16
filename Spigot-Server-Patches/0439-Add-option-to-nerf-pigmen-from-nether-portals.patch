@@ -1,0 +1,66 @@
+From 4ad34092852803562a53371352be2ac229171f87 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Feb 2020 14:36:56 -0600
+Subject: [PATCH] Add option to nerf pigmen from nether portals
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index bce502181..7d408542e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -653,4 +653,9 @@ public class PaperWorldConfig {
+         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
+     }
++
++    public boolean nerfNetherPortalPigmen = false;
++    private void nerfNetherPortalPigmen() {
++        nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockPortal.java b/src/main/java/net/minecraft/server/BlockPortal.java
+index 2dc3ab4cf..09c7c1318 100644
+--- a/src/main/java/net/minecraft/server/BlockPortal.java
++++ b/src/main/java/net/minecraft/server/BlockPortal.java
+@@ -45,6 +45,8 @@ public class BlockPortal extends Block {
+                 Entity entity = EntityTypes.ZOMBIE_PIGMAN.spawnCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.up(), EnumMobSpawn.STRUCTURE, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+ 
+                 if (entity != null) {
++                    entity.fromNetherPortal = true; // Paper
++                    if (worldserver.paperConfig.nerfNetherPortalPigmen) ((EntityInsentient) entity).aware = false; // Paper
+                     entity.portalCooldown = entity.ba();
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 6e41a5506..8974c16bf 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -193,6 +193,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public final boolean defaultActivationState;
+     public long activatedTick = Integer.MIN_VALUE;
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
++    public boolean fromNetherPortal; // Paper
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+@@ -1637,6 +1638,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
+             }
++            if (fromNetherPortal) {
++                nbttagcompound.setBoolean("Paper.FromNetherPortal", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -1759,6 +1763,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             }
+ 
+             spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = nbttagcompound.getBoolean("Paper.FromNetherPortal");
+             if (nbttagcompound.hasKey("Paper.SpawnReason")) {
+                 String spawnReasonName = nbttagcompound.getString("Paper.SpawnReason");
+                 try {
+-- 
+2.25.1
+

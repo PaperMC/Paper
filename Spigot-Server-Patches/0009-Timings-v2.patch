@@ -1,4 +1,4 @@
-From 3fd06184c267fa162162c17e6e763702234ed2eb Mon Sep 17 00:00:00 2001
+From 5e3f0af8030d2a96e8e22faf1b883b719c7fe1da Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 3 Mar 2016 04:00:11 -0600
 Subject: [PATCH] Timings v2
@@ -153,10 +153,10 @@ index 000000000..69e26a826
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 000000000..3a79cde59
+index 000000000..e41083f14
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,128 @@
 +package co.aikar.timings;
 +
 +import net.minecraft.server.World;
@@ -219,8 +219,7 @@ index 000000000..3a79cde59
 +
 +
 +    public final Timing miscMobSpawning;
-+    public final Timing chunkRangeCheckBig;
-+    public final Timing chunkRangeCheckSmall;
++    public final Timing chunkInhibitedRangeCheck;
 +
 +    public WorldTimingsHandler(World server) {
 +        String name = server.worldData.getName() +" - ";
@@ -278,9 +277,8 @@ index 000000000..3a79cde59
 +        countNaturalMobs = Timings.ofSafe(name + "Count natural mobs");
 +
 +
++        chunkInhibitedRangeCheck = Timings.ofSafe(name + "Chunks - Inhibited Range Check");
 +        miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
-+        chunkRangeCheckBig = Timings.ofSafe(name + "Chunk Tick Range - Big");
-+        chunkRangeCheckSmall = Timings.ofSafe(name + "Chunk Tick Range - Small");
 +    }
 +
 +    public static Timing getTickList(WorldServer worldserver, String timingsType) {
@@ -375,7 +373,7 @@ index e58dd3e6d..0b32179b7 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index f558ae441..2107ddc48 100644
+index a5f2468a6..a3d150a13 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -227,11 +227,13 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -414,8 +412,8 @@ index f558ae441..2107ddc48 100644
          this.world.timings.doChunkUnload.startTiming(); // Spigot
          this.world.getMethodProfiler().exitEnter("unload");
          this.playerChunkMap.unloadChunks(booleansupplier);
-@@ -486,10 +492,12 @@ public class ChunkProviderServer extends IChunkProvider {
-             boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit // PAIL: TODO monster ticks
+@@ -492,10 +498,12 @@ public class ChunkProviderServer extends IChunkProvider {
+             // CraftBukkit end
  
              this.world.getMethodProfiler().enter("naturalSpawnCount");
 +            this.world.timings.countNaturalMobs.startTiming(); // Paper - timings
@@ -427,7 +425,7 @@ index f558ae441..2107ddc48 100644
              this.world.getMethodProfiler().exit();
              this.playerChunkMap.f().forEach((playerchunk) -> {
                  Optional<Chunk> optional = ((Either) playerchunk.b().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
-@@ -498,13 +506,27 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -504,11 +512,15 @@ public class ChunkProviderServer extends IChunkProvider {
                      Chunk chunk = (Chunk) optional.get();
  
                      this.world.getMethodProfiler().enter("broadcast");
@@ -437,27 +435,13 @@ index f558ae441..2107ddc48 100644
                      this.world.getMethodProfiler().exit();
                      ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
  
--                    if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
-+                    // Paper start - timings
-+                    this.world.timings.chunkRangeCheckBig.startTiming();
-+                    // note: this is just a copy of the expression in the if
-+                    boolean bigRadiusOutsideRange = !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair);
-+                    this.world.timings.chunkRangeCheckBig.stopTiming();
-+                    if (bigRadiusOutsideRange) {
++                    this.world.timings.chunkInhibitedRangeCheck.startTiming();
+                     if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
 +                        // Paper end
                          chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
--                        if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
-+                        // Paper start - timings
-+                        this.world.timings.chunkRangeCheckSmall.startTiming();
-+                        // note: this is just a copy of the expression in the if
-+                        boolean smallRadiusOutsideRange = flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true);
-+                        this.world.timings.chunkRangeCheckSmall.stopTiming();
-+                        if (smallRadiusOutsideRange) { // Spigot
-+                            // Paper end
+                         if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
                              this.world.getMethodProfiler().enter("spawner");
-                             this.world.timings.mobSpawn.startTiming(); // Spigot
-                             EnumCreatureType[] aenumcreaturetype1 = aenumcreaturetype;
-@@ -548,24 +570,24 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -559,24 +571,25 @@ public class ChunkProviderServer extends IChunkProvider {
                              this.world.getMethodProfiler().exit();
                          }
  
@@ -467,6 +451,7 @@ index f558ae441..2107ddc48 100644
 -                        this.world.timings.doTickTiles.stopTiming(); // Spigot
 +                        this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
                      }
++                    this.world.timings.chunkInhibitedRangeCheck.stopTiming(); // Paper
                  }
              });
              this.world.getMethodProfiler().enter("customSpawners");
@@ -653,7 +638,7 @@ index 9eed98e37..d6646d7e6 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 306724e69..5635192f7 100644
+index d2cfc6551..74a4bf9c5 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -29,7 +29,8 @@ import org.bukkit.command.CommandSender;
@@ -675,7 +660,7 @@ index 306724e69..5635192f7 100644
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -505,7 +506,6 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -504,7 +505,6 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
@@ -683,7 +668,7 @@ index 306724e69..5635192f7 100644
          if (this.noclip) {
              this.a(this.getBoundingBox().b(vec3d));
              this.recalcPosition();
-@@ -657,7 +657,6 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -656,7 +656,6 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
  
              this.world.getMethodProfiler().exit();
          }
@@ -1202,7 +1187,7 @@ index 820180ab3..fa6400dcc 100644
      private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
      public CraftPersistentDataContainer persistentDataContainer;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 304dfac06..da3eb20d4 100644
+index 6861711c2..132c08dd1 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1,5 +1,7 @@
@@ -1222,7 +1207,7 @@ index 304dfac06..da3eb20d4 100644
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
  import org.bukkit.craftbukkit.block.CapturedBlockState;
-@@ -71,7 +73,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -73,7 +75,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public final com.destroystokyo.paper.PaperWorldConfig paperConfig; // Paper
  
@@ -1231,7 +1216,7 @@ index 304dfac06..da3eb20d4 100644
      public static BlockPosition lastPhysicsProblem; // Spigot
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
-@@ -134,7 +136,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -138,7 +140,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
              public void c(WorldBorder worldborder, double d0) {}
          });
          // CraftBukkit end
@@ -1240,7 +1225,7 @@ index 304dfac06..da3eb20d4 100644
          this.entityLimiter = new org.spigotmc.TickLimiter(spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(spigotConfig.tileMaxTickTime);
      }
-@@ -716,15 +718,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -720,15 +722,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          }
  
          timings.tileEntityPending.stopTiming(); // Spigot
@@ -1383,10 +1368,10 @@ index 8a5ac6f69..069898bad 100644
  
          // CraftBukkit start - moved from MinecraftServer.saveChunks
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0c9d5d231..49be263ae 100644
+index 8d1f066f0..f3eacb181 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1951,12 +1951,31 @@ public final class CraftServer implements Server {
+@@ -1973,12 +1973,31 @@ public final class CraftServer implements Server {
      private final Spigot spigot = new Spigot()
      {
  
