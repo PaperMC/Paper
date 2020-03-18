@@ -1,4 +1,4 @@
-From b6b1a2d029d0bf249832256d1f7b0542e6ab2b39 Mon Sep 17 00:00:00 2001
+From 1e468d382d6bf46a4ca53b22b3ab0afa0a95ae3a Mon Sep 17 00:00:00 2001
 From: Hugo Manrique <hugmanrique@gmail.com>
 Date: Mon, 23 Jul 2018 14:22:26 +0200
 Subject: [PATCH] Vanished players don't have rights
@@ -17,6 +17,27 @@ index 2612d60e3..d8f85eda0 100644
      public final List<Entity> passengers;
      protected int j;
      @Nullable
+diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
+index 278ef79d8..5c3731f68 100644
+--- a/src/main/java/net/minecraft/server/EntityFireworks.java
++++ b/src/main/java/net/minecraft/server/EntityFireworks.java
+@@ -110,6 +110,16 @@ public class EntityFireworks extends Entity implements IProjectile {
+ 
+         vec3d = this.getMot();
+         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this.getBoundingBox().a(vec3d).g(1.0D), (entity) -> {
++            // Paper start - Cancel hit for vanished players
++            if (this.spawningEntity != null && entity instanceof EntityPlayer && this.world instanceof WorldServer) {
++                Entity spawningEntity = ((WorldServer) this.world).getEntity(this.spawningEntity);
++                if (spawningEntity instanceof EntityPlayer) {
++                    org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                    org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) spawningEntity.getBukkitEntity();
++                    if (!shooter.canSee(collided)) return false;
++                }
++            }
++            // Paper end
+             return !entity.isSpectator() && entity.isAlive() && entity.isInteractable();
+         }, RayTrace.BlockCollisionOption.COLLIDER, true);
+ 
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
 index 3a1ad2346..9ab57be85 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
@@ -146,5 +167,5 @@ index f931fa48b..317a5bf4e 100644
          return event;
      }
 -- 
-2.25.1
+2.25.0.windows.1
 
