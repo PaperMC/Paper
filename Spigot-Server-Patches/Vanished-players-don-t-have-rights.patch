@@ -17,6 +17,27 @@ index 2612d60e3..d8f85eda0 100644
      public final List<Entity> passengers;
      protected int j;
      @Nullable
+diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/java/net/minecraft/server/EntityFireworks.java
+index 278ef79d8..5c3731f68 100644
+--- a/src/main/java/net/minecraft/server/EntityFireworks.java
++++ b/src/main/java/net/minecraft/server/EntityFireworks.java
+@@ -0,0 +0,0 @@ public class EntityFireworks extends Entity implements IProjectile {
+ 
+         vec3d = this.getMot();
+         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this.getBoundingBox().a(vec3d).g(1.0D), (entity) -> {
++            // Paper start - Cancel hit for vanished players
++            if (this.spawningEntity != null && entity instanceof EntityPlayer && this.world instanceof WorldServer) {
++                Entity spawningEntity = ((WorldServer) this.world).getEntity(this.spawningEntity);
++                if (spawningEntity instanceof EntityPlayer) {
++                    org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                    org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) spawningEntity.getBukkitEntity();
++                    if (!shooter.canSee(collided)) return false;
++                }
++            }
++            // Paper end
+             return !entity.isSpectator() && entity.isAlive() && entity.isInteractable();
+         }, RayTrace.BlockCollisionOption.COLLIDER, true);
+ 
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
 index 3a1ad2346..9ab57be85 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
