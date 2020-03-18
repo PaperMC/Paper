@@ -6,7 +6,7 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 000000000..db899937b
+index 000000000..41c79650b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -0,0 +0,0 @@
@@ -185,30 +185,34 @@ index 000000000..db899937b
 +                }
 +                WorldServer world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
 +
++                Map<MinecraftKey, Integer> nonEntityTicking = Maps.newHashMap();
++                ChunkProviderServer chunkProviderServer = world.getChunkProvider();
++
 +                Collection<Entity> entities = world.entitiesById.values();
 +                entities.forEach(e -> {
-+                    if (!e.isChunkLoaded()) {
-+                        return;
-+                    }
 +                    MinecraftKey key = new MinecraftKey(""); // TODO: update in next patch
 +
 +                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
 +                    ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 +                    info.left++;
 +                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                    if (!chunkProviderServer.isInEntityTickingChunk(e)) {
++                        nonEntityTicking.merge(key, Integer.valueOf(1), Integer::sum);
++                    }
 +                });
 +
 +                if (names.size() == 1) {
 +                    MinecraftKey name = names.iterator().next();
 +                    Pair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.get(name);
++                    int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
 +                    if (info == null) {
 +                        sender.sendMessage(ChatColor.RED + "No entities found.");
 +                        return;
 +                    }
-+                    sender.sendMessage("Entity: " + name + " Total: " + info.getLeft());
++                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
 +                    info.getRight().entrySet().stream()
 +                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-+                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z));
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isEntityTickingChunk(e.getKey()) ? " (Ticking)" : " (Non-Ticking)")));
 +                } else {
 +                    List<Pair<MinecraftKey, Integer>> info = list.entrySet().stream()
 +                            .filter(e -> names.contains(e.getKey()))
@@ -222,8 +226,13 @@ index 000000000..db899937b
 +                    }
 +
 +                    int count = info.stream().mapToInt(Pair::getRight).sum();
-+                    sender.sendMessage("Total: " + count);
-+                    info.forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey()));
++                    int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
++                    sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
++                    info.forEach(e -> {
++                        int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), Integer.valueOf(0)).intValue();
++                        sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
++                    });
++                    sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
 +                }
 +                break;
 +        }
@@ -520,6 +529,30 @@ index 000000000..a73865739
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 41eac3588..32c496fa8 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+         }
+     }
+ 
+-    @Override
+-    public boolean a(Entity entity) {
++    public final boolean isInEntityTickingChunk(Entity entity) { return this.a(entity); } // Paper - OBFHELPER
++    @Override public boolean a(Entity entity) {
+         long i = ChunkCoordIntPair.pair(MathHelper.floor(entity.locX()) >> 4, MathHelper.floor(entity.locZ()) >> 4);
+ 
+         return this.a(i, PlayerChunk::b);
+     }
+ 
+-    @Override
+-    public boolean a(ChunkCoordIntPair chunkcoordintpair) {
++    public final boolean isEntityTickingChunk(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } // Paper - OBFHELPER
++    @Override public boolean a(ChunkCoordIntPair chunkcoordintpair) {
+         return this.a(chunkcoordintpair.pair(), PlayerChunk::b);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
 index 136d1b50f..9eed98e37 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
