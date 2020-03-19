@@ -1,4 +1,4 @@
-From 5c3c318bcec00aae58e6b5e4585b50eb4d0b281d Mon Sep 17 00:00:00 2001
+From f2c303cd7f272183bc4a916550d447a6a63fdbaf Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -121,12 +121,12 @@ tasks required to be executed by the chunk load task (i.e lighting
 and some poi tasks).
 
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-index e41083f14c..8a3f30c36f 100644
+index 27ce4a828e..30bafb214b 100644
 --- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
-@@ -62,6 +62,17 @@ public class WorldTimingsHandler {
+@@ -61,6 +61,17 @@ public class WorldTimingsHandler {
+ 
      public final Timing miscMobSpawning;
-     public final Timing chunkInhibitedRangeCheck;
  
 +    public final Timing poiUnload;
 +    public final Timing chunkUnload;
@@ -142,9 +142,9 @@ index e41083f14c..8a3f30c36f 100644
      public WorldTimingsHandler(World server) {
          String name = server.worldData.getName() +" - ";
  
-@@ -120,6 +131,17 @@ public class WorldTimingsHandler {
+@@ -118,6 +129,17 @@ public class WorldTimingsHandler {
  
-         chunkInhibitedRangeCheck = Timings.ofSafe(name + "Chunks - Inhibited Range Check");
+ 
          miscMobSpawning = Timings.ofSafe(name + "Mob spawning - Misc");
 +
 +        poiUnload = Timings.ofSafe(name + "Chunk unload - POI");
@@ -2361,7 +2361,7 @@ index 0000000000..715a2dd8d2
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 21498da29c..eb9bf1516a 100644
+index b582171c51..03d7ce8294 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -218,11 +218,137 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2516,7 +2516,7 @@ index 21498da29c..eb9bf1516a 100644
                  this.world.timings.chunkAwait.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -756,11 +887,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -754,11 +885,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {
@@ -3933,7 +3933,7 @@ index c999f8c9bf..b59ef1a633 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 27dcc25284..6506daeecd 100644
+index 30a50afafe..5c8894840b 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -82,6 +82,79 @@ public class WorldServer extends World {
@@ -4108,5 +4108,5 @@ index 07936eeba2..5bdcdcf9e8 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
 -- 
-2.25.1
+2.25.2
 
