@@ -1,4 +1,4 @@
-From f7565bc8c0d326ebd6500309d2d2cbc4b6ee51c9 Mon Sep 17 00:00:00 2001
+From c8c8741ee68669f675d4cb4dc5abc430d289bcf1 Mon Sep 17 00:00:00 2001
 From: Minecrell <minecrell@minecrell.net>
 Date: Thu, 21 Sep 2017 19:41:20 +0200
 Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
@@ -14,7 +14,7 @@ parent of the plugin logger to avoid this.
 
 diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 new file mode 100644
-index 000000000..76f2cb9cd
+index 00000000..76f2cb9c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
 @@ -0,0 +1,41 @@
@@ -60,7 +60,7 @@ index 000000000..76f2cb9cd
 +
 +}
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
-index bb2e55e97..04fa3991f 100644
+index bb2e55e9..04fa3991 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
 @@ -42,7 +42,7 @@ public abstract class JavaPlugin extends PluginBase {
@@ -87,18 +87,18 @@ index bb2e55e97..04fa3991f 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index b859796b4..6f39f571d 100644
+index 36f542a8..3a02dbe9 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -37,6 +37,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
-     final JavaPlugin plugin;
+@@ -42,6 +42,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
      private JavaPlugin pluginInit;
      private IllegalStateException pluginState;
+     private final Set<String> seenIllegalAccess = Collections.newSetFromMap(new ConcurrentHashMap<>());
 +    private java.util.logging.Logger logger; // Paper - add field
  
      static {
          ClassLoader.registerAsParallelCapable();
-@@ -54,6 +55,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -59,6 +60,8 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          this.manifest = jar.getManifest();
          this.url = file.toURI().toURL();
  
@@ -107,7 +107,7 @@ index b859796b4..6f39f571d 100644
          try {
              Class<?> jarClass;
              try {
-@@ -171,6 +174,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -203,6 +206,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
          pluginState = new IllegalStateException("Initial initialization");
          this.pluginInit = javaPlugin;
  
@@ -116,5 +116,5 @@ index b859796b4..6f39f571d 100644
      }
  }
 -- 
-2.21.0
+2.25.0
 
