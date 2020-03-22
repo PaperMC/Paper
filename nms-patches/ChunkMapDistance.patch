@@ -110,7 +110,7 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -251,6 +281,21 @@
+@@ -251,6 +281,26 @@
          return this.i.a();
      }
  
@@ -118,12 +118,17 @@
 +    public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
 +        Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
 +
-+        for (java.util.Iterator<ArraySetSorted<Ticket<?>>> iterator = this.tickets.values().iterator(); iterator.hasNext();) {
-+            ArraySetSorted<Ticket<?>> tickets = iterator.next();
-+            tickets.remove(target);
++        for (java.util.Iterator<Entry<ArraySetSorted<Ticket<?>>>> iterator = this.tickets.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++            Entry<ArraySetSorted<Ticket<?>>> entry = iterator.next();
++            ArraySetSorted<Ticket<?>> tickets = entry.getValue();
++            if (tickets.remove(target)) {
++                // copied from removeTicket
++                this.e.b(entry.getLongKey(), a(tickets), false); // PAIL ticketLevelTracker // PAIL update // PAIL getLowestTicketLevel
 +
-+            if (tickets.isEmpty()) {
-+                iterator.remove();
++                // can't use entry after it's removed
++                if (tickets.isEmpty()) {
++                    iterator.remove();
++                }
 +            }
 +        }
 +    }
@@ -132,7 +137,7 @@
      class a extends ChunkMap {
  
          public a() {
-@@ -331,13 +376,13 @@
+@@ -331,13 +381,13 @@
                  Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i));
  
                  if (flag1) {
@@ -148,7 +153,7 @@
                                  }, i, false));
                              }
  
-@@ -346,7 +391,7 @@
+@@ -346,7 +396,7 @@
                          return j;
                      }));
                  } else {
