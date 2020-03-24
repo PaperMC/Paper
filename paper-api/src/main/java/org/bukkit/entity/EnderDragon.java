@@ -1,6 +1,9 @@
 package org.bukkit.entity;
 
+import org.bukkit.World;
+import org.bukkit.boss.DragonBattle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Ender Dragon
@@ -78,4 +81,27 @@ public interface EnderDragon extends ComplexLivingEntity, Boss {
      * @param phase the next phase
      */
     void setPhase(@NotNull Phase phase);
+
+    /**
+     * Get the {@link DragonBattle} associated with this EnderDragon.
+     *
+     * This will return null if the EnderDragon is not in the End dimension.
+     *
+     * @return the dragon battle
+     *
+     * @see World#getEnderDragonBattle()
+     */
+    @Nullable
+    DragonBattle getDragonBattle();
+
+    /**
+     * Get the current time in ticks relative to the start of this dragon's
+     * death animation.
+     *
+     * If this dragon is alive, 0 will be returned. This value will never exceed
+     * 200 (the length of the animation).
+     *
+     * @return this dragon's death animation ticks
+     */
+    int getDeathAnimationTicks();
 }
