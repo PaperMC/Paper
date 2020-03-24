@@ -7,22 +7,18 @@ import net.minecraft.server.DragonControllerPhase;
 import net.minecraft.server.EntityComplexPart;
 import net.minecraft.server.EntityEnderDragon;
 import org.bukkit.boss.BossBar;
+import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
+import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 
 public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderDragon {
 
-    private BossBar bossBar;
-
     public CraftEnderDragon(CraftServer server, EntityEnderDragon entity) {
         super(server, entity);
-
-        if (entity.getEnderDragonBattle() != null) {
-            this.bossBar = new CraftBossBar(entity.getEnderDragonBattle().bossBattle);
-        }
     }
 
     @Override
@@ -71,6 +67,16 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
 
     @Override
     public BossBar getBossBar() {
-        return bossBar;
+        return getDragonBattle().getBossBar();
+    }
+
+    @Override
+    public DragonBattle getDragonBattle() {
+        return new CraftDragonBattle(getHandle().getEnderDragonBattle());
+    }
+
+    @Override
+    public int getDeathAnimationTicks() {
+        return getHandle().bA; // PAIL rename deathAnimationTicks
     }
 }

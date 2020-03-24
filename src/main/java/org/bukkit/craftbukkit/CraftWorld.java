@@ -88,6 +88,8 @@ import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldGenerator;
+import net.minecraft.server.WorldProvider;
+import net.minecraft.server.WorldProviderTheEnd;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.BlockChangeDelegate;
@@ -111,9 +113,11 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.entity.CraftLightningStrike;
@@ -2269,5 +2273,15 @@ public class CraftWorld implements World {
     public List<Raid> getRaids() {
         PersistentRaid persistentRaid = world.getPersistentRaid();
         return persistentRaid.raids.values().stream().map(CraftRaid::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public DragonBattle getEnderDragonBattle() {
+        WorldProvider worldProvider = getHandle().worldProvider;
+        if (!(worldProvider instanceof WorldProviderTheEnd)) {
+            return null;
+        }
+
+        return new CraftDragonBattle(((WorldProviderTheEnd) worldProvider).o()); // PAIL rename getDragonBattle
     }
 }
