@@ -35,9 +35,15 @@ Long scheduled is handled the same as TickListServer.
 into a map of entries for that chunk. Once the chunk is moved
 to ticking, the items are re-scheduled.
 
+This patch has also added two flags to debug excessive tick delays:
+-Dpaper.ticklist-warn-on-excessive-delay=true (false by default)
+and -Dpaper.ticklist-excessive-delay-threshold=ticks which
+sets the excessive tick delay to the specified ticks (defaults to
+60 * 20 ticks, aka 60 seconds)
+
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 000000000..666f49fe9
+index 0000000000..e948012d5b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +0,0 @@
@@ -84,7 +90,7 @@ index 000000000..666f49fe9
 +    public static final int STATE_TICKED         = 1 << 4; // after this, it gets thrown back to unscheduled
 +    public static final int STATE_CANCELLED_TICK = 1 << 5; // still gets moved to unscheduled after tick
 +
-+    private static final int SHORT_SCHEDULE_TICK_THRESHOLD = 20 * 5 + 1; // 5 seconds
++    private static final int SHORT_SCHEDULE_TICK_THRESHOLD = 20 * 20 + 1; // 20 seconds
 +
 +    private final WorldServer world;
 +    private final Predicate<T> excludeFromScheduling;
@@ -116,6 +122,9 @@ index 000000000..666f49fe9
 +    private int shortScheduledIndex;
 +
 +    private long nextTick;
++
++    private static final boolean WARN_ON_EXCESSIVE_DELAY = Boolean.getBoolean("paper.ticklist-warn-on-excessive-delay");
++    private static final long EXCESSIVE_DELAY_THRESHOLD = Long.getLong("paper.ticklist-excessive-delay-threshold", 60 * 20).longValue(); // 1 min dfl
 +
 +    // assume index < length
 +    private static int getWrappedIndex(final int start, final int length, final int index) {
@@ -220,6 +229,11 @@ index 000000000..666f49fe9
 +            if (pendingTickingLoad.isEmpty()) {
 +                this.pendingChunkTickLoad.remove(chunkKey);
 +            }
++        }
++
++        long delay = entry.getTargetTick() - this.nextTick;
++        if (delay >= SHORT_SCHEDULE_TICK_THRESHOLD) {
++            this.longScheduled.remove(entry);
 +        }
 +    }
 +
@@ -449,6 +463,13 @@ index 000000000..666f49fe9
 +            return;
 +        }
 +
++        if (WARN_ON_EXCESSIVE_DELAY) {
++            final long delay = entry.getTargetTick() - this.nextTick;
++            if (delay >= EXCESSIVE_DELAY_THRESHOLD) {
++                MinecraftServer.LOGGER.warn("Entry " + entry.toString() + " has been scheduled with an excessive delay of: " + delay, new Throwable());
++            }
++        }
++
 +        final long blockKey = MCUtil.getBlockKey(pos);
 +
 +        final ArrayList<NextTickListEntry<T>> currentEntries = this.entriesByBlock.computeIfAbsent(blockKey, (long keyInMap) -> new ArrayList<>(3));
@@ -645,7 +666,7 @@ index 000000000..666f49fe9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 new file mode 100644
-index 000000000..13cf1a55a
+index 0000000000..13cf1a55a9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 @@ -0,0 +0,0 @@
@@ -692,7 +713,7 @@ index 000000000..13cf1a55a
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 new file mode 100644
-index 000000000..118988c39
+index 0000000000..118988c39e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 @@ -0,0 +0,0 @@
@@ -839,7 +860,7 @@ index 000000000..118988c39
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index e650a2e48..2d07d350d 100644
+index e650a2e48d..2d07d350d2 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -851,7 +872,7 @@ index e650a2e48..2d07d350d 100644
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index a385a473a..82168b6ae 100644
+index 8412feef6b..1dcd0980ec 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -869,7 +890,7 @@ index a385a473a..82168b6ae 100644
      public ChunkProviderServer(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator<?> chunkgenerator, int i, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
-index 33cfeabde..2287e47d1 100644
+index 33cfeabdee..2287e47d1b 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -0,0 +0,0 @@ import java.util.Comparator;
@@ -940,7 +961,7 @@ index 33cfeabde..2287e47d1 100644
      public String toString() {
          return this.e + ": " + this.a + ", " + this.b + ", " + this.c + ", " + this.f;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index b38bc6775..9f8818c2d 100644
+index b38bc67758..9f8818c2d4 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -0,0 +0,0 @@ public class PlayerChunk {
@@ -955,7 +976,7 @@ index b38bc6775..9f8818c2d 100644
                  }
              });
 diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
-index dbb565e74..185658e23 100644
+index dbb565e74d..185658e230 100644
 --- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
 +++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
 @@ -0,0 +0,0 @@ import com.google.common.base.MoreObjects;
@@ -994,7 +1015,7 @@ index dbb565e74..185658e23 100644
          return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
      }
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
-index f533860bb..3f1aa5ced 100644
+index f533860bbe..3f1aa5ced6 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java
 +++ b/src/main/java/net/minecraft/server/TickListServer.java
 @@ -0,0 +0,0 @@ public class TickListServer<T> implements TickList<T> {
@@ -1117,7 +1138,7 @@ index f533860bb..3f1aa5ced 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c74b85917..3e5ed2bd4 100644
+index aa01f47c08..2de48e7537 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
