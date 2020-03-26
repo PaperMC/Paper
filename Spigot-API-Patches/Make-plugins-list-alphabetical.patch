@@ -5,7 +5,7 @@ Subject: [PATCH] Make /plugins list alphabetical
 
 
 diff --git a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
-index 11fbd0e0..d4e74d29 100644
+index bcb576a4..a1071e31 100644
 --- a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
 @@ -0,0 +0,0 @@ package org.bukkit.command.defaults;
@@ -25,24 +25,31 @@ index 11fbd0e0..d4e74d29 100644
 -        StringBuilder pluginList = new StringBuilder();
 -        Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
 +        // Paper start
-+        TreeMap<String, ChatColor> plugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
++        TreeMap<String, Plugin> plugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 +
 +        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-+            plugins.put(plugin.getDescription().getName(), plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
++            plugins.put(plugin.getDescription().getName(), plugin);
 +        }
  
 -        for (Plugin plugin : plugins) {
 +        StringBuilder pluginList = new StringBuilder();
-+        for (Map.Entry<String, ChatColor> entry : plugins.entrySet()) {
++        for (Map.Entry<String, Plugin> entry : plugins.entrySet()) {
              if (pluginList.length() > 0) {
                  pluginList.append(ChatColor.WHITE);
                  pluginList.append(", ");
              }
--
+ 
 -            pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
 -            pluginList.append(plugin.getDescription().getName());
-+            pluginList.append(entry.getValue());
-+            pluginList.append(entry.getKey());
++            Plugin plugin = entry.getValue();
+ 
+             if (plugin.getDescription().getProvides().size() > 0) {
+                 pluginList.append(" (").append(String.join(", ", plugin.getDescription().getProvides())).append(")");
+             }
++
++
++            pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
++            pluginList.append(plugin.getDescription().getName());
          }
  
 -        return "(" + plugins.length + "): " + pluginList.toString();
