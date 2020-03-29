@@ -1,4 +1,4 @@
-From 0cf0f921e83dd698df146baff3bc1da04fecb2c1 Mon Sep 17 00:00:00 2001
+From 0a437fcfe710f4a0f78cc5ac20688640aca07d1e Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -3055,7 +3055,7 @@ index 50135446f7..b38bc67758 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 5ef1aedbed..a3271d6c28 100644
+index 5ef1aedbed..5562cf7af4 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -63,7 +63,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3152,7 +3152,7 @@ index 5ef1aedbed..a3271d6c28 100644
 +        }
 +
 +        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkPos.x, chunkPos.z,
-+            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++            poiData, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
 +
 +        if (!chunk.isNeedsSaving()) {
 +            return;
@@ -3186,7 +3186,7 @@ index 5ef1aedbed..a3271d6c28 100644
 +            asyncSaveData = ChunkRegionLoader.getAsyncSaveData(this.world, chunk);
 +        }
 +
-+        this.world.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY,
++        this.world.asyncChunkTaskManager.scheduleChunkSave(chunkPos.x, chunkPos.z, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY,
 +            asyncSaveData, chunk);
 +
 +        chunk.setLastSaved(this.world.getTime());
@@ -3304,7 +3304,7 @@ index 5ef1aedbed..a3271d6c28 100644
 +    // Paper start - async chunk io
 +    private boolean writeDataAsync(ChunkCoordIntPair chunkPos, NBTTagCompound poiData, NBTTagCompound chunkData, boolean async) {
 +        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkPos.x, chunkPos.z,
-+            poiData, chunkData, !async ? com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY : com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++            poiData, chunkData, !async ? com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY : com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
 +
 +        if (async) {
 +            return true;
@@ -3844,7 +3844,7 @@ index 1d1b267f32..4b87ca2ecb 100644
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index c999f8c9bf..b59ef1a633 100644
+index c999f8c9bf..6320e719cb 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
 @@ -24,8 +24,16 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
@@ -3882,7 +3882,7 @@ index c999f8c9bf..b59ef1a633 100644
 +                    data = this.getData(chunkcoordintpair);
 +                }
 +                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world,
-+                    chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
++                    chunkcoordintpair.x, chunkcoordintpair.z, data, null, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
 +            }
 +        }
 +        // Paper end
