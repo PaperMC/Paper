@@ -531,6 +531,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             Entity entity2;
 
             while ((entity2 = (Entity) this.entitiesToAdd.poll()) != null) {
+                if (!entity2.isQueuedForRegister) continue; // Paper - ignore cancelled registers
                 this.registerEntity(entity2);
             }
 
@@ -1286,6 +1287,19 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     public void unregisterEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+        // Paper start - fix entity registration issues
+        if (entity instanceof EntityComplexPart) {
+            // Usually this is a no-op for complex parts, and ID's should be removed, but go ahead and remove it anyways
+            // Dragon parts are handled special in register. they don't receive a valid = true or register by UUID etc.
+            this.entitiesById.remove(entity.getId(), entity);
+            return;
+        }
+        if (!entity.valid) {
+            // Someone called remove before we ever got added, cancel the add.
+            entity.isQueuedForRegister = false;
+            return;
+        }
+        // Paper end
         // Spigot start
         if ( entity instanceof EntityHuman )
         {
@@ -1352,9 +1366,21 @@ public class WorldServer extends World implements GeneratorAccessSeed {
 
     private void registerEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
+        // Paper start - don't double enqueue entity registration
+        //noinspection ObjectEquality
+        if (this.entitiesById.get(entity.getId()) == entity) {
+            LOGGER.error(entity + " was already registered!");
+            new Throwable().printStackTrace();
+            return;
+        }
+        // Paper end
         if (this.tickingEntities) {
-            this.entitiesToAdd.add(entity);
+            if (!entity.isQueuedForRegister) { // Paper
+                this.entitiesToAdd.add(entity);
+                entity.isQueuedForRegister = true; // Paper
+            }
         } else {
+            entity.isQueuedForRegister = false; // Paper
             this.entitiesById.put(entity.getId(), entity);
             if (entity instanceof EntityEnderDragon) {
                 EntityComplexPart[] aentitycomplexpart = ((EntityEnderDragon) entity).eJ();
