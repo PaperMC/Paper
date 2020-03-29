@@ -1,0 +1,310 @@
+From a89fc068754844e2ce3f5f59fc391e5bf0d6c9ac Mon Sep 17 00:00:00 2001
+From: TheVIperShow <thevipershowita@gmail.com>
+Date: Sun, 29 Mar 2020 21:03:49 +0200
+Subject: [PATCH] Increased TPS averages number and improved tps command
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c9deaffc..ae3e4d7d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -43,6 +43,7 @@ import java.util.Date;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++import java.util.HashMap;
+ import java.util.Optional;
+ import java.util.Random;
+ import java.util.UUID;
+@@ -242,6 +243,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         */
+         // Paper end
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
++
++        // Paper start
++        for (int j = 1; j <= 30 ; j++) {
++            rollingAverageMap.put(j, new RollingAverage(j*60));
++        }
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+@@ -546,11 +553,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
+         try {
+             com.google.common.io.Files.write("{\n"
+-                    + "    \"pack\": {\n"
+-                    + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
+-                    + "        \"pack_format\": " + SharedConstants.getGameVersion().getPackVersion() + "\n"
+-                    + "    }\n"
+-                    + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
++                + "    \"pack\": {\n"
++                + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
++                + "        \"pack_format\": " + SharedConstants.getGameVersion().getPackVersion() + "\n"
++                + "    }\n"
++                + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
+         } catch (IOException ex) {
+             throw new RuntimeException("Could not initialize Bukkit datapack", ex);
+         }
+@@ -833,9 +840,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
+     private long lastTick = 0;
+     private long catchupTime = 0;
+-    public final RollingAverage tps1 = new RollingAverage(60);
+-    public final RollingAverage tps5 = new RollingAverage(60 * 5);
+-    public final RollingAverage tps15 = new RollingAverage(60 * 15);
++
++    public final Map<Integer, RollingAverage> rollingAverageMap = new HashMap<>(); //A map of RollingAverage, their index represents the minute.
+ 
+     public static class RollingAverage {
+         private final int size;
+@@ -909,13 +915,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                     {
+                         final long diff = curTime - tickSection;
+                         java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
+-                        tps1.add(currentTps, diff);
+-                        tps5.add(currentTps, diff);
+-                        tps15.add(currentTps, diff);
++
++                        for (int j = 1; j <= 30 ; j++) {
++                            rollingAverageMap.get(j).add(currentTps,diff);
++                        }
+                         // Backwards compat with bad plugins
+-                        recentTps[0] = tps1.getAverage();
+-                        recentTps[1] = tps5.getAverage();
+-                        recentTps[2] = tps15.getAverage();
++                        recentTps[0] = rollingAverageMap.get(1).getAverage();
++                        recentTps[1] = rollingAverageMap.get(5).getAverage();
++                        recentTps[2] = rollingAverageMap.get(15).getAverage();
+                         // Paper end
+                         tickSection = curTime;
+                     }
+@@ -1125,26 +1132,26 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         }
+ 
+         //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
+-            //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
+-            serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
+-            this.methodProfiler.enter("save");
+-            if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // Paper
++        //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
++        serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
++        this.methodProfiler.enter("save");
++        if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // Paper
+             this.playerList.savePlayers();
+-            }// Paper
+-            // Paper start
+-            for (WorldServer world : getWorlds()) {
+-                if (world.paperConfig.autoSavePeriod > 0) {
+-                    try {
+-                        world.saveIncrementally(serverAutoSave);
+-                    } catch (ExceptionWorldConflict exceptionWorldConflict) {
+-                        MinecraftServer.LOGGER.warn(exceptionWorldConflict.getMessage());
+-                    }
++        }// Paper
++        // Paper start
++        for (WorldServer world : getWorlds()) {
++            if (world.paperConfig.autoSavePeriod > 0) {
++                try {
++                    world.saveIncrementally(serverAutoSave);
++                } catch (ExceptionWorldConflict exceptionWorldConflict) {
++                    MinecraftServer.LOGGER.warn(exceptionWorldConflict.getMessage());
+                 }
+             }
+-            // Paper end
++        }
++        // Paper end
+ 
+-            this.methodProfiler.exit();
+-            //MinecraftServer.LOGGER.debug("Autosave finished"); // Paper
++        this.methodProfiler.exit();
++        //MinecraftServer.LOGGER.debug("Autosave finished"); // Paper
+         //} // Paper
+ 
+         this.methodProfiler.enter("snooper");
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index b9a398bc..f9585af8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1414,7 +1414,7 @@ public final class CraftServer implements Server {
+         GameProfile profile;
+         // Only fetch an online UUID in online mode
+         if (net.minecraft.server.MinecraftServer.getServer().getOnlineMode()
+-                || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) {
++            || (org.spigotmc.SpigotConfig.bungee && com.destroystokyo.paper.PaperConfig.bungeeOnlineMode)) {
+             profile = console.getUserCache().getProfile( name );
+         } else {
+             // Make an OfflinePlayer using an offline mode UUID since the name has no profile
+@@ -1436,7 +1436,7 @@ public final class CraftServer implements Server {
+             GameProfile profile = null;
+             // Only fetch an online UUID in online mode
+             if ( getOnlineMode()
+-                    || com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() ) // Paper - Handle via setting
++                || com.destroystokyo.paper.PaperConfig.isProxyOnlineMode() ) // Paper - Handle via setting
+             {
+                 profile = console.getUserCache().getProfile( name );
+             }
+@@ -1515,11 +1515,11 @@ public final class CraftServer implements Server {
+         Validate.notNull(type, "Type cannot be null");
+ 
+         switch(type){
+-        case IP:
+-            return new CraftIpBanList(playerList.getIPBans());
+-        case NAME:
+-        default:
+-            return new CraftProfileBanList(playerList.getProfileBans());
++            case IP:
++                return new CraftIpBanList(playerList.getIPBans());
++            case NAME:
++            default:
++                return new CraftProfileBanList(playerList.getProfileBans());
+         }
+     }
+ 
+@@ -2047,11 +2047,32 @@ public final class CraftServer implements Server {
+     @Override
+     public double[] getTPS() {
+         return new double[] {
+-                net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
+-                net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
+-                net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
++            net.minecraft.server.MinecraftServer.getServer().rollingAverageMap.get(1).getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().rollingAverageMap.get(5).getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().rollingAverageMap.get(15).getAverage()
+         };
+     }
++
++    /**
++     * Provide the average tps at from the current indexes
++     * the index represent the minutes, for example:
++     * 2,5,10 , will provide the the TPS averages from
++     * two , five and ten minutes ago.
++     * this method only saves 30 minutes so the biggest that
++     * can be used is 30
++     *
++     * @param indexes any value from 1 to 30
++     * @return a double array that represents the TPS averages at the specified indexes.
++     */
++    @Override
++    public double[] getTPS(final int... indexes) {
++        final double[] tps = new double[indexes.length];
++        for (int i = 0; i < indexes.length ; i++) {
++            tps[i] = net.minecraft.server.MinecraftServer.getServer().rollingAverageMap.get(indexes[i]).getAverage();
++        }
++        return tps;
++    }
++
+     // Paper end
+ 
+     private final Spigot spigot = new Spigot()
+@@ -2158,8 +2179,8 @@ public final class CraftServer implements Server {
+     @Override
+     public boolean reloadCommandAliases() {
+         Set<String> removals = getCommandAliases().keySet().stream()
+-                .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
+-                .collect(java.util.stream.Collectors.toSet());
++            .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
++            .collect(java.util.stream.Collectors.toSet());
+         getCommandMap().getKnownCommands().keySet().removeIf(removals::contains);
+         File file = getCommandsConfigFile();
+         try {
+diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
+index 6d21c326..ba5fd841 100644
+--- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
++++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
+@@ -1,9 +1,15 @@
+ package org.spigotmc;
+ 
++import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
+ 
++import java.lang.management.ManagementFactory;
++import java.lang.management.RuntimeMXBean;
++import java.util.LinkedList;
++import java.util.stream.IntStream;
++
+ public class TicksPerSecondCommand extends Command
+ {
+ 
+@@ -14,6 +20,55 @@ public class TicksPerSecondCommand extends Command
+         this.usageMessage = "/tps";
+         this.setPermission( "bukkit.command.tps" );
+     }
++// Paper start - methods for graph
++    /**
++
++     * Creates a graphic table representing the server's TPS
++     *
++     * @param values the TPS values
++     * @param rows   the rows of the table (the bigger , the higher it will be)
++     * @return a LinkedList of rows, ordered from top to bottom of the char
++     */
++    public static LinkedList<String> createTable(final double[] values, final int rows) {
++        final LinkedList<String> completeTable = new LinkedList<>();
++        for (int r = 0; r < (rows - 1); r++) {
++            final StringBuilder stringBuilder = new StringBuilder();
++            for (double value : values) {
++                stringBuilder.append(value + (r + 1) > 20 ? "::" : " ");
++            }
++            completeTable.addLast(stringBuilder.reverse().insert(0, ChatColor.GREEN).toString());
++        }
++        return completeTable;
++    }
++
++    /**
++     * Get JVM formatted uptime
++     *
++     * @return the uptime
++     */
++    private String getUptime() {
++        final RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
++        long uptime = runtimeMXBean.getUptime();
++        return uptime / (60_000) <= 30 ? uptime / 1_000 <= 60 ? uptime / 1_000 + " seconds" : uptime / 60_000 + " minutes" : "30* minutes";
++    }
++
++    /**
++     * This methods sends what will be the output of the /tps command
++     * to the target CommandSender, it will have a header with the averages
++     * values from 1,5,15,30 minutes ago.
++     * Below it a TPS graph will be shown , it will have time on the ordinate going from 1-30min,
++     * meanwhile on the abscissa we'll find the TPS average value that goes from 0-20
++     *
++     * @param tpsArray The TPS averages that will be used to generate the graph.
++     * @param sender   The target that will recieve the /tps command output
++     */
++    private void sendGraphic(double[] tpsArray, CommandSender sender) {
++        sender.sendMessage(ChatColor.GOLD + "TPS Stats [1m], [5m], [15m], [30m]: " + ChatColor.GREEN + format(tpsArray[0]) + " " + format(tpsArray[4]) + " " + format(tpsArray[14]) + " " + format(tpsArray[28]));
++        sender.sendMessage(ChatColor.GRAY+"----------------"+ ChatColor.DARK_GRAY +"[" + ChatColor.ITALIC + ChatColor.GREEN + "TPS Graph (" + getUptime() + ")"+ ChatColor.DARK_GRAY +"]"+ChatColor.GRAY+"----------------");
++        final LinkedList<String> table = createTable(tpsArray, 10);
++        table.forEach(sender::sendMessage);
++    }
++    // Paper end
+ 
+     @Override
+     public boolean execute(CommandSender sender, String currentAlias, String[] args)
+@@ -30,7 +85,11 @@ public class TicksPerSecondCommand extends Command
+         for ( int i = 0; i < tps.length; i++) {
+             tpsAvg[i] = format( tps[i] );
+         }
+-        sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
++        if (args.length == 0)
++            sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + tpsAvg[0] + ", " + tpsAvg[1] + ", " + tpsAvg[2]);
++        else if (args.length == 1 && args[0].equalsIgnoreCase("graph"))
++            sendGraphic(Bukkit.getTPS(IntStream.range(1,30).toArray()),sender);
++
+         // Paper end
+ 
+         return true;
+@@ -39,6 +98,6 @@ public class TicksPerSecondCommand extends Command
+     private static String format(double tps) // Paper - Made static
+     {
+         return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
+-                + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
++            + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
+     }
+ }
+-- 
+2.21.1 (Apple Git-122.3)
+
