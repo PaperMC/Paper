@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byron Marohn <combustible@live.com>
+Date: Fri, 3 Apr 2020 20:42:49 -0700
+Subject: [PATCH] Monumenta - Add events for loading and saving player data
+
+Signed-off-by: Byron Marohn <combustible@live.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerDataLoadEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerDataLoadEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1faf07a59b67edfc58766e71d5e8b9ba29a9f0de
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerDataLoadEvent.java
+@@ -0,0 +1,83 @@
++package com.destroystokyo.paper.event.player;
++
++import java.io.File;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when the server loads the playerdata data for a player
++ */
++public class PlayerDataLoadEvent extends PlayerEvent {
++    private static final HandlerList handlers = new HandlerList();
++    @Nullable private Object data;
++    @NotNull private File path;
++
++    public PlayerDataLoadEvent(@NotNull Player who, @NotNull File path) {
++        super(who);
++        this.data = null;
++        this.path = path;
++    }
++
++    /**
++     * Get the file path where data will be loaded from.
++     *
++     * Data will only be loaded from here if the data is not directly set by {@link #setData}
++     *
++     * @return data File to load from
++     */
++    @NotNull
++    public File getPath() {
++        return path;
++    }
++
++    /**
++     * Set the file path where data will be loaded from.
++     *
++     * Data will only be loaded from here if the data is not directly set by {@link #setData}
++     *
++     * @param path data File to load from
++     */
++    public void setPath(@NotNull File path) {
++        this.path = path;
++    }
++
++    /**
++     * Get the data supplied by an earlier call to {@link #setData}.
++     *
++     * This data will be used instead of loading the player's file. It is null unless
++     * supplied by a plugin.
++     *
++     * @return NBTTagCompound data of the player's .dat file as set by {@link #setData}
++     */
++    @Nullable
++    public Object getData() {
++        return data;
++    }
++
++    /**
++     * Set the data to use for the player's data instead of loading it from a file.
++     *
++     * This data will be used instead of loading the player's .dat file. It is null unless
++     * supplied by a plugin.
++     *
++     * @param NBTTagCompound data to load. If null, load from file
++     */
++    public void setData(@Nullable Object data) {
++        this.data = data;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerDataSaveEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerDataSaveEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ba7bcc4b063c3e2d1fac461950a4db2f7ba11682
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerDataSaveEvent.java
+@@ -0,0 +1,73 @@
++package com.destroystokyo.paper.event.player;
++
++import java.io.File;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when the server saves the primary .dat data for a player
++ */
++public class PlayerDataSaveEvent extends PlayerEvent implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    @NotNull private final Object data;
++    @NotNull private File path;
++    private boolean cancel = false;
++
++    public PlayerDataSaveEvent(@NotNull Player who, @NotNull File path, @NotNull Object data) {
++        super(who);
++        this.data = data;
++        this.path = path;
++    }
++
++    /**
++     * Get the file path where player data will be saved to.
++     *
++     * @return player data File to save to
++     */
++    @NotNull
++    public File getPath() {
++        return path;
++    }
++
++    /**
++     * Set the file path where player data will be saved to.
++     *
++     * @return player data File to save to
++     */
++    public void setPath(@NotNull File path) {
++        this.path = path;
++    }
++
++    /**
++     * Get the NBTTagCompound player data that will be saved.
++     *
++     * @return NBTTagCompound player data
++     */
++    @NotNull
++    public Object getData() {
++        return data;
++    }
++
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
