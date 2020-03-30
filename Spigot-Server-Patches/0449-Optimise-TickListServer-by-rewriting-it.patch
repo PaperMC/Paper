@@ -1,4 +1,4 @@
-From da5a4122600e0c528c55bd379e836a41b27be30d Mon Sep 17 00:00:00 2001
+From 63b5fd64305178b6830255a2f44b07139858fbfc Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 14 Feb 2020 01:24:39 -0800
 Subject: [PATCH] Optimise TickListServer by rewriting it
@@ -43,10 +43,10 @@ sets the excessive tick delay to the specified ticks (defaults to
 
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000..e948012d5b
+index 0000000000..ce653f6b4b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -0,0 +1,617 @@
+@@ -0,0 +1,622 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
 +import net.minecraft.server.MCUtil;
@@ -343,7 +343,9 @@ index 0000000000..e948012d5b
 +                if (chunkProvider.isTickingReadyMainThread(toTick.getPosition())) {
 +                    toTick.tickState = STATE_TICKING;
 +                    this.tickFunction.accept(toTick);
-+                    toTick.tickState = STATE_TICKED;
++                    if (toTick.tickState == STATE_TICKING) {
++                        toTick.tickState = STATE_TICKED;
++                    } // else it's STATE_CANCELLED_TICK
 +                } else {
 +                    // re-schedule eventually
 +                    toTick.tickState = STATE_SCHEDULED;
@@ -378,6 +380,9 @@ index 0000000000..e948012d5b
 +    }
 +
 +    private void onTickEnd(final NextTickListEntry<T> entry) {
++        if (entry.tickState == STATE_CANCELLED_TICK) {
++            return;
++        }
 +        entry.tickState = STATE_UNSCHEDULED;
 +
 +        final BlockPosition pos = entry.getPosition();
