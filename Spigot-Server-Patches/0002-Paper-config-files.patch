@@ -1,4 +1,4 @@
-From 8e5b8c219622b92757c01e0ae591b206e8512802 Mon Sep 17 00:00:00 2001
+From 8f849e950e96e48bf06a93f787265c4e66db48a1 Mon Sep 17 00:00:00 2001
 From: Zach Brown <zach.brown@destroystokyo.com>
 Date: Mon, 29 Feb 2016 21:02:09 -0600
 Subject: [PATCH] Paper config files
@@ -6,10 +6,10 @@ Subject: [PATCH] Paper config files
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 000000000..db899937b
+index 000000000..41c79650b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,256 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
@@ -185,30 +185,34 @@ index 000000000..db899937b
 +                }
 +                WorldServer world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
 +
++                Map<MinecraftKey, Integer> nonEntityTicking = Maps.newHashMap();
++                ChunkProviderServer chunkProviderServer = world.getChunkProvider();
++
 +                Collection<Entity> entities = world.entitiesById.values();
 +                entities.forEach(e -> {
-+                    if (!e.isChunkLoaded()) {
-+                        return;
-+                    }
 +                    MinecraftKey key = new MinecraftKey(""); // TODO: update in next patch
 +
 +                    MutablePair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
 +                    ChunkCoordIntPair chunk = new ChunkCoordIntPair(e.getChunkX(), e.getChunkZ());
 +                    info.left++;
 +                    info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                    if (!chunkProviderServer.isInEntityTickingChunk(e)) {
++                        nonEntityTicking.merge(key, Integer.valueOf(1), Integer::sum);
++                    }
 +                });
 +
 +                if (names.size() == 1) {
 +                    MinecraftKey name = names.iterator().next();
 +                    Pair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.get(name);
++                    int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
 +                    if (info == null) {
 +                        sender.sendMessage(ChatColor.RED + "No entities found.");
 +                        return;
 +                    }
-+                    sender.sendMessage("Entity: " + name + " Total: " + info.getLeft());
++                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
 +                    info.getRight().entrySet().stream()
 +                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-+                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z));
++                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isEntityTickingChunk(e.getKey()) ? " (Ticking)" : " (Non-Ticking)")));
 +                } else {
 +                    List<Pair<MinecraftKey, Integer>> info = list.entrySet().stream()
 +                            .filter(e -> names.contains(e.getKey()))
@@ -222,8 +226,13 @@ index 000000000..db899937b
 +                    }
 +
 +                    int count = info.stream().mapToInt(Pair::getRight).sum();
-+                    sender.sendMessage("Total: " + count);
-+                    info.forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey()));
++                    int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
++                    sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
++                    info.forEach(e -> {
++                        int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), Integer.valueOf(0)).intValue();
++                        sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
++                    });
++                    sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
 +                }
 +                break;
 +        }
@@ -520,6 +529,30 @@ index 000000000..a73865739
 +        return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 41eac3588..32c496fa8 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -260,15 +260,15 @@ public class ChunkProviderServer extends IChunkProvider {
+         }
+     }
+ 
+-    @Override
+-    public boolean a(Entity entity) {
++    public final boolean isInEntityTickingChunk(Entity entity) { return this.a(entity); } // Paper - OBFHELPER
++    @Override public boolean a(Entity entity) {
+         long i = ChunkCoordIntPair.pair(MathHelper.floor(entity.locX()) >> 4, MathHelper.floor(entity.locZ()) >> 4);
+ 
+         return this.a(i, PlayerChunk::b);
+     }
+ 
+-    @Override
+-    public boolean a(ChunkCoordIntPair chunkcoordintpair) {
++    public final boolean isEntityTickingChunk(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } // Paper - OBFHELPER
++    @Override public boolean a(ChunkCoordIntPair chunkcoordintpair) {
+         return this.a(chunkcoordintpair.pair(), PlayerChunk::b);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
 index 136d1b50f..9eed98e37 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
@@ -541,7 +574,7 @@ index 136d1b50f..9eed98e37 100644
          this.setSpawnAnimals(dedicatedserverproperties.spawnAnimals);
          this.setSpawnNPCs(dedicatedserverproperties.spawnNpcs);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f14b37e51..34cb00b0b 100644
+index 4b90ee6ef..8789191fe 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -135,9 +135,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
@@ -581,10 +614,10 @@ index ddca89a13..f937b7294 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index cdd254a7e..f0deeb3d2 100644
+index 487346ce8..177e2af68 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -68,6 +68,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -70,6 +70,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
@@ -593,7 +626,7 @@ index cdd254a7e..f0deeb3d2 100644
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPosition lastPhysicsProblem; // Spigot
      private org.spigotmc.TickLimiter entityLimiter;
-@@ -88,6 +90,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -90,6 +92,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      protected World(WorldData worlddata, DimensionManager dimensionmanager, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
@@ -602,10 +635,10 @@ index cdd254a7e..f0deeb3d2 100644
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5a6142eb7..0c9d5d231 100644
+index 02364e3c3..8d1f066f0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -759,6 +759,7 @@ public final class CraftServer implements Server {
+@@ -769,6 +769,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
@@ -613,15 +646,15 @@ index 5a6142eb7..0c9d5d231 100644
          for (WorldServer world : console.getWorlds()) {
              world.worldData.setDifficulty(config.difficulty);
              world.setSpawnFlags(config.spawnMonsters, config.spawnAnimals);
-@@ -774,6 +775,7 @@ public final class CraftServer implements Server {
-                 world.ticksPerMonsterSpawns = this.getTicksPerMonsterSpawns();
+@@ -796,6 +797,7 @@ public final class CraftServer implements Server {
+                 world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
              }
              world.spigotConfig.init(); // Spigot
 +            world.paperConfig.init(); // Paper
          }
  
          pluginManager.clearPlugins();
-@@ -781,6 +783,7 @@ public final class CraftServer implements Server {
+@@ -803,6 +805,7 @@ public final class CraftServer implements Server {
          resetRecipes();
          reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
@@ -629,7 +662,7 @@ index 5a6142eb7..0c9d5d231 100644
          overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
          ignoreVanillaPermissions = commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -1978,4 +1981,35 @@ public final class CraftServer implements Server {
+@@ -2000,4 +2003,35 @@ public final class CraftServer implements Server {
      {
          return spigot;
      }
@@ -666,7 +699,7 @@ index 5a6142eb7..0c9d5d231 100644
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 766e0f6b1..3a0c01852 100644
+index 7d9a1851d..0d8668d34 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -129,6 +129,14 @@ public class Main {
@@ -732,5 +765,5 @@ index 5597d4100..4965a48c3 100644
          config.addDefault( "world-settings.default." + path, def );
          return config.getString( "world-settings." + worldName + "." + path, config.getString( "world-settings.default." + path ) );
 -- 
-2.25.0
+2.25.1
 
