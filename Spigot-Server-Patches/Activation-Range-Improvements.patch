@@ -202,7 +202,7 @@ index 5a8c60ad90..29657fed75 100644
          return this.c;
      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 92601c581c..b1cd59b047 100644
+index 92601c581c..ecafbaa6bf 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -0,0 +0,0 @@ package org.spigotmc;
@@ -211,8 +211,10 @@ index 92601c581c..b1cd59b047 100644
  import net.minecraft.server.AxisAlignedBB;
 +import net.minecraft.server.BehaviorController;
  import net.minecraft.server.Chunk;
++import net.minecraft.server.ChunkProviderServer; // Paper
  import net.minecraft.server.Entity;
  import net.minecraft.server.EntityAmbient;
+ import net.minecraft.server.EntityAnimal;
 @@ -0,0 +0,0 @@ import net.minecraft.server.EntityEnderDragon;
  import net.minecraft.server.EntityFallingBlock; // Paper
  import net.minecraft.server.EntityFireball;
@@ -270,6 +272,7 @@ index 92601c581c..b1cd59b047 100644
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
          final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
 +        final int waterActivationRange = world.spigotConfig.waterActivationRange; // Paper
++        final ChunkProviderServer chunkProvider = (ChunkProviderServer) world.getChunkProvider(); // Paper
  
          int maxRange = Math.max( monsterActivationRange, animalActivationRange );
          maxRange = Math.max( maxRange, raiderActivationRange );
@@ -282,6 +285,43 @@ index 92601c581c..b1cd59b047 100644
  
              int i = MathHelper.floor( maxBB.minX / 16.0D );
              int j = MathHelper.floor( maxBB.maxX / 16.0D );
+@@ -0,0 +0,0 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    Chunk chunk = (Chunk) world.getChunkIfLoadedImmediately( i1, j1 );
++                    Chunk chunk = chunkProvider.getChunkAtIfLoadedMainThreadNoCache( i1, j1 ); // Paper
+                     if ( chunk != null )
+                     {
+                         activateChunkEntities( chunk );
+@@ -0,0 +0,0 @@ public class ActivationRange
+      */
+     private static void activateChunkEntities(Chunk chunk)
+     {
+-        for ( List<Entity> slice : chunk.entitySlices )
+-        {
+-            for ( Entity entity : (Collection<Entity>) slice )
++        // Paper start
++        Entity[] rawData = chunk.entities.getRawData();
++        for (int i = 0; i < chunk.entities.size(); i++) {
++            Entity entity = rawData[i];
++            //for ( Entity entity : (Collection<Entity>) slice )
++            // Paper end
+             {
+-                if ( MinecraftServer.currentTick > entity.activatedTick )
+-                {
+-                    if ( entity.defaultActivationState )
+-                    {
+-                        entity.activatedTick = MinecraftServer.currentTick;
+-                        continue;
+-                    }
+-                    if ( entity.activationType.boundingBox.c( entity.getBoundingBox() ) )
+-                    {
++                if (MinecraftServer.currentTick > entity.activatedTick) {
++                    if (entity.defaultActivationState || entity.activationType.boundingBox.c(entity.getBoundingBox())) { // Paper
+                         entity.activatedTick = MinecraftServer.currentTick;
+                     }
+                 }
 @@ -0,0 +0,0 @@ public class ActivationRange
       * @param entity
       * @return
@@ -357,11 +397,11 @@ index 92601c581c..b1cd59b047 100644
              if (entity instanceof EntityCreeper && ((EntityCreeper) entity).isIgnited()) { // isExplosive
 -                return true;
 +                return 20; // Paper
-+            }
+             }
 +            // Paper start
 +            if (entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks() ) {
 +                return 0;
-             }
++            }
 +            // Paper end
          }
 -        return false;
