@@ -43,7 +43,7 @@ sets the excessive tick delay to the specified ticks (defaults to
 
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000..e948012d5b
+index 0000000000..ce653f6b4b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +0,0 @@
@@ -343,7 +343,9 @@ index 0000000000..e948012d5b
 +                if (chunkProvider.isTickingReadyMainThread(toTick.getPosition())) {
 +                    toTick.tickState = STATE_TICKING;
 +                    this.tickFunction.accept(toTick);
-+                    toTick.tickState = STATE_TICKED;
++                    if (toTick.tickState == STATE_TICKING) {
++                        toTick.tickState = STATE_TICKED;
++                    } // else it's STATE_CANCELLED_TICK
 +                } else {
 +                    // re-schedule eventually
 +                    toTick.tickState = STATE_SCHEDULED;
@@ -378,6 +380,9 @@ index 0000000000..e948012d5b
 +    }
 +
 +    private void onTickEnd(final NextTickListEntry<T> entry) {
++        if (entry.tickState == STATE_CANCELLED_TICK) {
++            return;
++        }
 +        entry.tickState = STATE_UNSCHEDULED;
 +
 +        final BlockPosition pos = entry.getPosition();
