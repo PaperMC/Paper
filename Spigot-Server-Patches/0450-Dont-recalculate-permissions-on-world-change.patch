@@ -1,0 +1,61 @@
+From f4b76e4d2953503312481754a6e496c08eadd0c4 Mon Sep 17 00:00:00 2001
+From: cryptite <cryptite@gmail.com>
+Date: Tue, 17 Dec 2019 15:29:44 -0600
+Subject: [PATCH] Dont recalculate permissions on world change
+
+Often, but not 100% of the time, the server will reconstruct and recalculate the Command Map sent to players
+when they change worlds. This is often laggy; worse-so depending on the extent of the tab-completed commands to be sent.
+In our case, the map sent to the player on login is sufficient and is not tossed by the client for world changes.
+
+As a result, we opt not to recalculate this on world change and this prevents a fairly heavy, and consistent main-thread
+lagspike whenever players change worlds, which can be a lot.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 81f29c951..260b85b72 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -426,4 +426,9 @@ public class PaperConfig {
+             */
+         }
+     }
++
++    public static boolean recalculatePermsOnWorldChange = true;
++    private static void recalculatePermsOnWorldChange() {
++        recalculatePermsOnWorldChange = getBoolean("settings.recalculate-perms-on-world-change", recalculatePermsOnWorldChange);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 7b79ee4fe..c1fe77da3 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -712,7 +712,9 @@ public abstract class PlayerList {
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
+         entityplayer1.playerConnection.sendPacket(new PacketPlayOutExperience(entityplayer1.exp, entityplayer1.expTotal, entityplayer1.expLevel));
+         this.a(entityplayer1, worldserver);
++        movedToWorld = true; // Paper
+         this.d(entityplayer1);
++        movedToWorld = false; // Paper
+         if (!entityplayer.playerConnection.isDisconnected()) {
+             worldserver.addPlayerRespawn(entityplayer1);
+             this.players.add(entityplayer1);
+@@ -754,6 +756,8 @@ public abstract class PlayerList {
+         // CraftBukkit end
+         return entityplayer1;
+     }
++    
++    private boolean movedToWorld = false; // Paper
+ 
+     public void d(EntityPlayer entityplayer) {
+         GameProfile gameprofile = entityplayer.getProfile();
+@@ -908,7 +912,7 @@ public abstract class PlayerList {
+         }
+ 
+         entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+-        this.server.getCommandDispatcher().a(entityplayer);
++        if(!(movedToWorld && !com.destroystokyo.paper.PaperConfig.recalculatePermsOnWorldChange)) this.server.getCommandDispatcher().a(entityplayer); // Paper
+     }
+ 
+     // Paper start
+-- 
+2.24.1 (Apple Git-126)
+
