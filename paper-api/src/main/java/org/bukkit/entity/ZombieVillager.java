@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -22,6 +23,21 @@ public interface ZombieVillager extends Zombie {
     @Override
     @Nullable
     Villager.Profession getVillagerProfession();
+
+    /**
+     * Gets the current type of this villager.
+     *
+     * @return Current type.
+     */
+    @NotNull
+    public Villager.Type getVillagerType();
+
+    /**
+     * Sets the new type of this villager.
+     *
+     * @param type New type.
+     */
+    public void setVillagerType(@NotNull Villager.Type type);
 
     /**
      * Get if this entity is in the process of converting to a Villager as a
