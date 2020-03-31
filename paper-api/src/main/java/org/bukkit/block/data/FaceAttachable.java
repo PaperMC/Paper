@@ -1,38 +1,34 @@
-package org.bukkit.block.data.type;
+package org.bukkit.block.data;
 
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.FaceAttachable;
-import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
-public interface Switch extends Directional, FaceAttachable, Powerable {
+/**
+ * 'face' represents the face to which a lever or button is stuck.
+ * <br>
+ * This is used in conjunction with {@link Directional} to compute the
+ * orientation of these blocks.
+ */
+public interface FaceAttachable extends BlockData {
 
     /**
      * Gets the value of the 'face' property.
      *
      * @return the 'face' value
-     * @deprecated use {@link #getAttachedFace()}
      */
     @NotNull
-    @Deprecated
-    Face getFace();
+    AttachedFace getAttachedFace();
 
     /**
      * Sets the value of the 'face' property.
      *
      * @param face the new 'face' value
-     * @deprecated use {@link #getAttachedFace()}
      */
-    @Deprecated
-    void setFace(@NotNull Face face);
+    void setAttachedFace(@NotNull AttachedFace face);
 
     /**
      * The face to which a switch type block is stuck.
-     *
-     * @deprecated use {@link AttachedFace}
      */
-    @Deprecated
-    public enum Face {
+    public enum AttachedFace {
         /**
          * The switch is mounted to the floor and pointing upwards.
          */

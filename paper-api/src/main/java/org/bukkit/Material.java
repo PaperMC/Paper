@@ -44,6 +44,7 @@ import org.bukkit.block.data.type.Fire;
 import org.bukkit.block.data.type.Furnace;
 import org.bukkit.block.data.type.Gate;
 import org.bukkit.block.data.type.GlassPane;
+import org.bukkit.block.data.type.Grindstone;
 import org.bukkit.block.data.type.Hopper;
 import org.bukkit.block.data.type.Jukebox;
 import org.bukkit.block.data.type.Ladder;
@@ -1006,9 +1007,9 @@ public enum Material implements Keyed {
     GREEN_WALL_BANNER(15046, Directional.class),
     GREEN_WOOL(25085),
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link Grindstone}
      */
-    GRINDSTONE(26260, Directional.class),
+    GRINDSTONE(26260, Grindstone.class),
     GUARDIAN_SPAWN_EGG(20113),
     GUNPOWDER(29974),
     /**
