@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftGrindstone extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Directional {
+public final class CraftGrindstone extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Grindstone, org.bukkit.block.data.Directional, org.bukkit.block.data.FaceAttachable {
 
     public CraftGrindstone() {
         super();
@@ -30,5 +30,19 @@ public final class CraftGrindstone extends org.bukkit.craftbukkit.block.data.Cra
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
         return getValues(FACING, org.bukkit.block.BlockFace.class);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftFaceAttachable
+
+    private static final net.minecraft.server.BlockStateEnum<?> ATTACH_FACE = getEnum(net.minecraft.server.BlockGrindstone.class, "face");
+
+    @Override
+    public AttachedFace getAttachedFace() {
+        return get(ATTACH_FACE, AttachedFace.class);
+    }
+
+    @Override
+    public void setAttachedFace(AttachedFace face) {
+        set(ATTACH_FACE, face);
     }
 }
