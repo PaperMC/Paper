@@ -355,11 +355,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
         }
 
         if (this.remoteControlListener != null) {
-            this.remoteControlListener.b();
+            //this.remoteControlListener.b(); // Paper - don't wait for remote connections
         }
 
         if (this.remoteStatusListener != null) {
-            this.remoteStatusListener.b();
+            //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
         }
 
         System.exit(0); // CraftBukkit
