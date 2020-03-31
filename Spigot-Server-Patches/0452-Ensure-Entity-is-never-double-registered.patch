@@ -1,4 +1,4 @@
-From e4dec7b8e9738cefe23b9b032b0ec6fabdbbcc1b Mon Sep 17 00:00:00 2001
+From 679f8ee00e78b7de41adc180523cd8d6bcaa765f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 29 Mar 2020 18:26:14 -0400
 Subject: [PATCH] Ensure Entity is never double registered
@@ -23,19 +23,18 @@ index 8da54c68cc..eb706f8636 100644
          private boolean locked = false;
          @Override
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 5ba46fca55..9cb22eef56 100644
+index 5ba46fca55..23527809ce 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -519,7 +519,7 @@ public class WorldServer extends World {
-             this.tickingEntities = false;
+@@ -520,6 +520,7 @@ public class WorldServer extends World {
  
              try (co.aikar.timings.Timing ignored = this.timings.newEntities.startTiming()) { // Paper - timings
--            while ((entity = (Entity) this.entitiesToAdd.poll()) != null) {
-+            while ((entity = (Entity) this.entitiesToAdd.poll()) != null && entity.isQueuedForRegister) { // Paper - ignore cancelled registers
+             while ((entity = (Entity) this.entitiesToAdd.poll()) != null) {
++                if (!entity.isQueuedForRegister) continue; // Paper - ignore cancelled registers
                  this.registerEntity(entity);
              }
              } // Paper - timings
-@@ -1329,6 +1329,19 @@ public class WorldServer extends World {
+@@ -1329,6 +1330,19 @@ public class WorldServer extends World {
  
      public void unregisterEntity(Entity entity) {
          org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
@@ -55,7 +54,7 @@ index 5ba46fca55..9cb22eef56 100644
          // Spigot start
          if ( entity instanceof EntityHuman )
          {
-@@ -1390,9 +1403,21 @@ public class WorldServer extends World {
+@@ -1390,9 +1404,21 @@ public class WorldServer extends World {
  
      private void registerEntity(Entity entity) {
          org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
