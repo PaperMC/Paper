@@ -61,7 +61,7 @@
 +// CraftBukkit end
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder {
- 
++
 +    // CraftBukkit start
 +    private static final int CURRENT_LEVEL = 2;
 +    static boolean isLevelAtLeast(CompoundTag tag, int level) {
@@ -141,7 +141,7 @@
 +    }
 +    // Paper end - Share random for entities to make them more random
 +    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
-+
+ 
 +    private CraftEntity bukkitEntity;
 +
 +    public CraftEntity getBukkitEntity() {
@@ -202,7 +202,7 @@
 +    private org.bukkit.util.Vector origin;
 +    @javax.annotation.Nullable
 +    private UUID originWorld;
- 
++
 +    public void setOrigin(@javax.annotation.Nonnull Location location) {
 +        this.origin = location.toVector();
 +        this.originWorld = location.getWorld().getUID();
@@ -221,7 +221,7 @@
 +    public float getBukkitYaw() {
 +        return this.yRot;
 +    }
-+
+ 
 +    public boolean isChunkLoaded() {
 +        return this.level.hasChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
 +    }
@@ -473,15 +473,15 @@
              }
  
          }
-@@ -587,7 +873,23 @@
+@@ -587,9 +873,25 @@
      }
  
      public final void igniteForSeconds(float seconds) {
 -        this.igniteForTicks(Mth.floor(seconds * 20.0F));
 +        // CraftBukkit start
 +        this.igniteForSeconds(seconds, true);
-+    }
-+
+     }
+ 
 +    public final void igniteForSeconds(float f, boolean callEvent) {
 +        if (callEvent) {
 +            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), f);
@@ -495,9 +495,11 @@
 +        }
 +        // CraftBukkit end
 +        this.igniteForTicks(Mth.floor(f * 20.0F));
-     }
- 
++    }
++
      public void igniteForTicks(int ticks) {
+         if (this.remainingFireTicks < ticks) {
+             this.setRemainingFireTicks(ticks);
 @@ -610,7 +912,7 @@
      }
  
@@ -536,15 +538,17 @@
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission entity_movementemission = this.getMovementEmission();
  
-@@ -1133,6 +1457,20 @@
-         return SoundEvents.GENERIC_SPLASH;
-     }
+@@ -1131,8 +1455,22 @@
  
+     protected SoundEvent getSwimHighSpeedSplashSound() {
+         return SoundEvents.GENERIC_SPLASH;
++    }
++
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getSwimSound0() {
 +        return this.getSwimSound();
-+    }
-+
+     }
+ 
 +    public SoundEvent getSwimSplashSound0() {
 +        return this.getSwimSplashSound();
 +    }
@@ -631,17 +635,18 @@
      }
  
      public CompoundTag saveWithoutId(CompoundTag nbt) {
+-        try {
+-            if (this.vehicle != null) {
+-                nbt.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
+-            } else {
+-                nbt.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
 +        // CraftBukkit start - allow excluding certain data when saving
 +        return this.saveWithoutId(nbt, true);
 +    }
 +
 +    public CompoundTag saveWithoutId(CompoundTag nbttagcompound, boolean includeAll) {
 +        // CraftBukkit end
-         try {
--            if (this.vehicle != null) {
--                nbt.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
--            } else {
--                nbt.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
++        try {
 +            // CraftBukkit start - selectively save position
 +            if (includeAll) {
 +                if (this.vehicle != null) {
@@ -804,7 +809,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being saved");
-@@ -2080,6 +2513,87 @@
+@@ -2080,6 +2513,68 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
              }
@@ -823,27 +828,8 @@
 +            }
 +            // CraftBukkit end
 +
-+            // CraftBukkit start - Reset world
-+            if (this instanceof ServerPlayer) {
-+                Server server = Bukkit.getServer();
-+                org.bukkit.World bworld = null;
-+
-+                // TODO: Remove World related checks, replaced with WorldUID
-+                String worldName = nbt.getString("world");
-+
-+                if (nbt.contains("WorldUUIDMost") && nbt.contains("WorldUUIDLeast")) {
-+                    UUID uid = new UUID(nbt.getLong("WorldUUIDMost"), nbt.getLong("WorldUUIDLeast"));
-+                    bworld = server.getWorld(uid);
-+                } else {
-+                    bworld = server.getWorld(worldName);
-+                }
-+
-+                if (bworld == null) {
-+                    bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getLevel(Level.OVERWORLD).getWorld();
-+                }
-+
-+                ((ServerPlayer) this).setLevel(bworld == null ? null : ((CraftWorld) bworld).getHandle());
-+            }
++            // CraftBukkit start
++            // Paper - move world parsing/loading to PlayerList#placeNewPlayer
 +            this.getBukkitEntity().readBukkitValues(nbt);
 +            if (nbt.contains("Bukkit.invisible")) {
 +                boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");
@@ -892,7 +878,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
-@@ -2101,6 +2615,12 @@
+@@ -2101,6 +2596,12 @@
          return entitytypes.canSerialize() && minecraftkey != null ? minecraftkey.toString() : null;
      }
  
@@ -905,7 +891,7 @@
      protected abstract void readAdditionalSaveData(CompoundTag nbt);
  
      protected abstract void addAdditionalSaveData(CompoundTag nbt);
-@@ -2153,9 +2673,22 @@
+@@ -2153,9 +2654,22 @@
          if (stack.isEmpty()) {
              return null;
          } else {
@@ -928,7 +914,7 @@
              world.addFreshEntity(entityitem);
              return entityitem;
          }
-@@ -2184,6 +2717,12 @@
+@@ -2184,6 +2698,12 @@
          if (this.isAlive() && this instanceof Leashable leashable) {
              if (leashable.getLeashHolder() == player) {
                  if (!this.level().isClientSide()) {
@@ -941,7 +927,7 @@
                      if (player.hasInfiniteMaterials()) {
                          leashable.removeLeash();
                      } else {
-@@ -2200,6 +2739,13 @@
+@@ -2200,6 +2720,13 @@
  
              if (itemstack.is(Items.LEAD) && leashable.canHaveALeashAttachedToIt()) {
                  if (!this.level().isClientSide()) {
@@ -955,7 +941,7 @@
                      leashable.setLeashedTo(player, true);
                  }
  
-@@ -2265,7 +2811,7 @@
+@@ -2265,7 +2792,7 @@
      }
  
      public boolean showVehicleHealth() {
@@ -964,7 +950,7 @@
      }
  
      public boolean startRiding(Entity entity, boolean force) {
-@@ -2273,7 +2819,7 @@
+@@ -2273,7 +2800,7 @@
              return false;
          } else if (!entity.couldAcceptPassenger()) {
              return false;
@@ -973,7 +959,7 @@
              return false;
          } else {
              for (Entity entity1 = entity; entity1.vehicle != null; entity1 = entity1.vehicle) {
-@@ -2285,11 +2831,32 @@
+@@ -2285,11 +2812,32 @@
              if (!force && (!this.canRide(entity) || !entity.canAddPassenger(this))) {
                  return false;
              } else {
@@ -1007,7 +993,7 @@
                  this.vehicle = entity;
                  this.vehicle.addPassenger(this);
                  entity.getIndirectPassengersStream().filter((entity2) -> {
-@@ -2314,19 +2881,30 @@
+@@ -2314,19 +2862,30 @@
      }
  
      public void removeVehicle() {
@@ -1040,7 +1026,7 @@
      protected void addPassenger(Entity passenger) {
          if (passenger.getVehicle() != this) {
              throw new IllegalStateException("Use x.startRiding(y), not y.addPassenger(x)");
-@@ -2349,21 +2927,53 @@
+@@ -2349,21 +2908,53 @@
          }
      }
  
@@ -1100,7 +1086,7 @@
      }
  
      protected boolean canAddPassenger(Entity passenger) {
-@@ -2464,7 +3074,7 @@
+@@ -2464,7 +3055,7 @@
                      if (teleporttransition != null) {
                          ServerLevel worldserver1 = teleporttransition.newLevel();
  
@@ -1109,7 +1095,7 @@
                              this.teleport(teleporttransition);
                          }
                      }
-@@ -2547,7 +3157,7 @@
+@@ -2547,7 +3138,7 @@
      }
  
      public boolean isCrouching() {
@@ -1118,7 +1104,7 @@
      }
  
      public boolean isSprinting() {
-@@ -2563,7 +3173,7 @@
+@@ -2563,7 +3154,7 @@
      }
  
      public boolean isVisuallySwimming() {
@@ -1127,7 +1113,7 @@
      }
  
      public boolean isVisuallyCrawling() {
-@@ -2571,6 +3181,13 @@
+@@ -2571,6 +3162,13 @@
      }
  
      public void setSwimming(boolean swimming) {
@@ -1141,7 +1127,7 @@
          this.setSharedFlag(4, swimming);
      }
  
-@@ -2609,6 +3226,7 @@
+@@ -2609,6 +3207,7 @@
  
      @Nullable
      public PlayerTeam getTeam() {
@@ -1149,7 +1135,7 @@
          return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
      }
  
-@@ -2624,8 +3242,12 @@
+@@ -2624,8 +3223,12 @@
          return this.getTeam() != null ? this.getTeam().isAlliedTo(team) : false;
      }
  
@@ -1163,7 +1149,7 @@
      }
  
      public boolean getSharedFlag(int index) {
-@@ -2644,7 +3266,7 @@
+@@ -2644,7 +3247,7 @@
      }
  
      public int getMaxAirSupply() {
@@ -1172,7 +1158,7 @@
      }
  
      public int getAirSupply() {
-@@ -2652,7 +3274,18 @@
+@@ -2652,7 +3255,18 @@
      }
  
      public void setAirSupply(int air) {
@@ -1192,7 +1178,7 @@
      }
  
      public int getTicksFrozen() {
-@@ -2679,11 +3312,40 @@
+@@ -2679,11 +3293,40 @@
  
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
@@ -1235,7 +1221,7 @@
      }
  
      public void onAboveBubbleCol(boolean drag) {
-@@ -2713,7 +3375,7 @@
+@@ -2713,7 +3356,7 @@
          this.resetFallDistance();
      }
  
@@ -1244,7 +1230,7 @@
          return true;
      }
  
-@@ -2818,7 +3480,7 @@
+@@ -2818,7 +3461,7 @@
      public String toString() {
          String s = this.level() == null ? "~NULL~" : this.level().toString();
  
@@ -1253,7 +1239,7 @@
      }
  
      public final boolean isInvulnerableToBase(DamageSource damageSource) {
-@@ -2852,6 +3514,26 @@
+@@ -2852,6 +3495,26 @@
  
          if (world instanceof ServerLevel worldserver) {
              if (!this.isRemoved()) {
@@ -1280,7 +1266,7 @@
                  ServerLevel worldserver1 = teleportTarget.newLevel();
                  boolean flag = worldserver1.dimension() != worldserver.dimension();
  
-@@ -2920,8 +3602,12 @@
+@@ -2920,8 +3583,12 @@
          } else {
              entity.restoreFrom(this);
              this.removeAfterChangingDimensions();
@@ -1294,7 +1280,7 @@
              Iterator iterator1 = list1.iterator();
  
              while (iterator1.hasNext()) {
-@@ -2947,7 +3633,7 @@
+@@ -2947,7 +3614,7 @@
      }
  
      private void sendTeleportTransitionToRidingPlayers(TeleportTransition teleportTarget) {
@@ -1303,7 +1289,7 @@
          Iterator iterator = this.getIndirectPassengers().iterator();
  
          while (iterator.hasNext()) {
-@@ -2995,8 +3681,9 @@
+@@ -2995,8 +3662,9 @@
      }
  
      protected void removeAfterChangingDimensions() {
@@ -1314,7 +1300,7 @@
              leashable.removeLeash();
          }
  
-@@ -3006,6 +3693,20 @@
+@@ -3006,6 +3674,20 @@
          return PortalShape.getRelativePosition(portalRect, portalAxis, this.position(), this.getDimensions(this.getPose()));
      }
  
@@ -1335,7 +1321,7 @@
      public boolean canUsePortal(boolean allowVehicles) {
          return (allowVehicles || !this.isPassenger()) && this.isAlive();
      }
-@@ -3134,10 +3835,16 @@
+@@ -3134,10 +3816,16 @@
          return (Boolean) this.entityData.get(Entity.DATA_CUSTOM_NAME_VISIBLE);
      }
  
@@ -1355,7 +1341,7 @@
          return entity != null;
      }
  
-@@ -3187,7 +3894,7 @@
+@@ -3187,7 +3875,7 @@
      /** @deprecated */
      @Deprecated
      protected void fixupDimensions() {
@@ -1364,7 +1350,7 @@
          EntityDimensions entitysize = this.getDimensions(entitypose);
  
          this.dimensions = entitysize;
-@@ -3196,7 +3903,7 @@
+@@ -3196,7 +3884,7 @@
  
      public void refreshDimensions() {
          EntityDimensions entitysize = this.dimensions;
@@ -1373,7 +1359,7 @@
          EntityDimensions entitysize1 = this.getDimensions(entitypose);
  
          this.dimensions = entitysize1;
-@@ -3258,10 +3965,29 @@
+@@ -3258,10 +3946,29 @@
      }
  
      public final void setBoundingBox(AABB boundingBox) {
@@ -1405,7 +1391,7 @@
          return this.getDimensions(pose).eyeHeight();
      }
  
-@@ -3335,7 +4061,7 @@
+@@ -3335,7 +4042,7 @@
      }
  
      @Nullable
@@ -1414,7 +1400,7 @@
          return null;
      }
  
-@@ -3435,7 +4161,7 @@
+@@ -3435,7 +4142,7 @@
      }
  
      public boolean isControlledByLocalInstance() {
@@ -1423,7 +1409,7 @@
  
          if (entityliving instanceof Player entityhuman) {
              return entityhuman.isLocalPlayer();
-@@ -3445,7 +4171,7 @@
+@@ -3445,7 +4152,7 @@
      }
  
      public boolean isControlledByClient() {
@@ -1432,7 +1418,7 @@
  
          return entityliving != null && entityliving.isControlledByClient();
      }
-@@ -3463,7 +4189,7 @@
+@@ -3463,7 +4170,7 @@
          return new Vec3((double) f1 * d2 / (double) f3, 0.0D, (double) f2 * d2 / (double) f3);
      }
  
@@ -1441,7 +1427,7 @@
          return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
      }
  
-@@ -3488,9 +4214,38 @@
+@@ -3488,9 +4195,38 @@
      public int getFireImmuneTicks() {
          return 1;
      }
@@ -1481,7 +1467,7 @@
      }
  
      public void lookAt(EntityAnchorArgument.Anchor anchorPoint, Vec3 target) {
-@@ -3551,6 +4306,11 @@
+@@ -3551,6 +4287,11 @@
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
                                  }
@@ -1493,7 +1479,7 @@
                              }
                          }
                      }
-@@ -3613,7 +4373,7 @@
+@@ -3613,7 +4354,7 @@
          return new ClientboundAddEntityPacket(this, entityTrackerEntry);
      }
  
@@ -1502,7 +1488,7 @@
          return this.type.getDimensions();
      }
  
-@@ -3818,8 +4578,16 @@
+@@ -3818,8 +4559,16 @@
  
      @Override
      public final void setRemoved(Entity.RemovalReason reason) {
@@ -1520,7 +1506,7 @@
          }
  
          if (this.removalReason.shouldDestroy()) {
-@@ -3827,8 +4595,8 @@
+@@ -3827,8 +4576,8 @@
          }
  
          this.getPassengers().forEach(Entity::stopRiding);
@@ -1531,7 +1517,7 @@
      }
  
      public void unsetRemoved() {
-@@ -3887,7 +4655,7 @@
+@@ -3887,7 +4636,7 @@
      }
  
      public Vec3 getKnownMovement() {
