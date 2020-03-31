@@ -1445,9 +1445,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
 
     private void removeEntityFromChunk(Entity entity) {
-        IChunkAccess ichunkaccess = this.getChunkAt(entity.chunkX, entity.chunkZ, ChunkStatus.FULL, false);
+        Chunk ichunkaccess = entity.getCurrentChunk(); // Paper - getChunkAt(x,z,full,false) is broken by CraftBukkit as it won't return an unloading chunk. Use our current chunk reference as this points to what chunk they need to be removed from anyways
 
-        if (ichunkaccess instanceof Chunk) {
+        if (ichunkaccess != null) { // Paper
             ((Chunk) ichunkaccess).b(entity);
         }
 
