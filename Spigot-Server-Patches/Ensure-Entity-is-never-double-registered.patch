@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 29 Mar 2020 18:26:14 -0400
+Subject: [PATCH] Ensure Entity is never double registered
+
+If something calls register twice, and the world is ticking, it could be
+enqueued to add twice.
+
+Vs behavior of non ticking of just overwriting state.
+
+We will now simply log a warning when this happens instead of crashing the server.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 8da54c68cc..eb706f8636 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
+     // Paper start
++    boolean isQueuedForRegister = false;
+     public static Random SHARED_RANDOM = new Random() {
+         private boolean locked = false;
+         @Override
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5ba46fca55..9cb22eef56 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+             this.tickingEntities = false;
+ 
+             try (co.aikar.timings.Timing ignored = this.timings.newEntities.startTiming()) { // Paper - timings
+-            while ((entity = (Entity) this.entitiesToAdd.poll()) != null) {
++            while ((entity = (Entity) this.entitiesToAdd.poll()) != null && entity.isQueuedForRegister) { // Paper - ignore cancelled registers
+                 this.registerEntity(entity);
+             }
+             } // Paper - timings
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+ 
+     public void unregisterEntity(Entity entity) {
+         org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
++        // Paper start - fix entity registration issues
++        if (entity instanceof EntityComplexPart) {
++            // Usually this is a no-op for complex parts, and ID's should be removed, but go ahead and remove it anyways
++            // Dragon parts are handled special in register. they don't receive a valid = true or register by UUID etc.
++            this.entitiesById.remove(entity.getId(), entity);
++            return;
++        }
++        if (!entity.valid) {
++            // Someone called remove before we ever got added, cancel the add.
++            entity.isQueuedForRegister = false;
++            return;
++        }
++        // Paper end
+         // Spigot start
+         if ( entity instanceof EntityHuman )
+         {
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+ 
+     private void registerEntity(Entity entity) {
+         org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
++        // Paper start - don't double enqueue entity registration
++        //noinspection ObjectEquality
++        if (this.entitiesById.get(entity.getId()) == entity) {
++            LOGGER.error(entity + " was already registered!");
++            new Throwable().printStackTrace();
++            return;
++        }
++        // Paper end
+         if (this.tickingEntities) {
+-            this.entitiesToAdd.add(entity);
++            if (!entity.isQueuedForRegister) { // Paper
++                this.entitiesToAdd.add(entity);
++                entity.isQueuedForRegister = true; // Paper
++            }
+         } else {
++            entity.isQueuedForRegister = false; // Paper
+             this.entitiesById.put(entity.getId(), entity);
+             if (entity instanceof EntityEnderDragon) {
+                 EntityComplexPart[] aentitycomplexpart = ((EntityEnderDragon) entity).eo();
+--
