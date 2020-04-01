@@ -1,0 +1,114 @@
+From 2faf4c3748dd3b7c02dae68ebff645c9e420fe67 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 1 Apr 2020 14:25:54 -0700
+Subject: [PATCH] Leaf takeover
+
+Finally, my brothers have formed an army and done what was
+right. The oppression ends today.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 07073af99..57d303099 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -226,6 +226,43 @@ public class Chunk implements IChunkAccess {
+         return this.sections;
+     }
+ 
++    // Paper start - make things better
++    private it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap<IBlockData> tempData;
++
++    void dumpTempData() {
++        this.tempData = new it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap<>();
++        for (int x = 0; x < 16; ++x) {
++            for (int z = 0; z < 16; ++z) {
++                for (int y = 0; y < 256; ++y) {
++                    short key = (short)com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(x, y, z);
++                    IBlockData data = this.getBlockData(x, y, z);
++                    this.tempData.put(key, data);
++                    ChunkSection section = this.sections[y >> 4];
++                    if (!data.isAir()) {
++                        section.blockIds.setBlock(x, y & 15, z, Blocks.OAK_LEAVES.getBlockData());
++                    }
++                }
++            }
++        }
++    }
++
++    void restoreData() {
++        for (int x = 0; x < 16; ++x) {
++            for (int z = 0; z < 16; ++z) {
++                for (int y = 0; y < 256; ++y) {
++                    short key = (short) com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(x, y, z);
++                    IBlockData data = this.tempData.get(key);
++                    ChunkSection section = this.sections[y >> 4];
++                    if (section != null) {
++                        section.blockIds.setBlock(x, y & 15, z, data);
++                    }
++                }
++            }
++        }
++        this.tempData = null;
++    }
++    // Paper end - make things better
++
+     // Paper start - Optimize getBlockData to reduce instructions
+     public final IBlockData getBlockData(BlockPosition pos) { return getBlockData(pos.getX(), pos.getY(), pos.getZ()); } // Paper
+     public IBlockData getType(BlockPosition blockposition) {
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+index ef7ade797..7167f655c 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
+@@ -42,6 +42,8 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+     }
+     public PacketPlayOutMapChunk(Chunk chunk, int i, boolean forceLoad) {
+         // Paper end
++        chunk.dumpTempData();
++        try {
+         ChunkPacketInfo<IBlockData> chunkPacketInfo = chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i, forceLoad); // Paper - Anti-Xray - Add chunk packet info
+         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
+ 
+@@ -75,7 +77,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         iterator = chunk.getTileEntities().entrySet().iterator();
+         int totalSigns = 0; // Paper
+ 
+-        while (iterator.hasNext()) {
++        while (false && iterator.hasNext()) { // No such thing as a TE. Only leaves.
+             entry = (Entry) iterator.next();
+             BlockPosition blockposition = (BlockPosition) entry.getKey();
+             TileEntity tileentity = (TileEntity) entry.getValue();
+@@ -97,6 +99,9 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+             }
+         }
+         chunk.world.chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo, forceLoad, null); // Paper - Anti-Xray - Modify blocks
++        } finally {
++            chunk.restoreData();
++        }
+     }
+ 
+     // Paper start - Async-Anti-Xray - Getter and Setter for the ready flag
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 9f8818c2d..abe7921d2 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -229,6 +229,8 @@ public class PlayerChunk {
+ 
+     public void a(Chunk chunk) {
+         if (this.dirtyCount != 0 || this.u != 0 || this.t != 0) {
++            chunk.dumpTempData();
++            try {
+             World world = chunk.getWorld();
+ 
+             if (this.dirtyCount == 64) {
+@@ -287,6 +289,9 @@ public class PlayerChunk {
+ 
+             this.dirtyCount = 0;
+             this.r = 0;
++            } finally {
++                chunk.restoreData();
++            }
+         }
+     }
+ 
+-- 
+2.26.0
+
