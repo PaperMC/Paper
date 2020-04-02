@@ -89,7 +89,7 @@ index af10c18d44..02b142fe8b 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7899fd6d88..d2cfc65513 100644
+index 7899fd6d88..2890e8121d 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -104,6 +104,15 @@ index 7899fd6d88..d2cfc65513 100644
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
+     public boolean isChunkLoaded() {
+-        return world.isChunkLoaded((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4);
++        return getCurrentChunk() != null;
+     }
+     // CraftBukkit end
+ 
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
      // Paper start
 +    java.lang.ref.WeakReference<Chunk> currentChunk = null;
 +
@@ -115,23 +124,27 @@ index 7899fd6d88..d2cfc65513 100644
 +     */
 +    public Chunk getCurrentChunk() {
 +        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
-+        return chunk != null && chunk.isLoaded() ? chunk : (isAddedToChunk() ? world.getChunkIfLoaded(getChunkX(), getChunkZ()) : null);
++        if (chunk != null && chunk.isLoaded()) {
++            return chunk;
++        }
++
++        return !isAddedToChunk() ? null : ((ChunkProviderServer) world.chunkProvider).getChunkAtIfLoadedMainThreadNoCache(getChunkX(), getChunkZ());
 +    }
++
 +    /**
 +     * Returns the chunk at the location, using the entities local cache if avail
 +     * Will only return null if the location specified is not loaded
 +     */
 +    public Chunk getCurrentChunkAt(int x, int z) {
-+        if (getChunkX() == x && getChunkZ() == z) {
-+            Chunk chunk = getCurrentChunk();
-+            if (chunk != null) {
-+                return chunk;
-+            }
++        Chunk chunk = getCurrentChunk();
++        if (chunk != null && getChunkX() == chunk.getPos().x && getChunkZ() == chunk.getPos().z) {
++            return chunk;
 +        }
-+        return world.getChunkIfLoaded(x, z);
++        return ((ChunkProviderServer) world.chunkProvider).getChunkAtIfLoadedMainThreadNoCache(getChunkX(), getChunkZ());
 +    }
 +    /**
 +     * Returns the chunk at the entities current location, using the entities local cache if avail
++     * Ideally this is always the same as getCurrentChunk, but only becomes different in registration issues.
 +     * Will only return null if the location specified is not loaded
 +     */
 +    public Chunk getChunkAtLocation() {
