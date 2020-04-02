@@ -1446,6 +1446,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     protected void addEntity(Entity entity) {
         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
+        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
+        if (!entity.valid || entity.world != this.world || this.trackedEntities.containsKey(entity.getId())) {
+            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.world.getWorld().getName()
+                + ": " + entity  + (this.trackedEntities.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
+                .printStackTrace();
+            return;
+        }
+        // Paper end
         if (!(entity instanceof EntityComplexPart)) {
             EntityTypes<?> entitytypes = entity.getEntityType();
             int i = entitytypes.getChunkRange() * 16;

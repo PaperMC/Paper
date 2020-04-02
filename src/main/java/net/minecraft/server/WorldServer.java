@@ -1411,7 +1411,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                 }
             }
 
-            this.getChunkProvider().addEntity(entity);
+            // this.getChunkProvider().addEntity(entity); // Paper - moved down below valid=true
             // CraftBukkit start - SPIGOT-5278
             if (entity instanceof EntityDrowned) {
                 this.navigators.add(((EntityDrowned) entity).navigationWater);
@@ -1422,6 +1422,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                 this.navigators.add(((EntityInsentient) entity).getNavigation());
             }
             entity.valid = true; // CraftBukkit
+            this.getChunkProvider().addEntity(entity); // Paper - from above to be below valid=true
             // Paper start - Set origin location when the entity is being added to the world
             if (entity.origin == null) {
                 entity.origin = entity.getBukkitEntity().getLocation();
