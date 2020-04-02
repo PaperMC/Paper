@@ -952,7 +952,7 @@ public abstract class EntityHuman extends EntityLiving {
 
     @Override
     protected boolean isFrozen() {
-        return super.isFrozen() || this.isSleeping();
+        return super.isFrozen() || this.isSleeping() || dead || !valid; // Paper - player's who are dead or not in a world shouldn't move...
     }
 
     @Override
