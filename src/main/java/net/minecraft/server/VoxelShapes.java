@@ -239,7 +239,8 @@ public final class VoxelShapes {
 
                             if (k2 < 3) {
                                 blockposition_mutableblockposition.a(enumaxiscycle1, i2, j2, l1);
-                                IBlockData iblockdata = iworldreader.getType(blockposition_mutableblockposition);
+                                IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
+                                if (iblockdata == null) return 0.0D; // Paper
 
                                 if ((k2 != 1 || iblockdata.d()) && (k2 != 2 || iblockdata.a(Blocks.MOVING_PISTON))) {
                                     d0 = iblockdata.b((IBlockAccess) iworldreader, blockposition_mutableblockposition, voxelshapecollision).a(enumdirection_enumaxis2, axisalignedbb.d((double) (-blockposition_mutableblockposition.getX()), (double) (-blockposition_mutableblockposition.getY()), (double) (-blockposition_mutableblockposition.getZ())), d0);

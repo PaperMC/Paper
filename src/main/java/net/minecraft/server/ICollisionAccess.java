@@ -46,7 +46,9 @@ public interface ICollisionAccess extends IBlockAccess {
     }
 
     default boolean b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
+        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
         return this.d(entity, axisalignedbb, predicate).allMatch(VoxelShape::isEmpty);
+        } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
     }
 
     Stream<VoxelShape> c(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate);

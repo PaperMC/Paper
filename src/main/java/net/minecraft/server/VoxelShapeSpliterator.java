@@ -9,13 +9,13 @@ import javax.annotation.Nullable;
 public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
 
     @Nullable
-    private final Entity a;
+    private final Entity a; final Entity getEntity() { return this.a; } // Paper - OBFHELPER
     private final AxisAlignedBB b;
     private final VoxelShapeCollision c;
     private final CursorPosition d;
-    private final BlockPosition.MutableBlockPosition e;
+    private final BlockPosition.MutableBlockPosition e; final BlockPosition.MutableBlockPosition getMutablePos() { return this.e; } // Paper - OBFHELPER
     private final VoxelShape f;
-    private final ICollisionAccess g;
+    private final ICollisionAccess g; final ICollisionAccess getCollisionAccess() { return this.g; } // Paper - OBFHELPER
     private boolean h;
     private final BiPredicate<IBlockData, BlockPosition> i;
 
@@ -52,23 +52,37 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
     boolean a(Consumer<? super VoxelShape> consumer) {
         while (true) {
             if (this.d.a()) {
-                int i = this.d.b();
-                int j = this.d.c();
-                int k = this.d.d();
+                int i = this.d.b(); final int x = i;
+                int j = this.d.c(); final int y = j;
+                int k = this.d.d(); final int z = k;
                 int l = this.d.e();
 
                 if (l == 3) {
                     continue;
                 }
 
-                IBlockAccess iblockaccess = this.a(i, k);
+                // Paper start - ensure we don't load chunks
+                Entity entity = this.getEntity();
+                BlockPosition.MutableBlockPosition blockposition_mutableblockposition = this.getMutablePos();
+                boolean far = entity != null && MCUtil.distanceSq(entity.locX(), y, entity.locZ(), x, y, z) > 14;
+                blockposition_mutableblockposition.setValues(x, y, z);
 
-                if (iblockaccess == null) {
+                boolean isRegionLimited = this.getCollisionAccess() instanceof RegionLimitedWorldAccess;
+                IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
+                    ? this.getCollisionAccess().getType(blockposition_mutableblockposition)
+                    : this.getCollisionAccess().getTypeIfLoaded(blockposition_mutableblockposition)
+                );
+
+                if (iblockdata == null) {
+                    if (!(entity instanceof EntityPlayer) || entity.world.paperConfig.preventMovingIntoUnloadedChunks) {
+                        VoxelShape voxelshape3 = VoxelShapes.of(far ? entity.getBoundingBox() : new AxisAlignedBB(new BlockPosition(x, y, z)));
+                        consumer.accept(voxelshape3);
+                        return true;
+                    }
                     continue;
                 }
-
-                this.e.d(i, j, k);
-                IBlockData iblockdata = iblockaccess.getType(this.e);
+                // Paper - moved up
+                // Paper end
 
                 if (!this.i.test(iblockdata, this.e) || l == 1 && !iblockdata.d() || l == 2 && !iblockdata.a(Blocks.MOVING_PISTON)) {
                     continue;
