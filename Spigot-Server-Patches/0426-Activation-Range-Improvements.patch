@@ -1,4 +1,4 @@
-From 8d53dc5bc54922b59ebfe41f40adbd7a0470787b Mon Sep 17 00:00:00 2001
+From 5d149308c170326343337431e4c888a7b3284eb7 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 13 May 2016 01:38:06 -0400
 Subject: [PATCH] Activation Range Improvements
@@ -10,7 +10,7 @@ Fixes and adds new Immunities to improve gameplay behavior
 Adds water Mobs to activation range config and nerfs fish
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 2c8603e2fc..e10740a65c 100644
+index d522d7238d..3a248dbe37 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -192,6 +192,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -29,6 +29,27 @@ index 2c8603e2fc..e10740a65c 100644
                  vec3d = this.a(vec3d);
                  if (vec3d.equals(Vec3D.a)) {
                      return;
+@@ -565,6 +567,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 this.y = Vec3D.a;
+                 this.setMot(Vec3D.a);
+             }
++            // Paper start - ignore movement changes while inactive.
++            if (isTemporarilyActive && vec3d == getMot() && enummovetype == EnumMoveType.SELF) {
++                setMot(Vec3D.a);
++                return;
++            }
++            // Paper end
+ 
+             vec3d = this.a(vec3d, enummovetype);
+             Vec3D vec3d1 = this.e(vec3d);
+@@ -2765,6 +2773,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.am;
+     }
+ 
++    public boolean isPushedByWater() { return this.bM(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
+     public boolean bM() {
+         // Paper start
+         return this.pushedByWater();
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
 index b40c8d2f83..4eda130750 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
@@ -63,19 +84,6 @@ index 6d53254f83..1991cee43d 100644
      public ControllerMove getControllerMove() {
          if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {
              EntityInsentient entityinsentient = (EntityInsentient) this.getVehicle();
-diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 1b9551ae09..d0dc1c127d 100644
---- a/src/main/java/net/minecraft/server/EntityLiving.java
-+++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -2380,7 +2380,7 @@ public abstract class EntityLiving extends Entity {
-             }
-         }
- 
--        this.movementTick();
-+        if (!this.isTemporarilyActive) this.movementTick(); // Paper - don't move if only temporarily active
-         double d0 = this.locX() - this.lastX;
-         double d1 = this.locZ() - this.lastZ;
-         float f = (float) (d0 * d0 + d1 * d1);
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
 index 6d4d41c88c..193dbfc5f6 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
@@ -202,20 +210,26 @@ index 5a8c60ad90..29657fed75 100644
          return this.c;
      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 92601c581c..ecafbaa6bf 100644
+index 92601c581c..f4cb669740 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
-@@ -3,7 +3,9 @@ package org.spigotmc;
+@@ -3,11 +3,15 @@ package org.spigotmc;
  import java.util.Collection;
  import java.util.List;
  import net.minecraft.server.AxisAlignedBB;
 +import net.minecraft.server.BehaviorController;
++import net.minecraft.server.BlockPosition;
  import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkProviderServer; // Paper
  import net.minecraft.server.Entity;
  import net.minecraft.server.EntityAmbient;
  import net.minecraft.server.EntityAnimal;
-@@ -16,10 +18,12 @@ import net.minecraft.server.EntityEnderDragon;
+ import net.minecraft.server.EntityArrow;
++import net.minecraft.server.EntityBee;
+ import net.minecraft.server.EntityComplexPart;
+ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityCreeper;
+@@ -16,10 +20,13 @@ import net.minecraft.server.EntityEnderDragon;
  import net.minecraft.server.EntityFallingBlock; // Paper
  import net.minecraft.server.EntityFireball;
  import net.minecraft.server.EntityFireworks;
@@ -224,11 +238,12 @@ index 92601c581c..ecafbaa6bf 100644
  import net.minecraft.server.EntityLightning;
  import net.minecraft.server.EntityLiving;
  import net.minecraft.server.EntityMonster;
++import net.minecraft.server.EntityPillager;
 +import net.minecraft.server.EntityPlayer;
  import net.minecraft.server.EntityProjectile;
  import net.minecraft.server.EntityRaider;
  import net.minecraft.server.EntitySheep;
-@@ -30,15 +34,22 @@ import net.minecraft.server.EntityThrownTrident;
+@@ -30,15 +37,22 @@ import net.minecraft.server.EntityThrownTrident;
  import net.minecraft.server.EntityVillager;
  import net.minecraft.server.EntityWither;
  import net.minecraft.server.MathHelper;
@@ -251,7 +266,7 @@ index 92601c581c..ecafbaa6bf 100644
          MONSTER,
          ANIMAL,
          RAIDER,
-@@ -58,6 +69,7 @@ public class ActivationRange
+@@ -58,6 +72,7 @@ public class ActivationRange
       */
      public static ActivationType initializeEntityActivationType(Entity entity)
      {
@@ -259,7 +274,7 @@ index 92601c581c..ecafbaa6bf 100644
          if ( entity instanceof EntityRaider )
          {
              return ActivationType.RAIDER;
-@@ -86,6 +98,7 @@ public class ActivationRange
+@@ -86,6 +101,7 @@ public class ActivationRange
                  || ( entity.activationType == ActivationType.RAIDER && config.raiderActivationRange == 0 )
                  || ( entity.activationType == ActivationType.ANIMAL && config.animalActivationRange == 0 )
                  || ( entity.activationType == ActivationType.MONSTER && config.monsterActivationRange == 0 )
@@ -267,7 +282,7 @@ index 92601c581c..ecafbaa6bf 100644
                  || entity instanceof EntityHuman
                  || entity instanceof EntityProjectile
                  || entity instanceof EntityEnderDragon
-@@ -118,6 +131,8 @@ public class ActivationRange
+@@ -118,6 +134,8 @@ public class ActivationRange
          final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
          final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
@@ -276,7 +291,7 @@ index 92601c581c..ecafbaa6bf 100644
  
          int maxRange = Math.max( monsterActivationRange, animalActivationRange );
          maxRange = Math.max( maxRange, raiderActivationRange );
-@@ -133,6 +148,8 @@ public class ActivationRange
+@@ -133,6 +151,8 @@ public class ActivationRange
              ActivationType.RAIDER.boundingBox = player.getBoundingBox().grow( raiderActivationRange, 256, raiderActivationRange );
              ActivationType.ANIMAL.boundingBox = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
              ActivationType.MONSTER.boundingBox = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
@@ -285,7 +300,7 @@ index 92601c581c..ecafbaa6bf 100644
  
              int i = MathHelper.floor( maxBB.minX / 16.0D );
              int j = MathHelper.floor( maxBB.maxX / 16.0D );
-@@ -143,7 +160,7 @@ public class ActivationRange
+@@ -143,7 +163,7 @@ public class ActivationRange
              {
                  for ( int j1 = k; j1 <= l; ++j1 )
                  {
@@ -294,7 +309,7 @@ index 92601c581c..ecafbaa6bf 100644
                      if ( chunk != null )
                      {
                          activateChunkEntities( chunk );
-@@ -161,19 +178,15 @@ public class ActivationRange
+@@ -161,19 +181,15 @@ public class ActivationRange
       */
      private static void activateChunkEntities(Chunk chunk)
      {
@@ -322,7 +337,7 @@ index 92601c581c..ecafbaa6bf 100644
                          entity.activatedTick = MinecraftServer.currentTick;
                      }
                  }
-@@ -188,22 +201,22 @@ public class ActivationRange
+@@ -188,22 +204,22 @@ public class ActivationRange
       * @param entity
       * @return
       */
@@ -331,7 +346,7 @@ index 92601c581c..ecafbaa6bf 100644
      {
          // quick checks.
 -        if ( entity.inWater || entity.fireTicks > 0 )
-+        if ( (entity.activationType != ActivationType.WATER && entity.inWater) || entity.fireTicks > 0 ) // Paper
++        if ( (entity.activationType != ActivationType.WATER && entity.inWater && entity.pushedByWater()) || entity.fireTicks > 0 ) // Paper
          {
 -            return true;
 +            return 1; // Paper
@@ -351,7 +366,7 @@ index 92601c581c..ecafbaa6bf 100644
          }
          // special cases.
          if ( entity instanceof EntityLiving )
-@@ -211,33 +224,49 @@ public class ActivationRange
+@@ -211,33 +227,63 @@ public class ActivationRange
              EntityLiving living = (EntityLiving) entity;
              if ( /*TODO: Missed mapping? living.attackTicks > 0 || */ living.hurtTicks > 0 || living.effects.size() > 0 )
              {
@@ -359,12 +374,22 @@ index 92601c581c..ecafbaa6bf 100644
 +                return 1; // Paper
              }
 -            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() != null )
-+            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() instanceof EntityPlayer) // Paper
++            if ( entity instanceof EntityInsentient && ((EntityInsentient) entity ).getGoalTarget() != null) // Paper
              {
 -                return true;
 +                return 20; // Paper
-             }
++            }
 +            // Paper start
++            if (entity instanceof EntityBee) {
++                EntityBee bee = (EntityBee)entity;
++                BlockPosition movingTarget = bee.getMovingTarget();
++                if (bee.isAngry() ||
++                    (bee.getHivePos() != null && bee.getHivePos().equals(movingTarget)) ||
++                    (bee.getFlowerPos() != null && bee.getFlowerPos().equals(movingTarget))
++                ) {
++                    return 20;
++                }
+             }
              if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).canBreed() )
              {
 -                return true;
@@ -373,12 +398,12 @@ index 92601c581c..ecafbaa6bf 100644
 +                    return 1;
 +                }
 +                // Paper end
-+            }
+             }
 +            // Paper start
 +            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
 +            {
 +                return 0;
-             }
++            }
 +            // Paper end
              if ( entity instanceof EntityAnimal )
              {
@@ -397,10 +422,14 @@ index 92601c581c..ecafbaa6bf 100644
              if (entity instanceof EntityCreeper && ((EntityCreeper) entity).isIgnited()) { // isExplosive
 -                return true;
 +                return 20; // Paper
-             }
++            }
 +            // Paper start
 +            if (entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks() ) {
 +                return 0;
+             }
++            if (entity instanceof EntityPillager) {
++                EntityPillager pillager = (EntityPillager) entity;
++                // TODO:?
 +            }
 +            // Paper end
          }
@@ -409,7 +438,7 @@ index 92601c581c..ecafbaa6bf 100644
      }
  
      /**
-@@ -254,6 +283,7 @@ public class ActivationRange
+@@ -254,6 +300,7 @@ public class ActivationRange
          }
  
          boolean isActive = entity.activatedTick >= MinecraftServer.currentTick || entity.defaultActivationState;
@@ -417,7 +446,7 @@ index 92601c581c..ecafbaa6bf 100644
  
          // Should this entity tick?
          if ( !isActive )
-@@ -261,15 +291,19 @@ public class ActivationRange
+@@ -261,15 +308,19 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
