@@ -16,7 +16,7 @@ function update {
     $gitcmd fetch && $gitcmd clean -fd && $gitcmd reset --hard origin/master
     refRemote=$(git rev-parse HEAD)
     cd ../
-    $gitcmd add $1
+    $gitcmd add $1 -f
     refHEAD=$(getRef HEAD "$workdir/$1")
     echo "$1 $refHEAD - $refRemote"
     if [ "$refHEAD" != "$refRemote" ]; then
