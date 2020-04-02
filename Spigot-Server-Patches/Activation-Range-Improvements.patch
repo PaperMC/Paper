@@ -10,7 +10,7 @@ Fixes and adds new Immunities to improve gameplay behavior
 Adds water Mobs to activation range config and nerfs fish
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 2c8603e2fc..e10740a65c 100644
+index d522d7238d..3a248dbe37 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -29,6 +29,27 @@ index 2c8603e2fc..e10740a65c 100644
                  vec3d = this.a(vec3d);
                  if (vec3d.equals(Vec3D.a)) {
                      return;
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 this.y = Vec3D.a;
+                 this.setMot(Vec3D.a);
+             }
++            // Paper start - ignore movement changes while inactive.
++            if (isTemporarilyActive && vec3d == getMot() && enummovetype == EnumMoveType.SELF) {
++                setMot(Vec3D.a);
++                return;
++            }
++            // Paper end
+ 
+             vec3d = this.a(vec3d, enummovetype);
+             Vec3D vec3d1 = this.e(vec3d);
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return this.am;
+     }
+ 
++    public boolean isPushedByWater() { return this.bM(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
+     public boolean bM() {
+         // Paper start
+         return this.pushedByWater();
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
 index b40c8d2f83..4eda130750 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
@@ -63,19 +84,6 @@ index 6d53254f83..1991cee43d 100644
      public ControllerMove getControllerMove() {
          if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {
              EntityInsentient entityinsentient = (EntityInsentient) this.getVehicle();
-diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 1b9551ae09..d0dc1c127d 100644
---- a/src/main/java/net/minecraft/server/EntityLiving.java
-+++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-             }
-         }
- 
--        this.movementTick();
-+        if (!this.isTemporarilyActive) this.movementTick(); // Paper - don't move if only temporarily active
-         double d0 = this.locX() - this.lastX;
-         double d1 = this.locZ() - this.lastZ;
-         float f = (float) (d0 * d0 + d1 * d1);
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
 index 6d4d41c88c..193dbfc5f6 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
@@ -202,7 +210,7 @@ index 5a8c60ad90..29657fed75 100644
          return this.c;
      }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 92601c581c..ecafbaa6bf 100644
+index 92601c581c..f4cb669740 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -0,0 +0,0 @@ package org.spigotmc;
@@ -210,11 +218,17 @@ index 92601c581c..ecafbaa6bf 100644
  import java.util.List;
  import net.minecraft.server.AxisAlignedBB;
 +import net.minecraft.server.BehaviorController;
++import net.minecraft.server.BlockPosition;
  import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkProviderServer; // Paper
  import net.minecraft.server.Entity;
  import net.minecraft.server.EntityAmbient;
  import net.minecraft.server.EntityAnimal;
+ import net.minecraft.server.EntityArrow;
++import net.minecraft.server.EntityBee;
+ import net.minecraft.server.EntityComplexPart;
+ import net.minecraft.server.EntityCreature;
+ import net.minecraft.server.EntityCreeper;
 @@ -0,0 +0,0 @@ import net.minecraft.server.EntityEnderDragon;
  import net.minecraft.server.EntityFallingBlock; // Paper
  import net.minecraft.server.EntityFireball;
@@ -224,6 +238,7 @@ index 92601c581c..ecafbaa6bf 100644
  import net.minecraft.server.EntityLightning;
  import net.minecraft.server.EntityLiving;
  import net.minecraft.server.EntityMonster;
++import net.minecraft.server.EntityPillager;
 +import net.minecraft.server.EntityPlayer;
  import net.minecraft.server.EntityProjectile;
  import net.minecraft.server.EntityRaider;
@@ -331,7 +346,7 @@ index 92601c581c..ecafbaa6bf 100644
      {
          // quick checks.
 -        if ( entity.inWater || entity.fireTicks > 0 )
-+        if ( (entity.activationType != ActivationType.WATER && entity.inWater) || entity.fireTicks > 0 ) // Paper
++        if ( (entity.activationType != ActivationType.WATER && entity.inWater && entity.pushedByWater()) || entity.fireTicks > 0 ) // Paper
          {
 -            return true;
 +            return 1; // Paper
@@ -359,12 +374,22 @@ index 92601c581c..ecafbaa6bf 100644
 +                return 1; // Paper
              }
 -            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() != null )
-+            if ( entity instanceof EntityCreature && ( (EntityCreature) entity ).getGoalTarget() instanceof EntityPlayer) // Paper
++            if ( entity instanceof EntityInsentient && ((EntityInsentient) entity ).getGoalTarget() != null) // Paper
              {
 -                return true;
 +                return 20; // Paper
-             }
++            }
 +            // Paper start
++            if (entity instanceof EntityBee) {
++                EntityBee bee = (EntityBee)entity;
++                BlockPosition movingTarget = bee.getMovingTarget();
++                if (bee.isAngry() ||
++                    (bee.getHivePos() != null && bee.getHivePos().equals(movingTarget)) ||
++                    (bee.getFlowerPos() != null && bee.getFlowerPos().equals(movingTarget))
++                ) {
++                    return 20;
++                }
+             }
              if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).canBreed() )
              {
 -                return true;
@@ -373,12 +398,12 @@ index 92601c581c..ecafbaa6bf 100644
 +                    return 1;
 +                }
 +                // Paper end
-+            }
+             }
 +            // Paper start
 +            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
 +            {
 +                return 0;
-             }
++            }
 +            // Paper end
              if ( entity instanceof EntityAnimal )
              {
@@ -397,10 +422,14 @@ index 92601c581c..ecafbaa6bf 100644
              if (entity instanceof EntityCreeper && ((EntityCreeper) entity).isIgnited()) { // isExplosive
 -                return true;
 +                return 20; // Paper
-             }
++            }
 +            // Paper start
 +            if (entity instanceof EntityInsentient && ((EntityInsentient) entity).targetSelector.hasTasks() ) {
 +                return 0;
+             }
++            if (entity instanceof EntityPillager) {
++                EntityPillager pillager = (EntityPillager) entity;
++                // TODO:?
 +            }
 +            // Paper end
          }
