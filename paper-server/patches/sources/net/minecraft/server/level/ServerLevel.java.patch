@@ -79,7 +79,7 @@
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
-+
+ 
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -129,7 +129,7 @@
 +        }
 +        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
 +        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
- 
++
 +        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
 +
@@ -947,20 +947,23 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1836,6 +2216,7 @@
+@@ -1836,7 +2216,8 @@
          }
  
          public void onTrackingStart(Entity entity) {
+-            ServerLevel.this.getChunkSource().addEntity(entity);
 +            org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
-             ServerLevel.this.getChunkSource().addEntity(entity);
++            // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
-@@ -1864,9 +2245,52 @@
+                 ServerLevel.this.updateSleepingPlayerList();
+@@ -1864,9 +2245,53 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
 +            entity.inWorld = true; // CraftBukkit - Mark entity as in world
 +            entity.valid = true; // CraftBukkit
++            ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server
 +            // Paper start - Entity origin API
 +            if (entity.getOriginVector() == null) {
 +                entity.setOrigin(entity.getBukkitEntity().getLocation());
@@ -1008,7 +1011,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2319,15 @@
+@@ -1895,6 +2320,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
