@@ -473,7 +473,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public void playerTick() {
         try {
-            if (!this.isSpectator() || this.world.isLoaded(this.getChunkCoordinates())) {
+            if (valid && !this.isSpectator() || this.world.isLoaded(this.getChunkCoordinates())) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
                 super.tick();
             }
 
