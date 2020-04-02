@@ -1,4 +1,4 @@
-From e853c9a81e2edbb4750c52f7121b71fa7d1d1862 Mon Sep 17 00:00:00 2001
+From 29199995fd17dcc6ce4757218ccbf95ad9f0478d Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 8 Jul 2019 00:13:36 -0700
 Subject: [PATCH] Use getChunkIfLoadedImmediately in places
@@ -7,21 +7,8 @@ This prevents us from hitting chunk loads for chunks at or less-than
 ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
 load in that case).
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 4021bb5b8..2c8603e2f 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -203,7 +203,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-     }
- 
-     public boolean isChunkLoaded() {
--        return world.isChunkLoaded((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4);
-+        return world.getChunkIfLoadedImmediately((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4) != null; // Paper
-     }
-     // CraftBukkit end
- 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 691331217..f88bcb29d 100644
+index 691331217b..f88bcb29db 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -989,7 +989,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -34,7 +21,7 @@ index 691331217..f88bcb29d 100644
                                  return;
                              }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 75829b4de..61829b3bf 100644
+index 75829b4de5..61829b3bf9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -116,8 +116,16 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -73,7 +60,7 @@ index 75829b4de..61829b3bf 100644
              return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity);
          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index f86404f83..92601c581 100644
+index f86404f83a..92601c581c 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -143,9 +143,10 @@ public class ActivationRange
