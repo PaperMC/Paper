@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-
-(
-set -e
-PS1="$"
-basedir="$(cd "$1" && pwd -P)"
+basedir=$(cd "$1" && pwd -P)
 workdir="$basedir/work"
 minecraftversion=$(cat "${workdir}/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
 minecraftserverurl=$(cat "${workdir}/BuildData/info.json" | grep serverUrl | cut -d '"' -f 4)
@@ -17,10 +13,11 @@ jarpath="$decompiledir/$minecraftversion"
 mkdir -p "$decompiledir"
 
 echo "Downloading unmapped vanilla jar..."
-if [ ! -f  "$jarpath.jar" ]; then
+if [ ! -f "$jarpath.jar" ]; then
     curl -s -o "$jarpath.jar" "$minecraftserverurl"
     if [ "$?" != "0" ]; then
         echo "Failed to download the vanilla server jar. Check connectivity or try again later."
+        rm -fr "$jarpath.jar"
         exit 1
     fi
 fi
@@ -40,6 +37,7 @@ command -v md5sum >/dev/null 2>&1 || {
 checksum=$(md5sum "$jarpath.jar" | cut -d ' ' -f 1)
 if [ "$checksum" != "$minecrafthash" ]; then
     echo "The MD5 checksum of the downloaded server jar does not match the BuildData hash."
+    rm -fr "$jarpath.jar"
     exit 1
 fi
 
@@ -48,24 +46,27 @@ if [ ! -f "$jarpath-cl.jar" ]; then
     java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --auto-lvt BASIC --auto-member SYNTHETIC -i "$jarpath.jar" -m "$classmappings" -o "$jarpath-cl.jar" 1>/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to apply class mappings."
+        rm -fr "$jarpath-cl.jar"
         exit 1
     fi
 fi
 
 echo "Applying member mappings..."
 if [ ! -f "$jarpath-m.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --auto-member LOGGER --auto-member TOKENS -i "$jarpath-cl.jar" -m "$membermappings" -o "$jarpath-m.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --auto-member LOGGER --auto-member TOKENS -i "$jarpath-cl.jar" -m "$membermappings" -o "$jarpath-m.jar" >/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to apply member mappings."
+        rm -fr "$jarpath-m.jar"
         exit 1
     fi
 fi
 
 echo "Creating remapped jar..."
 if [ ! -f "$jarpath-mapped.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource.jar" --only . --only net/minecraft -i "$jarpath-m.jar" --access-transformer "$accesstransforms" -m "$packagemappings" -o "$jarpath-mapped.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource.jar" --only . --only net/minecraft -i "$jarpath-m.jar" --access-transformer "$accesstransforms" -m "$packagemappings" -o "$jarpath-mapped.jar" >/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to create remapped jar."
+        rm -fr "$jarpath-mapped.jar"
         exit 1
     fi
 fi
@@ -77,4 +78,3 @@ if [ "$?" != "0" ]; then
     echo "Failed to install remapped jar."
     exit 1
 fi
-)

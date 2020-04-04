@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-
-(
-PS1="$"
-basedir="$(cd "$1" && pwd -P)"
+basedir=$(cd "$1" && pwd -P)
 workdir="$basedir/work"
 source "$basedir/scripts/functions.sh"
 gitcmd="git -c commit.gpgsign=false -c core.safecrlf=false"
@@ -16,15 +13,15 @@ function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
         echo "$patch"
-        gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
-        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(From [a-f0-9]{32,}|\-\-\- a|\+\+\+ b|^.index)")
+        local gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
+        local diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(From [a-f0-9]{32,}|\-\-\- a|\+\+\+ b|^.index)")
 
-        testver=$(echo "$diffs" | tail -n 2 | grep --color=none -ve "^$" | tail -n 1 | grep --color=none "$gitver")
-        if [ "x$testver" != "x" ]; then
+        local testver=$(echo "$diffs" | tail -n 2 | grep --color=none -ve "^$" | tail -n 1 | grep --color=none "$gitver")
+        if [ -n "$testver" ]; then
             diffs=$(echo "$diffs" | sed 'N;$!P;$!D;$d')
         fi
 
-        if [ "x$diffs" == "x" ] ; then
+        if [ -z "$diffs" ] ; then
             $gitcmd reset HEAD "$patch" >/dev/null
             $gitcmd checkout -- "$patch" >/dev/null
         fi
@@ -32,21 +29,21 @@ function cleanupPatches {
 }
 
 function savePatches {
-    what=$1
-    what_name=$(basename "$what")
-    target=$2
+    local what="$1"
+    local what_name=$(basename "$what")
+    local target="$2"
     echo "Formatting patches for $what..."
 
     cd "$basedir/${what_name}-Patches/"
     if [ -d "$basedir/$target/.git/rebase-apply" ]; then
         # in middle of a rebase, be smarter
         echo "REBASE DETECTED - PARTIAL SAVE"
-        last=$(cat "$basedir/$target/.git/rebase-apply/last")
-        next=$(cat "$basedir/$target/.git/rebase-apply/next")
-        orderedfiles=$(find . -name "*.patch" | sort)
-        for i in $(seq -f "%04g" 1 1 $last)
+        local last=$(cat "$basedir/$target/.git/rebase-apply/last")
+        local next=$(cat "$basedir/$target/.git/rebase-apply/next")
+        local orderedfiles=$(find . -name "*.patch" | sort)
+        for i in $(seq -f "%04g" 1 1 "$last")
         do
-            if [ $i -lt $next ]; then
+            if [ "$i" -lt "$next" ]; then
                 rm $(echo "$orderedfiles{@}" | sed -n "${i}p")
             fi
         done
@@ -59,7 +56,7 @@ function savePatches {
     $gitcmd format-patch --no-stat -N -o "$basedir/${what_name}-Patches/" upstream/upstream >/dev/null
     cd "$basedir"
     $gitcmd add -A "$basedir/${what_name}-Patches"
-    if [ "$nofilter" == "0" ]; then
+    if [ "$nofilter" = "0" ]; then
         cleanupPatches "$basedir/${what_name}-Patches"
     fi
     echo "  Patches saved for $what to $what_name-Patches/"
@@ -73,4 +70,3 @@ if [ -f "$basedir/Paper-API/.git/patch-apply-failed" ]; then
 else
     savePatches "$workdir/Spigot/Spigot-Server" "Paper-Server"
 fi
-) || exit 1

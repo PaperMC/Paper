@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-
-(
 set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
@@ -12,7 +10,7 @@ cb="src/main/java/net/minecraft/server"
 gitcmd="git -c commit.gpgsign=false"
 
 patch=$(which patch 2>/dev/null)
-if [ "x$patch" == "x" ]; then
+if [ -z "$patch" ]; then
     patch="$basedir/hctap.exe"
 fi
 
@@ -22,7 +20,7 @@ cd "$basedir"
 prepatchesdir="$basedir/scripts/pre-source-patches"
 for file in $(ls "$prepatchesdir")
 do
-    if [ $file == "README.md" ]; then
+    if [ $file = "README.md" ]; then
         continue
     fi
 
@@ -62,4 +60,3 @@ done
 $gitcmd add src
 $gitcmd commit -m "CraftBukkit $ $(date)" --author="CraftBukkit <auto@mated.null>"
 $gitcmd checkout -f HEAD~2
-)

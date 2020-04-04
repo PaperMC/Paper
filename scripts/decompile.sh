@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-
-(
 set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
@@ -18,14 +16,14 @@ forgeflowerbin="$workdir/ForgeFlower/$forgeflowerversion.jar"
 # TODO: Make this better? We don't need spigot compat for this stage
 forgefloweroptions="-dgs=1 -hdc=0 -asc=1 -udv=1 -jvn=1"
 forgeflowercachefile="$decompiledir/forgeflowercache"
-forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptions";
+forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptions"
 classdir="$decompiledir/classes"
 versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
 
-if [[ ! -f "$versionjson" ]]; then
+if [ ! -f "$versionjson" ]; then
     echo "Downloading $minecraftversion JSON Data"
-    verescaped=$(echo ${minecraftversion} | sed 's/\-pre/ Pre-Release /g' | sed 's/\./\\./g')
-    urlescaped=$(echo ${verescaped} | sed 's/ /_/g')
+    verescaped=$(echo "${minecraftversion}" | sed 's/\-pre/ Pre-Release /g' | sed 's/\./\\./g')
+    urlescaped=$(echo "${verescaped}" | sed 's/ /_/g')
     verentry=$(curl -s "https://launchermeta.mojang.com/mc/game/version_manifest.json" | grep -oE "\{\"id\": \"${verescaped}\".*${urlescaped}\.json")
     jsonurl=$(echo $verentry | grep -oE https:\/\/.*\.json)
     curl -o "$versionjson" "$jsonurl"
@@ -33,19 +31,18 @@ if [[ ! -f "$versionjson" ]]; then
 fi
 
 function downloadLibraries {
-    group=$1
-    groupesc=$(echo ${group} | sed 's/\./\\./g')
-    grouppath=$(echo ${group} | sed 's/\./\//g')
-    libdir="$decompiledir/libraries/${group}/"
+    local group="$1"
+    local groupesc=$(echo "${group}" | sed 's/\./\\./g')
+    local grouppath=$(echo "${group}" | sed 's/\./\//g')
+    local libdir="$decompiledir/libraries/${group}/"
     mkdir -p "$libdir"
     shift
-    for lib in "$@"
-    do
-        jar="$libdir/${lib}-sources.jar"
-        destlib="$libdir/${lib}"
+    for lib in "$@"; do
+        local jar="$libdir/${lib}-sources.jar"
+        local destlib="$libdir/${lib}"
         if [ ! -f "$jar" ]; then
-            libesc=$(echo ${lib} | sed 's/\./\\]./g')
-            ver=$(grep -oE "${groupesc}:${libesc}:[0-9\.]+" "$versionjson" | sed "s/${groupesc}:${libesc}://g")
+            local libesc=$(echo "${lib}" | sed 's/\./\\]./g')
+            local ver=$(grep -oE "${groupesc}:${libesc}:[0-9\.]+" "$versionjson" | sed "s/${groupesc}:${libesc}://g")
             echo "Downloading ${group}:${lib}:${ver} Sources"
             curl -s -o "$jar" "https://libraries.minecraft.net/${grouppath}/${lib}/${ver}/${lib}-${ver}-sources.jar"
             set +e
@@ -72,14 +69,13 @@ echo "Extracting NMS classes..."
 if [ ! -d "$classdir" ]; then
     mkdir -p "$classdir"
     cd "$classdir"
-    set +e
-    jar xf "$decompiledir/$minecraftversion-mapped.jar" net/minecraft/server
-    if [ "$?" != "0" ]; then
+    if jar xf "$decompiledir/$minecraftversion-mapped.jar" net/minecraft/server; then
+        :
+    else
         cd "$basedir"
         echo "Failed to extract NMS classes."
         exit 1
     fi
-    set -e
 fi
 
 #needsDecomp=0
@@ -124,14 +120,13 @@ fi
 if [ ! -d "$spigotdecompiledir/net" ]; then
     echo "Decompiling classes (stage 2)..."
     cd "$basedir"
-    set +e
-    java -jar "$workdir/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 -rsy=1 -aoa=1 "$classdir" "$spigotdecompiledir"
-    if [ "$?" != "0" ]; then
+    if java -jar "$workdir/BuildData/bin/fernflower.jar" -dgs=1 -hdc=0 -asc=1 -udv=0 -rsy=1 -aoa=1 "$classdir" "$spigotdecompiledir"; then
+        :
+    else
         rm -rf "$spigotdecompiledir/net"
         echo "Failed to decompile classes."
         exit 1
     fi
-    set -e
 fi
 
 # set a symlink to current
@@ -142,5 +137,3 @@ if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "$windows" == "false"
 	rm -rf "$currentlink" || true
 	ln -sfn "$minecraftversion" "$currentlink" || echo "Failed to set current symlink"
 fi
-
-)

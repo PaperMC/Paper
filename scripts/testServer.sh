@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-
 set -e
-PS1="$"
-basedir="$(cd "$1" && pwd -P)"
+basedir=$(cd "$1" && pwd -P)
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 gitcmd="git -c commit.gpgsign=false"
@@ -10,7 +8,7 @@ gitcmd="git -c commit.gpgsign=false"
 #
 # FUNCTIONS
 #
-source $basedir/scripts/functions.sh
+source "$basedir/scripts/functions.sh"
 
 updateTest() {
     paperstash
@@ -32,7 +30,7 @@ if [ ! -d .git ]; then
     $gitcmd remote add origin ${PAPER_TEST_SKELETON:-https://github.com/PaperMC/PaperTestServer}
     $gitcmd fetch origin
     updateTest
-elif [ "$2" == "update" ] || [ "$3" == "update" ]; then
+elif [ "$2" = "update" || "$3" = "update" ]; then
     updateTest
 fi
 
@@ -73,7 +71,7 @@ if [ ! -d "$folder" ]; then
 )
 fi
 
-if [ ! -f "$jar" ] || [ "$2" == "build" ] || [ "$3" == "build" ]; then
+if [ ! -f "$jar" ] || [ "$2" = "build" ] || [ "$3" = "build" ]; then
 (
     echo "Building Paper"
     cd "$basedir"
@@ -102,14 +100,14 @@ tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
 
 multiplex=${PAPER_TEST_MULTIPLEXER}
 
-if [ "$multiplex" == "screen" ]; then
+if [ "$multiplex" = "screen" ]; then
     if command -v "screen" >/dev/null 2>&1 ; then
         cmd="$screen_command"
     else
         echo "screen not found"
         exit 1
     fi
-elif [ "$multiplex" == "tmux" ] ; then
+elif [ "$multiplex" = "tmux" ] ; then
     if command -v "tmux" >/dev/null 2>&1 ; then
         cmd="$tmux_command"
     else

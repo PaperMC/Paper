@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-(
 set -e
-PS1="$"
 
-function changelog() {
-    base=$(git ls-tree HEAD $1  | cut -d' ' -f3 | cut -f1)
-    cd $1 && git log --oneline ${base}...HEAD
+function changelog {
+    local base="$(git ls-tree HEAD "$1"  | cut -d' ' -f3 | cut -f1)"
+    cd "$1" && git log --oneline "${base}...HEAD"
 }
 bukkit=$(changelog work/Bukkit)
 cb=$(changelog work/CraftBukkit)
@@ -28,11 +26,10 @@ fi
 disclaimer="Upstream has released updates that appears to apply and compile correctly.\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing"
 
 if [ ! -z "$1" ]; then
-    disclaimer="$@"
+    disclaimer="$*"
 fi
 
 log="${UP_LOG_PREFIX}Updated Upstream ($updated)\n\n${disclaimer}${logsuffix}"
 
 echo -e "$log" | git commit -F -
 
-) || exit 1

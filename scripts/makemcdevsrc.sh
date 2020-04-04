@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-
-(
 set -e
-PS1="$"
 
 basedir="$(cd "$1" && pwd -P)"
 cd "$basedir"
@@ -14,7 +11,7 @@ papernms="Paper-Server/src/main/java/net/minecraft/server"
 mcdevsrc="${decompiledir}/src/net/minecraft/server"
 rm -rf "${mcdevsrc}"
 mkdir -p "${mcdevsrc}"
-find ${nms} -name *.java -print0 | xargs -I\{} -0 cp \{} "${mcdevsrc}/"
+find "${nms}" -name *.java -print0 | xargs -I\{} -0 cp \{} "${mcdevsrc}/"
 
 for file in "${nms}/"*
 do
@@ -26,4 +23,3 @@ do
     fi
 done
 echo "Built $decompiledir/src to be included in your project for src access";
-)

@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
-
-(
 set -e
 nms="net/minecraft/server"
 export MODLOG=""
-PS1="$"
-basedir="$(cd "$1" && pwd -P)"
+basedir=$(cd "$1" && pwd -P)
 source "$basedir/scripts/functions.sh"
 gitcmd="git -c commit.gpgsign=false"
 
 workdir="$basedir/work"
-minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
+minecraftversion=$(cat "$workdir/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
 decompiledir="$workdir/Minecraft/$minecraftversion/forge"
 # replace for now
 decompiledir="$workdir/Minecraft/$minecraftversion/spigot"
@@ -31,9 +28,9 @@ function import {
 }
 
 function importLibrary {
-    group=$1
-    lib=$2
-    prefix=$3
+    local group="$1"
+    local lib="$2"
+    local prefix="$3"
     shift 3
     for file in "$@"; do
         file="$prefix/$file"
@@ -50,15 +47,12 @@ function importLibrary {
     done
 }
 
-(
     cd "$workdir/Spigot/Spigot-Server/"
     lastlog=$($gitcmd log -1 --oneline)
     if [[ "$lastlog" = *"mc-dev Imports"* ]]; then
         $gitcmd reset --hard HEAD^
     fi
-)
-
-
+    cd "$basedir"
 
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/server/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\/server\///g' | sed 's/.java//g')
 
@@ -66,14 +60,14 @@ nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -
 function containsElement {
 	local e
 	for e in "${@:2}"; do
-		[[ "$e" == "$1" ]] && return 0;
+		[ "$e" = "$1" ] && return 0;
 	done
 	return 1
 }
 set +e
 for f in $files; do
 	containsElement "$f" ${nonnms[@]}
-	if [ "$?" == "1" ]; then
+	if [ "$?" = "1" ]; then
 		if [ ! -f "$workdir/Spigot/Spigot-Server/src/main/java/net/minecraft/server/$f.java" ]; then
 			if [ ! -f "$decompiledir/$nms/$f.java" ]; then
 				echo "$(color 1 31) ERROR!!! Missing NMS$(color 1 34) $f $(colorend)";
@@ -116,4 +110,3 @@ cd "$workdir/Spigot/Spigot-Server/"
 rm -rf nms-patches applyPatches.sh makePatches.sh >/dev/null 2>&1
 $gitcmd add . -A >/dev/null 2>&1
 echo -e "mc-dev Imports\n\n$MODLOG" | $gitcmd commit . -F -
-)

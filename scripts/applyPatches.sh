@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-
-(
-PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
@@ -13,10 +10,10 @@ windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || 
 echo "Rebuilding Forked projects.... "
 
 function applyPatch {
-    what=$1
-    what_name=$(basename "$what")
-    target=$2
-    branch=$3
+    local what="$1"
+    local what_name="$(basename "$what")"
+    local target="$2"
+    local branch="$3"
 
     cd "$basedir/$what"
     $gitcmd fetch
@@ -74,15 +71,14 @@ function applyPatch {
 
 # Move into spigot dir
 cd "$workdir/Spigot"
-basedir=$(pwd)
+basedir="$(pwd)"
 # Apply Spigot
-(
-    applyPatch ../Bukkit Spigot-API HEAD &&
-    applyPatch ../CraftBukkit Spigot-Server patched
-) || (
+if applyPatch ../Bukkit Spigot-API HEAD && applyPatch ../CraftBukkit Spigot-Server patched;then
+:
+else
     echo "Failed to apply Spigot Patches"
     exit 1
-) || exit 1
+fi
 # Move out of Spigot
 basedir="$1"
 cd "$basedir"
@@ -93,16 +89,17 @@ echo "Importing MC Dev"
 
 # Apply paper
 cd "$basedir"
-(
-    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
-    applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+if (
+    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD || exit 1
+    applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD || exit 1
 
     # if we have previously ran ./paper mcdev, update it
     if [ -d "$workdir/Minecraft/$minecraftversion/src" ]; then
-        $basedir/scripts/makemcdevsrc.sh $basedir
+        "$basedir/scripts/makemcdevsrc.sh" "$basedir" || exit 1
     fi
-) || (
+); then
+    :
+else
     echo "Failed to apply Paper Patches"
     exit 1
-) || exit 1
-) || exit 1
+fi
