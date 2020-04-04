@@ -2,9 +2,10 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.server.TileEntityBell;
 import org.bukkit.Material;
+import org.bukkit.block.Bell;
 import org.bukkit.block.Block;
 
-public class CraftBell extends CraftBlockEntityState<TileEntityBell> {
+public class CraftBell extends CraftBlockEntityState<TileEntityBell> implements Bell {
 
     public CraftBell(Block block) {
         super(block, TileEntityBell.class);
