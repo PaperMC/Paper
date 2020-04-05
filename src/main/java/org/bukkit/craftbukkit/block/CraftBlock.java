@@ -38,9 +38,11 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFluidCollisionMode;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -612,12 +614,17 @@ public class CraftBlock implements Block {
 
     @Override
     public Collection<ItemStack> getDrops(ItemStack item) {
+        return getDrops(item, null);
+    }
+
+    @Override
+    public Collection<ItemStack> getDrops(ItemStack item, Entity entity) {
         IBlockData iblockdata = getNMS();
         net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
         if (iblockdata.getMaterial().isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
-            return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), null, nms)
+            return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {
             return Collections.emptyList();
