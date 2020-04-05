@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.util.BoundingBox;
@@ -407,6 +408,17 @@ public interface Block extends Metadatable {
      */
     @NotNull
     Collection<ItemStack> getDrops(@NotNull ItemStack tool);
+
+    /**
+     * Returns a list of items which would drop by the entity destroying this
+     * block with a specific tool
+     *
+     * @param tool The tool or item in hand used for digging
+     * @param entity the entity destroying the block
+     * @return a list of dropped items for this type of block
+     */
+    @NotNull
+    Collection<ItemStack> getDrops(@NotNull ItemStack tool, @Nullable Entity entity);
 
     /**
      * Checks if this block is passable.
