@@ -42,7 +42,7 @@ public class CraftContainer extends Container {
     private final int cachedSize;
 
     public CraftContainer(InventoryView view, EntityHuman player, int id) {
-        super(getNotchInventoryType(view.getType()), id);
+        super(getNotchInventoryType(view.getTopInventory()), id);
         this.view = view;
         // TODO: Do we need to check that it really is a CraftInventory?
         IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
@@ -104,7 +104,7 @@ public class CraftContainer extends Container {
         cachedTitle = view.getTitle();
         if (view.getPlayer() instanceof CraftPlayer) {
             CraftPlayer player = (CraftPlayer) view.getPlayer();
-            Containers type = getNotchInventoryType(cachedType);
+            Containers<?> type = getNotchInventoryType(view.getTopInventory());
             IInventory top = ((CraftInventory) view.getTopInventory()).getInventory();
             PlayerInventory bottom = (PlayerInventory) ((CraftInventory) view.getBottomInventory()).getInventory();
             this.items.clear();
@@ -119,8 +119,29 @@ public class CraftContainer extends Container {
         return true;
     }
 
-    public static Containers getNotchInventoryType(InventoryType type) {
-        switch (type) {
+    public static Containers getNotchInventoryType(Inventory inventory) {
+        switch (inventory.getType()) {
+            case PLAYER:
+            case CHEST:
+            case ENDER_CHEST:
+            case BARREL:
+                switch(inventory.getSize()) {
+                    case 9:
+                        return Containers.GENERIC_9X1;
+                    case 18:
+                        return Containers.GENERIC_9X2;
+                    case 27:
+                        return Containers.GENERIC_9X3;
+                    case 36:
+                    case 41: // PLAYER
+                        return Containers.GENERIC_9X4;
+                    case 45:
+                        return Containers.GENERIC_9X5;
+                    case 54:
+                        return Containers.GENERIC_9X6;
+                    default:
+                        throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
+                }
             case WORKBENCH:
                 return Containers.CRAFTING;
             case FURNACE:
@@ -155,7 +176,12 @@ public class CraftContainer extends Container {
                 return Containers.GRINDSTONE;
             case STONECUTTER:
                 return Containers.STONECUTTER;
+            case CREATIVE:
+            case CRAFTING:
+            case MERCHANT:
+                throw new IllegalArgumentException("Can't open a " + inventory.getType() + " inventory!");
             default:
+                // TODO: If it reaches the default case, should we throw an error?
                 return Containers.GENERIC_9X3;
         }
     }
@@ -271,6 +297,6 @@ public class CraftContainer extends Container {
 
     @Override
     public Containers<?> getType() {
-        return getNotchInventoryType(cachedType);
+        return getNotchInventoryType(view.getTopInventory());
     }
 }
