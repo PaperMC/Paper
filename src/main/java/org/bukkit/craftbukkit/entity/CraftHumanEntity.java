@@ -52,7 +52,6 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Villager;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
@@ -97,7 +96,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public MainHand getMainHand() {
-        return getHandle().getMainHand()== EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
+        return getHandle().getMainHand() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
     }
 
     @Override
@@ -304,7 +303,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public InventoryView openInventory(Inventory inventory) {
-        if(!(getHandle() instanceof EntityPlayer)) return null;
+        if (!(getHandle() instanceof EntityPlayer)) return null;
         EntityPlayer player = (EntityPlayer) getHandle();
         Container formerContainer = getHandle().activeContainer;
 
@@ -347,7 +346,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Container container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
 
         container = CraftEventFactory.callInventoryOpenEvent(player, container);
-        if(container == null) return;
+        if (container == null) return;
 
         String title = container.getBukkitView().getTitle();
 
@@ -402,7 +401,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (((EntityPlayer) getHandle()).playerConnection == null) return;
         if (getHandle().activeContainer != getHandle().defaultContainer) {
             // fire INVENTORY_CLOSE if one already open
-            ((EntityPlayer)getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
+            ((EntityPlayer) getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
         }
         EntityPlayer player = (EntityPlayer) getHandle();
         Container container;
