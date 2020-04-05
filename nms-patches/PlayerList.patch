@@ -379,13 +379,13 @@
 +            if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, "The server is full");
 +            }
-         }
++        }
 +
 +        cserver.getPluginManager().callEvent(event);
 +        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
 +            loginlistener.disconnect(event.getKickMessage());
 +            return null;
-+        }
+         }
 +        return entity;
      }
  
@@ -466,13 +466,13 @@
 +                    entityplayer1.setRespawnPosition(null, true, false);
 +                    entityplayer1.playerConnection.sendPacket(new PacketPlayOutGameStateChange(0, 0.0F));
 +                }
-             }
++            }
 +
 +            if (location == null) {
 +                cworld = (CraftWorld) this.server.server.getWorlds().get(0);
 +                blockposition = entityplayer1.getSpawnPoint(cworld.getHandle());
 +                location = new Location(cworld, (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F));
-+            }
+             }
 +
 +            Player respawnPlayer = cserver.getPlayer(entityplayer1);
 +            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn);
@@ -658,7 +658,7 @@
      }
  
      public int getPlayerCount() {
-@@ -710,26 +993,39 @@
+@@ -710,33 +993,52 @@
      }
  
      public void shutdown() {
@@ -695,15 +695,30 @@
      }
  
 -    public ServerStatisticManager getStatisticManager(EntityHuman entityhuman) {
-+    public ServerStatisticManager getStatisticManager(EntityPlayer entityhuman) {
-         UUID uuid = entityhuman.getUniqueID();
+-        UUID uuid = entityhuman.getUniqueID();
 -        ServerStatisticManager serverstatisticmanager = uuid == null ? null : (ServerStatisticManager) this.o.get(uuid);
-+        ServerStatisticManager serverstatisticmanager = uuid == null ? null : (ServerStatisticManager) entityhuman.getStatisticManager();
++    // CraftBukkit start
++    public ServerStatisticManager getStatisticManager(EntityPlayer entityhuman) {
++        ServerStatisticManager serverstatisticmanager = entityhuman.getStatisticManager();
++        return serverstatisticmanager == null ? getStatisticManager(entityhuman.getUniqueID(), entityhuman.getDisplayName().getString()) : serverstatisticmanager;
++    }
++
++    public ServerStatisticManager getStatisticManager(UUID uuid, String displayName) {
++        EntityPlayer entityHuman = this.a(uuid);
++        ServerStatisticManager serverstatisticmanager = entityHuman == null ? null : (ServerStatisticManager) entityHuman.getStatisticManager();
 +        // CraftBukkit end
  
          if (serverstatisticmanager == null) {
              File file = new File(this.server.getWorldServer(DimensionManager.OVERWORLD).getDataManager().getDirectory(), "stats");
-@@ -744,7 +1040,7 @@
+             File file1 = new File(file, uuid + ".json");
+ 
+             if (!file1.exists()) {
+-                File file2 = new File(file, entityhuman.getDisplayName().getString() + ".json");
++                File file2 = new File(file, displayName + ".json"); // CraftBukkit
+ 
+                 if (file2.exists() && file2.isFile()) {
+                     file2.renameTo(file1);
+@@ -744,7 +1046,7 @@
              }
  
              serverstatisticmanager = new ServerStatisticManager(this.server, file1);
@@ -712,7 +727,7 @@
          }
  
          return serverstatisticmanager;
-@@ -752,14 +1048,14 @@
+@@ -752,14 +1054,14 @@
  
      public AdvancementDataPlayer f(EntityPlayer entityplayer) {
          UUID uuid = entityplayer.getUniqueID();
@@ -729,7 +744,7 @@
          }
  
          advancementdataplayer.a(entityplayer);
-@@ -795,13 +1091,20 @@
+@@ -795,13 +1097,20 @@
      }
  
      public void reload() {

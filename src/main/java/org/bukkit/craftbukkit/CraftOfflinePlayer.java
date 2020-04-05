@@ -8,15 +8,19 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.DimensionManager;
 import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.ServerStatisticManager;
 import net.minecraft.server.WhiteListEntry;
 import net.minecraft.server.WorldNBTStorage;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
+import org.bukkit.Statistic;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
@@ -270,5 +274,201 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     public void removeMetadata(String metadataKey, Plugin plugin) {
         server.getPlayerMetadata().removeMetadata(this, metadataKey, plugin);
+    }
+
+    private ServerStatisticManager getStatisticManager() {
+        return server.getHandle().getStatisticManager(getUniqueId(), getName());
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic);
+            manager.a();
+        }
+    }
+
+    @Override
+    public int getStatistic(Statistic statistic) {
+        if (isOnline()) {
+            return getPlayer().getStatistic(statistic);
+        } else {
+            return CraftStatistic.getStatistic(getStatisticManager(), statistic);
+        }
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic, int amount) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic, int amount) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void setStatistic(Statistic statistic, int newValue) {
+        if (isOnline()) {
+            getPlayer().setStatistic(statistic, newValue);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.setStatistic(manager, statistic, newValue);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic, Material material) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic, material);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic, material);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic, Material material) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic, material);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic, material);
+            manager.a();
+        }
+    }
+
+    @Override
+    public int getStatistic(Statistic statistic, Material material) {
+        if (isOnline()) {
+            return getPlayer().getStatistic(statistic, material);
+        } else {
+            return CraftStatistic.getStatistic(getStatisticManager(), statistic, material);
+        }
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic, Material material, int amount) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic, material, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic, material, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic, Material material, int amount) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic, material, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic, material, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void setStatistic(Statistic statistic, Material material, int newValue) {
+        if (isOnline()) {
+            getPlayer().setStatistic(statistic, material, newValue);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.setStatistic(manager, statistic, material, newValue);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic, EntityType entityType) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic, entityType);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic, entityType);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic, EntityType entityType) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic, entityType);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic, entityType);
+            manager.a();
+        }
+    }
+
+    @Override
+    public int getStatistic(Statistic statistic, EntityType entityType) {
+        if (isOnline()) {
+            return getPlayer().getStatistic(statistic, entityType);
+        } else {
+            return CraftStatistic.getStatistic(getStatisticManager(), statistic, entityType);
+        }
+    }
+
+    @Override
+    public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) {
+        if (isOnline()) {
+            getPlayer().incrementStatistic(statistic, entityType, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.incrementStatistic(manager, statistic, entityType, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void decrementStatistic(Statistic statistic, EntityType entityType, int amount) {
+        if (isOnline()) {
+            getPlayer().decrementStatistic(statistic, entityType, amount);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.decrementStatistic(manager, statistic, entityType, amount);
+            manager.a();
+        }
+    }
+
+    @Override
+    public void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
+        if (isOnline()) {
+            getPlayer().setStatistic(statistic, entityType, newValue);
+        } else {
+            ServerStatisticManager manager = getStatisticManager();
+            CraftStatistic.setStatistic(manager, statistic, entityType, newValue);
+            manager.a();
+        }
     }
 }
