@@ -8,9 +8,12 @@ import net.minecraft.server.EntityTypes;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.ServerStatisticManager;
 import net.minecraft.server.StatisticList;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
+import org.bukkit.Statistic.Type;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 
@@ -187,5 +190,111 @@ public enum CraftStatistic {
             return CraftMagicNumbers.getMaterial((Block) statistic.b());
         }
         return null;
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic) {
+        incrementStatistic(manager, statistic, 1);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic) {
+        decrementStatistic(manager, statistic, 1);
+    }
+
+    public static int getStatistic(ServerStatisticManager manager, Statistic statistic) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.isTrue(statistic.getType() == Type.UNTYPED, "Must supply additional paramater for this statistic");
+        return manager.getStatisticValue(CraftStatistic.getNMSStatistic(statistic));
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, getStatistic(manager, statistic) + amount);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, getStatistic(manager, statistic) - amount);
+    }
+
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.isTrue(statistic.getType() == Type.UNTYPED, "Must supply additional paramater for this statistic");
+        Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getNMSStatistic(statistic);
+        manager.setStatistic(null, nmsStatistic, newValue);;
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
+        incrementStatistic(manager, statistic, material, 1);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
+        decrementStatistic(manager, statistic, material, 1);
+    }
+
+    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, Material material) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(material, "Material cannot be null");
+        Validate.isTrue(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        Validate.notNull(nmsStatistic, "The supplied Material does not have a corresponding statistic");
+        return manager.getStatisticValue(nmsStatistic);
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) + amount);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, material, getStatistic(manager, statistic, material) - amount);
+    }
+
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, Material material, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(material, "Material cannot be null");
+        Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
+        Validate.isTrue(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        Validate.notNull(nmsStatistic, "The supplied Material does not have a corresponding statistic");
+        manager.setStatistic(null, nmsStatistic, newValue);
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
+        incrementStatistic(manager, statistic, entityType, 1);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
+        decrementStatistic(manager, statistic, entityType, 1);
+    }
+
+    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(entityType, "EntityType cannot be null");
+        Validate.isTrue(statistic.getType() == Type.ENTITY, "This statistic does not take an EntityType parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
+        Validate.notNull(nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
+        return manager.getStatisticValue(nmsStatistic);
+    }
+
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) + amount);
+    }
+
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount) {
+        Validate.isTrue(amount > 0, "Amount must be greater than 0");
+        setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) - amount);
+    }
+
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(entityType, "EntityType cannot be null");
+        Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
+        Validate.isTrue(statistic.getType() == Type.ENTITY, "This statistic does not take an EntityType parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
+        Validate.notNull(nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
+        manager.setStatistic(null, nmsStatistic, newValue);
     }
 }
