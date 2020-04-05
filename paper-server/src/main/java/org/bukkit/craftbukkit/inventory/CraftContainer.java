@@ -15,6 +15,7 @@ import net.minecraft.server.ContainerGrindstone;
 import net.minecraft.server.ContainerHopper;
 import net.minecraft.server.ContainerLectern;
 import net.minecraft.server.ContainerLoom;
+import net.minecraft.server.ContainerMerchant;
 import net.minecraft.server.ContainerProperties;
 import net.minecraft.server.ContainerShulkerBox;
 import net.minecraft.server.ContainerSmoker;
@@ -246,6 +247,9 @@ public class CraftContainer extends Container {
                 break;
             case STONECUTTER:
                 delegate = new ContainerStonecutter(windowId, bottom);
+                break;
+            case MERCHANT:
+                delegate = new ContainerMerchant(windowId, bottom);
                 break;
         }
 
