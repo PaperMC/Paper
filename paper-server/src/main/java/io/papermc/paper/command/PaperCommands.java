@@ -18,6 +18,7 @@ public final class PaperCommands {
     static {
         COMMANDS.put("paper", new PaperCommand("paper"));
         COMMANDS.put("callback", new CallbackCommand("callback"));
+        COMMANDS.put("mspt", new MSPTCommand("mspt"));
     }
 
     public static void registerCommands(final MinecraftServer server) {
