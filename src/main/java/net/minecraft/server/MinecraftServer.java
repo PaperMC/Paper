@@ -107,6 +107,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     private int F;
     private int G;
     public final long[] h; public long[] getTickTimes() { return h; } // Paper - OBFHELPER
+    // Paper start
+    public final TickTimes tickTimes5s = new TickTimes(100);
+    public final TickTimes tickTimes10s = new TickTimes(200);
+    public final TickTimes tickTimes60s = new TickTimes(1200);
+    // Paper end
     @Nullable
     private KeyPair H;
     @Nullable
@@ -1213,6 +1218,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         this.ag = this.ag * 0.8F + (float) l / 1000000.0F * 0.19999999F;
         long i1 = SystemUtils.getMonotonicNanos();
 
+        // Paper start
+        tickTimes5s.add(this.ticks, l);
+        tickTimes10s.add(this.ticks, l);
+        tickTimes60s.add(this.ticks, l);
+        // Paper end
+
         this.circularTimer.a(i1 - i);
         this.methodProfiler.exit();
         org.spigotmc.WatchdogThread.tick(); // Spigot
@@ -2174,4 +2185,30 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     public IRegistryCustom getCustomRegistry() {
         return this.customRegistry;
     }
+
+    // Paper start
+    public static class TickTimes {
+        private final long[] times;
+
+        public TickTimes(int length) {
+            times = new long[length];
+        }
+
+        void add(int index, long time) {
+            times[index % times.length] = time;
+        }
+
+        public long[] getTimes() {
+            return times.clone();
+        }
+
+        public double getAverage() {
+            long total = 0L;
+            for (long value : times) {
+                total += value;
+            }
+            return ((double) total / (double) times.length) * 1.0E-6D;
+        }
+    }
+    // Paper end
 }

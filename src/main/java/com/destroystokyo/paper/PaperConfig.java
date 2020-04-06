@@ -69,6 +69,7 @@ public class PaperConfig {
 
         commands = new HashMap<String, Command>();
         commands.put("paper", new PaperCommand("paper"));
+        commands.put("mspt", new MSPTCommand("mspt"));
 
         version = getInt("config-version", 20);
         set("config-version", 20);

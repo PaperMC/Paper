@@ -2144,6 +2144,16 @@ public final class CraftServer implements Server {
                 net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
         };
     }
+
+    @Override
+    public long[] getTickTimes() {
+        return getServer().tickTimes5s.getTimes();
+    }
+
+    @Override
+    public double getAverageTickTime() {
+        return getServer().tickTimes5s.getAverage();
+    }
     // Paper end
 
     private final Spigot spigot = new Spigot()
