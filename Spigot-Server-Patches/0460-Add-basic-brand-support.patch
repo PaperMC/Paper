@@ -1,0 +1,60 @@
+From 887c56195ad8378f5a84eca12f681a1e58e74599 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Mon, 6 Apr 2020 17:14:57 +0200
+Subject: [PATCH] Add basic brand support
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7929fcc8..319f12f9 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -106,6 +106,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+ 
++    private String clientBrandName = null;
++
+     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
+         this.minecraftServer = minecraftserver;
+         this.networkManager = networkmanager;
+@@ -2664,6 +2666,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 PlayerConnection.LOGGER.error("Couldn\'t unregister custom payload", ex);
+                 this.disconnect("Invalid payload UNREGISTER!");
+             }
++        // paper start -- add brand support
++        }  else if(packetplayincustompayload.tag.equals(PacketPlayOutCustomPayload.a)) {
++            this.clientBrandName = packetplayincustompayload.data.readUTF(256);
++            // paper end
+         } else {
+             try {
+                 byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
+@@ -2677,6 +2683,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+     }
+ 
++    public String getClientBrandName() {
++        return this.clientBrandName;
++    }
++
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.networkManager.isConnected()) || this.processedDisconnect; // Paper
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 60f62f19..5470c6d7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2087,6 +2087,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    @Override
++    public String getClientBrandName() {
++        return getHandle().playerConnection.getClientBrandName();
++    }
++
+     public Player.Spigot spigot()
+     {
+         return spigot;
+-- 
+2.25.1.windows.1
+
