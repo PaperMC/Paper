@@ -2218,6 +2218,25 @@ public final class Bukkit {
     public static double[] getTPS() {
         return server.getTPS();
     }
+
+    /**
+     * Get a sample of the servers last tick times (in nanos)
+     *
+     * @return A sample of the servers last tick times (in nanos)
+     */
+    @NotNull
+    public static long[] getTickTimes() {
+        return server.getTickTimes();
+    }
+
+    /**
+     * Get the average tick time (in millis)
+     *
+     * @return Average tick time (in millis)
+     */
+    public static double getAverageTickTime() {
+        return server == null ? 0D : server.getAverageTickTime();
+    }
     // Paper end
 
     /**
