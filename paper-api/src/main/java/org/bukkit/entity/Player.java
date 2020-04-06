@@ -3488,6 +3488,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
         // Paper end
     }
 
+    // Paper start - brand support
+    /**
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.<br>
+     * For the Notchian client this name defaults to <code>vanilla</code>. Some modified clients report other names such as <code>forge</code>.<br>
+     * @return client brand name
+     */
+    @Nullable
+    String getClientBrandName();
+    // Paper end
+
     @NotNull
     @Override
     Spigot spigot();
