@@ -22,7 +22,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
     }
 
     private static final class Left<L, R> extends Either<L, R> {
-        private final L value;
+        private final L value; private Optional<L> valueOptional; // Paper - reduce the optional allocation...
 
         public Left(final L value) {
             this.value = value;
@@ -51,7 +51,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
 
         @Override
         public Optional<L> left() {
-            return Optional.of(value);
+            return this.valueOptional == null ? this.valueOptional = Optional.of(this.value) : this.valueOptional; // Paper - reduce the optional allocation...
         }
 
         @Override
@@ -83,7 +83,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
     }
 
     private static final class Right<L, R> extends Either<L, R> {
-        private final R value;
+        private final R value; private Optional<R> valueOptional; // Paper - reduce the optional allocation...
 
         public Right(final R value) {
             this.value = value;
@@ -117,7 +117,7 @@ public abstract class Either<L, R> implements App<Either.Mu<R>, L> {
 
         @Override
         public Optional<R> right() {
-            return Optional.of(value);
+            return this.valueOptional == null ? this.valueOptional = Optional.of(this.value) : this.valueOptional; // Paper - reduce the optional allocation...
         }
 
         @Override
