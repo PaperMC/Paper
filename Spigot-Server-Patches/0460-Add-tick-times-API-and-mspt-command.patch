@@ -1,4 +1,4 @@
-From e4eddb2d1948d258e270cad611bbedbdde692f2f Mon Sep 17 00:00:00 2001
+From d9363829a425ed107a3b90c6bb425df1c4b9ac36 Mon Sep 17 00:00:00 2001
 From: William Blake Galbreath <Blake.Galbreath@GMail.com>
 Date: Sun, 5 Apr 2020 22:23:14 -0500
 Subject: [PATCH] Add tick times API and /mspt command
@@ -6,7 +6,7 @@ Subject: [PATCH] Add tick times API and /mspt command
 
 diff --git a/src/main/java/com/destroystokyo/paper/MSPTCommand.java b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
 new file mode 100644
-index 000000000..d0211d4f3
+index 000000000..7504879a4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/MSPTCommand.java
 @@ -0,0 +1,64 @@
@@ -50,8 +50,8 @@ index 000000000..d0211d4f3
 +        times.addAll(eval(server.tickTimes10s.getTimes()));
 +        times.addAll(eval(server.tickTimes60s.getTimes()));
 +
-+        sender.sendMessage("§6Server tick times §e(§7avg§e/§7min§e/§7max§e)§6 from last 5s§7,§6 10s§7,§6 1m§e:");
-+        sender.sendMessage(String.format("§6◴ %s§7/%s§7/%s§e, %s§7/%s§7/%s§e, %s§7/%s§7/%s", times.toArray()));
++        sender.sendMessage(PaperConfig.msptCommandHeaderMessage);
++        sender.sendMessage(String.format(PaperConfig.msptCommandTimesMessage, times.toArray()));
 +        return true;
 +    }
 +
@@ -75,7 +75,7 @@ index 000000000..d0211d4f3
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 6916ed30c..1c4cd3635 100644
+index 6916ed30c..541942fcc 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -70,6 +70,7 @@ public class PaperConfig {
@@ -86,6 +86,20 @@ index 6916ed30c..1c4cd3635 100644
  
          version = getInt("config-version", 20);
          set("config-version", 20);
+@@ -287,6 +288,13 @@ public class PaperConfig {
+         noPermissionMessage = ChatColor.translateAlternateColorCodes('&', getString("messages.no-permission", noPermissionMessage));
+     }
+ 
++    public static String msptCommandHeaderMessage = "§6Server tick times §e(§7avg§e/§7min§e/§7max§e)§6 from last 5s§7,§6 10s§7,§6 1m§e:";
++    public static String msptCommandTimesMessage = "§6◴ %s§7/%s§7/%s§e, %s§7/%s§7/%s§e, %s§7/%s§7/%s";
++    private static void msptCommandMessages() {
++        msptCommandHeaderMessage = getString("messages.mspt-command.header", msptCommandHeaderMessage);
++        msptCommandTimesMessage = getString("messages.mspt-command.times", msptCommandTimesMessage);
++    }
++
+     public static boolean savePlayerData = true;
+     private static void savePlayerData() {
+         savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index c9deaffc4..9e5d569f7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
