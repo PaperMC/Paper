@@ -20,32 +20,30 @@ public interface PairedQueue<T, F> {
 
     public static final class a implements PairedQueue<PairedQueue.b, Runnable> {
 
-        private final List<Queue<Runnable>> a;
+        private final List<Queue<Runnable>> a; private final List<Queue<Runnable>> getQueues() { return this.a; } // Paper - OBFHELPER
 
         public a(int i) {
-            this.a = (List) IntStream.range(0, i).mapToObj((j) -> {
-                return Queues.newConcurrentLinkedQueue();
-            }).collect(Collectors.toList());
+            // Paper start - remove streams
+            this.a = new java.util.ArrayList<>(i); // queues
+            for (int j = 0; j < i; ++j) {
+                this.getQueues().add(Queues.newConcurrentLinkedQueue());
+            }
+            // Paper end - remove streams
         }
 
         @Nullable
         @Override
         public Runnable a() {
-            Iterator iterator = this.a.iterator();
-
-            Runnable runnable;
-
-            do {
-                if (!iterator.hasNext()) {
-                    return null;
+            // Paper start - remove iterator creation
+            for (int i = 0, len = this.getQueues().size(); i < len; ++i) {
+                Queue<Runnable> queue = this.getQueues().get(i);
+                Runnable ret = queue.poll();
+                if (ret != null) {
+                    return ret;
                 }
-
-                Queue<Runnable> queue = (Queue) iterator.next();
-
-                runnable = (Runnable) queue.poll();
-            } while (runnable == null);
-
-            return runnable;
+            }
+            return null;
+            // Paper end - remove iterator creation
         }
 
         public boolean a(PairedQueue.b pairedqueue_b) {
@@ -57,7 +55,16 @@ public interface PairedQueue<T, F> {
 
         @Override
         public boolean b() {
-            return this.a.stream().allMatch(Collection::isEmpty);
+            // Paper start - remove streams
+            // why are we doing streams every time we might want to execute a task?
+            for (int i = 0, len = this.getQueues().size(); i < len; ++i) {
+                Queue<Runnable> queue = this.getQueues().get(i);
+                if (!queue.isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+            // Paper end - remove streams
         }
     }
 
