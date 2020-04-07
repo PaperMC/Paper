@@ -1,8 +1,10 @@
 package net.minecraft.server;
 
+import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
 import com.google.common.collect.Sets;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Iterator; // Paper - remove streams from pathfindergoalselector
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -27,7 +29,8 @@ public class PathfinderGoalSelector {
     private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
     private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet(); private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
     private final Supplier<GameProfilerFiller> e;
-    private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class);
+    private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
+    private final OptimizedSmallEnumSet<PathfinderGoal.Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
     private int g = 3;private int getTickRate() { return g; } // Paper - OBFHELPER
     private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
 
@@ -59,35 +62,38 @@ public class PathfinderGoalSelector {
     // Paper end
 
     public void a(PathfinderGoal pathfindergoal) {
-        this.d.stream().filter((pathfindergoalwrapped) -> {
-            return pathfindergoalwrapped.j() == pathfindergoal;
-        }).filter(PathfinderGoalWrapped::g).forEach(PathfinderGoalWrapped::d);
-        this.d.removeIf((pathfindergoalwrapped) -> {
-            return pathfindergoalwrapped.j() == pathfindergoal;
-        });
+        // Paper start - remove streams from pathfindergoalselector
+        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
+            PathfinderGoalWrapped goalWrapped = iterator.next();
+            if (goalWrapped.j() != pathfindergoal) {
+                continue;
+            }
+            if (goalWrapped.g()) {
+                goalWrapped.d();
+            }
+            iterator.remove();
+        }
+        // Paper end - remove streams from pathfindergoalselector
     }
+
+    private static final PathfinderGoal.Type[] PATHFINDER_GOAL_TYPES = PathfinderGoal.Type.values(); // Paper - remove streams from pathfindergoalselector
 
     public void doTick() {
         GameProfilerFiller gameprofilerfiller = (GameProfilerFiller) this.e.get();
 
         gameprofilerfiller.enter("goalCleanup");
-        this.d().filter((pathfindergoalwrapped) -> {
-            boolean flag;
-
-            if (pathfindergoalwrapped.g()) {
-                Stream stream = pathfindergoalwrapped.i().stream();
-                EnumSet enumset = this.f;
-
-                this.f.getClass();
-                if (!stream.anyMatch(enumset::contains) && pathfindergoalwrapped.b()) {
-                    flag = false;
-                    return flag;
-                }
+        // Paper start - remove streams from pathfindergoalselector
+        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
+            PathfinderGoalWrapped wrappedGoal = iterator.next();
+            if (!wrappedGoal.g()) {
+                continue;
             }
-
-            flag = true;
-            return flag;
-        }).forEach(PathfinderGoal::d);
+            if (!this.goalTypes.hasCommonElements(wrappedGoal.getGoalTypes()) && wrappedGoal.b()) {
+                continue;
+            }
+            wrappedGoal.d();
+        }
+        // Paper end - remove streams from pathfindergoalselector
         this.c.forEach((pathfindergoal_type, pathfindergoalwrapped) -> {
             if (!pathfindergoalwrapped.g()) {
                 this.c.remove(pathfindergoal_type);
@@ -96,30 +102,58 @@ public class PathfinderGoalSelector {
         });
         gameprofilerfiller.exit();
         gameprofilerfiller.enter("goalUpdate");
-        this.d.stream().filter((pathfindergoalwrapped) -> {
-            return !pathfindergoalwrapped.g();
-        }).filter((pathfindergoalwrapped) -> {
-            Stream stream = pathfindergoalwrapped.i().stream();
-            EnumSet enumset = this.f;
+        // Paper start - remove streams from pathfindergoalselector
+        goal_update_loop: for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
+            PathfinderGoalWrapped wrappedGoal = iterator.next();
+            if (wrappedGoal.g()) {
+                continue;
+            }
 
-            this.f.getClass();
-            return stream.noneMatch(enumset::contains);
-        }).filter((pathfindergoalwrapped) -> {
-            return pathfindergoalwrapped.i().stream().allMatch((pathfindergoal_type) -> {
-                return ((PathfinderGoalWrapped) this.c.getOrDefault(pathfindergoal_type, PathfinderGoalSelector.b)).a(pathfindergoalwrapped);
-            });
-        }).filter(PathfinderGoalWrapped::a).forEach((pathfindergoalwrapped) -> {
-            pathfindergoalwrapped.i().forEach((pathfindergoal_type) -> {
-                PathfinderGoalWrapped pathfindergoalwrapped1 = (PathfinderGoalWrapped) this.c.getOrDefault(pathfindergoal_type, PathfinderGoalSelector.b);
+            OptimizedSmallEnumSet<PathfinderGoal.Type> wrappedGoalSet = wrappedGoal.getGoalTypes();
 
-                pathfindergoalwrapped1.d();
-                this.c.put(pathfindergoal_type, pathfindergoalwrapped);
-            });
-            pathfindergoalwrapped.c();
-        });
+            if (this.goalTypes.hasCommonElements(wrappedGoalSet)) {
+                continue;
+            }
+
+            long iterator1 = wrappedGoalSet.getBackingSet();
+            int wrappedGoalSize = wrappedGoalSet.size();
+            for (int i = 0; i < wrappedGoalSize; ++i) {
+                PathfinderGoal.Type type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
+                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
+                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
+                if (!wrapped.a(wrappedGoal)) {
+                    continue goal_update_loop;
+                }
+            }
+
+            if (!wrappedGoal.a()) {
+                continue;
+            }
+
+            iterator1 = wrappedGoalSet.getBackingSet();
+            wrappedGoalSize = wrappedGoalSet.size();
+            for (int i = 0; i < wrappedGoalSize; ++i) {
+                PathfinderGoal.Type type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
+                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
+                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
+
+                wrapped.d();
+                this.c.put(type, wrappedGoal);
+            }
+
+            wrappedGoal.c();
+        }
+        // Paper end - remove streams from pathfindergoalselector
         gameprofilerfiller.exit();
         gameprofilerfiller.enter("goalTick");
-        this.d().forEach(PathfinderGoalWrapped::e);
+        // Paper start - remove streams from pathfindergoalselector
+        for (Iterator<PathfinderGoalWrapped> iterator = this.d.iterator(); iterator.hasNext();) {
+            PathfinderGoalWrapped wrappedGoal = iterator.next();
+            if (wrappedGoal.g()) {
+                wrappedGoal.e();
+            }
+        }
+        // Paper end - remove streams from pathfindergoalselector
         gameprofilerfiller.exit();
     }
 
@@ -128,11 +162,11 @@ public class PathfinderGoalSelector {
     }
 
     public void a(PathfinderGoal.Type pathfindergoal_type) {
-        this.f.add(pathfindergoal_type);
+        this.goalTypes.addUnchecked(pathfindergoal_type); // Paper - remove streams from pathfindergoalselector
     }
 
     public void b(PathfinderGoal.Type pathfindergoal_type) {
-        this.f.remove(pathfindergoal_type);
+        this.goalTypes.removeUnchecked(pathfindergoal_type); // Paper - remove streams from pathfindergoalselector
     }
 
     public void a(PathfinderGoal.Type pathfindergoal_type, boolean flag) {

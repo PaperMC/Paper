@@ -59,9 +59,10 @@ public class PathfinderGoalWrapped extends PathfinderGoal {
         this.a.a(enumset);
     }
 
-    @Override
-    public EnumSet<PathfinderGoal.Type> i() {
-        return this.a.i();
+    // Paper start - remove streams from pathfindergoalselector
+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<PathfinderGoal.Type> getGoalTypes() {
+        return this.a.getGoalTypes();
+        // Paper end - remove streams from pathfindergoalselector
     }
 
     public boolean isRunning() { return this.g(); } // Paper - OBFHELPER
