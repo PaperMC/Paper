@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 8 Apr 2020 03:06:30 -0400
+Subject: [PATCH] Optimize PlayerChunkMap memory use for visibleChunks
+
+No longer clones visible chunks which is causing massive memory
+allocation issues, likely the source of Humongous Objects on large servers.
+
+Instead we just synchronize, clear and rebuild, reusing the same object buffers
+as before with only 2 small objects created (FastIterator/MapEntry)
+
+This should result in siginificant memory use reduction and improved GC behavior.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 1dcd0980ec..59055cccc5 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                 entityPlayer.playerNaturallySpawnedEvent.callEvent();
+             };
+             // Paper end
+-            this.playerChunkMap.f().forEach((playerchunk) -> {
++            this.playerChunkMap.visibleChunks.values().forEach((playerchunk) -> { // Paper - no need to wrap iterator
+                 Optional<Chunk> optional = ((Either) playerchunk.b().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
+ 
+                 if (optional.isPresent()) {
+diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
+index b9d5844520..9980e4c277 100644
+--- a/src/main/java/net/minecraft/server/MCUtil.java
++++ b/src/main/java/net/minecraft/server/MCUtil.java
+@@ -0,0 +0,0 @@ public final class MCUtil {
+ 
+             WorldServer world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
+             PlayerChunkMap chunkMap = world.getChunkProvider().playerChunkMap;
+-            Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = chunkMap.visibleChunks;
++            Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = chunkMap.getVisibleChunks();
+             ChunkMapDistance chunkMapDistance = chunkMap.getChunkMapDistanceManager();
+             List<PlayerChunk> allChunks = new ArrayList<>(visibleChunks.values());
+             List<EntityPlayer> players = world.players;
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index e1e4ea793a..0aa6487d5b 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     private static final Logger LOGGER = LogManager.getLogger();
+     public static final int GOLDEN_TICKET = 33 + ChunkStatus.b();
+     public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new Long2ObjectLinkedOpenHashMap();
+-    public volatile Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks;
++    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = new Long2ObjectLinkedOpenHashMap(); // Paper - remove copying, make mt safe
++    public transient Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunksClone; // Paper - remove copying, make mt safe
+     private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
+     final LongSet loadedChunks; // Paper - private -> package
+     public final WorldServer world;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
+         super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
+-        this.visibleChunks = this.updatingChunks.clone();
++        //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+         this.pendingUnload = new Long2ObjectLinkedOpenHashMap();
+         this.loadedChunks = new LongOpenHashSet();
+         this.unloadQueue = new LongOpenHashSet();
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         return (PlayerChunk) this.updatingChunks.get(i);
+     }
+ 
++    // Paper start - remove cloning of visible chunks unless accessed as a collection async
++    private static final boolean DEBUG_ASYNC_VISIBLE_CHUNKS = Boolean.getBoolean("paper.debug-async-visible-chunks");
++    public Long2ObjectLinkedOpenHashMap<PlayerChunk> getVisibleChunks() {
++        if (Thread.currentThread() == this.world.serverThread) {
++            return this.visibleChunks;
++        } else {
++            synchronized (this.visibleChunks) {
++                if (DEBUG_ASYNC_VISIBLE_CHUNKS) new Throwable("Async getVisibleChunks").printStackTrace();
++                if (this.visibleChunksClone == null) {
++                    this.visibleChunksClone = this.visibleChunks.clone();
++                }
++                return this.visibleChunksClone;
++            }
++        }
++    }
++    // Paper end
++
+     @Nullable
+     public PlayerChunk getVisibleChunk(long i) { // Paper - protected -> public
++        // Paper start - mt safe get
++        if (Thread.currentThread() != this.world.serverThread) {
++            synchronized (this.visibleChunks) {
++                return (PlayerChunk) this.visibleChunks.get(i);
++            }
++        }
++        // Paper end
+         return (PlayerChunk) this.visibleChunks.get(i);
+     }
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     // Paper end
+ 
+     protected void save(boolean flag) {
++        Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = this.getVisibleChunks(); // Paper remove clone of visible Chunks unless saving off main thread (watchdog kill)
+         if (flag) {
+-            List<PlayerChunk> list = (List) this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList());
++            List<PlayerChunk> list = (List) visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).peek(PlayerChunk::m).collect(Collectors.toList()); // Paper - remove cloning of visible chunks
+             MutableBoolean mutableboolean = new MutableBoolean();
+ 
+             do {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ //            this.i(); // Paper - nuke IOWorker
+             PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.w.getName());
+         } else {
+-            this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
++            visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
+                 IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
+ 
+                 if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         if (!this.updatingChunksModified) {
+             return false;
+         } else {
+-            this.visibleChunks = this.updatingChunks.clone();
++            // Paper start - stop cloning visibleChunks
++            synchronized (this.visibleChunks) {
++                this.visibleChunks.clear();
++                this.visibleChunks.putAll(this.updatingChunks);
++                this.visibleChunksClone = null;
++            }
++            // Paper end
++
+             this.updatingChunksModified = false;
+             return true;
+         }
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+ 
+     protected Iterable<PlayerChunk> f() {
+-        return Iterables.unmodifiableIterable(this.visibleChunks.values());
++        return Iterables.unmodifiableIterable(this.getVisibleChunks().values()); // Paper
+     }
+ 
+     void a(Writer writer) throws IOException {
+         CSVWriter csvwriter = CSVWriter.a().a("x").a("z").a("level").a("in_memory").a("status").a("full_status").a("accessible_ready").a("ticking_ready").a("entity_ticking_ready").a("ticket").a("spawning").a("entity_count").a("block_entity_count").a(writer);
+-        ObjectBidirectionalIterator objectbidirectionaliterator = this.visibleChunks.long2ObjectEntrySet().iterator();
++        ObjectBidirectionalIterator objectbidirectionaliterator = this.getVisibleChunks().long2ObjectEntrySet().iterator(); // Paper
+ 
+         while (objectbidirectionaliterator.hasNext()) {
+             Entry<PlayerChunk> entry = (Entry) objectbidirectionaliterator.next();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 051506fce8..c0e8eb85d7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+         return ret;
+     }
+     public int getTileEntityCount() {
++        org.spigotmc.AsyncCatcher.catchOp("getTileEntityCount");
+         // We don't use the full world tile entity list, so we must iterate chunks
+         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
+         int size = 0;
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+         return world.tileEntityListTick.size();
+     }
+     public int getChunkCount() {
++        org.spigotmc.AsyncCatcher.catchOp("getChunkCount");
+         int ret = 0;
+ 
+         for (PlayerChunk chunkHolder : world.getChunkProvider().playerChunkMap.visibleChunks.values()) {
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public Chunk[] getLoadedChunks() {
++        org.spigotmc.AsyncCatcher.catchOp("getLoadedChunks"); // Paper
+         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
+         return chunks.values().stream().map(PlayerChunk::getFullChunk).filter(Objects::nonNull).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
+     }
+--
