@@ -74,6 +74,7 @@ import net.minecraft.server.GroupDataEntity;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.IRegistry;
+import net.minecraft.server.MCUtil;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MovingObjectPosition;
@@ -294,6 +295,7 @@ public class CraftWorld implements World {
         return ret;
     }
     public int getTileEntityCount() {
+        return MCUtil.ensureMain(() -> {
         // We don't use the full world tile entity list, so we must iterate chunks
         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
         int size = 0;
@@ -305,11 +307,13 @@ public class CraftWorld implements World {
             size += chunk.tileEntities.size();
         }
         return size;
+        });
     }
     public int getTickableTileEntityCount() {
         return world.tileEntityListTick.size();
     }
     public int getChunkCount() {
+        return MCUtil.ensureMain(() -> {
         int ret = 0;
 
         for (PlayerChunk chunkHolder : world.getChunkProvider().playerChunkMap.visibleChunks.values()) {
@@ -318,7 +322,7 @@ public class CraftWorld implements World {
             }
         }
 
-        return ret;
+        return ret; });
     }
     public int getPlayerCount() {
         return world.players.size();
@@ -443,6 +447,14 @@ public class CraftWorld implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
+        // Paper start
+        if (Thread.currentThread() != world.getMinecraftWorld().serverThread) {
+            synchronized (world.getChunkProvider().playerChunkMap.visibleChunks) {
+                Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
+                return chunks.values().stream().map(PlayerChunk::getFullChunk).filter(Objects::nonNull).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
+            }
+        }
+        // Paper end
         Long2ObjectLinkedOpenHashMap<PlayerChunk> chunks = world.getChunkProvider().playerChunkMap.visibleChunks;
         return chunks.values().stream().map(PlayerChunk::getFullChunk).filter(Objects::nonNull).map(net.minecraft.server.Chunk::getBukkitChunk).toArray(Chunk[]::new);
     }

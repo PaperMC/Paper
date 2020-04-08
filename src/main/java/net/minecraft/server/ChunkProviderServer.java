@@ -757,7 +757,7 @@ public class ChunkProviderServer extends IChunkProvider {
                 entityPlayer.playerNaturallySpawnedEvent.callEvent();
             };
             // Paper end
-            this.playerChunkMap.f().forEach((playerchunk) -> { // Paper - no... just no...
+            this.playerChunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
 
                 if (optional.isPresent()) {

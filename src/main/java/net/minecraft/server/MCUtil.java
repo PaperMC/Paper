@@ -599,7 +599,7 @@ public final class MCUtil {
 
             WorldServer world = ((org.bukkit.craftbukkit.CraftWorld)bukkitWorld).getHandle();
             PlayerChunkMap chunkMap = world.getChunkProvider().playerChunkMap;
-            Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = chunkMap.visibleChunks;
+            Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = chunkMap.getVisibleChunks();
             ChunkMapDistance chunkMapDistance = chunkMap.chunkDistanceManager;
             List<PlayerChunk> allChunks = new ArrayList<>(visibleChunks.values());
             List<EntityPlayer> players = world.players;
