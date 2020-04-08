@@ -690,7 +690,7 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -628,18 +922,41 @@
+@@ -628,18 +922,42 @@
          this.stopServer();
      }
  
@@ -716,6 +716,7 @@
          }
  
          MinecraftServer.LOGGER.info("Stopping server");
++        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
 +        // CraftBukkit start
 +        if (this.server != null) {
 +            this.server.disablePlugins();
@@ -733,7 +734,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -693,6 +1010,15 @@
+@@ -693,6 +1011,15 @@
          } catch (IOException ioexception1) {
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
@@ -749,7 +750,7 @@
  
      }
  
-@@ -709,16 +1035,80 @@
+@@ -709,16 +1036,80 @@
      }
  
      public void halt(boolean waitForShutdown) {
@@ -830,7 +831,7 @@
  
      protected void runServer() {
          try {
-@@ -727,9 +1117,16 @@
+@@ -727,9 +1118,16 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -848,7 +849,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,12 +1141,31 @@
+@@ -744,12 +1142,31 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -880,7 +881,7 @@
                  boolean flag = i == 0L;
  
                  if (this.debugCommandProfilerDelayStart) {
-@@ -757,6 +1173,8 @@
+@@ -757,6 +1174,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
  
@@ -889,7 +890,7 @@
                  this.nextTickTimeNanos += i;
  
                  try {
-@@ -830,6 +1248,13 @@
+@@ -830,6 +1249,13 @@
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -903,7 +904,7 @@
                  this.onServerExit();
              }
  
-@@ -889,9 +1314,16 @@
+@@ -889,9 +1315,16 @@
      }
  
      private boolean haveTime() {
@@ -921,7 +922,7 @@
      public static boolean throwIfFatalException() {
          RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
  
-@@ -903,7 +1335,7 @@
+@@ -903,7 +1336,7 @@
      }
  
      public static void setFatalException(RuntimeException exception) {
@@ -930,7 +931,7 @@
      }
  
      @Override
-@@ -977,7 +1409,7 @@
+@@ -977,7 +1410,7 @@
          }
      }
  
@@ -939,7 +940,7 @@
          Profiler.get().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -1025,6 +1457,7 @@
+@@ -1025,6 +1458,7 @@
      }
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
@@ -947,7 +948,7 @@
          long i = Util.getNanos();
          int j = this.pauseWhileEmptySeconds() * 20;
  
-@@ -1041,6 +1474,7 @@
+@@ -1041,6 +1475,7 @@
                      this.autoSave();
                  }
  
@@ -955,7 +956,7 @@
                  this.tickConnection();
                  return;
              }
-@@ -1055,12 +1489,13 @@
+@@ -1055,12 +1490,13 @@
          }
  
          --this.ticksUntilAutosave;
@@ -970,7 +971,7 @@
          gameprofilerfiller.push("tallying");
          long k = Util.getNanos() - i;
          int l = this.tickCount % 100;
-@@ -1074,7 +1509,7 @@
+@@ -1074,7 +1510,7 @@
      }
  
      private void autoSave() {
@@ -979,7 +980,7 @@
          MinecraftServer.LOGGER.debug("Autosave started");
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -1123,7 +1558,7 @@
+@@ -1123,7 +1559,7 @@
      private ServerStatus buildServerStatus() {
          ServerStatus.Players serverping_serverpingplayersample = this.buildPlayerStatus();
  
@@ -988,7 +989,7 @@
      }
  
      private ServerStatus.Players buildPlayerStatus() {
-@@ -1133,7 +1568,7 @@
+@@ -1133,7 +1569,7 @@
          if (this.hidesOnlinePlayers()) {
              return new ServerStatus.Players(i, list.size(), List.of());
          } else {
@@ -997,7 +998,7 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -1154,24 +1589,55 @@
+@@ -1154,24 +1590,55 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -1053,7 +1054,7 @@
  
              gameprofilerfiller.push("tick");
  
-@@ -1186,6 +1652,7 @@
+@@ -1186,6 +1653,7 @@
  
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
@@ -1061,7 +1062,7 @@
          }
  
          gameprofilerfiller.popPush("connection");
-@@ -1265,8 +1732,24 @@
+@@ -1265,8 +1733,24 @@
      @Nullable
      public ServerLevel getLevel(ResourceKey<Level> key) {
          return (ServerLevel) this.levels.get(key);
@@ -1086,7 +1087,7 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1296,7 +1779,7 @@
+@@ -1296,7 +1780,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1095,7 +1096,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1347,7 +1830,7 @@
+@@ -1347,7 +1831,7 @@
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -1104,7 +1105,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1481,10 +1964,20 @@
+@@ -1481,10 +1965,20 @@
  
      @Override
      public String getMotd() {
@@ -1126,7 +1127,7 @@
          this.motd = motd;
      }
  
-@@ -1507,7 +2000,7 @@
+@@ -1507,7 +2001,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -1135,7 +1136,7 @@
      }
  
      public boolean isReady() {
-@@ -1634,11 +2127,11 @@
+@@ -1634,11 +2128,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -1149,7 +1150,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2147,7 @@
+@@ -1654,6 +2148,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1157,7 +1158,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2446,7 @@
+@@ -1952,7 +2447,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1166,7 +1167,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2552,7 @@
+@@ -2058,7 +2553,7 @@
              try {
                  label51:
                  {
@@ -1175,7 +1176,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,8 +2599,23 @@
+@@ -2105,8 +2600,23 @@
          if (bufferedwriter != null) {
              bufferedwriter.close();
          }
@@ -1199,7 +1200,7 @@
  
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
-@@ -2225,18 +2734,24 @@
+@@ -2225,18 +2735,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
