@@ -244,6 +244,14 @@ public class CommandDispatcher {
         if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
         // CraftBukkit start
         // Register Vanilla commands into builtRoot as before
+        // Paper start - Async command map building
+        java.util.concurrent.ForkJoinPool.commonPool().execute(() -> {
+            sendAsync(entityplayer);
+        });
+    }
+
+    private void sendAsync(EntityPlayer entityplayer) {
+        // Paper end - Async command map building
         Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
         RootCommandNode vanillaRoot = new RootCommandNode();
 
@@ -261,7 +269,14 @@ public class CommandDispatcher {
         for (CommandNode node : rootcommandnode.getChildren()) {
             bukkit.add(node.getName());
         }
+        // Paper start - Async command map building
+        MinecraftServer.getServer().execute(() -> {
+           runSync(entityplayer, bukkit, rootcommandnode);
+        });
+    }
 
+    private void runSync(EntityPlayer entityplayer, Collection<String> bukkit, RootCommandNode<ICompletionProvider> rootcommandnode) {
+        // Paper end - Async command map building
         PlayerCommandSendEvent event = new PlayerCommandSendEvent(entityplayer.getBukkitEntity(), new LinkedHashSet<>(bukkit));
         event.getPlayer().getServer().getPluginManager().callEvent(event);
 
