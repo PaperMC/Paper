@@ -606,4 +606,9 @@ public class PaperWorldConfig {
     private void zombieVillagerInfectionChance() {
         zombieVillagerInfectionChance = getDouble("zombie-villager-infection-chance", zombieVillagerInfectionChance);
     }
+
+    public int lightQueueSize = 20;
+    private void lightQueueSize() {
+        lightQueueSize = getInt("light-queue-size", lightQueueSize);
+    }
 }

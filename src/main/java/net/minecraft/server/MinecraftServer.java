@@ -660,7 +660,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         this.executeModerately();
         // CraftBukkit end
         worldloadlistener.b();
-        chunkproviderserver.getLightEngine().a(5);
+        chunkproviderserver.getLightEngine().a(worldserver.paperConfig.lightQueueSize); // Paper - increase light queue size
         this.bb();
 
         // CraftBukkit start
