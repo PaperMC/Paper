@@ -405,4 +405,9 @@ public class PaperConfig {
             log("Async Chunks: Enabled - Chunks will be loaded much faster, without lag.");
         }
     }
+
+    public static int midTickChunkTasks = 1000;
+    private static void midTickChunkTasks() {
+        midTickChunkTasks = getInt("settings.chunk-tasks-per-tick", midTickChunkTasks);
+    }
 }

@@ -453,6 +453,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         }
         timings.scheduledBlocks.stopTiming(); // Paper
 
+        this.getMinecraftServer().midTickLoadChunks(); // Paper
         gameprofilerfiller.exitEnter("raid");
         this.timings.raids.startTiming(); // Paper - timings
         this.persistentRaid.a();
@@ -461,6 +462,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         timings.doSounds.startTiming(); // Spigot
         this.aj();
         timings.doSounds.stopTiming(); // Spigot
+        this.getMinecraftServer().midTickLoadChunks(); // Paper
         this.ticking = false;
         gameprofilerfiller.exitEnter("entities");
         boolean flag3 = true || !this.players.isEmpty() || !this.getForceLoadedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
@@ -527,6 +529,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             timings.entityTick.stopTiming(); // Spigot
 
             this.tickingEntities = false;
+            this.getMinecraftServer().midTickLoadChunks(); // Paper
 
             Entity entity2;
 
@@ -536,6 +539,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             }
 
             timings.tickEntities.stopTiming(); // Spigot
+            this.getMinecraftServer().midTickLoadChunks(); // Paper
             this.tickBlockEntities();
         }
 

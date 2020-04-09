@@ -939,6 +939,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                         // Paper end
                         tickSection = curTime;
                     }
+                    midTickChunksTasksRan = 0; // Paper
                     // Spigot end
 
                     //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
@@ -1008,7 +1009,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     }
 
-    private boolean canSleepForTick() {
+    public boolean canSleepForTick() { // Paper
         // CraftBukkit start
         if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
         return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.X ? this.W : this.nextTick);
@@ -1037,6 +1038,23 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
         });
     }
+
+    // Paper start
+    public int midTickChunksTasksRan = 0;
+    private long midTickLastRan = 0;
+    public void midTickLoadChunks() {
+        if (!isMainThread() || System.nanoTime() - midTickLastRan < 1000000) {
+            // only check once per 0.25ms incase this code is called in a hot method
+            return;
+        }
+        try (co.aikar.timings.Timing ignored = co.aikar.timings.MinecraftTimings.midTickChunkTasks.startTiming()) {
+            for (WorldServer value : this.getWorlds()) {
+                value.getChunkProvider().serverThreadQueue.midTickLoadChunks();
+            }
+            midTickLastRan = System.nanoTime();
+        }
+    }
+    // Paper end
 
     @Override
     protected TickTask postToMainThread(Runnable runnable) {
@@ -1124,6 +1142,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         // Paper start - move oversleep into full server tick
         isOversleep = true;MinecraftTimings.serverOversleep.startTiming();
         this.awaitTasks(() -> {
+            midTickLoadChunks(); // will only do loads since we are still considered !canSleepForTick
             return !this.canOversleep();
         });
         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
@@ -1202,13 +1221,16 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     }
 
     protected void b(BooleanSupplier booleansupplier) {
+        midTickLoadChunks(); // Paper
         MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
         this.server.getScheduler().mainThreadHeartbeat(this.ticks); // CraftBukkit
         MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
+        midTickLoadChunks(); // Paper
         this.methodProfiler.enter("commandFunctions");
         MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
         this.getFunctionData().tick();
         MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
+        midTickLoadChunks(); // Paper
         this.methodProfiler.exitEnter("levels");
         Iterator iterator = this.getWorlds().iterator();
 
@@ -1219,7 +1241,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             processQueue.remove().run();
         }
         MinecraftTimings.processQueueTimer.stopTiming(); // Spigot
-
+        midTickLoadChunks(); // Paper
         MinecraftTimings.timeUpdateTimer.startTiming(); // Spigot // Paper
         // Send time updates to everyone, it will get the right time from the world the player is in.
         // Paper start - optimize time updates
@@ -1261,9 +1283,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.methodProfiler.enter("tick");
 
             try {
+                midTickLoadChunks(); // Paper
                 worldserver.timings.doTick.startTiming(); // Spigot
                 worldserver.doTick(booleansupplier);
                 worldserver.timings.doTick.stopTiming(); // Spigot
+                midTickLoadChunks(); // Paper
             } catch (Throwable throwable) {
                 // Spigot Start
                 CrashReport crashreport;

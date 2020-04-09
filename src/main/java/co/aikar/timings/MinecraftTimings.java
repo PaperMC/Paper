@@ -13,6 +13,7 @@ import java.util.Map;
 public final class MinecraftTimings {
 
     public static final Timing serverOversleep = Timings.ofSafe("Server Oversleep");
+    public static final Timing midTickChunkTasks = Timings.ofSafe("Mid Tick Chunk Tasks");
     public static final Timing playerListTimer = Timings.ofSafe("Player List");
     public static final Timing commandFunctionsTimer = Timings.ofSafe("Command Functions");
     public static final Timing connectionTimer = Timings.ofSafe("Connection Handler");
