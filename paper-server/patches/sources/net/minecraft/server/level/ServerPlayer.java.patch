@@ -171,8 +171,12 @@
          };
          this.textFilter = server.createTextFilterForPlayer(this);
          this.gameMode = server.createGameModeForPlayer(this);
-@@ -352,14 +420,68 @@
-         this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
+@@ -349,17 +417,71 @@
+         this.server = server;
+         this.stats = server.getPlayerList().getPlayerStats(this);
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+-        this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
++        // this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
          this.updateOptions(clientOptions);
          this.object = null;
 +
@@ -412,7 +416,7 @@
 +                position = Vec3.atCenterOf(world.getSharedSpawnPos());
 +            }
 +            this.setLevel(world);
-+            this.setPos(position);
++            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
 +        }
 +        this.gameMode.setLevel((ServerLevel) world);
 +    }
@@ -1103,11 +1107,11 @@
  
              this.nextContainerCounter();
              AbstractContainerMenu container = factory.createMenu(this.containerCounter, this.getInventory(), this);
-+
+ 
 +            // CraftBukkit start - Inventory open hook
 +            if (container != null) {
 +                container.setTitle(factory.getDisplayName());
- 
++
 +                boolean cancelled = false;
 +                container = CraftEventFactory.callInventoryOpenEvent(this, container, cancelled);
 +                if (container == null && !cancelled) { // Let pre-cancelled events fall through
