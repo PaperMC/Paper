@@ -44,46 +44,8 @@ index 69e26a8267..434833d50e 100644
      public static final Timing playerListTimer = Timings.ofSafe("Player List");
      public static final Timing commandFunctionsTimer = Timings.ofSafe("Command Functions");
      public static final Timing connectionTimer = Timings.ofSafe("Connection Handler");
-diff --git a/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java b/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java
-new file mode 100644
-index 0000000000..e0ad725b2e
---- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java
-@@ -0,0 +0,0 @@
-+package com.destroystokyo.paper.util.map;
-+
-+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-+
-+public class Long2ObjectLinkedOpenHashMapFastCopy<V> extends Long2ObjectLinkedOpenHashMap<V> {
-+
-+    public void copyFrom(Long2ObjectLinkedOpenHashMapFastCopy<V> map) {
-+        if (key.length < map.key.length) {
-+            key = null;
-+            key = new long[map.key.length];
-+        }
-+        if (value.length < map.value.length) {
-+            value = null;
-+            //noinspection unchecked
-+            value = (V[]) new Object[map.value.length];
-+        }
-+        if (link.length < map.link.length) {
-+            link = null;
-+            link = new long[map.link.length];
-+        }
-+        System.arraycopy(map.key, 0, this.key, 0, map.key.length);
-+        System.arraycopy(map.value, 0, this.value, 0, map.value.length);
-+        System.arraycopy(map.link, 0, this.link, 0, map.link.length);
-+        this.size = map.size;
-+        this.mask = map.mask;
-+        this.first = map.first;
-+        this.last = map.last;
-+        this.n = map.n;
-+        this.maxFill = map.maxFill;
-+        this.containsNullKey = map.containsNullKey;
-+    }
-+}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e627440c41..15450f36a4 100644
+index e627440c41..bacfc4cba6 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -132,8 +94,7 @@ index e627440c41..15450f36a4 100644
 +                    try {
 +                        // always try to load chunks as long as we aren't falling behind, restrain generation/other updates only.
 +                        boolean execChunkTask = com.destroystokyo.paper.io.chunk.ChunkTaskManager.pollChunkWaitQueue() || ChunkProviderServer.this.world.asyncChunkTaskManager.pollNextChunkTask(); // Paper
-+                        ChunkProviderServer.this.tickDistanceManager();
-+                        if (execChunkTask) {
++                        if (ChunkProviderServer.this.tickDistanceManager() || execChunkTask) {
 +                            continue;
 +                        }
 +                        long now = System.nanoTime();
@@ -202,95 +163,9 @@ index 06c395000f..936434110c 100644
      protected TickTask postToMainThread(Runnable runnable) {
          return new TickTask(this.ticks, runnable);
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index ce645a69bd..32fed8a39a 100644
+index e61ddeb1ff..92c9ab43d7 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
-     public static final int GOLDEN_TICKET = 33 + ChunkStatus.b();
--    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new Long2ObjectLinkedOpenHashMap();
--    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = new Long2ObjectLinkedOpenHashMap(); // Paper - remove copying, make mt safe
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> updatingChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>();
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> visibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - remove copying, make mt safe
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> pendingVisibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - remove copying, this is used if the visible chunks is updated while iterating only
-     public transient Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunksClone; // Paper - remove copying, make mt safe
-     private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
-     final LongSet loadedChunks; // Paper - private -> package
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-     // Paper start - remove cloning of visible chunks unless accessed as a collection async
-     private static final boolean DEBUG_ASYNC_VISIBLE_CHUNKS = Boolean.getBoolean("paper.debug-async-visible-chunks");
-     private boolean isIterating = false;
-+    private boolean hasPendingVisibleUpdate = false;
-     public void forEachVisibleChunk(java.util.function.Consumer<PlayerChunk> consumer) {
-         org.spigotmc.AsyncCatcher.catchOp("forEachVisibleChunk");
-         boolean prev = isIterating;
--        boolean wasUpdating = updatingChunksModified;
-         isIterating = true;
-         try {
-             for (PlayerChunk value : this.visibleChunks.values()) {
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-             }
-         } finally {
-             this.isIterating = prev;
--            if (!this.isIterating && updatingChunksModified && !wasUpdating) {
--                this.updateVisibleChunks();
-+            if (!this.isIterating && hasPendingVisibleUpdate) {
-+                this.visibleChunks.copyFrom(this.pendingVisibleChunks);
-+                this.pendingVisibleChunks.clear();
-             }
-         }
-     }
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-             synchronized (this.visibleChunks) {
-                 if (DEBUG_ASYNC_VISIBLE_CHUNKS) new Throwable("Async getVisibleChunks").printStackTrace();
-                 if (this.visibleChunksClone == null) {
--                    this.visibleChunksClone = this.visibleChunks.clone();
-+                    this.visibleChunksClone = this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.clone() : this.visibleChunks.clone();
-                 }
-                 return this.visibleChunksClone;
-             }
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         // Paper start - mt safe get
-         if (Thread.currentThread() != this.world.serverThread) {
-             synchronized (this.visibleChunks) {
--                return (PlayerChunk) this.visibleChunks.get(i);
-+                return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : this.visibleChunks.get(i));
-             }
-         }
-+        return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : this.visibleChunks.get(i));
-         // Paper end
--        return (PlayerChunk) this.visibleChunks.get(i);
-     }
- 
-     protected IntSupplier c(long i) {
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         });
-     }
- 
--    protected boolean updateVisibleChunks() { return b(); } // Paper - OBFHELPER
-     protected boolean b() {
--        if (!this.updatingChunksModified || this.isIterating) { // Paper
-+        if (!this.updatingChunksModified) {
-             return false;
-         } else {
-             // Paper start - stop cloning visibleChunks
-             synchronized (this.visibleChunks) {
--                this.visibleChunks.clear();
--                this.visibleChunks.putAll(this.updatingChunks);
--                this.visibleChunksClone = null;
-+                if (isIterating) {
-+                    hasPendingVisibleUpdate = true;
-+                    this.pendingVisibleChunks.copyFrom(this.updatingChunks);
-+                } else {
-+                    hasPendingVisibleUpdate = false;
-+                    this.pendingVisibleChunks.clear();
-+                    this.visibleChunks.copyFrom(this.updatingChunks);
-+                    this.visibleChunksClone = null;
-+                }
-             }
-             // Paper end
- 
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> ret = new CompletableFuture<>();
  
