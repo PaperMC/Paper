@@ -15,16 +15,21 @@
      private boolean d;
  
      public CraftingManager() {
-@@ -35,7 +37,7 @@
+@@ -35,7 +37,12 @@
  
      protected void a(Map<MinecraftKey, JsonObject> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
          this.d = false;
 -        Map<Recipes<?>, Builder<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap();
-+        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap(); // CraftBukkit
++        // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
++        Map<Recipes<?>, Object2ObjectLinkedOpenHashMap<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap();
++        for (Recipes<?> recipeType : IRegistry.RECIPE_TYPE) {
++            map1.put(recipeType, new Object2ObjectLinkedOpenHashMap<>());
++        }
++        // CraftBukkit end
          Iterator iterator = map.entrySet().iterator();
  
          while (iterator.hasNext()) {
-@@ -45,24 +47,42 @@
+@@ -45,24 +52,42 @@
              try {
                  IRecipe<?> irecipe = a(minecraftkey, (JsonObject) entry.getValue());
  
@@ -72,7 +77,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> List<T> b(Recipes<T> recipes, C c0, World world) {
-@@ -74,7 +94,7 @@
+@@ -74,7 +99,7 @@
      }
  
      private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> a(Recipes<T> recipes) {
@@ -81,7 +86,7 @@
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> c(Recipes<T> recipes, C c0, World world) {
-@@ -95,7 +115,7 @@
+@@ -95,7 +120,7 @@
  
      public Optional<? extends IRecipe<?>> a(MinecraftKey minecraftkey) {
          return this.recipes.values().stream().map((map) -> {
@@ -90,7 +95,7 @@
          }).filter(Objects::nonNull).findFirst();
      }
  
-@@ -118,4 +138,14 @@
+@@ -118,4 +143,14 @@
              return new JsonSyntaxException("Invalid or unsupported recipe type '" + s + "'");
          })).a(minecraftkey, jsonobject);
      }
