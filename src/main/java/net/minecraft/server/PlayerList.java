@@ -134,6 +134,8 @@ public abstract class PlayerList {
             worldserver1 = worldserver;
         }
 
+        if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
+
         entityplayer.spawnIn(worldserver1);
         entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
         String s1 = "local";
