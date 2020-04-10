@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 9 Apr 2020 21:20:33 -0400
+Subject: [PATCH] Don't move existing players to world spawn
+
+This can cause a nasty server lag the spawn chunks are not kept loaded
+or they aren't finished loading yet, or if the world spawn radius is
+larger than the keep loaded range.
+
+By skipping this, we avoid potential for a large spike on server start.
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index f44825090f..fb38975830 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.serverStatisticManager = minecraftserver.getPlayerList().getStatisticManager(this);
+         this.advancementDataPlayer = minecraftserver.getPlayerList().f(this);
+         this.H = 1.0F;
+-        this.a(worldserver);
++        //this.a(worldserver); // Paper - don't move to spawn on login, only first join
+ 
+         this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
+ 
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+     // CraftBukkit end
+ 
++    public void moveToSpawn(WorldServer worldserver) { a(worldserver); } // Paper - OBFHELPER
+     private void a(WorldServer worldserver) {
+         BlockPosition blockposition = worldserver.getSpawn();
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index f37be4b76b..6d6fbf2f50 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
+             s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
+         }
++        if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
+         // CraftBukkit end
+ 
+         // Paper start - support PlayerInitialSpawnEvent
+--
