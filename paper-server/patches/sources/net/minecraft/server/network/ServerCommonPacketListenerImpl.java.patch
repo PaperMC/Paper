@@ -14,7 +14,7 @@
  import net.minecraft.network.DisconnectionDetails;
  import net.minecraft.network.PacketSendListener;
  import net.minecraft.network.chat.Component;
-@@ -22,39 +24,87 @@
+@@ -22,39 +24,88 @@
  import net.minecraft.network.protocol.common.ServerboundPongPacket;
  import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
  import net.minecraft.network.protocol.cookie.ServerboundCookieResponsePacket;
@@ -81,6 +81,7 @@
      private volatile boolean suspendFlushingOnServerThread = false;
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
++    protected static final ResourceLocation MINECRAFT_BRAND = ResourceLocation.withDefaultNamespace("brand"); // Paper - Brand support
  
 -    public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie clientData) {
 -        this.server = server;
@@ -110,7 +111,7 @@
      private void close() {
          if (!this.closed) {
              this.closedListenerTime = Util.getMillis();
-@@ -80,13 +130,18 @@
+@@ -80,13 +131,18 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -130,7 +131,7 @@
          }
  
      }
-@@ -94,8 +149,56 @@
+@@ -94,9 +150,71 @@
      @Override
      public void handlePong(ServerboundPongPacket packet) {}
  
@@ -141,13 +142,18 @@
      @Override
 -    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {}
 +    public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
++        // Paper start - Brand support
++        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload brandPayload) {
++            this.player.clientBrandName = brandPayload.brand();
++        }
++        // Paper end - Brand support
 +        if (!(packet.payload() instanceof DiscardedPayload)) {
 +            return;
 +        }
 +        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
 +        ResourceLocation identifier = packet.payload().type().id();
 +        ByteBuf payload = ((DiscardedPayload)packet.payload()).data();
-+
+ 
 +        if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_REGISTER)) {
 +            try {
 +                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
@@ -172,6 +178,15 @@
 +            try {
 +                byte[] data = new byte[payload.readableBytes()];
 +                payload.readBytes(data);
++                // Paper start - Brand support; Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
++                if (identifier.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.player.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end - Brand support
 +                this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
 +            } catch (Exception ex) {
 +                ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t dispatch custom payload", ex);
@@ -185,10 +200,11 @@
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
 +    }
 +    // CraftBukkit end
- 
++
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
-@@ -104,28 +207,55 @@
+         PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
+@@ -104,28 +222,55 @@
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
              this.disconnect((Component) Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
@@ -250,7 +266,7 @@
  
          Profiler.get().pop();
      }
-@@ -156,6 +286,14 @@
+@@ -156,6 +301,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -265,7 +281,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -175,20 +313,72 @@
+@@ -175,20 +328,72 @@
          }
      }
  
