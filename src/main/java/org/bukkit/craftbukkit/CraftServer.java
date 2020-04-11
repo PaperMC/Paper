@@ -2309,5 +2309,10 @@ public final class CraftServer implements Server {
     public int getCurrentTick() {
         return net.minecraft.server.MinecraftServer.currentTick;
     }
+
+    @Override
+    public boolean isStopping() {
+        return net.minecraft.server.MinecraftServer.getServer().hasStopped();
+    }
     // Paper end
 }
