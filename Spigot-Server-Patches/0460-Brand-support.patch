@@ -1,11 +1,11 @@
-From 47b67ab29602a941f43aea7984fee0076dd387b0 Mon Sep 17 00:00:00 2001
+From c916ffd278f19de9e5449a109c4ad3351a2e287b Mon Sep 17 00:00:00 2001
 From: DigitalRegent <misterwener@gmail.com>
-Date: Sat, 11 Apr 2020 11:40:08 +0200
+Date: Sat, 11 Apr 2020 12:35:25 +0200
 Subject: [PATCH] Brand support
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 7929fcc80..073bae15f 100644
+index 7929fcc8..464c79a8 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -5,6 +5,7 @@ import com.google.common.primitives.Floats;
@@ -16,17 +16,16 @@ index 7929fcc80..073bae15f 100644
  import io.netty.util.concurrent.Future;
  import io.netty.util.concurrent.GenericFutureListener;
  import it.unimi.dsi.fastutil.ints.Int2ShortMap;
-@@ -106,6 +107,9 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -106,6 +107,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
-+
 +    private String clientBrandName = null; // Paper - Brand name
 +
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
          this.minecraftServer = minecraftserver;
          this.networkManager = networkmanager;
-@@ -2641,6 +2645,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2641,6 +2644,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final MinecraftKey CUSTOM_REGISTER = new MinecraftKey("register");
      private static final MinecraftKey CUSTOM_UNREGISTER = new MinecraftKey("unregister");
  
@@ -35,19 +34,9 @@ index 7929fcc80..073bae15f 100644
      @Override
      public void a(PacketPlayInCustomPayload packetplayincustompayload) {
          PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.getWorldServer());
-@@ -2666,17 +2672,30 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2666,8 +2671,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
              }
          } else {
-<<<<<<< HEAD
-=======
-+            // Paper start - Brand support
-+            byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
-+            packetplayincustompayload.data.readBytes(data);
-+            
-+            if (packetplayincustompayload.tag.equals(MINECRAFT_BRAND))
-+                this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(255);
-+
->>>>>>> 3eb11008195599db2eab7b1794cb847a8a34fff6
              try {
 +                // Paper start - Brand support
                  byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
@@ -57,13 +46,9 @@ index 7929fcc80..073bae15f 100644
 +                    this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(256);
 +
                  server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.tag.toString(), data);
-+                // Paper end
              } catch (Exception ex) {
                  PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-                 this.disconnect("Invalid custom payload!");
-             }
-+
-         }
+@@ -2677,6 +2687,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
  
      }
  
@@ -77,7 +62,7 @@ index 7929fcc80..073bae15f 100644
          return (!this.player.joining && !this.networkManager.isConnected()) || this.processedDisconnect; // Paper
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 60f62f19c..1357c4233 100644
+index 60f62f19..34058eea 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2087,6 +2087,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -89,8 +74,8 @@ index 60f62f19c..1357c4233 100644
 +    public String getClientBrandName() {
 +        return getHandle().playerConnection.getClientBrandName();
 +    }
-+    // Paper end
 +
++    // Paper end
      public Player.Spigot spigot()
      {
          return spigot;
