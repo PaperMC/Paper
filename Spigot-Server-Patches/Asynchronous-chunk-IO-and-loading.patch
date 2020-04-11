@@ -1053,7 +1053,7 @@ index 0000000000..4f10a8311e
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 new file mode 100644
-index 0000000000..78bd238f4c
+index 0000000000..97f2e433c4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/PrioritizedTaskQueue.java
 @@ -0,0 +0,0 @@
@@ -1131,8 +1131,11 @@ index 0000000000..78bd238f4c
 +     *                               This can also be thrown if the queue has shutdown.
 +     */
 +    public void add(final T task) throws IllegalStateException {
-+        task.onQueue(this);
-+        this.queues[task.getPriority()].add(task);
++        int priority = task.getPriority();
++        if (priority != COMPLETING_PRIORITY) {
++            task.setQueue(this);
++            this.queues[priority].add(task);
++        }
 +        if (this.shutdown.get()) {
 +            // note: we're not actually sure at this point if our task will go through
 +            throw new IllegalStateException("Queue has shutdown, refusing to execute task " + IOUtil.genericToString(task));
@@ -1309,10 +1312,8 @@ index 0000000000..78bd238f4c
 +            }
 +        }
 +
-+        void onQueue(final PrioritizedTaskQueue queue) {
-+            if (this.queue.getAndSet(queue) != null) {
-+                throw new IllegalStateException("Already queued!");
-+            }
++        void setQueue(final PrioritizedTaskQueue queue) {
++            this.queue.set(queue);
 +        }
 +
 +        /* priority */
@@ -1901,7 +1902,7 @@ index 0000000000..1dfa8abfd8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000..715a2dd8d2
+index 0000000000..e8282e9781
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 @@ -0,0 +0,0 @@
@@ -1941,7 +1942,9 @@ index 0000000000..715a2dd8d2
 +    private final PrioritizedTaskQueue<ChunkTask> chunkTasks = new PrioritizedTaskQueue<>(); // used if async chunks are disabled in config
 +
 +    protected static QueueExecutorThread<ChunkTask>[] globalWorkers;
++    protected static QueueExecutorThread<ChunkTask> globalUrgentWorker;
 +    protected static PrioritizedTaskQueue<ChunkTask> globalQueue;
++    protected static PrioritizedTaskQueue<ChunkTask> globalUrgentQueue;
 +
 +    protected static final ConcurrentLinkedQueue<Runnable> CHUNK_WAIT_QUEUE = new ConcurrentLinkedQueue<>();
 +
@@ -2023,6 +2026,7 @@ index 0000000000..715a2dd8d2
 +
 +        globalWorkers = new QueueExecutorThread[threads];
 +        globalQueue = new PrioritizedTaskQueue<>();
++        globalUrgentQueue = new PrioritizedTaskQueue<>();
 +
 +        for (int i = 0; i < threads; ++i) {
 +            globalWorkers[i] = new QueueExecutorThread<>(globalQueue, (long)0.10e6); //0.1ms
@@ -2034,6 +2038,15 @@ index 0000000000..715a2dd8d2
 +
 +            globalWorkers[i].start();
 +        }
++
++        globalUrgentWorker = new QueueExecutorThread<>(globalUrgentQueue, (long)0.10e6); //0.1ms
++        globalUrgentWorker.setName("Paper Async Chunk Urgent Task Thread");
++        globalUrgentWorker.setPriority(Thread.NORM_PRIORITY+1);
++        globalUrgentWorker.setUncaughtExceptionHandler((final Thread thread, final Throwable throwable) -> {
++            PaperFileIOThread.LOGGER.fatal("Thread '" + thread.getName() + "' threw an uncaught exception!", throwable);
++        });
++
++        globalUrgentWorker.start();
 +    }
 +
 +    /**
@@ -2284,6 +2297,7 @@ index 0000000000..715a2dd8d2
 +                worker.flush();
 +            }
 +        }
++        globalUrgentWorker.flush();
 +
 +        // flush again since tasks we execute async saves
 +        drainChunkWaitQueue();
@@ -2316,20 +2330,30 @@ index 0000000000..715a2dd8d2
 +    public void raisePriority(final int chunkX, final int chunkZ, final int priority) {
 +        final Long chunkKey = Long.valueOf(IOUtil.getCoordinateKey(chunkX, chunkZ));
 +
-+        ChunkSaveTask chunkSaveTask = this.chunkSaveTasks.get(chunkKey);
++        ChunkTask chunkSaveTask = this.chunkSaveTasks.get(chunkKey);
 +        if (chunkSaveTask != null) {
-+            final boolean raised = chunkSaveTask.raisePriority(priority);
-+            if (chunkSaveTask.isScheduled() && raised) {
-+                // only notify if we're in queue to be executed
-+                this.internalScheduleNotify();
-+            }
++            // don't bump save into urgent queue
++            raiseTaskPriority(chunkSaveTask, priority != PrioritizedTaskQueue.HIGHEST_PRIORITY ? priority : PrioritizedTaskQueue.HIGH_PRIORITY);
 +        }
 +
 +        ChunkLoadTask chunkLoadTask = this.chunkLoadTasks.get(chunkKey);
 +        if (chunkLoadTask != null) {
-+            final boolean raised = chunkLoadTask.raisePriority(priority);
-+            if (chunkLoadTask.isScheduled() && raised) {
-+                // only notify if we're in queue to be executed
++            raiseTaskPriority(chunkLoadTask, priority);
++        }
++    }
++
++    private void raiseTaskPriority(ChunkTask task, int priority) {
++        final boolean raised = task.raisePriority(priority);
++        if (task.isScheduled() && raised) {
++            // only notify if we're in queue to be executed
++            if (priority == PrioritizedTaskQueue.HIGHEST_PRIORITY) {
++                // was in another queue but became urgent later, add to urgent queue and the previous
++                // queue will just have to ignore this task if it has already been started.
++                // Ultimately, we now have 2 potential queues that can pull it out whoever gets it first
++                // but the urgent queue has dedicated thread(s) so it's likely to win....
++                globalUrgentQueue.add(task);
++                this.internalScheduleNotifyUrgent();
++            } else {
 +                this.internalScheduleNotify();
 +            }
 +        }
@@ -2343,8 +2367,14 @@ index 0000000000..715a2dd8d2
 +
 +        // It's important we order the task to be executed before notifying. Avoid a race condition where the worker thread
 +        // wakes up and goes to sleep before we actually schedule (or it's just about to sleep)
-+        this.queue.add(task);
-+        this.internalScheduleNotify();
++        if (task.getPriority() == PrioritizedTaskQueue.HIGHEST_PRIORITY) {
++            globalUrgentQueue.add(task);
++            this.internalScheduleNotifyUrgent();
++        } else {
++            this.queue.add(task);
++            this.internalScheduleNotify();
++        }
++
 +    }
 +
 +    protected void internalScheduleNotify() {
@@ -2357,6 +2387,14 @@ index 0000000000..715a2dd8d2
 +                break;
 +            }
 +        }
++    }
++
++
++    protected void internalScheduleNotifyUrgent() {
++        if (globalUrgentWorker == null) {
++            return;
++        }
++        globalUrgentWorker.notifyTasks();
 +    }
 +
 +}
@@ -2800,7 +2838,7 @@ index a950ad801d..26f1a4b095 100644
  
          nbttagcompound1.set("PostProcessing", a(ichunkaccess.l()));
 diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
-index 134a4f0b7d..88f1674616 100644
+index 134a4f0b7d..40ce30cdc2 100644
 --- a/src/main/java/net/minecraft/server/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/server/ChunkStatus.java
 @@ -0,0 +0,0 @@ public class ChunkStatus {
@@ -2810,6 +2848,30 @@ index 134a4f0b7d..88f1674616 100644
 +    public static int getTicketLevelOffset(ChunkStatus status) { return ChunkStatus.a(status); } // Paper - OBFHELPER
      public static int a(ChunkStatus chunkstatus) {
          return ChunkStatus.r.getInt(chunkstatus.c());
+     }
+@@ -0,0 +0,0 @@ public class ChunkStatus {
+         this.t = chunkstatus == null ? 0 : chunkstatus.c() + 1;
+     }
+ 
++    public int getStatusIndex() { return c(); } // Paper - OBFHELPER
+     public int c() {
+         return this.t;
+     }
+@@ -0,0 +0,0 @@ public class ChunkStatus {
+         return this.w.doWork(this, worldserver, definedstructuremanager, lightenginethreaded, function, ichunkaccess);
+     }
+ 
++    public int getNeighborRadius() { return this.f(); } // Paper - OBFHELPER
+     public int f() {
+         return this.x;
+     }
+@@ -0,0 +0,0 @@ public class ChunkStatus {
+         return this.z;
+     }
+ 
++    public boolean isAtLeastStatus(ChunkStatus chunkstatus) { return b(chunkstatus); } // Paper - OBFHELPER
+     public boolean b(ChunkStatus chunkstatus) {
+         return this.c() >= chunkstatus.c();
      }
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 index 7e5ece9d50..cfe43e882e 100644
@@ -3055,7 +3117,7 @@ index 50135446f7..b38bc67758 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7dec34cb76..893c542f57 100644
+index b4c9d544fe..7e5fa016c7 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
