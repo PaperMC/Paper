@@ -196,8 +196,8 @@ public abstract class PlayerList {
         final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
         PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
         playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
-        worldserver1.getChunkProvider().tickDistanceManager();
-        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
+        worldserver1.getChunkProvider().markAreaHighPriority(pos, 28, 3);
+        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, false).thenApply(chunk -> {
             PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
             if (updatingChunk != null) {
                 return updatingChunk.getEntityTickingFuture();
@@ -616,6 +616,7 @@ public abstract class PlayerList {
         SocketAddress socketaddress = loginlistener.networkManager.getSocketAddress();
 
         EntityPlayer entity = new EntityPlayer(this.server, this.server.getWorldServer(World.OVERWORLD), gameprofile, new PlayerInteractManager(this.server.getWorldServer(World.OVERWORLD)));
+        entity.isRealPlayer = true; // Paper
         Player player = entity.getBukkitEntity();
         PlayerLoginEvent event = new PlayerLoginEvent(player, hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.networkManager.getRawAddress()).getAddress());
 
@@ -822,6 +823,7 @@ public abstract class PlayerList {
         // CraftBukkit end
 
         worldserver1.getChunkProvider().addTicket(TicketType.POST_TELEPORT, new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
+        entityplayer1.forceCheckHighPriority(); // Player
         while (avoidSuffocation && !worldserver1.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
             entityplayer1.setPosition(entityplayer1.locX(), entityplayer1.locY() + 1.0D, entityplayer1.locZ());
         }

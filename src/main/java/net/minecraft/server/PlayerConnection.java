@@ -1295,6 +1295,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
         this.A = this.e;
         this.player.setLocation(d0, d1, d2, f, f1);
+        this.player.forceCheckHighPriority(); // Paper
         this.player.playerConnection.sendPacket(new PacketPlayOutPosition(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.teleportAwait));
     }
 

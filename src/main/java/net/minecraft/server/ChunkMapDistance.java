@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.spigotmc.AsyncCatcher; // Paper
 
 public abstract class ChunkMapDistance {
 
@@ -46,7 +47,7 @@ public abstract class ChunkMapDistance {
     private final ChunkTaskQueueSorter i;
     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
     private final Mailbox<ChunkTaskQueueSorter.b> k;
-    private final LongSet l = new LongOpenHashSet();
+    private final LongSet l = new LongOpenHashSet(); public final LongSet getOnPlayerTicketAddQueue() { return l; } // Paper - OBFHELPER
     private final Executor m;
     private long currentTick;
 
@@ -84,6 +85,7 @@ public abstract class ChunkMapDistance {
     }
 
     private static int getLowestTicketLevel(ArraySetSorted<Ticket<?>> arraysetsorted) {
+        AsyncCatcher.catchOp("ChunkMapDistance::getLowestTicketLevel"); // Paper
         return !arraysetsorted.isEmpty() ? ((Ticket) arraysetsorted.b()).b() : PlayerChunkMap.GOLDEN_TICKET + 1;
     }
 
@@ -97,6 +99,7 @@ public abstract class ChunkMapDistance {
 
     public boolean a(PlayerChunkMap playerchunkmap) {
         //this.f.a(); // Paper - no longer used
+        AsyncCatcher.catchOp("DistanceManagerTick"); // Paper
         this.g.a();
         int i = Integer.MAX_VALUE - this.ticketLevelTracker.a(Integer.MAX_VALUE);
         boolean flag = i != 0;
@@ -107,11 +110,13 @@ public abstract class ChunkMapDistance {
 
         // Paper start
         if (!this.pendingChunkUpdates.isEmpty()) {
+            this.pollingPendingChunkUpdates = true; try {
             while(!this.pendingChunkUpdates.isEmpty()) {
                 PlayerChunk remove = this.pendingChunkUpdates.remove();
                 remove.isUpdateQueued = false;
                 remove.a(playerchunkmap);
             }
+            } finally { this.pollingPendingChunkUpdates = false; }
             // Paper end
             return true;
         } else {
@@ -147,8 +152,10 @@ public abstract class ChunkMapDistance {
             return flag;
         }
     }
+    boolean pollingPendingChunkUpdates = false; // Paper
 
     private boolean addTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+        AsyncCatcher.catchOp("ChunkMapDistance::addTicket"); // Paper
         ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
         int j = getLowestTicketLevel(arraysetsorted);
         Ticket<?> ticket1 = (Ticket) arraysetsorted.a(ticket); // CraftBukkit - decompile error
@@ -162,7 +169,9 @@ public abstract class ChunkMapDistance {
     }
 
     private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
+        AsyncCatcher.catchOp("ChunkMapDistance::removeTicket"); // Paper
         ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
+        int oldLevel = getLowestTicketLevel(arraysetsorted); // Paper
 
         boolean removed = false; // CraftBukkit
         if (arraysetsorted.remove(ticket)) {
@@ -173,7 +182,8 @@ public abstract class ChunkMapDistance {
             this.tickets.remove(i);
         }
 
-        this.ticketLevelTracker.update(i, getLowestTicketLevel(arraysetsorted), false);
+        int newLevel = getLowestTicketLevel(arraysetsorted); // Paper
+        if (newLevel > oldLevel) this.ticketLevelTracker.update(i, newLevel, false); // Paper
         return removed; // CraftBukkit
     }
 
@@ -182,6 +192,135 @@ public abstract class ChunkMapDistance {
         this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
     }
 
+    // Paper start
+    public static final int PRIORITY_TICKET_LEVEL = PlayerChunkMap.GOLDEN_TICKET;
+    public static final int URGENT_PRIORITY = 29;
+    public boolean delayDistanceManagerTick = false;
+    public boolean markUrgent(ChunkCoordIntPair coords) {
+        return addPriorityTicket(coords, TicketType.URGENT, URGENT_PRIORITY);
+    }
+    public boolean markHighPriority(ChunkCoordIntPair coords, int priority) {
+        priority = Math.min(URGENT_PRIORITY - 1, Math.max(1, priority));
+        return addPriorityTicket(coords, TicketType.PRIORITY, priority);
+    }
+
+    public void markAreaHighPriority(ChunkCoordIntPair center, int priority, int radius) {
+        delayDistanceManagerTick = true;
+        priority = Math.min(URGENT_PRIORITY - 1, Math.max(1, priority));
+        int finalPriority = priority;
+        MCUtil.getSpiralOutChunks(center.asPosition(), radius).forEach(coords -> {
+            addPriorityTicket(coords, TicketType.PRIORITY, finalPriority);
+        });
+        delayDistanceManagerTick = false;
+        chunkMap.world.getChunkProvider().tickDistanceManager();
+    }
+
+    public void clearAreaPriorityTickets(ChunkCoordIntPair center, int radius) {
+        delayDistanceManagerTick = true;
+        MCUtil.getSpiralOutChunks(center.asPosition(), radius).forEach(coords -> {
+            this.removeTicket(coords.pair(), new Ticket<ChunkCoordIntPair>(TicketType.PRIORITY, PRIORITY_TICKET_LEVEL, coords));
+        });
+        delayDistanceManagerTick = false;
+        chunkMap.world.getChunkProvider().tickDistanceManager();
+    }
+
+    private boolean hasPlayerTicket(ChunkCoordIntPair coords, int level) {
+        ArraySetSorted<Ticket<?>> tickets = this.tickets.get(coords.pair());
+        if (tickets == null || tickets.isEmpty()) {
+            return false;
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getTicketType() == TicketType.PLAYER && ticket.getTicketLevel() == level) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean addPriorityTicket(ChunkCoordIntPair coords, TicketType<ChunkCoordIntPair> ticketType, int priority) {
+        AsyncCatcher.catchOp("ChunkMapDistance::addPriorityTicket");
+        long pair = coords.pair();
+        PlayerChunk chunk = chunkMap.getUpdatingChunk(pair);
+        boolean needsTicket = chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(pair) != null && !hasPlayerTicket(coords, 33);
+
+        if (needsTicket) {
+            Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords);
+            getOnPlayerTicketAddQueue().add(pair);
+            addTicket(pair, ticket);
+        }
+        if ((chunk != null && chunk.isFullChunkReady())) {
+            if (needsTicket) {
+                chunkMap.world.getChunkProvider().tickDistanceManager();
+            }
+            return needsTicket;
+        }
+
+        boolean success;
+        if (!(success = updatePriorityTicket(coords, ticketType, priority))) {
+            Ticket<ChunkCoordIntPair> ticket = new Ticket<ChunkCoordIntPair>(ticketType, PRIORITY_TICKET_LEVEL, coords);
+            ticket.priority = priority;
+            success = this.addTicket(pair, ticket);
+        } else {
+            if (chunk == null) {
+                chunk = chunkMap.getUpdatingChunk(pair);
+            }
+            chunkMap.queueHolderUpdate(chunk);
+        }
+
+        //chunkMap.world.getWorld().spawnParticle(priority <= 15 ? org.bukkit.Particle.EXPLOSION_HUGE : org.bukkit.Particle.EXPLOSION_NORMAL, chunkMap.world.getWorld().getPlayers(), null, coords.x << 4, 70, coords.z << 4, 2, 0, 0, 0, 1, null, true);
+
+        chunkMap.world.getChunkProvider().tickDistanceManager();
+
+        return success;
+    }
+
+    private boolean updatePriorityTicket(ChunkCoordIntPair coords, TicketType<ChunkCoordIntPair> type, int priority) {
+        ArraySetSorted<Ticket<?>> tickets = this.tickets.get(coords.pair());
+        if (tickets == null) {
+            return false;
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getTicketType() == type) {
+                // We only support increasing, not decreasing, too complicated
+                ticket.setCurrentTick(this.currentTick);
+                ticket.priority = Math.max(ticket.priority, priority);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public int getChunkPriority(ChunkCoordIntPair coords) {
+        AsyncCatcher.catchOp("ChunkMapDistance::getChunkPriority");
+        ArraySetSorted<Ticket<?>> tickets = this.tickets.get(coords.pair());
+        if (tickets == null) {
+            return 0;
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getTicketType() == TicketType.URGENT) {
+                return URGENT_PRIORITY;
+            }
+        }
+        for (Ticket<?> ticket : tickets) {
+            if (ticket.getTicketType() == TicketType.PRIORITY && ticket.priority > 0) {
+                return ticket.priority;
+            }
+        }
+        return 0;
+    }
+
+    public void clearPriorityTickets(ChunkCoordIntPair coords) {
+        AsyncCatcher.catchOp("ChunkMapDistance::clearPriority");
+        this.removeTicket(coords.pair(), new Ticket<ChunkCoordIntPair>(TicketType.PRIORITY, PRIORITY_TICKET_LEVEL, coords));
+    }
+
+    public void clearUrgent(ChunkCoordIntPair coords) {
+        AsyncCatcher.catchOp("ChunkMapDistance::clearUrgent");
+        this.removeTicket(coords.pair(), new Ticket<ChunkCoordIntPair>(TicketType.URGENT, PRIORITY_TICKET_LEVEL, coords));
+    }
+    // Paper end
     public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
         return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier));
         // CraftBukkit end
@@ -381,33 +520,151 @@ public abstract class ChunkMapDistance {
 
         private void a(long i, int j, boolean flag, boolean flag1) {
             if (flag != flag1) {
-                Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
+                ChunkCoordIntPair coords = new ChunkCoordIntPair(i); // Paper
+                Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords); // Paper - no-tick view distance
 
                 if (flag1) {
-                    ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> {
+                    scheduleChunkLoad(i, MinecraftServer.currentTick, j, (priority) -> { // Paper - smarter ticket delay based on frustum and distance
+                    // Paper start - recheck its still valid if not cancel
+                    if (!isChunkInRange(i)) {
+                        ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> {
+                            ChunkMapDistance.this.m.execute(() -> {
+                                ChunkMapDistance.this.removeTicket(i, ticket);
+                                ChunkMapDistance.this.clearPriorityTickets(coords);
+                            });
+                        }, i, false));
+                        return;
+                    }
+                    // abort early if we got a ticket already
+                    if (hasPlayerTicket(coords, 33)) return;
+                    // skip player ticket throttle for near chunks
+                    if (priority <= 3) {
+                        ChunkMapDistance.this.addTicket(i, ticket);
+                        ChunkMapDistance.this.l.add(i);
+                        return;
+                    }
+                    // Paper end
+                    ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                         ChunkMapDistance.this.m.execute(() -> {
-                            if (this.c(this.c(i))) {
+                            if (isChunkInRange(i)) { if (!hasPlayerTicket(coords, 33)) { // Paper - high priority might of already added it
                                 ChunkMapDistance.this.addTicket(i, ticket);
                                 ChunkMapDistance.this.l.add(i);
-                            } else {
-                                ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> {
+                            }} else { // Paper
+                                ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                                 }, i, false));
                             }
 
                         });
                     }, i, () -> {
-                        return j;
+                        return Math.min(PlayerChunkMap.GOLDEN_TICKET, priority); // Paper
                     }));
+                    }); // Paper
                 } else {
                     ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> {
                         ChunkMapDistance.this.m.execute(() -> {
                             ChunkMapDistance.this.removeTicket(i, ticket);
+                            ChunkMapDistance.this.clearPriorityTickets(coords); // Paper
                         });
                     }, i, true));
                 }
             }
 
         }
+
+        // Paper start - smart scheduling of player tickets
+        private boolean isChunkInRange(long i) {
+            return this.isLoadedChunkLevel(this.getChunkLevel(i));
+        }
+        public void scheduleChunkLoad(long i, long startTick, int initialDistance, java.util.function.Consumer<Integer> task) {
+            long elapsed = MinecraftServer.currentTick - startTick;
+            ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(i);
+            PlayerChunk updatingChunk = chunkMap.getUpdatingChunk(i);
+            if ((updatingChunk != null && updatingChunk.isFullChunkReady()) || !isChunkInRange(i) || getChunkPriority(chunkPos) > 0) { // Copied from above
+                // no longer needed
+                task.accept(1);
+                return;
+            }
+
+            int desireDelay = 0;
+            double minDist = Double.MAX_VALUE;
+            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i);
+            if (elapsed == 0 && initialDistance <= 4) {
+                // Aim for no delay on initial 6 chunk radius tickets save on performance of the below code to only > 6
+                minDist = initialDistance;
+            } else if (players != null) {
+                Object[] backingSet = players.getBackingSet();
+
+                BlockPosition blockPos = chunkPos.asPosition();
+
+                boolean isFront = false;
+                BlockPosition.MutableBlockPosition pos = new BlockPosition.MutableBlockPosition();
+                for (int index = 0, len = backingSet.length; index < len; ++index) {
+                    if (!(backingSet[index] instanceof EntityPlayer)) {
+                        continue;
+                    }
+                    EntityPlayer player = (EntityPlayer) backingSet[index];
+
+                    ChunkCoordIntPair pointInFront = player.getChunkInFront(5);
+                    pos.setValues(pointInFront.x << 4, 0, pointInFront.z << 4);
+                    double frontDist = MCUtil.distanceSq(pos, blockPos);
+
+                    pos.setValues(player.locX(), 0, player.locZ());
+                    double center = MCUtil.distanceSq(pos, blockPos);
+
+                    double dist = Math.min(frontDist, center);
+                    if (!isFront) {
+                        ChunkCoordIntPair pointInBack = player.getChunkInFront(-7);
+                        pos.setValues(pointInBack.x << 4, 0, pointInBack.z << 4);
+                        double backDist = MCUtil.distanceSq(pos, blockPos);
+                        if (frontDist < backDist) {
+                            isFront = true;
+                        }
+                    }
+                    if (dist < minDist) {
+                        minDist = dist;
+                    }
+                }
+                if (minDist == Double.MAX_VALUE) {
+                    minDist = 15;
+                } else {
+                    minDist = Math.sqrt(minDist) / 16;
+                }
+                if (minDist > 4) {
+                    int desiredTimeDelayMax = isFront ?
+                        (minDist < 10 ? 7 : 15) : // Front
+                        (minDist < 10 ? 15 : 45); // Back
+                    desireDelay += (desiredTimeDelayMax * 20) * (minDist / 32);
+                }
+            } else {
+                minDist = initialDistance;
+                desireDelay = 1;
+            }
+            long delay = desireDelay - elapsed;
+            if (delay <= 0 && minDist > 4 && minDist < Double.MAX_VALUE) {
+                boolean hasAnyNeighbor = false;
+                for (int x = -1; x <= 1; x++) {
+                    for (int z = -1; z <= 1; z++) {
+                        if (x == 0 && z == 0) continue;
+                        long pair = ChunkCoordIntPair.pair(chunkPos.x + x, chunkPos.z + z);
+                        PlayerChunk neighbor = chunkMap.getUpdatingChunk(pair);
+                        ChunkStatus current = neighbor != null ? neighbor.getChunkHolderStatus() : null;
+                        if (current != null && current.isAtLeastStatus(ChunkStatus.LIGHT)) {
+                            hasAnyNeighbor = true;
+                        }
+                    }
+                }
+                if (!hasAnyNeighbor) {
+                    delay += 20;
+                }
+            }
+            if (delay <= 0) {
+                task.accept((int) minDist);
+            } else {
+                int taskDelay = (int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 5 : 20));
+                MCUtil.scheduleTask(taskDelay, () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
+            }
+        }
+        // Paper end
 
         @Override
         public void a() {
@@ -440,6 +697,7 @@ public abstract class ChunkMapDistance {
 
         }
 
+        private boolean isLoadedChunkLevel(int i) { return c(i); } // Paper - OBFHELPER
         private boolean c(int i) {
             return i <= this.e - 2;
         }
@@ -456,6 +714,7 @@ public abstract class ChunkMapDistance {
             this.a.defaultReturnValue((byte) (i + 2));
         }
 
+        protected final int getChunkLevel(long i) { return c(i); } // Paper - OBFHELPER
         @Override
         protected int c(long i) {
             return this.a.get(i);

@@ -103,6 +103,7 @@ public class ChunkCoordIntPair {
         return "[" + this.x + ", " + this.z + "]";
     }
 
+    public final BlockPosition asPosition() { return l(); } // Paper - OBFHELPER
     public BlockPosition l() {
         return new BlockPosition(this.d(), 0, this.e());
     }

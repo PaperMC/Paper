@@ -2508,6 +2508,10 @@ public class CraftWorld implements World {
             return future;
         }
 
+        if (!urgent) {
+            // if not urgent, at least use a slightly boosted priority
+            world.getChunkProvider().markHighPriority(new ChunkCoordIntPair(x, z), 1);
+        }
         return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
             net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) either.left().orElse(null);
             return CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());

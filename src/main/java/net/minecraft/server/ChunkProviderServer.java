@@ -444,6 +444,26 @@ public class ChunkProviderServer extends IChunkProvider {
     public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkPos, int ticketLevel, T identifier) {
         this.chunkMapDistance.removeTicketAtLevel(ticketType, chunkPos, ticketLevel, identifier);
     }
+
+    public boolean markUrgent(ChunkCoordIntPair coords) {
+        return this.chunkMapDistance.markUrgent(coords);
+    }
+
+    public boolean markHighPriority(ChunkCoordIntPair coords, int priority) {
+        return this.chunkMapDistance.markHighPriority(coords, priority);
+    }
+
+    public void markAreaHighPriority(ChunkCoordIntPair center, int priority, int radius) {
+        this.chunkMapDistance.markAreaHighPriority(center, priority, radius);
+    }
+
+    public void clearAreaPriorityTickets(ChunkCoordIntPair center, int radius) {
+        this.chunkMapDistance.clearAreaPriorityTickets(center, radius);
+    }
+
+    public void clearPriorityTickets(ChunkCoordIntPair coords) {
+        this.chunkMapDistance.clearPriorityTickets(coords);
+    }
     // Paper end
 
     @Nullable
@@ -482,6 +502,8 @@ public class ChunkProviderServer extends IChunkProvider {
 
             if (!completablefuture.isDone()) { // Paper
                 // Paper start - async chunk io/loading
+                ChunkCoordIntPair pair = new ChunkCoordIntPair(x, z);
+                this.chunkMapDistance.markUrgent(pair);
                 this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                 // Paper end
@@ -490,6 +512,8 @@ public class ChunkProviderServer extends IChunkProvider {
             this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                 this.world.timings.syncChunkLoad.stopTiming(); // Paper
+                this.chunkMapDistance.clearPriorityTickets(pair); // Paper
+                this.chunkMapDistance.clearUrgent(pair); // Paper
             } // Paper
             ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                 return ichunkaccess1;
@@ -542,10 +566,12 @@ public class ChunkProviderServer extends IChunkProvider {
         if (flag && !currentlyUnloading) {
             // CraftBukkit end
             this.chunkMapDistance.a(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
+            if (isUrgent) this.chunkMapDistance.markUrgent(chunkcoordintpair); // Paper
             if (this.a(playerchunk, l)) {
                 GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
 
                 gameprofilerfiller.enter("chunkLoad");
+                chunkMapDistance.delayDistanceManagerTick = false; // Paper - ensure this is never false
                 this.tickDistanceManager();
                 playerchunk = this.getChunk(k);
                 gameprofilerfiller.exit();
@@ -554,8 +580,13 @@ public class ChunkProviderServer extends IChunkProvider {
                 }
             }
         }
-
-        return this.a(playerchunk, l) ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : playerchunk.a(chunkstatus, this.playerChunkMap);
+        // Paper start
+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.a(playerchunk, l) ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : playerchunk.a(chunkstatus, this.playerChunkMap);
+        if (isUrgent) {
+            future.thenAccept(either -> this.chunkMapDistance.clearUrgent(chunkcoordintpair));
+        }
+        return future;
+        // Paper end
     }
 
     private boolean a(@Nullable PlayerChunk playerchunk, int i) {
@@ -606,6 +637,7 @@ public class ChunkProviderServer extends IChunkProvider {
     }
 
     public boolean tickDistanceManager() { // Paper - private -> public
+        if (chunkMapDistance.delayDistanceManagerTick) return false; // Paper
         boolean flag = this.chunkMapDistance.a(this.playerChunkMap);
         boolean flag1 = this.playerChunkMap.b();
 

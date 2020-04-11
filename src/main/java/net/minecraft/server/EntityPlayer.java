@@ -56,6 +56,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int lastArmorScored = Integer.MIN_VALUE;
     private int lastExpLevelScored = Integer.MIN_VALUE;
     private int lastExpTotalScored = Integer.MIN_VALUE;
+    public long lastHighPriorityChecked; // Paper
+    public void forceCheckHighPriority() {
+        lastHighPriorityChecked = -1;
+        getWorldServer().getChunkProvider().playerChunkMap.checkHighPriorityChunks(this);
+    }
+    public boolean isRealPlayer; // Paper
     private float lastHealthSent = -1.0E8F;
     private int lastFoodSent = -99999999;
     private boolean lastSentSaturationZero = true;
@@ -138,6 +144,21 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.maxHealthCache = this.getMaxHealth();
         this.cachedSingleMobDistanceMap = new com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
     }
+    // Paper start
+    public BlockPosition getPointInFront(double inFront) {
+        double rads = Math.toRadians(MCUtil.normalizeYaw(this.yaw+90)); // MC rotates yaw 90 for some odd reason
+        final double x = locX() + inFront * Math.cos(rads);
+        final double z = locZ() + inFront * Math.sin(rads);
+        return new BlockPosition(x, locY(), z);
+    }
+
+    public ChunkCoordIntPair getChunkInFront(double inFront) {
+        double rads = Math.toRadians(MCUtil.normalizeYaw(this.yaw+90)); // MC rotates yaw 90 for some odd reason
+        final double x = locX() + (inFront * 16) * Math.cos(rads);
+        final double z = locZ() + (inFront * 16) * Math.sin(rads);
+        return new ChunkCoordIntPair(MathHelper.floor(x) >> 4, MathHelper.floor(z) >> 4);
+    }
+    // Paper end
 
     // Yes, this doesn't match Vanilla, but it's the best we can do for now.
     // If this is an issue, PRs are welcome
@@ -485,6 +506,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             if (valid && !this.isSpectator() || this.world.isLoaded(this.getChunkCoordinates())) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
                 super.tick();
             }
+            if (valid && isAlive() && playerConnection != null) ((WorldServer)world).getChunkProvider().playerChunkMap.checkHighPriorityChunks(this); // Paper
 
             for (int i = 0; i < this.inventory.getSize(); ++i) {
                 ItemStack itemstack = this.inventory.getItem(i);

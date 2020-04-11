@@ -656,6 +656,7 @@ public final class MCUtil {
                 chunkData.addProperty("x", playerChunk.location.x);
                 chunkData.addProperty("z", playerChunk.location.z);
                 chunkData.addProperty("ticket-level", playerChunk.getTicketLevel());
+                chunkData.addProperty("priority", playerChunk.getCurrentPriority());
                 chunkData.addProperty("state", PlayerChunk.getChunkState(playerChunk.getTicketLevel()).toString());
                 chunkData.addProperty("queued-for-unload", chunkMap.unloadQueue.contains(playerChunk.location.pair()));
                 chunkData.addProperty("status", status == null ? "unloaded" : status.toString());

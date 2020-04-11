@@ -743,6 +743,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
     }
 
+    // Paper start
+    @Override
+    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, @javax.annotation.Nonnull PlayerTeleportEvent.TeleportCause cause) {
+        ((CraftWorld)loc.getWorld()).getHandle().getChunkProvider().markAreaHighPriority(new net.minecraft.server.ChunkCoordIntPair(net.minecraft.server.MathHelper.floor(loc.getX()) >> 4, net.minecraft.server.MathHelper.floor(loc.getZ()) >> 4), 28, 3); // Paper - load area high priority
+        return super.teleportAsync(loc, cause);
+    }
+    // Paper end
+
     @Override
     public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
         Preconditions.checkArgument(location != null, "location");

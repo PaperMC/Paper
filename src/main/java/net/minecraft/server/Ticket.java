@@ -8,6 +8,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
     private final int b;
     public final T identifier; public final T getObjectReason() { return this.identifier; } // Paper - OBFHELPER
     private long d; public final long getCreationTick() { return this.d; } // Paper - OBFHELPER
+    public int priority = 0; // Paper
 
     protected Ticket(TicketType<T> tickettype, int i, T t0) {
         this.a = tickettype;
@@ -56,6 +57,7 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
         return this.b;
     }
 
+    public final void setCurrentTick(long i) { this.a(i); } // Paper - OBFHELPER
     protected void a(long i) {
         this.d = i;
     }

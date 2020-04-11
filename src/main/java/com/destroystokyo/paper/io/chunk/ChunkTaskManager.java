@@ -4,7 +4,10 @@ import com.destroystokyo.paper.io.PaperFileIOThread;
 import com.destroystokyo.paper.io.IOUtil;
 import com.destroystokyo.paper.io.PrioritizedTaskQueue;
 import com.destroystokyo.paper.io.QueueExecutorThread;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.server.ChunkCoordIntPair;
 import net.minecraft.server.ChunkRegionLoader;
+import net.minecraft.server.ChunkStatus;
 import net.minecraft.server.IAsyncTaskHandler;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.MinecraftServer;
@@ -106,7 +109,7 @@ public final class ChunkTaskManager {
     }
 
     static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z) {
-        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 1);
+        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 4);
     }
 
     static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent, int maxDepth) {
@@ -127,6 +130,30 @@ public final class ChunkTaskManager {
             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + PlayerChunk.getChunkStatus(chunkHolder.getTicketLevel()));
             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
+            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Priority - " + chunkHolder.getCurrentPriority());
+
+            if (!chunkHolder.neighbors.isEmpty()) {
+                if (indent >= maxDepth) {
+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: (Can't show, too deeply nested)");
+                    return;
+                }
+                PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: ");
+                for (PlayerChunk neighbor : chunkHolder.neighbors.keySet()) {
+                    ChunkStatus status = neighbor.getChunkHolderStatus();
+                    if (status != null && status.isAtLeastStatus(PlayerChunk.getChunkStatus(neighbor.getTicketLevel()))) {
+                        continue;
+                    }
+                    int nx = neighbor.location.x;
+                    int nz = neighbor.location.z;
+                    if (seenChunks.contains(neighbor)) {
+                        PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + " (CIRCULAR)");
+                        continue;
+                    }
+                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
+                    dumpChunkInfo(seenChunks, neighbor, nx, nz, indent + 1, maxDepth);
+                }
+            }
+
         }
     }
 
