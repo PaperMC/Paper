@@ -40,4 +40,5 @@ MicleBrick <miclebrick@outlook.com>
 Trigary <trigary0@gmail.com>
 rickyboy320 <rickw320@hotmail.com>
 DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
+Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.com>
 ```
