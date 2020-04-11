@@ -4,6 +4,7 @@ import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.StringReader;
+import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import it.unimi.dsi.fastutil.ints.Int2ShortMap;
@@ -107,6 +108,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private int processedMovePackets;
     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+
+    private String clientBrandName = null; // Paper - Brand name
 
     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
         this.minecraftServer = minecraftserver;
@@ -2738,6 +2741,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private static final MinecraftKey CUSTOM_REGISTER = new MinecraftKey("register");
     private static final MinecraftKey CUSTOM_UNREGISTER = new MinecraftKey("unregister");
 
+    private static final MinecraftKey MINECRAFT_BRAND = new MinecraftKey("brand"); // Paper - Brand support
+
     @Override
     public void a(PacketPlayInCustomPayload packetplayincustompayload) {
         PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.getWorldServer());
@@ -2765,6 +2770,16 @@ public class PlayerConnection implements PacketListenerPlayIn {
             try {
                 byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
                 packetplayincustompayload.data.readBytes(data);
+
+                // Paper start - Brand support
+                if (packetplayincustompayload.tag.equals(MINECRAFT_BRAND)) {
+                    try {
+                        this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(256);
+                    } catch (StringIndexOutOfBoundsException ex) {
+                        this.clientBrandName = "illegal";
+                    }
+                }
+                // Paper end
                 server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.tag.toString(), data);
             } catch (Exception ex) {
                 PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
@@ -2773,6 +2788,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
         }
 
     }
+
+    // Paper start - brand support
+    public String getClientBrandName() {
+        return clientBrandName;
+    }
+    // Paper end
 
     public final boolean isDisconnected() {
         return (!this.player.joining && !this.networkManager.isConnected()) || this.processedDisconnect; // Paper
