@@ -2243,5 +2243,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return Current tick
      */
     int getCurrentTick();
+
+    /**
+     * Checks if the server is in the process of being shutdown.
+     *
+     * @return true if server is in the process of being shutdown
+     */
+    boolean isStopping();
     // Paper end
 }

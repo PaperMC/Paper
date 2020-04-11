@@ -2575,6 +2575,15 @@ public final class Bukkit {
     public static int getCurrentTick() {
         return server.getCurrentTick();
     }
+
+    /**
+     * Checks if the server is in the process of being shutdown.
+     *
+     * @return true if server is in the process of being shutdown
+     */
+    public static boolean isStopping() {
+        return server.isStopping();
+    }
     // Paper end
 
     @NotNull
