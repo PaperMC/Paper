@@ -2569,7 +2569,7 @@ index b582171c5..03d7ce829 100644
          } finally {
              playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index a950ad801..26f1a4b09 100644
+index 8816c90e2..0b61ee3ba 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -2786,18 +2786,22 @@ index a950ad801..26f1a4b09 100644
                  nbttagcompound2 = new NBTTagCompound();
                  nbttagcompound2.setByte("Y", (byte) (i & 255));
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
-                     // Paper start
-                     if ((int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
-                         LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
--                        toUpdate.add(entity);
-+                        if (asyncsavedata == null) toUpdate.add(entity); // todo fix this broken code, entityJoinedWorld wont work in this case!
-                         continue;
-                     }
--                    if (entity.dead) {
-+                    if (asyncsavedata == null && entity.dead) { // todo
-                         continue;
-                     }
-                     // Paper end
+             }
+ 
+             // Paper start - move entities to the correct chunk
+-            for (Entity entity : toUpdate) {
+-                worldserver.chunkCheck(entity);
+-            }
++            worldserver.getMinecraftServer().execute(() -> {
++                for (Entity entity : toUpdate) {
++                    if (!entity.dead) {
++                        worldserver.chunkCheck(entity);
++                    }
++                }
++            });
+             // Paper end
+ 
+         } else {
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
          }
  

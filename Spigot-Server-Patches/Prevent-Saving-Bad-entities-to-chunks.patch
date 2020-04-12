@@ -18,7 +18,7 @@ an invalid entity.
 This should reduce log occurrences of dupe uuid messages.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 4af5a230ba..6371f2f5b1 100644
+index 4af5a230b..83bcef7e6 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
@@ -36,11 +36,10 @@ index 4af5a230ba..6371f2f5b1 100644
 -
 +                    // Paper start
 +                    if ((int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
-+                        LogManager.getLogger().warn(entity + " is not in this chunk, skipping save. This a bug fix to a vanilla bug. Do not report this to PaperMC please.");
 +                        toUpdate.add(entity);
 +                        continue;
 +                    }
-+                    if (entity.dead) {
++                    if (entity.dead || hasPlayerPassenger(entity)) {
 +                        continue;
 +                    }
 +                    // Paper end
@@ -53,11 +52,31 @@ index 4af5a230ba..6371f2f5b1 100644
 +
 +            // Paper start - move entities to the correct chunk
 +            for (Entity entity : toUpdate) {
-+                worldserver.entityJoinedWorld(entity);
++                worldserver.chunkCheck(entity);
 +            }
 +            // Paper end
 +
          } else {
              ProtoChunk protochunk = (ProtoChunk) ichunkaccess;
  
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
+         nbttagcompound1.set("Structures", a(chunkcoordintpair, ichunkaccess.h(), ichunkaccess.v()));
+         return nbttagcompound;
+     }
++    // Paper start - this is saved with the player
++    private static boolean hasPlayerPassenger(Entity entity) {
++        for (Entity passenger : entity.passengers) {
++            if (passenger instanceof EntityPlayer) {
++                return true;
++            }
++            if (hasPlayerPassenger(passenger)) {
++                return true;
++            }
++        }
++        return false;
++    }
++    // Paper end
+ 
+     public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
+         if (nbttagcompound != null) {
 --
