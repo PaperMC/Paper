@@ -62,6 +62,16 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
     public final ChunkProviderServer chunkProvider; // Paper - public
     boolean tickingEntities;
+    // Paper start
+    List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
+    public void doIfNotEntityTicking(java.lang.Runnable run) {
+        if (tickingEntities) {
+            afterEntityTickingTasks.add(run);
+        } else {
+            run.run();
+        }
+    }
+    // Paper end
     private final MinecraftServer server;
     public final WorldDataServer worldDataServer; // CraftBukkit - type
     public boolean savingDisabled;
@@ -529,6 +539,16 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             timings.entityTick.stopTiming(); // Spigot
 
             this.tickingEntities = false;
+            // Paper start
+            for (java.lang.Runnable run : this.afterEntityTickingTasks) {
+                try {
+                    run.run();
+                } catch (Exception e) {
+                    LOGGER.error("Error in After Entity Ticking Task", e);
+                }
+            }
+            this.afterEntityTickingTasks.clear();
+            // Paper end
             this.getMinecraftServer().midTickLoadChunks(); // Paper
 
             Entity entity2;
