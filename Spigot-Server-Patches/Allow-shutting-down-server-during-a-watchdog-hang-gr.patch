@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 12 Apr 2020 15:50:48 -0400
+Subject: [PATCH] Allow shutting down server during a watchdog hang gracefully
+
+If the request to shut down the server is received while we are in
+a watchdog hang, immediately treat it as a crash and begin the shutdown
+process. Shutdown process is now improved to also shutdown cleanly when
+not using restart scripts either.
+
+If a server is deadlocked, a server owner can send SIGUP (or any other signal
+the JVM understands to shut down as it currently does) and the watchdog
+will no longer need to wait until the full timeout, allowing you to trigger
+a close process and try to shut the server down gracefully, saving player and
+world data.
+
+Previously there was no way to trigger this outside of waiting for a full watchdog
+timeout, which may be set to a really long time...
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 2686874f2..a9b533751 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public boolean serverAutoSave = false; // Paper
+     public File bukkitDataPackFolder;
+     public CommandDispatcher vanillaCommandDispatcher;
+-    private boolean forceTicks;
++    public boolean forceTicks; // Paper
+     // CraftBukkit end
+     // Spigot start
+     public static final int TPS = 20;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         }
+         // Spigot end
+         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
++        System.exit(0); // Paper
+     }
+ 
+     public String getServerIp() {
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index aefea3a9a..123de5ac9 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -0,0 +0,0 @@ public class RestartCommand extends Command
+     // Paper end
+ 
+     // Paper start - copied from above and modified to return if the hook registered
+-    private static boolean addShutdownHook(String restartScript)
++    public static boolean addShutdownHook(String restartScript)
+     {
+         String[] split = restartScript.split( " " );
+         if ( split.length > 0 && new File( split[0] ).isFile() )
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 5bdcdcf9e..704e8426a 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+             long currentTime = monotonicMillis();
+             if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
+             {
+-                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
++                boolean isLongTimeout = currentTime > lastTick + timeoutTime || !MinecraftServer.getServer().isRunning();
+                 // Don't spam early warning dumps
+                 if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
+                 if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+ 
+                 if ( isLongTimeout )
+                 {
+-                if ( restart && !MinecraftServer.getServer().hasStopped() )
++                if ( !MinecraftServer.getServer().hasStopped() )
+                 {
+-                    RestartCommand.restart();
++                    AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
++                    AsyncCatcher.shuttingDown = true;
++                    MinecraftServer.getServer().forceTicks = true;
++                    if (restart) {
++                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
++                    }
++                    MinecraftServer.getServer().close();
+                 }
+                 break;
+                 } // Paper end
+--
