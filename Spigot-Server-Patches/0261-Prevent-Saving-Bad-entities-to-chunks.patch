@@ -1,4 +1,4 @@
-From 0e1e8bae2d4aa584614af1937310c93dd0384a88 Mon Sep 17 00:00:00 2001
+From 3c6d8305c8007d43baa346e7509fa87793f59c1d Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 26 Jul 2018 00:11:12 -0400
 Subject: [PATCH] Prevent Saving Bad entities to chunks
@@ -79,6 +79,47 @@ index 4af5a230b..83bcef7e6 100644
  
      public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
          if (nbttagcompound != null) {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 6ce7f77a5..1adabb751 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1085,6 +1085,7 @@ public class WorldServer extends World {
+         List[] aentityslice = chunk.getEntitySlices(); // Spigot
+         int i = aentityslice.length;
+ 
++        java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
+         for (int j = 0; j < i; ++j) {
+             List<Entity> entityslice = aentityslice[j]; // Spigot
+             Iterator iterator = entityslice.iterator();
+@@ -1109,11 +1110,28 @@ public class WorldServer extends World {
+                         throw (IllegalStateException) SystemUtils.c(new IllegalStateException("Removing entity while ticking!"));
+                     }
+ 
++                    // Paper start - move out entities that shouldn't be in this chunk before it unloads
++                    if (!entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
++                        toMoveChunks.add(entity);
++                        entity.inChunk = false;
++                        entity.entitySlice = null;
++                        iterator.remove();
++                        continue;
++                    }
++                    // Paper end
++
+                     this.entitiesById.remove(entity.getId());
+                     this.unregisterEntity(entity);
++
++                    if (entity.dead) iterator.remove(); // Paper - don't save dead entities during unload
+                 }
+             }
+         }
++        // Paper start - move out entities that shouldn't be in this chunk before it unloads
++        for (Entity entity : toMoveChunks) {
++            this.chunkCheck(entity);
++        }
++        // Paper end
+ 
+     }
+ 
 -- 
 2.25.1
 
