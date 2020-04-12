@@ -139,7 +139,7 @@ public class RestartCommand extends Command
     // Paper end
 
     // Paper start - copied from above and modified to return if the hook registered
-    private static boolean addShutdownHook(String restartScript)
+    public static boolean addShutdownHook(String restartScript)
     {
         String[] split = restartScript.split( " " );
         if ( split.length > 0 && new File( split[0] ).isFile() )

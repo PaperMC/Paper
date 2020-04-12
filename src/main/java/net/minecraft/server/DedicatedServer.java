@@ -238,7 +238,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             long j = SystemUtils.getMonotonicNanos() - i;
             String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
 
-            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
+            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
             if (dedicatedserverproperties.announcePlayerAchievements != null) {
                 ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
             }
@@ -362,6 +362,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
         }
 
+        hasFullyShutdown = true; // Paper
         System.exit(0); // CraftBukkit
     }
 
@@ -695,7 +696,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
     @Override
     public void stop() {
         super.stop();
-        SystemUtils.h();
+        //SystemUtils.h(); // Paper - moved into super
     }
 
     @Override

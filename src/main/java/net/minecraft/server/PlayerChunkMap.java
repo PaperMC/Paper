@@ -487,6 +487,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
             MutableBoolean mutableboolean = new MutableBoolean();
 
             do {
+                boolean isShuttingDown = world.getMinecraftServer().hasStopped(); // Paper
                 mutableboolean.setFalse();
                 list.stream().map((playerchunk) -> {
                     CompletableFuture completablefuture;

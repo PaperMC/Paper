@@ -797,6 +797,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
 
                         gameprofilerfiller.exit();
                     } catch (Throwable throwable) {
+                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
                         // Paper start - Prevent tile entity and entity crashes
                         String msg = "TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ();
                         System.err.println(msg);
@@ -872,6 +873,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
         try {
             consumer.accept(entity);
         } catch (Throwable throwable) {
+            if (throwable instanceof ThreadDeath) throw throwable; // Paper
             // Paper start - Prevent tile entity and entity crashes
             String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
             System.err.println(msg);

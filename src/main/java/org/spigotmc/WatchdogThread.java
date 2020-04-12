@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 public class WatchdogThread extends Thread
 {
 
+    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
     private static WatchdogThread instance;
     private final long timeoutTime;
     private final long earlyWarningEvery; // Paper - Timeout time for just printing a dump but not restarting
@@ -41,6 +42,7 @@ public class WatchdogThread extends Thread
     {
         if ( instance == null )
         {
+            if (timeoutTime <= 0) timeoutTime = 300; // Paper
             instance = new WatchdogThread( timeoutTime * 1000L, restart );
             instance.start();
         }
@@ -67,12 +69,13 @@ public class WatchdogThread extends Thread
             // Paper start
             Logger log = Bukkit.getServer().getLogger();
             long currentTime = monotonicMillis();
-            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
+            MinecraftServer server = MinecraftServer.getServer();
+            if (lastTick != 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
             {
-                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
+                boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
                 // Don't spam early warning dumps
                 if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
-                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+                if ( !isLongTimeout && server.hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
                 lastEarlyWarning = currentTime;
                 if (isLongTimeout) {
                 // Paper end
@@ -114,7 +117,7 @@ public class WatchdogThread extends Thread
                 log.log( Level.SEVERE, "------------------------------" );
                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
                 ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
-                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
                 log.log( Level.SEVERE, "------------------------------" );
                 //
                 // Paper start - Only print full dump on long timeouts
@@ -135,9 +138,24 @@ public class WatchdogThread extends Thread
 
                 if ( isLongTimeout )
                 {
-                if ( restart && !MinecraftServer.getServer().hasStopped() )
+                if ( !server.hasStopped() )
                 {
-                    RestartCommand.restart();
+                    AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
+                    AsyncCatcher.shuttingDown = true;
+                    server.forceTicks = true;
+                    if (restart) {
+                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
+                    }
+                    // try one last chance to safe shutdown on main incase it 'comes back'
+                    server.safeShutdown(false, restart);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (!server.hasStopped()) {
+                        server.close();
+                    }
                 }
                 break;
                 } // Paper end

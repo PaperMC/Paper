@@ -257,6 +257,7 @@ public class CrashReport {
     }
 
     public static CrashReport a(Throwable throwable, String s) {
+        if (throwable instanceof ThreadDeath) com.destroystokyo.paper.util.SneakyThrow.sneaky(throwable); // Paper
         while (throwable instanceof CompletionException && throwable.getCause() != null) {
             throwable = throwable.getCause();
         }

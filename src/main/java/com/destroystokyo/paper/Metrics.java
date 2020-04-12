@@ -86,6 +86,9 @@ public class Metrics {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                if (MinecraftServer.getServer().hasStopped()) {
+                    return;
+                }
                 submitData();
             }
         }, 1000 * 60 * 5, 1000 * 60 * 30);

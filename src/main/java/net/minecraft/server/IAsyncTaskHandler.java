@@ -135,6 +135,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
         try {
             r0.run();
         } catch (Exception exception) {
+            if (exception.getCause() instanceof ThreadDeath) throw exception; // Paper
             IAsyncTaskHandler.LOGGER.fatal("Error executing task on {}", this.bi(), exception);
         }
 

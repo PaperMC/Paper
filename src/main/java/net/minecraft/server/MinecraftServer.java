@@ -159,7 +159,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     public int autosavePeriod;
     public boolean serverAutoSave = false; // Paper
     public CommandDispatcher vanillaCommandDispatcher;
-    private boolean forceTicks;
+    public boolean forceTicks; // Paper
     // CraftBukkit end
     // Spigot start
     public static final int TPS = 20;
@@ -168,6 +168,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
     public final double[] recentTps = new double[ 3 ];
     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
     // Spigot end
+
+    public volatile Thread shutdownThread; // Paper
 
     public static <S extends MinecraftServer> S a(Function<Thread, S> function) {
         AtomicReference<S> atomicreference = new AtomicReference();
@@ -735,6 +737,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     // CraftBukkit start
     private boolean hasStopped = false;
+    public volatile boolean hasFullyShutdown = false; // Paper
     private final Object stopLock = new Object();
     public final boolean hasStopped() {
         synchronized (stopLock) {
@@ -749,6 +752,19 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             if (hasStopped) return;
             hasStopped = true;
         }
+        // Paper start - kill main thread, and kill it hard
+        shutdownThread = Thread.currentThread();
+        org.spigotmc.WatchdogThread.doStop(); // Paper
+        if (!isMainThread()) {
+            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)");
+            while (this.getThread().isAlive()) {
+                this.getThread().stop();
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {}
+            }
+        }
+        // Paper end
         // CraftBukkit end
         MinecraftServer.LOGGER.info("Stopping server");
         MinecraftTimings.stopServer(); // Paper
@@ -814,7 +830,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.getUserCache().b(false); // Paper
         }
         // Spigot end
+        // Paper start - move final shutdown items here
+        LOGGER.info("Flushing Chunk IO");
         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
+        LOGGER.info("Closing Thread Pool");
+        SystemUtils.shutdownServerThreadPool(); // Paper
+        LOGGER.info("Closing Server");
+        try {
+            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+        } catch (Exception e) {
+        }
+        this.exit();
+        // Paper end
     }
 
     public String getServerIp() {
@@ -907,6 +934,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     protected void w() {
         try {
+            long serverStartTime = SystemUtils.getMonotonicNanos(); // Paper
             if (this.init()) {
                 this.nextTick = SystemUtils.getMonotonicMillis();
                 this.serverPing.setMOTD(new ChatComponentText(this.motd));
@@ -914,6 +942,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 this.a(this.serverPing);
 
                 // Spigot start
+                // Paper start - move done tracking
+                LOGGER.info("Running delayed init tasks");
+                this.server.getScheduler().mainThreadHeartbeat(this.ticks); // run all 1 tick delay tasks during init,
+                // this is going to be the first thing the tick process does anyways, so move done and run it after
+                // everything is init before watchdog tick.
+                // anything at 3+ won't be caught here but also will trip watchdog....
+                // tasks are default scheduled at -1 + delay, and first tick will tick at 1
+                String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (SystemUtils.getMonotonicNanos() - serverStartTime) / 1.0E9D);
+                LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
+                // Paper end
+
+                org.spigotmc.WatchdogThread.tick(); // Paper
                 org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                 Arrays.fill( recentTps, 20 );
                 long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
@@ -969,6 +1009,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 this.a((CrashReport) null);
             }
         } catch (Throwable throwable) {
+            // Paper start
+            if (throwable instanceof ThreadDeath) {
+                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable);
+                return;
+            }
+            // Paper end
             MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
             // Spigot Start
             if ( throwable.getCause() != null )
@@ -1000,14 +1046,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             } catch (Throwable throwable1) {
                 MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
             } finally {
-                org.spigotmc.WatchdogThread.doStop(); // Spigot
+                //org.spigotmc.WatchdogThread.doStop(); // Spigot // Paper - move into stop
                 // CraftBukkit start - Restore terminal to original settings
                 try {
-                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+                    //net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Move into stop
                 } catch (Exception ignored) {
                 }
                 // CraftBukkit end
-                this.exit();
+                //this.exit(); // Paper - moved into stop
             }
 
         }
@@ -1063,6 +1109,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
 
     @Override
     protected TickTask postToMainThread(Runnable runnable) {
+        // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
+        if (this.hasStopped && Thread.currentThread().equals(shutdownThread)) {
+            runnable.run();
+            runnable = () -> {};
+        }
+        // Paper end
         return new TickTask(this.ticks, runnable);
     }
 
@@ -1305,6 +1357,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                 try {
                     crashreport = CrashReport.a(throwable, "Exception ticking world");
                 } catch (Throwable t) {
+                    if (throwable instanceof ThreadDeath) { throw (ThreadDeath)throwable; } // Paper
                     throw new RuntimeException("Error generating crash report", t);
                 }
                 // Spigot End
@@ -1756,7 +1809,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
             this.resourcePackRepository.a(collection);
             this.saveData.a(a(this.resourcePackRepository));
             datapackresources.i();
-            this.getPlayerList().savePlayers();
+            if (Thread.currentThread() != this.serverThread) return; // Paper
+            //this.getPlayerList().savePlayers(); // Paper - we don't need to do this
             this.getPlayerList().reload();
             this.customFunctionData.a(this.dataPackResources.a());
             this.ak.a(this.dataPackResources.h());
