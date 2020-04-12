@@ -2569,7 +2569,7 @@ index b582171c5..03d7ce829 100644
          } finally {
              playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index 8816c90e2..0b61ee3ba 100644
+index 8816c90e2..1298a07dc 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -2786,22 +2786,14 @@ index 8816c90e2..0b61ee3ba 100644
                  nbttagcompound2 = new NBTTagCompound();
                  nbttagcompound2.setByte("Y", (byte) (i & 255));
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
-             }
- 
-             // Paper start - move entities to the correct chunk
--            for (Entity entity : toUpdate) {
--                worldserver.chunkCheck(entity);
--            }
-+            worldserver.getMinecraftServer().execute(() -> {
-+                for (Entity entity : toUpdate) {
-+                    if (!entity.dead) {
-+                        worldserver.chunkCheck(entity);
-+                    }
-+                }
-+            });
-             // Paper end
- 
-         } else {
+                     Entity entity = (Entity) iterator1.next();
+                     NBTTagCompound nbttagcompound4 = new NBTTagCompound();
+                     // Paper start
+-                    if ((int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
++                    if (asyncsavedata == null && !entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
+                         toUpdate.add(entity);
+                         continue;
+                     }
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
          }
  
@@ -3991,7 +3983,7 @@ index c999f8c9b..b59ef1a63 100644
  
          HAS_SPACE(VillagePlaceRecord::d), IS_OCCUPIED(VillagePlaceRecord::e), ANY((villageplacerecord) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index df7503a5e..d4ef2403d 100644
+index 4ddd8fd04..b5daebe51 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
