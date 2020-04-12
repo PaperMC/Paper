@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 11 Apr 2020 21:23:42 -0400
+Subject: [PATCH] Delay unsafe actions until after entity ticking is done
+
+This will help prevent many cases of unregistering entities during entity ticking
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index a9a2ce3d3f..24cb88559b 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+                         // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
+                         // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
+                         // These actions may however happen deferred, so we manually set the needsSaving flag already here.
++                        // Paper start
++                        ((WorldServer) chunk.world).doIfNotEntityTicking(() -> { // Paper
+                         chunk.setNeedsSaving(true);
+                         chunk.unloadCallback();
++                        }); // Paper
+                     });
+                 }
+             }).exceptionally((throwable) -> {
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index cd8266f675..84a3367b87 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
+     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
+     boolean tickingEntities;
++    // Paper start
++    List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
++    public void doIfNotEntityTicking(java.lang.Runnable run) {
++        if (tickingEntities) {
++            afterEntityTickingTasks.add(run);
++        } else {
++            run.run();
++        }
++    }
++    // Paper end
+     private final MinecraftServer server;
+     private final WorldNBTStorage dataManager;
+     public boolean savingDisabled;
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+             timings.entityTick.stopTiming(); // Spigot
+ 
+             this.tickingEntities = false;
++            // Paper start
++            for (java.lang.Runnable run : this.afterEntityTickingTasks) {
++                try {
++                    run.run();
++                } catch (Exception e) {
++                    LOGGER.error("Error in After Entity Ticking Task", e);
++                }
++            }
++            this.afterEntityTickingTasks.clear();
++            // Paper end
+             this.getMinecraftServer().midTickLoadChunks(); // Paper
+ 
+             try (co.aikar.timings.Timing ignored = this.timings.newEntities.startTiming()) { // Paper - timings
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 1fbb1344fc..f56131e3a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+ 
+         CompletableFuture<Chunk> ret = new CompletableFuture<>();
+         this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, (net.minecraft.server.Chunk chunk) -> {
+-            ret.complete(chunk == null ? null : chunk.bukkitChunk);
++            this.world.doIfNotEntityTicking(() -> ret.complete(chunk == null ? null : chunk.bukkitChunk));
+         });
+ 
+         return ret;
+--
