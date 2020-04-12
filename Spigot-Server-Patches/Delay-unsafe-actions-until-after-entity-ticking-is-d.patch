@@ -5,22 +5,6 @@ Subject: [PATCH] Delay unsafe actions until after entity ticking is done
 
 This will help prevent many cases of unregistering entities during entity ticking
 
-diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index a9a2ce3d3f..24cb88559b 100644
---- a/src/main/java/net/minecraft/server/PlayerChunk.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -0,0 +0,0 @@ public class PlayerChunk {
-                         // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
-                         // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
-                         // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-+                        // Paper start
-+                        ((WorldServer) chunk.world).doIfNotEntityTicking(() -> { // Paper
-                         chunk.setNeedsSaving(true);
-                         chunk.unloadCallback();
-+                        }); // Paper
-                     });
-                 }
-             }).exceptionally((throwable) -> {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index cd8266f675..84a3367b87 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
