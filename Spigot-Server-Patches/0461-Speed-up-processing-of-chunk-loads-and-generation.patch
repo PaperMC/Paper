@@ -1,4 +1,4 @@
-From a7827fe0ade0d2345c605f97c29de347ae9b9068 Mon Sep 17 00:00:00 2001
+From aa7f8a74b12bd4d919113eac6132707eddf0ef1a Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Thu, 9 Apr 2020 00:09:26 -0400
 Subject: [PATCH] Speed up processing of chunk loads and generation
@@ -176,7 +176,7 @@ index e61ddeb1ff..92c9ab43d7 100644
              });
          };
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c7ec8cbc11..43573287f2 100644
+index c7ec8cbc11..cd8266f675 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -420,6 +420,7 @@ public class WorldServer extends World {
@@ -195,17 +195,7 @@ index c7ec8cbc11..43573287f2 100644
          this.ticking = false;
          gameprofilerfiller.exitEnter("entities");
          boolean flag3 = true || !this.players.isEmpty() || !this.getForceLoadedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
-@@ -470,7 +472,9 @@ public class WorldServer extends World {
-             org.spigotmc.ActivationRange.activateEntities(this); // Spigot
-             timings.entityTick.startTiming(); // Spigot
-             TimingHistory.entityTicks += this.globalEntityList.size(); // Paper
-+            int entitiesTicked = 0; // Paper
-             while (objectiterator.hasNext()) {
-+                if (entitiesTicked++ % 100 == 0) this.getMinecraftServer().midTickLoadChunks(); // Paper
-                 Entry<Entity> entry = (Entry) objectiterator.next();
-                 Entity entity1 = (Entity) entry.getValue();
-                 Entity entity2 = entity1.getVehicle();
-@@ -517,6 +521,7 @@ public class WorldServer extends World {
+@@ -517,6 +519,7 @@ public class WorldServer extends World {
              timings.entityTick.stopTiming(); // Spigot
  
              this.tickingEntities = false;
@@ -213,7 +203,7 @@ index c7ec8cbc11..43573287f2 100644
  
              try (co.aikar.timings.Timing ignored = this.timings.newEntities.startTiming()) { // Paper - timings
              while ((entity = (Entity) this.entitiesToAdd.poll()) != null) {
-@@ -527,7 +532,9 @@ public class WorldServer extends World {
+@@ -527,7 +530,9 @@ public class WorldServer extends World {
  
              gameprofilerfiller.exit();
              timings.tickEntities.stopTiming(); // Spigot
