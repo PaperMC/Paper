@@ -5,7 +5,7 @@ Subject: [PATCH] Don't allow digging into unloaded chunks
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index bde60377ee..b21fca9e5c 100644
+index bde60377e..b21fca9e5 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -20,4 +20,24 @@ index bde60377ee..b21fca9e5c 100644
                  this.player.playerInteractManager.a(blockposition, packetplayinblockdig_enumplayerdigtype, packetplayinblockdig.c(), this.minecraftServer.getMaxBuildHeight());
                  return;
              default:
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index e2e5c17c2..17b7eddac 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -0,0 +0,0 @@ public class PlayerInteractManager {
+                 this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true, "stopped destroying"));
+             } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
+                 this.e = false;
+-                if (!Objects.equals(this.g, blockposition)) {
++                if (!Objects.equals(this.g, blockposition) && !BlockPosition.ZERO.equals(this.g)) { // Paper
+                     PlayerInteractManager.LOGGER.debug("Mismatch in destroy block pos: " + this.g + " " + blockposition); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
+-                    this.world.a(this.player.getId(), this.g, -1);
+-                    this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(this.g, this.world.getType(this.g), packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying"));
++                    IBlockData type = this.world.getTypeIfLoaded(this.g); // Paper - don't load unloaded chunks for stale records here
++                    if (type != null) this.world.a(this.player.getId(), this.g, -1); // Paper
++                    if (type != null) this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(this.g, type, packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying")); // Paper
++                    this.g = BlockPosition.ZERO; // Paper
+                 }
+ 
+                 this.world.a(this.player.getId(), blockposition, -1);
 --
