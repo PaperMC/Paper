@@ -424,7 +424,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
         }
         // Paper end
-        if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
+        if (!this.world.isClientSide && this.activeContainer != this.defaultContainer && (isFrozen() || !this.activeContainer.canUse(this))) { // Paper - auto close while frozen
             this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
             this.activeContainer = this.defaultContainer;
         }
@@ -1252,7 +1252,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
             } else {
                 // CraftBukkit start
                 this.activeContainer = container;
-                this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle()));
+                if (!isFrozen()) this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle())); // Paper
                 // CraftBukkit end
                 container.addSlotListener(this);
                 return OptionalInt.of(this.containerCounter);
@@ -2043,7 +2043,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     }
 
     @Override
-    protected boolean isFrozen() {
+    public boolean isFrozen() { // Paper - protected > public
         return super.isFrozen() || (this.playerConnection != null && this.playerConnection.isDisconnected()); // Paper
     }
 

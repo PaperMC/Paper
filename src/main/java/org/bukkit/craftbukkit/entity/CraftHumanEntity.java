@@ -319,7 +319,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         String title = container.getBukkitView().getTitle();
 
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0]));
+        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -389,7 +389,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         // Now open the window
         Containers<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
         String title = inventory.getTitle();
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0]));
+        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }
