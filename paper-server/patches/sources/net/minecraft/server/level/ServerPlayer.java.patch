@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,7 +293,33 @@
+@@ -258,6 +293,32 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
- 
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -144,10 +144,9 @@
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
-+
+ 
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
-         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +327,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -185,8 +184,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-+    }
-+
+     }
+ 
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    public void resendItemInHands() {
@@ -232,9 +231,9 @@
 +        }
 +
 +        return blockposition;
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -285,16 +284,16 @@
  
          if (this.isSleeping()) {
              this.stopSleeping();
-+        }
-+
+         }
+ 
 +        // CraftBukkit start
 +        String spawnWorld = nbt.getString("SpawnWorld");
 +        CraftWorld oldWorld = (CraftWorld) Bukkit.getWorld(spawnWorld);
 +        if (oldWorld != null) {
 +            this.respawnDimension = oldWorld.getHandle().dimension();
-         }
++        }
 +        // CraftBukkit end
- 
++
          if (nbt.contains("SpawnX", 99) && nbt.contains("SpawnY", 99) && nbt.contains("SpawnZ", 99)) {
              this.respawnPosition = new BlockPos(nbt.getInt("SpawnX"), nbt.getInt("SpawnY"), nbt.getInt("SpawnZ"));
              this.respawnForced = nbt.getBoolean("SpawnForced");
@@ -442,13 +441,14 @@
          }
  
 -        this.containerMenu.broadcastChanges();
+-        if (!this.containerMenu.stillValid(this)) {
+-            this.closeContainer();
 +        if (--this.containerUpdateDelay <= 0) {
 +            this.containerMenu.broadcastChanges();
 +            this.containerUpdateDelay = this.level().paperConfig().tickRates.containerUpdate;
 +        }
 +        // Paper end - Configurable container update tick rate
-         if (!this.containerMenu.stillValid(this)) {
--            this.closeContainer();
++        if (this.containerMenu != this.inventoryMenu && (this.isImmobile() || !this.containerMenu.stillValid(this))) { // Paper - Prevent opening inventories when frozen
 +            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
@@ -484,10 +484,12 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -865,6 +1054,20 @@
-                 CriteriaTriggers.LOCATION.trigger(this);
-             }
+@@ -863,8 +1052,22 @@
  
+             if (this.tickCount % 20 == 0) {
+                 CriteriaTriggers.LOCATION.trigger(this);
++            }
++
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
@@ -496,8 +498,8 @@
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
-+            }
-+
+             }
+ 
 +            if (this.getBukkitEntity().hasClientWorldBorder()) {
 +                ((CraftWorldBorder) this.getBukkitEntity().getWorldBorder()).getHandle().tick();
 +            }
@@ -1137,7 +1139,7 @@
 -                this.initMenu(container);
 +                // CraftBukkit start
                  this.containerMenu = container;
-+                this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle()));
++                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle())); // Paper - Prevent opening inventories when frozen
 +                // CraftBukkit end
 +                this.initMenu(container);
                  return OptionalInt.of(this.containerCounter);
@@ -1533,7 +1535,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,16 +2966,161 @@
+@@ -2375,10 +2966,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1549,11 +1551,10 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
- 
+@@ -2387,4 +2980,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-+        }
-+    }
+         }
+     }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1578,7 +1579,7 @@
 +    public void setPlayerWeather(WeatherType type, boolean plugin) {
 +        if (!plugin && this.weather != null) {
 +            return;
-         }
++        }
 +
 +        if (plugin) {
 +            this.weather = type;
@@ -1589,7 +1590,7 @@
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
 +        }
-     }
++    }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;
