@@ -38,6 +38,33 @@ index 2686874f2..a9b533751 100644
      }
  
      public String getServerIp() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+index 449e99d1b..f255c448a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+@@ -0,0 +0,0 @@ public class ServerShutdownThread extends Thread {
+     @Override
+     public void run() {
+         try {
++            // Paper start - try to shutdown on main
++            server.safeShutdown(false, false);
++            for (int i = 1000; i > 0 && !server.hasStopped(); i -= 100) {
++                Thread.sleep(100);
++            }
++            if (server.hasStopped()) {
++                return;
++            }
++            // Looks stalled, close async
+             org.spigotmc.AsyncCatcher.enabled = false; // Spigot
+             org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
++            server.forceTicks = true;
+             server.close();
++        } catch (InterruptedException e) {
++            e.printStackTrace();
++            // Paper end
+         } finally {
+             try {
+                 net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
 diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
 index aefea3a9a..123de5ac9 100644
 --- a/src/main/java/org/spigotmc/RestartCommand.java
@@ -52,7 +79,7 @@ index aefea3a9a..123de5ac9 100644
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 5bdcdcf9e..704e8426a 100644
+index 5bdcdcf9e..6dda6d168 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
@@ -60,25 +87,48 @@ index 5bdcdcf9e..704e8426a 100644
              if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
              {
 -                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
-+                boolean isLongTimeout = currentTime > lastTick + timeoutTime || !MinecraftServer.getServer().isRunning();
++                MinecraftServer server = MinecraftServer.getServer();
++                boolean isLongTimeout = currentTime > lastTick + timeoutTime || !server.isRunning();
                  // Don't spam early warning dumps
                  if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
-                 if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+-                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
++                if ( !isLongTimeout && server.hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+                 lastEarlyWarning = currentTime;
+                 if (isLongTimeout) {
+                 // Paper end
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
+-                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
++                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
+                 // Paper start - Only print full dump on long timeouts
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
 -                if ( restart && !MinecraftServer.getServer().hasStopped() )
-+                if ( !MinecraftServer.getServer().hasStopped() )
++                if ( !server.hasStopped() )
                  {
 -                    RestartCommand.restart();
 +                    AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
 +                    AsyncCatcher.shuttingDown = true;
-+                    MinecraftServer.getServer().forceTicks = true;
++                    server.forceTicks = true;
 +                    if (restart) {
 +                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
 +                    }
-+                    MinecraftServer.getServer().close();
++                    // try one last chance to safe shutdown on main incase it 'comes back'
++                    server.safeShutdown(false, restart);
++                    try {
++                        Thread.sleep(1000);
++                    } catch (InterruptedException e) {
++                        e.printStackTrace();
++                    }
++                    if (!server.hasStopped()) {
++                        server.close();
++                    }
                  }
                  break;
                  } // Paper end
