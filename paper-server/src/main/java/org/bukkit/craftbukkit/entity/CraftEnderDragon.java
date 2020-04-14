@@ -9,7 +9,6 @@ import net.minecraft.server.EntityEnderDragon;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.boss.CraftBossBar;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;

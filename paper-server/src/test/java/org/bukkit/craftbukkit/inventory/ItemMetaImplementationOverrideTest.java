@@ -19,7 +19,7 @@ import org.junit.runners.Parameterized.Parameters;
 public class ItemMetaImplementationOverrideTest {
     static final Class<CraftMetaItem> parent = CraftMetaItem.class;
 
-    @Parameters(name="[{index}]:{1}")
+    @Parameters(name = "[{index}]:{1}")
     public static List<Object[]> data() {
         final List<Object[]> testData = new ArrayList<Object[]>();
         List<Class<? extends CraftMetaItem>> classes = new ArrayList<Class<? extends CraftMetaItem>>();

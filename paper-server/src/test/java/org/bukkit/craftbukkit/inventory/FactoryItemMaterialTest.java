@@ -41,7 +41,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
         return buffer.delete(0, Integer.MAX_VALUE).append(from.getClass().getName()).append('(').append(from.name()).append(") to ").append(to.getClass().getName()).append('(').append(to.name()).append(')').toString();
     }
 
-    @Parameters(name="Material[{index}]:{0}")
+    @Parameters(name = "Material[{index}]:{0}")
     public static List<Object[]> data() {
         List<Object[]> list = new ArrayList<Object[]>();
         for (Material material : materials) {

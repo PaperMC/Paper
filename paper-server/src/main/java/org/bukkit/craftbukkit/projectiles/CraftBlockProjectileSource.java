@@ -26,7 +26,6 @@ import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.AbstractArrow;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Fireball;

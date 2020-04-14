@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
-import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BiomeStorage;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.Blocks;
@@ -286,7 +285,7 @@ public class CraftChunk implements Chunk {
 
         BiomeStorage biome = null;
 
-        if (includeBiome|| includeBiomeTempRain) {
+        if (includeBiome || includeBiomeTempRain) {
             biome = chunk.getBiomeIndex().b();
         }
 

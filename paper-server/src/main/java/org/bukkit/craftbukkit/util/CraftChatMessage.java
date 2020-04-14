@@ -37,7 +37,7 @@ public final class CraftChatMessage {
         return ChatColor.getByChar(format.character);
     }
 
-    private static class StringMessage {
+    private static final class StringMessage {
         private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))", Pattern.CASE_INSENSITIVE);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
@@ -47,10 +47,10 @@ public final class CraftChatMessage {
         private int currentIndex;
         private final String message;
 
-        private StringMessage(String message,  boolean keepNewlines) {
+        private StringMessage(String message, boolean keepNewlines) {
             this.message = message;
             if (message == null) {
-                output = new IChatBaseComponent[] { currentChatComponent };
+                output = new IChatBaseComponent[]{currentChatComponent};
                 return;
             }
             list.add(currentChatComponent);
@@ -100,7 +100,7 @@ public final class CraftChatMessage {
                     }
                     break;
                 case 3:
-                    if ( !( match.startsWith( "http://" ) || match.startsWith( "https://" ) ) ) {
+                    if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                         match = "http://" + match;
                     }
                     modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
@@ -207,8 +207,7 @@ public final class CraftChatMessage {
             if (matcher.reset(msg).find()) {
                 matcher.reset();
 
-                ChatModifier modifier = text.getChatModifier() != null ?
-                        text.getChatModifier() : new ChatModifier();
+                ChatModifier modifier = text.getChatModifier() != null ? text.getChatModifier() : new ChatModifier();
                 List<IChatBaseComponent> extras = new ArrayList<IChatBaseComponent>();
                 List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.getSiblings());
                 component = text = new ChatComponentText("");
@@ -217,7 +216,7 @@ public final class CraftChatMessage {
                 while (matcher.find()) {
                     String match = matcher.group();
 
-                    if ( !( match.startsWith( "http://" ) || match.startsWith( "https://" ) ) ) {
+                    if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                         match = "http://" + match;
                     }
 
@@ -262,7 +261,7 @@ public final class CraftChatMessage {
                     if (c.getChatModifier() != null && c.getChatModifier().getClickEvent() == null) {
                         subs[i] = fixComponent(c, matcher);
                     }
-                } else if (comp instanceof String && matcher.reset((String)comp).find()) {
+                } else if (comp instanceof String && matcher.reset((String) comp).find()) {
                     subs[i] = fixComponent(new ChatComponentText((String) comp), matcher);
                 }
             }

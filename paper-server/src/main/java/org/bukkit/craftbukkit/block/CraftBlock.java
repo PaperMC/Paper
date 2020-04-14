@@ -254,10 +254,7 @@ public class CraftBlock implements Block {
         BlockFace[] values = BlockFace.values();
 
         for (BlockFace face : values) {
-            if ((this.getX() + face.getModX() == block.getX()) &&
-                (this.getY() + face.getModY() == block.getY()) &&
-                (this.getZ() + face.getModZ() == block.getZ())
-            ) {
+            if ((this.getX() + face.getModX() == block.getX()) && (this.getY() + face.getModY() == block.getY()) && (this.getZ() + face.getModZ() == block.getZ())) {
                 return face;
             }
         }

@@ -85,7 +85,7 @@ import org.bukkit.persistence.PersistentDataContainer;
  *
  * <li> Constructor(CraftMetaItem meta)
  * <li> Constructor(NBTTagCompound tag)
- * <li> Constructor(Map<String, Object> map)
+ * <li> Constructor(Map&lt;String, Object&gt; map)
  * <br><br>
  * <li> void applyToItem(NBTTagCompound tag)
  * <li> boolean applicableTo(Material type)
@@ -99,7 +99,7 @@ import org.bukkit.persistence.PersistentDataContainer;
  * <li> int applyHash()
  * <li> public Class clone()
  * <br><br>
- * <li> Builder<String, Object> serialize(Builder<String, Object> builder)
+ * <li> Builder&lt;String, Object&gt; serialize(Builder&lt;String, Object&gt; builder)
  * <li> SerializableMeta.Deserializers deserializer()
  */
 @DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
@@ -132,7 +132,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @SerializableAs("ItemMeta")
-    public static class SerializableMeta implements ConfigurationSerializable {
+    public static final class SerializableMeta implements ConfigurationSerializable {
         static final String TYPE_FIELD = "meta-type";
 
         static final ImmutableMap<Class<? extends CraftMetaItem>, String> classMap;
@@ -617,7 +617,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         if (hasDisplayName()) {
             setDisplayTag(itemTag, NAME.NBT, NBTTagString.a(CraftChatMessage.toJSON(displayName)));
         }
-        if (hasLocalizedName()){
+        if (hasLocalizedName()) {
             setDisplayTag(itemTag, LOCNAME.NBT, NBTTagString.a(CraftChatMessage.toJSON(locName)));
         }
 
@@ -1131,7 +1131,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Overridden
     boolean equalsCommon(CraftMetaItem that) {
         return ((this.hasDisplayName() ? that.hasDisplayName() && this.displayName.equals(that.displayName) : !that.hasDisplayName()))
-                && (this.hasLocalizedName()? that.hasLocalizedName()&& this.locName.equals(that.locName) : !that.hasLocalizedName())
+                && (this.hasLocalizedName() ? that.hasLocalizedName() && this.locName.equals(that.locName) : !that.hasLocalizedName())
                 && (this.hasEnchants() ? that.hasEnchants() && this.enchantments.equals(that.enchantments) : !that.hasEnchants())
                 && (this.hasLore() ? that.hasLore() && this.lore.equals(that.lore) : !that.hasLore())
                 && (this.hasCustomModelData() ? that.hasCustomModelData() && this.customModelData.equals(that.customModelData) : !that.hasCustomModelData())
@@ -1165,7 +1165,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     int applyHash() {
         int hash = 3;
         hash = 61 * hash + (hasDisplayName() ? this.displayName.hashCode() : 0);
-        hash = 61 * hash + (hasLocalizedName()? this.locName.hashCode() : 0);
+        hash = 61 * hash + (hasLocalizedName() ? this.locName.hashCode() : 0);
         hash = 61 * hash + (hasLore() ? this.lore.hashCode() : 0);
         hash = 61 * hash + (hasCustomModelData() ? this.customModelData.hashCode() : 0);
         hash = 61 * hash + (hasBlockData() ? this.blockData.hashCode() : 0);

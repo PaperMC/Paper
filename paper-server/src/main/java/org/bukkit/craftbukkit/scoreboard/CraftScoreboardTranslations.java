@@ -6,7 +6,7 @@ import net.minecraft.server.Scoreboard;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.RenderType;
 
-class CraftScoreboardTranslations {
+final class CraftScoreboardTranslations {
     static final int MAX_DISPLAY_SLOT = 3;
     static ImmutableBiMap<DisplaySlot, String> SLOTS = ImmutableBiMap.of(
             DisplaySlot.BELOW_NAME, "belowName",

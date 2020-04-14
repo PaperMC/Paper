@@ -132,7 +132,7 @@ public class CraftInventory implements Inventory {
             return true;
         }
         for (ItemStack item : getStorageContents()) {
-            if (item != null && item.getType()== material) {
+            if (item != null && item.getType() == material) {
                 if ((amount -= item.getAmount()) <= 0) {
                     return true;
                 }
@@ -182,7 +182,7 @@ public class CraftInventory implements Inventory {
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getType()== material) {
+            if (item != null && item.getType() == material) {
                 slots.put(i, item);
             }
         }
@@ -210,7 +210,7 @@ public class CraftInventory implements Inventory {
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getType()== material) {
+            if (item != null && item.getType() == material) {
                 return i;
             }
         }
@@ -254,7 +254,7 @@ public class CraftInventory implements Inventory {
         ItemStack[] inventory = getStorageContents();
         for (int i = 0; i < inventory.length; i++) {
             ItemStack item = inventory[i];
-            if (item != null && item.getType()== material && item.getAmount() < item.getMaxStackSize()) {
+            if (item != null && item.getType() == material && item.getAmount() < item.getMaxStackSize()) {
                 return i;
             }
         }
@@ -396,7 +396,7 @@ public class CraftInventory implements Inventory {
         material = CraftLegacy.fromLegacy(material);
         ItemStack[] items = getStorageContents();
         for (int i = 0; i < items.length; i++) {
-            if (items[i] != null && items[i].getType()== material) {
+            if (items[i] != null && items[i].getType() == material) {
                 clear(i);
             }
         }
@@ -460,7 +460,7 @@ public class CraftInventory implements Inventory {
         } else if (inventory instanceof TileEntityFurnace) {
             return InventoryType.FURNACE;
         } else if (this instanceof CraftInventoryEnchanting) {
-           return InventoryType.ENCHANTING;
+            return InventoryType.ENCHANTING;
         } else if (inventory instanceof TileEntityBrewingStand) {
             return InventoryType.BREWING;
         } else if (inventory instanceof CraftInventoryCustom.MinecraftInventory) {
@@ -472,7 +472,7 @@ public class CraftInventory implements Inventory {
         } else if (this instanceof CraftInventoryBeacon) {
             return InventoryType.BEACON;
         } else if (this instanceof CraftInventoryAnvil) {
-           return InventoryType.ANVIL;
+            return InventoryType.ANVIL;
         } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;
         } else if (inventory instanceof TileEntityShulkerBox) {

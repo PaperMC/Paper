@@ -229,7 +229,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             name = getName();
         }
         getHandle().listName = name.equals(getName()) ? null : CraftChatMessage.fromStringOrNull(name);
-        for (EntityPlayer player : (List<EntityPlayer>)server.getHandle().players) {
+        for (EntityPlayer player : (List<EntityPlayer>) server.getHandle().players) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME, getHandle()));
             }

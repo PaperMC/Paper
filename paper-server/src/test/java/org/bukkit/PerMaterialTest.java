@@ -40,7 +40,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         fireValues = Util.getInternalState(BlockFire.class, Blocks.FIRE, "flameChances");
     }
 
-    @Parameters(name= "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static List<Object[]> data() {
         List<Object[]> list = Lists.newArrayList();
         for (Material material : Material.values()) {
@@ -91,7 +91,7 @@ public class PerMaterialTest extends AbstractTestingBase {
 
         if (material == Material.AIR) {
             assertThat((int) material.getMaxDurability(), is(0));
-        } else if (material.isBlock()){
+        } else if (material.isBlock()) {
             Item item = CraftMagicNumbers.getItem(material);
             assertThat((int) material.getMaxDurability(), is(item.getMaxDurability()));
         }

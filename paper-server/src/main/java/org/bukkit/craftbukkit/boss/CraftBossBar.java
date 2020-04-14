@@ -215,7 +215,7 @@ public class CraftBossBar implements BossBar {
         }
     }
 
-    private class FlagContainer {
+    private final class FlagContainer {
 
         private Supplier<Boolean> get;
         private Consumer<Boolean> set;

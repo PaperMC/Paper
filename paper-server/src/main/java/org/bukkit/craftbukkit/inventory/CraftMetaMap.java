@@ -100,7 +100,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
 
-        if (hasMapId()){
+        if (hasMapId()) {
             tag.setInt(MAP_ID.NBT, getMapId());
         }
 

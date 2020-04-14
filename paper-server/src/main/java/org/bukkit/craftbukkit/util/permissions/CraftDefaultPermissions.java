@@ -4,7 +4,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.util.permissions.DefaultPermissions;
 
 public final class CraftDefaultPermissions {
-    private static final String ROOT= "minecraft";
+    private static final String ROOT = "minecraft";
 
     private CraftDefaultPermissions() {}
 

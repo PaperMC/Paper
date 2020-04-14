@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,7 +21,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.server.ArraySetSorted;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
@@ -102,10 +102,10 @@ import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Raid;
 import org.bukkit.Sound;
 import org.bukkit.StructureType;
 import org.bukkit.TreeType;
-import org.bukkit.Raid;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
@@ -621,7 +621,7 @@ public class CraftWorld implements World {
             ((EntityTippedArrow) arrow).setType(CraftPotionUtil.fromBukkit(new PotionData(PotionType.WATER, false, false)));
         } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
             arrow = EntityTypes.SPECTRAL_ARROW.a(world);
-        } else if (Trident.class.isAssignableFrom(clazz)){
+        } else if (Trident.class.isAssignableFrom(clazz)) {
             arrow = EntityTypes.TRIDENT.a(world);
         } else {
             arrow = EntityTypes.ARROW.a(world);
@@ -1009,7 +1009,7 @@ public class CraftWorld implements World {
     @SuppressWarnings("unchecked")
     @Deprecated
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes) {
-        return (Collection<T>)getEntitiesByClasses(classes);
+        return (Collection<T>) getEntitiesByClasses(classes);
     }
 
     @Override
@@ -1561,7 +1561,7 @@ public class CraftWorld implements World {
                     entity = EntityTypes.HORSE.a(world);
                 }
             } else if (Skeleton.class.isAssignableFrom(clazz)) {
-                if (Stray.class.isAssignableFrom(clazz)){
+                if (Stray.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.STRAY.a(world);
                 } else if (WitherSkeleton.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.WITHER_SKELETON.a(world);
@@ -1633,7 +1633,7 @@ public class CraftWorld implements World {
             } else if (Endermite.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.ENDERMITE.a(world);
             } else if (Guardian.class.isAssignableFrom(clazz)) {
-                if (ElderGuardian.class.isAssignableFrom(clazz)){
+                if (ElderGuardian.class.isAssignableFrom(clazz)) {
                     entity = EntityTypes.ELDER_GUARDIAN.a(world);
                 } else {
                     entity = EntityTypes.GUARDIAN.a(world);

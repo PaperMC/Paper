@@ -25,7 +25,7 @@ class CraftAsyncTask extends CraftTask {
     @Override
     public void run() {
         final Thread thread = Thread.currentThread();
-        synchronized(workers) {
+        synchronized (workers) {
             if (getPeriod() == CraftTask.CANCEL) {
                 // Never continue running after cancelled.
                 // Checking this with the lock is important!
@@ -63,7 +63,7 @@ class CraftAsyncTask extends CraftTask {
                     thrown);
         } finally {
             // Cleanup is important for any async task, otherwise ghost tasks are everywhere
-            synchronized(workers) {
+            synchronized (workers) {
                 try {
                     final Iterator<BukkitWorker> workers = this.workers.iterator();
                     boolean removed = false;

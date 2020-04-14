@@ -37,9 +37,9 @@ import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityMonster;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
+import net.minecraft.server.EntityRaider;
 import net.minecraft.server.EntitySheep;
 import net.minecraft.server.EntitySlime;
-import net.minecraft.server.EntityRaider;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.EntityWaterAnimal;
@@ -81,8 +81,8 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.entity.CraftRaider;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftRaider;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMetaBook;
@@ -192,12 +192,12 @@ import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
+import org.bukkit.event.raid.RaidFinishEvent;
+import org.bukkit.event.raid.RaidSpawnWaveEvent;
+import org.bukkit.event.raid.RaidStopEvent;
+import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
-import org.bukkit.event.raid.RaidTriggerEvent;
-import org.bukkit.event.raid.RaidFinishEvent;
-import org.bukkit.event.raid.RaidStopEvent;
-import org.bukkit.event.raid.RaidSpawnWaveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
@@ -510,7 +510,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean doEntityAddEventCalling(World world, Entity entity, SpawnReason spawnReason){
+    public static boolean doEntityAddEventCalling(World world, Entity entity, SpawnReason spawnReason) {
         if (entity == null) return false;
 
         org.bukkit.event.Cancellable event = null;
@@ -532,7 +532,7 @@ public class CraftEventFactory {
         } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Projectile) {
             // Not all projectiles extend EntityProjectile, so check for Bukkit interface instead
             event = CraftEventFactory.callProjectileLaunchEvent(entity);
-        } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle){
+        } else if (entity.getBukkitEntity() instanceof org.bukkit.entity.Vehicle) {
             event = CraftEventFactory.callVehicleCreateEvent(entity);
         } else if (!(entity instanceof EntityPlayer)) {
             event = CraftEventFactory.callEntitySpawnEvent(entity);

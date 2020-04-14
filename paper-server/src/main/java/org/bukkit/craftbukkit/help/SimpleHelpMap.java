@@ -136,7 +136,7 @@ public class SimpleHelpMap implements HelpMap {
                     if (t != null) addTopic(t);
                     continue outer;
                 }
-                if (command instanceof PluginCommand && c.isAssignableFrom(((PluginCommand)command).getExecutor().getClass())) {
+                if (command instanceof PluginCommand && c.isAssignableFrom(((PluginCommand) command).getExecutor().getClass())) {
                     HelpTopic t = topicFactoryMap.get(c).createTopic(command);
                     if (t != null) addTopic(t);
                     continue outer;
@@ -206,7 +206,7 @@ public class SimpleHelpMap implements HelpMap {
             return "Bukkit";
         }
         if (command instanceof PluginIdentifiableCommand) {
-            return ((PluginIdentifiableCommand)command).getPlugin().getName();
+            return ((PluginIdentifiableCommand) command).getPlugin().getName();
         }
         return null;
     }
@@ -215,7 +215,7 @@ public class SimpleHelpMap implements HelpMap {
         if ((command instanceof BukkitCommand) && ignoredPlugins.contains("Bukkit")) {
             return true;
         }
-        if (command instanceof PluginIdentifiableCommand && ignoredPlugins.contains(((PluginIdentifiableCommand)command).getPlugin().getName())) {
+        if (command instanceof PluginIdentifiableCommand && ignoredPlugins.contains(((PluginIdentifiableCommand) command).getPlugin().getName())) {
             return true;
         }
         return false;

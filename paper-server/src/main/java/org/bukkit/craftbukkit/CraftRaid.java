@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityRaider;
 import net.minecraft.server.World;
