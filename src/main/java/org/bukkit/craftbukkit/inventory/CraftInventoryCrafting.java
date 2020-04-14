@@ -43,7 +43,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         List<net.minecraft.server.ItemStack> mcResultItems = getResultInventory().getContents();
 
         int i = 0;
-        for (i = 0; i < mcResultItems.size(); i++ ) {
+        for (i = 0; i < mcResultItems.size(); i++) {
             items[i] = CraftItemStack.asCraftMirror(mcResultItems.get(i));
         }
 

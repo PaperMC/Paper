@@ -126,7 +126,7 @@ public class CraftContainer extends Container {
             case CHEST:
             case ENDER_CHEST:
             case BARREL:
-                switch(inventory.getSize()) {
+                switch (inventory.getSize()) {
                     case 9:
                         return Containers.GENERIC_9X1;
                     case 18:

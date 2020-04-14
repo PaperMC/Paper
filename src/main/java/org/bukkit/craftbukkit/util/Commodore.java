@@ -29,6 +29,7 @@ import org.objectweb.asm.Type;
  *
  * @author md_5
  */
+// CHECKSTYLE:OFF
 public class Commodore
 {
 

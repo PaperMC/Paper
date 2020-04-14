@@ -305,7 +305,7 @@ public class ItemStackTest extends AbstractTestingBase {
         }
     }
 
-    @Parameters(name="[{index}]:{" + NAME_PARAMETER + "}")
+    @Parameters(name = "[{index}]:{" + NAME_PARAMETER + "}")
     public static List<Object[]> data() {
         return ImmutableList.of(); // TODO, test basic durability issues
     }

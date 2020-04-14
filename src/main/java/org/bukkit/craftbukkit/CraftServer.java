@@ -17,6 +17,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +42,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import jline.console.ConsoleReader;
 import net.minecraft.server.Advancement;
 import net.minecraft.server.ArgumentEntity;
@@ -676,7 +676,7 @@ public final class CraftServer implements Server {
     // NOTE: Should only be called from DedicatedServer.ah()
     public boolean dispatchServerCommand(CommandSender sender, ServerCommand serverCommand) {
         if (sender instanceof Conversable) {
-            Conversable conversable = (Conversable)sender;
+            Conversable conversable = (Conversable) sender;
 
             if (conversable.isConversing()) {
                 conversable.acceptConversationInput(serverCommand.command);
@@ -933,7 +933,7 @@ public final class CraftServer implements Server {
                     break;
                 }
             }
-        } while(used);
+        } while (used);
         boolean hardcore = creator.hardcore();
 
         WorldNBTStorage sdm = new WorldNBTStorage(getWorldContainer(), name, getServer(), getHandle().getServer().dataConverterManager);
@@ -1409,7 +1409,7 @@ public final class CraftServer implements Server {
     public BanList getBanList(BanList.Type type) {
         Validate.notNull(type, "Type cannot be null");
 
-        switch(type){
+        switch (type) {
         case IP:
             return new CraftIpBanList(playerList.getIPBans());
         case NAME:

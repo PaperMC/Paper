@@ -180,9 +180,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public static CraftEntity getEntity(CraftServer server, Entity entity) {
-        /**
+        /*
          * Order is *EXTREMELY* important -- keep it right! =D
          */
+        // CHECKSTYLE:OFF
         if (entity instanceof EntityLiving) {
             // Players
             if (entity instanceof EntityHuman) {
@@ -368,6 +369,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityAreaEffectCloud) { return new CraftAreaEffectCloud(server, (EntityAreaEffectCloud) entity); }
         else if (entity instanceof EntityEvokerFangs) { return new CraftEvokerFangs(server, (EntityEvokerFangs) entity); }
         else if (entity instanceof EntityLlamaSpit) { return new CraftLlamaSpit(server, (EntityLlamaSpit) entity); }
+        // CHECKSTYLE:ON
 
         throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
     }

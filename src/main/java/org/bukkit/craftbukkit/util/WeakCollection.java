@@ -39,7 +39,7 @@ public final class WeakCollection<T> implements Collection<T> {
 
     @Override
     public boolean contains(Object object) {
-        if (object  == null) {
+        if (object == null) {
             return false;
         }
         for (T compare : this) {

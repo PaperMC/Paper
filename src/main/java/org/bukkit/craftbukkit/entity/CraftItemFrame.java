@@ -48,7 +48,7 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
         old.die();
 
-        EntityItemFrame frame = new EntityItemFrame(world,position,direction);
+        EntityItemFrame frame = new EntityItemFrame(world, position, direction);
         frame.setItem(item);
         world.addEntity(frame);
         this.entity = frame;

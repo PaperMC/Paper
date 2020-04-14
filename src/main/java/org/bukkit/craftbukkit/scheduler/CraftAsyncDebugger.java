@@ -2,14 +2,13 @@ package org.bukkit.craftbukkit.scheduler;
 
 import org.bukkit.plugin.Plugin;
 
-
 class CraftAsyncDebugger {
     private CraftAsyncDebugger next = null;
     private final int expiry;
     private final Plugin plugin;
     private final Class<?> clazz;
 
-    CraftAsyncDebugger(final int expiry, final  Plugin plugin, final Class<?> clazz) {
+    CraftAsyncDebugger(final int expiry, final Plugin plugin, final Class<?> clazz) {
         this.expiry = expiry;
         this.plugin = plugin;
         this.clazz = clazz;

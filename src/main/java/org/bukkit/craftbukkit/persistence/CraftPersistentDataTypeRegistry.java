@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.persistence;
 
+import com.google.common.primitives.Primitives;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import com.google.common.primitives.Primitives;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagByte;
 import net.minecraft.server.NBTTagByteArray;

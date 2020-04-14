@@ -75,7 +75,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public void setDisplayBlock(MaterialData material) {
-        if(material != null) {
+        if (material != null) {
             IBlockData block = CraftMagicNumbers.getBlock(material);
             this.getHandle().setDisplayBlock(block);
         } else {

@@ -14,7 +14,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-public class CraftRayTraceResult {
+public final class CraftRayTraceResult {
 
     private CraftRayTraceResult() {}
 

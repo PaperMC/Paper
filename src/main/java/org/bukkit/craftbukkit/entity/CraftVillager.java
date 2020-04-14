@@ -2,12 +2,12 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
+import net.minecraft.server.BlockBed;
+import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityVillager;
+import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.VillagerProfession;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.BlockBed;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;

@@ -11,7 +11,7 @@ public class CraftInventoryEnchanting extends CraftInventory implements Enchanti
 
     @Override
     public void setItem(ItemStack item) {
-        setItem(0,item);
+        setItem(0, item);
     }
 
     @Override

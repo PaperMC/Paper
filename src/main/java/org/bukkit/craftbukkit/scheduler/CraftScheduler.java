@@ -82,7 +82,12 @@ public class CraftScheduler implements BukkitScheduler {
     private volatile CraftTask currentTask = null;
     private volatile int currentTick = -1;
     private final Executor executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %d").build());
-    private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {@Override StringBuilder debugTo(StringBuilder string) {return string;}};
+    private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {
+        @Override
+        StringBuilder debugTo(StringBuilder string) {
+            return string;
+        }
+    };
     private CraftAsyncDebugger debugTail = debugHead;
     private static final int RECENT_TICKS;
 
@@ -248,7 +253,8 @@ public class CraftScheduler implements BukkitScheduler {
                             }
                         }
                         return false;
-                    }});
+                    }
+                });
         handle(task, 0L);
         for (CraftTask taskPending = head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
             if (taskPending == task) {
@@ -465,8 +471,8 @@ public class CraftScheduler implements BukkitScheduler {
         // We split this because of the way things are ordered for all of the async calls in CraftScheduler
         // (it prevents race-conditions)
         for (task = head; task != lastTask; task = head) {
-           head = task.getNext();
-           task.setNext(null);
+            head = task.getNext();
+            task.setNext(null);
         }
         this.head = lastTask;
     }

@@ -19,9 +19,9 @@ import org.junit.Assert;
 
 /**
  *  If you are getting: java.lang.ExceptionInInitializerError
- *    at net.minecraft.server.StatisticList.<clinit>(SourceFile:58)
- *    at net.minecraft.server.Item.<clinit>(SourceFile:252)
- *    at net.minecraft.server.Block.<clinit>(Block.java:577)
+ *    at net.minecraft.server.StatisticList.&lt;clinit&gt;(SourceFile:58)
+ *    at net.minecraft.server.Item.&lt;clinit&gt;(SourceFile:252)
+ *    at net.minecraft.server.Block.&lt;clinit&gt;(Block.java:577)
  *
  *  extend this class to solve it.
  */

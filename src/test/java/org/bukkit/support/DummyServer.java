@@ -16,7 +16,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Versioning;
 
-public class DummyServer implements InvocationHandler {
+public final class DummyServer implements InvocationHandler {
     private static interface MethodHandler {
         Object handle(DummyServer server, Object[] args);
     }

@@ -35,8 +35,7 @@ public final class CraftMapView implements MapView {
         if (text.startsWith("map_")) {
             try {
                 return Integer.parseInt(text.substring("map_".length()));
-            }
-            catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex) {
                 throw new IllegalStateException("Map has non-numeric ID");
             }
         } else {

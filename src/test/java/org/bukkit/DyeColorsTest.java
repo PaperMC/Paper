@@ -15,7 +15,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class DyeColorsTest extends AbstractTestingBase {
 
-    @Parameters(name= "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static List<Object[]> data() {
         List<Object[]> list = new ArrayList<Object[]>();
         for (DyeColor dye : DyeColor.values()) {

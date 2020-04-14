@@ -56,22 +56,22 @@ public class ItemMetaTest extends AbstractTestingBase {
 
     static final int MAX_FIREWORK_POWER = 127; // Please update ItemStackFireworkTest if/when this gets changed.
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPowerLimitExact() {
         newFireworkMeta().setPower(MAX_FIREWORK_POWER + 1);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPowerLimitMax() {
         newFireworkMeta().setPower(Integer.MAX_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPowerLimitMin() {
         newFireworkMeta().setPower(Integer.MIN_VALUE);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testPowerLimitNegative() {
         newFireworkMeta().setPower(-1);
     }

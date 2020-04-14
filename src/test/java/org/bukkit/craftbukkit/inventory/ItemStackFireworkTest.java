@@ -16,7 +16,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class ItemStackFireworkTest extends ItemStackTest {
 
-    @Parameters(name="[{index}]:{" + NAME_PARAMETER + "}")
+    @Parameters(name = "[{index}]:{" + NAME_PARAMETER + "}")
     public static List<Object[]> data() {
         return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.FIREWORK_ROCKET);
     }

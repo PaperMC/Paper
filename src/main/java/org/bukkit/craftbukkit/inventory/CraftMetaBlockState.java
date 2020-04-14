@@ -184,7 +184,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     boolean applicableTo(Material type) {
-        switch(type){
+        switch (type) {
             case FURNACE:
             case CHEST:
             case TRAPPED_CHEST:
@@ -459,58 +459,58 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             }
             return new CraftEnchantingTable(material, (TileEntityEnchantTable) te);
         case ENDER_CHEST:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityEnderChest();
             }
             return new CraftEnderChest(material, (TileEntityEnderChest) te);
         case DAYLIGHT_DETECTOR:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityLightDetector();
             }
             return new CraftDaylightDetector(material, (TileEntityLightDetector) te);
         case COMPARATOR:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityComparator();
             }
             return new CraftComparator(material, (TileEntityComparator) te);
         case BARREL:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityBarrel();
             }
             return new CraftBarrel(material, (TileEntityBarrel) te);
         case BELL:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityBell();
             }
             return new CraftBell(material, (TileEntityBell) te);
         case BLAST_FURNACE:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityBlastFurnace();
             }
             return new CraftBlastFurnace(material, (TileEntityBlastFurnace) te);
         case CAMPFIRE:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityCampfire();
             }
             return new CraftCampfire(material, (TileEntityCampfire) te);
         case JIGSAW:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityJigsaw();
             }
             return new CraftJigsaw(material, (TileEntityJigsaw) te);
         case LECTERN:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityLectern();
             }
             return new CraftLectern(material, (TileEntityLectern) te);
         case SMOKER:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntitySmoker();
             }
             return new CraftSmoker(material, (TileEntitySmoker) te);
         case BEE_NEST:
         case BEEHIVE:
-            if (te == null){
+            if (te == null) {
                 te = new TileEntityBeehive();
             }
             return new CraftBeehive(material, (TileEntityBeehive) te);
