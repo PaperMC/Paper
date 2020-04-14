@@ -3,6 +3,8 @@ Paper [![Build Status](https://papermc.io/ci/job/Paper-1.15/badge/icon)](https:/
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
+**Changes**
+- Removed patch to fix MC-161754 (Paper/Spigot-Server-Patches/0403-Fix-MC-161754.patch)
 
 **Support and Project Discussion:**
  - [IRC](http://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/papermc)
