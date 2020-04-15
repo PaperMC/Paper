@@ -1,0 +1,136 @@
+From 6a3ef29a4c359e6cccd54b60e1d4b5bfdd401b45 Mon Sep 17 00:00:00 2001
+From: Trigary <trigary0@gmail.com>
+Date: Wed, 15 Apr 2020 03:18:20 +0200
+Subject: [PATCH] Make PluginClassLoader thread-safe
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 8ff228ce..2b9dc278 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -189,28 +189,58 @@ public final class JavaPluginLoader implements PluginLoader {
+         return fileFilters.clone();
+     }
+ 
++    // Paper start
++    private final Map<String, Object> classFinderLocks = new ConcurrentHashMap<>();
+     @Nullable
+-    Class<?> getClassByName(final String name) {
++    Class<?> getClassByName(final String name, PluginClassLoader checkFirst, Object lock) {
++        System.out.println("### " + Thread.currentThread().getName() + " Name: " + name);
+         Class<?> cachedClass = classes.get(name);
+-
+         if (cachedClass != null) {
++            System.out.println("### " + Thread.currentThread().getName() + " Returned cached: " + name);
+             return cachedClass;
+-        } else {
+-            for (PluginClassLoader loader : loaders) {
++        }
++
++        synchronized (lock) { //might already be synchronized on it
++            System.out.println("### " + Thread.currentThread().getName() + " Locked: " + name);
++            Object oldLock = classFinderLocks.putIfAbsent(name, lock); //the lock must be removed if it was added
++            if (oldLock != null) {
++                System.out.println("### " + Thread.currentThread().getName() + " Old lock detected: " + name);
++                //class load attempt is/was in progress
++                //we can accept its result if it succeeded, but we must retry if it didn't:
++                //what if the plugin containing the class got registered after this old attempt started?
++                synchronized (oldLock) {} //wait for the code to finish running
++                System.out.println("### " + Thread.currentThread().getName() + " Old lock waited: " + name);
++                return getClassByName(name, checkFirst, lock); //lock is reused
++            }
++
++            System.out.println("### " + Thread.currentThread().getName() + " Searching: " + name);
++            PluginClassLoader loader = checkFirst;
++            for (java.util.Iterator<PluginClassLoader> iterator = loaders.iterator(); ; ) {
+                 try {
+-                    cachedClass = loader.findClass(name, false);
++                    cachedClass = loader.findClassInternally(name); //this call can modify the classes Map through #setClass
+                 } catch (ClassNotFoundException cnfe) {}
+                 if (cachedClass != null) {
++                    Validate.isTrue(classFinderLocks.remove(name) == lock, "lock changed while searching for class");
++                    System.out.println("### " + Thread.currentThread().getName() + " Found: " + name);
+                     return cachedClass;
+                 }
++
++                if (iterator.hasNext()) {
++                    loader = iterator.next();
++                } else {
++                    break;
++                }
+             }
++
++            Validate.isTrue(classFinderLocks.remove(name) == lock, "lock changed while searching for class");
++            System.out.println("### " + Thread.currentThread().getName() + " Not found: " + name);
++            return null;
+         }
+-        return null;
+     }
++    // Paper end
+ 
+     void setClass(@NotNull final String name, @NotNull final Class<?> clazz) {
+-        if (!classes.containsKey(name)) {
+-            classes.put(name, clazz);
++        if (classes.putIfAbsent(name, clazz) == null) { // Paper
+ 
+             if (ConfigurationSerializable.class.isAssignableFrom(clazz)) {
+                 Class<? extends ConfigurationSerializable> serializable = clazz.asSubclass(ConfigurationSerializable.class);
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 3a02dbe9..84e531b3 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -97,38 +97,24 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+ 
+     @Override
+     protected Class<?> findClass(String name) throws ClassNotFoundException {
+-        return findClass(name, true);
+-    }
+-
+-    Class<?> findClass(@NotNull String name, boolean checkGlobal) throws ClassNotFoundException {
++        // Paper start
+         if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
+             throw new ClassNotFoundException(name);
+         }
+-        Class<?> result = classes.get(name);
+-
+-        if (result == null) {
+-            if (checkGlobal) {
+-                result = loader.getClassByName(name);
++        return loader.getClassByName(name, this, new Object());
++    }
+ 
+-                if (result != null) {
+-                    PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
+-
+-                    if (provider != description
+-                            && !seenIllegalAccess.contains(provider.getName())
+-                            && !((SimplePluginManager) loader.server.getPluginManager()).isTransitiveDepend(description, provider)) {
+-
+-                        seenIllegalAccess.add(provider.getName());
+-                        if (plugin != null) {
+-                            plugin.getLogger().log(Level.WARNING, "Loaded class {0} from {1} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{name, provider.getFullName()});
+-                        } else {
+-                            // In case the bad access occurs on construction
+-                            loader.server.getLogger().log(Level.WARNING, "[{0}] Loaded class {1} from {2} which is not a depend, softdepend or loadbefore of this plugin.", new Object[]{description.getName(), name, provider.getFullName()});
+-                        }
+-                    }
+-                }
+-            }
++    Class<?> findClassInternally(@NotNull String name) throws ClassNotFoundException {
++        Class<?> result = classes.get(name);
++        if (result != null) {
++            //class got removed from JavaPluginLoader but is still stored here
++            loader.setClass(name, result);
++            return result;
++        }
+ 
+-            if (result == null) {
++        if (true) {
++            if (true) {
++                // Paper end
+                 String path = name.replace('.', '/').concat(".class");
+                 JarEntry entry = jar.getJarEntry(path);
+ 
+-- 
+2.25.1.windows.1
+
