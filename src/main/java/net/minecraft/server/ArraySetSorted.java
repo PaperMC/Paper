@@ -10,8 +10,8 @@ import java.util.NoSuchElementException;
 public class ArraySetSorted<T> extends AbstractSet<T> {
 
     private final Comparator<T> a;
-    private T[] b;
-    private int c;
+    private T[] b; private final T[] getBackingArray() { return this.b; } // Paper - OBFHELPER
+    private int c; private final int getSize() { return this.c; } private final void setSize(int value) { this.c = value; } // Paper - OBFHELPER
 
     private ArraySetSorted(int i, Comparator<T> comparator) {
         this.a = comparator;
@@ -21,6 +21,42 @@ public class ArraySetSorted<T> extends AbstractSet<T> {
             this.b = a(new Object[i]);
         }
     }
+
+    // Paper start - optimise removeIf
+    @Override
+    public boolean removeIf(java.util.function.Predicate<? super T> filter) {
+        // prev. impl used an iterator, which could be n^2 and creates garbage
+        int i = 0, len = this.getSize();
+        T[] backingArray = this.getBackingArray();
+
+        for (;;) {
+            if (i >= len) {
+                return false;
+            }
+            if (!filter.test(backingArray[i])) {
+                ++i;
+                continue;
+            }
+            break;
+        }
+
+        // we only want to write back to backingArray if we really need to
+
+        int lastIndex = i; // this is where new elements are shifted to
+
+        for (; i < len; ++i) {
+            T curr = backingArray[i];
+            if (!filter.test(curr)) { // if test throws we're screwed
+                backingArray[lastIndex++] = curr;
+            }
+        }
+
+        // cleanup end
+        Arrays.fill(backingArray, lastIndex, len, null);
+        this.setSize(lastIndex);
+        return true;
+    }
+    // Paper end - optimise removeIf
 
     public static <T extends Comparable<T>> ArraySetSorted<T> a(int i) {
         return new ArraySetSorted<>(i, (Comparator)Comparator.naturalOrder()); // Paper - decompile fix
