@@ -749,7 +749,7 @@ index 1f350e335..35e3f1c78 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b4a0bd795..4dc691775 100644
+index b4a0bd795..456d03be2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -815,6 +815,9 @@ index b4a0bd795..4dc691775 100644
      protected void a(BooleanSupplier booleansupplier) {
 -        SpigotTimings.serverTickTimer.startTiming(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
+         this.slackActivityAccountant.tickStarted(); // Spigot
+         long i = SystemUtils.getMonotonicNanos();
+ 
 +        // Paper start - move oversleep into full server tick
 +        MinecraftTimings.serverOversleep.startTiming();
 +        this.awaitTasks(() -> {
@@ -822,9 +825,10 @@ index b4a0bd795..4dc691775 100644
 +        });
 +        MinecraftTimings.serverOversleep.stopTiming();
 +        // Paper end
-         this.slackActivityAccountant.tickStarted(); // Spigot
-         long i = SystemUtils.getMonotonicNanos();
- 
++
+         ++this.ticks;
+         this.b(booleansupplier);
+         if (i - this.Z >= 5000000000L) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
  
@@ -841,16 +845,25 @@ index b4a0bd795..4dc691775 100644
  
          this.methodProfiler.enter("snooper");
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         }
+ 
          this.methodProfiler.exit();
-         org.spigotmc.WatchdogThread.tick(); // Spigot
-         this.slackActivityAccountant.tickEnded(l); // Spigot
--        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
--        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
++
 +        // Paper start - move executeAll() into full server tick timing
 +        try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 +            this.executeAll();
 +        }
 +        // Paper end
++
+         this.methodProfiler.enter("tallying");
+         long l = this.f[this.ticks % 100] = SystemUtils.getMonotonicNanos() - i;
+ 
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.methodProfiler.exit();
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         this.slackActivityAccountant.tickEnded(l); // Spigot
+-        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
+-        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
      }
  

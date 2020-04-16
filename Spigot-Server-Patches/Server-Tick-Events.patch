@@ -6,27 +6,28 @@ Subject: [PATCH] Server Tick Events
 Fires event at start and end of a server tick
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2a01e609c6..2801a3ee69 100644
+index 4d604bd0e..2a8e097f9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         });
+         MinecraftTimings.serverOversleep.stopTiming();
          // Paper end
-         this.slackActivityAccountant.tickStarted(); // Spigot
-         long i = SystemUtils.getMonotonicNanos();
 +        new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.ticks+1).callEvent(); // Paper
  
          ++this.ticks;
          this.b(booleansupplier);
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-             this.executeAll();
          }
          // Paper end
+ 
 +        // Paper start
 +        long endTime = System.nanoTime();
 +        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
 +        new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.ticks, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
 +        // Paper end
-         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
-     }
++
+         this.methodProfiler.enter("tallying");
+         long l = this.f[this.ticks % 100] = SystemUtils.getMonotonicNanos() - i;
  
 --
