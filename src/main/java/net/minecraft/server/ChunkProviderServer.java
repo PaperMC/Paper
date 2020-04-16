@@ -619,21 +619,29 @@ public class ChunkProviderServer extends IChunkProvider {
 
     public final boolean isInEntityTickingChunk(Entity entity) { return this.a(entity); } // Paper - OBFHELPER
     @Override public boolean a(Entity entity) {
-        long i = ChunkCoordIntPair.pair(MathHelper.floor(entity.locX()) >> 4, MathHelper.floor(entity.locZ()) >> 4);
-
-        return this.a(i, (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
+        // Paper start - optimize is ticking ready type functions
+        // entity ticking
+        PlayerChunk playerChunk = this.getChunk(MCUtil.getCoordinateKey(entity));
+        return playerChunk != null && playerChunk.isEntityTickingReady();
+        // Paper end - optimize is ticking ready type functions
     }
 
     public final boolean isEntityTickingChunk(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } // Paper - OBFHELPER
     @Override public boolean a(ChunkCoordIntPair chunkcoordintpair) {
-        return this.a(chunkcoordintpair.pair(), (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
+        // Paper start - optimize is ticking ready type functions
+        // is entity ticking ready
+        PlayerChunk playerChunk = this.getChunk(MCUtil.getCoordinateKey(chunkcoordintpair));
+        return playerChunk != null && playerChunk.isEntityTickingReady();
+        // Paper end - optimize is ticking ready type functions
     }
 
     @Override
     public boolean a(BlockPosition blockposition) {
-        long i = ChunkCoordIntPair.pair(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-
-        return this.a(i, (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::a); // CraftBukkit - decompile error
+        // Paper start - optimize is ticking ready type functions
+        // is ticking ready
+        PlayerChunk playerChunk = this.getChunk(MCUtil.getCoordinateKey(blockposition));
+        return playerChunk != null && playerChunk.isTickingReady();
+        // Paper end - optimize is ticking ready type functions
     }
 
     private boolean a(long i, Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>> function) {
