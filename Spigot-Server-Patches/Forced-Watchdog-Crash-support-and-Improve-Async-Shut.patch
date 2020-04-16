@@ -1,0 +1,328 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 12 Apr 2020 15:50:48 -0400
+Subject: [PATCH] Forced Watchdog Crash support and Improve Async Shutdown
+
+If the request to shut down the server is received while we are in
+a watchdog hang, immediately treat it as a crash and begin the shutdown
+process. Shutdown process is now improved to also shutdown cleanly when
+not using restart scripts either.
+
+If a server is deadlocked, a server owner can send SIGUP (or any other signal
+the JVM understands to shut down as it currently does) and the watchdog
+will no longer need to wait until the full timeout, allowing you to trigger
+a close process and try to shut the server down gracefully, saving player and
+world data.
+
+Previously there was no way to trigger this outside of waiting for a full watchdog
+timeout, which may be set to a really long time...
+
+Additionally, fix everything to do with shutting the server down asynchronously.
+
+Previously, nearly everything about the process was fragile and unsafe. Main might
+not have actually been frozen, and might still be manipulating state.
+
+Or, some reuest might ask main to do something in the shutdown but main is dead.
+
+Or worse, other things might start closing down items such as the Console or Thread Pool
+before we are fully shutdown.
+
+This change tries to resolve all of these issues by moving everything into the stop
+method and guaranteeing only one thread is stopping the server.
+
+We then issue Thread Death to the main thread of another thread initiates the stop process.
+We have to ensure Thread Death propagates correctly though to stop main completely.
+
+This is to ensure that if main isn't truely stuck, it's not manipulating state we are trying to save.
+
+diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
+index 3de19c998..c7dc8787c 100644
+--- a/src/main/java/net/minecraft/server/CrashReport.java
++++ b/src/main/java/net/minecraft/server/CrashReport.java
+@@ -0,0 +0,0 @@ public class CrashReport {
+     }
+ 
+     public static CrashReport a(Throwable throwable, String s) {
++        if (throwable instanceof ThreadDeath) com.destroystokyo.paper.util.SneakyThrow.sneaky(throwable); // Paper
+         while (throwable instanceof CompletionException && throwable.getCause() != null) {
+             throwable = throwable.getCause();
+         }
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 1ef7890da..e62ca0543 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+     @Override
+     public void stop() {
+         super.stop();
+-        SystemUtils.f();
++        //SystemUtils.f(); // Paper - moved into super
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3dbd75ad0..a386c1ab4 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     private final ResourcePackRepository<ResourcePackLoader> resourcePackRepository;
+     @Nullable
+     private ResourcePackSourceFolder resourcePackFolder;
++    public volatile Thread shutdownThread; // Paper
+     public CommandDispatcher commandDispatcher;
+     private final CraftingManager craftingManager;
+     private final TagRegistry tagRegistry;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public boolean serverAutoSave = false; // Paper
+     public File bukkitDataPackFolder;
+     public CommandDispatcher vanillaCommandDispatcher;
+-    private boolean forceTicks;
++    public boolean forceTicks; // Paper
+     // CraftBukkit end
+     // Spigot start
+     public static final int TPS = 20;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         // CraftBukkit start - prevent double stopping on multiple threads
+         synchronized(stopLock) {
+             if (hasStopped) return;
++            shutdownThread = Thread.currentThread();
+             hasStopped = true;
++            org.spigotmc.WatchdogThread.doStop(); // Paper
++            if (!isMainThread()) {
++                this.getThread().stop();
++            }
+         }
+         // CraftBukkit end
+         MinecraftServer.LOGGER.info("Stopping server");
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             this.getUserCache().c(false); // Paper
+         }
+         // Spigot end
++        // Paper start - move final shutdown items here
++        LOGGER.info("Flushing Chunk IO");
+         com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.close(true, true); // Paper
++        LOGGER.info("Closing Thread Pool");
++        SystemUtils.shutdownServerThreadPool(); // Paper
++        LOGGER.info("Closing Server");
++        try {
++            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
++        } catch (Exception e) {
++        }
++        this.exit();
++        // Paper end
+     }
+ 
+     public String getServerIp() {
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     // Spigot End
+ 
+     public void run() {
++        boolean isThreadDeath = false; // Paper
+         try {
+             if (this.init()) {
+                 this.nextTick = SystemUtils.getMonotonicMillis();
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 this.a((CrashReport) null);
+             }
+         } catch (Throwable throwable) {
++            // Paper start
++            if (throwable instanceof ThreadDeath) {
++                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable);
++                isThreadDeath = true;
++                return;
++            }
++            // Paper end
+             MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
+             // Spigot Start
+             if ( throwable.getCause() != null )
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             } catch (Throwable throwable1) {
+                 MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
+             } finally {
+-                org.spigotmc.WatchdogThread.doStop(); // Spigot
++                //org.spigotmc.WatchdogThread.doStop(); // Spigot // Paper - move into stop
+                 // CraftBukkit start - Restore terminal to original settings
+                 try {
+-                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
++                    //net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Move into stop
+                 } catch (Exception ignored) {
+                 }
+                 // CraftBukkit end
+-                this.exit();
++                //this.exit(); // Paper - moved into stop
+             }
+ 
+         }
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     @Override
+     protected TickTask postToMainThread(Runnable runnable) {
++        // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
++        if (this.hasStopped && Thread.currentThread().equals(shutdownThread)) {
++            runnable.run();
++            runnable = () -> {};
++        }
++        // Paper end
+         return new TickTask(this.ticks, runnable);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 6d6fbf2f5..0e1703c9d 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         cserver.getPluginManager().callEvent(playerQuitEvent);
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
+-        entityplayer.playerTick();// SPIGOT-924
++        if (server.isMainThread()) entityplayer.playerTick();// SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
+         // CraftBukkit end
+ 
+         // Paper start - Remove from collideRule team if needed
+diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+index dc6d03062..bc8b90466 100644
+--- a/src/main/java/net/minecraft/server/SystemUtils.java
++++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -0,0 +0,0 @@ public class SystemUtils {
+         return SystemUtils.c;
+     }
+ 
++    public static void shutdownServerThreadPool() { f(); } // Paper - OBFHELPER
+     public static void f() {
+         SystemUtils.c.shutdown();
+ 
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d554d4cf0..46e19d916 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+                         gameprofilerfiller.exit();
+                     } catch (Throwable throwable) {
++                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
+                         // Paper start - Prevent tile entity and entity crashes
+                         String msg = "TileEntity threw exception at " + tileentity.world.getWorld().getName() + ":" + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ();
+                         System.err.println(msg);
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         try {
+             consumer.accept(entity);
+         } catch (Throwable throwable) {
++            if (throwable instanceof ThreadDeath) throw throwable; // Paper
+             // Paper start - Prevent tile entity and entity crashes
+             String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
+             System.err.println(msg);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 8cc0f66ce..dcc44be61 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean isPrimaryThread() {
+-        return Thread.currentThread().equals(console.serverThread); // Paper - Fix issues with detecting main thread properly
++        return Thread.currentThread().equals(console.serverThread) || Thread.currentThread().equals(net.minecraft.server.MinecraftServer.getServer().shutdownThread); // Paper - Fix issues with detecting main thread properly, the only time Watchdog will be used is during a crash shutdown which is a "try our best" scenario
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+index 449e99d1b..899a52520 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
+@@ -0,0 +0,0 @@ public class ServerShutdownThread extends Thread {
+     @Override
+     public void run() {
+         try {
++            // Paper start - try to shutdown on main
++            server.safeShutdown(false, false);
++            for (int i = 1000; i > 0 && !server.hasStopped(); i -= 100) {
++                Thread.sleep(100);
++            }
++            if (server.hasStopped()) {
++                return;
++            }
++            // Looks stalled, close async
+             org.spigotmc.AsyncCatcher.enabled = false; // Spigot
+             org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
++            server.forceTicks = true;
+             server.close();
++        } catch (InterruptedException e) {
++            e.printStackTrace();
++            // Paper end
+         } finally {
+             try {
+-                net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
++                //net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Move into stop
+             } catch (Exception e) {
+             }
+         }
+diff --git a/src/main/java/org/spigotmc/RestartCommand.java b/src/main/java/org/spigotmc/RestartCommand.java
+index aefea3a9a..123de5ac9 100644
+--- a/src/main/java/org/spigotmc/RestartCommand.java
++++ b/src/main/java/org/spigotmc/RestartCommand.java
+@@ -0,0 +0,0 @@ public class RestartCommand extends Command
+     // Paper end
+ 
+     // Paper start - copied from above and modified to return if the hook registered
+-    private static boolean addShutdownHook(String restartScript)
++    public static boolean addShutdownHook(String restartScript)
+     {
+         String[] split = restartScript.split( " " );
+         if ( split.length > 0 && new File( split[0] ).isFile() )
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 5bdcdcf9e..acc880c7c 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+             // Paper start
+             Logger log = Bukkit.getServer().getLogger();
+             long currentTime = monotonicMillis();
+-            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
++            MinecraftServer server = MinecraftServer.getServer();
++            if ( !server.isRunning() || (lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog")) )
+             {
+-                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
++                boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
+                 // Don't spam early warning dumps
+                 if ( !isLongTimeout && (earlyWarningEvery <= 0 || !hasStarted || currentTime < lastEarlyWarning + earlyWarningEvery || currentTime < lastTick + earlyWarningDelay)) continue;
+-                if ( !isLongTimeout && MinecraftServer.getServer().hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
++                if ( !isLongTimeout && server.hasStopped()) continue; // Don't spam early watchdog warnings during shutdown, we'll come back to this...
+                 lastEarlyWarning = currentTime;
+                 if (isLongTimeout) {
+                 // Paper end
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
+-                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
++                dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( server.serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
+                 // Paper start - Only print full dump on long timeouts
+@@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
+ 
+                 if ( isLongTimeout )
+                 {
+-                if ( restart && !MinecraftServer.getServer().hasStopped() )
++                if ( !server.hasStopped() )
+                 {
+-                    RestartCommand.restart();
++                    AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
++                    AsyncCatcher.shuttingDown = true;
++                    server.forceTicks = true;
++                    if (restart) {
++                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
++                    }
++                    // try one last chance to safe shutdown on main incase it 'comes back'
++                    server.safeShutdown(false, restart);
++                    try {
++                        Thread.sleep(1000);
++                    } catch (InterruptedException e) {
++                        e.printStackTrace();
++                    }
++                    if (!server.hasStopped()) {
++                        server.close();
++                    }
+                 }
+                 break;
+                 } // Paper end
+--
