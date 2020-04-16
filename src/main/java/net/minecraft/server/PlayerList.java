@@ -211,9 +211,9 @@ public abstract class PlayerList {
         joinMessage = playerJoinEvent.getJoinMessage();
 
         if (joinMessage != null && joinMessage.length() > 0) {
-            for (IChatBaseComponent line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
-                server.getPlayerList().sendAll(new PacketPlayOutChat(line, ChatMessageType.SYSTEM, SystemUtils.b));
-            }
+            // Paper start - Removed sendAll for loop and broadcasted to console also
+            server.getPlayerList().sendMessage(CraftChatMessage.fromString(joinMessage));
+            // Paper end
         }
         // CraftBukkit end
 
