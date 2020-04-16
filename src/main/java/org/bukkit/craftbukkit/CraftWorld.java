@@ -333,6 +333,8 @@ public class CraftWorld implements World {
 
     @Override
     public Chunk getChunkAt(Block block) {
+        Preconditions.checkArgument(block != null, "null block");
+
         return getChunkAt(block.getX() >> 4, block.getZ() >> 4);
     }
 
@@ -471,11 +473,15 @@ public class CraftWorld implements World {
 
     @Override
     public boolean isChunkLoaded(Chunk chunk) {
+        Preconditions.checkArgument(chunk != null, "null chunk");
+
         return isChunkLoaded(chunk.getX(), chunk.getZ());
     }
 
     @Override
     public void loadChunk(Chunk chunk) {
+        Preconditions.checkArgument(chunk != null, "null chunk");
+
         loadChunk(chunk.getX(), chunk.getZ());
         ((CraftChunk) getChunkAt(chunk.getX(), chunk.getZ())).getHandle().bukkitChunk = chunk;
     }
