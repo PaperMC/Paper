@@ -1,0 +1,40 @@
+From 1eeb8f60ab8a35fe9552fc2d227b651238eab157 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@minidigger.me>
+Date: Thu, 16 Apr 2020 20:43:46 +0200
+Subject: [PATCH] Implement PlayerSendPacketEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
+index eb3269e0e..bfd258909 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
++++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
+@@ -20,6 +20,7 @@ public class PlayerConnectionUtils {
+                 if (MinecraftServer.getServer().hasStopped() || (t0 instanceof PlayerConnection && ((PlayerConnection) t0).processedDisconnect)) return; // CraftBukkit, MC-142590
+                 if (t0.a().isConnected()) {
+                     try (Timing ignored = timing.startTiming()) { // Paper - timings
++                    if (!handleEvent(packet, t0)) return; // Paper - packet event
+                     packet.a(t0);
+                     } // Paper - timings
+                 } else {
+@@ -34,5 +35,18 @@ public class PlayerConnectionUtils {
+             throw CancelledPacketHandleException.INSTANCE;
+         }
+         // CraftBukkit end
++        if (!handleEvent(packet, t0)) throw CancelledPacketHandleException.INSTANCE; // Paper - packet event
+     }
++
++    // Paper start - packet event
++    private static <T extends PacketListener> boolean handleEvent(Packet<T> packet, T listener) {
++        if (listener instanceof PlayerConnection) {
++            Integer id = EnumProtocol.PLAY.a(EnumProtocolDirection.SERVERBOUND, packet);
++            if(id == null) return false;
++            PlayerConnection connection = (PlayerConnection) listener;
++            return new com.destroystokyo.paper.event.player.PlayerSendPacketEvent(connection.getPlayer(), id, packet).callEvent();
++        }
++        return true;
++    }
++    // Paper end
+ }
+-- 
+2.17.1
+
