@@ -2832,10 +2832,16 @@ public abstract class EntityLiving extends Entity {
     protected void doTick() {}
 
     protected void collideNearby() {
+        // Paper - start don't run getEntities if we're not going to use its result
+        int i = this.world.getGameRules().getInt(GameRules.MAX_ENTITY_CRAMMING);
+        if (i <= 0 && world.paperConfig.maxCollisionsPerEntity <= 0) {
+            return;
+        }
+        // Paper - end don't run getEntities if we're not going to use its result
         List<Entity> list = this.world.getEntities(this, this.getBoundingBox(), IEntitySelector.a(this));
 
         if (!list.isEmpty()) {
-            int i = this.world.getGameRules().getInt(GameRules.MAX_ENTITY_CRAMMING);
+            // Paper - move up
             int j;
 
             if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
