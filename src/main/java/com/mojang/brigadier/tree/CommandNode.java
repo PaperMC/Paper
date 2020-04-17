@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import net.minecraft.server.CommandListenerWrapper; // CraftBukkit
 
 public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
-    private Map<String, CommandNode<S>> children = Maps.newLinkedHashMap();
+    private Map<String, CommandNode<S>> children = Maps.newTreeMap(); //Paper - Switch to tree map for automatic sorting
     private Map<String, LiteralCommandNode<S>> literals = Maps.newLinkedHashMap();
     private Map<String, ArgumentCommandNode<S, ?>> arguments = Maps.newLinkedHashMap();
     private final Predicate<S> requirement;
@@ -107,8 +107,7 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
                 arguments.put(node.getName(), (ArgumentCommandNode<S, ?>) node);
             }
         }
-
-        children = children.entrySet().stream().sorted(Map.Entry.comparingByValue()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+        //Paper - Remove manual sorting, it is no longer needed
     }
 
     public void findAmbiguities(final AmbiguityConsumer<S> consumer) {
