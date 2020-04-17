@@ -114,7 +114,7 @@ public abstract class ChunkGenerator {
      */
     @NotNull
     public ChunkData generateChunkData(@NotNull World world, @NotNull Random random, int x, int z, @NotNull BiomeGrid biome) {
-        throw new UnsupportedOperationException("Custom generator is missing required method generateChunkData");
+        throw new UnsupportedOperationException("Custom generator " + getClass().getName() + " is missing required method generateChunkData");
     }
 
     /**
