@@ -119,6 +119,12 @@ public class CommandTeleport {
 
     private static void a(CommandListenerWrapper commandlistenerwrapper, Entity entity, WorldServer worldserver, double d0, double d1, double d2, Set<PacketPlayOutPosition.EnumPlayerTeleportFlags> set, float f, float f1, @Nullable CommandTeleport.a commandteleport_a) throws CommandSyntaxException {
         BlockPosition blockposition = new BlockPosition(d0, d1, d2);
+        // Paper start - Don't allow teleport command to invalid locations
+        if (d0 <= -30000000 || d2 <= -30000000 || d0 > 30000000 || d2 > 30000000 || d1 > 30000000 || d1 <= -30000000) { // Copy/pasta from BaseBlockPosition#isValidLocation
+            org.bukkit.Bukkit.getLogger().warning("Refused to teleport " + entity.getName() + " to " + d0 + ", " + d1 + ", " + d2);
+            return;
+        }
+        // Paper end
 
         if (!World.l(blockposition)) {
             throw CommandTeleport.a.create();
