@@ -134,6 +134,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     };
     // CraftBukkit end
 
+    final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
+
     // Paper start - distance maps
     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 
@@ -999,7 +1001,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                 return Either.left(chunk);
             });
         }, (runnable) -> {
-            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, runnable));
+            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, () -> PlayerChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
         });
 
         completablefuture1.thenAcceptAsync((either) -> {
