@@ -24,16 +24,58 @@ the executor so that the mailbox ChunkQueue is now considered empty.
 This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index ba6bdc40a..a72f821f2 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                         // we do not want to use this.executeNext as that also processes chunk loads and might count against task counter.
+                         // We also have already ticked the distance manager above too.
+                         if (server.chunksTasksRan < 200 && now - lastChunkTask > 100000 && super.executeNext()) {
++                            ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
+                             ChunkProviderServer.this.lightEngine.queueUpdate();
+                             server.chunksTasksRan++;
+                             lastChunkTask = now;
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                 return true;
+             } else {
+                 ChunkProviderServer.this.lightEngine.queueUpdate();
+-                return super.executeNext() || execChunkTask; // Paper
++                // Paper start - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
++                boolean executed = super.executeNext();
++                ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
++                return executed || execChunkTask;
++                // Paper end - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
+             }
+         } finally {
+             playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c38d31faf..12639dfb9 100644
+index c38d31faf..e19342eb8 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         @Override
+         public void execute(Runnable runnable) {
+             if (queued != null) {
++                MinecraftServer.LOGGER.fatal("Failed to schedule runnable", new IllegalStateException("Already queued")); // Paper - make sure this is printed
+                 throw new IllegalStateException("Already queued");
+             }
+             queued = runnable;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     };
+     // CraftBukkit end
+ 
++    final CallbackExecutor chunkLoadConversionCallbackExecutor = new CallbackExecutor(); // Paper
++
+     // Paper start - distance maps
+     private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
+ 
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return Either.left(chunk);
              });
          }, (runnable) -> {
 -            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
-+            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, () -> this.executor.addTask(runnable))); // CraftBukkit - decompile error // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
++            this.mailboxMain.a(ChunkTaskQueueSorter.a(playerchunk, () -> PlayerChunkMap.this.chunkLoadConversionCallbackExecutor.execute(runnable))); // CraftBukkit - decompile error // Paper - delay running Chunk post processing until outside of the sorter to prevent a deadlock scenario when post processing causes another chunk request.
          });
  
          completablefuture1.thenAcceptAsync((either) -> {
