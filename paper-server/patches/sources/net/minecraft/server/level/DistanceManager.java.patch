@@ -100,14 +100,19 @@
      }
  
      private SortedArraySet<Ticket<?>> getTickets(long position) {
-@@ -253,6 +279,7 @@
+@@ -253,9 +279,10 @@
          ChunkPos chunkcoordintpair = pos.chunk();
          long i = chunkcoordintpair.toLong();
          ObjectSet<ServerPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
 +        if (objectset == null) return; // CraftBukkit - SPIGOT-6208
  
-         objectset.remove(player);
-         if (objectset.isEmpty()) {
+-        objectset.remove(player);
+-        if (objectset.isEmpty()) {
++        if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully
++        if (objectset == null || objectset.isEmpty()) { // Paper
+             this.playersPerChunk.remove(i);
+             this.naturalSpawnChunkCounter.update(i, Integer.MAX_VALUE, false);
+             this.playerTicketManager.update(i, Integer.MAX_VALUE, false);
 @@ -358,7 +385,7 @@
      }
  
