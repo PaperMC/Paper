@@ -5,30 +5,28 @@ Subject: [PATCH] Add PlayerInitialSpawnEvent
 
 For modifying a player's initial spawn location as they join the server
 
+This is a duplicate API from spigot, so use our duplicate subclass and
+improve setPosition to use raw
+
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 1652a57e25..948a6e3b7a 100644
+index f28be11ee..541e3ce83 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
-         // CraftBukkit end
  
--        entityplayer.spawnIn(worldserver);
-+        // Paper start - support PlayerInitialSpawnEvent
-+        Location originalLoc = new Location(entityplayer.world.getWorld(), entityplayer.locX(), entityplayer.locY(), entityplayer.locZ(), entityplayer.yaw, entityplayer.pitch);
-+        com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent event = new com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent(entityplayer.getBukkitEntity(), originalLoc);
-+        this.server.server.getPluginManager().callEvent(event);
-+
-+        Location newLoc = event.getSpawnLocation();
-+        entityplayer.world = ((CraftWorld) newLoc.getWorld()).getHandle();
-+        entityplayer.setPositionRaw(newLoc.getX(), newLoc.getY(), newLoc.getZ());
-+        entityplayer.yaw = newLoc.getYaw();
-+        entityplayer.pitch = newLoc.getPitch();
-+        entityplayer.dimension = ((CraftWorld) newLoc.getWorld()).getHandle().worldProvider.getDimensionManager();
-+        // Paper end
-+
-+        entityplayer.spawnIn(((CraftWorld) newLoc.getWorld()).getHandle());
-         entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
-         String s1 = "local";
+         // Spigot start - spawn location event
+         Player bukkitPlayer = entityplayer.getBukkitEntity();
+-        PlayerSpawnLocationEvent ev = new PlayerSpawnLocationEvent(bukkitPlayer, bukkitPlayer.getLocation());
++        PlayerSpawnLocationEvent ev = new com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent(bukkitPlayer, bukkitPlayer.getLocation()); // Paper use our duplicate event
+         Bukkit.getPluginManager().callEvent(ev);
+ 
+         Location loc = ev.getSpawnLocation();
+         worldserver = ((CraftWorld) loc.getWorld()).getHandle();
+ 
+         entityplayer.spawnIn(worldserver);
+-        entityplayer.setPosition(loc.getX(), loc.getY(), loc.getZ());
++        entityplayer.setPositionRaw(loc.getX(), loc.getY(), loc.getZ()); // Paper - set raw so we aren't fully joined to the world (not added to chunk or world)
+         entityplayer.setYawPitch(loc.getYaw(), loc.getPitch());
+         // Spigot end
  
 --
