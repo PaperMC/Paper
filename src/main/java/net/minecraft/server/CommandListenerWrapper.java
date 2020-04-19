@@ -16,7 +16,7 @@ import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
-public class CommandListenerWrapper implements ICompletionProvider {
+public class CommandListenerWrapper implements ICompletionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
 
     public static final SimpleCommandExceptionType a = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.player"));
     public static final SimpleCommandExceptionType b = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.entity"));
@@ -127,6 +127,25 @@ public class CommandListenerWrapper implements ICompletionProvider {
     public String getName() {
         return this.g;
     }
+
+    // Paper start
+    @Override
+    public org.bukkit.entity.Entity getBukkitEntity() {
+        return getEntity() != null ? getEntity().getBukkitEntity() : null;
+    }
+
+    @Override
+    public org.bukkit.World getBukkitWorld() {
+        return getWorld() != null ? getWorld().getWorld() : null;
+    }
+
+    @Override
+    public org.bukkit.Location getBukkitLocation() {
+        Vec3D pos = getPosition();
+        org.bukkit.World world = getBukkitWorld();
+        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z) : null;
+    }
+    // Paper end
 
     @Override
     public boolean hasPermission(int i) {

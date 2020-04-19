@@ -270,6 +270,7 @@ public class CommandDispatcher {
             bukkit.add(node.getName());
         }
         // Paper start - Async command map building
+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandListenerWrapper>(entityplayer.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
         MinecraftServer.getServer().execute(() -> {
            runSync(entityplayer, bukkit, rootcommandnode);
         });
@@ -277,6 +278,7 @@ public class CommandDispatcher {
 
     private void runSync(EntityPlayer entityplayer, Collection<String> bukkit, RootCommandNode<ICompletionProvider> rootcommandnode) {
         // Paper end - Async command map building
+        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandListenerWrapper>(entityplayer.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
         PlayerCommandSendEvent event = new PlayerCommandSendEvent(entityplayer.getBukkitEntity(), new LinkedHashSet<>(bukkit));
         event.getPlayer().getServer().getPluginManager().callEvent(event);
 

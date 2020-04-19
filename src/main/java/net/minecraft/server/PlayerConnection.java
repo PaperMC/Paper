@@ -579,8 +579,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
                     ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
 
                     this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
-                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
-                        this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestions));
+                        // Paper start
+                        com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
+                        suggestEvent.setCancelled(suggestions.isEmpty());
+                        if (!suggestEvent.callEvent()) return;
+                        this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (com.mojang.brigadier.suggestion.Suggestions) suggestEvent.getSuggestions())); // CraftBukkit - decompile error // Paper
+                        // Paper end
                     });
                 });
             }
@@ -589,7 +593,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
             builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
             completions.forEach(builder::suggest);
-            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), builder.buildFuture().join()));
+            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
+            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
+            suggestEvent.setCancelled(suggestions.isEmpty());
+            if (!suggestEvent.callEvent()) return;
+            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestEvent.getSuggestions()));
         }
         // Paper end - async tab completion
     }
