@@ -1538,6 +1538,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                 .printStackTrace();
             return;
         }
+        if (entity instanceof EntityPlayer && ((EntityPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
         // Paper end
         if (!(entity instanceof EntityComplexPart)) {
             EntityTypes<?> entitytypes = entity.getEntityType();

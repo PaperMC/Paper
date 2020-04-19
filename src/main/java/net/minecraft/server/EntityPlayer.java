@@ -106,6 +106,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     public double maxHealthCache;
     public boolean joining = true;
     public boolean sentListPacket = false;
+    public boolean supressTrackerForLogin = false; // Paper
     public Integer clientViewDistance;
     // CraftBukkit end
     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper

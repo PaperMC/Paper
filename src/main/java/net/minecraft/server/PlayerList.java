@@ -200,6 +200,12 @@ public abstract class PlayerList {
         this.j.put(entityplayer.getUniqueID(), entityplayer);
         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
 
+        // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
+        entityplayer.supressTrackerForLogin = true;
+        worldserver1.addPlayerJoin(entityplayer);
+        this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
+        mountSavedVehicle(entityplayer, worldserver1, nbttagcompound);
+        // Paper end
         // CraftBukkit start
         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
         cserver.getPluginManager().callEvent(playerJoinEvent);
@@ -234,6 +240,8 @@ public abstract class PlayerList {
             entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
         }
         entityplayer.sentListPacket = true;
+        entityplayer.supressTrackerForLogin = false; // Paper
+        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
         // CraftBukkit end
 
         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
@@ -259,6 +267,11 @@ public abstract class PlayerList {
             playerconnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
         }
 
+        // Paper start - move vehicle into method so it can be called above - short circuit around that code
+        onPlayerJoinFinish(entityplayer, worldserver1, s1);
+    }
+    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver1, NBTTagCompound nbttagcompound) {
+        // Paper end
         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
             // CraftBukkit start
@@ -307,6 +320,10 @@ public abstract class PlayerList {
             }
         }
 
+        // Paper start
+    }
+    public void onPlayerJoinFinish(EntityPlayer entityplayer, WorldServer worldserver1, String s1) {
+        // Paper end
         entityplayer.syncInventory();
         // Paper start - Add to collideRule team if needed
         final Scoreboard scoreboard = this.getServer().getWorldServer(World.OVERWORLD).getScoreboard();
