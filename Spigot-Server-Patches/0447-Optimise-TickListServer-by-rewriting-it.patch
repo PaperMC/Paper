@@ -1,4 +1,4 @@
-From 37ec5b6997cb9ba61792aa97b8cc9bbcfc45e186 Mon Sep 17 00:00:00 2001
+From 22ff60999f9a027a3174672784ff94e158629627 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 14 Feb 2020 01:24:39 -0800
 Subject: [PATCH] Optimise TickListServer by rewriting it
@@ -43,7 +43,7 @@ sets the excessive tick delay to the specified ticks (defaults to
 
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000..ce653f6b4b
+index 000000000..ce653f6b4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +1,622 @@
@@ -671,7 +671,7 @@ index 0000000000..ce653f6b4b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 new file mode 100644
-index 0000000000..13cf1a55a9
+index 000000000..13cf1a55a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 @@ -0,0 +1,41 @@
@@ -718,7 +718,7 @@ index 0000000000..13cf1a55a9
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 new file mode 100644
-index 0000000000..118988c39e
+index 000000000..118988c39
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 @@ -0,0 +1,142 @@
@@ -865,7 +865,7 @@ index 0000000000..118988c39e
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index e650a2e48d..2d07d350d2 100644
+index e650a2e48..2d07d350d 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -125,6 +125,7 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -877,12 +877,12 @@ index e650a2e48d..2d07d350d2 100644
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 8412feef6b..1dcd0980ec 100644
+index 12fa1013f..5c45756c7 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -119,6 +119,13 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -198,6 +198,13 @@ public class ChunkProviderServer extends IChunkProvider {
      }
-     // Paper
+     // Paper end
  
 +    // Paper start - rewrite ticklistserver
 +    public final boolean isTickingReadyMainThread(BlockPosition pos) {
@@ -895,7 +895,7 @@ index 8412feef6b..1dcd0980ec 100644
      public ChunkProviderServer(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator<?> chunkgenerator, int i, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
-index 33cfeabdee..2287e47d1b 100644
+index 33cfeabde..2287e47d1 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -5,11 +5,13 @@ import java.util.Comparator;
@@ -966,10 +966,10 @@ index 33cfeabdee..2287e47d1b 100644
      public String toString() {
          return this.e + ": " + this.a + ", " + this.b + ", " + this.c + ", " + this.f;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index b38bc67758..9f8818c2d4 100644
+index 74e6b8b97..04b97cec2 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -474,7 +474,9 @@ public class PlayerChunk {
+@@ -477,7 +477,9 @@ public class PlayerChunk {
                      PlayerChunk.this.isTickingReady = true;
  
  
@@ -981,7 +981,7 @@ index b38bc67758..9f8818c2d4 100644
                  }
              });
 diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
-index dbb565e74d..185658e230 100644
+index dbb565e74..185658e23 100644
 --- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
 +++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
 @@ -4,12 +4,12 @@ import com.google.common.base.MoreObjects;
@@ -1020,7 +1020,7 @@ index dbb565e74d..185658e230 100644
          return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
      }
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
-index f533860bbe..3f1aa5ced6 100644
+index f533860bb..3f1aa5ced 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java
 +++ b/src/main/java/net/minecraft/server/TickListServer.java
 @@ -42,6 +42,11 @@ public class TickListServer<T> implements TickList<T> {
@@ -1143,7 +1143,7 @@ index f533860bbe..3f1aa5ced6 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index eb99819e51..5ba46fca55 100644
+index ed41c814a..9d35d650f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -170,6 +170,13 @@ public class WorldServer extends World {
@@ -1174,5 +1174,5 @@ index eb99819e51..5ba46fca55 100644
          }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
          this.navigators = Sets.newHashSet();
 -- 
-2.25.1
+2.26.0
 
