@@ -1282,7 +1282,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         this.lastY = d1;
         this.lastZ = d4;
         this.setPosition(d3, d1, d4);
-        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
+        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
     }
 
     public void d(Vec3D vec3d) {

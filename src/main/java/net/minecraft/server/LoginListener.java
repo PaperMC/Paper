@@ -66,7 +66,7 @@ public class LoginListener implements PacketLoginInListener {
             }
             // Paper end
         } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
-            EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.i.getId());
+            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
 
             if (entityplayer == null) {
                 this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
@@ -165,7 +165,7 @@ public class LoginListener implements PacketLoginInListener {
             }
 
             this.networkManager.sendPacket(new PacketLoginOutSuccess(this.i));
-            EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.i.getId());
+            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
 
             if (entityplayer != null) {
                 this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;

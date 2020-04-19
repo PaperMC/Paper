@@ -70,6 +70,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     private static final Logger LOGGER = LogManager.getLogger();
     public final NetworkManager networkManager;
     private final MinecraftServer minecraftServer;
+    Runnable playerJoinReady; // Paper
     public EntityPlayer player;
     private int e;
     private long lastKeepAlive = SystemUtils.getMonotonicMillis(); private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
@@ -143,6 +144,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
     // CraftBukkit end
 
     public void tick() {
+        // Paper start - login async
+        Runnable playerJoinReady = this.playerJoinReady;
+        if (playerJoinReady != null) {
+            this.playerJoinReady = null;
+            playerJoinReady.run();
+        }
+        // Don't tick if not valid (dead), otherwise we load chunks below
+        if (this.player.valid) {
+        // Paper end
         this.syncPosition();
         this.player.lastX = this.player.locX();
         this.player.lastY = this.player.locY();
@@ -184,7 +194,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
             this.r = null;
             this.D = false;
             this.E = 0;
-        }
+        }} // Paper - end if (valid)
 
         this.minecraftServer.getMethodProfiler().enter("keepAlive");
         // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings

@@ -54,11 +54,12 @@ public abstract class PlayerList {
     private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
     private final MinecraftServer server;
     public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
-    private final Map<UUID, EntityPlayer> j = Maps.newHashMap();
+    private final Map<UUID, EntityPlayer> j = Maps.newHashMap();Map<UUID, EntityPlayer> getUUIDMap() { return j; } // Paper - OBFHELPER
     private final GameProfileBanList k;
     private final IpBanList l;
     private final OpList operators;
     private final WhiteList whitelist;
+    private final Map<UUID, EntityPlayer> pendingPlayers = Maps.newHashMap(); // Paper
     // CraftBukkit start
     // private final Map<UUID, ServerStatisticManager> o;
     // private final Map<UUID, AdvancementDataPlayer> p;
@@ -97,6 +98,11 @@ public abstract class PlayerList {
     }
 
     public void a(NetworkManager networkmanager, EntityPlayer entityplayer) {
+        EntityPlayer prev = pendingPlayers.put(entityplayer.getUniqueID(), entityplayer);// Paper
+        if (prev != null) {
+            disconnectPendingPlayer(prev);
+        }
+        entityplayer.networkManager = networkmanager; // Paper
         entityplayer.loginTime = System.currentTimeMillis(); // Paper
         GameProfile gameprofile = entityplayer.getProfile();
         UserCache usercache = this.server.getUserCache();
@@ -110,7 +116,7 @@ public abstract class PlayerList {
         if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
             s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
-        }
+        }String lastKnownName = s; // Paper
         // CraftBukkit end
 
         if (nbttagcompound != null) {
@@ -183,6 +189,51 @@ public abstract class PlayerList {
         entityplayer.getRecipeBook().a(entityplayer);
         this.sendScoreboard(worldserver1.getScoreboard(), entityplayer);
         this.server.invalidatePingSample();
+        // Paper start - async load spawn in chunk
+        WorldServer finalWorldserver = worldserver1;
+        int chunkX = loc.getBlockX() >> 4;
+        int chunkZ = loc.getBlockZ() >> 4;
+        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
+        PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
+        playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
+        worldserver1.getChunkProvider().tickDistanceManager();
+        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
+            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
+            if (updatingChunk != null) {
+                return updatingChunk.getEntityTickingFuture();
+            } else {
+                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
+            }
+        }).thenAccept(chunk -> {
+            playerconnection.playerJoinReady = () -> {
+                postChunkLoadJoin(
+                    entityplayer, finalWorldserver, networkmanager, playerconnection,
+                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
+                );
+            };
+        });
+    }
+
+    EntityPlayer getActivePlayer(UUID uuid) {
+        EntityPlayer player = this.getUUIDMap().get(uuid);
+        return player != null ? player : pendingPlayers.get(uuid);
+    }
+
+    void disconnectPendingPlayer(EntityPlayer entityplayer) {
+        ChatMessage msg = new ChatMessage("multiplayer.disconnect.duplicate_login", new Object[0]);
+        entityplayer.networkManager.sendPacket(new PacketPlayOutKickDisconnect(msg), (future) -> {
+            entityplayer.networkManager.close(msg);
+            entityplayer.networkManager = null;
+        });
+    }
+
+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
+        pendingPlayers.remove(entityplayer.getUniqueID(), entityplayer);
+        if (!networkmanager.isConnected()) {
+            return;
+        }
+        entityplayer.didPlayerJoinEvent = true;
+        // Paper end
         ChatMessage chatmessage;
 
         if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
@@ -419,6 +470,7 @@ public abstract class PlayerList {
 
     protected void savePlayerFile(EntityPlayer entityplayer) {
         if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
+        if (!entityplayer.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
         this.playerFileData.save(entityplayer);
         ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
 
@@ -446,7 +498,7 @@ public abstract class PlayerList {
         }
 
         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
-        cserver.getPluginManager().callEvent(playerQuitEvent);
+        if (entityplayer.didPlayerJoinEvent) cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
 
         if (server.isMainThread()) entityplayer.playerTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
@@ -499,6 +551,13 @@ public abstract class PlayerList {
             // this.p.remove(uuid);
             // CraftBukkit end
         }
+        // Paper start
+        entityplayer1 = pendingPlayers.get(uuid);
+        if (entityplayer1 == entityplayer) {
+            pendingPlayers.remove(uuid);
+        }
+        entityplayer.networkManager = null;
+        // Paper end
 
         // CraftBukkit start
         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
@@ -516,7 +575,7 @@ public abstract class PlayerList {
         cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
         // CraftBukkit end
 
-        return playerQuitEvent.getQuitMessage(); // CraftBukkit
+        return entityplayer.didPlayerJoinEvent ? playerQuitEvent.getQuitMessage() : null; // CraftBukkit // Paper - don't print quit if we never printed join
     }
 
     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
@@ -535,6 +594,13 @@ public abstract class PlayerList {
                 list.add(entityplayer);
             }
         }
+        // Paper start - check pending players too
+        entityplayer = pendingPlayers.get(uuid);
+        if (entityplayer != null) {
+            this.pendingPlayers.remove(uuid);
+            disconnectPendingPlayer(entityplayer);
+        }
+        // Paper end
 
         Iterator iterator = list.iterator();
 
