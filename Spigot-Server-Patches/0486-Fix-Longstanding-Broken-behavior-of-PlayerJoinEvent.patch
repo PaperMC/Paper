@@ -1,4 +1,4 @@
-From 63418c01ebd90b30014d7c173d2d0af444e832b7 Mon Sep 17 00:00:00 2001
+From 841d912dd05dbb6d52500b04b48207ffeb33d77f Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 19 Apr 2020 00:05:46 -0400
 Subject: [PATCH] Fix Longstanding Broken behavior of PlayerJoinEvent
@@ -27,27 +27,40 @@ This was very non deterministic. This change will ensure every plugin
 receives a deterministic result, and should no longer require 1 tick
 delays anymore.
 
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 42ddc991cc..75543ee6dc 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -104,6 +104,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public double maxHealthCache;
+     public boolean joining = true;
+     public boolean sentListPacket = false;
++    public boolean supressTrackerForLogin = false; // Paper
+     public Integer clientViewDistance;
+     // CraftBukkit end
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index e19342eb89..cc588d6f35 100644
+index e19342eb89..8b2eed1051 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -1565,6 +1565,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  .printStackTrace();
              return;
          }
-+        if (entity instanceof EntityPlayer && !((EntityPlayer) entity).sentListPacket) return; // Delay adding to tracker until after list packets
++        if (entity instanceof EntityPlayer && ((EntityPlayer) entity).supressTrackerForLogin) return; // Delay adding to tracker until after list packets
          // Paper end
          if (!(entity instanceof EntityComplexPart)) {
              if (!(entity instanceof EntityLightning)) {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 7403be0b25..c2850d50d6 100644
+index 7403be0b25..ec45c30dd3 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -175,6 +175,11 @@ public abstract class PlayerList {
+@@ -175,6 +175,12 @@ public abstract class PlayerList {
          this.j.put(entityplayer.getUniqueID(), entityplayer);
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
  
 +        // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
++        entityplayer.supressTrackerForLogin = true;
 +        worldserver.addPlayerJoin(entityplayer);
 +        this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
 +        mountSavedVehicle(entityplayer, worldserver, nbttagcompound);
@@ -55,15 +68,16 @@ index 7403be0b25..c2850d50d6 100644
          // CraftBukkit start
          PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
          cserver.getPluginManager().callEvent(playerJoinEvent);
-@@ -209,6 +214,7 @@ public abstract class PlayerList {
+@@ -209,6 +215,8 @@ public abstract class PlayerList {
              entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
          }
          entityplayer.sentListPacket = true;
++        entityplayer.supressTrackerForLogin = false; // Paper
 +        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
          // CraftBukkit end
  
          entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
-@@ -234,6 +240,11 @@ public abstract class PlayerList {
+@@ -234,6 +242,11 @@ public abstract class PlayerList {
              playerconnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
          }
  
@@ -75,7 +89,7 @@ index 7403be0b25..c2850d50d6 100644
          if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
              NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
              // CraftBukkit start
-@@ -275,6 +286,10 @@ public abstract class PlayerList {
+@@ -275,6 +288,10 @@ public abstract class PlayerList {
              }
          }
  
