@@ -20,7 +20,7 @@ remains the same.
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
 new file mode 100644
-index 00000000..3edc8e52
+index 0000000000..3edc8e52e0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
 @@ -0,0 +0,0 @@
@@ -71,7 +71,7 @@ index 00000000..3edc8e52
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index e29ec958..e40375b6 100644
+index e29ec958b3..e40375b67a 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -0,0 +0,0 @@ public class Block implements IMaterial {
@@ -86,7 +86,7 @@ index e29ec958..e40375b6 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
-index 6d351f09..a44f65f4 100644
+index 6d351f0979..a44f65f40d 100644
 --- a/src/main/java/net/minecraft/server/BlockFluids.java
 +++ b/src/main/java/net/minecraft/server/BlockFluids.java
 @@ -0,0 +0,0 @@ public class BlockFluids extends Block implements IFluidSource {
@@ -99,7 +99,7 @@ index 6d351f09..a44f65f4 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index e76528f1..e650a2e4 100644
+index e76528f199..e650a2e48d 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -111,37 +111,9 @@ index e76528f1..e650a2e4 100644
              return this.d(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
          }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 03c25eae..92bb009b 100644
+index 29cfef1605..8fc26aa4b8 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-     private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
-     private volatile boolean x;
- 
-+    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
-+
-     public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
-         this(world, chunkcoordintpair, biomestorage, ChunkConverter.a, TickListEmpty.b(), TickListEmpty.b(), 0L, (ChunkSection[]) null, (Consumer) null);
-     }
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-         this.v = consumer;
-         if (achunksection != null) {
-             if (this.sections.length == achunksection.length) {
-+                // Paper start - maintain a list of ticking blocks in a chunk
-+                for (ChunkSection section : achunksection) {
-+                    if (section != null) {
-+                        section.chunk = this;
-+                        int offset = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(0, section.yPos, 0);
-+                        for (it.unimi.dsi.fastutil.longs.LongIterator iterator = section.tickingList.getRawIterator(); iterator.hasNext();) {
-+                            long raw = iterator.nextLong();
-+                            this.tickingList.add(com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw) + offset, com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw));
-+                        }
-+                    }
-+                }
-+                // Paper end
-                 System.arraycopy(achunksection, 0, this.sections, 0, this.sections.length);
-             } else {
-                 Chunk.LOGGER.warn("Could not set level chunk sections, array length is {} instead of {}", achunksection.length, this.sections.length);
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          this.entities.remove(entity); // Paper
      }
@@ -154,7 +126,7 @@ index 03c25eae..92bb009b 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 4526527a..8b28fb5e 100644
+index 4526527aca..3eaf893cdf 100644
 --- a/src/main/java/net/minecraft/server/ChunkSection.java
 +++ b/src/main/java/net/minecraft/server/ChunkSection.java
 @@ -0,0 +0,0 @@ import javax.annotation.Nullable;
@@ -193,9 +165,6 @@ index 4526527a..8b28fb5e 100644
                  --this.tickingBlockCount;
 +                // Paper start
 +                this.tickingList.remove(i, j, k);
-+                if (this.chunk != null) {
-+                    this.chunk.tickingList.remove(i, j + this.yPos, k);
-+                }
 +                // Paper end
              }
          }
@@ -206,9 +175,6 @@ index 4526527a..8b28fb5e 100644
                  ++this.tickingBlockCount;
 +                // Paper start
 +                this.tickingList.add(i, j, k, iblockdata);
-+                if (this.chunk != null) {
-+                    this.chunk.tickingList.add(i, j + this.yPos, k, iblockdata);
-+                }
 +                // Paper end
              }
          }
@@ -218,13 +184,6 @@ index 4526527a..8b28fb5e 100644
  
      public void recalcBlockCounts() {
 +        // Paper start
-+        int offset = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationKey(0, this.yPos, 0);
-+        if (this.chunk != null) {
-+            for (it.unimi.dsi.fastutil.longs.LongIterator iterator = this.tickingList.getRawIterator(); iterator.hasNext();) {
-+                long raw = iterator.nextLong();
-+                this.chunk.tickingList.remove(com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw) + offset);
-+            }
-+        }
 +        this.tickingList.clear();
 +        // Paper end
          this.nonEmptyBlockCount = 0;
@@ -242,9 +201,6 @@ index 4526527a..8b28fb5e 100644
 +                    this.tickingBlockCount = (short) (this.tickingBlockCount + 1); // Paper
 +                    // Paper start
 +                    this.tickingList.add(location, iblockdata);
-+                    if (this.chunk != null) {
-+                        this.chunk.tickingList.add(location + offset, iblockdata);
-+                    }
 +                    // Paper end
                  }
              }
@@ -259,7 +215,7 @@ index 4526527a..8b28fb5e 100644
              }
  
 diff --git a/src/main/java/net/minecraft/server/DataBits.java b/src/main/java/net/minecraft/server/DataBits.java
-index f9680b68..a61cffa3 100644
+index f9680b6830..a61cffa3f4 100644
 --- a/src/main/java/net/minecraft/server/DataBits.java
 +++ b/src/main/java/net/minecraft/server/DataBits.java
 @@ -0,0 +0,0 @@ public class DataBits {
@@ -310,7 +266,7 @@ index f9680b68..a61cffa3 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 44aed672..fa664897 100644
+index 44aed67274..fa664897fb 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
@@ -329,7 +285,7 @@ index 44aed672..fa664897 100644
      public interface a<T> {
  
 diff --git a/src/main/java/net/minecraft/server/EntityTurtle.java b/src/main/java/net/minecraft/server/EntityTurtle.java
-index dd02cb34..b24a5100 100644
+index dd02cb3485..b24a5100b4 100644
 --- a/src/main/java/net/minecraft/server/EntityTurtle.java
 +++ b/src/main/java/net/minecraft/server/EntityTurtle.java
 @@ -0,0 +0,0 @@ public class EntityTurtle extends EntityAnimal {
@@ -342,7 +298,7 @@ index dd02cb34..b24a5100 100644
  
      public final BlockPosition getHome() { return this.es(); } // Paper - OBFHELPER
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index de438816..e821c236 100644
+index de43881653..e821c236b4 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
 +++ b/src/main/java/net/minecraft/server/IBlockData.java
 @@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
@@ -395,7 +351,7 @@ index de438816..e821c236 100644
  
      public final SoundEffectType getStepSound() { return this.r(); } // Paper - OBFHELPER
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 28b6c9a0..d554d4cf 100644
+index 5036348abf..5e6481f115 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -420,21 +376,23 @@ index 28b6c9a0..d554d4cf 100644
  
      public boolean isSavingDisabled() {
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 71f5e3ce..ed41c814 100644
+index 62fabb7ad5..9a2b4fa7a2 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
          });
      }
  
+-    public void a(Chunk chunk, int i) {
 +    // Paper start - optimise random block ticking
 +    private final BlockPosition.MutableBlockPosition chunkTickMutablePosition = new BlockPosition.MutableBlockPosition();
 +    private final com.destroystokyo.paper.util.math.ThreadUnsafeRandom randomTickRandom = new com.destroystokyo.paper.util.math.ThreadUnsafeRandom();
 +    // Paper end
 +
-     public void a(Chunk chunk, int i) {
++    public void a(Chunk chunk, int i) { final int randomTickSpeed = i; // Paper
          ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
          boolean flag = this.isRaining();
+         int j = chunkcoordintpair.d();
 @@ -0,0 +0,0 @@ public class WorldServer extends World {
          GameProfilerFiller gameprofilerfiller = this.getMethodProfiler();
  
@@ -491,75 +449,69 @@ index 71f5e3ce..ed41c814 100644
  
 -        gameprofilerfiller.exitEnter("tickBlocks");
 -        timings.chunkTicksBlocks.startTiming(); // Paper
--        if (i > 0) {
--            ChunkSection[] achunksection = chunk.getSections();
--            int l = achunksection.length;
--
--            for (int i1 = 0; i1 < l; ++i1) {
--                ChunkSection chunksection = achunksection[i1];
--
--                if (chunksection != Chunk.a && chunksection.d()) {
--                    int j1 = chunksection.getYPosition();
 +        // Paper start - optimise random block ticking
 +        gameprofilerfiller.exit();
-+        int blocks = chunk.tickingList.size();
-+        if (i > 0 && blocks > 0) {
-+            if ((this.randomTickRandom.nextInt() & (16 * 16 * 256 - 1)) > blocks) {
-+                // we optimise random block ticking by realising that most of the blocks we will try to tick
-+                // are not tickable. Instead we only tick tickable blocks, but only if the above
-+                // statement is true
-+                // Note: The number of blocks that get ticked per tick still REMAIN the same.
-+                return;
-+            }
-+            gameprofilerfiller.enter("tickBlocks");
+         if (i > 0) {
+-            ChunkSection[] achunksection = chunk.getSections();
+-            int l = achunksection.length;
++            gameprofilerfiller.enter("randomTick");
 +            timings.chunkTicksBlocks.startTiming(); // Paper
+ 
+-            for (int i1 = 0; i1 < l; ++i1) {
+-                ChunkSection chunksection = achunksection[i1];
++            ChunkSection[] sections = chunk.getSections();
+ 
+-                if (chunksection != Chunk.a && chunksection.d()) {
+-                    int j1 = chunksection.getYPosition();
++            for (int sectionIndex = 0; sectionIndex < 16; ++sectionIndex) {
++                ChunkSection section = sections[sectionIndex];
++                if (section == null || section.tickingList.size() == 0) {
++                    continue;
++                }
  
 -                    for (int k1 = 0; k1 < i; ++k1) {
 -                        BlockPosition blockposition2 = this.a(j, j1, k, 15);
-+            int toTick = i << 4; // i * 16
++                int yPos = sectionIndex << 4;
  
 -                        gameprofilerfiller.enter("randomTick");
 -                        IBlockData iblockdata = chunksection.getType(blockposition2.getX() - j, blockposition2.getY() - j1, blockposition2.getZ() - k);
-+            gameprofilerfiller.enter("randomTick");
-+            for (int tick = 0; tick < toTick; ++tick) {
-+                int tickingSize = chunk.tickingList.size();
-+                if (tickingSize == 0) {
-+                    break;
-+                }
++                for (int a = 0; a < randomTickSpeed; ++a) {
++                    int tickingBlocks = section.tickingList.size();
++                    int index = this.randomTickRandom.nextInt(16 * 16 * 16);
++                    if (index >= tickingBlocks) {
++                        continue;
++                    }
  
 -                        if (iblockdata.q()) {
 -                            iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
 -                            iblockdata.b(this, blockposition2, this.random);
 -                            iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
 -                        }
-+                int index = this.randomTickRandom.nextInt(tickingSize);
-+                long raw = chunk.tickingList.getRaw(index);
-+                int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
-+                int randomX = location & 15;
-+                int randomY = (location >>> (4 + 4)) & 255;
-+                int randomZ = (location >>> 4) & 15;
++                    long raw = section.tickingList.getRaw(index);
++                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
++                    int randomX = location & 15;
++                    int randomY = ((location >>> (4 + 4)) & 255) | yPos;
++                    int randomZ = (location >>> 4) & 15;
  
 -                        Fluid fluid = iblockdata.getFluid();
-+                BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
-+                IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
++                    BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
++                    IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
  
 -                        if (fluid.h()) {
 -                            fluid.b(this, blockposition2, this.random);
 -                        }
-+                iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
-+                iblockdata.b(this, blockposition2, this.randomTickRandom);
-+                iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
++                    iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
++                    iblockdata.b(this, blockposition2, this.randomTickRandom);
++                    iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
  
 -                        gameprofilerfiller.exit();
 -                    }
--                }
-+                // We drop the fluid tick since LAVA is ALREADY TICKED by the above method.
-+                // TODO CHECK ON UPDATE
++                    // We drop the fluid tick since LAVA is ALREADY TICKED by the above method.
++                    // TODO CHECK ON UPDATE
+                 }
              }
-+
 +            gameprofilerfiller.exit();
 +            timings.chunkTicksBlocks.stopTiming(); // Paper
-+            gameprofilerfiller.exit();
 +            // Paper end
          }
 -        timings.chunkTicksBlocks.stopTiming(); // Paper
