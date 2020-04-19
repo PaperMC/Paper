@@ -27,8 +27,20 @@ This was very non deterministic. This change will ensure every plugin
 receives a deterministic result, and should no longer require 1 tick
 delays anymore.
 
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index e19342eb89..cc588d6f35 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 .printStackTrace();
+             return;
+         }
++        if (entity instanceof EntityPlayer && !((EntityPlayer) entity).sentListPacket) return; // Delay adding to tracker until after list packets
+         // Paper end
+         if (!(entity instanceof EntityComplexPart)) {
+             if (!(entity instanceof EntityLightning)) {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 7403be0b2..e737381b3 100644
+index 7403be0b25..c2850d50d6 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -44,25 +56,13 @@ index 7403be0b2..e737381b3 100644
          PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
          cserver.getPluginManager().callEvent(playerJoinEvent);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-                 continue;
-             }
- 
--            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
-+            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer1}));
+             entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
          }
          entityplayer.sentListPacket = true;
++        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
          // CraftBukkit end
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
  
-         // CraftBukkit start - Only add if the player wasn't moved in the event
-         if (entityplayer.world == worldserver && !worldserver.getPlayers().contains(entityplayer)) {
--            worldserver.addPlayerJoin(entityplayer);
--            this.server.getBossBattleCustomData().a(entityplayer);
-+            //worldserver.addPlayerJoin(entityplayer); // Paper - moved up
-+            //this.server.getBossBattleCustomData().a(entityplayer); // Paper - moved up - if mapping changes, update above
-         }
- 
-         worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
+         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
              playerconnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
          }
