@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Apr 2020 00:05:46 -0400
+Subject: [PATCH] Fix Longstanding Broken behavior of PlayerJoinEvent
+
+For years, plugin developers have had to delay many things they do
+inside of the PlayerJoinEvent by 1 tick to make it actually work.
+
+This all boiled down to 1 reason why: The event fired before the
+player was fully ready and joined to the world!
+
+Additionally, if that player logged out on a vehicle, the event
+fired before the vehicle was even loaded, so that plugins had no
+access to the vehicle during this event either.
+
+This change finally fixes this issue, fully preparing the player
+into the world as a fully ready entity, vehicle included.
+
+There should be no plugins that break because of this change, but might
+improve consistency with other plugins instead.
+
+For example, if 2 plugins listens to this event, and the first one
+teleported the player in the event, then the 2nd plugin actually
+would be getting a valid player!
+
+This was very non deterministic. This change will ensure every plugin
+receives a deterministic result, and should no longer require 1 tick
+delays anymore.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 72ca7f706..3dae96b66 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         this.j.put(entityplayer.getUniqueID(), entityplayer);
+         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+ 
++        // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
++        worldserver.addPlayerJoin(entityplayer);
++        this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
++        mountSavedVehicle(entityplayer, worldserver, nbttagcompound);
++        // Paper end
+         // CraftBukkit start
+         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
+         cserver.getPluginManager().callEvent(playerJoinEvent);
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+                 continue;
+             }
+ 
+-            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
++            entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer1}));
+         }
+         entityplayer.sentListPacket = true;
+         // CraftBukkit end
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+ 
+         // CraftBukkit start - Only add if the player wasn't moved in the event
+         if (entityplayer.world == worldserver && !worldserver.getPlayers().contains(entityplayer)) {
+-            worldserver.addPlayerJoin(entityplayer);
+-            this.server.getBossBattleCustomData().a(entityplayer);
++            //worldserver.addPlayerJoin(entityplayer); // Paper - moved up
++            //this.server.getBossBattleCustomData().a(entityplayer); // Paper - moved up - if mapping changes, update above
+         }
+ 
+         worldserver = server.getWorldServer(entityplayer.dimension);  // CraftBukkit - Update in case join event changed it
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             playerconnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
+         }
+ 
++        // Paper start - move vehicle into method so it can be called above - short circuit around that code
++        onPlayerJoinFinish(entityplayer, worldserver, s1);
++    }
++    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
++        // Paper end
+         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
+             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
+             // CraftBukkit start
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             }
+         }
+ 
++        // Paper start
++    }
++    public void onPlayerJoinFinish(EntityPlayer entityplayer, WorldServer worldserver, String s1) {
++        // Paper end
+         entityplayer.syncInventory();
+         // Paper start - Add to collideRule team if needed
+         final Scoreboard scoreboard = this.getServer().getWorldServer(DimensionManager.OVERWORLD).getScoreboard();
+--
