@@ -1,4 +1,4 @@
-From 10e05a26c3962896fd2bba8a9cc939c59c668093 Mon Sep 17 00:00:00 2001
+From 0467c06a3ef19731b946d4240eb9ab19b22de245 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Wed, 15 Apr 2020 18:08:53 -0700
 Subject: [PATCH] Optimise entity hard collision checking
@@ -11,10 +11,10 @@ Less crammed entities are likely to show significantly less benefit.
 Effectively, this patch optimises crammed entity situations.
 
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 719c6f3e..d745eae4 100644
+index 8695845445..32c342d313 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -92,6 +92,54 @@ public class Chunk implements IChunkAccess {
+@@ -90,6 +90,54 @@ public class Chunk implements IChunkAccess {
      private final int[] inventoryEntityCounts = new int[16];
      // Paper end
  
@@ -69,7 +69,7 @@ index 719c6f3e..d745eae4 100644
      public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage, ChunkConverter chunkconverter, TickList<Block> ticklist, TickList<FluidType> ticklist1, long i, @Nullable ChunkSection[] achunksection, @Nullable Consumer<Chunk> consumer) {
          this.sections = new ChunkSection[16];
          this.e = Maps.newHashMap();
-@@ -539,7 +587,7 @@ public class Chunk implements IChunkAccess {
+@@ -525,7 +573,7 @@ public class Chunk implements IChunkAccess {
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
          this.entities.add(entity); // Paper - per chunk entity list
@@ -78,7 +78,7 @@ index 719c6f3e..d745eae4 100644
          // Paper start
          if (entity instanceof EntityItem) {
              itemCounts[k]++;
-@@ -576,7 +624,7 @@ public class Chunk implements IChunkAccess {
+@@ -562,7 +610,7 @@ public class Chunk implements IChunkAccess {
              entity.entitySlice = null;
              entity.inChunk = false;
          }
@@ -88,7 +88,7 @@ index 719c6f3e..d745eae4 100644
          }
          if (entity instanceof EntityItem) {
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9cb4e5a1..96a47dd1 100644
+index 9cb4e5a1e6..96a47dd1c2 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -210,6 +210,40 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -133,7 +133,7 @@ index 9cb4e5a1..96a47dd1 100644
          this.id = Entity.entityCount.incrementAndGet();
          this.passengers = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index af10fc36..2887cb14 100644
+index af10fc36e0..2887cb14e4 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
 @@ -847,6 +847,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
@@ -145,7 +145,7 @@ index af10fc36..2887cb14 100644
          return this.children;
      }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index 4157e50e..5135308f 100644
+index 4157e50e4d..5135308fb6 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
 @@ -42,17 +42,26 @@ public interface IEntityAccess {
@@ -178,7 +178,7 @@ index 4157e50e..5135308f 100644
  
              return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 46e19d91..09b03aff 100644
+index d530508b61..1a3c7c148b 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1172,6 +1172,32 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -215,5 +215,5 @@ index 46e19d91..09b03aff 100644
      public List<Entity> getEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super Entity> predicate) {
          this.getMethodProfiler().c("getEntities");
 -- 
-2.25.1.windows.1
+2.25.1
 
