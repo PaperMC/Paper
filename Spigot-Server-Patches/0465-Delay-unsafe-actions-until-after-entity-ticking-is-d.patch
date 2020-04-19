@@ -1,4 +1,4 @@
-From 659e3b03a4d6f5e691a516535bbff7b8bf52aba4 Mon Sep 17 00:00:00 2001
+From 957a9d3302c8eb1888d6c3629bfd47d0a228eeab Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Apr 2020 21:23:42 -0400
 Subject: [PATCH] Delay unsafe actions until after entity ticking is done
@@ -6,7 +6,7 @@ Subject: [PATCH] Delay unsafe actions until after entity ticking is done
 This will help prevent many cases of unregistering entities during entity ticking
 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index cd8266f675..84a3367b87 100644
+index 969c6aadf6..2ab24cc772 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -60,6 +60,16 @@ public class WorldServer extends World {
@@ -26,7 +26,7 @@ index cd8266f675..84a3367b87 100644
      private final MinecraftServer server;
      private final WorldNBTStorage dataManager;
      public boolean savingDisabled;
-@@ -519,6 +529,16 @@ public class WorldServer extends World {
+@@ -517,6 +527,16 @@ public class WorldServer extends World {
              timings.entityTick.stopTiming(); // Spigot
  
              this.tickingEntities = false;
@@ -40,14 +40,14 @@ index cd8266f675..84a3367b87 100644
 +            }
 +            this.afterEntityTickingTasks.clear();
 +            // Paper end
-             this.getMinecraftServer().midTickLoadChunks(); // Paper
  
              try (co.aikar.timings.Timing ignored = this.timings.newEntities.startTiming()) { // Paper - timings
+             while ((entity = (Entity) this.entitiesToAdd.poll()) != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 1fbb1344fc..f56131e3a5 100644
+index 1e40991348..233d21d302 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2469,7 +2469,7 @@ public class CraftWorld implements World {
+@@ -2457,7 +2457,7 @@ public class CraftWorld implements World {
  
          CompletableFuture<Chunk> ret = new CompletableFuture<>();
          this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, (net.minecraft.server.Chunk chunk) -> {
@@ -57,5 +57,5 @@ index 1fbb1344fc..f56131e3a5 100644
  
          return ret;
 -- 
-2.25.1
+2.26.0
 

@@ -1,4 +1,4 @@
-From 5895b7d41d8065551cc27a225ccf2c5494d3b491 Mon Sep 17 00:00:00 2001
+From e65ed0fb794bfbfb493d1deb26bf7f020317f2c3 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Apr 2020 04:36:11 -0400
 Subject: [PATCH] Fix Chunk Post Processing deadlock risk
@@ -25,18 +25,10 @@ This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index ba6bdc40a..a72f821f2 100644
+index d1c235b166..734c039be2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -938,6 +938,7 @@ public class ChunkProviderServer extends IChunkProvider {
-                         // we do not want to use this.executeNext as that also processes chunk loads and might count against task counter.
-                         // We also have already ticked the distance manager above too.
-                         if (server.chunksTasksRan < 200 && now - lastChunkTask > 100000 && super.executeNext()) {
-+                            ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
-                             ChunkProviderServer.this.lightEngine.queueUpdate();
-                             server.chunksTasksRan++;
-                             lastChunkTask = now;
-@@ -961,7 +962,11 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -926,7 +926,11 @@ public class ChunkProviderServer extends IChunkProvider {
                  return true;
              } else {
                  ChunkProviderServer.this.lightEngine.queueUpdate();
@@ -50,10 +42,10 @@ index ba6bdc40a..a72f821f2 100644
          } finally {
              playerChunkMap.callbackExecutor.run();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c38d31faf..e19342eb8 100644
+index a6c19c247b..9cbe9a8677 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -92,6 +92,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -90,6 +90,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          @Override
          public void execute(Runnable runnable) {
              if (queued != null) {
@@ -61,7 +53,7 @@ index c38d31faf..e19342eb8 100644
                  throw new IllegalStateException("Already queued");
              }
              queued = runnable;
-@@ -108,6 +109,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -106,6 +107,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      };
      // CraftBukkit end
  
@@ -70,7 +62,7 @@ index c38d31faf..e19342eb8 100644
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
-@@ -1002,7 +1005,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -943,7 +946,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return Either.left(chunk);
              });
          }, (runnable) -> {

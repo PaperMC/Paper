@@ -1,4 +1,4 @@
-From dbdeade181e9720106c3ac60c465319597d3518a Mon Sep 17 00:00:00 2001
+From 5445542e29db6c275996d258f74416247a8c82ab Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Apr 2020 03:56:07 -0400
 Subject: [PATCH] Implement Chunk Priority / Urgency System for World Gen
@@ -16,7 +16,7 @@ lots of chunks already.
 This massively reduces the lag spikes from sync chunk gens.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index bacfc4cba6..f741a034e8 100644
+index 1dcd0980ec..a04ece676a 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -227,6 +227,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -197,10 +197,10 @@ index 9f8818c2d4..a9a2ce3d3f 100644
  
      private void d(int i) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 92c9ab43d7..c38d31fafe 100644
+index e1e4ea793a..a6c19c247b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -324,6 +324,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -279,6 +279,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          List<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> list = Lists.newArrayList();
          int j = chunkcoordintpair.x;
          int k = chunkcoordintpair.z;
@@ -208,7 +208,7 @@ index 92c9ab43d7..c38d31fafe 100644
  
          for (int l = -i; l <= i; ++l) {
              for (int i1 = -i; i1 <= i; ++i1) {
-@@ -341,6 +342,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -296,6 +297,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  }
  
                  ChunkStatus chunkstatus = (ChunkStatus) intfunction.apply(j1);
@@ -216,7 +216,7 @@ index 92c9ab43d7..c38d31fafe 100644
                  CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = playerchunk.a(chunkstatus, this);
  
                  list.add(completablefuture);
-@@ -799,23 +801,28 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -740,23 +742,28 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          };
  
          CompletableFuture<NBTTagCompound> chunkSaveFuture = this.world.asyncChunkTaskManager.getChunkSaveFuture(chunkcoordintpair.x, chunkcoordintpair.z);
@@ -250,7 +250,7 @@ index 92c9ab43d7..c38d31fafe 100644
  
          this.world.getMethodProfiler().c(() -> {
              return "chunkGenerate " + chunkstatus.d();
-@@ -843,6 +850,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -784,6 +791,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
          }, (runnable) -> {
@@ -258,7 +258,7 @@ index 92c9ab43d7..c38d31fafe 100644
              this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
          });
      }
-@@ -855,6 +863,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -796,6 +804,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          }));
      }
  
@@ -266,7 +266,7 @@ index 92c9ab43d7..c38d31fafe 100644
      private ChunkStatus a(ChunkStatus chunkstatus, int i) {
          ChunkStatus chunkstatus1;
  
-@@ -979,9 +988,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -920,9 +929,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a(PlayerChunk playerchunk) {
          ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
@@ -280,5 +280,5 @@ index 92c9ab43d7..c38d31fafe 100644
              return either.flatMap((list) -> {
                  Chunk chunk = (Chunk) list.get(list.size() / 2);
 -- 
-2.25.1
+2.26.0
 
