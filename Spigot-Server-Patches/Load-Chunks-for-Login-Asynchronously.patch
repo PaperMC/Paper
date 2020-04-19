@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Apr 2020 04:28:29 -0400
+Subject: [PATCH] Load Chunks for Login Asynchronously
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index e737381b3..83ceb3f99 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         // CraftBukkit start - Better rename detection
+         if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
+             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
+-            s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
++            s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s; // Diff below
+         }
++        String lastKnownName = s; // Paper
+         if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
+         // CraftBukkit end
+ 
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         entityplayer.setYawPitch(loc.getYaw(), loc.getPitch());
+         // Spigot end
+ 
++        // Paper start - async load spawn in chunk
++        WorldServer finalWorldserver = worldserver;
++        worldserver.getChunkProvider().getChunkAtAsynchronously(loc.getBlockX() >> 4, loc.getBlockZ() >> 4, true, (chunk -> {
++            if (networkmanager.isConnected()) {
++                postChunkLoadJoin(entityplayer, finalWorldserver, nbttagcompound, networkmanager, lastKnownName, networkmanager.getSocketAddress().toString());
++            }
++        }));
++    }
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound, NetworkManager networkmanager, String s, String s1) {
++        // Paper end
+         // CraftBukkit - Moved message to after join
+         // PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.locX(), entityplayer.locY(), entityplayer.locZ());
+         WorldData worlddata = worldserver.getWorldData();
+--
