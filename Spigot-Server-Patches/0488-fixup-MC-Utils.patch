@@ -1,0 +1,135 @@
+From 88fead9d04ddda0187d543fb048dc0a688df4a68 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 19 Apr 2020 07:22:41 -0700
+Subject: [PATCH] fixup! MC Utils
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index d01cc71d1..fd84807a5 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -117,7 +117,86 @@ public class ChunkProviderServer extends IChunkProvider {
+         }
+         return (Chunk)this.getChunkAt(x, z, ChunkStatus.FULL, true);
+     }
+-    // Paper
++
++    private long chunkFutureAwaitCounter;
++
++    public void getEntityTickingChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
++        if (Thread.currentThread() != this.serverThread) {
++            this.serverThreadQueue.execute(() -> {
++                ChunkProviderServer.this.getEntityTickingChunkAsync(x, z, onLoad);
++            });
++            return;
++        }
++        this.getChunkFutureAsynchronously(x, z, 31, PlayerChunk::getEntityTickingFuture, onLoad);
++    }
++
++    public void getTickingChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
++        if (Thread.currentThread() != this.serverThread) {
++            this.serverThreadQueue.execute(() -> {
++                ChunkProviderServer.this.getTickingChunkAsync(x, z, onLoad);
++            });
++            return;
++        }
++        this.getChunkFutureAsynchronously(x, z, 32, PlayerChunk::getTickingFuture, onLoad);
++    }
++
++    public void getFullChunkAsync(int x, int z, java.util.function.Consumer<Chunk> onLoad) {
++        if (Thread.currentThread() != this.serverThread) {
++            this.serverThreadQueue.execute(() -> {
++                ChunkProviderServer.this.getFullChunkAsync(x, z, onLoad);
++            });
++            return;
++        }
++        this.getChunkFutureAsynchronously(x, z, 33, PlayerChunk::getFullChunkFuture, onLoad);
++    }
++
++    private void getChunkFutureAsynchronously(int x, int z, int ticketLevel, Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>> futureGet, java.util.function.Consumer<Chunk> onLoad) {
++        if (Thread.currentThread() != this.serverThread) {
++            throw new IllegalStateException();
++        }
++        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
++        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
++        this.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++        this.tickDistanceManager();
++
++        PlayerChunk chunk = this.playerChunkMap.getUpdatingChunk(chunkPos.pair());
++
++        if (chunk == null) {
++            throw new IllegalStateException("Expected playerchunk " + chunkPos + " in world '" + this.world.getWorld().getName() + "'");
++        }
++
++        CompletableFuture<Either<Chunk, PlayerChunk.Failure>> future = futureGet.apply(chunk);
++
++        future.whenCompleteAsync((either, throwable) -> {
++            try {
++                if (throwable != null) {
++                    if (throwable instanceof ThreadDeath) {
++                        throw (ThreadDeath)throwable;
++                    }
++                    MinecraftServer.LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "'", throwable);
++                } else if (either.right().isPresent()) {
++                    MinecraftServer.LOGGER.fatal("Failed to complete future await for chunk " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "': " + either.right().get().toString());
++                }
++
++                try {
++                    if (onLoad != null) {
++                        onLoad.accept(either == null ? null : either.left().orElse(null)); // indicate failure to the callback.
++                    }
++                } catch (Throwable thr) {
++                    if (thr instanceof ThreadDeath) {
++                        throw (ThreadDeath)thr;
++                    }
++                    MinecraftServer.LOGGER.fatal("Load callback for future await failed " + chunkPos.toString() + " in world '" + ChunkProviderServer.this.world.getWorld().getName() + "'", thr);
++                    return;
++                }
++            } finally {
++                // due to odd behaviour with CB unload implementation we need to have these AFTER the load callback.
++                ChunkProviderServer.this.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
++                ChunkProviderServer.this.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
++            }
++        }, this.serverThreadQueue);
++    }
++    // Paper end
+ 
+     // Paper start - rewrite ticklistserver
+     public final boolean isTickingReadyMainThread(BlockPosition pos) {
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index a9a2ce3d3..568fbbd5f 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -262,14 +262,17 @@ public class PlayerChunk {
+         return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
+     }
+ 
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } // Paper - OBFHELPER
+     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
+         return this.tickingFuture;
+     }
+ 
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() { return this.b(); } // Paper - OBFHELPER
+     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
+         return this.entityTickingFuture;
+     }
+ 
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getFullChunkFuture() { return this.c(); } // Paper - OBFHELPER
+     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
+         return this.fullChunkFuture;
+     }
+diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
+index 4b87ca2ec..6e0d0a54a 100644
+--- a/src/main/java/net/minecraft/server/TicketType.java
++++ b/src/main/java/net/minecraft/server/TicketType.java
+@@ -21,6 +21,7 @@ public class TicketType<T> {
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+     public static final TicketType<org.bukkit.plugin.Plugin> PLUGIN_TICKET = a("plugin_ticket", (plugin1, plugin2) -> plugin1.getClass().getName().compareTo(plugin2.getClass().getName())); // CraftBukkit
++    public static final TicketType<Long> FUTURE_AWAIT = a("future_await", Long::compareTo); // Paper
+     public static final TicketType<Integer> ANTIXRAY = a("antixray", Integer::compareTo); // Paper - Anti-Xray
+     public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
+ 
+-- 
+2.26.0
+
