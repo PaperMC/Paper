@@ -113,24 +113,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
     public final CallbackExecutor callbackExecutor = new CallbackExecutor();
     public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
 
-        private Runnable queued;
+        // Paper start - replace impl with recursive safe multi entry queue
+        // it's possible to schedule multiple tasks currently, so it's vital we change this impl
+        // If we recurse into the executor again, we will append to another queue, ensuring task order consistency
+        private java.util.ArrayDeque<Runnable> queued = new java.util.ArrayDeque<>();
 
         @Override
         public void execute(Runnable runnable) {
-            if (queued != null) {
-                throw new IllegalStateException("Already queued");
+            if (queued == null) {
+                queued = new java.util.ArrayDeque<>();
             }
-            queued = runnable;
+            queued.add(runnable);
         }
 
         @Override
         public void run() {
-            Runnable task = queued;
+            if (queued == null) {
+                return;
+            }
+            java.util.ArrayDeque<Runnable> queue = queued;
             queued = null;
-            if (task != null) {
+            Runnable task;
+            while ((task = queue.pollFirst()) != null) {
                 task.run();
             }
         }
+        // Paper end
     };
     // CraftBukkit end
 
