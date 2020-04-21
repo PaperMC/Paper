@@ -1,0 +1,34 @@
+From c002f483dd0b1e1ff710060d73d333c41a9fd844 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 13 Apr 2020 07:31:44 +0100
+Subject: [PATCH] Prevent opening inventories when frozen
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index d16f3880..c59416e1 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1910,7 +1910,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     @Override
+-    protected boolean isFrozen() {
++    public boolean isFrozen() { // Paper - protected > public
+         return super.isFrozen() || (this.playerConnection != null && this.playerConnection.isDisconnected()); // Paper
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 1c88eace..5a79c7f1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -305,6 +305,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     public InventoryView openInventory(Inventory inventory) {
+         if (!(getHandle() instanceof EntityPlayer)) return null;
+         EntityPlayer player = (EntityPlayer) getHandle();
++        if (player.isFrozen()) return null; // Paper
+         Container formerContainer = getHandle().activeContainer;
+ 
+         ITileInventory iinventory = null;
+-- 
+2.25.1.windows.1
+
