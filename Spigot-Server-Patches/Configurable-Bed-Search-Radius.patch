@@ -10,7 +10,7 @@ player at their bed should it of became obstructed.
 Defaults to vanilla 1.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index cea15d50ed..387e0dcb9f 100644
+index cea15d50e..387e0dcb9 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -30,17 +30,17 @@ index cea15d50ed..387e0dcb9f 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
-index 7947563426..06a35629ab 100644
+index 794756342..74e915c21 100644
 --- a/src/main/java/net/minecraft/server/BlockBed.java
 +++ b/src/main/java/net/minecraft/server/BlockBed.java
 @@ -0,0 +0,0 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
  
      public static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int i) {
          EnumDirection enumdirection = (EnumDirection) iworldreader.getType(blockposition).get(BlockBed.FACING);
-+    // Paper start - configurable bed search radius
++        // Paper start - configurable bed search radius
 +        return findSafePosition(entitytypes, (World) iworldreader, enumdirection, blockposition);
 +    }
-+        /*
++/*
          int j = blockposition.getX();
          int k = blockposition.getY();
          int l = blockposition.getZ();
@@ -97,7 +97,7 @@ index 7947563426..06a35629ab 100644
 +                    numIterated++;
 +
 +                    pos = corePosition[index].add(0, h, 0);
-+                    vector = isSafeRespawn(entitytypes, world, pos);
++                    vector = isSafeRespawn(entitytypes, world, pos, 0);
 +                    if (vector.isPresent()) {
 +                        return vector;
 +                    }
@@ -117,20 +117,20 @@ index 7947563426..06a35629ab 100644
 +                        tmpPosition[index] = tmpPosition[index].add(tmpPositionDirection[index].getAdjacentX(), 0, tmpPositionDirection[index].getAdjacentZ());
 +                        pos = tmpPosition[index];
 +
-+                        vector = isSafeRespawn(entitytypes, world, pos);
++                        vector = isSafeRespawn(entitytypes, world, pos, 0);
 +                        if (vector.isPresent()) {
 +                            return vector;
 +                        }
 +                    }
 +                }
 +                switch (h) {
-+                    case -1:
-+                        h = 1;
-+                        break;
 +                    case 0:
 +                        h = -1;
 +                        break;
-+                    case 1:
++                    case -1:
++                        h = -2;
++                        break;
++                    case -2:
 +                        h = Integer.MAX_VALUE;
 +                        break;
 +                }
@@ -144,8 +144,21 @@ index 7947563426..06a35629ab 100644
 +    }
 +    // Paper end
  
-+    protected static Optional<Vec3D> isSafeRespawn(EntityTypes<?> entityTypes, IWorldReader iworldreader, BlockPosition blockPosition) { return a(entityTypes, iworldreader, blockPosition); } // Paper -- obfhelper
-     protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
+-    protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
++    // Paper start -- add maxBelow param
++    protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) { return isSafeRespawn(entitytypes, iworldreader, blockposition, 2); }
++    protected static Optional<Vec3D> isSafeRespawn(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int maxBelow) {
++    // Paper end
          VoxelShape voxelshape = iworldreader.getType(blockposition).getCollisionShape(iworldreader, blockposition);
+ 
+         if (voxelshape.c(EnumDirection.EnumAxis.Y) > 0.4375D) {
+@@ -0,0 +0,0 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+         } else {
+             BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition(blockposition);
+ 
+-            while (blockposition_mutableblockposition.getY() >= 0 && blockposition.getY() - blockposition_mutableblockposition.getY() <= 2 && iworldreader.getType(blockposition_mutableblockposition).getCollisionShape(iworldreader, blockposition_mutableblockposition).isEmpty()) {
++            while (blockposition_mutableblockposition.getY() >= 0 && blockposition.getY() - blockposition_mutableblockposition.getY() <= maxBelow && iworldreader.getType(blockposition_mutableblockposition).getCollisionShape(iworldreader, blockposition_mutableblockposition).isEmpty()) { // Paper -- configurable max distance to search below
+                 blockposition_mutableblockposition.c(EnumDirection.DOWN);
+             }
  
 --
