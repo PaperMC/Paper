@@ -4,36 +4,51 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 96a47dd1c2..96ebe0b226 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.pitch = MathHelper.a(f1, -90.0F, 90.0F) % 360.0F;
+         this.lastYaw = this.yaw;
+         this.lastPitch = this.pitch;
+-        world.getChunkAt((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4); // CraftBukkit
++        if (valid) world.getChunkAt((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4); // CraftBukkit // Paper
+     }
+ 
+     public void setPositionRotation(BlockPosition blockposition, float f, float f1) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 7929fcc800..c3710b73af 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     // CraftBukkit end
+ 
+     public void tick() {
++        if (!this.player.valid) return; // Paper
+         this.syncPosition();
+         this.player.lastX = this.player.locX();
+         this.player.lastY = this.player.locY();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index c2850d50d..d145c4bf1 100644
+index ec45c30dd3..de55423686 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         // CraftBukkit start - Better rename detection
-         if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
-             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
--            s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
-+            s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s; // Diff below
-         }
-+        String lastKnownName = s; // Paper
-         if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
-         // CraftBukkit end
- 
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         entityplayer.setYawPitch(loc.getYaw(), loc.getPitch());
-         // Spigot end
- 
+         this.players.add(entityplayer);
+         this.playersByName.put(entityplayer.getName().toLowerCase(java.util.Locale.ROOT), entityplayer); // Spigot
+         this.j.put(entityplayer.getUniqueID(), entityplayer);
 +        // Paper start - async load spawn in chunk
 +        WorldServer finalWorldserver = worldserver;
 +        worldserver.getChunkProvider().getTickingChunkAsync(loc.getBlockX() >> 4, loc.getBlockZ() >> 4, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
-+            if (networkmanager.isConnected()) {
-+                postChunkLoadJoin(entityplayer, finalWorldserver, nbttagcompound, networkmanager, lastKnownName, networkmanager.getSocketAddress().toString());
-+            }
++            postChunkLoadJoin(entityplayer, finalWorldserver, playerconnection, nbttagcompound, networkmanager.getSocketAddress().toString(), joinMessage);
 +        }));
 +    }
-+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound, NetworkManager networkmanager, String s, String s1) {
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String joinMessage) {
++        if (!entityplayer.playerConnection.networkManager.isConnected()) {
++            return;
++        }
 +        // Paper end
-         // CraftBukkit - Moved message to after join
-         // PlayerList.LOGGER.info("{}[{}] logged in with entity id {} at ({}, {}, {})", entityplayer.getDisplayName().getString(), s1, entityplayer.getId(), entityplayer.locX(), entityplayer.locY(), entityplayer.locZ());
-         WorldData worlddata = worldserver.getWorldData();
+         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+ 
+         // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
 --
