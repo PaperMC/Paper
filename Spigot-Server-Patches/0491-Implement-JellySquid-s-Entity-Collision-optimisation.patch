@@ -1,0 +1,241 @@
+From d82a624eaed07fc8507d4de7176b6e51628d3574 Mon Sep 17 00:00:00 2001
+From: JellySquid <jellysquid+atwork@protonmail.com>
+Date: Wed, 22 Apr 2020 14:58:13 +0200
+Subject: [PATCH] Implement JellySquid's Entity Collision optimisations patch
+
+
+diff --git a/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java b/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java
+new file mode 100644
+index 00000000..8e257e35
+--- /dev/null
++++ b/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java
+@@ -0,0 +1,161 @@
++//Paper start - The methods in this class are used for significantly faster entity collisions
++//Original code by JellySquid, licensed under GNU Lesser General Public License v3.0
++//you can find the original code on https://github.com/jellysquid3/lithium-fabric/tree/1.15.x/fabric (Yarn mappings)
++package me.jellysquid.mods.lithium.common.shapes;
++
++import net.minecraft.server.*;
++import java.util.*;
++
++import java.util.List;
++import java.util.function.Consumer;
++import java.util.stream.Stream;
++import java.util.stream.StreamSupport;
++
++public class LithiumEntityCollisions {
++    /**
++      * [VanillaCopy] CollisionView#getBlockCollisions(Entity, Box)
++      * This is a much, much faster implementation which uses simple collision testing against full-cube block shapes.
++      * Checks against the world border are replaced with our own optimized functions which do not go through the
++      * VoxelShape system.
++     */
++    public static Stream<VoxelShape> getBlockCollisions(ICollisionAccess world, final Entity entity, AxisAlignedBB entityBox) {
++        int minX = MathHelper.floor(entityBox.minX - 1.0E-7D) - 1;
++        int maxX = MathHelper.floor(entityBox.maxX + 1.0E-7D) + 1;
++        int minY = MathHelper.floor(entityBox.minY - 1.0E-7D) - 1;
++        int maxY = MathHelper.floor(entityBox.maxY + 1.0E-7D) + 1;
++        int minZ = MathHelper.floor(entityBox.minZ - 1.0E-7D) - 1;
++        int maxZ = MathHelper.floor(entityBox.maxZ + 1.0E-7D) + 1;
++
++        final VoxelShapeCollision context = entity == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a(entity);
++        final CursorPosition cuboidIt = new CursorPosition(minX, minY, minZ, maxX, maxY, maxZ);
++        final BlockPosition.MutableBlockPosition pos = new BlockPosition.MutableBlockPosition();
++        final VoxelShape entityShape = VoxelShapes.a(entityBox);
++
++        return StreamSupport.stream(new Spliterators.AbstractSpliterator<VoxelShape>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.IMMUTABLE) {
++            boolean skipWorldBorderCheck = entity == null;
++
++            public boolean tryAdvance(Consumer<? super VoxelShape> consumer) {
++                if (!this.skipWorldBorderCheck) {
++                    this.skipWorldBorderCheck = true;
++
++                    WorldBorder border = world.getWorldBorder();
++                    boolean isInsideBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().shrink(1.0E-7D));
++                    boolean isCrossingBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().grow(1.0E-7D));
++                    if (!isInsideBorder && isCrossingBorder) {
++                        consumer.accept(border.a());
++
++                        return true;
++                    }
++                }
++
++                while (cuboidIt.a()) {
++                    int x = cuboidIt.b();
++                    int y = cuboidIt.c();
++                    int z = cuboidIt.d();
++
++                    int edgesHit = cuboidIt.e();
++
++                    if (edgesHit == 3) {
++                        continue;
++                    }
++
++                    IBlockAccess chunk = world.c(x >> 4, z >> 4);
++
++                    if (chunk == null) {
++                        continue;
++                    }
++
++                    pos.setValues(x, y, z);
++
++                    IBlockData state = chunk.getType(pos);
++
++                    if (edgesHit == 1 && !state.f()) {
++                        continue;
++                    }
++
++                    if (edgesHit == 2 && state.getBlock() != Blocks.MOVING_PISTON) {
++                        continue;
++                    }
++
++                    VoxelShape blockShape = state.getCollisionShape(world, pos, context);
++
++                    if (blockShape == VoxelShapes.a()) {
++                        continue;
++                    }
++
++                    if (blockShape == VoxelShapes.b()) {
++                        if (entityBox.a(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
++                            consumer.accept(blockShape.offset(x, y, z));
++
++                            return true;
++                        }
++                    } else {
++                        VoxelShape shape = blockShape.offset(x, y, z);
++
++                        if (VoxelShapes.c(shape, entityShape, OperatorBoolean.AND)) {
++                            consumer.accept(shape);
++                            return true;
++                        }
++                    }
++                }
++                return false;
++            }
++            }, false);
++    }
++    /**
++      * This provides a faster check for seeing if an entity is within the world border as it avoids going through
++      * the slower shape system.
++      * @return True if the {@param box} is fully within the {@param border}, otherwise false.
++      */
++    public static boolean isBoxFullyWithinWorldBorder(WorldBorder border, AxisAlignedBB box) {
++        double wboxMinX = Math.floor(border.c());
++        double wboxMinZ = Math.floor(border.d());
++
++        double wboxMaxX = Math.ceil(border.e());
++        double wboxMaxZ = Math.ceil(border.f());
++
++        return box.minX >= wboxMinX && box.minX < wboxMaxX && box.minZ >= wboxMinZ && box.minZ < wboxMaxZ &&
++            box.maxX >= wboxMinX && box.maxX < wboxMaxX && box.maxZ >= wboxMinZ && box.maxZ < wboxMaxZ;
++    }
++
++    /**
++      * [VanillaCopy] EntityView#getEntityCollisions
++      * Re-implements the function named above without stream code or unnecessary allocations. This can provide a small
++      * boost in some situations (such as heavy entity crowding) and reduces the allocation rate significantly.
++      */
++    public static Stream<VoxelShape> getEntityCollisions(IEntityAccess view, Entity entity, AxisAlignedBB box, Set<Entity> excluded) {
++        if (box.a() < 1.0E-7D) {
++            return Stream.empty();
++
++        }
++        AxisAlignedBB selection = box.grow(1.0E-7D);
++        List<Entity> entities = view.getEntities(entity, selection);
++        List<VoxelShape> shapes = new ArrayList<>();
++
++        for (Entity otherEntity : entities) {
++            if (!excluded.isEmpty() && excluded.contains(otherEntity)) {
++                continue;
++            }
++
++            if (entity != null && entity.isSameVehicle(otherEntity)) {
++                continue;
++            }
++
++            AxisAlignedBB otherEntityBox = otherEntity.au();
++
++            if (otherEntityBox != null && selection.intersects(otherEntityBox)) {
++                shapes.add(VoxelShapes.a(otherEntityBox));
++            }
++
++            if (entity != null) {
++                AxisAlignedBB otherEntityHardBox = entity.j(otherEntity);
++
++                if (otherEntityHardBox != null && selection.intersects(otherEntityHardBox)) {
++                    shapes.add(VoxelShapes.a(otherEntityHardBox));
++                }
++            }
++        }
++
++        return shapes.stream();
++    }
++}
++//Paper end
+diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
+index d1544872..2827a94d 100644
+--- a/src/main/java/net/minecraft/server/ICollisionAccess.java
++++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
+@@ -1,6 +1,8 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.Streams;
++import me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions;
++
+ import java.util.Collections;
+ import java.util.Set;
+ import java.util.Spliterators.AbstractSpliterator;
+@@ -55,7 +57,10 @@ public interface ICollisionAccess extends IBlockAccess {
+     }
+ 
+     default Stream<VoxelShape> b(@Nullable final Entity entity, AxisAlignedBB axisalignedbb) {
+-        int i = MathHelper.floor(axisalignedbb.minX - 1.0E-7D) - 1;
++        //Paper start - Use optimised block collision calculations
++        return LithiumEntityCollisions.getBlockCollisions(this, entity, axisalignedbb);
++        //Paper end
++        /*int i = MathHelper.floor(axisalignedbb.minX - 1.0E-7D) - 1;
+         int j = MathHelper.floor(axisalignedbb.maxX + 1.0E-7D) + 1;
+         int k = MathHelper.floor(axisalignedbb.minY - 1.0E-7D) - 1;
+         int l = MathHelper.floor(axisalignedbb.maxY + 1.0E-7D) + 1;
+@@ -116,6 +121,6 @@ public interface ICollisionAccess extends IBlockAccess {
+ 
+                 return false;
+             }
+-        }, false);
++        }, false);*/
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
+index 5135308f..2bfbf7aa 100644
+--- a/src/main/java/net/minecraft/server/IEntityAccess.java
++++ b/src/main/java/net/minecraft/server/IEntityAccess.java
+@@ -1,6 +1,8 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.Lists;
++import me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions;
++
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Objects;
+@@ -52,6 +54,9 @@ public interface IEntityAccess {
+     // Paper end - optimise hard collision
+ 
+     default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
++        //Paper start - use fast entity collisions
++        return LithiumEntityCollisions.getEntityCollisions(this, entity, axisalignedbb, set);
++        /*
+         if (axisalignedbb.a() < 1.0E-7D) {
+             return Stream.empty();
+         } else {
+@@ -66,6 +71,8 @@ public interface IEntityAccess {
+ 
+             return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
+         }
++         */
++        //Paper end
+     }
+ 
+     @Nullable
+2.23.0.windows.1
+
