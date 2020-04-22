@@ -2329,10 +2329,10 @@ index 0000000000000000000000000000000000000000..9df0006c1a283f77c4d01d9fce9062fc
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
-index 4f60b931a143ebf70a8469913ec445ff13da4d8d..f427953a83c4712dc490bd76e07aaaa0381ff17c 100644
+index 4f60b931a143ebf70a8469913ec445ff13da4d8d..3e90b57b6fd5dcb6cb1325861306e2ff84d0cccb 100644
 --- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
 +++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
-@@ -186,6 +186,7 @@ public class AxisAlignedBB {
+@@ -186,10 +186,12 @@ public class AxisAlignedBB {
          return this.d(vec3d.x, vec3d.y, vec3d.z);
      }
  
@@ -2340,6 +2340,19 @@ index 4f60b931a143ebf70a8469913ec445ff13da4d8d..f427953a83c4712dc490bd76e07aaaa0
      public boolean c(AxisAlignedBB axisalignedbb) {
          return this.a(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.maxY, axisalignedbb.maxZ);
      }
+ 
++    public final boolean intersects(double d0, double d1, double d2, double d3, double d4, double d5) { return a(d0, d1, d2, d3, d4, d5); } // Paper - OBFHELPER
+     public boolean a(double d0, double d1, double d2, double d3, double d4, double d5) {
+         return this.minX < d3 && this.maxX > d0 && this.minY < d4 && this.maxY > d1 && this.minZ < d5 && this.maxZ > d2;
+     }
+@@ -202,6 +204,7 @@ public class AxisAlignedBB {
+         return d0 >= this.minX && d0 < this.maxX && d1 >= this.minY && d1 < this.maxY && d2 >= this.minZ && d2 < this.maxZ;
+     }
+ 
++    public final double getAverageSideLength(){return a();} // Paper - OBFHELPER
+     public double a() {
+         double d0 = this.b();
+         double d1 = this.c();
 diff --git a/src/main/java/net/minecraft/server/BlockAccessAir.java b/src/main/java/net/minecraft/server/BlockAccessAir.java
 index eff6ebcd30b538cbaedaa031a46a59ea956253ba..30cbfc8eac20910aa55951e3dce63862f5a43c37 100644
 --- a/src/main/java/net/minecraft/server/BlockAccessAir.java
@@ -3061,6 +3074,26 @@ index 774a8f543424853be5fc8c0367d734ddf196d7f9..d5f5a51872dfabdbb828b6c20d61893a
      public void b(PacketDataSerializer packetdataserializer) {
          this.a();
          packetdataserializer.writeByte(this.i);
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index f4863852b04c5fa55b79acabe40ce59909b9bbbd..7e01f6a1807f9885a7f4b163ce6bb626d8786a9a 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1033,6 +1033,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+ 
+     }
+ 
++    public final AxisAlignedBB getCollisionBox(){return au();} //Paper - OBFHELPER
+     @Nullable
+     public AxisAlignedBB au() {
+         return null;
+@@ -1842,6 +1843,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
+         return false;
+     }
+ 
++    public final AxisAlignedBB getHardCollisionBox(Entity entity){ return j(entity);}//Paper - OBFHELPER
+     @Nullable
+     public AxisAlignedBB j(Entity entity) {
+         return null;
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
 index fe69161e5b9e69c75696a3434a681d0489f3863e..b40c8d2f83a80bcb8925632a1e7d6bb4cc0caebf 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
@@ -3203,6 +3236,18 @@ index 3b08770801ca072c853ca422212e40c5db35b2d2..0dff023529ba9e44a7406ad6388cad35
 +
      default int h(BlockPosition blockposition) {
          return this.getType(blockposition).h();
+     }
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index 3a1ad2346b4cae833de90dafb716c56e6e2f606d..181661fc8fe9d46cb36cfffac38c58f0d5003192 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -58,6 +58,7 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return this.c != null && this.c.f != null ? this.c.f[enumdirection.ordinal()] : VoxelShapes.a(this.j(iblockaccess, blockposition), enumdirection);
+     }
+ 
++    public final boolean exceedsCube(){ return f();} // Paper - OBFHELPER
+     public boolean f() {
+         return this.c == null || this.c.h;
      }
 diff --git a/src/main/java/net/minecraft/server/IOWorker.java b/src/main/java/net/minecraft/server/IOWorker.java
 index c5658c0779b0e0d51fd4921456b6fef0711d7be3..b90baef0f54bdb8f5ee51cdde149f64e39887ef5 100644
@@ -4222,6 +4267,23 @@ index f82db93f88223ffddc55deec8f21efc5b774d900..75ab9f185b3231113dfa387c956a707b
  
      public static <T> TicketType<T> a(String s, Comparator<T> comparator) {
          return new TicketType<>(s, comparator, 0L);
+diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
+index 143be566c683ae035997f9a4058381a109f3de23..0e30d8c9933dc6595b9715ef6dc99cc8910892cb 100644
+--- a/src/main/java/net/minecraft/server/VoxelShapes.java
++++ b/src/main/java/net/minecraft/server/VoxelShapes.java
+@@ -21,10 +21,12 @@ public final class VoxelShapes {
+     public static final VoxelShape a = create(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+     private static final VoxelShape c = new VoxelShapeArray(new VoxelShapeBitSet(0, 0, 0), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}));
+ 
++    public static final VoxelShape empty() {return a();} // Paper - OBFHELPER
+     public static VoxelShape a() {
+         return VoxelShapes.c;
+     }
+ 
++    public static final VoxelShape fullCube() {return b();} // Paper - OBFHELPER
+     public static VoxelShape b() {
+         return VoxelShapes.b;
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 2e1eabba14a3757d03fd90741651001e78c6322f..2a4fa455ff3065f9b1ad9bcf8d236bbb6f830bc9 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -4286,6 +4348,19 @@ index 2e1eabba14a3757d03fd90741651001e78c6322f..2a4fa455ff3065f9b1ad9bcf8d236bbb
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index 020e5c171a44f8886395849d718efd6f90659bab..3db276f176301ebf15d5a2ba44d0edb5c7ec6097 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -35,6 +35,8 @@ public class WorldBorder {
+         return this.b(entity.locX(), entity.locZ());
+     }
+ 
++    public final VoxelShape asVoxelShape(){ return a();} // Paper - OBFHELPER
++
+     public VoxelShape a() {
+         return this.i.m();
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index e181df6f4d08b88835db7342f97e0b848bcf01ef..4a9132c7016b076ab35b5d66ce81bbd247e1a3ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java

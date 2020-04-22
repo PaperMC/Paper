@@ -25,11 +25,15 @@ index 641a52b968ef04a142b32703b61c8b75643b36a6..0b0c3c681c07cf8506df1b91b1feaf13
      private EntityItemFrame i;
      private ShapeDetectorBlock j;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index d9574a9ace96d8c5666e62a5aed96a67021b91d8..93ae6dcd78e9b786b64fadcb9cd016559fb98535 100644
+index d9574a9ace96d8c5666e62a5aed96a67021b91d8..e810da87977b441cc329066e3cb158ef3bc62a66 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-@@ -253,6 +253,15 @@ public class PacketDataSerializer extends ByteBuf {
-                 CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+@@ -250,9 +250,18 @@ public class PacketDataSerializer extends ByteBuf {
+             if (item.usesDurability() || item.o()) {
+                 // Spigot start - filter
+                 itemstack = itemstack.cloneItemStack();
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                //CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
                  // Spigot end
                  nbttagcompound = itemstack.getTag();
 +                // Paper start
@@ -44,10 +48,11 @@ index d9574a9ace96d8c5666e62a5aed96a67021b91d8..93ae6dcd78e9b786b64fadcb9cd01655
              }
  
              this.a(nbttagcompound);
-@@ -272,6 +281,16 @@ public class PacketDataSerializer extends ByteBuf {
+@@ -272,7 +281,17 @@ public class PacketDataSerializer extends ByteBuf {
              itemstack.setTag(this.l());
              // CraftBukkit start
              if (itemstack.getTag() != null) {
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
 +                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
 +                if (itemstack.tag.hasKey("SkullOwnerOrig")) {
 +                    NBTTagCompound owner = itemstack.tag.getCompound("SkullOwner");
@@ -58,9 +63,10 @@ index d9574a9ace96d8c5666e62a5aed96a67021b91d8..93ae6dcd78e9b786b64fadcb9cd01655
 +                    itemstack.tag.remove("SkullOwnerOrig");
 +                }
 +                // Paper end
-                 CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
              }
              // CraftBukkit end
+             return itemstack;
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 index 3a1d0deb0dec880d73185690e2a7c769a2731479..1fcbbd698a7e1b9ae3e8b5fa0328b85c43019bea 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
