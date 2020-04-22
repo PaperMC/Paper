@@ -61,9 +61,9 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         double y = direction.getY();
         double z = direction.getZ();
         double magnitude = (double) MathHelper.sqrt(x * x + y * y + z * z);
-        getHandle().dirX = x / magnitude;
-        getHandle().dirY = y / magnitude;
-        getHandle().dirZ = z / magnitude;
+        getHandle().dirX = x / magnitude * 0.1D;
+        getHandle().dirY = y / magnitude * 0.1D;
+        getHandle().dirZ = z / magnitude * 0.1D;
     }
 
     @Override
