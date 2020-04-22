@@ -947,6 +947,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
         this.bD = 0;
     }
 
+    public Reputation getReputation() { return this.fj(); } // Paper - OBFHELPER
     public Reputation fj() {
         return this.by;
     }

@@ -1,9 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.entity.villager.Reputation; // Paper
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps; // Paper
 import java.util.Locale;
 import net.minecraft.server.BlockBed;
 import net.minecraft.server.BlockPosition;
+import java.util.Map; // Paper
+import java.util.UUID; // Paper
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
@@ -124,4 +128,45 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public static VillagerProfession bukkitToNmsProfession(Profession bukkit) {
         return IRegistry.VILLAGER_PROFESSION.get(CraftNamespacedKey.toMinecraft(bukkit.getKey()));
     }
+
+    // Paper start - Add villager reputation API
+    @Override
+    public Reputation getReputation(UUID uniqueId) {
+        net.minecraft.server.Reputation.a rep = getHandle().getReputation().getReputations().get(uniqueId);
+        if (rep == null) {
+            return new Reputation(Maps.newHashMap());
+        }
+
+        return rep.getPaperReputation();
+    }
+
+    @Override
+    public Map<UUID, Reputation> getReputations() {
+        return getHandle().getReputation().getReputations().entrySet()
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getPaperReputation()));
+    }
+
+    @Override
+    public void setReputation(UUID uniqueId, Reputation reputation) {
+        net.minecraft.server.Reputation.a nmsReputation =
+            getHandle().getReputation().getReputations().computeIfAbsent(
+                uniqueId,
+                key -> new net.minecraft.server.Reputation.a()
+            );
+        nmsReputation.assignFromPaperReputation(reputation);
+    }
+
+    @Override
+    public void setReputations(Map<UUID, Reputation> reputations) {
+        for (Map.Entry<UUID, Reputation> entry : reputations.entrySet()) {
+            setReputation(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Override
+    public void clearReputations() {
+        getHandle().getReputation().getReputations().clear();
+    }
+    // Paper end
 }

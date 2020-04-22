@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 public class Reputation {
 
-    private final Map<UUID, Reputation.a> a = Maps.newHashMap();
+    private final Map<UUID, Reputation.a> a = Maps.newHashMap(); public Map<UUID, Reputation.a> getReputations() { return this.a; } // Paper - add getter for reputations
 
     public Reputation() {}
 
@@ -140,11 +140,11 @@ public class Reputation {
         return k > reputationtype.h ? Math.max(reputationtype.h, i) : k;
     }
 
-    static class a {
+    public static class a { // Paper - make public
 
         private final Object2IntMap<ReputationType> a;
 
-        private a() {
+        public a() { // Paper - make public - update CraftVillager setReputation on change
             this.a = new Object2IntOpenHashMap();
         }
 
@@ -198,6 +198,28 @@ public class Reputation {
         public void b(ReputationType reputationtype) {
             this.a.removeInt(reputationtype);
         }
+
+        // Paper start - Add villager reputation API
+        private static final com.destroystokyo.paper.entity.villager.ReputationType[] REPUTATION_TYPES = com.destroystokyo.paper.entity.villager.ReputationType.values();
+        public com.destroystokyo.paper.entity.villager.Reputation getPaperReputation() {
+            int[] reputation = new int[REPUTATION_TYPES.length];
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE.ordinal()] = a.getOrDefault(ReputationType.MAJOR_NEGATIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE.ordinal()] = a.getOrDefault(ReputationType.MAJOR_POSITIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE.ordinal()] = a.getOrDefault(ReputationType.MINOR_NEGATIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE.ordinal()] = a.getOrDefault(ReputationType.MINOR_POSITIVE, 0);
+            reputation[com.destroystokyo.paper.entity.villager.ReputationType.TRADING.ordinal()] = a.getOrDefault(ReputationType.TRADING, 0);
+            return com.destroystokyo.paper.entity.villager.ReputationConstructor.construct(reputation);
+        }
+
+        public void assignFromPaperReputation(com.destroystokyo.paper.entity.villager.Reputation rep) {
+            int val;
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE)) != 0) this.a.put(ReputationType.MAJOR_NEGATIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE)) != 0) this.a.put(ReputationType.MAJOR_POSITIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE)) != 0) this.a.put(ReputationType.MINOR_NEGATIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE)) != 0) this.a.put(ReputationType.MINOR_POSITIVE, val);
+            if ((val = rep.getReputation(com.destroystokyo.paper.entity.villager.ReputationType.TRADING)) != 0) this.a.put(ReputationType.TRADING, val);
+        }
+        // Paper end
     }
 
     static class b {
