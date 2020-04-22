@@ -24,7 +24,7 @@ public interface Messenger {
     /**
      * Represents the largest size that a Plugin Channel may be.
      */
-    public static final int MAX_CHANNEL_SIZE = 32;
+    public static final int MAX_CHANNEL_SIZE = 64;
 
     /**
      * Checks if the specified channel is a reserved name.
