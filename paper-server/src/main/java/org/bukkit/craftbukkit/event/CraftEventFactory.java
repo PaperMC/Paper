@@ -2125,4 +2125,12 @@ public class CraftEventFactory {
         return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
     }
     // Paper end - WitchReadyPotionEvent
+
+    // Paper start
+    public static boolean handleBlockFailedDispenseEvent(ServerLevel serverLevel, BlockPos pos) {
+        org.bukkit.block.Block block = CraftBlock.at(serverLevel, pos);
+        io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.BlockFailedDispenseEvent(block);
+        return event.callEvent();
+    }
+    // Paper end
 }
