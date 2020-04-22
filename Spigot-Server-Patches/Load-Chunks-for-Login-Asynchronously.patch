@@ -17,6 +17,18 @@ index 96a47dd1c2..96ebe0b226 100644
      }
  
      public void setPositionRotation(BlockPosition blockposition, float f, float f1) {
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 686fd4cbad..84c6e5b614 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public boolean joining = true;
+     public boolean sentListPacket = false;
+     public boolean supressTrackerForLogin = false; // Paper
++    public boolean didPlayerJoinEvent = false; // Paper
+     public Integer clientViewDistance;
+     // CraftBukkit end
+     public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 7929fcc800..c3710b73af 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -30,7 +42,7 @@ index 7929fcc800..c3710b73af 100644
          this.player.lastX = this.player.locX();
          this.player.lastY = this.player.locY();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ec45c30dd3..de55423686 100644
+index ec45c30dd3..ddecbc0a28 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -39,16 +51,56 @@ index ec45c30dd3..de55423686 100644
          this.j.put(entityplayer.getUniqueID(), entityplayer);
 +        // Paper start - async load spawn in chunk
 +        WorldServer finalWorldserver = worldserver;
-+        worldserver.getChunkProvider().getTickingChunkAsync(loc.getBlockX() >> 4, loc.getBlockZ() >> 4, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
++        int chunkX = loc.getBlockX() >> 4;
++        int chunkZ = loc.getBlockZ() >> 4;
++        worldserver.getChunkProvider().getTickingChunkAsync(chunkX, chunkZ, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
 +            postChunkLoadJoin(entityplayer, finalWorldserver, playerconnection, nbttagcompound, networkmanager.getSocketAddress().toString(), joinMessage);
 +        }));
++        // boost the priorities
++        worldserver.asyncChunkTaskManager.raisePriority(chunkX, chunkZ, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
++        for (int cx = -1; cx <= 1; cx++) {
++            for (int cz = -1; cz <= 1; cz++) {
++                if (cx == 0 && cz == 0) continue;
++                // we have to directly request it otherwise the task won't be started yet to boost priority
++                worldserver.getChunkProvider().getFullChunkAsync(chunkX + cx, chunkZ + cz, (c) -> {});
++                worldserver.asyncChunkTaskManager.raisePriority(chunkX + cx, chunkZ + cz, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
++            }
++        }
++
 +    }
 +    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String joinMessage) {
 +        if (!entityplayer.playerConnection.networkManager.isConnected()) {
 +            return;
 +        }
++        entityplayer.didPlayerJoinEvent = true;
 +        // Paper end
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
  
          // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+ 
+     protected void savePlayerFile(EntityPlayer entityplayer) {
+         if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
++        if (!entityplayer.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
+         this.playerFileData.save(entityplayer);
+         ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
+ 
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(entityplayer, org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
+ 
+         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
+-        cserver.getPluginManager().callEvent(playerQuitEvent);
++        if (entityplayer.didPlayerJoinEvent) cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
+         if (server.isMainThread()) entityplayer.playerTick();// SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
+         // CraftBukkit end
+ 
+-        return playerQuitEvent.getQuitMessage(); // CraftBukkit
++        return entityplayer.didPlayerJoinEvent ? playerQuitEvent.getQuitMessage() : null; // CraftBukkit // Paper - don't print quit if we never printed join
+     }
+ 
+     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
 --
