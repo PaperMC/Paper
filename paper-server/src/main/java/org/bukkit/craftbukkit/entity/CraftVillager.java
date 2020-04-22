@@ -21,6 +21,13 @@ import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityTransformEvent;
 
+// Paper start
+import com.destroystokyo.paper.entity.villager.Reputation;
+import com.google.common.collect.Maps;
+import java.util.Map;
+import java.util.UUID;
+// Paper end
+
 public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.Villager entity) {
@@ -299,4 +306,45 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return this.getKey().hashCode();
         }
     }
+
+    // Paper start - Add villager reputation API
+    @Override
+    public Reputation getReputation(UUID uniqueId) {
+        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().gossips.get(uniqueId);
+        if (rep == null) {
+            return new Reputation(new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class));
+        }
+
+        return rep.getPaperReputation();
+    }
+
+    @Override
+    public Map<UUID, Reputation> getReputations() {
+        return getHandle().getGossips().gossips.entrySet()
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getPaperReputation()));
+    }
+
+    @Override
+    public void setReputation(UUID uniqueId, Reputation reputation) {
+        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips nmsReputation =
+            getHandle().getGossips().gossips.computeIfAbsent(
+                uniqueId,
+                key -> new net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips()
+            );
+        nmsReputation.assignFromPaperReputation(reputation);
+    }
+
+    @Override
+    public void setReputations(Map<UUID, Reputation> reputations) {
+        for (Map.Entry<UUID, Reputation> entry : reputations.entrySet()) {
+            setReputation(entry.getKey(), entry.getValue());
+        }
+    }
+
+    @Override
+    public void clearReputations() {
+        getHandle().getGossips().gossips.clear();
+    }
+    // Paper end
 }
