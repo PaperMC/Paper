@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 23 Apr 2020 01:36:39 -0400
+Subject: [PATCH] Don't fire BlockFade on worldgen threads
+
+Caused a deadlock
+
+diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
+index b41de95a63..9e501514f3 100644
+--- a/src/main/java/net/minecraft/server/BlockFire.java
++++ b/src/main/java/net/minecraft/server/BlockFire.java
+@@ -0,0 +0,0 @@ public class BlockFire extends Block {
+     @Override
+     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+         // CraftBukkit start
++        if (!(generatoraccess instanceof WorldServer)) return this.canPlace(iblockdata, generatoraccess, blockposition) ? (IBlockData) this.a((IBlockAccess) generatoraccess, blockposition).set(BlockFire.AGE, iblockdata.get(BlockFire.AGE)) : Blocks.AIR.getBlockData(); // Paper - don't fire events in world generation
+         if (!iblockdata.canPlace(generatoraccess, blockposition)) {
+             CraftBlockState blockState = CraftBlockState.getBlockState(generatoraccess, blockposition);
+             blockState.setData(Blocks.AIR.getBlockData());
+--
