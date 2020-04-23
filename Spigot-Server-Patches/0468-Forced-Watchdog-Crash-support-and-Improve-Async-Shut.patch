@@ -1,4 +1,4 @@
-From 9366f4f3f725418e1e9533904d8eeda8fe4699a3 Mon Sep 17 00:00:00 2001
+From e8380a57b97e6c5ebbc79be3181abeeb462a3b13 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 12 Apr 2020 15:50:48 -0400
 Subject: [PATCH] Forced Watchdog Crash support and Improve Async Shutdown
@@ -61,7 +61,7 @@ index 1ef7890da5..e62ca0543f 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7bfadb35d2..f68494b030 100644
+index 7bfadb35d2..1086d1caac 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -144,6 +144,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -121,21 +121,20 @@ index 7bfadb35d2..f68494b030 100644
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-@@ -938,6 +956,13 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -938,6 +956,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a((CrashReport) null);
              }
          } catch (Throwable throwable) {
 +            // Paper start
 +            if (throwable instanceof ThreadDeath) {
 +                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable);
-+                isThreadDeath = true;
 +                return;
 +            }
 +            // Paper end
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              // Spigot Start
              if ( throwable.getCause() != null )
-@@ -969,14 +994,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -969,14 +993,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -153,7 +152,7 @@ index 7bfadb35d2..f68494b030 100644
              }
  
          }
-@@ -1027,6 +1052,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1027,6 +1051,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
      protected TickTask postToMainThread(Runnable runnable) {
