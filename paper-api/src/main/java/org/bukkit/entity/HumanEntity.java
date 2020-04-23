@@ -325,6 +325,16 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getExpToLevel();
 
     /**
+     * Gets the current cooldown for a player's attack.
+     *
+     * This is used to calculate damage, with 1.0 representing a fully charged
+     * attack and 0.0 representing a non-charged attack
+     *
+     * @return A float between 0.0-1.0 representing the progress of the charge
+     */
+    public float getAttackCooldown();
+
+    /**
      * Discover a recipe for this player such that it has not already been
      * discovered. This method will add the key's associated recipe to the
      * player's recipe book.
