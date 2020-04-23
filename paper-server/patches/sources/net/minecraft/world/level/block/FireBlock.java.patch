@@ -21,12 +21,13 @@
  
  public class FireBlock extends BaseFireBlock {
  
-@@ -100,7 +107,24 @@
+@@ -100,7 +107,25 @@
  
      @Override
      protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
 -        return this.canSurvive(state, world, pos) ? this.getStateWithAge(world, pos, (Integer) state.getValue(FireBlock.AGE)) : Blocks.AIR.defaultBlockState();
 +        // CraftBukkit start
++        if (!(world instanceof ServerLevel)) return this.canSurvive(state, world, pos) ? (BlockState) this.getStateWithAge(world, pos, (Integer) state.getValue(FireBlock.AGE)) : Blocks.AIR.defaultBlockState(); // Paper - don't fire events in world generation
 +        if (!this.canSurvive(state, world, pos)) {
 +            // Suppress during worldgen
 +            if (!(world instanceof Level world1)) {
@@ -42,12 +43,12 @@
 +                return blockState.getHandle();
 +            }
 +        }
-+        return this.getStateWithAge(world, pos, (Integer) state.getValue(FireBlock.AGE));
++        return this.getStateWithAge(world, pos, (Integer) state.getValue(FireBlock.AGE)); // Paper - don't fire events in world generation; diff on change, see "don't fire events in world generation"
 +        // CraftBukkit end
      }
  
      @Override
-@@ -149,7 +173,7 @@
+@@ -149,7 +174,7 @@
          world.scheduleTick(pos, (Block) this, FireBlock.getFireTickDelay(world.random));
          if (world.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
              if (!state.canSurvive(world, pos)) {
@@ -56,7 +57,7 @@
              }
  
              BlockState iblockdata1 = world.getBlockState(pos.below());
-@@ -157,7 +181,7 @@
+@@ -157,7 +182,7 @@
              int i = (Integer) state.getValue(FireBlock.AGE);
  
              if (!flag && world.isRaining() && this.isNearRain(world, pos) && random.nextFloat() < 0.2F + (float) i * 0.03F) {
@@ -65,7 +66,7 @@
              } else {
                  int j = Math.min(15, i + random.nextInt(3) / 2);
  
-@@ -171,14 +195,14 @@
+@@ -171,14 +196,14 @@
                          BlockPos blockposition1 = pos.below();
  
                          if (!world.getBlockState(blockposition1).isFaceSturdy(world, blockposition1, Direction.UP) || i > 3) {
@@ -82,7 +83,7 @@
                          return;
                      }
                  }
-@@ -186,12 +210,14 @@
+@@ -186,12 +211,14 @@
                  boolean flag1 = world.getBiome(pos).is(BiomeTags.INCREASED_FIRE_BURNOUT);
                  int k = flag1 ? -50 : 0;
  
@@ -103,7 +104,7 @@
                  BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
  
                  for (int l = -1; l <= 1; ++l) {
-@@ -217,7 +243,15 @@
+@@ -217,7 +244,15 @@
                                      if (i2 > 0 && random.nextInt(k1) <= i2 && (!world.isRaining() || !this.isNearRain(world, blockposition_mutableblockposition))) {
                                          int j2 = Math.min(15, i + random.nextInt(5) / 4);
  
@@ -120,7 +121,7 @@
                                      }
                                  }
                              }
-@@ -241,24 +275,47 @@
+@@ -241,24 +276,47 @@
          return state.hasProperty(BlockStateProperties.WATERLOGGED) && (Boolean) state.getValue(BlockStateProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(state.getBlock());
      }
  
@@ -177,7 +178,7 @@
              }
          }
  
-@@ -310,9 +367,11 @@
+@@ -310,9 +368,11 @@
      }
  
      @Override
