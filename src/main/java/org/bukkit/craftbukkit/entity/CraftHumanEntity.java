@@ -491,6 +491,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
+    public float getAttackCooldown() {
+        return getHandle().s(0.5f);
+    }
+
+    @Override
     public boolean hasCooldown(Material material) {
         Preconditions.checkArgument(material != null, "material");
 
