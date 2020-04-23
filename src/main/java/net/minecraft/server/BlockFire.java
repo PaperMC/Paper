@@ -73,6 +73,7 @@ public class BlockFire extends BlockFireAbstract {
     @Override
     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
         // CraftBukkit start
+        if (!(generatoraccess instanceof WorldServer)) return this.canPlace(iblockdata, generatoraccess, blockposition) ? (IBlockData) this.a(generatoraccess, blockposition, (Integer) iblockdata.get(BlockFire.AGE)) : Blocks.AIR.getBlockData(); // Paper - don't fire events in world generation
         if (!this.canPlace(iblockdata, generatoraccess, blockposition)) {
             // Suppress during worldgen
             if (!(generatoraccess instanceof World)) {
@@ -88,7 +89,7 @@ public class BlockFire extends BlockFireAbstract {
                 return blockState.getHandle();
             }
         }
-        return this.a(generatoraccess, blockposition, (Integer) iblockdata.get(BlockFire.AGE));
+        return this.a(generatoraccess, blockposition, (Integer) iblockdata.get(BlockFire.AGE)); // Paper - diff on change, see "don't fire events in world generation"
         // CraftBukkit end
     }
 
