@@ -9,9 +9,11 @@ Subject: [PATCH] Optimize Hoppers
   However, pushes do not exhibit the same behavior, so this is not something plugins could of been relying on.
 * Add option (Default on) to cooldown hoppers when they fail to move an item due to full inventory
 * Skip subsequent InventoryMoveItemEvents if a plugin does not use the item after first event fire for an iteration
+* Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
+* Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index f8d8cb86..3b8488d3 100644
+index f8d8cb8655..3b8488d3ff 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
@@ -28,8 +30,30 @@ index f8d8cb86..3b8488d3 100644
 +        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
 +    }
  }
+diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
+index e1aa272e52..4da26365ec 100644
+--- a/src/main/java/net/minecraft/server/IHopper.java
++++ b/src/main/java/net/minecraft/server/IHopper.java
+@@ -0,0 +0,0 @@ public interface IHopper extends IInventory {
+         return IHopper.c;
+     }
+ 
+-    @Nullable
++    //@Nullable // Paper - it's annoying
+     World getWorld();
++    default BlockPosition getBlockPosition() { return new BlockPosition(getX(), getY(), getZ()); } // Paper
+ 
+-    double z();
++    double z();default double getX() { return z(); } // Paper - OBFHELPER
+ 
+-    double A();
++    double A();default double getY() { return A(); } // Paper - OBFHELPER
+ 
+-    double B();
++    double B();default double getZ() { return B(); } // Paper - OBFHELPER
+ }
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index d953cdef..d6e43313 100644
+index d953cdef14..d6e43313bf 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -0,0 +0,0 @@ public final class ItemStack {
@@ -49,7 +73,7 @@ index d953cdef..d6e43313 100644
              itemstack.d(this.C());
              if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 61fc659e..177d1445 100644
+index 61fc659ed2..177d1445ad 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -61,7 +85,7 @@ index 61fc659e..177d1445 100644
                  this.methodProfiler.a(() -> {
                      return worldserver.getWorldData().getName() + " " + IRegistry.DIMENSION_TYPE.getKey(worldserver.worldProvider.getDimensionManager());
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 95827924..a8e64dfd 100644
+index 958279249f..a8e64dfdab 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -81,7 +105,7 @@ index 95827924..a8e64dfd 100644
              this.world.b(this.position, this);
              if (!this.c.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 907d088c..4afd33a4 100644
+index 907d088c86..280c4e99e8 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -306,4 +330,58 @@ index 907d088c..4afd33a4 100644
                  itemstack = ItemStack.a;
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+     }
+ 
+     public static List<EntityItem> c(IHopper ihopper) {
+-        return (List) ihopper.P_().d().stream().flatMap((axisalignedbb) -> {
+-            return ihopper.getWorld().a(EntityItem.class, axisalignedbb.d(ihopper.z() - 0.5D, ihopper.A() - 0.5D, ihopper.B() - 0.5D), IEntitySelector.a).stream();
+-        }).collect(Collectors.toList());
++        // Paper start - Optimize item suck in. remove streams, restore 1.12 checks. Seriously checking the bowl?!
++        World world = ihopper.getWorld();
++        double d0 = ihopper.getX();
++        double d1 = ihopper.getY();
++        double d2 = ihopper.getZ();
++        AxisAlignedBB bb = new AxisAlignedBB(d0 - 0.5D, d1, d2 - 0.5D, d0 + 0.5D, d1 + 1.5D, d2 + 0.5D);
++        return world.getEntities(EntityItem.class, bb, Entity::isAlive);
++        // Paper end
+     }
+ 
+     @Nullable
+     public static IInventory b(World world, BlockPosition blockposition) {
+-        return a(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D);
++        return a(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, true); // Paper
+     }
+ 
+     @Nullable
+-    public static IInventory a(World world, double d0, double d1, double d2) {
++    public static IInventory a(World world, double d0, double d1, double d2) { return a(world, d0, d1, d2, false); } // Paper - overload to default false
++    public static IInventory a(World world, double d0, double d1, double d2, boolean optimizeEntities) { // Paper
+         Object object = null;
+         BlockPosition blockposition = new BlockPosition(d0, d1, d2);
+         if ( !world.isLoaded( blockposition ) ) return null; // Spigot
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             }
+         }
+ 
+-        if (object == null) {
++        if (object == null && (!optimizeEntities || !org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(block).isOccluding())) { // Paper
+             List<Entity> list = world.getEntities((Entity) null, new AxisAlignedBB(d0 - 0.5D, d1 - 0.5D, d2 - 0.5D, d0 + 0.5D, d1 + 0.5D, d2 + 0.5D), IEntitySelector.d);
+ 
+             if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 568e04faa3..9e161746f2 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return list;
+     }
+ 
+-    @Override
+-    public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
++    public <T extends Entity> List<T> getEntities(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) { return a(oclass, axisalignedbb, predicate); } // Paper - OBFHELPER
++    @Override public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
+         this.getMethodProfiler().c("getEntities");
+         int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
+         int j = MathHelper.f((axisalignedbb.maxX + 2.0D) / 16.0D);
 --
