@@ -1,4 +1,4 @@
-From d3f69fdacc40bcebc991188160a9d2508277bd5e Mon Sep 17 00:00:00 2001
+From 98260d8a7b814a9c1fbdd4002c40e7182e36ecf6 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Apr 2020 03:56:07 -0400
 Subject: [PATCH] Implement Chunk Priority / Urgency System for World Gen
@@ -16,10 +16,10 @@ lots of chunks already.
 This massively reduces the lag spikes from sync chunk gens.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 4af75a95..8d4b227e 100644
+index 5fea6e56d5..bcf59beed6 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -306,6 +306,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -308,6 +308,7 @@ public class ChunkProviderServer extends IChunkProvider {
      }
  
      private long asyncLoadSeqCounter;
@@ -27,7 +27,7 @@ index 4af75a95..8d4b227e 100644
  
      public void getChunkAtAsynchronously(int x, int z, boolean gen, java.util.function.Consumer<Chunk> onComplete) {
          if (Thread.currentThread() != this.serverThread) {
-@@ -463,10 +464,18 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -465,10 +466,18 @@ public class ChunkProviderServer extends IChunkProvider {
              }
  
              gameprofilerfiller.c("getChunkCacheMiss");
@@ -46,7 +46,7 @@ index 4af75a95..8d4b227e 100644
                  this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                  // Paper end
-@@ -476,6 +485,11 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -478,6 +487,11 @@ public class ChunkProviderServer extends IChunkProvider {
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                  this.world.timings.chunkAwait.stopTiming(); // Paper
              } // Paper
@@ -59,7 +59,7 @@ index 4af75a95..8d4b227e 100644
                  return ichunkaccess1;
              }, (playerchunk_failure) -> {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 04b97cec..568fbbd5 100644
+index 04b97cec29..568fbbd5f2 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -43,6 +43,111 @@ public class PlayerChunk {
@@ -197,7 +197,7 @@ index 04b97cec..568fbbd5 100644
  
      private void d(int i) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 92c9ab43..c38d31fa 100644
+index 92c9ab43d7..c38d31fafe 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -324,6 +324,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -280,5 +280,5 @@ index 92c9ab43..c38d31fa 100644
              return either.flatMap((list) -> {
                  Chunk chunk = (Chunk) list.get(list.size() / 2);
 -- 
-2.25.1.windows.1
+2.25.1
 
