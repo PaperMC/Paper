@@ -1,14 +1,12 @@
-From d82a624eaed07fc8507d4de7176b6e51628d3574 Mon Sep 17 00:00:00 2001
-From: JellySquid <jellysquid+atwork@protonmail.com>
+From 223ce2fb4316cf85e08612d817a3c826bb4c37d1 Mon Sep 17 00:00:00 2001
+From: Zoutelande <unconfigured@null.spigotmc.org>
 Date: Wed, 22 Apr 2020 14:58:13 +0200
 Subject: [PATCH] Implement JellySquid's Entity Collision optimisations patch
 
-Original code by JellySquid, licensed under GNU Lesser General Public License v3.0
-you can find the original code on https://github.com/jellysquid3/lithium-fabric/tree/1.15.x/fabric (Yarn mappings)
 
 diff --git a/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java b/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java
 new file mode 100644
-index 00000000..8e257e35
+index 000000000..13500f1cb
 --- /dev/null
 +++ b/src/main/java/me/jellysquid/mods/lithium/common/shapes/LithiumEntityCollisions.java
 @@ -0,0 +1,161 @@
@@ -43,7 +41,7 @@ index 00000000..8e257e35
 +        final VoxelShapeCollision context = entity == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a(entity);
 +        final CursorPosition cuboidIt = new CursorPosition(minX, minY, minZ, maxX, maxY, maxZ);
 +        final BlockPosition.MutableBlockPosition pos = new BlockPosition.MutableBlockPosition();
-+        final VoxelShape entityShape = VoxelShapes.a(entityBox);
++        final VoxelShape entityShape = VoxelShapes.of(entityBox);
 +
 +        return StreamSupport.stream(new Spliterators.AbstractSpliterator<VoxelShape>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.IMMUTABLE) {
 +            boolean skipWorldBorderCheck = entity == null;
@@ -56,24 +54,24 @@ index 00000000..8e257e35
 +                    boolean isInsideBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().shrink(1.0E-7D));
 +                    boolean isCrossingBorder = LithiumEntityCollisions.isBoxFullyWithinWorldBorder(border, entity.getBoundingBox().grow(1.0E-7D));
 +                    if (!isInsideBorder && isCrossingBorder) {
-+                        consumer.accept(border.a());
++                        consumer.accept(border.asVoxelShape());
 +
 +                        return true;
 +                    }
 +                }
 +
-+                while (cuboidIt.a()) {
-+                    int x = cuboidIt.b();
-+                    int y = cuboidIt.c();
-+                    int z = cuboidIt.d();
++                while (cuboidIt.step()) {
++                    int x = cuboidIt.getX();
++                    int y = cuboidIt.getY();
++                    int z = cuboidIt.getZ();
 +
-+                    int edgesHit = cuboidIt.e();
++                    int edgesHit = cuboidIt.getEdgeCoordinatesCount();
 +
 +                    if (edgesHit == 3) {
 +                        continue;
 +                    }
 +
-+                    IBlockAccess chunk = world.c(x >> 4, z >> 4);
++                    IBlockAccess chunk = world.c(x >> 4, z >> 4); // c() = getExistingChunk()
 +
 +                    if (chunk == null) {
 +                        continue;
@@ -83,7 +81,7 @@ index 00000000..8e257e35
 +
 +                    IBlockData state = chunk.getType(pos);
 +
-+                    if (edgesHit == 1 && !state.f()) {
++                    if (edgesHit == 1 && !state.exceedsCube()) {
 +                        continue;
 +                    }
 +
@@ -93,12 +91,12 @@ index 00000000..8e257e35
 +
 +                    VoxelShape blockShape = state.getCollisionShape(world, pos, context);
 +
-+                    if (blockShape == VoxelShapes.a()) {
++                    if (blockShape == VoxelShapes.empty()) {
 +                        continue;
 +                    }
 +
-+                    if (blockShape == VoxelShapes.b()) {
-+                        if (entityBox.a(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
++                    if (blockShape == VoxelShapes.fullcube()) {
++                        if (entityBox.intersects(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
 +                            consumer.accept(blockShape.offset(x, y, z));
 +
 +                            return true;
@@ -106,7 +104,7 @@ index 00000000..8e257e35
 +                    } else {
 +                        VoxelShape shape = blockShape.offset(x, y, z);
 +
-+                        if (VoxelShapes.c(shape, entityShape, OperatorBoolean.AND)) {
++                        if (VoxelShapes.matchesAnywhere(shape, entityShape, OperatorBoolean.AND)) {
 +                            consumer.accept(shape);
 +                            return true;
 +                        }
@@ -122,11 +120,11 @@ index 00000000..8e257e35
 +      * @return True if the {@param box} is fully within the {@param border}, otherwise false.
 +      */
 +    public static boolean isBoxFullyWithinWorldBorder(WorldBorder border, AxisAlignedBB box) {
-+        double wboxMinX = Math.floor(border.c());
-+        double wboxMinZ = Math.floor(border.d());
++        double wboxMinX = Math.floor(border.getBoundWest());
++        double wboxMinZ = Math.floor(border.getBoundNorth());
 +
-+        double wboxMaxX = Math.ceil(border.e());
-+        double wboxMaxZ = Math.ceil(border.f());
++        double wboxMaxX = Math.ceil(border.getBoundEast());
++        double wboxMaxZ = Math.ceil(border.getBoundSouth());
 +
 +        return box.minX >= wboxMinX && box.minX < wboxMaxX && box.minZ >= wboxMinZ && box.minZ < wboxMaxZ &&
 +            box.maxX >= wboxMinX && box.maxX < wboxMaxX && box.maxZ >= wboxMinZ && box.maxZ < wboxMaxZ;
@@ -138,7 +136,7 @@ index 00000000..8e257e35
 +      * boost in some situations (such as heavy entity crowding) and reduces the allocation rate significantly.
 +      */
 +    public static Stream<VoxelShape> getEntityCollisions(IEntityAccess view, Entity entity, AxisAlignedBB box, Set<Entity> excluded) {
-+        if (box.a() < 1.0E-7D) {
++        if (box.getAverageSideLength() < 1.0E-7D) {
 +            return Stream.empty();
 +
 +        }
@@ -155,17 +153,17 @@ index 00000000..8e257e35
 +                continue;
 +            }
 +
-+            AxisAlignedBB otherEntityBox = otherEntity.au();
++            AxisAlignedBB otherEntityBox = otherEntity.getCollisionBox();
 +
 +            if (otherEntityBox != null && selection.intersects(otherEntityBox)) {
-+                shapes.add(VoxelShapes.a(otherEntityBox));
++                shapes.add(VoxelShapes.of(otherEntityBox));
 +            }
 +
 +            if (entity != null) {
-+                AxisAlignedBB otherEntityHardBox = entity.j(otherEntity);
++                AxisAlignedBB otherEntityHardBox = entity.getHardCollisionBox(otherEntity);
 +
 +                if (otherEntityHardBox != null && selection.intersects(otherEntityHardBox)) {
-+                    shapes.add(VoxelShapes.a(otherEntityHardBox));
++                    shapes.add(VoxelShapes.of(otherEntityHardBox));
 +                }
 +            }
 +        }
@@ -173,64 +171,156 @@ index 00000000..8e257e35
 +        return shapes.stream();
 +    }
 +}
-+//Paper end
+diff --git a/src/main/java/net/minecraft/server/AxisAlignedBB.java b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+index 3fdb52007..2b605ac97 100644
+--- a/src/main/java/net/minecraft/server/AxisAlignedBB.java
++++ b/src/main/java/net/minecraft/server/AxisAlignedBB.java
+@@ -197,7 +197,7 @@ public class AxisAlignedBB {
+     public boolean c(AxisAlignedBB axisalignedbb) {
+         return this.a(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.maxY, axisalignedbb.maxZ);
+     }
+-
++    public final boolean intersects(double d0, double d1, double d2, double d3, double d4, double d5) { return a(d0, d1, d2, d3, d4, d5); } // Paper - OBFHELPER
+     public boolean a(double d0, double d1, double d2, double d3, double d4, double d5) {
+         return this.minX < d3 && this.maxX > d0 && this.minY < d4 && this.maxY > d1 && this.minZ < d5 && this.maxZ > d2;
+     }
+@@ -210,7 +210,7 @@ public class AxisAlignedBB {
+     public boolean e(double d0, double d1, double d2) {
+         return d0 >= this.minX && d0 < this.maxX && d1 >= this.minY && d1 < this.maxY && d2 >= this.minZ && d2 < this.maxZ;
+     }
+-
++    public final double getAverageSideLength(){return a();}
+     public double a() {
+         double d0 = this.b();
+         double d1 = this.c();
+diff --git a/src/main/java/net/minecraft/server/CursorPosition.java b/src/main/java/net/minecraft/server/CursorPosition.java
+index af21c809d..e8f5ab164 100644
+--- a/src/main/java/net/minecraft/server/CursorPosition.java
++++ b/src/main/java/net/minecraft/server/CursorPosition.java
+@@ -21,7 +21,7 @@ public class CursorPosition {
+         this.e = i1;
+         this.f = j1;
+     }
+-
++    public final boolean step(){return a();} //Paper - OBFHELPER
+     public boolean a() {
+         if (!this.j) {
+             this.g = this.a;
+@@ -46,19 +46,19 @@ public class CursorPosition {
+             return true;
+         }
+     }
+-
++    public final int getX() {return b();} //Paper - OBFHELPER
+     public int b() {
+         return this.g;
+     }
+-
++    public final int getY() {return c();} //Paper - OBFHELPER
+     public int c() {
+         return this.h;
+     }
+-
++    public final int getZ() {return d();} //Paper - OBFHELPER
+     public int d() {
+         return this.i;
+     }
+-
++    public final int getEdgeCoordinatesCount(){return e();} //Paper - OBFHELPER
+     public int e() {
+         int i = 0;
+ 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index f973466ba..66bad7b0c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1119,7 +1119,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         }
+ 
+     }
+-
++    public final AxisAlignedBB getCollisionBox(){return au();} //Paper - OBFHELPER
+     @Nullable
+     public AxisAlignedBB au() {
+         return null;
+@@ -2036,7 +2036,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public boolean b(EntityHuman entityhuman, EnumHand enumhand) {
+         return false;
+     }
+-
++    public final AxisAlignedBB getHardCollisionBox(Entity entity){ return j(entity);}//Paper - OBFHELPER
+     @Nullable
+     public AxisAlignedBB j(Entity entity) {
+         return null;
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index e821c236b..1a2b322ef 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -72,7 +72,7 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+     public VoxelShape a(IBlockAccess iblockaccess, BlockPosition blockposition, EnumDirection enumdirection) {
+         return this.c != null && this.c.f != null ? this.c.f[enumdirection.ordinal()] : VoxelShapes.a(this.j(iblockaccess, blockposition), enumdirection);
+     }
+-
++    public final boolean exceedsCube(){ return f();} //Paper - OBFHELPER
+     public boolean f() {
+         return this.c == null || this.c.h;
+     }
 diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
-index d1544872..2827a94d 100644
+index d15448729..98853e88a 100644
 --- a/src/main/java/net/minecraft/server/ICollisionAccess.java
 +++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -1,6 +1,8 @@
+@@ -1,6 +1,7 @@
  package net.minecraft.server;
  
  import com.google.common.collect.Streams;
-+import me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions;
 +
  import java.util.Collections;
  import java.util.Set;
  import java.util.Spliterators.AbstractSpliterator;
-@@ -55,7 +57,10 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -55,7 +56,10 @@ public interface ICollisionAccess extends IBlockAccess {
      }
  
      default Stream<VoxelShape> b(@Nullable final Entity entity, AxisAlignedBB axisalignedbb) {
 -        int i = MathHelper.floor(axisalignedbb.minX - 1.0E-7D) - 1;
 +        //Paper start - Use optimised block collision calculations
-+        return LithiumEntityCollisions.getBlockCollisions(this, entity, axisalignedbb);
-+        //Paper end
++        return me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions.getBlockCollisions(this, entity, axisalignedbb);
++
 +        /*int i = MathHelper.floor(axisalignedbb.minX - 1.0E-7D) - 1;
          int j = MathHelper.floor(axisalignedbb.maxX + 1.0E-7D) + 1;
          int k = MathHelper.floor(axisalignedbb.minY - 1.0E-7D) - 1;
          int l = MathHelper.floor(axisalignedbb.maxY + 1.0E-7D) + 1;
-@@ -116,6 +121,6 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -116,6 +120,7 @@ public interface ICollisionAccess extends IBlockAccess {
  
                  return false;
              }
 -        }, false);
 +        }, false);*/
++        //Paper end
      }
  }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index 5135308f..2bfbf7aa 100644
+index 5135308fb..073abb58b 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -1,6 +1,8 @@
+@@ -1,6 +1,7 @@
  package net.minecraft.server;
  
  import com.google.common.collect.Lists;
-+import me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions;
 +
  import java.util.Iterator;
  import java.util.List;
  import java.util.Objects;
-@@ -52,6 +54,9 @@ public interface IEntityAccess {
+@@ -52,6 +53,9 @@ public interface IEntityAccess {
      // Paper end - optimise hard collision
  
      default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
 +        //Paper start - use fast entity collisions
-+        return LithiumEntityCollisions.getEntityCollisions(this, entity, axisalignedbb, set);
++        return me.jellysquid.mods.lithium.common.shapes.LithiumEntityCollisions.getEntityCollisions(this, entity, axisalignedbb, set);
 +        /*
          if (axisalignedbb.a() < 1.0E-7D) {
              return Stream.empty();
          } else {
-@@ -66,6 +71,8 @@ public interface IEntityAccess {
+@@ -66,6 +70,8 @@ public interface IEntityAccess {
  
              return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
          }
@@ -239,5 +329,69 @@ index 5135308f..2bfbf7aa 100644
      }
  
      @Nullable
+diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
+index 08c83c62d..802900e34 100644
+--- a/src/main/java/net/minecraft/server/VoxelShapes.java
++++ b/src/main/java/net/minecraft/server/VoxelShapes.java
+@@ -20,11 +20,11 @@ public final class VoxelShapes {
+     });
+     public static final VoxelShape a = create(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+     private static final VoxelShape c = new VoxelShapeArray(new VoxelShapeBitSet(0, 0, 0), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}), new DoubleArrayList(new double[]{0.0D}));
+-
++    public static final VoxelShape empty() {return a();} //Paper - OBFHELPER
+     public static VoxelShape a() {
+         return VoxelShapes.c;
+     }
+-
++    public static final VoxelShape fullcube() {return b();} //Paper - OBFHELPER
+     public static VoxelShape b() {
+         return VoxelShapes.b;
+     }
+@@ -129,6 +129,7 @@ public final class VoxelShapes {
+     }
+ 
+     public static final boolean applyOperation(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) { return VoxelShapes.c(voxelshape, voxelshape1, operatorboolean); } // Paper - OBFHELPER
++    public static final boolean matchesAnywhere(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) { return c(voxelshape, voxelshape1, operatorboolean);} // Paper - OBFHELPER
+     public static boolean c(VoxelShape voxelshape, VoxelShape voxelshape1, OperatorBoolean operatorboolean) {
+         if (operatorboolean.apply(false, false)) {
+             throw (IllegalArgumentException) SystemUtils.c(new IllegalArgumentException());
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index 5f10c4338..81636c2ba 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -48,6 +48,8 @@ public class WorldBorder {
+         return this.b(entity.locX(), entity.locZ());
+     }
+ 
++    public final VoxelShape asVoxelShape(){ return a();} //Paper - OBFHELPER
++
+     public VoxelShape a() {
+         return this.i.m();
+     }
+@@ -62,19 +64,19 @@ public class WorldBorder {
+         d6 = Math.min(d6, d2);
+         return Math.min(d6, d3);
+     }
+-
++    public final double getBoundWest(){ return c();} //Paper - OBFHELPER
+     public double c() {
+         return this.i.a();
+     }
+-
++    public final double getBoundNorth(){ return d();} //Paper - OBFHELPER
+     public double d() {
+         return this.i.c();
+     }
+-
++    public final double getBoundEast(){ return e();} //Paper - OBFHELPER
+     public double e() {
+         return this.i.b();
+     }
+-
++    public final double getBoundSouth(){ return f();} //Paper - OBFHELPER
+     public double f() {
+         return this.i.d();
+     }
+-- 
 2.23.0.windows.1
 
