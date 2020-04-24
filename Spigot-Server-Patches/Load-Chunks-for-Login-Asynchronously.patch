@@ -18,9 +18,17 @@ index 96a47dd1c2..96ebe0b226 100644
  
      public void setPositionRotation(BlockPosition blockposition, float f, float f1) {
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 686fd4cbad..84c6e5b614 100644
+index 686fd4cbad..079ddc714e 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     private static final Logger LOGGER = LogManager.getLogger();
+     public String locale = null; // CraftBukkit - lowercase // Paper - default to null
+     public PlayerConnection playerConnection;
++    public NetworkManager networkManager; // Paper
+     public final MinecraftServer server;
+     public final PlayerInteractManager playerInteractManager;
+     public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public boolean joining = true;
      public boolean sentListPacket = false;
@@ -29,6 +37,28 @@ index 686fd4cbad..84c6e5b614 100644
      public Integer clientViewDistance;
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
+diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+index f1222fcb2b..28f48f2252 100644
+--- a/src/main/java/net/minecraft/server/LoginListener.java
++++ b/src/main/java/net/minecraft/server/LoginListener.java
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+             }
+             // Paper end
+         } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
+-            EntityPlayer entityplayer = this.server.getPlayerList().a(this.i.getId());
++            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
+ 
+             if (entityplayer == null) {
+                 this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
+@@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
+             }
+ 
+             this.networkManager.sendPacket(new PacketLoginOutSuccess(this.i));
+-            EntityPlayer entityplayer = this.server.getPlayerList().a(this.i.getId());
++            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
+ 
+             if (entityplayer != null) {
+                 this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 7929fcc800..c3710b73af 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -42,19 +72,55 @@ index 7929fcc800..c3710b73af 100644
          this.player.lastX = this.player.locX();
          this.player.lastY = this.player.locY();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ec45c30dd3..ddecbc0a28 100644
+index ec45c30dd3..eaba3cbf06 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-         this.players.add(entityplayer);
-         this.playersByName.put(entityplayer.getName().toLowerCase(java.util.Locale.ROOT), entityplayer); // Spigot
-         this.j.put(entityplayer.getUniqueID(), entityplayer);
+     private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+     private final MinecraftServer server;
+     public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+-    private final Map<UUID, EntityPlayer> j = Maps.newHashMap();
++    private final Map<UUID, EntityPlayer> j = Maps.newHashMap();Map<UUID, EntityPlayer> getUUIDMap() { return j; } // Paper - OBFHELPER
+     private final GameProfileBanList k;
+     private final IpBanList l;
+     private final OpList operators;
+     private final WhiteList whitelist;
++    private final Map<UUID, EntityPlayer> pendingPlayers = Maps.newHashMap(); // Paper
+     // CraftBukkit start
+     // private final Map<UUID, ServerStatisticManager> o;
+     // private final Map<UUID, AdvancementDataPlayer> p;
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+     }
+ 
+     public void a(NetworkManager networkmanager, EntityPlayer entityplayer) {
++        EntityPlayer prev = pendingPlayers.put(entityplayer.getUniqueID(), entityplayer);// Paper
++        if (prev != null) {
++            disconnectPendingPlayer(prev);
++        }
++        entityplayer.networkManager = networkmanager; // Paper
+         entityplayer.loginTime = System.currentTimeMillis(); // Paper
+         GameProfile gameprofile = entityplayer.getProfile();
+         UserCache usercache = this.server.getUserCache();
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
+             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
+             s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
+-        }
++        }String lastKnownName = s; // Paper
+         if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
+         // CraftBukkit end
+ 
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         entityplayer.B().a(entityplayer);
+         this.sendScoreboard(worldserver.getScoreboard(), entityplayer);
+         this.server.invalidatePingSample();
 +        // Paper start - async load spawn in chunk
 +        WorldServer finalWorldserver = worldserver;
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        worldserver.getChunkProvider().getTickingChunkAsync(chunkX, chunkZ, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
-+            postChunkLoadJoin(entityplayer, finalWorldserver, playerconnection, nbttagcompound, networkmanager.getSocketAddress().toString(), joinMessage);
++            postChunkLoadJoin(entityplayer, finalWorldserver, networkmanager, playerconnection, nbttagcompound, networkmanager.getSocketAddress().toString(),
++                lastKnownName);
 +        }));
 +        // boost the priorities
 +        worldserver.asyncChunkTaskManager.raisePriority(chunkX, chunkZ, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
@@ -62,21 +128,35 @@ index ec45c30dd3..ddecbc0a28 100644
 +            for (int cz = -1; cz <= 1; cz++) {
 +                if (cx == 0 && cz == 0) continue;
 +                // we have to directly request it otherwise the task won't be started yet to boost priority
-+                worldserver.getChunkProvider().getFullChunkAsync(chunkX + cx, chunkZ + cz, (c) -> {});
++                worldserver.getChunkProvider().getFullChunkAsync(chunkX + cx, chunkZ + cz, null);
 +                worldserver.asyncChunkTaskManager.raisePriority(chunkX + cx, chunkZ + cz, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
 +            }
 +        }
-+
 +    }
-+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String joinMessage) {
-+        if (!entityplayer.playerConnection.networkManager.isConnected()) {
++
++    EntityPlayer getActivePlayer(UUID uuid) {
++        EntityPlayer player = this.getUUIDMap().get(uuid);
++        return player != null ? player : pendingPlayers.get(uuid);
++    }
++
++    void disconnectPendingPlayer(EntityPlayer entityplayer) {
++        ChatMessage msg = new ChatMessage("multiplayer.disconnect.duplicate_login", new Object[0]);
++        entityplayer.networkManager.sendPacket(new PacketPlayOutKickDisconnect(msg), (future) -> {
++            entityplayer.networkManager.close(msg);
++            entityplayer.networkManager = null;
++        });
++    }
++
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
++        pendingPlayers.remove(entityplayer.getUniqueID(), entityplayer);
++        if (!networkmanager.isConnected()) {
 +            return;
 +        }
 +        entityplayer.didPlayerJoinEvent = true;
 +        // Paper end
-         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+         ChatMessage chatmessage;
  
-         // Paper start - correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
+         if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
@@ -95,6 +175,20 @@ index ec45c30dd3..ddecbc0a28 100644
  
          if (server.isMainThread()) entityplayer.playerTick();// SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
+             // this.p.remove(uuid);
+             // CraftBukkit end
+         }
++        // Paper start
++        entityplayer1 = pendingPlayers.get(uuid);
++        if (entityplayer1 == entityplayer) {
++            pendingPlayers.remove(uuid);
++        }
++        entityplayer.networkManager = null;
++        // Paper end
+ 
+         // CraftBukkit start
+         //  this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
          cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -103,4 +197,18 @@ index ec45c30dd3..ddecbc0a28 100644
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+                 list.add(entityplayer);
+             }
+         }
++        // Paper start - check pending players too
++        entityplayer = pendingPlayers.get(uuid);
++        if (entityplayer != null) {
++            this.pendingPlayers.remove(uuid);
++            disconnectPendingPlayer(entityplayer);
++        }
++        // Paper end
+ 
+         Iterator iterator = list.iterator();
+ 
 --
