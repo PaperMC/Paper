@@ -1,4 +1,4 @@
-From e8380a57b97e6c5ebbc79be3181abeeb462a3b13 Mon Sep 17 00:00:00 2001
+From 6a79fcb39fedf8d5f398026e6da8c616d34470f4 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 12 Apr 2020 15:50:48 -0400
 Subject: [PATCH] Forced Watchdog Crash support and Improve Async Shutdown
@@ -60,6 +60,18 @@ index 1ef7890da5..e62ca0543f 100644
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+index cfe43e882e..2632c7c3ec 100644
+--- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
++++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
+@@ -135,6 +135,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
+         try {
+             r0.run();
+         } catch (Exception exception) {
++            if (exception.getCause() instanceof ThreadDeath) throw exception; // Paper
+             IAsyncTaskHandler.LOGGER.fatal("Error executing task on {}", this.bi(), exception);
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 7bfadb35d2..1086d1caac 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -268,10 +280,18 @@ index aefea3a9a8..123de5ac90 100644
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 5bdcdcf9e8..963bd001f4 100644
+index 5bdcdcf9e8..fe4b8caf28 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -67,12 +67,13 @@ public class WatchdogThread extends Thread
+@@ -41,6 +41,7 @@ public class WatchdogThread extends Thread
+     {
+         if ( instance == null )
+         {
++            if (timeoutTime <= 0) timeoutTime = 300; // Paper
+             instance = new WatchdogThread( timeoutTime * 1000L, restart );
+             instance.start();
+         }
+@@ -67,12 +68,13 @@ public class WatchdogThread extends Thread
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = monotonicMillis();
@@ -288,7 +308,7 @@ index 5bdcdcf9e8..963bd001f4 100644
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -114,7 +115,7 @@ public class WatchdogThread extends Thread
+@@ -114,7 +116,7 @@ public class WatchdogThread extends Thread
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
                  ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
@@ -297,7 +317,7 @@ index 5bdcdcf9e8..963bd001f4 100644
                  log.log( Level.SEVERE, "------------------------------" );
                  //
                  // Paper start - Only print full dump on long timeouts
-@@ -135,9 +136,24 @@ public class WatchdogThread extends Thread
+@@ -135,9 +137,24 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
