@@ -1879,11 +1879,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         } else {
             // CraftBukkit start - Capture drops for death event
             if (this instanceof EntityLiving && !((EntityLiving) this).forceDrops) {
-                ((EntityLiving) this).drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack));
+                ((EntityLiving) this).drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // Paper - mirror so we can destroy it later
                 return null;
             }
             // CraftBukkit end
-            EntityItem entityitem = new EntityItem(this.world, this.locX(), this.locY() + (double) f, this.locZ(), itemstack);
+            EntityItem entityitem = new EntityItem(this.world, this.locX(), this.locY() + (double) f, this.locZ(), itemstack.cloneItemStack()); // Paper - clone so we can destroy original
+            itemstack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
 
             entityitem.defaultPickupDelay();
             // CraftBukkit start
@@ -2531,6 +2532,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     @Nullable
     public Entity teleportTo(WorldServer worldserver, BlockPosition location) {
         // CraftBukkit end
+        // Paper start - fix bad state entities causing dupes
+        if (!isAlive() || !valid) {
+            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
+            return null;
+        }
+        // Paper end
         if (this.world instanceof WorldServer && !this.dead) {
             this.world.getMethodProfiler().enter("changeDimension");
             // CraftBukkit start
@@ -2566,7 +2573,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                     entity.bukkitEntity = this.getBukkitEntity();
 
                     if (this instanceof EntityInsentient) {
-                        ((EntityInsentient) this).unleash(true, false); // Unleash to prevent duping of leads.
+                        ((EntityInsentient) this).unleash(true, true); // Paper drop lead
                     }
                     // CraftBukkit end
                 }
@@ -2686,7 +2693,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
 
     public boolean canPortal() {
-        return true;
+        return isAlive() && valid; // Paper
     }
 
     public float a(Explosion explosion, IBlockAccess iblockaccess, BlockPosition blockposition, IBlockData iblockdata, Fluid fluid, float f) {

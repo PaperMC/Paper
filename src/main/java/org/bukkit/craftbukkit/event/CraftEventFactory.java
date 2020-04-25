@@ -811,7 +811,8 @@ public class CraftEventFactory {
         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
 
-            world.dropItem(entity.getLocation(), stack);
+            world.dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
+            if (stack instanceof CraftItemStack) stack.setAmount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe, but don't nuke bukkit stacks of manually added items
         }
 
         return event;

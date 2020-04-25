@@ -559,7 +559,7 @@ public class EntityArmorStand extends EntityLiving {
         for (i = 0; i < this.handItems.size(); ++i) {
             itemstack = (ItemStack) this.handItems.get(i);
             if (!itemstack.isEmpty()) {
-                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
                 this.handItems.set(i, ItemStack.b);
             }
         }
@@ -567,7 +567,7 @@ public class EntityArmorStand extends EntityLiving {
         for (i = 0; i < this.armorItems.size(); ++i) {
             itemstack = (ItemStack) this.armorItems.get(i);
             if (!itemstack.isEmpty()) {
-                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
+                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
                 this.armorItems.set(i, ItemStack.b);
             }
         }
