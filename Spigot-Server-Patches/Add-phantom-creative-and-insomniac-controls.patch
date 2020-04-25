@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Apr 2020 15:13:41 -0500
+Subject: [PATCH] Add phantom creative and insomniac controls
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 88a45e517..fc189ebc9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -0,0 +0,0 @@ public class PaperWorldConfig {
+     private void lightQueueSize() {
+         lightQueueSize = getInt("light-queue-size", lightQueueSize);
+     }
++
++    public boolean phantomIgnoreCreative = true;
++    public boolean phantomOnlyAttackInsomniacs = true;
++    private void phantomSettings() {
++        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
++        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPhantom.java b/src/main/java/net/minecraft/server/EntityPhantom.java
+index 90eeddb1a..96b4912c4 100644
+--- a/src/main/java/net/minecraft/server/EntityPhantom.java
++++ b/src/main/java/net/minecraft/server/EntityPhantom.java
+@@ -0,0 +0,0 @@ public class EntityPhantom extends EntityFlying implements IMonster {
+                         EntityHuman entityhuman = (EntityHuman) iterator.next();
+ 
+                         if (EntityPhantom.this.a((EntityLiving) entityhuman, PathfinderTargetCondition.a)) {
++                            if (!world.paperConfig.phantomOnlyAttackInsomniacs || IEntitySelector.isInsomniac.test(entityhuman)) // Paper
+                             EntityPhantom.this.setGoalTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index a2d1ef360..1398c47a2 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -0,0 +0,0 @@ public final class IEntitySelector {
+     public static final Predicate<Entity> f = (entity) -> {
+         return !entity.isSpectator();
+     };
++    public static Predicate<EntityHuman> isInsomniac = (player) -> MathHelper.clamp(((EntityPlayer) player).getStatisticManager().getStatisticValue(StatisticList.CUSTOM.get(StatisticList.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
+ 
+     public static Predicate<Entity> a(double d0, double d1, double d2, double d3) {
+         double d4 = d3 * d3;
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+index f488c22ed..0db431cd6 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+@@ -0,0 +0,0 @@ public class MobSpawnerPhantom {
+                     while (iterator.hasNext()) {
+                         EntityHuman entityhuman = (EntityHuman) iterator.next();
+ 
+-                        if (!entityhuman.isSpectator()) {
++                        if (!entityhuman.isSpectator() && (!worldserver.paperConfig.phantomIgnoreCreative || !entityhuman.isCreative())) { // Paper
+                             BlockPosition blockposition = new BlockPosition(entityhuman);
+ 
+                             if (!worldserver.worldProvider.f() || blockposition.getY() >= worldserver.getSeaLevel() && worldserver.f(blockposition)) {
+--
