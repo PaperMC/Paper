@@ -611,4 +611,11 @@ public class PaperWorldConfig {
     private void lightQueueSize() {
         lightQueueSize = getInt("light-queue-size", lightQueueSize);
     }
+
+    public boolean phantomIgnoreCreative = true;
+    public boolean phantomOnlyAttackInsomniacs = true;
+    private void phantomSettings() {
+        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
+        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
+    }
 }

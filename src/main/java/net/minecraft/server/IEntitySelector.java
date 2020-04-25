@@ -25,6 +25,7 @@ public final class IEntitySelector {
     public static final Predicate<Entity> g = (entity) -> {
         return !entity.isSpectator();
     };
+    public static Predicate<EntityHuman> isInsomniac = (player) -> MathHelper.clamp(((EntityPlayer) player).getStatisticManager().getStatisticValue(StatisticList.CUSTOM.get(StatisticList.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
 
     // Paper start
     public static final Predicate<Entity> affectsSpawning = (entity) -> {

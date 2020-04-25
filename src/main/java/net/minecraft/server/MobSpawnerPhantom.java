@@ -32,7 +32,7 @@ public class MobSpawnerPhantom implements MobSpawner {
                     while (iterator.hasNext()) {
                         EntityHuman entityhuman = (EntityHuman) iterator.next();
 
-                        if (!entityhuman.isSpectator()) {
+                        if (!entityhuman.isSpectator() && (!worldserver.paperConfig.phantomIgnoreCreative || !entityhuman.isCreative())) { // Paper
                             BlockPosition blockposition = entityhuman.getChunkCoordinates();
 
                             if (!worldserver.getDimensionManager().hasSkyLight() || blockposition.getY() >= worldserver.getSeaLevel() && worldserver.e(blockposition)) {
