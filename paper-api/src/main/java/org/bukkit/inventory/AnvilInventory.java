@@ -78,4 +78,64 @@ public interface AnvilInventory extends Inventory {
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void setMaximumRepairCost(int levels);
+
+    // Paper start
+    /**
+     * Gets the item in the left input slot.
+     *
+     * @return item in the first slot
+     */
+    @Nullable
+    default ItemStack getFirstItem() {
+        return getItem(0);
+    }
+
+    /**
+     * Sets the item in the left input slot.
+     *
+     * @param firstItem item to set
+     */
+    default void setFirstItem(@Nullable ItemStack firstItem) {
+        setItem(0, firstItem);
+    }
+
+    /**
+     * Gets the item in the right input slot.
+     *
+     * @return item in the second slot
+     */
+    @Nullable
+    default ItemStack getSecondItem() {
+        return getItem(1);
+    }
+
+    /**
+     * Sets the item in the right input slot.
+     *
+     * @param secondItem item to set
+     */
+    default void setSecondItem(@Nullable ItemStack secondItem) {
+        setItem(1, secondItem);
+    }
+
+    /**
+     * Gets the item in the result slot.
+     *
+     * @return item in the result slot
+     */
+    @Nullable
+    default ItemStack getResult() {
+        return getItem(2);
+    }
+
+    /**
+     * Sets the item in the result slot.
+     * Note that the client might not be able to take out the item if it does not match the input items.
+     *
+     * @param result item to set
+     */
+    default void setResult(@Nullable ItemStack result) {
+        setItem(2, result);
+    }
+    // Paper end
 }

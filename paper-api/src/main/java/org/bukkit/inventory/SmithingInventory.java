@@ -30,4 +30,59 @@ public interface SmithingInventory extends Inventory {
      */
     @Nullable
     Recipe getRecipe();
+
+    // Paper start
+    /**
+     * Gets the input template (first slot).
+     *
+     * @return input template item
+     */
+    default @Nullable ItemStack getInputTemplate() {
+        return this.getItem(0);
+    }
+
+    /**
+     * Sets the input template (first slot).
+     *
+     * @param itemStack item to set
+     */
+    default void setInputTemplate(@Nullable ItemStack itemStack) {
+        this.setItem(0, itemStack);
+    }
+    /**
+     * Gets the input equipment (second slot).
+     *
+     * @return input equipment item
+     */
+    default @Nullable ItemStack getInputEquipment() {
+        return this.getItem(1);
+    }
+
+    /**
+     * Sets the input equipment (second slot).
+     *
+     * @param itemStack item to set
+     */
+    default void setInputEquipment(@Nullable ItemStack itemStack) {
+        this.setItem(1, itemStack);
+    }
+
+    /**
+     * Gets the input mineral (third slot).
+     *
+     * @return input mineral item
+     */
+    default @Nullable ItemStack getInputMineral() {
+        return this.getItem(2);
+    }
+
+    /**
+     * Sets the input mineral (third slot).
+     *
+     * @param itemStack item to set
+     */
+    default void setInputMineral(@Nullable ItemStack itemStack) {
+        this.setItem(2, itemStack);
+    }
+    // Paper end
 }
