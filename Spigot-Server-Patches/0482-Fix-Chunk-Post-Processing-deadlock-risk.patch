@@ -1,4 +1,4 @@
-From d4150f3df14622ffc4ad49ff655ba6aaa23114bb Mon Sep 17 00:00:00 2001
+From 4922e0520435d838eabc020f440b9c95e7e4b0de Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 18 Apr 2020 04:36:11 -0400
 Subject: [PATCH] Fix Chunk Post Processing deadlock risk
@@ -25,43 +25,22 @@ This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 15bd3cacb3..2d4d7250f2 100644
+index 8f4d4f2283..e63333fcab 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -1019,6 +1019,7 @@ public class ChunkProviderServer extends IChunkProvider {
-                         // we do not want to use this.executeNext as that also processes chunk loads and might count against task counter.
-                         // We also have already ticked the distance manager above too.
-                         if (server.chunksTasksRan < 200 && now - lastChunkTask > 100000 && super.executeNext()) {
-+                            ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
-                             ChunkProviderServer.this.lightEngine.queueUpdate();
-                             server.chunksTasksRan++;
-                             lastChunkTask = now;
-@@ -1042,7 +1043,11 @@ public class ChunkProviderServer extends IChunkProvider {
-                 return true;
-             } else {
-                 ChunkProviderServer.this.lightEngine.queueUpdate();
--                return super.executeNext() || execChunkTask; // Paper
-+                // Paper start - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
-+                boolean executed = super.executeNext();
-+                ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
-+                return executed || execChunkTask;
-+                // Paper end - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
+@@ -1048,6 +1048,7 @@ public class ChunkProviderServer extends IChunkProvider {
+                 return super.executeNext() || execChunkTask; // Paper
              }
          } finally {
++            playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // Paper - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
              playerChunkMap.callbackExecutor.run();
+         }
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c38d31fafe..e19342eb89 100644
+index 0de3f6029c..f5a28e9322 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -92,6 +92,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         @Override
-         public void execute(Runnable runnable) {
-             if (queued != null) {
-+                MinecraftServer.LOGGER.fatal("Failed to schedule runnable", new IllegalStateException("Already queued")); // Paper - make sure this is printed
-                 throw new IllegalStateException("Already queued");
-             }
-             queued = runnable;
-@@ -108,6 +109,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -108,6 +108,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      };
      // CraftBukkit end
  
@@ -70,7 +49,7 @@ index c38d31fafe..e19342eb89 100644
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
  
-@@ -1002,7 +1005,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1007,7 +1009,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return Either.left(chunk);
              });
          }, (runnable) -> {
@@ -80,5 +59,5 @@ index c38d31fafe..e19342eb89 100644
  
          completablefuture1.thenAcceptAsync((either) -> {
 -- 
-2.25.1
+2.26.2
 

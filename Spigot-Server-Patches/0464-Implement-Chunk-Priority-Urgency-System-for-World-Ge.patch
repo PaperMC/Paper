@@ -1,4 +1,4 @@
-From 98260d8a7b814a9c1fbdd4002c40e7182e36ecf6 Mon Sep 17 00:00:00 2001
+From 3bdf52eb971e76f98beef7dd5bc361e55fce2232 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sat, 11 Apr 2020 03:56:07 -0400
 Subject: [PATCH] Implement Chunk Priority / Urgency System for World Gen
@@ -16,7 +16,7 @@ lots of chunks already.
 This massively reduces the lag spikes from sync chunk gens.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 5fea6e56d5..bcf59beed6 100644
+index 98ce805a64..640265c3bd 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -308,6 +308,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -197,7 +197,7 @@ index 04b97cec29..568fbbd5f2 100644
  
      private void d(int i) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 92c9ab43d7..c38d31fafe 100644
+index 90e4811157..0de3f6029c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -324,6 +324,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -216,7 +216,7 @@ index 92c9ab43d7..c38d31fafe 100644
                  CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = playerchunk.a(chunkstatus, this);
  
                  list.add(completablefuture);
-@@ -799,23 +801,28 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -804,23 +806,28 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          };
  
          CompletableFuture<NBTTagCompound> chunkSaveFuture = this.world.asyncChunkTaskManager.getChunkSaveFuture(chunkcoordintpair.x, chunkcoordintpair.z);
@@ -250,7 +250,7 @@ index 92c9ab43d7..c38d31fafe 100644
  
          this.world.getMethodProfiler().c(() -> {
              return "chunkGenerate " + chunkstatus.d();
-@@ -843,6 +850,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -848,6 +855,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
          }, (runnable) -> {
@@ -258,7 +258,7 @@ index 92c9ab43d7..c38d31fafe 100644
              this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
          });
      }
-@@ -855,6 +863,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -860,6 +868,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          }));
      }
  
@@ -266,7 +266,7 @@ index 92c9ab43d7..c38d31fafe 100644
      private ChunkStatus a(ChunkStatus chunkstatus, int i) {
          ChunkStatus chunkstatus1;
  
-@@ -979,9 +988,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -984,9 +993,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a(PlayerChunk playerchunk) {
          ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
@@ -280,5 +280,5 @@ index 92c9ab43d7..c38d31fafe 100644
              return either.flatMap((list) -> {
                  Chunk chunk = (Chunk) list.get(list.size() / 2);
 -- 
-2.25.1
+2.26.2
 

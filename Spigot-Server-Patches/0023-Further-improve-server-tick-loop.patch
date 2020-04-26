@@ -1,4 +1,4 @@
-From 66cb7186fb398829970cb0df184ef6a1050c969c Mon Sep 17 00:00:00 2001
+From f8b2b0e30d6bfb90e265a6d91ee8b96729761fda Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Tue, 1 Mar 2016 23:09:29 -0600
 Subject: [PATCH] Further improve server tick loop
@@ -12,7 +12,7 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2b3844ae5a..7b8c523e6d 100644
+index e71ee0fb33..53d0a98d00 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -160,7 +160,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -162,7 +162,7 @@ index 99a6b3d443..e3939387e7 100644
      {
  
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index be2e31deae..6d21c32692 100644
+index be2e31deae..387af9d5c0 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 @@ -1,8 +1,5 @@
@@ -174,7 +174,7 @@ index be2e31deae..6d21c32692 100644
  import org.bukkit.ChatColor;
  import org.bukkit.command.Command;
  import org.bukkit.command.CommandSender;
-@@ -26,18 +23,20 @@ public class TicksPerSecondCommand extends Command
+@@ -26,20 +23,22 @@ public class TicksPerSecondCommand extends Command
              return true;
          }
  
@@ -201,7 +201,10 @@ index be2e31deae..6d21c32692 100644
 +    private static String format(double tps) // Paper - Made static
      {
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
-                 + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
+-                + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
++                + ( ( tps > 21.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 ); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
+     }
+ }
 -- 
-2.25.1
+2.26.2
 
