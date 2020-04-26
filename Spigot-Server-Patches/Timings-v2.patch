@@ -153,7 +153,7 @@ index 0000000000..223d3b1125
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000000..27ce4a828e
+index 0000000000..fa1c920ea6
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -0,0 +0,0 @@
@@ -202,16 +202,12 @@ index 0000000000..27ce4a828e
 +    public final Timing broadcastChunkUpdates;
 +    public final Timing countNaturalMobs;
 +
-+    public final Timing syncChunkLoadTimer;
-+    public final Timing syncChunkLoadDataTimer;
-+    public final Timing syncChunkLoadStructuresTimer;
-+    public final Timing syncChunkLoadPostTimer;
-+    public final Timing syncChunkLoadPopulateTimer;
-+    public final Timing chunkAwait;
++    public final Timing chunkLoad;
++    public final Timing chunkLoadPopulate;
++    public final Timing syncChunkLoad;
 +    public final Timing chunkLoadLevelTimer;
-+    public final Timing chunkGeneration;
-+    public final Timing chunkIOStage1;
-+    public final Timing chunkIOStage2;
++    public final Timing chunkIO;
++    public final Timing chunkPostLoad;
 +    public final Timing worldSave;
 +    public final Timing worldSaveChunks;
 +    public final Timing worldSaveLevel;
@@ -248,16 +244,12 @@ index 0000000000..27ce4a828e
 +        tileEntityTick = Timings.ofSafe(name + "tileEntityTick");
 +        tileEntityPending = Timings.ofSafe(name + "tileEntityPending");
 +
-+        syncChunkLoadTimer = Timings.ofSafe(name + "syncChunkLoad");
-+        syncChunkLoadDataTimer = Timings.ofSafe(name + "syncChunkLoad - Data");
-+        syncChunkLoadStructuresTimer = Timings.ofSafe(name + "chunkLoad - recreateStructures");
-+        syncChunkLoadPostTimer = Timings.ofSafe(name + "chunkLoad - Post");
-+        syncChunkLoadPopulateTimer = Timings.ofSafe(name + "chunkLoad - Populate");
-+        chunkAwait = Timings.ofSafe(name + "chunkAwait");
-+        chunkLoadLevelTimer = Timings.ofSafe(name + "chunkLoad - Load Level");
-+        chunkGeneration = Timings.ofSafe(name + "chunkGeneration");
-+        chunkIOStage1 = Timings.ofSafe(name + "ChunkIO Stage 1 - DiskIO");
-+        chunkIOStage2 = Timings.ofSafe(name + "ChunkIO Stage 2 - Post Load");
++        chunkLoad = Timings.ofSafe(name + "Chunk Load");
++        chunkLoadPopulate = Timings.ofSafe(name + "Chunk Load - Populate");
++        syncChunkLoad = Timings.ofSafe(name + "Sync Chunk Load");
++        chunkLoadLevelTimer = Timings.ofSafe(name + "Chunk Load - Load Level");
++        chunkIO = Timings.ofSafe(name + "Chunk Load - DiskIO");
++        chunkPostLoad = Timings.ofSafe(name + "Chunk Load - Post Load");
 +        worldSave = Timings.ofSafe(name + "World Save");
 +        worldSaveLevel = Timings.ofSafe(name + "World Save - Level");
 +        worldSaveChunks = Timings.ofSafe(name + "World Save - Chunks");
@@ -351,14 +343,14 @@ index cd72a9c845..5de881371a 100644
      private final float frictionFactor;
      private final float f;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 2b6fe2e01d..87c5e09a59 100644
+index 2b6fe2e01d..4cd353b253 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
              server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(this.bukkitChunk, this.needsDecoration));
  
              if (this.needsDecoration) {
-+                try (co.aikar.timings.Timing ignored = this.world.timings.syncChunkLoadPopulateTimer.startTiming()) { // Paper
++                try (co.aikar.timings.Timing ignored = this.world.timings.chunkLoadPopulate.startTiming()) { // Paper
                  this.needsDecoration = false;
                  java.util.Random random = new java.util.Random();
                  random.setSeed(world.getSeed());
@@ -371,7 +363,7 @@ index 2b6fe2e01d..87c5e09a59 100644
          }
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index ba2af2abe2..a653ce4ce5 100644
+index ba2af2abe2..875f353dc3 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -382,10 +374,10 @@ index ba2af2abe2..a653ce4ce5 100644
              CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
  
 +            if (!completablefuture.isDone()) { // Paper
-+                this.world.timings.chunkAwait.startTiming(); // Paper
++                this.world.timings.syncChunkLoad.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
 -            world.timings.syncChunkLoadTimer.stopTiming(); // Spigot
-+                this.world.timings.chunkAwait.stopTiming(); // Paper
++                this.world.timings.syncChunkLoad.stopTiming(); // Paper
 +            } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
@@ -468,7 +460,7 @@ index ba2af2abe2..a653ce4ce5 100644
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index e16d30f2ca..4af5a230ba 100644
+index e16d30f2ca..13d99de2cd 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@
@@ -483,7 +475,6 @@ index e16d30f2ca..4af5a230ba 100644
          NBTTagList nbttaglist = nbttagcompound.getList("Entities", 10);
          World world = chunk.getWorld();
 -        world.timings.syncChunkLoadEntitiesTimer.startTiming(); // Spigot
-+        world.timings.chunkLoadLevelTimer.startTiming(); // Spigot
  
          for (int i = 0; i < nbttaglist.size(); ++i) {
              NBTTagCompound nbttagcompound1 = nbttaglist.getCompound(i);
@@ -501,10 +492,10 @@ index e16d30f2ca..4af5a230ba 100644
              }
          }
 -        world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
-+        world.timings.chunkLoadLevelTimer.stopTiming(); // Paper
- 
+-
      }
  
+     private static NBTTagCompound a(ChunkCoordIntPair chunkcoordintpair, Map<String, StructureStart> map, Map<String, LongSet> map1) {
 diff --git a/src/main/java/net/minecraft/server/CustomFunction.java b/src/main/java/net/minecraft/server/CustomFunction.java
 index 8d7a6d2403..707bd2600d 100644
 --- a/src/main/java/net/minecraft/server/CustomFunction.java
@@ -943,7 +934,7 @@ index b4a0bd7951..67bdd57747 100644
          this.methodProfiler.exit();
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 93d838ec2d..2a6955f855 100644
+index 93d838ec2d..5e31b65e16 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@
@@ -961,16 +952,28 @@ index 93d838ec2d..2a6955f855 100644
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> f(ChunkCoordIntPair chunkcoordintpair) {
          return CompletableFuture.supplyAsync(() -> {
 -            try {
-+            try (Timing ignored = this.world.timings.syncChunkLoadTimer.startTimingIfSync()) { // Paper
++            try (Timing ignored = this.world.timings.chunkLoad.startTimingIfSync()) { // Paper
                  this.world.getMethodProfiler().c("chunkLoad");
 -                NBTTagCompound nbttagcompound = this.readChunkData(chunkcoordintpair);
 +                NBTTagCompound nbttagcompound; // Paper
-+                try (Timing ignored2 = this.world.timings.chunkIOStage1.startTimingIfSync()) { // Paper start - timings
++                try (Timing ignored2 = this.world.timings.chunkIO.startTimingIfSync()) { // Paper start - timings
 +                    nbttagcompound = this.readChunkData(chunkcoordintpair);
 +                } // Paper end
  
-                 if (nbttagcompound != null) {
+-                if (nbttagcompound != null) {
++                if (nbttagcompound != null) {try (Timing ignored2 = this.world.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
                      boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
+ 
+                     if (flag) {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     }
+ 
+                     PlayerChunkMap.LOGGER.error("Chunk file at {} is missing level data, skipping", chunkcoordintpair);
+-                }
++                }} // Paper
+             } catch (ReportedException reportedexception) {
+                 Throwable throwable = reportedexception.getCause();
+ 
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              return "chunkGenerate " + chunkstatus.d();
          });
@@ -984,7 +987,7 @@ index 93d838ec2d..2a6955f855 100644
              ChunkStatus chunkstatus = PlayerChunk.getChunkStatus(playerchunk.getTicketLevel());
  
              return !chunkstatus.b(ChunkStatus.FULL) ? PlayerChunk.UNLOADED_CHUNK_ACCESS : either.mapLeft((ichunkaccess) -> {
-+            try (Timing ignored = world.timings.chunkIOStage2.startTimingIfSync()) { // Paper
++            try (Timing ignored = world.timings.chunkPostLoad.startTimingIfSync()) { // Paper
                  ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
                  Chunk chunk;
  
