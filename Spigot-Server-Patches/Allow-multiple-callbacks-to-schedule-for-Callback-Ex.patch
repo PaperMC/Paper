@@ -11,8 +11,10 @@ needed within a single tick of ChunkMapDistance
 
 Use an ArrayDeque to store this Queue
 
+We make sure to also implement a pattern that is recursion safe too.
+
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 8b2eed10..ee0cabad 100644
+index 2ea06224f3..99b490374d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -20,26 +22,33 @@ index 8b2eed10..ee0cabad 100644
      public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
  
 -        private Runnable queued;
-+        // Paper start - replace impl with Deque - possible multiple is needed in single pass
-+        private java.util.Deque<Runnable> queued = new java.util.ArrayDeque<>();
++        // Paper start - replace impl with recursive safe multi entry queue
++        // it's possible to schedule multiple tasks currently, so it's vital we change this impl
++        // If we recurse into the executor again, we will append to another queue, ensuring task order consistency
++        private java.util.ArrayDeque<Runnable> queued = new java.util.ArrayDeque<>();
  
          @Override
          public void execute(Runnable runnable) {
 -            if (queued != null) {
--                MinecraftServer.LOGGER.fatal("Failed to schedule runnable", new IllegalStateException("Already queued")); // Paper - make sure this is printed
 -                throw new IllegalStateException("Already queued");
--            }
++            if (queued == null) {
++                queued = new java.util.ArrayDeque<>();
+             }
 -            queued = runnable;
-+            queued.add(runnable); // Paper
++            queued.add(runnable);
          }
  
          @Override
          public void run() {
 -            Runnable task = queued;
--            queued = null;
++            if (queued == null) {
++                return;
++            }
++            java.util.ArrayDeque<Runnable> queue = queued;
+             queued = null;
 -            if (task != null) {
 +            Runnable task;
-+            while ((task = queued.pollFirst()) != null) {
++            while ((task = queue.pollFirst()) != null) {
                  task.run();
              }
          }

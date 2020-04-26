@@ -6,7 +6,7 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 0000000000..69e26a8267
+index 0000000000..223d3b1125
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
 @@ -0,0 +0,0 @@
@@ -144,7 +144,7 @@ index 0000000000..69e26a8267
 +    }*/
 +
 +    public static Timing getPacketTiming(Packet packet) {
-+        return Timings.ofSafe("## Packet - " + packet.getClass().getSimpleName(), packetProcessTimer);
++        return Timings.ofSafe("## Packet - " + packet.getClass().getName(), packetProcessTimer);
 +    }
 +
 +    public static Timing getCommandFunctionTiming(CustomFunction function) {
@@ -749,7 +749,7 @@ index 1f350e3352..35e3f1c78d 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b4a0bd7951..456d03be22 100644
+index b4a0bd7951..67bdd57747 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -781,10 +781,15 @@ index b4a0bd7951..456d03be22 100644
          if (this.server != null) {
              this.server.disablePlugins();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     private boolean canSleepForTick() {
+         // CraftBukkit start
++        if (isOversleep) return canOversleep();// Paper - because of our changes, this logic is broken
          return this.forceTicks || this.isEntered() || SystemUtils.getMonotonicMillis() < (this.ac ? this.ab : this.nextTick);
      }
  
 +    // Paper start
++    boolean isOversleep = false;
 +    private boolean canOversleep() {
 +        return this.hasExecutedTask() && SystemUtils.getMonotonicMillis() < this.getTickOversleepMaxTime();
 +    }
@@ -819,11 +824,11 @@ index b4a0bd7951..456d03be22 100644
          long i = SystemUtils.getMonotonicNanos();
  
 +        // Paper start - move oversleep into full server tick
-+        MinecraftTimings.serverOversleep.startTiming();
++        isOversleep = true;MinecraftTimings.serverOversleep.startTiming();
 +        this.awaitTasks(() -> {
 +            return !this.canOversleep();
 +        });
-+        MinecraftTimings.serverOversleep.stopTiming();
++        isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
 +        // Paper end
 +
          ++this.ticks;

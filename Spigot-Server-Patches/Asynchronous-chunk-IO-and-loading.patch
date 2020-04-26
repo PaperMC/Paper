@@ -3022,7 +3022,7 @@ index 2dcecc1bbd..d9941b38ca 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7ca4a7cca8..61fc659ed2 100644
+index 7ecf781263..26be349870 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -3113,7 +3113,7 @@ index f1620ba80e..74e6b8b973 100644
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b4c9d544fe..7e5fa016c7 100644
+index b4c9d544fe..c4fb0c68dd 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3293,21 +3293,21 @@ index b4c9d544fe..7e5fa016c7 100644
 -
 -                if (nbttagcompound != null) {
 -                    boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
--
--                    if (flag) {
--                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.io.IOUtil.rethrow(ioThrowable);
 +                }
  
--                        protochunk.setLastSaved(this.world.getTime());
--                        return Either.left(protochunk);
--                    }
+-                    if (flag) {
+-                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
 +                this.getVillagePlace().loadInData(chunkcoordintpair, chunkHolder.poiData);
 +                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper - async load completes this
 +                // Paper end
  
+-                        protochunk.setLastSaved(this.world.getTime());
+-                        return Either.left(protochunk);
+-                    }
+-
 -                    PlayerChunkMap.LOGGER.error("Chunk file at {} is missing level data, skipping", chunkcoordintpair);
 +                // Paper start - This is done async
 +                if (chunkHolder.protoChunk != null) {
@@ -3328,8 +3328,13 @@ index b4c9d544fe..7e5fa016c7 100644
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> ret = new CompletableFuture<>();
 +
 +        Consumer<ChunkRegionLoader.InProgressChunkHolder> chunkHolderConsumer = (ChunkRegionLoader.InProgressChunkHolder holder) -> {
-+            PlayerChunkMap.this.executor.addTask(() -> {
-+                ret.complete(syncLoadComplete.apply(holder, null));
++            // Go into the chunk load queue and not server task queue so we can be popped out even faster.
++            com.destroystokyo.paper.io.chunk.ChunkTaskManager.queueChunkWaitTask(() -> {
++                try {
++                    ret.complete(syncLoadComplete.apply(holder, null));
++                } catch (Exception e) {
++                    ret.completeExceptionally(e);
++                }
 +            });
 +        };
 +

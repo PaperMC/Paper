@@ -25,42 +25,21 @@ This successfully fixed a reoccurring and highly reproduceable crash
 for heightmaps.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 15bd3cacb3..2d4d7250f2 100644
+index 8f4d4f2283..e63333fcab 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-                         // we do not want to use this.executeNext as that also processes chunk loads and might count against task counter.
-                         // We also have already ticked the distance manager above too.
-                         if (server.chunksTasksRan < 200 && now - lastChunkTask > 100000 && super.executeNext()) {
-+                            ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
-                             ChunkProviderServer.this.lightEngine.queueUpdate();
-                             server.chunksTasksRan++;
-                             lastChunkTask = now;
-@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-                 return true;
-             } else {
-                 ChunkProviderServer.this.lightEngine.queueUpdate();
--                return super.executeNext() || execChunkTask; // Paper
-+                // Paper start - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
-+                boolean executed = super.executeNext();
-+                ChunkProviderServer.this.playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // run immediately after a task is potentially queued
-+                return executed || execChunkTask;
-+                // Paper end - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
+                 return super.executeNext() || execChunkTask; // Paper
              }
          } finally {
++            playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // Paper - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
              playerChunkMap.callbackExecutor.run();
+         }
+         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c38d31fafe..e19342eb89 100644
+index 0de3f6029c..f5a28e9322 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         @Override
-         public void execute(Runnable runnable) {
-             if (queued != null) {
-+                MinecraftServer.LOGGER.fatal("Failed to schedule runnable", new IllegalStateException("Already queued")); // Paper - make sure this is printed
-                 throw new IllegalStateException("Already queued");
-             }
-             queued = runnable;
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      };
      // CraftBukkit end
