@@ -127,8 +127,12 @@ public class EntityTrackerEntry {
                 ++this.o;
                 i = MathHelper.d(this.tracker.yaw * 256.0F / 360.0F);
                 j = MathHelper.d(this.tracker.pitch * 256.0F / 360.0F);
-                Vec3D vec3d = this.tracker.getPositionVector().d(PacketPlayOutEntity.a(this.xLoc, this.yLoc, this.zLoc));
-                boolean flag1 = vec3d.g() >= 7.62939453125E-6D;
+                // Paper start - reduce allocation of Vec3D here
+                double vec3d_dx = this.tracker.locX() - 2.44140625E-4D*(this.xLoc);
+                double vec3d_dy = this.tracker.locY() - 2.44140625E-4D*(this.yLoc);
+                double vec3d_dz = this.tracker.locZ() - 2.44140625E-4D*(this.zLoc);
+                boolean flag1 = (vec3d_dx * vec3d_dx + vec3d_dy * vec3d_dy + vec3d_dz * vec3d_dz) >= 7.62939453125E-6D;
+                // Paper end - reduce allocation of Vec3D here
                 Packet<?> packet1 = null;
                 boolean flag2 = flag1 || this.tickCounter % 60 == 0;
                 boolean flag3 = Math.abs(i - this.yRot) >= 1 || Math.abs(j - this.xRot) >= 1;
@@ -145,9 +149,11 @@ public class EntityTrackerEntry {
                 // CraftBukkit end
 
                 if (this.tickCounter > 0 || this.tracker instanceof EntityArrow) {
-                    long k = PacketPlayOutEntity.a(vec3d.x);
-                    long l = PacketPlayOutEntity.a(vec3d.y);
-                    long i1 = PacketPlayOutEntity.a(vec3d.z);
+                    // Paper start - remove allocation of Vec3D here
+                    long k = PacketPlayOutEntity.a(vec3d_dx);
+                    long l = PacketPlayOutEntity.a(vec3d_dy);
+                    long i1 = PacketPlayOutEntity.a(vec3d_dz);
+                    // Paper end - remove allocation of Vec3D here
                     boolean flag4 = k < -32768L || k > 32767L || l < -32768L || l > 32767L || i1 < -32768L || i1 > 32767L;
 
                     if (!flag4 && this.o <= 400 && !this.q && this.r == this.tracker.isOnGround()) {

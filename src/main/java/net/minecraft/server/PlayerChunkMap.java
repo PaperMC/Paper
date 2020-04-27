@@ -2134,9 +2134,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
         public void updatePlayer(EntityPlayer entityplayer) {
             org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
             if (entityplayer != this.tracker) {
-                Vec3D vec3d = entityplayer.getPositionVector().d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
+                // Paper start - remove allocation of Vec3D here
+                //Vec3D vec3d = entityplayer.getPositionVector().d(this.tracker.getPositionVector()); // MC-155077, SPIGOT-5113
+                double vec3d_dx = entityplayer.locX() - this.tracker.locX();
+                double vec3d_dy = entityplayer.locY() - this.tracker.locY();
+                double vec3d_dz = entityplayer.locZ() - this.tracker.locZ();
+                // Paper end - remove allocation of Vec3D here
                 int i = Math.min(this.b(), (PlayerChunkMap.this.viewDistance - 1) * 16);
-                boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
+                boolean flag = vec3d_dx >= (double) (-i) && vec3d_dx <= (double) i && vec3d_dz >= (double) (-i) && vec3d_dz <= (double) i && this.tracker.a(entityplayer); // Paper - remove allocation of Vec3D here
 
                 if (flag) {
                     boolean flag1 = this.tracker.attachedToPlayer;
