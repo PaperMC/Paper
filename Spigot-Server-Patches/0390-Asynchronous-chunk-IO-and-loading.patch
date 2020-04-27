@@ -1,4 +1,4 @@
-From 35ab84aa1f38c79f543ac56e8745919fb3b2bc87 Mon Sep 17 00:00:00 2001
+From e486a08f08f4cb5fe6791d889f77889cd4b8c831 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Sat, 13 Jul 2019 09:23:10 -0700
 Subject: [PATCH] Asynchronous chunk IO and loading
@@ -3633,7 +3633,7 @@ index d37abf2cf3..df728e2c0a 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index e07ae98540..0f201000f6 100644
+index 2f8af42e2a..2b9bf25fbb 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -9,7 +9,7 @@ import java.io.File;
@@ -3688,17 +3688,21 @@ index e07ae98540..0f201000f6 100644
              return regionfile1;
          }
      }
-@@ -119,7 +136,8 @@ public final class RegionFileCache implements AutoCloseable {
- 
+@@ -120,11 +137,12 @@ public final class RegionFileCache implements AutoCloseable {
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // CraftBukkit // Paper
+         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
+-        RegionFile regionfile = this.getFile(chunkcoordintpair, true);
++        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // Paper
+         if (regionfile == null) {
+             return null;
+         }
+         // CraftBukkit end
 +        try { // Paper
          DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
          // Paper start
          if (regionfile.isOversized(chunkcoordintpair.x, chunkcoordintpair.z)) {
-@@ -157,10 +175,14 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -162,10 +180,14 @@ public final class RegionFileCache implements AutoCloseable {
          }
  
          return nbttagcompound;
@@ -3714,7 +3718,7 @@ index e07ae98540..0f201000f6 100644
          int attempts = 0; Exception laste = null; while (attempts++ < 5) { try { // Paper
          DataOutputStream dataoutputstream = regionfile.c(chunkcoordintpair);
          Throwable throwable = null;
-@@ -199,9 +221,12 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -204,9 +226,12 @@ public final class RegionFileCache implements AutoCloseable {
              MinecraftServer.LOGGER.error("Failed to save chunk", laste);
          }
          // Paper end
@@ -3728,15 +3732,19 @@ index e07ae98540..0f201000f6 100644
          ObjectIterator objectiterator = this.cache.values().iterator();
  
          while (objectiterator.hasNext()) {
-@@ -213,7 +238,7 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -216,4 +241,12 @@ public final class RegionFileCache implements AutoCloseable {
+         }
+ 
      }
- 
-     // CraftBukkit start
--    public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
++
++    // CraftBukkit start
 +    public synchronized boolean chunkExists(ChunkCoordIntPair pos) throws IOException { // Paper - synchronize
-         RegionFile regionfile = getFile(pos, true);
- 
-         return regionfile != null ? regionfile.chunkExists(pos) : false;
++        RegionFile regionfile = getFile(pos, true);
++
++        return regionfile != null ? regionfile.chunkExists(pos) : false;
++    }
++    // CraftBukkit end
+ }
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
 index db9f0196bd..a6d8ef5eb4 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
@@ -4081,10 +4089,10 @@ index e3913952d9..3db0ad0a46 100644
      }
      public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a71bb86508..1d275520fb 100644
+index 4fa16e167c..94a9a16a88 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -554,22 +554,23 @@ public class CraftWorld implements World {
+@@ -556,22 +556,23 @@ public class CraftWorld implements World {
                  return true;
              }
  
@@ -4116,7 +4124,7 @@ index a71bb86508..1d275520fb 100644
  
              // fall through to load
              // we do this so we do not re-read the chunk data on disk
-@@ -2439,6 +2440,24 @@ public class CraftWorld implements World {
+@@ -2445,6 +2446,24 @@ public class CraftWorld implements World {
  
          return new CraftDragonBattle(((WorldProviderTheEnd) worldProvider).o()); // PAIL rename getDragonBattle
      }
