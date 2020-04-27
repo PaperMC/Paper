@@ -90,6 +90,18 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         this.getHandle().setVillagerXp(experience);
     }
 
+    // Paper start
+    @Override
+    public int getRestocksToday() {
+        return getHandle().numberOfRestocksToday;
+    }
+
+    @Override
+    public void setRestocksToday(int restocksToday) {
+        getHandle().numberOfRestocksToday = restocksToday;
+    }
+    // Paper end
+
     @Override
     public boolean sleep(Location location) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
