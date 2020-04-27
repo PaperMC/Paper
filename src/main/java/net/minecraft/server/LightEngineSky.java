@@ -6,6 +6,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
 
     private static final EnumDirection[] e = EnumDirection.values();
     private static final EnumDirection[] f = new EnumDirection[]{EnumDirection.NORTH, EnumDirection.SOUTH, EnumDirection.WEST, EnumDirection.EAST};
+    private final MutableInt mutableint = new MutableInt(); // Paper
 
     public LightEngineSky(ILightAccess ilightaccess) {
         super(ilightaccess, EnumSkyBlock.SKY, new LightEngineStorageSky(ilightaccess));
@@ -27,7 +28,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
             if (k >= 15) {
                 return k;
             } else {
-                MutableInt mutableint = new MutableInt();
+                //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
                 IBlockData iblockdata = this.a(j, mutableint);
 
                 if (mutableint.getValue() >= 15) {
