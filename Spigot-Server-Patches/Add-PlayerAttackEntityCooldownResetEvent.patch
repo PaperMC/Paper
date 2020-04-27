@@ -4,21 +4,27 @@ Date: Thu, 26 Mar 2020 19:44:50 -0700
 Subject: [PATCH] Add PlayerAttackEntityCooldownResetEvent
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 8a3f2b5e..2e186134 100644
---- a/src/main/java/net/minecraft/server/EntityHuman.java
-+++ b/src/main/java/net/minecraft/server/EntityHuman.java
-@@ -0,0 +0,0 @@ public abstract class EntityHuman extends EntityLiving {
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 2c81344a65..3fc2360a10 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
  
-                 f *= 0.2F + f2 * f2 * 0.8F;
-                 f1 *= f2;
--                this.ey();
+             EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
+             if (damagesource.getEntity() instanceof EntityHuman) {
+-                ((EntityHuman) damagesource.getEntity()).ey(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
 +                // Paper start - PlayerAttackEntityCooldownResetEvent
-+                if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent((Player) this.getBukkitEntity(), entity.getBukkitEntity(), this.getCooledAttackStrength(0F)).callEvent()) {
-+                    this.resetCooldown(); // reset it like normal
++                if (damagesource.getEntity() instanceof EntityPlayer) {
++                    EntityPlayer player = (EntityPlayer) damagesource.getEntity();
++                    if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent(player.getBukkitEntity(), this.getBukkitEntity(), player.getCooledAttackStrength(0F)).callEvent()) {
++                        player.resetCooldown();
++                    }
++                } else {
++                    ((EntityHuman) damagesource.getEntity()).resetCooldown();
 +                }
 +                // Paper end
-                 if (f > 0.0F || f1 > 0.0F) {
-                     boolean flag = f2 > 0.9F;
-                     boolean flag1 = false;
++
+             }
+             if (event.isCancelled()) {
+                 return false;
 --

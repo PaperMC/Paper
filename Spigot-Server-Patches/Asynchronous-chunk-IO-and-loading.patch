@@ -3633,7 +3633,7 @@ index d37abf2cf3..df728e2c0a 100644
      }
  
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
-index e07ae98540..0f201000f6 100644
+index 2f8af42e2a..2b9bf25fbb 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ import java.io.File;
@@ -3689,11 +3689,15 @@ index e07ae98540..0f201000f6 100644
          }
      }
 @@ -0,0 +0,0 @@ public final class RegionFileCache implements AutoCloseable {
- 
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
--        RegionFile regionfile = this.getFile(chunkcoordintpair, false); // CraftBukkit
-+        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // CraftBukkit // Paper
+         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
+-        RegionFile regionfile = this.getFile(chunkcoordintpair, true);
++        RegionFile regionfile = this.getFile(chunkcoordintpair, false, true); // Paper
+         if (regionfile == null) {
+             return null;
+         }
+         // CraftBukkit end
 +        try { // Paper
          DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
          // Paper start
@@ -3729,14 +3733,18 @@ index e07ae98540..0f201000f6 100644
  
          while (objectiterator.hasNext()) {
 @@ -0,0 +0,0 @@ public final class RegionFileCache implements AutoCloseable {
+         }
+ 
      }
- 
-     // CraftBukkit start
--    public boolean chunkExists(ChunkCoordIntPair pos) throws IOException {
++
++    // CraftBukkit start
 +    public synchronized boolean chunkExists(ChunkCoordIntPair pos) throws IOException { // Paper - synchronize
-         RegionFile regionfile = getFile(pos, true);
- 
-         return regionfile != null ? regionfile.chunkExists(pos) : false;
++        RegionFile regionfile = getFile(pos, true);
++
++        return regionfile != null ? regionfile.chunkExists(pos) : false;
++    }
++    // CraftBukkit end
+ }
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
 index db9f0196bd..a6d8ef5eb4 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
@@ -4081,7 +4089,7 @@ index e3913952d9..3db0ad0a46 100644
      }
      public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index a71bb86508..1d275520fb 100644
+index 4fa16e167c..94a9a16a88 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
