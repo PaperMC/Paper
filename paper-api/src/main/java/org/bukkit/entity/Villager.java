@@ -82,6 +82,20 @@ public interface Villager extends AbstractVillager {
      */
     public void setVillagerExperience(int experience);
 
+    // Paper start
+    /**
+     * Gets the amount of times a villager has restocked their trades today
+     * @return The amount of trade restocks.
+     */
+    public int getRestocksToday();
+
+    /**
+     * Sets the amount of times a villager has restocked their trades today
+     * @param restocksToday new restock count
+     */
+    public void setRestocksToday(int restocksToday);
+    // Paper end
+
     /**
      * Attempts to make this villager sleep at the given location.
      * <br>
