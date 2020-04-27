@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 19 Apr 2020 18:15:29 -0400
+Subject: [PATCH] Implement Brigadier Mojang API
+
+Adds AsyncPlayerSendCommandsEvent
+  - Allows modifying on a per command basis what command data they see.
+
+Adds CommandRegisteredEvent
+  - Allows manipulating the CommandNode to add more children/metadata for the client
+
+diff --git a/src/main/java/net/minecraft/server/CommandDispatcher.java b/src/main/java/net/minecraft/server/CommandDispatcher.java
+index 2414b0a552..2d512aa4f9 100644
+--- a/src/main/java/net/minecraft/server/CommandDispatcher.java
++++ b/src/main/java/net/minecraft/server/CommandDispatcher.java
+@@ -0,0 +0,0 @@ public class CommandDispatcher {
+             bukkit.add(node.getName());
+         }
+         // Paper start - Async command map building
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandListenerWrapper>(entityplayer.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
+         MinecraftServer.getServer().execute(() -> {
+            runSync(entityplayer, bukkit, rootcommandnode);
+         });
+@@ -0,0 +0,0 @@ public class CommandDispatcher {
+ 
+     private void runSync(EntityPlayer entityplayer, Collection<String> bukkit, RootCommandNode<ICompletionProvider> rootcommandnode) {
+         // Paper end - Async command map building
++        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandListenerWrapper>(entityplayer.getBukkitEntity(), (RootCommandNode) rootcommandnode, false).callEvent(); // Paper
+         PlayerCommandSendEvent event = new PlayerCommandSendEvent(entityplayer.getBukkitEntity(), new LinkedHashSet<>(bukkit));
+         event.getPlayer().getServer().getPluginManager().callEvent(event);
+ 
+diff --git a/src/main/java/net/minecraft/server/CommandListenerWrapper.java b/src/main/java/net/minecraft/server/CommandListenerWrapper.java
+index 0b23a0548d..c988c929f1 100644
+--- a/src/main/java/net/minecraft/server/CommandListenerWrapper.java
++++ b/src/main/java/net/minecraft/server/CommandListenerWrapper.java
+@@ -0,0 +0,0 @@ import java.util.function.BinaryOperator;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ 
+-public class CommandListenerWrapper implements ICompletionProvider {
++public class CommandListenerWrapper implements ICompletionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
+ 
+     public static final SimpleCommandExceptionType a = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.player", new Object[0]));
+     public static final SimpleCommandExceptionType b = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.entity", new Object[0]));
+@@ -0,0 +0,0 @@ public class CommandListenerWrapper implements ICompletionProvider {
+         return this.g;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.entity.Entity getBukkitEntity() {
++        return getEntity() != null ? getEntity().getBukkitEntity() : null;
++    }
++
++    @Override
++    public org.bukkit.World getBukkitWorld() {
++        return getWorld() != null ? getWorld().getWorld() : null;
++    }
++
++    @Override
++    public org.bukkit.Location getBukkitLocation() {
++        Vec3D pos = getPosition();
++        org.bukkit.World world = getBukkitWorld();
++        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z) : null;
++    }
++    // Paper end
++
+     @Override
+     public boolean hasPermission(int i) {
+         // CraftBukkit start
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index 5f33c9e52a..e16ecdea7d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -0,0 +0,0 @@ import net.minecraft.server.CommandListenerWrapper;
+ import org.bukkit.command.Command;
+ import org.bukkit.craftbukkit.CraftServer;
+ 
+-public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandListenerWrapper>, Predicate<CommandListenerWrapper>, SuggestionProvider<CommandListenerWrapper> {
++public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandListenerWrapper>, Predicate<CommandListenerWrapper>, SuggestionProvider<CommandListenerWrapper>, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<CommandListenerWrapper> { // Paper
+ 
+     private final CraftServer server;
+     private final Command command;
+@@ -0,0 +0,0 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
+     }
+ 
+     public LiteralCommandNode<CommandListenerWrapper> register(CommandDispatcher<CommandListenerWrapper> dispatcher, String label) {
+-        return dispatcher.register(
+-                LiteralArgumentBuilder.<CommandListenerWrapper>literal(label).requires(this).executes(this)
+-                .then(RequiredArgumentBuilder.<CommandListenerWrapper, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this))
+-        );
++        // Paper start - Expose Brigadier to Paper-MojangAPI
++        com.mojang.brigadier.tree.RootCommandNode<CommandListenerWrapper> root = dispatcher.getRoot();
++        LiteralCommandNode<CommandListenerWrapper> literal = LiteralArgumentBuilder.<CommandListenerWrapper>literal(label).requires(this).executes(this).build();
++        com.mojang.brigadier.tree.ArgumentCommandNode<CommandListenerWrapper, String> defaultArgs = RequiredArgumentBuilder.<CommandListenerWrapper, String>argument("args", StringArgumentType.greedyString()).suggests(this).executes(this).build();
++        literal.addChild(defaultArgs);
++        com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<CommandListenerWrapper> event = new com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<>(label, this, this.command, root, literal, defaultArgs);
++        if (!event.callEvent()) {
++            return null;
++        }
++        literal = event.getLiteral();
++        root.addChild(literal);
++        return literal;
++        // Paper end
+     }
+ 
+     @Override
+--
