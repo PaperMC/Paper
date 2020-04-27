@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Mon, 27 Apr 2020 12:31:59 +0200
+Subject: [PATCH] Prioritise own classes where possible
+
+This adds the server property `Paper.DisableClassPrioritization` to disable
+prioritization of own classes for plugins' classloaders.
+
+This value is by default not present, and this will therefore break any
+plugins which abuse behaviour related to not using their own classes
+while still loading their own. This is often an issue with failing to
+relocate or shade properly, such as when shading plugin APIs like Vault.
+
+A plugin's classloader will first look in the same jar as it is loading
+in for a requested class, then load it. It does not re-use other
+plugins' classes if it has the chance to avoid doing so.
+
+If a class is not found in the same jar as it is loading for and it does
+find it elsewhere, it will still choose the class elsewhere. This is
+intended behaviour, as it will only prioritise classes it has in its own
+jar, no other plugins' classes will be prioritised in any other order
+than the one they were registered in.
+
+The patch in general terms just loads the class in the plugin's jar
+before it starts looking elsewhere for it.
+
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+  * A ClassLoader for plugins, to allow shared classes across multiple plugins
+  */
+ public final class PluginClassLoader extends URLClassLoader { // Spigot
++    private static final boolean DISABLE_CLASS_PRIORITIZATION = Boolean.getBoolean("Paper.DisableClassPrioritization"); // Paper
+     public JavaPlugin getPlugin() { return plugin; } // Spigot
+     private final JavaPluginLoader loader;
+     private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
+@@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         Class<?> result = classes.get(name);
+ 
+         if (result == null) {
+-            if (checkGlobal) {
++            String path = name.replace('.', '/').concat(".class"); // Paper - moved up
++            JarEntry entry = jar.getJarEntry(path); // Paper - moved up
++
++            if (checkGlobal && (entry == null || DISABLE_CLASS_PRIORITIZATION)) { // Paper - prioritise own classes if they exist
+                 result = loader.getClassByName(name);
+ 
+                 if (result != null) {
+@@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+             }
+ 
+             if (result == null) {
+-                String path = name.replace('.', '/').concat(".class");
+-                JarEntry entry = jar.getJarEntry(path);
+-
++                // Paper - move code here up
+                 if (entry != null) {
+                     byte[] classBytes;
+ 
