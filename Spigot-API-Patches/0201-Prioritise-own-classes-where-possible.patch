@@ -1,0 +1,132 @@
+From 2559a6581102dbde780985de2e3de0a5078d8861 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Mon, 27 Apr 2020 12:31:59 +0200
+Subject: [PATCH] Prioritise own classes where possible
+
+This adds the plugin.yml property `classloader-prioritize-self` to allow
+plugins to decide that they want the classloader to prioritize the
+classes of the plugin it is loading for.
+
+This value is by default `false` and this will therefore not break any
+intended behaviour by default, but if a plugin knows it does not care
+about other plugins' classes, it can turn on the option to have it load
+its own classes in any case it can. This is especially useful with
+plugins using libraries which cannot have version incompatibilities
+and/or libraries which somehow break upon relocation.
+
+If a class is not found in the same jar as it is loading for and it does
+find it elsewhere, it will still choose the class elsewhere. This is
+intended behaviour, as it will only prioritise classes it has in its own
+jar, no other plugins' classes will be prioritised in any other order
+than the one they were registered in.
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index 70d50819..418c0a03 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -129,7 +129,11 @@ import org.yaml.snakeyaml.nodes.Tag;
+  *     <td><code>api-version</code></td>
+  *     <td>{@link #getAPIVersion()}</td>
+  *     <td>The API version which this plugin was programmed against</td>
+- * </tr>
++ * </tr><tr> <!-- Paper start -->
++ *     <td><code>classloader-prioritize-self</code></td>
++ *     <td>{@link #shouldClassLoaderPrioritizeOwnClasses()}</td>
++ *     <td>Whether the classloader should prioritize its own classes.</td>
++ * </tr> <!-- Paper end -->
+  * </table>
+  * <p>
+  * A plugin.yml example:<blockquote><pre>
+@@ -148,6 +152,8 @@ import org.yaml.snakeyaml.nodes.Tag;
+  *depend: [NewFire, FlameWire]
+  *api-version: 1.13
+  *
++ *classloader-prioritize-self: true<!-- Paper -->
++ *
+  *commands:
+  *  flagrate:
+  *    description: Set yourself on fire.
+@@ -241,6 +247,7 @@ public final class PluginDescriptionFile {
+     private PermissionDefault defaultPerm = PermissionDefault.OP;
+     private Set<PluginAwareness> awareness = ImmutableSet.of();
+     private String apiVersion = null;
++    private boolean classLoaderPrioritizeSelf = false; // Paper - prioritise own classes
+ 
+     public PluginDescriptionFile(@NotNull final InputStream stream) throws InvalidDescriptionException {
+         loadMap(asMap(YAML.get().load(stream)));
+@@ -927,6 +934,19 @@ public final class PluginDescriptionFile {
+         return apiVersion;
+     }
+ 
++    // Paper start - prioritise own classes
++    /**
++     * Returns whether the plugin's classloader should prioritize the classes
++     * of the plugin it loads for.
++     *
++     * @return whether the plugin's classloader should prioritize its own
++     * classes
++     */
++    public boolean shouldClassLoaderPrioritizeOwnClasses() {
++        return classLoaderPrioritizeSelf;
++    }
++    // Paper end
++
+     /**
+      * @return unused
+      * @deprecated unused
+@@ -1092,6 +1112,16 @@ public final class PluginDescriptionFile {
+         if (map.get("prefix") != null) {
+             prefix = map.get("prefix").toString();
+         }
++
++        // Paper start - prioritise own classes
++        if (map.get("classloader-prioritize-self") != null) {
++            try {
++                classLoaderPrioritizeSelf = (Boolean) map.get("classloader-prioritize-self");
++            } catch (ClassCastException exception) {
++                throw new InvalidDescriptionException(exception, "classloader-prioritize-self has wrong type");
++            }
++        }
++        // Paper end
+     }
+ 
+     @NotNull
+@@ -1161,6 +1191,8 @@ public final class PluginDescriptionFile {
+             map.put("prefix", prefix);
+         }
+ 
++        map.put("classloader-prioritize-self", classLoaderPrioritizeSelf); // Paper - prioritise own classes
++
+         return map;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 3a02dbe9..80dbfd0a 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -107,7 +107,10 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         Class<?> result = classes.get(name);
+ 
+         if (result == null) {
+-            if (checkGlobal) {
++            String path = name.replace('.', '/').concat(".class"); // Paper - moved up
++            JarEntry entry = jar.getJarEntry(path); // Paper - moved up
++
++            if (checkGlobal && (entry == null || !description.shouldClassLoaderPrioritizeOwnClasses())) { // Paper - prioritise own classes if they exist
+                 result = loader.getClassByName(name);
+ 
+                 if (result != null) {
+@@ -129,9 +132,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+             }
+ 
+             if (result == null) {
+-                String path = name.replace('.', '/').concat(".class");
+-                JarEntry entry = jar.getJarEntry(path);
+-
++                // Paper - move code here up
+                 if (entry != null) {
+                     byte[] classBytes;
+ 
+-- 
+2.26.2
+
