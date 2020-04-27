@@ -19,8 +19,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
     protected final LongSet b = new LongOpenHashSet();
     protected final LongSet c = new LongOpenHashSet();
     protected final LongSet d = new LongOpenHashSet();
-    protected volatile M e;
-    protected final M f;
+    protected volatile M e_visible; protected final Object visibleUpdateLock = new Object(); // Paper - diff on change, should be "visible" - force compile fail on usage change
+    protected final M f; // Paper - diff on change, should be "updating"
     protected final LongSet g = new LongOpenHashSet();
     protected final LongSet h = new LongOpenHashSet();
     protected final Long2ObjectMap<NibbleArray> i = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap());
@@ -34,8 +34,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
         this.l = enumskyblock;
         this.m = ilightaccess;
         this.f = m0;
-        this.e = m0.b();
-        this.e.d();
+        this.e_visible = m0.b(); // Paper - avoid copying light data
+        this.e_visible.d(); // Paper - avoid copying light data
     }
 
     protected boolean g(long i) {
@@ -44,7 +44,15 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
 
     @Nullable
     protected NibbleArray a(long i, boolean flag) {
-        return this.a(flag ? this.f : this.e, i);
+        // Paper start - avoid copying light data
+        if (flag) {
+            return this.a(this.f, i);
+        } else {
+            synchronized (this.visibleUpdateLock) {
+                return this.a(this.e_visible, i);
+            }
+        }
+        // Paper end - avoid copying light data
     }
 
     @Nullable
@@ -357,10 +365,12 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
 
     protected void e() {
         if (!this.g.isEmpty()) {
+            synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
             M m0 = this.f.b();
 
             m0.d();
-            this.e = m0;
+            this.e_visible = m0; // Paper - avoid copying light data
+            } // Paper - avoid copying light data
             this.g.clear();
         }
 

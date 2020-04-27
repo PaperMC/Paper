@@ -17,15 +17,16 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
     private volatile boolean p;
 
     protected LightEngineStorageSky(ILightAccess ilightaccess) {
-        super(EnumSkyBlock.SKY, ilightaccess, new LightEngineStorageSky.a(new Long2ObjectOpenHashMap(), new Long2IntOpenHashMap(), Integer.MAX_VALUE));
+        super(EnumSkyBlock.SKY, ilightaccess, new LightEngineStorageSky.a(new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<>(), new com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int(), Integer.MAX_VALUE, false)); // Paper - avoid copying light data
     }
 
     @Override
     protected int d(long i) {
         long j = SectionPosition.e(i);
         int k = SectionPosition.c(j);
-        LightEngineStorageSky.a lightenginestoragesky_a = (LightEngineStorageSky.a) this.e;
-        int l = lightenginestoragesky_a.c.get(SectionPosition.f(j));
+        synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
+        LightEngineStorageSky.a lightenginestoragesky_a = (LightEngineStorageSky.a) this.e_visible; // Paper - avoid copying light data - must be after lock acquire
+        int l = lightenginestoragesky_a.otherData.getVisibleAsync(SectionPosition.f(j)); // Paper - avoid copying light data
 
         if (l != lightenginestoragesky_a.b && k < l) {
             NibbleArray nibblearray = this.a(lightenginestoragesky_a, j); // Paper - decompile fix
@@ -46,6 +47,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
         } else {
             return 15;
         }
+        } // Paper - avoid copying light data
     }
 
     @Override
@@ -54,14 +56,14 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
 
         if (((LightEngineStorageSky.a) this.f).b > j) {
             ((LightEngineStorageSky.a) this.f).b = j;
-            ((LightEngineStorageSky.a) this.f).c.defaultReturnValue(((LightEngineStorageSky.a) this.f).b);
+            ((LightEngineStorageSky.a) this.f).otherData.queueDefaultReturnValue(((LightEngineStorageSky.a) this.f).b); // Paper - avoid copying light data
         }
 
         long k = SectionPosition.f(i);
-        int l = ((LightEngineStorageSky.a) this.f).c.get(k);
+        int l = ((LightEngineStorageSky.a) this.f).otherData.getUpdating(k); // Paper - avoid copying light data
 
         if (l < j + 1) {
-            ((LightEngineStorageSky.a) this.f).c.put(k, j + 1);
+            ((LightEngineStorageSky.a) this.f).otherData.queueUpdate(k, j + 1); // Paper - avoid copying light data
             if (this.o.contains(k)) {
                 this.q(i);
                 if (l > ((LightEngineStorageSky.a) this.f).b) {
@@ -101,7 +103,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
 
         int k = SectionPosition.c(i);
 
-        if (((LightEngineStorageSky.a) this.f).c.get(j) == k + 1) {
+        if (((LightEngineStorageSky.a) this.f).otherData.getUpdating(j) == k + 1) { // Paper - avoid copying light data
             long l;
 
             for (l = i; !this.g(l) && this.a(k); l = SectionPosition.a(l, EnumDirection.DOWN)) {
@@ -109,12 +111,12 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
             }
 
             if (this.g(l)) {
-                ((LightEngineStorageSky.a) this.f).c.put(j, k + 1);
+                ((LightEngineStorageSky.a) this.f).otherData.queueUpdate(j, k + 1); // Paper - avoid copying light data
                 if (flag) {
                     this.q(l);
                 }
             } else {
-                ((LightEngineStorageSky.a) this.f).c.remove(j);
+                ((LightEngineStorageSky.a) this.f).otherData.queueRemove(j); // Paper - avoid copying light data
             }
         }
 
@@ -128,7 +130,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
     protected void b(long i, boolean flag) {
         this.d();
         if (flag && this.o.add(i)) {
-            int j = ((LightEngineStorageSky.a) this.f).c.get(i);
+            int j = ((LightEngineStorageSky.a) this.f).otherData.getUpdating(i); // Paper - avoid copying light data
 
             if (j != ((LightEngineStorageSky.a) this.f).b) {
                 long k = SectionPosition.b(SectionPosition.b(i), j - 1, SectionPosition.d(i));
@@ -155,7 +157,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
             return nibblearray;
         } else {
             long j = SectionPosition.a(i, EnumDirection.UP);
-            int k = ((LightEngineStorageSky.a) this.f).c.get(SectionPosition.f(i));
+            int k = ((LightEngineStorageSky.a) this.f).otherData.getUpdating(SectionPosition.f(i)); // Paper - avoid copying light data
 
             if (k != ((LightEngineStorageSky.a) this.f).b && SectionPosition.c(j) < k) {
                 NibbleArray nibblearray1;
@@ -298,7 +300,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
             if (!this.o.contains(l)) {
                 return false;
             } else {
-                int i1 = ((LightEngineStorageSky.a) this.f).c.get(l);
+                int i1 = ((LightEngineStorageSky.a) this.f).otherData.getUpdating(l); // Paper - avoid copying light data
 
                 return SectionPosition.c(i1) == j + 16;
             }
@@ -307,7 +309,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
 
     protected boolean n(long i) {
         long j = SectionPosition.f(i);
-        int k = ((LightEngineStorageSky.a) this.f).c.get(j);
+        int k = ((LightEngineStorageSky.a) this.f).otherData.getUpdating(j); // Paper - avoid copying light data
 
         return k == ((LightEngineStorageSky.a) this.f).b || SectionPosition.c(i) >= k;
     }
@@ -321,18 +323,21 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
     public static final class a extends LightEngineStorageArray<LightEngineStorageSky.a> {
 
         private int b;
-        private final Long2IntOpenHashMap c;
+        private final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int otherData; // Paper - avoid copying light data
 
-        public a(Long2ObjectOpenHashMap<NibbleArray> long2objectopenhashmap, Long2IntOpenHashMap long2intopenhashmap, int i) {
-            super(long2objectopenhashmap);
-            this.c = long2intopenhashmap;
-            long2intopenhashmap.defaultReturnValue(i);
+        // Paper start - avoid copying light data
+        public a(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, com.destroystokyo.paper.util.map.QueuedChangesMapLong2Int otherData, int i, boolean isVisible) {
+            super(data, isVisible);
+            this.otherData = otherData;
+            otherData.queueDefaultReturnValue(i);
+            // Paper end - avoid copying light data
             this.b = i;
         }
 
         @Override
         public LightEngineStorageSky.a b() {
-            return new LightEngineStorageSky.a(this.a.clone(), this.c.clone(), this.b);
+            this.otherData.performUpdatesLockMap(); // Paper - avoid copying light data
+            return new LightEngineStorageSky.a(this.data, this.otherData, this.b, true); // Paper - avoid copying light data
         }
     }
 }

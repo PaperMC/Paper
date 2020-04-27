@@ -8,10 +8,23 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
     private final long[] b = new long[2];
     private final NibbleArray[] c = new NibbleArray[2];
     private boolean d;
-    protected final Long2ObjectOpenHashMap<NibbleArray> a;
+    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
+    protected final boolean isVisible; // Paper - avoid copying light data
+    java.util.function.Function<Long, NibbleArray> lookup; // Paper - faster branchless lookup
 
-    protected LightEngineStorageArray(Long2ObjectOpenHashMap<NibbleArray> long2objectopenhashmap) {
-        this.a = long2objectopenhashmap;
+    // Paper start - avoid copying light data
+    protected LightEngineStorageArray(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, boolean isVisible) {
+        if (isVisible) {
+            data.performUpdatesLockMap();
+        }
+        this.data = data;
+        this.isVisible = isVisible;
+        if (isVisible) {
+            lookup = data::getVisibleAsync;
+        } else {
+            lookup = data::getUpdating;
+        }
+        // Paper end - avoid copying light data
         this.c();
         this.d = true;
     }
@@ -19,16 +32,17 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
     public abstract M b();
 
     public void a(long i) {
-        this.a.put(i, ((NibbleArray) this.a.get(i)).b());
+        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+        this.data.queueUpdate(i, ((NibbleArray) this.data.getUpdating(i)).b()); // Paper - avoid copying light data
         this.c();
     }
 
     public boolean b(long i) {
-        return this.a.containsKey(i);
+        return lookup.apply(i) != null; // Paper - avoid copying light data
     }
 
     @Nullable
-    public NibbleArray c(long i) {
+    public final NibbleArray c(long i) { // Paper - final
         if (this.d) {
             for (int j = 0; j < 2; ++j) {
                 if (i == this.b[j]) {
@@ -37,7 +51,7 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
             }
         }
 
-        NibbleArray nibblearray = (NibbleArray) this.a.get(i);
+        NibbleArray nibblearray = lookup.apply(i); // Paper - avoid copying light data
 
         if (nibblearray == null) {
             return null;
@@ -58,11 +72,13 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
 
     @Nullable
     public NibbleArray d(long i) {
-        return (NibbleArray) this.a.remove(i);
+        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+        return (NibbleArray) this.data.queueRemove(i); // Paper - avoid copying light data
     }
 
     public void a(long i, NibbleArray nibblearray) {
-        this.a.put(i, nibblearray);
+        if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+        this.data.queueUpdate(i, nibblearray); // Paper - avoid copying light data
     }
 
     public void c() {
@@ -70,7 +86,6 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
             this.b[i] = Long.MAX_VALUE;
             this.c[i] = null;
         }
-
     }
 
     public void d() {
