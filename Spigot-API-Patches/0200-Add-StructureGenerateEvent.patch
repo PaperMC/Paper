@@ -1,0 +1,114 @@
+From e6eab6cc582a0174494f8b5f214466459132ba0a Mon Sep 17 00:00:00 2001
+From: Nahuel <nahueldolores@hotmail.com>
+Date: Mon, 27 Apr 2020 14:38:26 -0300
+Subject: [PATCH] Add StructureGenerateEvent It's an async event that is called
+ when a is generated in a world returning useful StructureTypes. This is a
+ cancellable event which prevents structures from generating in the world if
+ desired.
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/world/StructureGenerateEvent.java b/src/main/java/com/destroystokyo/paper/event/world/StructureGenerateEvent.java
+new file mode 100644
+index 00000000..d71f534e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/world/StructureGenerateEvent.java
+@@ -0,0 +1,96 @@
++package com.destroystokyo.paper.event.world;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.StructureType;
++import org.bukkit.World;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Async event called when a structure is generated in a world.
++ */
++public class StructureGenerateEvent extends Event implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++
++    private final World world;
++    private final StructureType structureType;
++    private final int chunkX;
++    private final int chunkZ;
++
++    private boolean cancel = false;
++
++    public StructureGenerateEvent(@NotNull World world, @NotNull StructureType structureType, int chunkX, int chunkZ) {
++        super(true);
++        this.world = Preconditions.checkNotNull(world, "world");
++        this.structureType = Preconditions.checkNotNull(structureType, "structureType");
++        this.chunkX = chunkX;
++        this.chunkZ = chunkZ;
++    }
++
++    /**
++     * Get the world the structure is being generated in.
++     *
++     * @return structure world.
++     */
++    @NotNull
++    public World getWorld() {
++        return world;
++    }
++
++    /**
++     * Get the type of structure that is being generated.
++     *
++     * @return The type of structure generated.
++     */
++    @NotNull
++    public StructureType getStructureType() {
++        return structureType;
++    }
++
++    /**
++     * Get the chunk's X coordinate.
++     *
++     * @return chunk X.
++     */
++    public int getChunkX() {
++        return chunkX;
++    }
++
++    /**
++     * Get the chunk's Z coordinate.
++     *
++     * @return chunk Z.
++     */
++    public int getChunkZ() {
++        return chunkZ;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+-- 
+2.26.2
+
