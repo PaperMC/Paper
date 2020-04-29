@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 public class ChunkConverter {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    public static final ChunkConverter a = new ChunkConverter();
+    public static final ChunkConverter a = new ChunkConverter(); public static ChunkConverter getEmptyConverter() { return a; } // Paper - obfhelper
     private static final EnumDirection8[] c = EnumDirection8.values();
     private final EnumSet<EnumDirection8> d;
     private final int[][] e;
@@ -303,7 +303,7 @@ public class ChunkConverter {
                         if ((Integer) iblockdata.get(BlockProperties.an) >= j) {
                             generatoraccess.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockProperties.an, j), 18);
                             if (i != 7) {
-                                EnumDirection[] aenumdirection = null.f;
+                                EnumDirection[] aenumdirection = f; // Paper - decomp fix
                                 int k = aenumdirection.length;
 
                                 for (int l = 0; l < k; ++l) {

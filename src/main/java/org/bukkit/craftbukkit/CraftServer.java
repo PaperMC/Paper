@@ -1975,6 +1975,29 @@ public final class CraftServer implements Server {
         return new CraftChunkData(world);
     }
 
+    // Paper start
+    @Override
+    public ChunkGenerator.ChunkData createVanillaChunkData(World world, int x, int z) {
+        // get empty object
+        CraftChunkData data = (CraftChunkData) createChunkData(world);
+        // do bunch of vanilla shit
+        net.minecraft.server.WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+        net.minecraft.server.ProtoChunk protoChunk = new net.minecraft.server.ProtoChunk(new net.minecraft.server.ChunkCoordIntPair(x, z), net.minecraft.server.ChunkConverter.getEmptyConverter(), nmsWorld);
+        List<net.minecraft.server.IChunkAccess> list = new ArrayList<>();
+        list.add(protoChunk);
+        net.minecraft.server.RegionLimitedWorldAccess genRegion = new net.minecraft.server.RegionLimitedWorldAccess(nmsWorld, list);
+        // call vanilla generator, one feature after another. Order here is important!
+        net.minecraft.server.ChunkGenerator chunkGenerator = nmsWorld.getChunkProvider().chunkGenerator;
+        chunkGenerator.createBiomes(nmsWorld.r().b(IRegistry.ay), protoChunk);
+        chunkGenerator.buildNoise(genRegion, nmsWorld.getStructureManager(), protoChunk);
+        chunkGenerator.buildBase(genRegion, protoChunk);
+        // copy over generated sections
+        data.setRawChunkData(protoChunk.getSections());
+        // hooray!
+        return data;
+    }
+    // Paper end
+
     @Override
     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         return new CraftBossBar(title, color, style, flags);

@@ -19,7 +19,7 @@ import org.bukkit.material.MaterialData;
  */
 public final class CraftChunkData implements ChunkGenerator.ChunkData {
     private final int maxHeight;
-    private final ChunkSection[] sections;
+    private ChunkSection[] sections; // Paper - remove final
     private Set<BlockPosition> tiles;
     private World world; // Paper - Anti-Xray - Add world
 
@@ -167,6 +167,12 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     ChunkSection[] getRawChunkData() {
         return sections;
     }
+
+    // Paper start
+    public void setRawChunkData(ChunkSection[] sections) {
+        this.sections = sections;
+    }
+    // Paper end
 
     Set<BlockPosition> getTiles() {
         return tiles;
