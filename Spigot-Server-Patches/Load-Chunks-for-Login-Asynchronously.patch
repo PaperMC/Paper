@@ -5,7 +5,7 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 96a47dd1c2..96ebe0b226 100644
+index 324fd07bce..01330045c0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -18,7 +18,7 @@ index 96a47dd1c2..96ebe0b226 100644
  
      public void setPositionRotation(BlockPosition blockposition, float f, float f1) {
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 686fd4cbad..079ddc714e 100644
+index a48e113b53..0f9bca8b8b 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -60,19 +60,37 @@ index f1222fcb2b..28f48f2252 100644
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 7929fcc800..c3710b73af 100644
+index 2e81f3a1d9..8800a8fcf9 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     private static final Logger LOGGER = LogManager.getLogger();
+     public final NetworkManager networkManager;
+     private final MinecraftServer minecraftServer;
++    Runnable playerJoinReady; // Paper
+     public EntityPlayer player;
+     private int e;
+     private long lastKeepAlive = SystemUtils.getMonotonicMillis(); private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
      // CraftBukkit end
  
      public void tick() {
-+        if (!this.player.valid) return; // Paper
++        // Paper start - login async
++        Runnable playerJoinReady = this.playerJoinReady;
++        if (playerJoinReady != null) {
++            this.playerJoinReady = null;
++            playerJoinReady.run();
++        }
++        // Don't tick if not valid (dead), otherwise we load chunks below
++        if (!this.player.valid) {
++            return;
++        }
++        // Paper end
          this.syncPosition();
          this.player.lastX = this.player.locX();
          this.player.lastY = this.player.locY();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ec45c30dd3..eaba3cbf06 100644
+index ec45c30dd3..edf9df8c8a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
@@ -119,8 +137,12 @@ index ec45c30dd3..eaba3cbf06 100644
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        worldserver.getChunkProvider().getTickingChunkAsync(chunkX, chunkZ, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
-+            postChunkLoadJoin(entityplayer, finalWorldserver, networkmanager, playerconnection, nbttagcompound, networkmanager.getSocketAddress().toString(),
-+                lastKnownName);
++            playerconnection.playerJoinReady = () -> {
++                postChunkLoadJoin(
++                    entityplayer, finalWorldserver, networkmanager, playerconnection,
++                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
++                );
++            };
 +        }));
 +        // boost the priorities
 +        worldserver.asyncChunkTaskManager.raisePriority(chunkX, chunkZ, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
@@ -157,6 +179,22 @@ index ec45c30dd3..eaba3cbf06 100644
          ChatMessage chatmessage;
  
          if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         }
+         entityplayer.sentListPacket = true;
+         entityplayer.supressTrackerForLogin = false; // Paper
+-        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
+         // CraftBukkit end
+ 
+         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         }
+ 
+         // Paper start - move vehicle into method so it can be called above - short circuit around that code
++        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // track entity now
+         onPlayerJoinFinish(entityplayer, worldserver, s1);
+     }
+     private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
