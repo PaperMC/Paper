@@ -164,5 +164,9 @@ public interface UnsafeValues {
     default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
         return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
     }
+
+    byte[] serializeItem(ItemStack item);
+
+    ItemStack deserializeItem(byte[] data);
     // Paper end
 }

@@ -662,6 +662,117 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
+     * use the built in data converter instead of bukkits dangerous serialization system.
+     *
+     * This expects that the DataVersion was stored on the root of the Compound, as saved from
+     * the {@link #serializeAsBytes()} API returned.
+     * @param bytes bytes representing an item in NBT
+     * @return ItemStack migrated to this version of Minecraft if needed.
+     */
+    @NotNull
+    public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
+        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
+    }
+
+    /**
+     * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
+     * use the built in data converter instead of bukkits dangerous serialization system.
+     * @return bytes representing this item in NBT.
+     */
+    @NotNull
+    public byte[] serializeAsBytes() {
+        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
+    }
+
+    /**
+     * The current version byte of the item array format used in {@link #serializeItemsAsBytes(java.util.Collection)}
+     * and {@link #deserializeItemsFromBytes(byte[])} respectively.
+     */
+    private static final byte ARRAY_SERIALIZATION_VERSION = 1;
+
+    /**
+     * Serializes a collection of items to raw bytes in NBT. Serializes null items as {@link #empty()}.
+     * <p>
+     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
+     *
+     * @param items items to serialize
+     * @return bytes representing the items in NBT
+     * @see #serializeAsBytes()
+     */
+    public static byte @NotNull [] serializeItemsAsBytes(java.util.@NotNull Collection<ItemStack> items) {
+        try (final java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
+            final java.io.DataOutput output = new java.io.DataOutputStream(outputStream);
+            output.writeByte(ARRAY_SERIALIZATION_VERSION);
+            output.writeInt(items.size());
+            for (final ItemStack item : items) {
+                if (item == null || item.isEmpty()) {
+                    // Ensure the correct order by including empty/null items
+                    output.writeInt(0);
+                    continue;
+                }
+
+                final byte[] itemBytes = item.serializeAsBytes();
+                output.writeInt(itemBytes.length);
+                output.write(itemBytes);
+            }
+            return outputStream.toByteArray();
+        } catch (final java.io.IOException e) {
+            throw new RuntimeException("Error while writing itemstack", e);
+        }
+    }
+
+    /**
+     * Serializes a collection of items to raw bytes in NBT. Serializes null items as {@link #empty()}.
+     * <p>
+     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
+     *
+     * @param items items to serialize
+     * @return bytes representing the items in NBT
+     * @see #serializeAsBytes()
+     */
+    public static byte @NotNull [] serializeItemsAsBytes(@Nullable ItemStack @NotNull [] items) {
+        return serializeItemsAsBytes(java.util.Arrays.asList(items));
+    }
+
+    /**
+     * Deserializes this itemstack from raw NBT bytes.
+     * <p>
+     * If you need a string representation to put into a file, you can for example use {@link java.util.Base64} encoding.
+     *
+     * @param bytes bytes representing an item in NBT
+     * @return ItemStack array migrated to this version of Minecraft if needed
+     * @see #deserializeBytes(byte[])
+     */
+    public static @NotNull ItemStack @NotNull [] deserializeItemsFromBytes(final byte @NotNull [] bytes) {
+        try (final java.io.ByteArrayInputStream inputStream = new java.io.ByteArrayInputStream(bytes)) {
+            final java.io.DataInputStream input = new java.io.DataInputStream(inputStream);
+            final byte version = input.readByte();
+            if (version != ARRAY_SERIALIZATION_VERSION) {
+                throw new IllegalArgumentException("Unsupported version or bad data: " + version);
+            }
+
+            final int count = input.readInt();
+            final ItemStack[] items = new ItemStack[count];
+            for (int i = 0; i < count; i++) {
+                final int length = input.readInt();
+                if (length == 0) {
+                    // Empty item, keep entry as empty
+                    items[i] = ItemStack.empty();
+                    continue;
+                }
+
+                final byte[] itemBytes = new byte[length];
+                input.read(itemBytes);
+                items[i] = ItemStack.deserializeBytes(itemBytes);
+            }
+            return items;
+        } catch (final java.io.IOException e) {
+            throw new RuntimeException("Error while reading itemstack", e);
+        }
+    }
+
+    /**
      * Gets the Display name as seen in the Client.
      * Currently the server only supports the English language. To override this,
      * You must replace the language file embedded in the server jar.
