@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BlockPropertyInstrument;
@@ -54,6 +55,9 @@ import net.minecraft.server.IInventory;
 import net.minecraft.server.ItemActionContext;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.Items;
+import net.minecraft.server.LootContextParameters;
+import net.minecraft.server.LootTable;
+import net.minecraft.server.LootTableInfo;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MovingObjectPosition;
@@ -67,11 +71,13 @@ import net.minecraft.server.World;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
 import org.bukkit.Statistic.Type;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftStatistic;
@@ -198,6 +204,7 @@ import org.bukkit.event.raid.RaidStopEvent;
 import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
+import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
@@ -1523,6 +1530,18 @@ public class CraftEventFactory {
         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
             return null;
         }
+        return event;
+    }
+
+    public static LootGenerateEvent callLootGenerateEvent(IInventory inventory, LootTable lootTable, LootTableInfo lootInfo, List<ItemStack> loot, boolean plugin) {
+        CraftWorld world = lootInfo.c().getWorld(); // PAIL rename getWorld
+        Entity entity = lootInfo.getContextParameter(LootContextParameters.THIS_ENTITY);
+        NamespacedKey key = CraftNamespacedKey.fromMinecraft(world.getHandle().getMinecraftServer().getLootTableRegistry().lootTableToKey.get(lootTable));
+        CraftLootTable craftLootTable = new CraftLootTable(key, lootTable);
+        List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
+
+        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
+        Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 }

@@ -114,6 +114,30 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         return builder.build(nmsBuilder.a()); // PAIL rename build
     }
 
+    public static LootContext convertContext(LootTableInfo info) {
+        BlockPosition position = info.getContextParameter(LootContextParameters.POSITION);
+        Location location = new Location(info.c().getWorld(), position.getX(), position.getY(), position.getZ()); // PAIL rename getWorld
+        LootContext.Builder contextBuilder = new LootContext.Builder(location);
+
+        if (info.hasContextParameter(LootContextParameters.KILLER_ENTITY)) {
+            CraftEntity killer = info.getContextParameter(LootContextParameters.KILLER_ENTITY).getBukkitEntity();
+            if (killer instanceof CraftHumanEntity) {
+                contextBuilder.killer((CraftHumanEntity) killer);
+            }
+        }
+
+        if (info.hasContextParameter(LootContextParameters.THIS_ENTITY)) {
+            contextBuilder.lootedEntity(info.getContextParameter(LootContextParameters.THIS_ENTITY).getBukkitEntity());
+        }
+
+        if (info.hasContextParameter(LootContextParameters.LOOTING_MOD)) {
+            contextBuilder.lootingModifier(info.getContextParameter(LootContextParameters.LOOTING_MOD));
+        }
+
+        contextBuilder.luck(info.b()); // PAIL rename getLuck
+        return contextBuilder.build();
+    }
+
     @Override
     public String toString() {
         return getKey().toString();
