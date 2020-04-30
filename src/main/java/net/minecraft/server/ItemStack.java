@@ -144,6 +144,7 @@ public final class ItemStack {
         this.checkEmpty();
     }
 
+    public static ItemStack fromCompound(NBTTagCompound nbttagcompound) { return a(nbttagcompound); } // Paper - OBFHELPER
     public static ItemStack a(NBTTagCompound nbttagcompound) {
         try {
             return new ItemStack(nbttagcompound);

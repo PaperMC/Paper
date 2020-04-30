@@ -353,6 +353,46 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public boolean isSupportedApiVersion(String apiVersion) {
         return apiVersion != null && SUPPORTED_API.contains(apiVersion);
     }
+
+    @Override
+    public byte[] serializeItem(ItemStack item) {
+        Preconditions.checkNotNull(item, "null cannot be serialized");
+        Preconditions.checkArgument(item.getType() != Material.AIR, "air cannot be serialized");
+
+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+        NBTTagCompound compound = (item instanceof CraftItemStack ? ((CraftItemStack) item).getHandle() : CraftItemStack.asNMSCopy(item)).save(new NBTTagCompound());
+        compound.setInt("DataVersion", getDataVersion());
+        try {
+            net.minecraft.server.NBTCompressedStreamTools.writeNBT(
+                compound,
+                outputStream
+            );
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        return outputStream.toByteArray();
+    }
+
+    @Override
+    public ItemStack deserializeItem(byte[] data) {
+        Preconditions.checkNotNull(data, "null cannot be deserialized");
+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
+
+        try {
+            NBTTagCompound compound = net.minecraft.server.NBTCompressedStreamTools.readNBT(
+                new java.io.ByteArrayInputStream(data)
+            );
+            int dataVersion = compound.getInt("DataVersion");
+
+            Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
+            Dynamic<NBTBase> converted = DataConverterRegistry.getDataFixer().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.a, compound), dataVersion, getDataVersion());
+            return CraftItemStack.asCraftMirror(net.minecraft.server.ItemStack.fromCompound((NBTTagCompound) converted.getValue()));
+        } catch (IOException ex) {
+            com.destroystokyo.paper.util.SneakyThrow.sneaky(ex);
+            throw new RuntimeException();
+        }
+    }
     // Paper end
 
     /**

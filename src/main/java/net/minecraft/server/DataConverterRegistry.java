@@ -24,6 +24,7 @@ public class DataConverterRegistry {
         return datafixerbuilder.build(SystemUtils.e());
     }
 
+    public static DataFixer getDataFixer() { return a(); } // Paper - OBFHELPER
     public static DataFixer a() {
         return DataConverterRegistry.c;
     }

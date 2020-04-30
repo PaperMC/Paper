@@ -47,6 +47,7 @@ public class NBTCompressedStreamTools {
         return nbttagcompound;
     }
 
+    public static NBTTagCompound readNBT(InputStream inputstream) throws IOException { return a(inputstream); } // Paper - OBFHELPER
     public static NBTTagCompound a(InputStream inputstream) throws IOException {
         DataInputStream datainputstream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(inputstream)));
         Throwable throwable = null;
@@ -102,6 +103,7 @@ public class NBTCompressedStreamTools {
 
     }
 
+    public static void writeNBT(NBTTagCompound nbttagcompound, OutputStream outputstream) throws IOException { a(nbttagcompound, outputstream); } // Paper - OBFHELPER
     public static void a(NBTTagCompound nbttagcompound, OutputStream outputstream) throws IOException {
         DataOutputStream dataoutputstream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputstream)));
         Throwable throwable = null;
