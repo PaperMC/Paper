@@ -5,8 +5,8 @@
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.SheepRegrowWoolEvent;
-+import org.bukkit.event.player.PlayerShearEntityEvent;
 +import org.bukkit.inventory.InventoryView;
 +// CraftBukkit end
 +
@@ -18,15 +18,12 @@
          enummap.put(EnumColor.WHITE, Blocks.WHITE_WOOL);
          enummap.put(EnumColor.ORANGE, Blocks.ORANGE_WOOL);
          enummap.put(EnumColor.MAGENTA, Blocks.MAGENTA_WOOL);
-@@ -141,6 +147,15 @@
+@@ -141,6 +147,12 @@
          ItemStack itemstack = entityhuman.b(enumhand);
  
          if (itemstack.getItem() == Items.SHEARS && !this.isSheared() && !this.isBaby()) {
 +            // CraftBukkit start
-+            PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
-+            this.world.getServer().getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
++            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
 +                return false;
 +            }
 +            // CraftBukkit end
@@ -34,7 +31,7 @@
              this.shear();
              if (!this.world.isClientSide) {
                  itemstack.damage(1, entityhuman, (entityhuman1) -> {
-@@ -160,7 +175,9 @@
+@@ -160,7 +172,9 @@
              int i = 1 + this.random.nextInt(3);
  
              for (int j = 0; j < i; ++j) {
@@ -44,7 +41,7 @@
  
                  if (entityitem != null) {
                      entityitem.setMot(entityitem.getMot().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
-@@ -247,6 +264,12 @@
+@@ -247,6 +261,12 @@
  
      @Override
      public void blockEaten() {
@@ -57,7 +54,7 @@
          this.setSheared(false);
          if (this.isBaby()) {
              this.setAge(60);
-@@ -265,7 +288,7 @@
+@@ -265,7 +285,7 @@
          EnumColor enumcolor = ((EntitySheep) entityanimal).getColor();
          EnumColor enumcolor1 = ((EntitySheep) entityanimal1).getColor();
          InventoryCrafting inventorycrafting = a(enumcolor, enumcolor1);
@@ -66,7 +63,7 @@
              return recipecrafting.a(inventorycrafting);
          }).map(ItemStack::getItem);
  
-@@ -283,10 +306,18 @@
+@@ -283,10 +303,18 @@
              public boolean canUse(EntityHuman entityhuman) {
                  return false;
              }
