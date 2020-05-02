@@ -1,4 +1,4 @@
-From 8484c9a9399fea29f53b0e0255d6f584cdce5543 Mon Sep 17 00:00:00 2001
+From a68f8b7e27715b5e86c662b29c3620375fe2ad42 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 4 Jul 2018 15:22:06 -0400
 Subject: [PATCH] Configurable Bed Search Radius
@@ -30,26 +30,24 @@ index cea15d50ed..387e0dcb9f 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/BlockBed.java b/src/main/java/net/minecraft/server/BlockBed.java
-index 7947563426..74e915c21e 100644
+index 7947563426..e0bc6080ef 100644
 --- a/src/main/java/net/minecraft/server/BlockBed.java
 +++ b/src/main/java/net/minecraft/server/BlockBed.java
-@@ -196,6 +196,10 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+@@ -196,6 +196,9 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
  
      public static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int i) {
          EnumDirection enumdirection = (EnumDirection) iworldreader.getType(blockposition).get(BlockBed.FACING);
 +        // Paper start - configurable bed search radius
-+        return findSafePosition(entitytypes, (World) iworldreader, enumdirection, blockposition);
-+    }
-+/*
++        if (entitytypes == EntityTypes.PLAYER) return findSafePosition(entitytypes, (World) iworldreader, enumdirection, blockposition);
++
          int j = blockposition.getX();
          int k = blockposition.getY();
          int l = blockposition.getZ();
-@@ -224,8 +228,106 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
- 
+@@ -225,7 +228,104 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
          return Optional.empty();
      }
-+    */
-+
+ 
+-    protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
 +    private static Optional<Vec3D> findSafePosition(EntityTypes<?> entitytypes, World world, EnumDirection updirection, BlockPosition blockposition){
 +        int radius = world.paperConfig.bedSearchRadius;
 +        double angle = Math.PI / 2;
@@ -143,8 +141,7 @@ index 7947563426..74e915c21e 100644
 +        return Optional.empty();
 +    }
 +    // Paper end
- 
--    protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) {
++
 +    // Paper start -- add maxBelow param
 +    protected static Optional<Vec3D> a(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition) { return isSafeRespawn(entitytypes, iworldreader, blockposition, 2); }
 +    protected static Optional<Vec3D> isSafeRespawn(EntityTypes<?> entitytypes, IWorldReader iworldreader, BlockPosition blockposition, int maxBelow) {
@@ -152,7 +149,7 @@ index 7947563426..74e915c21e 100644
          VoxelShape voxelshape = iworldreader.getType(blockposition).getCollisionShape(iworldreader, blockposition);
  
          if (voxelshape.c(EnumDirection.EnumAxis.Y) > 0.4375D) {
-@@ -233,7 +335,7 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
+@@ -233,7 +333,7 @@ public class BlockBed extends BlockFacingHorizontal implements ITileEntity {
          } else {
              BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition(blockposition);
  
