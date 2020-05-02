@@ -1377,29 +1377,21 @@ index 2c1d1b1a55..44aed67274 100644
  
          if (this.h == this.b) {
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index e156804f7a..96a785af27 100644
+index ddc12364e7..0b6dce35e6 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-         return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
-     });
-     private final EnumProtocolDirection h;
--    private final Queue<NetworkManager.QueuedPacket> packetQueue = Queues.newConcurrentLinkedQueue();
-+    private final Queue<NetworkManager.QueuedPacket> packetQueue = Queues.newConcurrentLinkedQueue(); private final Queue<NetworkManager.QueuedPacket> getPacketQueue() { return this.packetQueue; } // Paper - OBFHELPER
-     public Channel channel;
-     public SocketAddress socketAddress; public void setSpoofedRemoteAddress(SocketAddress address) { this.socketAddress = address; } // Paper - OBFHELPER
-     // Spigot Start
-@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-     }
  
      public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
--        if (this.isConnected()) {
--            this.o();
-+        if (this.isConnected() && this.sendPacketQueue() && !(packet instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) packet).isReady())) { // Paper - Async-Anti-Xray - Add chunk packets which are not ready or all packets if the packet queue contains chunk packets which are not ready to the packet queue and send the packets later in the right order
-+            //this.o(); // Paper - Async-Anti-Xray - Move to if statement (this.sendPacketQueue())
-             this.b(packet, genericfuturelistener);
-         } else {
-             this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
+         // Paper start start - handle oversized packets better
++        // Special case keepalive, allow it to go out of queue order
++        if (packet instanceof PacketPlayOutKeepAlive && this.isConnected()) {
++            this.dispatchPacket(packet, genericfuturelistener);
++            return;
++        }
+         // write the packets to the queue, then flush - antixray hooks there already
+         java.util.List<Packet> extraPackets = buildExtraPackets(packet);
+         boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
  
      }
@@ -1418,13 +1410,13 @@ index e156804f7a..96a785af27 100644
 -                while ((networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.packetQueue.poll()) != null) {
 -                    this.b(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
 +                while (!this.packetQueue.isEmpty()) {
-+                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.getPacketQueue().peek(); // poll -> peek
++                    NetworkManager.QueuedPacket networkmanager_queuedpacket = (NetworkManager.QueuedPacket) queue.peek(); // poll -> peek
 +
 +                    if (networkmanager_queuedpacket != null) { // Fix NPE (Spigot bug caused by handleDisconnection())
 +                        if (networkmanager_queuedpacket.getPacket() instanceof PacketPlayOutMapChunk && !((PacketPlayOutMapChunk) networkmanager_queuedpacket.getPacket()).isReady()) { // Check if the peeked packet is a chunk packet which is not ready
 +                            return false; // Return false if the peeked packet is a chunk packet which is not ready
 +                        } else {
-+                            this.getPacketQueue().poll(); // poll here
++                            queue.poll(); // poll here
 +                            this.dispatchPacket(networkmanager_queuedpacket.getPacket(), networkmanager_queuedpacket.getGenericFutureListener()); // dispatch the packet
 +                        }
 +                    }
