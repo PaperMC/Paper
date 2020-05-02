@@ -1,0 +1,62 @@
+From acd45a0492e8507ae0e9b2dc5c634ec37ea21980 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Thu, 30 Apr 2020 17:09:23 +0200
+Subject: [PATCH] Add hover events joiner for items
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/ItemStackHoverConstructor.java b/src/main/java/com/destroystokyo/paper/ItemStackHoverConstructor.java
+new file mode 100644
+index 00000000000..d4efe68451d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ItemStackHoverConstructor.java
+@@ -0,0 +1,35 @@
++package com.destroystokyo.paper;
++
++import java.util.function.Function;
++import net.md_5.bungee.api.chat.BaseComponent;
++import net.md_5.bungee.api.chat.HoverEvent;
++import net.md_5.bungee.api.chat.TextComponent;
++import net.minecraft.server.NBTTagCompound;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.ItemStack;
++
++public class ItemStackHoverConstructor implements Function<ItemStack, HoverEvent> {
++    public static final ItemStackHoverConstructor INSTANCE = new ItemStackHoverConstructor();
++
++    private ItemStackHoverConstructor() {
++    }
++
++    /**
++     * This <b>must</b> be called at least once during setup of the server.
++     */
++    public static void setup() {
++        ItemStackHoverJoiner.converter = INSTANCE;
++    }
++
++    @Override
++    public HoverEvent apply(ItemStack itemStack) {
++        return new HoverEvent(
++            HoverEvent.Action.SHOW_ITEM,
++            new BaseComponent[]{
++                new TextComponent(
++                    CraftItemStack.asNMSCopy(itemStack).save(new NBTTagCompound()).toString()
++                )
++            }
++        );
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index e62ca0543f1..057052768b2 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -229,6 +229,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             return false;
+         }
+ 
++        com.destroystokyo.paper.ItemStackHoverConstructor.setup(); // Paper
++
+         // CraftBukkit start
+         // this.a((PlayerList) (new DedicatedPlayerList(this))); // Spigot - moved up
+         server.loadPlugins();
+2.26.2
+

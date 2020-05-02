@@ -1,0 +1,84 @@
+From 491755c15ddc6af88fb00225467a4350c25ca6ab Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Thu, 30 Apr 2020 17:09:16 +0200
+Subject: [PATCH] Add hover event joiner for items
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/ItemStackHoverJoiner.java b/src/main/java/com/destroystokyo/paper/ItemStackHoverJoiner.java
+new file mode 100644
+index 00000000..33ca1563
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ItemStackHoverJoiner.java
+@@ -0,0 +1,69 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.Preconditions;
++import java.util.function.Function;
++import net.md_5.bungee.api.chat.ComponentBuilder;
++import net.md_5.bungee.api.chat.ComponentBuilder.FormatRetention;
++import net.md_5.bungee.api.chat.ComponentBuilder.Joiner;
++import net.md_5.bungee.api.chat.HoverEvent;
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * A {@link Joiner} for applying a {@link HoverEvent} for an {@link ItemStack} to text.
++ * <p>
++ * This is a no-op on {@link Material#AIR}, {@link Material#VOID_AIR}, and {@link Material#CAVE_AIR}.
++ * </p>
++ */
++public class ItemStackHoverJoiner implements Joiner {
++    // This is package-level to abuse Java mechanics where a custom interface would be unnecessary.
++    static Function<ItemStack, HoverEvent> converter = null;
++
++    @NotNull
++    private final ItemStack itemStack;
++
++    public ItemStackHoverJoiner(@NotNull ItemStack itemStack) {
++        Preconditions.checkNotNull(itemStack, "itemStack cannot be null");
++
++        this.itemStack = itemStack;
++    }
++
++    @Override
++    @NotNull
++    public ComponentBuilder join(@NotNull ComponentBuilder componentBuilder,
++        @Nullable FormatRetention formatRetention) {
++        HoverEvent event = createEvent();
++        if (event == null) {
++            return componentBuilder;
++        }
++        return componentBuilder.event(event);
++    }
++
++    /**
++     * Return the {@link ItemStack} this applies a {@link HoverEvent} for.
++     *
++     * @return the {@link ItemStack} this makes a {@link HoverEvent} for.
++     */
++    @NotNull
++    public ItemStack getItemStack() {
++        return itemStack;
++    }
++
++    /**
++     * Creates a {@link HoverEvent} for the {@link ItemStack} this is for.
++     *
++     * @return a new {@link HoverEvent} for this item or null if not applicable.
++     */
++    @Nullable
++    public HoverEvent createEvent() {
++        if (itemStack.getType() == Material.AIR
++            || itemStack.getType() == Material.CAVE_AIR
++            || itemStack.getType() == Material.VOID_AIR) {
++            return null;
++        }
++
++        return converter.apply(itemStack);
++    }
++}
+-- 
+2.26.2
+
