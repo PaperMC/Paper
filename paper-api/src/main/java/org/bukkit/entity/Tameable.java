@@ -2,7 +2,7 @@ package org.bukkit.entity;
 
 import org.jetbrains.annotations.Nullable;
 
-public interface Tameable extends Entity {
+public interface Tameable extends Animals {
 
     /**
      * Check if this is tamed

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Horse-like creature.
  */
-public interface AbstractHorse extends Animals, Vehicle, InventoryHolder, Tameable {
+public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
 
     /**
      * Gets the horse's variant.

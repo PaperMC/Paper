@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Wolf
  */
-public interface Wolf extends Animals, Tameable, Sittable {
+public interface Wolf extends Tameable, Sittable {
 
     /**
      * Checks if this wolf is angry

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Meow.
  */
-public interface Cat extends Animals, Tameable, Sittable {
+public interface Cat extends Tameable, Sittable {
 
     /**
      * Gets the current type of this cat.

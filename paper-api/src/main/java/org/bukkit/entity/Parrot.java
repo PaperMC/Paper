@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Parrot.
  */
-public interface Parrot extends Animals, Tameable, Sittable {
+public interface Parrot extends Tameable, Sittable {
 
     /**
      * Get the variant of this parrot.
