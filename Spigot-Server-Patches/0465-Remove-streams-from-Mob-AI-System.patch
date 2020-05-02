@@ -1,4 +1,4 @@
-From 92483b5800e7db9d3c1046ab607bec5e35b9ee4f Mon Sep 17 00:00:00 2001
+From 7739f39ca832f6942b113739172d2bf9c948134b Mon Sep 17 00:00:00 2001
 From: Spottedleaf <spottedleaf@spottedleaf.dev>
 Date: Mon, 6 Apr 2020 17:53:29 -0700
 Subject: [PATCH] Remove streams from Mob AI System
@@ -10,10 +10,10 @@ Also optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
-index bdb90a3466..134f7d0013 100644
+index bdb90a3466..93009d83f0 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
-@@ -1,10 +1,11 @@
+@@ -1,10 +1,12 @@
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
@@ -22,11 +22,12 @@ index bdb90a3466..134f7d0013 100644
  public abstract class PathfinderGoal {
  
 -    private final EnumSet<PathfinderGoal.Type> a = EnumSet.noneOf(PathfinderGoal.Type.class);
++    private final EnumSet<PathfinderGoal.Type> a = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
 +    private final OptimizedSmallEnumSet<Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
  
      public PathfinderGoal() {}
  
-@@ -28,16 +29,20 @@ public abstract class PathfinderGoal {
+@@ -28,16 +30,20 @@ public abstract class PathfinderGoal {
      public void e() {}
  
      public void a(EnumSet<PathfinderGoal.Type> enumset) {
@@ -52,7 +53,7 @@ index bdb90a3466..134f7d0013 100644
  
      public static enum Type {
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
-index 935136771e..90319909e5 100644
+index 935136771e..84d2abbcb9 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 @@ -1,8 +1,10 @@
@@ -66,16 +67,17 @@ index 935136771e..90319909e5 100644
  import java.util.Map;
  import java.util.Set;
  import java.util.stream.Stream;
-@@ -26,7 +28,7 @@ public class PathfinderGoalSelector {
+@@ -26,7 +28,8 @@ public class PathfinderGoalSelector {
      private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
      private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
      private final GameProfilerFiller e;
 -    private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class);
++    private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
 +    private final OptimizedSmallEnumSet<PathfinderGoal.Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
      private int g = 3;private int getTickRate() { return g; } // Paper - OBFHELPER
      private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
  
-@@ -58,33 +60,36 @@ public class PathfinderGoalSelector {
+@@ -58,33 +61,36 @@ public class PathfinderGoalSelector {
      // Paper end
  
      public void a(PathfinderGoal pathfindergoal) {
@@ -134,7 +136,7 @@ index 935136771e..90319909e5 100644
          this.c.forEach((pathfindergoal_type, pathfindergoalwrapped) -> {
              if (!pathfindergoalwrapped.g()) {
                  this.c.remove(pathfindergoal_type);
-@@ -93,30 +98,58 @@ public class PathfinderGoalSelector {
+@@ -93,30 +99,58 @@ public class PathfinderGoalSelector {
          });
          this.e.exit();
          this.e.enter("goalUpdate");
@@ -215,7 +217,7 @@ index 935136771e..90319909e5 100644
          this.e.exit();
      }
  
-@@ -125,11 +158,11 @@ public class PathfinderGoalSelector {
+@@ -125,11 +159,11 @@ public class PathfinderGoalSelector {
      }
  
      public void a(PathfinderGoal.Type pathfindergoal_type) {
