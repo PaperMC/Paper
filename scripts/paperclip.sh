@@ -7,10 +7,11 @@ workdir="$basedir/work"
 mcver=$(cat "$workdir/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
 paperjar="$basedir/Paper-Server/target/paper-$mcver.jar"
 vanillajar="$workdir/Minecraft/$mcver/$mcver.jar"
+mvncmd="mvn -T 1.5C"
 
 (
     cd "$workdir/Paperclip"
-    mvn clean package "-Dmcver=$mcver" "-Dpaperjar=$paperjar" "-Dvanillajar=$vanillajar"
+    $mvncmd clean package "-Dmcver=$mcver" "-Dpaperjar=$paperjar" "-Dvanillajar=$vanillajar"
 )
 cp "$workdir/Paperclip/assembly/target/paperclip-${mcver}.jar" "$basedir/paperclip.jar"
 
