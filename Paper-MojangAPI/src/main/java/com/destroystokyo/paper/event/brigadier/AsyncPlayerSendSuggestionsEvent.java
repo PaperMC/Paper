@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when sending Suggestions to the client. Will be called asynchronously if a plugin
  * marks the AsyncTabComplete event handled asynchronously, otherwise called synchronously.
  */
-public class AsyncSendPlayerSuggestionsEvent extends PlayerEvent implements Cancellable {
+public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled = false;
@@ -21,7 +21,7 @@ public class AsyncSendPlayerSuggestionsEvent extends PlayerEvent implements Canc
     private Suggestions suggestions;
     private final String buffer;
 
-    public AsyncSendPlayerSuggestionsEvent(Player player, Suggestions suggestions, String buffer) {
+    public AsyncPlayerSendSuggestionsEvent(Player player, Suggestions suggestions, String buffer) {
         super(player, !Bukkit.isPrimaryThread());
         this.suggestions = suggestions;
         this.buffer = buffer;
