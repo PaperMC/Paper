@@ -692,7 +692,14 @@ public class PlayerConnection implements PacketListenerPlayIn {
     @Override
     public void a(PacketPlayInPickItem packetplayinpickitem) {
         PlayerConnectionUtils.ensureMainThread(packetplayinpickitem, this, this.player.getWorldServer());
-        this.player.inventory.c(packetplayinpickitem.b());
+        // Paper start - validate pick item position
+        if (!(packetplayinpickitem.b() >= 0 && packetplayinpickitem.b() < this.player.inventory.items.size())) {
+            PlayerConnection.LOGGER.warn("{} tried to set an invalid carried item", this.player.getDisplayName().getString());
+            this.disconnect("Invalid hotbar selection (Hacking?)");
+            return;
+        }
+        this.player.inventory.c(packetplayinpickitem.b()); // Paper - Diff above if changed
+        // Paper end
         this.player.playerConnection.sendPacket(new PacketPlayOutSetSlot(-2, this.player.inventory.itemInHandIndex, this.player.inventory.getItem(this.player.inventory.itemInHandIndex)));
         this.player.playerConnection.sendPacket(new PacketPlayOutSetSlot(-2, packetplayinpickitem.b(), this.player.inventory.getItem(packetplayinpickitem.b())));
         this.player.playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(this.player.inventory.itemInHandIndex));
