@@ -1,4 +1,4 @@
-From 56c60b5fe7223fdb70332e205f3ae0a831377782 Mon Sep 17 00:00:00 2001
+From 15707af6bfb4b1a034d72de16ab84afdb2e5d9d9 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Fri, 13 May 2016 01:38:06 -0400
 Subject: [PATCH] Entity Activation Range 2.0
@@ -266,7 +266,7 @@ index 9e161746f2..228e6e9ab9 100644
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 92601c581c..92f19fcbb1 100644
+index 92601c581c..d873b8cf3a 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -2,24 +2,34 @@ package org.spigotmc;
@@ -331,25 +331,16 @@ index 92601c581c..92f19fcbb1 100644
          MONSTER,
          ANIMAL,
          RAIDER,
-@@ -46,6 +66,52 @@ public class ActivationRange
+@@ -46,6 +66,43 @@ public class ActivationRange
  
          AxisAlignedBB boundingBox = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
      }
 +    // Paper start
-+    static MemoryModuleType<?>[] VILLAGER_IMMUNITIES = {
-+        MemoryModuleType.LOOK_TARGET,
-+        MemoryModuleType.INTERACTION_TARGET,
-+        MemoryModuleType.WALK_TARGET,
-+        MemoryModuleType.HIDING_PLACE,
-+        MemoryModuleType.PATH,
-+        MemoryModuleType.SECONDARY_JOB_SITE
-+    };
 +
-+    static Activity[] VILLAGER_ACTIVITY_IMMUNITIES = {
++    static Activity[] VILLAGER_PANIC_IMMUNITIES = {
 +        Activity.HIDE,
 +        Activity.PRE_RAID,
 +        Activity.RAID,
-+        Activity.WORK,
 +        Activity.PANIC
 +    };
 +
@@ -384,7 +375,7 @@ index 92601c581c..92f19fcbb1 100644
  
      static AxisAlignedBB maxBB = new AxisAlignedBB( 0, 0, 0, 0, 0, 0 );
  
-@@ -58,10 +124,13 @@ public class ActivationRange
+@@ -58,10 +115,13 @@ public class ActivationRange
       */
      public static ActivationType initializeEntityActivationType(Entity entity)
      {
@@ -399,7 +390,7 @@ index 92601c581c..92f19fcbb1 100644
          {
              return ActivationType.MONSTER;
          } else if ( entity instanceof EntityCreature || entity instanceof EntityAmbient )
-@@ -82,10 +151,14 @@ public class ActivationRange
+@@ -82,10 +142,14 @@ public class ActivationRange
       */
      public static boolean initializeEntityActivationState(Entity entity, SpigotWorldConfig config)
      {
@@ -418,7 +409,7 @@ index 92601c581c..92f19fcbb1 100644
                  || entity instanceof EntityHuman
                  || entity instanceof EntityProjectile
                  || entity instanceof EntityEnderDragon
-@@ -118,10 +191,25 @@ public class ActivationRange
+@@ -118,10 +182,25 @@ public class ActivationRange
          final int raiderActivationRange = world.spigotConfig.raiderActivationRange;
          final int animalActivationRange = world.spigotConfig.animalActivationRange;
          final int monsterActivationRange = world.spigotConfig.monsterActivationRange;
@@ -444,7 +435,7 @@ index 92601c581c..92f19fcbb1 100644
          maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
  
          for ( EntityHuman player : world.getPlayers() )
-@@ -133,6 +221,11 @@ public class ActivationRange
+@@ -133,6 +212,11 @@ public class ActivationRange
              ActivationType.RAIDER.boundingBox = player.getBoundingBox().grow( raiderActivationRange, 256, raiderActivationRange );
              ActivationType.ANIMAL.boundingBox = player.getBoundingBox().grow( animalActivationRange, 256, animalActivationRange );
              ActivationType.MONSTER.boundingBox = player.getBoundingBox().grow( monsterActivationRange, 256, monsterActivationRange );
@@ -456,7 +447,7 @@ index 92601c581c..92f19fcbb1 100644
  
              int i = MathHelper.floor( maxBB.minX / 16.0D );
              int j = MathHelper.floor( maxBB.maxX / 16.0D );
-@@ -143,7 +236,7 @@ public class ActivationRange
+@@ -143,7 +227,7 @@ public class ActivationRange
              {
                  for ( int j1 = k; j1 <= l; ++j1 )
                  {
@@ -465,7 +456,7 @@ index 92601c581c..92f19fcbb1 100644
                      if ( chunk != null )
                      {
                          activateChunkEntities( chunk );
-@@ -161,19 +254,15 @@ public class ActivationRange
+@@ -161,19 +245,15 @@ public class ActivationRange
       */
      private static void activateChunkEntities(Chunk chunk)
      {
@@ -493,7 +484,7 @@ index 92601c581c..92f19fcbb1 100644
                          entity.activatedTick = MinecraftServer.currentTick;
                      }
                  }
-@@ -188,56 +277,100 @@ public class ActivationRange
+@@ -188,56 +268,105 @@ public class ActivationRange
       * @param entity
       * @return
       */
@@ -501,6 +492,7 @@ index 92601c581c..92f19fcbb1 100644
 +    public static int checkEntityImmunities(Entity entity) // Paper - return # of ticks to get immunity
      {
 +        // Paper start
++        SpigotWorldConfig config = entity.world.spigotConfig;
 +        int inactiveWakeUpImmunity = checkInactiveWakeup(entity);
 +        if (inactiveWakeUpImmunity > -1) {
 +            return inactiveWakeUpImmunity;
@@ -508,6 +500,7 @@ index 92601c581c..92f19fcbb1 100644
 +        if (entity.fireTicks > 0) {
 +            return 2;
 +        }
++        long inactiveFor = MinecraftServer.currentTick - entity.activatedTick;
 +        // Paper end
          // quick checks.
 -        if ( entity.inWater || entity.fireTicks > 0 )
@@ -544,7 +537,8 @@ index 92601c581c..92f19fcbb1 100644
              {
 -                return true;
 +                return 20; // Paper
-+            }
+             }
+-            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).canBreed() )
 +            // Paper start
 +            if (entity instanceof EntityBee) {
 +                EntityBee bee = (EntityBee)entity;
@@ -559,18 +553,20 @@ index 92601c581c..92f19fcbb1 100644
 +            if ( entity instanceof EntityVillager ) {
 +                BehaviorController<EntityVillager> behaviorController = ((EntityVillager) entity).getBehaviorController();
 +
-+                for (Activity activity : VILLAGER_ACTIVITY_IMMUNITIES) {
-+                    if (behaviorController.hasActivity(activity)) {
-+                        return 5;
++                if (config.villagersActiveForPanic) {
++                    for (Activity activity : VILLAGER_PANIC_IMMUNITIES) {
++                        if (behaviorController.hasActivity(activity)) {
++                            return 20*5;
++                        }
 +                    }
 +                }
-+                for (MemoryModuleType<?> type : VILLAGER_IMMUNITIES) {
-+                    if (behaviorController.hasMemory(type)) {
-+                        return 5;
++
++                if (config.villagersWorkImmunityAfter > 0 && inactiveFor >= config.villagersWorkImmunityAfter) {
++                    if (behaviorController.hasActivity(Activity.WORK)) {
++                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
-             }
--            if ( entity instanceof EntityVillager && ( (EntityVillager) entity ).canBreed() )
++            }
 +            if ( entity instanceof EntityLlama && ( (EntityLlama ) entity ).inCaravan() )
              {
 -                return true;
@@ -610,7 +606,7 @@ index 92601c581c..92f19fcbb1 100644
      }
  
      /**
-@@ -252,8 +385,19 @@ public class ActivationRange
+@@ -252,8 +381,19 @@ public class ActivationRange
          if ( !entity.inChunk || entity instanceof EntityFireworks ) {
              return true;
          }
@@ -631,7 +627,7 @@ index 92601c581c..92f19fcbb1 100644
  
          // Should this entity tick?
          if ( !isActive )
-@@ -261,15 +405,19 @@ public class ActivationRange
+@@ -261,15 +401,19 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
@@ -657,10 +653,10 @@ index 92601c581c..92f19fcbb1 100644
              isActive = false;
          }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 5e932a5d97..5a704c60fd 100644
+index 5e932a5d97..9d706626bf 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-@@ -180,13 +180,53 @@ public class SpigotWorldConfig
+@@ -180,13 +180,59 @@ public class SpigotWorldConfig
      public int monsterActivationRange = 32;
      public int raiderActivationRange = 48;
      public int miscActivationRange = 16;
@@ -675,11 +671,14 @@ index 5e932a5d97..5a704c60fd 100644
 +    public int wakeUpInactiveMonstersEvery = 20*20;
 +    public int wakeUpInactiveMonstersFor = 5*20;
 +    public int wakeUpInactiveVillagers = 4;
-+    public int wakeUpInactiveVillagersEvery = 15*20;
++    public int wakeUpInactiveVillagersEvery = 30*20;
 +    public int wakeUpInactiveVillagersFor = 5*20;
 +    public int wakeUpInactiveFlying = 8;
 +    public int wakeUpInactiveFlyingEvery = 10*20;
 +    public int wakeUpInactiveFlyingFor = 5*20;
++    public int villagersWorkImmunityAfter = 5*20;
++    public int villagersWorkImmunityFor = 20;
++    public boolean villagersActiveForPanic = true;
 +    // Paper end
      public boolean tickInactiveVillagers = true;
      private void activationRange()
@@ -710,6 +709,9 @@ index 5e932a5d97..5a704c60fd 100644
 +        wakeUpInactiveFlyingEvery = getInt("entity-activation-range.wake-up-inactive.flying-monsters-every", wakeUpInactiveFlyingEvery);
 +        wakeUpInactiveFlyingFor = getInt("entity-activation-range.wake-up-inactive.flying-monsters-for", wakeUpInactiveFlyingFor);
 +
++        villagersWorkImmunityAfter = getInt( "entity-activation-range.villagers-work-immunity-after", villagersWorkImmunityAfter );
++        villagersWorkImmunityFor = getInt( "entity-activation-range.villagers-work-immunity-for", villagersWorkImmunityFor );
++        villagersActiveForPanic = getBoolean( "entity-activation-range.villagers-active-for-panic", villagersActiveForPanic );
 +        // Paper end
          tickInactiveVillagers = getBoolean( "entity-activation-range.tick-inactive-villagers", tickInactiveVillagers );
          log( "Entity Activation Range: An " + animalActivationRange + " / Mo " + monsterActivationRange + " / Ra " + raiderActivationRange + " / Mi " + miscActivationRange + " / Tiv " + tickInactiveVillagers );
