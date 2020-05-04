@@ -10,7 +10,7 @@ Finalizers have no guarantee on when they will be ran, and since this is
 old generation memory, it might be a while before its called.
 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index df728e2c0a..c565307a58 100644
+index df728e2c0a..20927d55c6 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
@@ -26,8 +26,60 @@ index df728e2c0a..c565307a58 100644
          }
          } finally { // Paper start - Prevent regionfiles from being closed during use
              this.fileLock.unlock();
-+            if (getFileBuffer() instanceof sun.nio.ch.DirectBuffer) ((sun.nio.ch.DirectBuffer) getFileBuffer()).cleaner().clean(); // Paper - clean up direct buffers on close
++            if (getFileBuffer().isDirect()) cleanDirectByteBuffer(getFileBuffer()); // Paper - clean up direct buffers on close
          }
          } // Paper end
  
+     }
++    // Paper start
++    private static int getVersion() {
++        String version = System.getProperty("java.version");
++        if(version.startsWith("1.")) {
++            version = version.substring(2, 3);
++        } else {
++            int dot = version.indexOf(".");
++            if(dot != -1) { version = version.substring(0, dot); }
++        } return Integer.parseInt(version);
++    }
++    static java.lang.reflect.Method unsafeClean;
++    static sun.misc.Unsafe unsafe = com.destroystokyo.paper.utils.UnsafeUtils.getUnsafe();
++    static java.util.function.Consumer<ByteBuffer> cleaner;
++    static {
++        try {
++            if (unsafe != null) {
++                unsafeClean = unsafe.getClass().getMethod("invokeCleaner", ByteBuffer.class);
++                if (unsafeClean != null) {
++                    cleaner = (buf) -> {
++                        try {
++                            unsafeClean.invoke(unsafe, buf);
++                        } catch (Exception ex) {
++                            com.destroystokyo.paper.util.SneakyThrow.sneaky(ex);
++                        }
++                    };
++                    LOGGER.info("[RegionFile] Using Java 9+ invokeCleaner DirectByteBuffer cleanup method");
++                }
++            }
++        } catch (java.lang.NoSuchMethodException e) {}
++        if (cleaner == null && getVersion() <= 8) {
++            cleaner = (buf) -> {
++                ((sun.nio.ch.DirectBuffer) buf).cleaner().clean();
++            };
++            LOGGER.info("[RegionFile] Using Java 8 DirectByteBuffer cleanup method");
++        }
++    }
++    public static void cleanDirectByteBuffer(ByteBuffer toBeDestroyed) {
++        try {
++            if (cleaner != null) {
++                cleaner.accept(toBeDestroyed);
++            }
++        } catch (Exception ex) {
++            LOGGER.warn("Failed automatically cleaning DirectByteBuffer");
++            ex.printStackTrace();
++            cleaner = null;
++        }
++    }
++    // Paper end
+ 
+     private void c() throws IOException {
+         int i = (int) this.dataFile.size();
 --
