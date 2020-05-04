@@ -319,9 +319,21 @@ public final class VoxelShapes {
     }
 
     @VisibleForTesting
-    protected static VoxelShapeMerger a(int i, DoubleList doublelist, DoubleList doublelist1, boolean flag, boolean flag1) {
+    private static VoxelShapeMerger a(int i, DoubleList doublelist, DoubleList doublelist1, boolean flag, boolean flag1) { // Paper - private
+        // Paper start - fast track the most common scenario
+        // doublelist is usually a DoubleArrayList with Infinite head/tails that falls to the final else clause
+        // This is actually the most common path, so jump to it straight away
+        if (doublelist.getDouble(0) == Double.NEGATIVE_INFINITY && doublelist.getDouble(doublelist.size() - 1) == Double.POSITIVE_INFINITY) {
+            return new VoxelShapeMergerList(doublelist, doublelist1, flag, flag1);
+        }
+        // Split out rest to hopefully inline the above
+        return lessCommonMerge(i, doublelist, doublelist1, flag, flag1);
+    }
+
+    private static VoxelShapeMerger lessCommonMerge(int i, DoubleList doublelist, DoubleList doublelist1, boolean flag, boolean flag1) {
         int j = doublelist.size() - 1;
         int k = doublelist1.size() - 1;
+        // Paper note - Rewrite below as optimized order if instead of nasty ternary
 
         if (doublelist instanceof VoxelShapeCubePoint && doublelist1 instanceof VoxelShapeCubePoint) {
             long l = a(j, k);
@@ -331,7 +343,22 @@ public final class VoxelShapes {
             }
         }
 
-        return (VoxelShapeMerger) (doublelist.getDouble(j) < doublelist1.getDouble(0) - 1.0E-7D ? new VoxelShapeMergerDisjoint(doublelist, doublelist1, false) : (doublelist1.getDouble(k) < doublelist.getDouble(0) - 1.0E-7D ? new VoxelShapeMergerDisjoint(doublelist1, doublelist, true) : (j == k && Objects.equals(doublelist, doublelist1) ? (doublelist instanceof VoxelShapeMergerIdentical ? (VoxelShapeMerger) doublelist : (doublelist1 instanceof VoxelShapeMergerIdentical ? (VoxelShapeMerger) doublelist1 : new VoxelShapeMergerIdentical(doublelist))) : new VoxelShapeMergerList(doublelist, doublelist1, flag, flag1))));
+        // Identical happens more often than Disjoint
+        if (j == k && Objects.equals(doublelist, doublelist1)) {
+            if (doublelist instanceof VoxelShapeMergerIdentical) {
+                return (VoxelShapeMerger) doublelist;
+            } else if (doublelist1 instanceof VoxelShapeMergerIdentical) {
+                return (VoxelShapeMerger) doublelist1;
+            }
+            return new VoxelShapeMergerIdentical(doublelist);
+        } else if (doublelist.getDouble(j) < doublelist1.getDouble(0) - 1.0E-07) {
+            return new VoxelShapeMergerDisjoint(doublelist, doublelist1, false);
+        } else if (doublelist1.getDouble(k) < doublelist.getDouble(0) - 1.0E-07) {
+            return new VoxelShapeMergerDisjoint(doublelist1, doublelist, true);
+        } else {
+            return new VoxelShapeMergerList(doublelist, doublelist1, flag, flag1);
+        }
+        // Paper end
     }
 
     public interface a {

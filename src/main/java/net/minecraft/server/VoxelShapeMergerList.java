@@ -6,9 +6,15 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 public final class VoxelShapeMergerList implements VoxelShapeMerger {
 
-    private final DoubleArrayList a;
+    private final DoubleList a; // Paper
     private final IntArrayList b;
     private final IntArrayList c;
+
+    // Paper start
+    private static final IntArrayList INFINITE_B_1 = new IntArrayList(new int[]{1, 1});
+    private static final IntArrayList INFINITE_B_0 = new IntArrayList(new int[]{0, 0});
+    private static final IntArrayList INFINITE_C = new IntArrayList(new int[]{0, 1});
+    // Paper end
 
     protected VoxelShapeMergerList(DoubleList doublelist, DoubleList doublelist1, boolean flag, boolean flag1) {
         int i = 0;
@@ -17,6 +23,22 @@ public final class VoxelShapeMergerList implements VoxelShapeMerger {
         int k = doublelist.size();
         int l = doublelist1.size();
         int i1 = k + l;
+
+        // Paper start - optimize common path of infinity doublelist
+        int size = doublelist.size();
+        double tail = doublelist.getDouble(size - 1);
+        double head = doublelist.getDouble(0);
+        if (head == Double.NEGATIVE_INFINITY && tail == Double.POSITIVE_INFINITY && !flag && !flag1 && (size == 2 || size == 4)) {
+            this.a = doublelist1;
+            if (size == 2) {
+                this.b = INFINITE_B_0;
+            } else {
+                this.b = INFINITE_B_1;
+            }
+            this.c = INFINITE_C;
+            return;
+        }
+        // Paper end
 
         this.a = new DoubleArrayList(i1);
         this.b = new IntArrayList(i1);
