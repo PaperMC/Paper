@@ -27,6 +27,7 @@ public class Main {
         }
         // Paper end
         // Todo: Installation script
+        if (System.getProperty("jdk.nio.maxCachedBufferSize") == null) System.setProperty("jdk.nio.maxCachedBufferSize", "262144"); // Paper - cap per-thread NIO cache size; https://www.evanjones.ca/java-bytebuffer-leak.html
         OptionParser parser = new OptionParser() {
             {
                 this.acceptsAll(Main.asList("?", "help"), "Show the help");
