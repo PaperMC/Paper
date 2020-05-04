@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 4 May 2020 00:38:13 -0400
+Subject: [PATCH] Cleanup Region Files Direct Memory on close
+
+Mojang was semi leaking native memory here by relying on finalizers
+to clean up the direct memory.
+
+Finalizers have no guarantee on when they will be ran, and since this is
+old generation memory, it might be a while before its called.
+
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index df728e2c0a..c565307a58 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+     private final FileChannel dataFile;
+     private final java.nio.file.Path d;
+     private final RegionFileCompression e;
+-    private final ByteBuffer f;
++    private final ByteBuffer f; private ByteBuffer getFileBuffer() { return f; } // Paper - clean up direct buffers on close
+     private final IntBuffer g;
+     private final IntBuffer h;
+     private final RegionFileBitSet freeSectors;
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+         }
+         } finally { // Paper start - Prevent regionfiles from being closed during use
+             this.fileLock.unlock();
++            if (getFileBuffer() instanceof sun.nio.ch.DirectBuffer) ((sun.nio.ch.DirectBuffer) getFileBuffer()).cleaner().clean(); // Paper - clean up direct buffers on close
+         }
+         } // Paper end
+ 
+--
