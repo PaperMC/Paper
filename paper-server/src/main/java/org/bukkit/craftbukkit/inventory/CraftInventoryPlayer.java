@@ -9,6 +9,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory, EntityEquipment {
@@ -100,6 +101,56 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
             index = 8 - (index - 36);
         }
         player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.defaultContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
+    }
+
+    @Override
+    public void setItem(EquipmentSlot slot, ItemStack item) {
+        Preconditions.checkArgument(slot != null, "slot must not be null");
+
+        switch (slot) {
+            case HAND:
+                this.setItemInMainHand(item);
+                break;
+            case OFF_HAND:
+                this.setItemInOffHand(item);
+                break;
+            case FEET:
+                this.setBoots(item);
+                break;
+            case LEGS:
+                this.setLeggings(item);
+                break;
+            case CHEST:
+                this.setChestplate(item);
+                break;
+            case HEAD:
+                this.setHelmet(item);
+                break;
+            default:
+                throw new IllegalArgumentException("Not implemented. This is a bug");
+        }
+    }
+
+    @Override
+    public ItemStack getItem(EquipmentSlot slot) {
+        Preconditions.checkArgument(slot != null, "slot must not be null");
+
+        switch (slot) {
+            case HAND:
+                return getItemInMainHand();
+            case OFF_HAND:
+                return getItemInOffHand();
+            case FEET:
+                return getBoots();
+            case LEGS:
+                return getLeggings();
+            case CHEST:
+                return getChestplate();
+            case HEAD:
+                return getHelmet();
+            default:
+                throw new IllegalArgumentException("Not implemented. This is a bug");
+        }
     }
 
     @Override
