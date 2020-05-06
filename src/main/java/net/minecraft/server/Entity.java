@@ -206,6 +206,21 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
     // CraftBukkit end
 
+    // Paper start - optimise entity tracking
+    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
+
+    boolean isLegacyTrackingEntity = false;
+
+    public final void setLegacyTrackingEntity(final boolean isLegacyTrackingEntity) {
+        this.isLegacyTrackingEntity = isLegacyTrackingEntity;
+    }
+
+    final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInTrackRange() {
+        return ((WorldServer)this.world).getChunkProvider().playerChunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
+            .getObjectsInRange(MCUtil.getCoordinateKey(this));
+    }
+    // Paper end - optimise entity tracking
+
     public Entity(EntityTypes<?> entitytypes, World world) {
         this.id = Entity.entityCount.incrementAndGet();
         this.passengers = Lists.newArrayList();

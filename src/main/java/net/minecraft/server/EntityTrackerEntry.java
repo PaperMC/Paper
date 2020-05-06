@@ -72,6 +72,7 @@ public class EntityTrackerEntry {
         this.r = entity.isOnGround();
     }
 
+    public final void tick() { this.a(); } // Paper - OBFHELPER
     public void a() {
         List<Entity> list = this.tracker.getPassengers();
 

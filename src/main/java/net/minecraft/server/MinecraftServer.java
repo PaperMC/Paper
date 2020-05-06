@@ -1525,6 +1525,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         }
     }
 
+    public final int applyTrackingRangeScale(int value) { return this.b(value); } // Paper - OBFHELPER
     public int b(int i) {
         return i;
     }
