@@ -70,6 +70,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        }
++        // Paper start
++        private static boolean canSendImmediate(NetworkManager networkManager, Packet<?> packet) {
++            return networkManager.isPending || networkManager.protocol == EnumProtocol.HANDSHAKING || networkManager.protocol == EnumProtocol.STATUS || networkManager.queueImmunity ||
++                packet instanceof PacketPlayOutKeepAlive ||
++                packet instanceof PacketPlayOutChat ||
++                packet instanceof PacketPlayOutTabComplete;
++        }
++        // Paper end
 +    }
 +    // Paper end
  
@@ -77,14 +85,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.sendPacket(packet, (GenericFutureListener) null);
      }
  
-+    // Paper start
-+    private boolean canSendImmediate(Packet<?> packet) {
-+        return isPending || protocol == EnumProtocol.HANDSHAKING || protocol == EnumProtocol.STATUS || queueImmunity ||
-+            packet instanceof PacketPlayOutKeepAlive ||
-+            packet instanceof PacketPlayOutChat ||
-+            packet instanceof PacketPlayOutTabComplete;
-+    }
-+    // Paper end
      public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
 -        if (this.isConnected()) {
 -            this.o();
@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
 +        if (!connected && !preparing) return; // Do nothing
-+        if (connected && (canSendImmediate(packet) || (
++        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
 +            MCUtil.isMainThread() && packet.isReady() && this.packetQueue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
 +        ))) {
