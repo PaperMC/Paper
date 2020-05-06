@@ -22,7 +22,15 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
     private boolean h;
 
     public PacketPlayOutMapChunk() {}
+    // Paper start
+    private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
+    private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
 
+    @Override
+    public java.util.List<Packet> getExtraPackets() {
+        return extraPackets;
+    }
+    // Paper end
     public PacketPlayOutMapChunk(Chunk chunk, int i) {
         ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
 
@@ -49,6 +57,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
         this.c = this.a(new PacketDataSerializer(this.j()), chunk, i);
         this.g = Lists.newArrayList();
         iterator = chunk.getTileEntities().entrySet().iterator();
+        int totalTileEntities = 0; // Paper
 
         while (iterator.hasNext()) {
             entry = (Entry) iterator.next();
@@ -57,6 +66,15 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
             int j = blockposition.getY() >> 4;
 
             if (this.f() || (i & 1 << j) != 0) {
+                // Paper start - improve oversized chunk data packet handling
+                if (++totalTileEntities > TE_LIMIT) {
+                    PacketPlayOutTileEntityData updatePacket = tileentity.getUpdatePacket();
+                    if (updatePacket != null) {
+                        this.extraPackets.add(updatePacket);
+                        continue;
+                    }
+                }
+                // Paper end
                 NBTTagCompound nbttagcompound = tileentity.b();
                 if (tileentity instanceof TileEntitySkull) { TileEntitySkull.sanitizeTileEntityUUID(nbttagcompound); } // Paper
 
