@@ -65,6 +65,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     public int protocolVersion;
     public java.net.InetSocketAddress virtualHost;
     private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush");
+    // Optimize network
+    boolean isPending = true;
+    boolean queueImmunity = false;
+    EnumProtocol protocol;
     // Paper end
 
     public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
@@ -88,6 +92,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     }
 
     public void setProtocol(EnumProtocol enumprotocol) {
+        protocol = enumprotocol; // Paper
         this.channel.attr(NetworkManager.c).set(enumprotocol);
         this.channel.config().setAutoRead(true);
         NetworkManager.LOGGER.debug("Enabled auto read");
@@ -158,19 +163,82 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
         Validate.notNull(packetlistener, "packetListener", new Object[0]);
         this.packetListener = packetlistener;
     }
+    // Paper start
+    EntityPlayer getPlayer() {
+        if (packetListener instanceof PlayerConnection) {
+            return ((PlayerConnection) packetListener).player;
+        } else {
+            return null;
+        }
+    }
+    private static class InnerUtil { // Attempt to hide these methods from ProtocolLib so it doesn't accidently pick them up.
+        private static java.util.List<Packet> buildExtraPackets(Packet packet) {
+            java.util.List<Packet> extra = packet.getExtraPackets();
+            if (extra == null || extra.isEmpty()) {
+                return null;
+            }
+            java.util.List<Packet> ret = new java.util.ArrayList<>(1 + extra.size());
+            buildExtraPackets0(extra, ret);
+            return ret;
+        }
+
+        private static void buildExtraPackets0(java.util.List<Packet> extraPackets, java.util.List<Packet> into) {
+            for (Packet extra : extraPackets) {
+                into.add(extra);
+                java.util.List<Packet> extraExtra = extra.getExtraPackets();
+                if (extraExtra != null && !extraExtra.isEmpty()) {
+                    buildExtraPackets0(extraExtra, into);
+                }
+            }
+        }
+        // Paper start
+        private static boolean canSendImmediate(NetworkManager networkManager, Packet<?> packet) {
+            return networkManager.isPending || networkManager.protocol != EnumProtocol.PLAY ||
+                packet instanceof PacketPlayOutKeepAlive ||
+                packet instanceof PacketPlayOutChat ||
+                packet instanceof PacketPlayOutTabComplete;
+        }
+        // Paper end
+    }
+    // Paper end
 
     public void sendPacket(Packet<?> packet) {
         this.sendPacket(packet, (GenericFutureListener) null);
     }
 
     public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
-        if (this.isConnected()) {
-            this.p();
-            this.b(packet, genericfuturelistener);
-        } else {
-            this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
+        // Paper start - handle oversized packets better
+        boolean connected = this.isConnected();
+        if (!connected && !preparing) {
+            return; // Do nothing
         }
+        packet.onPacketDispatch(getPlayer());
+        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
+            MCUtil.isMainThread() && packet.isReady() && this.packetQueue.isEmpty() &&
+            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
+        ))) {
+            this.dispatchPacket(packet, genericfuturelistener);
+            return;
+        }
+        // write the packets to the queue, then flush - antixray hooks there already
+        java.util.List<Packet> extraPackets = InnerUtil.buildExtraPackets(packet);
+        boolean hasExtraPackets = extraPackets != null && !extraPackets.isEmpty();
+        if (!hasExtraPackets) {
+            this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
+        } else {
+            java.util.List<NetworkManager.QueuedPacket> packets = new java.util.ArrayList<>(1 + extraPackets.size());
+            packets.add(new NetworkManager.QueuedPacket(packet, null)); // delay the future listener until the end of the extra packets
 
+            for (int i = 0, len = extraPackets.size(); i < len;) {
+                Packet extra = extraPackets.get(i);
+                boolean end = ++i == len;
+                packets.add(new NetworkManager.QueuedPacket(extra, end ? genericfuturelistener : null)); // append listener to the end
+            }
+
+            this.packetQueue.addAll(packets); // atomic
+        }
+        this.sendPacketQueue();
+        // Paper end
     }
 
     private void dispatchPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericFutureListener) { this.b(packet, genericFutureListener); } // Paper - OBFHELPER
@@ -184,51 +252,116 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
             this.channel.config().setAutoRead(false);
         }
 
+        EntityPlayer player = getPlayer(); // Paper
         if (this.channel.eventLoop().inEventLoop()) {
             if (enumprotocol != enumprotocol1) {
                 this.setProtocol(enumprotocol);
             }
+            // Paper start
+            if (!isConnected()) {
+                packet.onPacketDispatchFinish(player, null);
+                return;
+            }
+            try {
+                // Paper end
 
             ChannelFuture channelfuture = this.channel.writeAndFlush(packet);
 
             if (genericfuturelistener != null) {
                 channelfuture.addListener(genericfuturelistener);
             }
+            // Paper start
+            if (packet.hasFinishListener()) {
+                channelfuture.addListener((ChannelFutureListener) channelFuture -> packet.onPacketDispatchFinish(player, channelFuture));
+            }
+            // Paper end
 
             channelfuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            // Paper start
+            } catch (Exception e) {
+                LOGGER.error("NetworkException: " + player, e);
+                close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));;
+                packet.onPacketDispatchFinish(player, null);
+            }
+            // Paper end
         } else {
             this.channel.eventLoop().execute(() -> {
                 if (enumprotocol != enumprotocol1) {
                     this.setProtocol(enumprotocol);
                 }
 
+                // Paper start
+                if (!isConnected()) {
+                    packet.onPacketDispatchFinish(player, null);
+                    return;
+                }
+                try {
+                    // Paper end
                 ChannelFuture channelfuture1 = this.channel.writeAndFlush(packet);
+
 
                 if (genericfuturelistener != null) {
                     channelfuture1.addListener(genericfuturelistener);
                 }
+                // Paper start
+                if (packet.hasFinishListener()) {
+                    channelfuture1.addListener((ChannelFutureListener) channelFuture -> packet.onPacketDispatchFinish(player, channelFuture));
+                }
+                // Paper end
 
                 channelfuture1.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                // Paper start
+                } catch (Exception e) {
+                    LOGGER.error("NetworkException: " + player, e);
+                    close(new ChatMessage("disconnect.genericReason", "Internal Exception: " + e.getMessage()));;
+                    packet.onPacketDispatchFinish(player, null);
+                }
+                // Paper end
             });
         }
 
     }
 
-    private void sendPacketQueue() { this.p(); } // Paper - OBFHELPER
-    private void p() {
-        if (this.channel != null && this.channel.isOpen()) {
-            Queue queue = this.packetQueue;
-
+    // Paper start - rewrite this to be safer if ran off main thread
+    private boolean sendPacketQueue() { return this.p(); } // OBFHELPER // void -> boolean
+    private boolean p() { // void -> boolean
+        if (!isConnected()) {
+            return true;
+        }
+        if (MCUtil.isMainThread()) {
+            return processQueue();
+        } else if (isPending) {
+            // Should only happen during login/status stages
             synchronized (this.packetQueue) {
-                NetworkManager.QueuedPacket networkmanager_queuedpacket;
-
-                while ((networkmanager_queuedpacket = (NetworkManager.QueuedPacket) this.packetQueue.poll()) != null) {
-                    this.b(networkmanager_queuedpacket.a, networkmanager_queuedpacket.b);
-                }
-
+                return this.processQueue();
             }
         }
+        return false;
     }
+    private boolean processQueue() {
+        if (this.packetQueue.isEmpty()) return true;
+        // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
+        // But if we are not on main due to login/status, the parent is synchronized on packetQueue
+        java.util.Iterator<QueuedPacket> iterator = this.packetQueue.iterator();
+        while (iterator.hasNext()) {
+            NetworkManager.QueuedPacket queued = iterator.next(); // poll -> peek
+
+            // Fix NPE (Spigot bug caused by handleDisconnection())
+            if (queued == null) {
+                return true;
+            }
+
+            Packet<?> packet = queued.getPacket();
+            if (!packet.isReady()) {
+                return false;
+            } else {
+                iterator.remove();
+                this.dispatchPacket(packet, queued.getGenericFutureListener());
+            }
+        }
+        return true;
+    }
+    // Paper end
 
     public void a() {
         this.p();
@@ -261,9 +394,21 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
         return this.socketAddress;
     }
 
+    // Paper start
+    public void clearPacketQueue() {
+        EntityPlayer player = getPlayer();
+        packetQueue.forEach(queuedPacket -> {
+            Packet<?> packet = queuedPacket.getPacket();
+            if (packet.hasFinishListener()) {
+                packet.onPacketDispatchFinish(player, null);
+            }
+        });
+        packetQueue.clear();
+    } // Paper end
     public void close(IChatBaseComponent ichatbasecomponent) {
         // Spigot Start
         this.preparing = false;
+        clearPacketQueue(); // Paper
         // Spigot End
         if (this.channel.isOpen()) {
             this.channel.close(); // We can't wait as this may be called from an event loop.
@@ -331,7 +476,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     public void handleDisconnection() {
         if (this.channel != null && !this.channel.isOpen()) {
             if (this.o) {
-                NetworkManager.LOGGER.warn("handleDisconnection() called twice");
+                //NetworkManager.LOGGER.warn("handleDisconnection() called twice"); // Paper - Do not log useless message
             } else {
                 this.o = true;
                 if (this.k() != null) {
@@ -339,7 +484,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                 } else if (this.j() != null) {
                     this.j().a(new ChatMessage("multiplayer.disconnect.generic"));
                 }
-                this.packetQueue.clear(); // Free up packet queue.
+                clearPacketQueue(); // Paper
                 // Paper start - Add PlayerConnectionCloseEvent
                 final PacketListener packetListener = this.j();
                 if (packetListener instanceof PlayerConnection) {

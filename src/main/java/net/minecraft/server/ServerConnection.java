@@ -16,6 +16,7 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler; // Paper
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -41,10 +42,12 @@ public class ServerConnection {
     private final List<NetworkManager> connectedChannels = Collections.synchronizedList(Lists.newArrayList());
     // Paper start - prevent blocking on adding a new network manager while the server is ticking
     private final java.util.Queue<NetworkManager> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private static final boolean disableFlushConsolidation = Boolean.getBoolean("Paper.disableFlushConsolidate"); // Paper
     private void addPending() {
         NetworkManager manager = null;
         while ((manager = pending.poll()) != null) {
             connectedChannels.add(manager);
+            manager.isPending = false;
         }
     }
     // Paper end
@@ -79,6 +82,7 @@ public class ServerConnection {
                         ;
                     }
 
+                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new FlushConsolidationHandler()); // Paper
                     channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(ServerConnection.this)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(EnumProtocolDirection.SERVERBOUND)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(EnumProtocolDirection.CLIENTBOUND));
                     int j = ServerConnection.this.e.k();
                     Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);
