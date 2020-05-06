@@ -1,0 +1,46 @@
+From 6a1e78f606bdaf63e33ad53c875643ee4d23ec0e Mon Sep 17 00:00:00 2001
+From: AgentTroll <woodyc40@gmail.com>
+Date: Fri, 22 Mar 2019 22:24:03 -0700
+Subject: [PATCH] Update entity Metadata for all tracked players
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index 3ff7a7b4a85..3a88c9a6706 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -387,6 +387,12 @@ public class EntityTrackerEntry {
+         return PacketPlayOutEntity.a(this.xLoc, this.yLoc, this.zLoc);
+     }
+ 
++    // Paper start - Add broadcast method
++    void broadcast(Packet<?> packet) {
++        this.getPacketConsumer().accept(packet);
++    }
++    // Paper end
++
+     private void broadcastIncludingSelf(Packet<?> packet) {
+         this.f.accept(packet);
+         if (this.tracker instanceof EntityPlayer) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 94d3d602ccd..f496006f3cc 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2006,7 +2006,14 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+                     if (event.isCancelled() || this.player.inventory.getItemInHand() == null || this.player.inventory.getItemInHand().getItem() != origItem) {
+                         // Refresh the current entity metadata
+-                        this.sendPacket(new PacketPlayOutEntityMetadata(entity.getId(), entity.datawatcher, true));
++                        // Paper start - update entity for all players
++                        PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(entity.getId(), entity.datawatcher, true);
++                        if (entity.tracker != null) {
++                            entity.tracker.broadcast(packet);
++                        } else {
++                            this.sendPacket(packet);
++                        }
++                        // Paper end
+                     }
+ 
+                     if (event.isCancelled()) {
+-- 
+2.26.2
+
