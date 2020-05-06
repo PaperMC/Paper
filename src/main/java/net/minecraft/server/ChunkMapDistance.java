@@ -31,7 +31,7 @@ public abstract class ChunkMapDistance {
     private final Long2ObjectMap<ObjectSet<EntityPlayer>> c = new Long2ObjectOpenHashMap();
     public final Long2ObjectOpenHashMap<ArraySetSorted<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
     private final ChunkMapDistance.a ticketLevelTracker = new ChunkMapDistance.a();
-    private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
+    public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
     private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
     // Paper start use a queue, but still keep unique requirement
     public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
@@ -49,6 +49,8 @@ public abstract class ChunkMapDistance {
     private final LongSet l = new LongOpenHashSet();
     private final Executor m;
     private long currentTick;
+
+    PlayerChunkMap chunkMap; // Paper
 
     protected ChunkMapDistance(Executor executor, Executor executor1) {
         executor1.getClass();
@@ -94,7 +96,7 @@ public abstract class ChunkMapDistance {
     protected abstract PlayerChunk a(long i, int j, @Nullable PlayerChunk playerchunk, int k);
 
     public boolean a(PlayerChunkMap playerchunkmap) {
-        this.f.a();
+        //this.f.a(); // Paper - no longer used
         this.g.a();
         int i = Integer.MAX_VALUE - this.ticketLevelTracker.a(Integer.MAX_VALUE);
         boolean flag = i != 0;
@@ -230,7 +232,7 @@ public abstract class ChunkMapDistance {
         ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
             return new ObjectOpenHashSet();
         })).add(entityplayer);
-        this.f.update(i, 0, true);
+        //this.f.update(i, 0, true); // Paper - no longer used
         this.g.update(i, 0, true);
     }
 
@@ -241,7 +243,7 @@ public abstract class ChunkMapDistance {
         if (objectset != null) objectset.remove(entityplayer); // Paper - some state corruption happens here, don't crash, clean up gracefully.
         if (objectset == null || objectset.isEmpty()) { // Paper
             this.c.remove(i);
-            this.f.update(i, Integer.MAX_VALUE, false);
+            //this.f.update(i, Integer.MAX_VALUE, false); // Paper - no longer used
             this.g.update(i, Integer.MAX_VALUE, false);
         }
 
@@ -265,13 +267,17 @@ public abstract class ChunkMapDistance {
     }
 
     public int b() {
-        this.f.a();
-        return this.f.a.size();
+        // Paper start - use distance map to implement
+        // note: this is the spawn chunk count
+        return this.chunkMap.playerChunkTickRangeMap.size();
+        // Paper end - use distance map to implement
     }
 
     public boolean d(long i) {
-        this.f.a();
-        return this.f.a.containsKey(i);
+        // Paper start - use distance map to implement
+        // note: this is the is spawn chunk method
+        return this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(i) != null;
+        // Paper end - use distance map to implement
     }
 
     public String c() {

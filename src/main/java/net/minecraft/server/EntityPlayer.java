@@ -115,6 +115,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
 
     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
 
+    double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+
     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
         super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
         this.spawnDimension = World.OVERWORLD;

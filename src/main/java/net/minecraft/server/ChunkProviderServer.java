@@ -729,6 +729,37 @@ public class ChunkProviderServer extends IChunkProvider {
         boolean flag1 = this.world.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING) && !world.getPlayers().isEmpty(); // CraftBukkit
 
         if (!flag) {
+            // Paper start - optimize isOutisdeRange
+            PlayerChunkMap playerChunkMap = this.playerChunkMap;
+            for (EntityPlayer player : this.world.players) {
+                if (!player.affectsSpawning || player.isSpectator()) {
+                    playerChunkMap.playerMobSpawnMap.remove(player);
+                    continue;
+                }
+
+                int viewDistance = this.playerChunkMap.getEffectiveViewDistance();
+
+                // copied and modified from isOutisdeRange
+                int chunkRange = world.spigotConfig.mobSpawnRange;
+                chunkRange = (chunkRange > viewDistance) ? (byte)viewDistance : chunkRange;
+                chunkRange = (chunkRange > ChunkMapDistance.MOB_SPAWN_RANGE) ? ChunkMapDistance.MOB_SPAWN_RANGE : chunkRange;
+
+                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte)chunkRange);
+                event.callEvent();
+                if (event.isCancelled() || event.getSpawnRadius() < 0 || playerChunkMap.playerChunkTickRangeMap.getLastViewDistance(player) == -1) {
+                    playerChunkMap.playerMobSpawnMap.remove(player);
+                    continue;
+                }
+
+                int range = Math.min(event.getSpawnRadius(), 32); // limit to max view distance
+                int chunkX = net.minecraft.server.MCUtil.getChunkCoordinate(player.locX());
+                int chunkZ = net.minecraft.server.MCUtil.getChunkCoordinate(player.locZ());
+
+                playerChunkMap.playerMobSpawnMap.addOrUpdate(player, chunkX, chunkZ, range);
+                player.lastEntitySpawnRadiusSquared = (double)((range << 4) * (range << 4)); // used in isOutsideRange
+                player.playerNaturallySpawnedEvent = event;
+            }
+            // Paper end - optimize isOutisdeRange
             this.world.getMethodProfiler().enter("pollingChunks");
             int k = this.world.getGameRules().getInt(GameRules.RANDOM_TICK_SPEED);
             boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit
@@ -758,15 +789,7 @@ public class ChunkProviderServer extends IChunkProvider {
             this.world.getMethodProfiler().exit();
             //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
             //Collections.shuffle(list); // Paper
-            //Paper start - call player naturally spawn event
-            int chunkRange = world.spigotConfig.mobSpawnRange;
-            chunkRange = (chunkRange > world.spigotConfig.viewDistance) ? (byte) world.spigotConfig.viewDistance : chunkRange;
-            chunkRange = Math.min(chunkRange, 8);
-            for (EntityPlayer entityPlayer : this.world.getPlayers()) {
-                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
-                entityPlayer.playerNaturallySpawnedEvent.callEvent();
-            };
-            // Paper end
+            // Paper - moved up
             final int[] chunksTicked = {0}; this.playerChunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
 
@@ -782,9 +805,9 @@ public class ChunkProviderServer extends IChunkProvider {
                         Chunk chunk = (Chunk) optional1.get();
                         ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
 
-                        if (!this.playerChunkMap.isOutsideOfRange(chunkcoordintpair)) {
+                        if (!this.playerChunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, false)) { // Paper - optimise isOutsideOfRange
                             chunk.setInhabitedTime(chunk.getInhabitedTime() + j);
-                            if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(chunkcoordintpair, true)) { // Spigot
+                            if (flag1 && (this.allowMonsters || this.allowAnimals) && this.world.getWorldBorder().isInBounds(chunk.getPos()) && !this.playerChunkMap.isOutsideOfRange(playerchunk, chunkcoordintpair, true)) { // Spigot // Paper - optimise isOutsideOfRange
                                 SpawnerCreature.a(this.world, chunk, spawnercreature_d, this.allowAnimals, this.allowMonsters, flag2);
                             }
 

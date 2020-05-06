@@ -45,6 +45,18 @@ public class PlayerChunk {
     long lastAutoSaveTime; // Paper - incremental autosave
     long inactiveTimeStart; // Paper - incremental autosave
 
+    // Paper start - optimise isOutsideOfRange
+    // cached here to avoid a map lookup
+    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersInMobSpawnRange;
+    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersInChunkTickRange;
+
+    void updateRanges() {
+        long key = net.minecraft.server.MCUtil.getCoordinateKey(this.location);
+        this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
+        this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
+    }
+    // Paper end - optimise isOutsideOfRange
+
     public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
         this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -61,6 +73,7 @@ public class PlayerChunk {
         this.n = this.oldTicketLevel;
         this.a(i);
         this.chunkMap = (PlayerChunkMap)playerchunk_d; // Paper
+        this.updateRanges(); // Paper - optimise isOutsideOfRange
     }
 
     // Paper start
