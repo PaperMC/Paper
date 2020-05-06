@@ -248,7 +248,7 @@ index 0000000000..59868f37d1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java
 new file mode 100644
-index 0000000000..07685b6bd5
+index 0000000000..7bab31a312
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/map/QueuedChangesMapLong2Object.java
 @@ -0,0 +0,0 @@
@@ -300,8 +300,16 @@ index 0000000000..07685b6bd5
 +        return this.updatingMap.get(k);
 +    }
 +
++    public boolean updatingContainsKey(final long k) {
++        return this.updatingMap.containsKey(k);
++    }
++
 +    public V getVisible(final long k) {
 +        return this.visibleMap.get(k);
++    }
++
++    public boolean visibleContainsKey(final long k) {
++        return this.visibleMap.containsKey(k);
 +    }
 +
 +    public V getVisibleAsync(final long k) {
@@ -313,6 +321,28 @@ index 0000000000..07685b6bd5
 +
 +            try {
 +                ret = this.visibleMap.get(k);
++            } catch (final Throwable thr) {
++                if (thr instanceof ThreadDeath) {
++                    throw (ThreadDeath)thr;
++                }
++                // ignore...
++                continue;
++            }
++
++        } while (!this.updatingMapSeqLock.tryReleaseRead(readlock));
++
++        return ret;
++    }
++
++    public boolean visibleContainsKeyAsync(final long k) {
++        long readlock;
++        boolean ret = false;
++
++        do {
++            readlock = this.updatingMapSeqLock.acquireRead();
++
++            try {
++                ret = this.visibleMap.containsKey(k);
 +            } catch (final Throwable thr) {
 +                if (thr instanceof ThreadDeath) {
 +                    throw (ThreadDeath)thr;
@@ -1065,7 +1095,7 @@ index 0000000000..c3b936f54b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 new file mode 100644
-index 0000000000..f625da9f09
+index 0000000000..c71ed11834
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
 @@ -0,0 +0,0 @@
@@ -1148,26 +1178,56 @@ index 0000000000..f625da9f09
 +        return this.areaMap.size();
 +    }
 +
-+    public final void update(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++    public final void addOrUpdate(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
 +        final int oldViewDistance = this.objectToViewDistance.put(object, viewDistance);
 +        final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
++        final long oldPos = this.objectToLastCoordinate.put(object, newPos);
++
 +        if (oldViewDistance == -1) {
-+            this.objectToLastCoordinate.put(object, newPos);
 +            this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, viewDistance);
 +            this.addObjectCallback(object, chunkX, chunkZ, viewDistance);
 +        } else {
-+            final long oldPos = this.objectToLastCoordinate.put(object, newPos);
 +            this.updateObject(object, oldPos, newPos, oldViewDistance, viewDistance);
 +            this.updateObjectCallback(object, oldPos, newPos, oldViewDistance, viewDistance);
 +        }
 +        //this.validate(object, viewDistance);
 +    }
 +
-+    // called after the distance map updates
-+    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {}
++    public final boolean update(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        final int oldViewDistance = this.objectToViewDistance.replace(object, viewDistance);
++        if (oldViewDistance == -1) {
++            return false;
++        } else {
++            final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
++            final long oldPos = this.objectToLastCoordinate.put(object, newPos);
++            this.updateObject(object, oldPos, newPos, oldViewDistance, viewDistance);
++            this.updateObjectCallback(object, oldPos, newPos, oldViewDistance, viewDistance);
++        }
++        //this.validate(object, viewDistance);
++        return true;
++    }
 +
 +    // called after the distance map updates
 +    protected void updateObjectCallback(final E Object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {}
++
++    public final boolean add(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
++        final int oldViewDistance = this.objectToViewDistance.putIfAbsent(object, viewDistance);
++        if (oldViewDistance != -1) {
++            return false;
++        }
++
++        final long newPos = MCUtil.getCoordinateKey(chunkX, chunkZ);
++        this.objectToLastCoordinate.put(object, newPos);
++        this.addObject(object, chunkX, chunkZ, Integer.MIN_VALUE, Integer.MIN_VALUE, viewDistance);
++        this.addObjectCallback(object, chunkX, chunkZ, viewDistance);
++
++        //this.validate(object, viewDistance);
++
++        return true;
++    }
++
++    // called after the distance map updates
++    protected void addObjectCallback(final E object, final int chunkX, final int chunkZ, final int viewDistance) {}
 +
 +    public final boolean remove(final E object) {
 +        final long position = this.objectToLastCoordinate.removeLong(object);
@@ -2015,6 +2075,197 @@ index 0000000000..e51104e65a
 +        }
 +    }
 +}
+diff --git a/src/main/java/com/destroystokyo/paper/util/pooled/PooledObjects.java b/src/main/java/com/destroystokyo/paper/util/pooled/PooledObjects.java
+new file mode 100644
+index 0000000000..d4325f1f11
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/pooled/PooledObjects.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util.pooled;
++
++import org.apache.commons.lang3.mutable.MutableInt;
++import java.util.ArrayDeque;
++import java.util.concurrent.ThreadLocalRandom;
++import java.util.concurrent.locks.ReentrantLock;
++
++public final class PooledObjects<E> {
++
++    public static final PooledObjects<MutableInt> POOLED_MUTABLE_INTEGERS = new PooledObjects<>(new PooledObjectHandler<MutableInt>() {
++        @Override
++        public MutableInt createNew() {
++            return new MutableInt();
++        }
++
++        @Override
++        public void onAcquire(final MutableInt value) {}
++
++        @Override
++        public void onRelease(final MutableInt value) {}
++    }, 200, -1);
++
++    private final PooledObjectHandler<E> handler;
++    private final int maxPoolSize;
++    private final int expectingThreads;
++
++    private final IsolatedPool<E> mainPool;
++    // use these under contention
++    private final IsolatedPool<E>[] contendedPools;
++
++    public PooledObjects(final PooledObjectHandler<E> handler, final int maxPoolSize, int expectingThreads) {
++        if (handler == null) {
++            throw new NullPointerException("Handler must not be null");
++        }
++        if (maxPoolSize <= 0) {
++            throw new IllegalArgumentException("Max pool size must be greater-than 0");
++        }
++        if (expectingThreads <= 0) {
++            expectingThreads = Runtime.getRuntime().availableProcessors();
++        }
++
++        this.handler = handler;
++        this.maxPoolSize = maxPoolSize;
++        this.expectingThreads = expectingThreads;
++        this.mainPool = new IsolatedPool<>(handler, maxPoolSize);
++        final IsolatedPool<E>[] contendedPools = new IsolatedPool[2 * expectingThreads];
++
++        for (int i = 0; i < contendedPools.length; ++i) {
++            contendedPools[i] = new IsolatedPool<>(handler, Math.max(1, maxPoolSize / 2));
++        }
++
++        this.contendedPools = contendedPools;
++    }
++
++    // Taken from
++    // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
++    // https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/2016/06/25/fastrange.c
++    // Original license is public domain
++    public static int fastRandomBounded(final long randomInteger, final long limit) {
++        // randomInteger must be [0, pow(2, 32))
++        // limit must be [0, pow(2, 32))
++        return (int)((randomInteger * limit) >>> 32);
++    }
++
++    public E acquire() {
++        E ret;
++        PooledObjects.IsolatedPool<E> pooled = this.mainPool;
++        int lastIndex = -1;
++        while ((ret = pooled.tryAcquireUncontended()) == null) {
++            int index;
++            while (lastIndex == (index = fastRandomBounded(ThreadLocalRandom.current().nextInt() & 0xFFFFFFFFL, this.contendedPools.length)));
++            lastIndex = index;
++            pooled = this.contendedPools[index];
++        }
++
++        return ret;
++    }
++
++    public void release(final E value) {
++        PooledObjects.IsolatedPool<E> pooled = this.mainPool;
++        int lastIndex = -1;
++        while (!pooled.tryReleaseUncontended(value)) {
++            int index;
++            while (lastIndex == (index = fastRandomBounded(ThreadLocalRandom.current().nextInt() & 0xFFFFFFFFL, this.contendedPools.length)));
++            lastIndex = index;
++            pooled = this.contendedPools[index];
++        }
++    }
++
++    /** This object is restricted from interacting with any pool */
++    static interface PooledObjectHandler<E> {
++
++        /**
++         * Must return a non-null object
++         */
++        E createNew();
++
++        void onAcquire(final E value);
++
++        void onRelease(final E value);
++    }
++
++    protected static class IsolatedPool<E> {
++
++        protected final PooledObjectHandler<E> handler;
++
++        // We use arraydeque as it doesn't create garbage per element...
++        protected final ArrayDeque<E> pool;
++        protected final int maxPoolSize;
++
++        protected final ReentrantLock lock = new ReentrantLock();
++
++        public IsolatedPool(final PooledObjectHandler<E> handler, final int maxPoolSize) {
++            this.handler = handler;
++            this.pool = new ArrayDeque<>();
++            this.maxPoolSize = maxPoolSize;
++        }
++
++        protected E acquireOrCreateNoLock() {
++            E ret;
++
++            ret = this.pool.poll();
++
++            if (ret == null) {
++                ret = this.handler.createNew();
++            }
++            this.handler.onAcquire(ret);
++
++            return ret;
++        }
++
++        public E tryAcquireUncontended() {
++            if (!this.lock.tryLock()) {
++                return null;
++            }
++            try {
++                return this.acquireOrCreateNoLock();
++            } finally {
++                this.lock.unlock();
++            }
++        }
++
++        public E acquire() {
++            this.lock.lock();
++            try {
++                return this.acquireOrCreateNoLock();
++            } finally {
++                this.lock.unlock();
++            }
++        }
++
++        protected void releaseNoLock(final E value) {
++            if (this.pool.size() >= this.maxPoolSize) {
++                this.handler.onRelease(value);
++                return; // can't accept, we're at capacity
++            }
++
++            this.pool.add(value);
++            this.handler.onRelease(value);
++        }
++
++        public boolean tryReleaseUncontended(final E value) {
++            if (!this.lock.tryLock()) {
++                return false;
++            }
++
++            try {
++                this.releaseNoLock(value);
++            } finally {
++                this.lock.unlock();
++            }
++
++            return true;
++        }
++
++        public void release(final E value) {
++            this.lock.lock();
++            try {
++                this.releaseNoLock(value);
++            } finally {
++                this.lock.unlock();
++            }
++        }
++    }
++}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
 new file mode 100644
 index 0000000000..9df0006c1a
@@ -2136,7 +2387,7 @@ index 1cf97cefc9..2040f18349 100644
          return this.d.containsKey(iblockstate);
      }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index c88a62f6b7..5dbd3e60fe 100644
+index c88a62f6b7..f8ac39e1b0 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -2156,6 +2407,14 @@ index c88a62f6b7..5dbd3e60fe 100644
      public BlockPosition immutableCopy() {
          return this;
      }
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+             super(i, j, k);
+         }
+ 
++        public static BlockPosition.PooledBlockPosition acquire() { return r(); } // Paper - OBFHELPER
+         public static BlockPosition.PooledBlockPosition r() {
+             return f(0, 0, 0);
+         }
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
              return this.d;
          }
@@ -2191,7 +2450,7 @@ index c88a62f6b7..5dbd3e60fe 100644
              this.d = i;
          }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 55373cae07..c50fe1c245 100644
+index 55373cae07..b39ce329aa 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
@@ -2256,27 +2515,41 @@ index 55373cae07..c50fe1c245 100644
 +        if (chunk == null) {
 +            throw new IllegalArgumentException("Chunk must be non-null, neighbour: (" + relativeX + "," + relativeZ + "), chunk: " + this.loc);
 +        }
++        final long before = this.neighbourChunksLoadedBitset;
 +        final int index = getNeighbourIndex(relativeX, relativeZ);
 +        this.loadedNeighbourChunks[index] = chunk;
 +        this.neighbourChunksLoadedBitset |= (1L << index);
++        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
 +    }
 +
 +    public final void setNeighbourUnloaded(final int relativeX, final int relativeZ) {
++        final long before = this.neighbourChunksLoadedBitset;
 +        final int index = getNeighbourIndex(relativeX, relativeZ);
 +        this.loadedNeighbourChunks[index] = null;
 +        this.neighbourChunksLoadedBitset &= ~(1L << index);
++        this.onNeighbourChange(before, this.neighbourChunksLoadedBitset);
 +    }
 +
 +    public final void resetNeighbours() {
++        final long before = this.neighbourChunksLoadedBitset;
 +        this.neighbourChunksLoadedBitset = 0L;
 +        java.util.Arrays.fill(this.loadedNeighbourChunks, null);
++        this.onNeighbourChange(before, 0L);
++    }
++
++    protected void onNeighbourChange(final long bitsetBefore, final long bitsetAfter) {
++
 +    }
 +
 +    public final boolean areNeighboursLoaded(final int radius) {
++        return Chunk.areNeighboursLoaded(this.neighbourChunksLoadedBitset, radius);
++    }
++
++    public static boolean areNeighboursLoaded(final long bitset, final int radius) {
 +        // index = relativeX + (relativeZ * (NEIGHBOUR_CACHE_RADIUS * 2 + 1)) + (NEIGHBOUR_CACHE_RADIUS + NEIGHBOUR_CACHE_RADIUS * ((NEIGHBOUR_CACHE_RADIUS * 2 + 1)))
 +        switch (radius) {
 +            case 0: {
-+                return this.loadedTicketLevel;
++                return (bitset & (1L << getNeighbourIndex(0, 0))) != 0;
 +            }
 +            case 1: {
 +                long mask = 0L;
@@ -2285,7 +2558,7 @@ index 55373cae07..c50fe1c245 100644
 +                        mask |= (1L << getNeighbourIndex(dx, dz));
 +                    }
 +                }
-+                return (this.neighbourChunksLoadedBitset & mask) == mask;
++                return (bitset & mask) == mask;
 +            }
 +            case 2: {
 +                long mask = 0L;
@@ -2294,7 +2567,7 @@ index 55373cae07..c50fe1c245 100644
 +                        mask |= (1L << getNeighbourIndex(dx, dz));
 +                    }
 +                }
-+                return (this.neighbourChunksLoadedBitset & mask) == mask;
++                return (bitset & mask) == mask;
 +            }
 +            case 3: {
 +                long mask = 0L;
@@ -2303,7 +2576,7 @@ index 55373cae07..c50fe1c245 100644
 +                        mask |= (1L << getNeighbourIndex(dx, dz));
 +                    }
 +                }
-+                return (this.neighbourChunksLoadedBitset & mask) == mask;
++                return (bitset & mask) == mask;
 +            }
 +
 +            default:
@@ -3704,7 +3977,7 @@ index 5c5bf010d0..6e9f402fb0 100644
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 7ad30548e2..93d838ec2d 100644
+index 7ad30548e2..b505244516 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3715,26 +3988,19 @@ index 7ad30548e2..93d838ec2d 100644
 +    private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
 +
 +    void addPlayerToDistanceMaps(EntityPlayer player) {
-+        this.updateMaps(player);
-+
-+
-+
++        int chunkX = MCUtil.getChunkCoordinate(player.locX());
++        int chunkZ = MCUtil.getChunkCoordinate(player.locZ());
++        // Note: players need to be explicitly added to distance maps before they can be updated
 +    }
 +
 +    void removePlayerFromDistanceMaps(EntityPlayer player) {
-+
-+
-+
 +
 +    }
 +
 +    void updateMaps(EntityPlayer player) {
 +        int chunkX = MCUtil.getChunkCoordinate(player.locX());
 +        int chunkZ = MCUtil.getChunkCoordinate(player.locZ());
-+
-+
-+
-+
++        // Note: players need to be explicitly added to distance maps before they can be updated
 +    }
 +
 +
@@ -3743,6 +4009,37 @@ index 7ad30548e2..93d838ec2d 100644
      public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
          super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
          this.visibleChunks = this.updatingChunks.clone();
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         };
+     }
+ 
++    // Paper start
++    public final int getEffectiveViewDistance() {
++        // TODO this needs to be checked on update
++        // Mojang currently sets it to +1 of the configured view distance. So subtract one to get the one we really want.
++        return this.viewDistance - 1;
++    }
++    // Paper end
++
+     private CompletableFuture<Either<List<IChunkAccess>, PlayerChunk.Failure>> a(ChunkCoordIntPair chunkcoordintpair, int i, IntFunction<ChunkStatus> intfunction) {
+         List<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> list = Lists.newArrayList();
+         int j = chunkcoordintpair.x;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             if (!flag1) {
+                 this.chunkDistanceManager.a(SectionPosition.a((Entity) entityplayer), entityplayer);
+             }
++            this.addPlayerToDistanceMaps(entityplayer); // Paper - distance maps
+         } else {
+             SectionPosition sectionposition = entityplayer.K();
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             if (!flag2) {
+                 this.chunkDistanceManager.b(sectionposition, entityplayer);
+             }
++            this.removePlayerFromDistanceMaps(entityplayer); // Paper - distance maps
+         }
+ 
+         for (int k = i - this.viewDistance; k <= i + this.viewDistance; ++k) {
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              }
          }
@@ -3961,26 +4258,6 @@ index 2e1eabba14..2a4fa455ff 100644
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index d5014abc9d..8a5ac6f69b 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         }
- 
-         this.registerEntity(entityplayer);
-+        this.getChunkProvider().playerChunkMap.addPlayerToDistanceMaps(entityplayer); // Paper - distance maps
-     }
- 
-     // CraftBukkit start
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-             EntityPlayer entityplayer = (EntityPlayer) entity;
- 
-             this.players.remove(entityplayer);
-+            this.getChunkProvider().playerChunkMap.removePlayerFromDistanceMaps(entityplayer); // Paper - distance maps
-         }
- 
-         this.getScoreboard().a(entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index e181df6f4d..4a9132c701 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
