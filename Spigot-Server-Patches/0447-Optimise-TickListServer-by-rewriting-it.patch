@@ -1,4 +1,4 @@
-From 7953128bd96ef3878736f57eaa3a3c17915c1164 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 14 Feb 2020 01:24:39 -0800
 Subject: [PATCH] Optimise TickListServer by rewriting it
@@ -42,7 +42,7 @@ sets the excessive tick delay to the specified ticks (defaults to
 60 * 20 ticks, aka 60 seconds)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index f4836e2da10..647f6fc8efb 100644
+index f4836e2da1061e7aa62ddb01c8ca7b3467b18415..647f6fc8efb350fbd0bc4c40358a998f8b89b96a 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -369,6 +369,13 @@ public class PaperConfig {
@@ -61,7 +61,7 @@ index f4836e2da10..647f6fc8efb 100644
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 00000000000..ce653f6b4be
+index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8c8759e25
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +1,622 @@
@@ -689,7 +689,7 @@ index 00000000000..ce653f6b4be
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 new file mode 100644
-index 00000000000..13cf1a55a9b
+index 0000000000000000000000000000000000000000..13cf1a55a9babbffccbca1acfbe1c496e8925521
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 @@ -0,0 +1,41 @@
@@ -736,7 +736,7 @@ index 00000000000..13cf1a55a9b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 new file mode 100644
-index 00000000000..118988c39e5
+index 0000000000000000000000000000000000000000..118988c39e58f28e8a2851792b9c014f341f06fc
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/set/LinkedSortedSet.java
 @@ -0,0 +1,142 @@
@@ -883,7 +883,7 @@ index 00000000000..118988c39e5
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 9010359fbdc..07813c55cdc 100644
+index 9010359fbdc393e43ab2a0702cfc27427458b1ff..07813c55cdc85e08697d4126973f829ae564cf41 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -125,6 +125,7 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -895,7 +895,7 @@ index 9010359fbdc..07813c55cdc 100644
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index e67e0065357..ca1b5b3b094 100644
+index e67e00653575c3e57fe16980d2ff074d8413a95e..ca1b5b3b094b847f96742d8466fc42c5bdedbff5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -200,6 +200,13 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -913,7 +913,7 @@ index e67e0065357..ca1b5b3b094 100644
      public ChunkProviderServer(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator<?> chunkgenerator, int i, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
-index 33cfeabdee0..2287e47d1b8 100644
+index 33cfeabdee03195a294f303f28044a313cb1c4ed..2287e47d1b891135a5f2579ec324c70589141192 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
 +++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
 @@ -5,11 +5,13 @@ import java.util.Comparator;
@@ -984,7 +984,7 @@ index 33cfeabdee0..2287e47d1b8 100644
      public String toString() {
          return this.e + ": " + this.a + ", " + this.b + ", " + this.c + ", " + this.f;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index bf592125f4c..3d610e41969 100644
+index bf592125f4ce5d7ea6e802e637ee3bfbe25d23aa..3d610e41969768da0d2848fa1ae195035ccfd660 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -472,7 +472,9 @@ public class PlayerChunk {
@@ -999,7 +999,7 @@ index bf592125f4c..3d610e41969 100644
                  }
              });
 diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
-index dbb565e74d2..185658e2306 100644
+index dbb565e74d211ef35d5d40b3d024e2f07cef9031..185658e230688a9939c89dae9167217cbee03571 100644
 --- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
 +++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
 @@ -4,12 +4,12 @@ import com.google.common.base.MoreObjects;
@@ -1038,7 +1038,7 @@ index dbb565e74d2..185658e2306 100644
          return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
      }
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
-index f533860bbed..3f1aa5ced69 100644
+index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5dc98b8166 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java
 +++ b/src/main/java/net/minecraft/server/TickListServer.java
 @@ -42,6 +42,11 @@ public class TickListServer<T> implements TickList<T> {
@@ -1161,7 +1161,7 @@ index f533860bbed..3f1aa5ced69 100644
      }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index fcbc9f29139..5173731dc55 100644
+index fcbc9f29139ce5cd3b165130006f9c326a5d9eea..5173731dc55db416a312e13afd09e4e69d829e45 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -170,6 +170,15 @@ public class WorldServer extends World {
@@ -1209,6 +1209,3 @@ index fcbc9f29139..5173731dc55 100644
          this.navigators = Sets.newHashSet();
          this.I = new ObjectLinkedOpenHashSet();
          this.dataManager = worldnbtstorage;
--- 
-2.26.2
-

@@ -1,4 +1,4 @@
-From 2e3c16be1393bef658a5488a38309fde4c6550be Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 27 Apr 2016 22:09:52 -0400
 Subject: [PATCH] Optimize Hoppers
@@ -13,7 +13,7 @@ Subject: [PATCH] Optimize Hoppers
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index e89ad807ed9..fca4b6e20ab 100644
+index e89ad807ed96205a7bf1110d849c3459a995188d..fca4b6e20ab407ecaef3c5909c3d5e23a944e01b 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -626,4 +626,13 @@ public class PaperWorldConfig {
@@ -31,7 +31,7 @@ index e89ad807ed9..fca4b6e20ab 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
-index e1aa272e526..4da26365ec5 100644
+index e1aa272e526950e6405221e566cf4299c869a6b2..4da26365ec59ed33e10b55789e535a1c0e7b92a1 100644
 --- a/src/main/java/net/minecraft/server/IHopper.java
 +++ b/src/main/java/net/minecraft/server/IHopper.java
 @@ -12,12 +12,13 @@ public interface IHopper extends IInventory {
@@ -53,7 +53,7 @@ index e1aa272e526..4da26365ec5 100644
 +    double B();default double getZ() { return B(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index d953cdef14a..d6e43313bf0 100644
+index d953cdef14a9b62833a35a4fe94a22b5e9b19c2d..d6e43313bf0c678cf78fe77de2f8f4b6f819e3f4 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -482,11 +482,12 @@ public final class ItemStack {
@@ -73,7 +73,7 @@ index d953cdef14a..d6e43313bf0 100644
              itemstack.d(this.C());
              if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 26be3498704..63db74993c1 100644
+index 26be34987047370b0a8971f387cf959468031ebd..63db74993c12671292b6beef45c2e8be577d4a50 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1219,6 +1219,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -85,7 +85,7 @@ index 26be3498704..63db74993c1 100644
                  this.methodProfiler.a(() -> {
                      return worldserver.getWorldData().getName() + " " + IRegistry.DIMENSION_TYPE.getKey(worldserver.worldProvider.getDimensionManager());
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 958279249fd..a8e64dfdab1 100644
+index 958279249fdadfe5c2808d2a046636f06c3bd500..a8e64dfdab1e73894144a65c10c15d22f9198d3d 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -62,6 +62,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
@@ -105,7 +105,7 @@ index 958279249fd..a8e64dfdab1 100644
              this.world.b(this.position, this);
              if (!this.c.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 907d088c869..280c4e99e82 100644
+index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec8f4565e3 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -168,6 +168,160 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -370,7 +370,7 @@ index 907d088c869..280c4e99e82 100644
  
              if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 568e04faa31..9e161746f2a 100644
+index 568e04faa314552e14286efdfcdfb79e682fda95..9e161746f2acbe544140979bddb51ac26ee0d20f 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -1205,8 +1205,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -384,6 +384,3 @@ index 568e04faa31..9e161746f2a 100644
          this.getMethodProfiler().c("getEntities");
          int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
          int j = MathHelper.f((axisalignedbb.maxX + 2.0D) / 16.0D);
--- 
-2.26.2
-
