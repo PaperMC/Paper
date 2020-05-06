@@ -16,13 +16,7 @@ function cleanupPatches {
     cd "$1"
     for patch in *.patch; do
         echo "$patch"
-        gitver=$(tail -n 2 "$patch" | grep -ve "^$" | tail -n 1)
-        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(From [a-f0-9]{32,}|\-\-\- a|\+\+\+ b|^.index)")
-
-        testver=$(echo "$diffs" | tail -n 2 | grep --color=none -ve "^$" | tail -n 1 | grep --color=none "$gitver")
-        if [ "x$testver" != "x" ]; then
-            diffs=$(echo "$diffs" | sed 'N;$!P;$!D;$d')
-        fi
+        diffs=$($gitcmd diff --staged "$patch" | grep --color=none -E "^(\+|\-)" | grep --color=none -Ev "(\-\-\- a|\+\+\+ b|^.index)")
 
         if [ "x$diffs" == "x" ] ; then
             $gitcmd reset HEAD "$patch" >/dev/null
@@ -56,7 +50,7 @@ function savePatches {
 
     cd "$basedir/$target"
 
-    $gitcmd format-patch --no-stat -N -o "$basedir/${what_name}-Patches/" upstream/upstream >/dev/null
+    $gitcmd format-patch --zero-commit --full-index --no-signature --no-stat -N -o "$basedir/${what_name}-Patches/" upstream/upstream >/dev/null
     cd "$basedir"
     $gitcmd add -A "$basedir/${what_name}-Patches"
     if [ "$nofilter" == "0" ]; then
