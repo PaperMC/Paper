@@ -57,6 +57,18 @@ public class PlayerChunk {
     }
     // Paper end - optimise isOutsideOfRange
 
+    // Paper start - no-tick view distance
+    public final Chunk getSendingChunk() {
+        // it's important that we use getChunkAtIfLoadedImmediately to mirror the chunk sending logic used
+        // in Chunk's neighbour callback
+        Chunk ret = this.chunkMap.world.getChunkProvider().getChunkAtIfLoadedImmediately(this.location.x, this.location.z);
+        if (ret != null && ret.areNeighboursLoaded(1)) {
+            return ret;
+        }
+        return null;
+    }
+    // Paper end - no-tick view distance
+
     public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
         this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
         this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
@@ -212,7 +224,7 @@ public class PlayerChunk {
     }
 
     public void a(BlockPosition blockposition) {
-        Chunk chunk = this.getChunk();
+        Chunk chunk = this.getSendingChunk(); // Paper - no-tick view distance
 
         if (chunk != null) {
             byte b0 = (byte) SectionPosition.a(blockposition.getY());
@@ -228,7 +240,7 @@ public class PlayerChunk {
     }
 
     public void a(EnumSkyBlock enumskyblock, int i) {
-        Chunk chunk = this.getChunk();
+        Chunk chunk = this.getSendingChunk(); // Paper - no-tick view distance
 
         if (chunk != null) {
             chunk.setNeedsSaving(true);
@@ -310,9 +322,48 @@ public class PlayerChunk {
     }
 
     private void a(Packet<?> packet, boolean flag) {
-        this.players.a(this.location, flag).forEach((entityplayer) -> {
-            entityplayer.playerConnection.sendPacket(packet);
-        });
+        // Paper start - per player view distance
+        // there can be potential desync with player's last mapped section and the view distance map, so use the
+        // view distance map here.
+        com.destroystokyo.paper.util.misc.PlayerAreaMap viewDistanceMap = this.chunkMap.playerViewDistanceBroadcastMap;
+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = viewDistanceMap.getObjectsInRange(this.location);
+        if (players == null) {
+            return;
+        }
+
+        if (flag) { // flag -> border only
+            Object[] backingSet = players.getBackingSet();
+            for (int i = 0, len = backingSet.length; i < len; ++i) {
+                Object temp = backingSet[i];
+                if (!(temp instanceof EntityPlayer)) {
+                    continue;
+                }
+                EntityPlayer player = (EntityPlayer)temp;
+
+                int viewDistance = viewDistanceMap.getLastViewDistance(player);
+                long lastPosition = viewDistanceMap.getLastCoordinate(player);
+
+                int distX = Math.abs(MCUtil.getCoordinateX(lastPosition) - this.location.x);
+                int distZ = Math.abs(MCUtil.getCoordinateZ(lastPosition) - this.location.z);
+
+                if (Math.max(distX, distZ) == viewDistance) {
+                    player.playerConnection.sendPacket(packet);
+                }
+            }
+        } else {
+            Object[] backingSet = players.getBackingSet();
+            for (int i = 0, len = backingSet.length; i < len; ++i) {
+                Object temp = backingSet[i];
+                if (!(temp instanceof EntityPlayer)) {
+                    continue;
+                }
+                EntityPlayer player = (EntityPlayer)temp;
+                player.playerConnection.sendPacket(packet);
+            }
+        }
+
+        return;
+        // Paper end - per player view distance
     }
 
     public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> a(ChunkStatus chunkstatus, PlayerChunkMap playerchunkmap) {

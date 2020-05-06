@@ -201,7 +201,7 @@ public class ActivationRange
         maxRange = Math.max( maxRange, waterActivationRange );
         maxRange = Math.max( maxRange, villagerActivationRange );
         // Paper end
-        maxRange = Math.min( ( world.spigotConfig.viewDistance << 4 ) - 8, maxRange );
+        maxRange = Math.min( ( ((net.minecraft.server.WorldServer)world).getChunkProvider().playerChunkMap.getEffectiveViewDistance() << 4 ) - 8, maxRange ); // Paper - no-tick view distance
 
         for ( EntityHuman player : world.getPlayers() )
         {

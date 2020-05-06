@@ -621,7 +621,8 @@ public final class MCUtil {
             });
 
             worldData.addProperty("name", world.getWorld().getName());
-            worldData.addProperty("view-distance", world.spigotConfig.viewDistance);
+            worldData.addProperty("view-distance", world.getChunkProvider().playerChunkMap.getEffectiveViewDistance());
+            worldData.addProperty("no-view-distance", world.getChunkProvider().playerChunkMap.getRawNoTickViewDistance());
             worldData.addProperty("keep-spawn-loaded", world.keepSpawnInMemory);
             worldData.addProperty("keep-spawn-loaded-range", world.paperConfig.keepLoadedRange);
             worldData.addProperty("visible-chunk-count", visibleChunks.size());

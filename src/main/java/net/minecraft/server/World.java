@@ -464,8 +464,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                 this.b(blockposition, iblockdata1, iblockdata2);
             }
 
-            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getState() != null && chunk.getState().isAtLeast(PlayerChunk.State.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
+            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getState() != null && chunk.getState().isAtLeast(PlayerChunk.State.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement // Paper - diff on change, see below
                 this.notify(blockposition, iblockdata1, iblockdata, i);
+                // Paper start - per player view distance - allow block updates for non-ticking chunks in player view distance
+                // if copied from above
+            } else if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || ((WorldServer)this).getChunkProvider().playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.getCoordinateKey(blockposition)) != null)) {
+                ((WorldServer)this).getChunkProvider().flagDirty(blockposition);
+                // Paper end - per player view distance
             }
 
             if ((i & 1) != 0) {

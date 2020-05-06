@@ -262,7 +262,7 @@ public abstract class ChunkMapDistance {
         return s;
     }
 
-    protected void a(int i) {
+    protected void setNoTickViewDistance(int i) { // Paper - force abi breakage on usage change
         this.g.a(i);
     }
 
@@ -381,7 +381,7 @@ public abstract class ChunkMapDistance {
 
         private void a(long i, int j, boolean flag, boolean flag1) {
             if (flag != flag1) {
-                Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, ChunkMapDistance.b, new ChunkCoordIntPair(i));
+                Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
 
                 if (flag1) {
                     ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> {

@@ -153,7 +153,8 @@ public class TimingsExport extends Thread {
                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
                     return pair(rule, world.getWorld().getGameRuleValue(rule));
                 })),
-                pair("ticking-distance", world.getChunkProvider().playerChunkMap.getEffectiveViewDistance())
+                pair("ticking-distance", world.getChunkProvider().playerChunkMap.getEffectiveViewDistance()),
+                pair("notick-viewdistance", world.getChunkProvider().playerChunkMap.getEffectiveNoTickViewDistance())
             ));
         }));
 

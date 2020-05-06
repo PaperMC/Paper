@@ -175,7 +175,7 @@ public abstract class PlayerList {
         boolean flag1 = gamerules.getBoolean(GameRules.REDUCED_DEBUG_INFO);
 
         // Spigot - view distance
-        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), entityplayer.playerInteractManager.c(), BiomeManager.a(worldserver1.getSeed()), worlddata.isHardcore(), this.server.F(), this.s, worldserver1.getDimensionManager(), worldserver1.getDimensionKey(), this.getMaxPlayers(), worldserver1.spigotConfig.viewDistance, flag1, !flag, worldserver1.isDebugWorld(), worldserver1.isFlatWorld()));
+        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), entityplayer.playerInteractManager.c(), BiomeManager.a(worldserver1.getSeed()), worlddata.isHardcore(), this.server.F(), this.s, worldserver1.getDimensionManager(), worldserver1.getDimensionKey(), this.getMaxPlayers(), worldserver1.getChunkProvider().playerChunkMap.getLoadViewDistance(), flag1, !flag, worldserver1.isDebugWorld(), worldserver1.isFlatWorld())); // Paper - no-tick view distance
         entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
         playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.a, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
         playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
@@ -828,7 +828,7 @@ public abstract class PlayerList {
         // CraftBukkit start
         WorldData worlddata = worldserver1.getWorldData();
         entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver1.getDimensionManager(), worldserver1.getDimensionKey(), BiomeManager.a(worldserver1.getSeed()), entityplayer1.playerInteractManager.getGameMode(), entityplayer1.playerInteractManager.c(), worldserver1.isDebugWorld(), worldserver1.isFlatWorld(), flag));
-        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver1.spigotConfig.viewDistance)); // Spigot
+        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver1.getChunkProvider().playerChunkMap.getLoadViewDistance())); // Spigot // Paper - no-tick view distance
         entityplayer1.spawnIn(worldserver1);
         entityplayer1.dead = false;
         entityplayer1.playerConnection.teleport(new Location(worldserver1.getWorld(), entityplayer1.locX(), entityplayer1.locY(), entityplayer1.locZ(), entityplayer1.yaw, entityplayer1.pitch));
@@ -1295,7 +1295,7 @@ public abstract class PlayerList {
 
     public void a(int i) {
         this.viewDistance = i;
-        this.sendAll(new PacketPlayOutViewDistance(i));
+        //this.sendAll(new PacketPlayOutViewDistance(i)); // Paper - move into setViewDistance
         Iterator iterator = this.server.getWorlds().iterator();
 
         while (iterator.hasNext()) {

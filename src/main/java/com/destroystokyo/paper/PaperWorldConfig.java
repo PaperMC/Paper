@@ -618,4 +618,9 @@ public class PaperWorldConfig {
         phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
         phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
     }
+
+    public int noTickViewDistance;
+    private void viewDistance() {
+        this.noTickViewDistance = this.getInt("viewdistances.no-tick-view-distance", -1);
+    }
 }
