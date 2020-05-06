@@ -23,7 +23,7 @@ This should solve some deadlock risks
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index b1dededc15cce686ead74a99bee64c89ac1de22c..b529c8882491bad278570f322e8a13cfc3588e6c 100644
+index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19fd7d6ac9 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -64,6 +64,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -70,6 +70,14 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..b529c8882491bad278570f322e8a13cf
 +                }
 +            }
 +        }
++        // Paper start
++        private static boolean canSendImmediate(NetworkManager networkManager, Packet<?> packet) {
++            return networkManager.isPending || networkManager.protocol == EnumProtocol.HANDSHAKING || networkManager.protocol == EnumProtocol.STATUS || networkManager.queueImmunity ||
++                packet instanceof PacketPlayOutKeepAlive ||
++                packet instanceof PacketPlayOutChat ||
++                packet instanceof PacketPlayOutTabComplete;
++        }
++        // Paper end
 +    }
 +    // Paper end
  
@@ -77,14 +85,6 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..b529c8882491bad278570f322e8a13cf
          this.sendPacket(packet, (GenericFutureListener) null);
      }
  
-+    // Paper start
-+    private boolean canSendImmediate(Packet<?> packet) {
-+        return isPending || protocol == EnumProtocol.HANDSHAKING || protocol == EnumProtocol.STATUS || queueImmunity ||
-+            packet instanceof PacketPlayOutKeepAlive ||
-+            packet instanceof PacketPlayOutChat ||
-+            packet instanceof PacketPlayOutTabComplete;
-+    }
-+    // Paper end
      public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
 -        if (this.isConnected()) {
 -            this.o();
@@ -94,7 +94,7 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..b529c8882491bad278570f322e8a13cf
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
 +        if (!connected && !preparing) return; // Do nothing
-+        if (connected && (canSendImmediate(packet) || (
++        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
 +            MCUtil.isMainThread() && packet.isReady() && this.packetQueue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
 +        ))) {
