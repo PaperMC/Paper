@@ -1,4 +1,4 @@
-From 8e744f5b5d46417c511bce46f59fc1c329d30394 Mon Sep 17 00:00:00 2001
+From bd2cf1b4ef75665ee95267f4e238ee92fb64dcb6 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Tue, 5 May 2020 21:23:34 -0700
 Subject: [PATCH] No-Tick view distance implementation
@@ -9,10 +9,10 @@ Per-Player is absent due to difficulty of maintaining
 the diff required to make it happen.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index bfb52d75c7..57baf7092d 100644
+index 4612697569f..5c8a946d5c8 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -691,4 +691,9 @@ public class PaperWorldConfig {
+@@ -679,4 +679,9 @@ public class PaperWorldConfig {
          phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
          phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
      }
@@ -23,7 +23,7 @@ index bfb52d75c7..57baf7092d 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 53d3acccd3..af8a3e186e 100644
+index 69bfece7d43..2332f126f73 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -245,7 +245,51 @@ public class Chunk implements IChunkAccess {
@@ -79,7 +79,7 @@ index 53d3acccd3..af8a3e186e 100644
  
      public final boolean areNeighboursLoaded(final int radius) {
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 7cd4e29123..942efe62fe 100644
+index 7cd4e291235..942efe62fe5 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -252,7 +252,7 @@ public abstract class ChunkMapDistance {
@@ -101,7 +101,7 @@ index 7cd4e29123..942efe62fe 100644
                  if (flag1) {
                      ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 6e8179b465..e32c458dfe 100644
+index 6e8179b4651..e32c458dfe5 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -111,6 +111,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -114,7 +114,7 @@ index 6e8179b465..e32c458dfe 100644
          super((World) worldserver, gameprofile);
          playerinteractmanager.player = this;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 8742d13499..72ce7bf0c3 100644
+index bae9371a1e2..9d71c4c455d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -160,6 +160,18 @@ public class PlayerChunk {
@@ -154,7 +154,7 @@ index 8742d13499..72ce7bf0c3 100644
  
          if (chunk != null) {
              chunk.setNeedsSaving(true);
-@@ -431,9 +443,48 @@ public class PlayerChunk {
+@@ -426,9 +438,48 @@ public class PlayerChunk {
      }
  
      private void a(Packet<?> packet, boolean flag) {
@@ -207,7 +207,7 @@ index 8742d13499..72ce7bf0c3 100644
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> a(ChunkStatus chunkstatus, PlayerChunkMap playerchunkmap) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 099e612171..345f2689c7 100644
+index 4317d9b98e4..a3abad95a11 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -71,7 +71,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -539,7 +539,7 @@ index 099e612171..345f2689c7 100644
 +    final void sendChunk(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) { this.a(entityplayer, apacket, chunk); } // Paper - OBFHELPER
      private void a(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) {
          if (apacket[0] == null) {
-             apacket[0] = new PacketPlayOutMapChunk(chunk, 65535, true); // Paper - Anti-Xray
+             apacket[0] = new PacketPlayOutMapChunk(chunk, 65535);
 @@ -2014,7 +2145,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(this.tracker.chunkX, this.tracker.chunkZ);
                          PlayerChunk playerchunk = PlayerChunkMap.this.getVisibleChunk(chunkcoordintpair.pair());
@@ -550,7 +550,7 @@ index 099e612171..345f2689c7 100644
                          }
                      }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index edf9df8c8a..ec95b63e51 100644
+index edf9df8c8ad..ec95b63e51a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -150,7 +150,7 @@ public abstract class PlayerList {
@@ -581,7 +581,7 @@ index edf9df8c8a..ec95b63e51 100644
  
          while (iterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 899c535c40..0e6368d0fb 100644
+index 899c535c405..0e6368d0fb3 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -443,8 +443,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -600,7 +600,7 @@ index 899c535c40..0e6368d0fb 100644
  
              if (!this.isClientSide && (i & 1) != 0) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 995f706678..ee7ae46389 100644
+index 995f706678f..ee7ae463898 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -2483,10 +2483,39 @@ public class CraftWorld implements World {
@@ -645,7 +645,7 @@ index 995f706678..ee7ae46389 100644
      private final Spigot spigot = new Spigot()
      {
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index d873b8cf3a..f735217e7a 100644
+index d873b8cf3ae..f735217e7a9 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -201,7 +201,7 @@ public class ActivationRange
@@ -658,5 +658,5 @@ index d873b8cf3a..f735217e7a 100644
          for ( EntityHuman player : world.getPlayers() )
          {
 -- 
-2.26.0
+2.26.2
 
