@@ -1,7 +1,9 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 12 Apr 2020 15:50:48 -0400
-Subject: [PATCH] Forced Watchdog Crash support and Improve Async Shutdown
+Subject: [PATCH] Improved Watchdog Support
+
+Forced Watchdog Crash support and Improve Async Shutdown
 
 If the request to shut down the server is received while we are in
 a watchdog hang, immediately treat it as a crash and begin the shutdown
@@ -34,6 +36,9 @@ We then issue Thread Death to the main thread of another thread initiates the st
 We have to ensure Thread Death propagates correctly though to stop main completely.
 
 This is to ensure that if main isn't truely stuck, it's not manipulating state we are trying to save.
+
+This also moves all plugins who register "delayed init" tasks to occur just before "Done" so they
+are properly accounted for and wont trip watchdog on init.
 
 diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
 index 3de19c998b749ccf74958c2412a8c9506457383e..c7dc8787cc3456c5540d6a00a6ff051533edc25a 100644
@@ -73,7 +78,7 @@ index cfe43e882e524b6ab3d9702e81269c97e6b75eba..2632c7c3ec77918be7979f2aa49209e5
          }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2df36e304 100644
+index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e77fd8dd0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -144,6 +144,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -93,7 +98,15 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
      // CraftBukkit end
      // Spigot start
      public static final int TPS = 20;
-@@ -725,7 +726,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -486,6 +487,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        this.server.getScheduler().mainThreadHeartbeat(this.ticks); // Paper - run all 1 tick delay tasks during init, this is going to be the first thing the tick process does anyways, just move it inside of "Done"  anything at 3+ won't be caught here but also will trip watchdog.... tasks are default scheduled at -1 + delay, and first tick will tick at 1
+         this.serverConnection.acceptConnections();
+         // CraftBukkit end
+ 
+@@ -725,7 +727,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit start - prevent double stopping on multiple threads
          synchronized(stopLock) {
              if (hasStopped) return;
@@ -106,7 +119,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
          }
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
-@@ -782,7 +788,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -782,7 +789,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
          // Spigot end
@@ -125,7 +138,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
      }
  
      public String getServerIp() {
-@@ -882,6 +899,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -882,6 +900,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a(this.serverPing);
  
                  // Spigot start
@@ -133,7 +146,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-@@ -938,6 +956,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -938,6 +957,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a((CrashReport) null);
              }
          } catch (Throwable throwable) {
@@ -146,7 +159,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              // Spigot Start
              if ( throwable.getCause() != null )
-@@ -969,14 +993,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -969,14 +994,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -164,7 +177,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..98f03983485058a5e9ad9c3f81a9cfc2
              }
  
          }
-@@ -1032,6 +1056,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1032,6 +1057,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
      protected TickTask postToMainThread(Runnable runnable) {
