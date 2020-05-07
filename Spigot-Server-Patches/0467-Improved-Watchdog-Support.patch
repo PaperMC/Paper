@@ -53,9 +53,18 @@ index 3de19c998b749ccf74958c2412a8c9506457383e..c7dc8787cc3456c5540d6a00a6ff0515
              throwable = throwable.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 1ef7890da599d13e784861035e7891efcc4cd504..e62ca0543f1819259ad8720ad792fed3ef134d6a 100644
+index 1ef7890da599d13e784861035e7891efcc4cd504..b07c49f1b48cc6dedd7c2057da0ec4f6f6d446e6 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -299,7 +299,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             long l = SystemUtils.getMonotonicNanos() - i;
+             String s2 = String.format(Locale.ROOT, "%.3fs", (double) l / 1.0E9D);
+ 
+-            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s2);
++            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s2); // Paper moved to after init
+             if (dedicatedserverproperties.announcePlayerAchievements != null) {
+                 ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
+             }
 @@ -750,7 +750,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      @Override
      public void stop() {
@@ -78,7 +87,7 @@ index cfe43e882e524b6ab3d9702e81269c97e6b75eba..2632c7c3ec77918be7979f2aa49209e5
          }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e77fd8dd0 100644
+index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..1a4bc90435d0a56ab7b607c72f28772fb92049bc 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -144,6 +144,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -98,15 +107,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e
      // CraftBukkit end
      // Spigot start
      public static final int TPS = 20;
-@@ -486,6 +487,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
- 
-         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
-+        this.server.getScheduler().mainThreadHeartbeat(this.ticks); // Paper - run all 1 tick delay tasks during init, this is going to be the first thing the tick process does anyways, just move it inside of "Done"  anything at 3+ won't be caught here but also will trip watchdog.... tasks are default scheduled at -1 + delay, and first tick will tick at 1
-         this.serverConnection.acceptConnections();
-         // CraftBukkit end
- 
-@@ -725,7 +727,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -725,7 +726,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit start - prevent double stopping on multiple threads
          synchronized(stopLock) {
              if (hasStopped) return;
@@ -119,7 +120,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e
          }
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
-@@ -782,7 +789,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -782,7 +788,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
          // Spigot end
@@ -138,15 +139,34 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e
      }
  
      public String getServerIp() {
-@@ -882,6 +900,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -875,6 +892,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     public void run() {
+         try {
++            long serverStartTime = SystemUtils.getMonotonicNanos(); // Paper
+             if (this.init()) {
+                 this.nextTick = SystemUtils.getMonotonicMillis();
+                 this.serverPing.setMOTD(new ChatComponentText(this.motd));
+@@ -882,6 +900,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a(this.serverPing);
  
                  // Spigot start
++                // Paper start - move done tracking
++                LOGGER.info("Running delayed init tasks");
++                this.server.getScheduler().mainThreadHeartbeat(this.ticks); // run all 1 tick delay tasks during init,
++                // this is going to be the first thing the tick process does anyways, so move done and run it after
++                // everything is init before watchdog tick.
++                // anything at 3+ won't be caught here but also will trip watchdog....
++                // tasks are default scheduled at -1 + delay, and first tick will tick at 1
++                String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (SystemUtils.getMonotonicNanos() - serverStartTime) / 1.0E9D);
++                LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
++                // Paper end
++
 +                org.spigotmc.WatchdogThread.tick(); // Paper
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-@@ -938,6 +957,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -938,6 +968,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a((CrashReport) null);
              }
          } catch (Throwable throwable) {
@@ -159,7 +179,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              // Spigot Start
              if ( throwable.getCause() != null )
-@@ -969,14 +994,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -969,14 +1005,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -177,7 +197,7 @@ index 5f57a9e1c8d5f641facdadbd1877637a8fe8daf5..b952e9efabd01e1ec915d754c48cda8e
              }
  
          }
-@@ -1032,6 +1057,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1032,6 +1068,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
      protected TickTask postToMainThread(Runnable runnable) {
