@@ -57,6 +57,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             long l = SystemUtils.getMonotonicNanos() - i;
+             String s2 = String.format(Locale.ROOT, "%.3fs", (double) l / 1.0E9D);
+ 
+-            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s2);
++            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s2); // Paper moved to after init
+             if (dedicatedserverproperties.announcePlayerAchievements != null) {
+                 ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
+             }
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      @Override
      public void stop() {
          super.stop();
@@ -99,14 +108,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      public static final int TPS = 20;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
- 
-         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
-+        this.server.getScheduler().mainThreadHeartbeat(this.ticks); // Paper - run all 1 tick delay tasks during init, this is going to be the first thing the tick process does anyways, just move it inside of "Done"  anything at 3+ won't be caught here but also will trip watchdog.... tasks are default scheduled at -1 + delay, and first tick will tick at 1
-         this.serverConnection.acceptConnections();
-         // CraftBukkit end
- 
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit start - prevent double stopping on multiple threads
          synchronized(stopLock) {
              if (hasStopped) return;
@@ -139,9 +140,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public String getServerIp() {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     public void run() {
+         try {
++            long serverStartTime = SystemUtils.getMonotonicNanos(); // Paper
+             if (this.init()) {
+                 this.nextTick = SystemUtils.getMonotonicMillis();
+                 this.serverPing.setMOTD(new ChatComponentText(this.motd));
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a(this.serverPing);
  
                  // Spigot start
++                // Paper start - move done tracking
++                LOGGER.info("Running delayed init tasks");
++                this.server.getScheduler().mainThreadHeartbeat(this.ticks); // run all 1 tick delay tasks during init,
++                // this is going to be the first thing the tick process does anyways, so move done and run it after
++                // everything is init before watchdog tick.
++                // anything at 3+ won't be caught here but also will trip watchdog....
++                // tasks are default scheduled at -1 + delay, and first tick will tick at 1
++                String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (SystemUtils.getMonotonicNanos() - serverStartTime) / 1.0E9D);
++                LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
++                // Paper end
++
 +                org.spigotmc.WatchdogThread.tick(); // Paper
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
