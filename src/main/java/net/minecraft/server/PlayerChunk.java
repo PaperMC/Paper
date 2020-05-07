@@ -321,6 +321,7 @@ public class PlayerChunk {
 
     }
 
+    public void sendPacketToTrackedPlayers(Packet<?> packet, boolean flag) { a(packet, flag); } // Paper - OBFHELPER
     private void a(Packet<?> packet, boolean flag) {
         // Paper start - per player view distance
         // there can be potential desync with player's last mapped section and the view distance map, so use the

@@ -20,6 +20,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -36,14 +37,14 @@ public class PaperCommand extends Command {
     public PaperCommand(String name) {
         super(name);
         this.description = "Paper related commands";
-        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo]";
+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight]";
         this.setPermission("bukkit.command.paper");
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         if (args.length <= 1)
-            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo");
+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight");
 
         switch (args[0].toLowerCase(Locale.ENGLISH))
         {
@@ -144,6 +145,9 @@ public class PaperCommand extends Command {
             case "syncloadinfo":
                 this.doSyncLoadInfo(sender, args);
                 break;
+            case "fixlight":
+                this.doFixLight(sender, args);
+                break;
             case "ver":
             case "version":
                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
@@ -158,6 +162,77 @@ public class PaperCommand extends Command {
         }
 
         return true;
+    }
+
+    private void doFixLight(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Only players can use this command");
+            return;
+        }
+        int radius = 2;
+        if (args.length > 1) {
+            try {
+                radius = Math.min(5, Integer.parseInt(args[1]));
+            } catch (Exception e) {
+                sender.sendMessage("Not a number");
+                return;
+            }
+
+        }
+
+        CraftPlayer player = (CraftPlayer) sender;
+        EntityPlayer handle = player.getHandle();
+        net.minecraft.server.WorldServer world = (WorldServer) handle.world;
+        LightEngineThreaded lightengine = world.getChunkProvider().getLightEngine();
+
+        BlockPosition center = MCUtil.toBlockPosition(player.getLocation());
+        Deque<ChunkCoordIntPair> queue = new ArrayDeque<>(MCUtil.getSpiralOutChunks(center, radius));
+        updateLight(sender, world, lightengine, queue);
+    }
+
+    private void updateLight(CommandSender sender, WorldServer world, LightEngineThreaded lightengine, Deque<ChunkCoordIntPair> queue) {
+        ChunkCoordIntPair coord = queue.poll();
+        if (coord == null) {
+            sender.sendMessage("All Chunks Light updated");
+            return;
+        }
+        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, false).whenCompleteAsync((either, ex) -> {
+            if (ex != null) {
+                sender.sendMessage("Error loading chunk " + coord);
+                updateLight(sender, world, lightengine, queue);
+                return;
+            }
+            Chunk chunk = (Chunk) either.left().orElse(null);
+            if (chunk == null) {
+                updateLight(sender, world, lightengine, queue);
+                return;
+            }
+            lightengine.a(world.paperConfig.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
+            sender.sendMessage("Updating Light " + coord);
+            int cx = chunk.getPos().x << 4;
+            int cz = chunk.getPos().z << 4;
+            for (int y = 0; y < world.getHeight(); y++) {
+                for (int x = 0; x < 16; x++) {
+                    for (int z = 0; z < 16; z++) {
+                        BlockPosition pos = new BlockPosition(cx + x, y, cz + z);
+                        lightengine.a(pos);
+                    }
+                }
+            }
+            lightengine.queueUpdate();
+            PlayerChunk visibleChunk = world.getChunkProvider().playerChunkMap.getVisibleChunk(chunk.coordinateKey);
+            if (visibleChunk != null) {
+                world.getChunkProvider().playerChunkMap.addLightTask(visibleChunk, () -> {
+                    MinecraftServer.getServer().processQueue.add(() -> {
+                        visibleChunk.sendPacketToTrackedPlayers(new PacketPlayOutLightUpdate(chunk.getPos(), lightengine, true), false);
+                        updateLight(sender, world, lightengine, queue);
+                    });
+                });
+            } else {
+                updateLight(sender, world, lightengine, queue);
+            }
+            lightengine.a(world.paperConfig.lightQueueSize);
+        }, MinecraftServer.getServer());
     }
 
     private void doSyncLoadInfo(CommandSender sender, String[] args) {
