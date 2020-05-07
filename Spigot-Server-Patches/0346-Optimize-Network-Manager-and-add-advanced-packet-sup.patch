@@ -4,7 +4,8 @@ Date: Wed, 6 May 2020 04:53:35 -0400
 Subject: [PATCH] Optimize Network Manager and add advanced packet support
 
 Adds ability for 1 packet to bundle other packets to follow it
-adds ability for a packet to delay sending more packets until a state is ready.
+Adds ability for a packet to delay sending more packets until a state is ready.
+Adds ability to clean up a packet when it is finished (not sent, or finished encoding), such as freeing buffers
 
 Removes synchronization from sending packets
 Removes processing packet queue off of main thread
@@ -23,7 +24,7 @@ This should solve some deadlock risks
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19fd7d6ac9 100644
+index b1dededc15cce686ead74a99bee64c89ac1de22c..d24d7df807287c51a8dd5ecf4f7c842b7cdf3976 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -64,6 +64,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -45,7 +46,7 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19
          this.channel.attr(NetworkManager.c).set(enumprotocol);
          this.channel.config().setAutoRead(true);
          NetworkManager.LOGGER.debug("Enabled auto read");
-@@ -158,19 +163,72 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -158,19 +163,75 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
          NetworkManager.LOGGER.debug("Set listener of {} to {}", this, packetlistener);
          this.packetListener = packetlistener;
      }
@@ -93,7 +94,10 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19
 -            this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
-+        if (!connected && !preparing) return; // Do nothing
++        if (!connected && !preparing) {
++            packet.onPacketDone();
++            return; // Do nothing
++        }
 +        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
 +            MCUtil.isMainThread() && packet.isReady() && this.packetQueue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
@@ -109,13 +113,13 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19
 +        } else {
 +            java.util.List<NetworkManager.QueuedPacket> packets = new java.util.ArrayList<>(1 + extraPackets.size());
 +            packets.add(new NetworkManager.QueuedPacket(packet, null)); // delay the future listener until the end of the extra packets
- 
++
 +            for (int i = 0, len = extraPackets.size(); i < len;) {
 +                Packet extra = extraPackets.get(i);
 +                boolean end = ++i == len;
 +                packets.add(new NetworkManager.QueuedPacket(extra, end ? genericfuturelistener : null)); // append listener to the end
 +            }
-+
+ 
 +            this.packetQueue.addAll(packets); // atomic
 +        }
 +        this.sendPacketQueue();
@@ -123,7 +127,7 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19
      }
  
      private void dispatchPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericFutureListener) { this.b(packet, genericFutureListener); } // Paper - OBFHELPER
-@@ -214,21 +272,46 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -214,21 +275,46 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
  
      }
  
@@ -180,27 +184,54 @@ index b1dededc15cce686ead74a99bee64c89ac1de22c..f81014973a4cf50c1320f82c22ed1c19
  
      public void a() {
          this.o();
-@@ -260,6 +343,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -257,9 +343,11 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         return this.socketAddress;
+     }
+ 
++    public void clearPacketQueue() { QueuedPacket packet; while ((packet = packetQueue.poll()) != null) packet.getPacket().onPacketDone(); } // Paper
      public void close(IChatBaseComponent ichatbasecomponent) {
          // Spigot Start
          this.preparing = false;
-+        this.packetQueue.clear(); // Paper - just incase its closed before we ever get to the main thread to do this
++        clearPacketQueue(); // Paper
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
+@@ -335,7 +423,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 } else if (this.i() != null) {
+                     this.i().a(new ChatMessage("multiplayer.disconnect.generic", new Object[0]));
+                 }
+-                this.packetQueue.clear(); // Free up packet queue.
++                clearPacketQueue(); // Paper
+                 // Paper start - Add PlayerConnectionCloseEvent
+                 final PacketListener packetListener = this.i();
+                 if (packetListener instanceof PlayerConnection) {
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
-index 2d8e6a2f4a0c3c5d74a647d7164b0028781d3bf5..45142ed9d2440e21dd1ff1a32a12759fea4dbcb4 100644
+index 2d8e6a2f4a0c3c5d74a647d7164b0028781d3bf5..df1b4877b1560f982a1fcaf98404c8fe73e29973 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
 +++ b/src/main/java/net/minecraft/server/Packet.java
-@@ -11,6 +11,8 @@ public interface Packet<T extends PacketListener> {
+@@ -11,6 +11,9 @@ public interface Packet<T extends PacketListener> {
      void a(T t0);
  
      // Paper start
++    default void onPacketDone() {}
 +    default boolean isReady() { return true; }
 +    default java.util.List<Packet> getExtraPackets() { return null; }
      default boolean packetTooLarge(NetworkManager manager) {
          return false;
      }
+diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
+index b0cfef52cbb5e23beae528668e4e98cedecf603c..f46d028016a425a29674e768ae9310c825c088f2 100644
+--- a/src/main/java/net/minecraft/server/PacketEncoder.java
++++ b/src/main/java/net/minecraft/server/PacketEncoder.java
+@@ -48,7 +48,7 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+                     } else {
+                         throw throwable;
+                     }
+-                }
++                } finally { try { packet.onPacketDone(); } catch (Exception e) { e.printStackTrace(); } ; } // Paper
+ 
+                 // Paper start
+                 int packetLength = bytebuf.readableBytes();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index e148940ab3721cff27cf791c159c11b9b94191e4..e917d37382dab70ed9e6b62decf1557c33b26065 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
