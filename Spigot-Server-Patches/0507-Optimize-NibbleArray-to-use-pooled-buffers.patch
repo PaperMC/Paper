@@ -143,26 +143,30 @@ index 67c960292db9d99ac85b5d0dda50ae48ef942c1b..f7641156beea365a91a935667abf8c95
          for (int i = 0; i < 16; ++i) {
              System.arraycopy(this.a, 0, abyte, i * 128, 128);
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java b/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
-index cd1ad45469aa163b9bc41774ae80adfa617fd97b..d6560f4693869a6638963867f7ebc63bf80d534e 100644
+index cd1ad45469aa163b9bc41774ae80adfa617fd97b..90796fab9826a33ed35d50cdd60741d93f8607b2 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
-@@ -17,6 +17,15 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -17,6 +17,19 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
      private List<byte[]> h;
  
      public PacketPlayOutLightUpdate() {}
 +    // Paper start
-+    private final java.util.List<byte[]> usedBytes = new java.util.ArrayList<>();
++    private java.util.List<byte[]> usedBytes = new java.util.ArrayList<>();
 +
 +    @Override
-+    public void onPacketDone() {
-+        usedBytes.forEach(NibbleArray::releaseBytes);
-+        usedBytes.clear();
++    public void finalize() throws Throwable {
++        try {
++            usedBytes.forEach(NibbleArray::releaseBytes);
++            usedBytes.clear();
++        } finally {
++            super.finalize();
++        }
 +    }
 +    // Paper end
  
      public PacketPlayOutLightUpdate(ChunkCoordIntPair chunkcoordintpair, LightEngine lightengine) {
          this.a = chunkcoordintpair.x;
-@@ -24,6 +33,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -24,6 +37,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
          this.g = Lists.newArrayList();
          this.h = Lists.newArrayList();
  
@@ -170,7 +174,7 @@ index cd1ad45469aa163b9bc41774ae80adfa617fd97b..d6560f4693869a6638963867f7ebc63b
          for (int i = 0; i < 18; ++i) {
              NibbleArray nibblearray = lightengine.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkcoordintpair, -1 + i));
              NibbleArray nibblearray1 = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkcoordintpair, -1 + i));
-@@ -33,7 +43,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -33,7 +47,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
                      this.e |= 1 << i;
                  } else {
                      this.c |= 1 << i;
@@ -179,7 +183,7 @@ index cd1ad45469aa163b9bc41774ae80adfa617fd97b..d6560f4693869a6638963867f7ebc63b
                  }
              }
  
-@@ -42,7 +52,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -42,7 +56,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
                      this.f |= 1 << i;
                  } else {
                      this.d |= 1 << i;
@@ -188,7 +192,7 @@ index cd1ad45469aa163b9bc41774ae80adfa617fd97b..d6560f4693869a6638963867f7ebc63b
                  }
              }
          }
-@@ -57,13 +67,14 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -57,13 +71,14 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
          this.g = Lists.newArrayList();
          this.h = Lists.newArrayList();
  
@@ -204,7 +208,7 @@ index cd1ad45469aa163b9bc41774ae80adfa617fd97b..d6560f4693869a6638963867f7ebc63b
                  } else {
                      this.c &= ~(1 << k);
                      if (nibblearray != null) {
-@@ -75,7 +86,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
+@@ -75,7 +90,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
              if ((this.d & 1 << k) != 0) {
                  nibblearray = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkcoordintpair, -1 + k));
                  if (nibblearray != null && !nibblearray.c()) {
