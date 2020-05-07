@@ -1,7 +1,9 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Sun, 12 Apr 2020 15:50:48 -0400
-Subject: [PATCH] Forced Watchdog Crash support and Improve Async Shutdown
+Subject: [PATCH] Improved Watchdog Support
+
+Forced Watchdog Crash support and Improve Async Shutdown
 
 If the request to shut down the server is received while we are in
 a watchdog hang, immediately treat it as a crash and begin the shutdown
@@ -34,6 +36,9 @@ We then issue Thread Death to the main thread of another thread initiates the st
 We have to ensure Thread Death propagates correctly though to stop main completely.
 
 This is to ensure that if main isn't truely stuck, it's not manipulating state we are trying to save.
+
+This also moves all plugins who register "delayed init" tasks to occur just before "Done" so they
+are properly accounted for and wont trip watchdog on init.
 
 diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -93,6 +98,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit end
      // Spigot start
      public static final int TPS = 20;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
++        this.server.getScheduler().mainThreadHeartbeat(this.ticks); // Paper - run all 1 tick delay tasks during init, this is going to be the first thing the tick process does anyways, just move it inside of "Done"  anything at 3+ won't be caught here but also will trip watchdog.... tasks are default scheduled at -1 + delay, and first tick will tick at 1
+         this.serverConnection.acceptConnections();
+         // CraftBukkit end
+ 
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit start - prevent double stopping on multiple threads
          synchronized(stopLock) {
