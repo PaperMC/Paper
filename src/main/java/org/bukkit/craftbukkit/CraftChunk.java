@@ -274,14 +274,14 @@ public class CraftChunk implements Chunk {
                     sectionSkyLights[i] = emptyLight;
                 } else {
                     sectionSkyLights[i] = new byte[2048];
-                    System.arraycopy(skyLightArray.asBytes(), 0, sectionSkyLights[i], 0, 2048);
+                    System.arraycopy(skyLightArray.getIfSet(), 0, sectionSkyLights[i], 0, 2048); // Paper
                 }
                 NibbleArray emitLightArray = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(x, i, z));
                 if (emitLightArray == null) {
                     sectionEmitLights[i] = emptyLight;
                 } else {
                     sectionEmitLights[i] = new byte[2048];
-                    System.arraycopy(emitLightArray.asBytes(), 0, sectionEmitLights[i], 0, 2048);
+                    System.arraycopy(emitLightArray.getIfSet(), 0, sectionEmitLights[i], 0, 2048); // Paper
                 }
             }
         }

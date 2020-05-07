@@ -8,7 +8,7 @@ public class NibbleArrayFlat extends NibbleArray {
 
     public NibbleArrayFlat(NibbleArray nibblearray, int i) {
         super(128);
-        System.arraycopy(nibblearray.asBytes(), i * 128, this.a, 0, 128);
+        System.arraycopy(nibblearray.getIfSet(), i * 128, this.a, 0, 128); // Paper
     }
 
     @Override
@@ -18,7 +18,7 @@ public class NibbleArrayFlat extends NibbleArray {
 
     @Override
     public byte[] asBytes() {
-        byte[] abyte = new byte[2048];
+        byte[] abyte = BYTE_2048.acquire(); // Paper
 
         for (int i = 0; i < 16; ++i) {
             System.arraycopy(this.a, 0, abyte, i * 128, 128);

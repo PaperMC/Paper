@@ -1,6 +1,8 @@
 package net.minecraft.server;
 
 import com.google.common.collect.Lists;
+import io.netty.channel.ChannelFuture; // Paper
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -17,14 +19,43 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
     private List<byte[]> h;
     private boolean i;
 
+    // Paper start
+    java.lang.Runnable cleaner1;
+    java.lang.Runnable cleaner2;
+    java.util.concurrent.atomic.AtomicInteger remainingSends = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    @Override
+    public void onPacketDispatch(EntityPlayer player) {
+        remainingSends.incrementAndGet();
+    }
+
+    @Override
+    public void onPacketDispatchFinish(EntityPlayer player, ChannelFuture future) {
+        if (remainingSends.decrementAndGet() <= 0) {
+            // incase of any race conditions, schedule this delayed
+            MCUtil.scheduleTask(5, () -> {
+                if (remainingSends.get() == 0) {
+                    cleaner1.run();
+                    cleaner2.run();
+                }
+            }, "Light Packet Release");
+        }
+    }
+
+    @Override
+    public boolean hasFinishListener() {
+        return true;
+    }
+
+    // Paper end
     public PacketPlayOutLightUpdate() {}
 
     public PacketPlayOutLightUpdate(ChunkCoordIntPair chunkcoordintpair, LightEngine lightengine, boolean flag) {
         this.a = chunkcoordintpair.x;
         this.b = chunkcoordintpair.z;
         this.i = flag;
-        this.g = Lists.newArrayList();
-        this.h = Lists.newArrayList();
+        this.g = Lists.newArrayList();cleaner1 = MCUtil.registerListCleaner(this, this.g, NibbleArray::releaseBytes); // Paper
+        this.h = Lists.newArrayList();cleaner2 = MCUtil.registerListCleaner(this, this.h, NibbleArray::releaseBytes); // Paper
 
         for (int i = 0; i < 18; ++i) {
             NibbleArray nibblearray = lightengine.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkcoordintpair, -1 + i));
@@ -35,7 +66,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
                     this.e |= 1 << i;
                 } else {
                     this.c |= 1 << i;
-                    this.g.add(nibblearray.asBytes().clone());
+                    this.g.add(nibblearray.getCloneIfSet()); // Paper
                 }
             }
 
@@ -44,7 +75,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
                     this.f |= 1 << i;
                 } else {
                     this.d |= 1 << i;
-                    this.h.add(nibblearray1.asBytes().clone());
+                    this.h.add(nibblearray1.getCloneIfSet()); // Paper
                 }
             }
         }
@@ -57,8 +88,8 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
         this.i = flag;
         this.c = i;
         this.d = j;
-        this.g = Lists.newArrayList();
-        this.h = Lists.newArrayList();
+        this.g = Lists.newArrayList();cleaner1 = MCUtil.registerListCleaner(this, this.g, NibbleArray::releaseBytes); // Paper
+        this.h = Lists.newArrayList();cleaner2 = MCUtil.registerListCleaner(this, this.h, NibbleArray::releaseBytes); // Paper
 
         for (int k = 0; k < 18; ++k) {
             NibbleArray nibblearray;
@@ -66,7 +97,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
             if ((this.c & 1 << k) != 0) {
                 nibblearray = lightengine.a(EnumSkyBlock.SKY).a(SectionPosition.a(chunkcoordintpair, -1 + k));
                 if (nibblearray != null && !nibblearray.c()) {
-                    this.g.add(nibblearray.asBytes().clone());
+                    this.g.add(nibblearray.getCloneIfSet()); // Paper
                 } else {
                     this.c &= ~(1 << k);
                     if (nibblearray != null) {
@@ -78,7 +109,7 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
             if ((this.d & 1 << k) != 0) {
                 nibblearray = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(chunkcoordintpair, -1 + k));
                 if (nibblearray != null && !nibblearray.c()) {
-                    this.h.add(nibblearray.asBytes().clone());
+                    this.h.add(nibblearray.getCloneIfSet()); // Paper
                 } else {
                     this.d &= ~(1 << k);
                     if (nibblearray != null) {

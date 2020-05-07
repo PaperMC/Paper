@@ -149,7 +149,7 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
     protected NibbleArray j(long i) {
         NibbleArray nibblearray = (NibbleArray) this.i.get(i);
 
-        return nibblearray != null ? nibblearray : new NibbleArray();
+        return nibblearray != null ? nibblearray : new NibbleArray().markPoolSafe(); // Paper
     }
 
     protected void a(LightEngineLayer<?, ?> lightenginelayer, long i) {
@@ -331,12 +331,12 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
 
     protected void a(long i, @Nullable NibbleArray nibblearray, boolean flag) {
         if (nibblearray != null) {
-            this.i.put(i, nibblearray);
+            NibbleArray remove = this.i.put(i, nibblearray); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
             if (!flag) {
                 this.n.add(i);
             }
         } else {
-            this.i.remove(i);
+            NibbleArray remove = this.i.remove(i); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
         }
 
     }

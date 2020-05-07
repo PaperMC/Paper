@@ -166,9 +166,9 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                     j = SectionPosition.a(j, EnumDirection.UP);
                 }
 
-                return new NibbleArray((new NibbleArrayFlat(nibblearray1, 0)).asBytes());
+                return new NibbleArray().markPoolSafe(new NibbleArrayFlat(nibblearray1, 0).asBytes()); // Paper - mark pool use as safe (no auto cleaner)
             } else {
-                return new NibbleArray();
+                return new NibbleArray().markPoolSafe(); // Paper - mark pool use as safe (no auto cleaner)
             }
         }
     }
@@ -197,7 +197,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                                 ((LightEngineStorageSky.a) this.f).a(i);
                             }
 
-                            Arrays.fill(this.a(i, true).asBytes(), (byte) -1);
+                            Arrays.fill(this.a(i, true).asBytesPoolSafe(), (byte) -1); // Paper
                             k = SectionPosition.c(SectionPosition.b(i));
                             l = SectionPosition.c(SectionPosition.c(i));
                             int i1 = SectionPosition.c(SectionPosition.d(i));

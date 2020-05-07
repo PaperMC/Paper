@@ -386,11 +386,11 @@ public class ChunkRegionLoader {
                 }
 
                 if (nibblearray != null && !nibblearray.c()) {
-                    nbttagcompound2.setByteArray("BlockLight", nibblearray.asBytes());
+                    nbttagcompound2.setByteArray("BlockLight", nibblearray.asBytesPoolSafe().clone()); // Paper
                 }
 
                 if (nibblearray1 != null && !nibblearray1.c()) {
-                    nbttagcompound2.setByteArray("SkyLight", nibblearray1.asBytes());
+                    nbttagcompound2.setByteArray("SkyLight", nibblearray1.asBytesPoolSafe().clone()); // Paper
                 }
 
                 nbttaglist.add(nbttagcompound2);

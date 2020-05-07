@@ -33,7 +33,9 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
 
     public void a(long i) {
         if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
-        this.data.queueUpdate(i, ((NibbleArray) this.data.getUpdating(i)).b()); // Paper - avoid copying light data
+        NibbleArray updating = this.data.getUpdating(i); // Paper - pool nibbles
+        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(updating.getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
+        if (updating.cleaner != null) MCUtil.scheduleTask(2, updating.cleaner, "Light Engine Release"); // Paper - delay clean incase anything holding ref was still using it
         this.c();
     }
 
