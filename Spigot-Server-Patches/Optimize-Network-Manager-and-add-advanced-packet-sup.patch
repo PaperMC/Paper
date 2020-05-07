@@ -4,7 +4,8 @@ Date: Wed, 6 May 2020 04:53:35 -0400
 Subject: [PATCH] Optimize Network Manager and add advanced packet support
 
 Adds ability for 1 packet to bundle other packets to follow it
-adds ability for a packet to delay sending more packets until a state is ready.
+Adds ability for a packet to delay sending more packets until a state is ready.
+Adds ability to clean up a packet when it is finished (not sent, or finished encoding), such as freeing buffers
 
 Removes synchronization from sending packets
 Removes processing packet queue off of main thread
@@ -93,7 +94,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
 +        // Paper start - handle oversized packets better
 +        boolean connected = this.isConnected();
-+        if (!connected && !preparing) return; // Do nothing
++        if (!connected && !preparing) {
++            packet.onPacketDone();
++            return; // Do nothing
++        }
 +        if (connected && (InnerUtil.canSendImmediate(this, packet) || (
 +            MCUtil.isMainThread() && packet.isReady() && this.packetQueue.isEmpty() &&
 +            (packet.getExtraPackets() == null || packet.getExtraPackets().isEmpty())
@@ -109,13 +113,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } else {
 +            java.util.List<NetworkManager.QueuedPacket> packets = new java.util.ArrayList<>(1 + extraPackets.size());
 +            packets.add(new NetworkManager.QueuedPacket(packet, null)); // delay the future listener until the end of the extra packets
- 
++
 +            for (int i = 0, len = extraPackets.size(); i < len;) {
 +                Packet extra = extraPackets.get(i);
 +                boolean end = ++i == len;
 +                packets.add(new NetworkManager.QueuedPacket(extra, end ? genericfuturelistener : null)); // append listener to the end
 +            }
-+
+ 
 +            this.packetQueue.addAll(packets); // atomic
 +        }
 +        this.sendPacketQueue();
@@ -181,13 +185,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void a() {
          this.o();
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+         return this.socketAddress;
+     }
+ 
++    public void clearPacketQueue() { QueuedPacket packet; while ((packet = packetQueue.poll()) != null) packet.getPacket().onPacketDone(); } // Paper
      public void close(IChatBaseComponent ichatbasecomponent) {
          // Spigot Start
          this.preparing = false;
-+        this.packetQueue.clear(); // Paper - just incase its closed before we ever get to the main thread to do this
++        clearPacketQueue(); // Paper
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
+@@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+                 } else if (this.i() != null) {
+                     this.i().a(new ChatMessage("multiplayer.disconnect.generic", new Object[0]));
+                 }
+-                this.packetQueue.clear(); // Free up packet queue.
++                clearPacketQueue(); // Paper
+                 // Paper start - Add PlayerConnectionCloseEvent
+                 final PacketListener packetListener = this.i();
+                 if (packetListener instanceof PlayerConnection) {
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
@@ -196,11 +213,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      void a(T t0);
  
      // Paper start
++    default void onPacketDone() {}
 +    default boolean isReady() { return true; }
 +    default java.util.List<Packet> getExtraPackets() { return null; }
      default boolean packetTooLarge(NetworkManager manager) {
          return false;
      }
+diff --git a/src/main/java/net/minecraft/server/PacketEncoder.java b/src/main/java/net/minecraft/server/PacketEncoder.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PacketEncoder.java
++++ b/src/main/java/net/minecraft/server/PacketEncoder.java
+@@ -0,0 +0,0 @@ public class PacketEncoder extends MessageToByteEncoder<Packet<?>> {
+                     } else {
+                         throw throwable;
+                     }
+-                }
++                } finally { try { packet.onPacketDone(); } catch (Exception e) { e.printStackTrace(); } ; } // Paper
+ 
+                 // Paper start
+                 int packetLength = bytebuf.readableBytes();
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
