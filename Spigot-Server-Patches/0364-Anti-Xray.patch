@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index e7c73a4ddbb42aa52112147a60c8a761bfd3d07b..fd869c25b83670ded11678988288ab1322b9b001 100644
+index e7c73a4ddbb42aa52112147a60c8a761bfd3d07b..28ee5c483c7e7987f12c0afd6df785fe583fcbf5 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,7 +1,9 @@
@@ -18,7 +18,7 @@ index e7c73a4ddbb42aa52112147a60c8a761bfd3d07b..fd869c25b83670ded11678988288ab13
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
-@@ -454,4 +456,31 @@ public class PaperWorldConfig {
+@@ -454,4 +456,33 @@ public class PaperWorldConfig {
      private void maxAutoSaveChunksPerTick() {
          maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
      }
@@ -27,6 +27,7 @@ index e7c73a4ddbb42aa52112147a60c8a761bfd3d07b..fd869c25b83670ded11678988288ab13
 +    public EngineMode engineMode;
 +    public int maxChunkSectionIndex;
 +    public int updateRadius;
++    public boolean lavaObscures;
 +    public List<String> hiddenBlocks;
 +    public List<String> replacementBlocks;
 +    private void antiXray() {
@@ -36,6 +37,7 @@ index e7c73a4ddbb42aa52112147a60c8a761bfd3d07b..fd869c25b83670ded11678988288ab13
 +        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
 +        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
 +        updateRadius = getInt("anti-xray.update-radius", 2);
++        lavaObscures = getBoolean("anti-xray.lava-obscures", true);
 +        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "clay", "emerald_ore", "ender_chest"));
 +        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList("stone", "oak_planks"));
 +        if (PaperConfig.version < 19) {
@@ -98,10 +100,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..70b854c2619551df1f1984204010fa15b743234a
+index 0000000000000000000000000000000000000000..9e48bcfae4fd4d56d8740907b91f501f1b4e0686
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,604 @@
+@@ -0,0 +1,605 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -202,7 +204,8 @@ index 0000000000000000000000000000000000000000..70b854c2619551df1f1984204010fa15
 +
 +            if (blockData != null) {
 +                solidGlobal[i] = blockData.isOccluding(emptyChunk, zeroPos)
-+                    && blockData.getBlock() != Blocks.SPAWNER && blockData.getBlock() != Blocks.BARRIER && blockData.getBlock() != Blocks.SHULKER_BOX;
++                    && blockData.getBlock() != Blocks.SPAWNER && blockData.getBlock() != Blocks.BARRIER && blockData.getBlock() != Blocks.SHULKER_BOX || paperWorldConfig.lavaObscures && blockData == Blocks.LAVA.getBlockData();
++                // Comparing blockData == Blocks.LAVA.getBlockData() instead of blockData.getBlock() == Blocks.LAVA ensures that only "stationary lava" is used
 +                // shulker box checks TE.
 +            }
 +        }
