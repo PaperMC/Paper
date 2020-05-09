@@ -26,7 +26,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         // get tile entity from block:
         CraftWorld world = (CraftWorld) this.getWorld();
         this.tileEntity = tileEntityClass.cast(world.getHandle().getTileEntity(this.getPosition()));
-        Preconditions.checkState(this.tileEntity != null, "Tile is null, asynchronous access? " + block);
+        if (tileEntity == null) Preconditions.checkState(false, "Tile is null, asynchronous access? " + block); // Paper - Don't toString block unless actually error'ing...
 
         // Paper start
         this.snapshotDisabled = DISABLE_SNAPSHOT;
