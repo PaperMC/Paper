@@ -2670,7 +2670,7 @@ index 55373cae078ddaf6c7c974abf59183698f669c24..b39ce329aa0b2e8da679a7b658f707f1
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/ChunkCache.java b/src/main/java/net/minecraft/server/ChunkCache.java
-index 11c4d23ba988dac5f3fd85142083c77fb603e673..53c15c1c0bf2d902e6b0325e0964f88f6d5fd6a5 100644
+index 11c4d23ba988dac5f3fd85142083c77fb603e673..a03e4c5b8693395f4a145ca565b074d6aed1913f 100644
 --- a/src/main/java/net/minecraft/server/ChunkCache.java
 +++ b/src/main/java/net/minecraft/server/ChunkCache.java
 @@ -8,7 +8,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
@@ -2682,20 +2682,47 @@ index 11c4d23ba988dac5f3fd85142083c77fb603e673..53c15c1c0bf2d902e6b0325e0964f88f
  
      public ChunkCache(World world, BlockPosition blockposition, BlockPosition blockposition1) {
          this.e = world;
-@@ -71,6 +71,20 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+@@ -27,7 +27,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+ 
+         for (k = this.a; k <= i; ++k) {
+             for (l = this.b; l <= j; ++l) {
+-                this.c[k - this.a][l - this.b] = ichunkprovider.a(k, l);
++                this.c[k - this.a][l - this.b] = ((WorldServer)world).getChunkProvider().getChunkAtIfLoadedMainThreadNoCache(k, l); // Paper
+             }
+         }
+ 
+@@ -52,7 +52,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+         int k = i - this.a;
+         int l = j - this.b;
+ 
+-        if (k >= 0 && k < this.c.length && l >= 0 && l < this.c[k].length) {
++        if (k >= 0 && k < this.c.length && l >= 0 && l < this.c[k].length) { // Paper - if this changes, update getChunkIfLoaded below
+             IChunkAccess ichunkaccess = this.c[k][l];
+ 
+             return (IChunkAccess) (ichunkaccess != null ? ichunkaccess : new ChunkEmpty(this.e, new ChunkCoordIntPair(i, j)));
+@@ -71,6 +71,29 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
          return this.a(i, j);
      }
  
 +    // Paper start - if loaded util
++    private IChunkAccess getChunkIfLoaded(int x, int z) {
++        int k = x - this.a;
++        int l = z - this.b;
++
++        if (k >= 0 && k < this.c.length && l >= 0 && l < this.c[k].length) {
++            return this.c[k][l];
++        }
++        return null;
++    }
 +    @Override
 +    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
-+        IChunkAccess chunk = getWorld().getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        IChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getFluid(blockposition);
 +    }
 +
 +    @Override
 +    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
-+        IChunkAccess chunk = getWorld().getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        IChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return chunk == null ? null : chunk.getType(blockposition);
 +    }
 +    // Paper end
