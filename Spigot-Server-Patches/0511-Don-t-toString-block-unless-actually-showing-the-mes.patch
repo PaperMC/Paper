@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 9 May 2020 13:54:25 -0400
+Subject: [PATCH] Don't toString block unless actually showing the message
+
+This is causing MASSIVE performance issues with hoppers and block states
+in general.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index 3e22d558ea09a6554e1bc71f8ca10277ec480705..3da34ebcb96040ef4b399e348d1cff2f000aefa2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -26,7 +26,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
+         // get tile entity from block:
+         CraftWorld world = (CraftWorld) this.getWorld();
+         this.tileEntity = tileEntityClass.cast(world.getHandle().getTileEntity(this.getPosition()));
+-        Preconditions.checkState(this.tileEntity != null, "Tile is null, asynchronous access? " + block);
++        if (tileEntity == null) Preconditions.checkState(false, "Tile is null, asynchronous access? " + block); // Paper - Don't toString block unless actually error'ing...
+ 
+         // Paper start
+         this.snapshotDisabled = DISABLE_SNAPSHOT;
