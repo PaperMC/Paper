@@ -49,12 +49,20 @@ public final class CraftTripwire extends org.bukkit.craftbukkit.block.data.Craft
 
     @Override
     public boolean hasFace(org.bukkit.block.BlockFace face) {
-        return get(FACES[face.ordinal()]);
+        net.minecraft.server.BlockStateBoolean state = FACES[face.ordinal()];
+        if (state == null) {
+            throw new IllegalArgumentException("Non-allowed face " + face + ". Check MultipleFacing.getAllowedFaces.");
+        }
+        return get(state);
     }
 
     @Override
     public void setFace(org.bukkit.block.BlockFace face, boolean has) {
-        set(FACES[face.ordinal()], has);
+        net.minecraft.server.BlockStateBoolean state = FACES[face.ordinal()];
+        if (state == null) {
+            throw new IllegalArgumentException("Non-allowed face " + face + ". Check MultipleFacing.getAllowedFaces.");
+        }
+        set(state, has);
     }
 
     @Override
