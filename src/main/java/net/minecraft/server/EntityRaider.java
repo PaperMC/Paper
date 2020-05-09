@@ -487,7 +487,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
 
     public class b<T extends EntityRaider> extends PathfinderGoal {
 
-        private final T b;
+        private final T b; private T getRaider() { return b; } // Paper - obfhelper
 
         public b(T entityraider) { // CraftBukkit - decompile error
             this.b = entityraider;
@@ -496,6 +496,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
 
         @Override
         public boolean a() {
+            if (!getRaider().world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) || !getRaider().canPickupLoot()) return false; // Paper - respect game and entity rules for picking up items
             Raid raid = this.b.fa();
 
             if (this.b.fb() && !this.b.fa().a() && this.b.eN() && !ItemStack.matches(this.b.getEquipment(EnumItemSlot.HEAD), Raid.s())) {
