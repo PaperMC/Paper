@@ -8,10 +8,10 @@ Adds API's to load or generate chunks asynchronously.
 Also adds utility methods to Entity to teleport asynchronously.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index e5b76d59fdcc85344cf3932b38ab096155d2eec3..62aa9bd67cf652cc9fcd4ef2ced3bc48e120763d 100644
+index e5b76d59fdcc85344cf3932b38ab096155d2eec3..8fe496ad8f566183e2280582d00c3b7751f06d75 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -221,6 +221,358 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -221,6 +221,467 @@ public interface World extends PluginMessageRecipient, Metadatable {
      public default Chunk getChunkAt(long chunkKey) {
          return getChunkAt((int) chunkKey, (int) (chunkKey >> 32));
      }
@@ -366,15 +366,124 @@ index e5b76d59fdcc85344cf3932b38ab096155d2eec3..62aa9bd67cf652cc9fcd4ef2ced3bc48
 +     * @return Future that will resolve when the chunk is loaded
 +     */
 +    @NotNull
-+    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen);
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen) {
++        return getChunkAtAsync(x, z, gen, false);
++    }
++
++    /**
++     * Requests a {@link Chunk} to be loaded at the given coordinates
++     *
++     * This method makes no guarantee on how fast the chunk will load,
++     * and will return the chunk to the callback at a later time.
++     *
++     * You should use this method if you need a chunk but do not need it
++     * immediately, and you wish to let the server control the speed
++     * of chunk loads, keeping performance in mind.
++     *
++     * The future will always be executed synchronously
++     * on the main Server Thread.
++     * @param loc Location to load the corresponding chunk from
++     * @return Future that will resolve when the chunk is loaded
++     */
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Location loc) {
++        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, true, true);
++    }
++
++    /**
++     * Requests a {@link Chunk} to be loaded at the given coordinates
++     *
++     * This method makes no guarantee on how fast the chunk will load,
++     * and will return the chunk to the callback at a later time.
++     *
++     * You should use this method if you need a chunk but do not need it
++     * immediately, and you wish to let the server control the speed
++     * of chunk loads, keeping performance in mind.
++     *
++     * The future will always be executed synchronously
++     * on the main Server Thread.
++     * @param loc Location to load the corresponding chunk from
++     * @param gen Should the chunk generate
++     * @return Future that will resolve when the chunk is loaded
++     */
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Location loc, boolean gen) {
++        return getChunkAtAsync((int)Math.floor(loc.getX()) >> 4, (int)Math.floor(loc.getZ()) >> 4, gen, true);
++    }
++
++    /**
++     * Requests a {@link Chunk} to be loaded at the given coordinates
++     *
++     * This method makes no guarantee on how fast the chunk will load,
++     * and will return the chunk to the callback at a later time.
++     *
++     * You should use this method if you need a chunk but do not need it
++     * immediately, and you wish to let the server control the speed
++     * of chunk loads, keeping performance in mind.
++     *
++     * The future will always be executed synchronously
++     * on the main Server Thread.
++     * @param block Block to load the corresponding chunk from
++     * @return Future that will resolve when the chunk is loaded
++     */
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Block block) {
++        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, true);
++    }
++
++    /**
++     * Requests a {@link Chunk} to be loaded at the given coordinates
++     *
++     * This method makes no guarantee on how fast the chunk will load,
++     * and will return the chunk to the callback at a later time.
++     *
++     * You should use this method if you need a chunk but do not need it
++     * immediately, and you wish to let the server control the speed
++     * of chunk loads, keeping performance in mind.
++     *
++     * The future will always be executed synchronously
++     * on the main Server Thread.
++     * @param block Block to load the corresponding chunk from
++     * @param gen Should the chunk generate
++     * @return Future that will resolve when the chunk is loaded
++     */
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(@NotNull Block block, boolean gen) {
++        return getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, true);
++    }
++
++    /**
++     * Requests a {@link Chunk} to be loaded at the given coordinates
++     *
++     * This method makes no guarantee on how fast the chunk will load,
++     * and will return the chunk to the callback at a later time.
++     *
++     * You should use this method if you need a chunk but do not need it
++     * immediately, and you wish to let the server control the speed
++     * of chunk loads, keeping performance in mind.
++     *
++     * The future will always be executed synchronously
++     * on the main Server Thread.
++     *
++     * @param x X Coord
++     * @param z Z Coord
++     * @return Future that will resolve when the chunk is loaded
++     */
++    @NotNull
++    public default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(int x, int z) {
++        return getChunkAtAsync(x, z, true, true);
++    }
++
++    @NotNull
++    java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent);
      // Paper end
  
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index b4069dbf31587786da39f5e387a71b7bc6a5d0ae..45e0dffe60ce1f4d54b481b6b2cbee511659a5cc 100644
+index b4069dbf31587786da39f5e387a71b7bc6a5d0ae..b8e8a425a84a562ccd8431d30e39145a662c4180 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -155,6 +155,30 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -155,6 +155,33 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
  
@@ -397,7 +506,10 @@ index b4069dbf31587786da39f5e387a71b7bc6a5d0ae..45e0dffe60ce1f4d54b481b6b2cbee51
 +    @NotNull
 +    public default java.util.concurrent.CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause) {
 +        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
-+        loc.getWorld().getChunkAtAsync(loc).thenAccept((chunk) -> future.complete(teleport(loc, cause)));
++        loc.getWorld().getChunkAtAsyncUrgently(loc).thenAccept((chunk) -> future.complete(teleport(loc, cause))).exceptionally(ex -> {
++            future.completeExceptionally(ex);
++            return null;
++        });
 +        return future;
 +    }
 +    // Paper end

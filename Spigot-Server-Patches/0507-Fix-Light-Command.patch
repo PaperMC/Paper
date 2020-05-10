@@ -7,7 +7,7 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index ddb60e9a48e5e7225ad575240b94fda24b6b78ca..bd9c56dd277c58b5f2c423f6e3e65a5086099619 100644
+index ddb60e9a48e5e7225ad575240b94fda24b6b78ca..beb50f78e8b2f79d45e2e7fdc932e947138be7aa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 @@ -19,6 +19,7 @@ import org.bukkit.command.Command;
@@ -45,7 +45,7 @@ index ddb60e9a48e5e7225ad575240b94fda24b6b78ca..bd9c56dd277c58b5f2c423f6e3e65a50
              case "ver":
              case "version":
                  Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -156,6 +160,65 @@ public class PaperCommand extends Command {
+@@ -156,6 +160,75 @@ public class PaperCommand extends Command {
          return true;
      }
  
@@ -81,7 +81,17 @@ index ddb60e9a48e5e7225ad575240b94fda24b6b78ca..bd9c56dd277c58b5f2c423f6e3e65a50
 +            sender.sendMessage("All Chunks Light updated");
 +            return;
 +        }
-+        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, chunk -> {
++        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, false).whenCompleteAsync((either, ex) -> {
++            if (ex != null) {
++                sender.sendMessage("Error loading chunk " + coord);
++                updateLight(sender, world, lightengine, queue);
++                return;
++            }
++            Chunk chunk = (Chunk) either.left().orElse(null);
++            if (chunk == null) {
++                updateLight(sender, world, lightengine, queue);
++                return;
++            }
 +            lightengine.a(world.paperConfig.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
 +            sender.sendMessage("Updating Light " + coord);
 +            for (int y = 0; y < world.getHeight(); y++) {
@@ -105,14 +115,14 @@ index ddb60e9a48e5e7225ad575240b94fda24b6b78ca..bd9c56dd277c58b5f2c423f6e3e65a50
 +                updateLight(sender, world, lightengine, queue);
 +            }
 +            lightengine.a(world.paperConfig.lightQueueSize);
-+        });
++        }, MinecraftServer.getServer());
 +    }
 +
      private void doSyncLoadInfo(CommandSender sender, String[] args) {
          if (!SyncLoadFinder.ENABLED) {
              sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 9d71c4c455d68bcc82dc56b0706c7305e4897e46..709e35cd4864eb666b68c1b6666a9d3a5a5a3c29 100644
+index 7b2a3287ce8d296d29cbef45322a469921cf9944..d0085b7459293e3e3460cfda34c67bda6e7bc324 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -437,6 +437,7 @@ public class PlayerChunk {
