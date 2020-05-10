@@ -20,22 +20,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-     }
- 
-     private long asyncLoadSeqCounter;
-+    public static boolean IS_CHUNK_LOAD_BLOCKING_MAIN = false;
- 
-     public void getChunkAtAsynchronously(int x, int z, boolean gen, java.util.function.Consumer<Chunk> onComplete) {
-         if (Thread.currentThread() != this.serverThread) {
-@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
              }
  
              gameprofilerfiller.c("getChunkCacheMiss");
-+            // Paper start - Chunk Load/Gen Priority
-+            boolean prevBlocking = IS_CHUNK_LOAD_BLOCKING_MAIN;
-+            IS_CHUNK_LOAD_BLOCKING_MAIN = true;
-+            // Paper end
-             CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
+-            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag, true); // Paper
  
              if (!completablefuture.isDone()) { // Paper
                  // Paper start - async chunk io/loading
@@ -54,10 +43,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (playerChunk != null) {
 +                playerChunk.clearChunkUrgent();
 +            }
-+            IS_CHUNK_LOAD_BLOCKING_MAIN = prevBlocking;// Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
              }, (playerchunk_failure) -> {
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+     }
+ 
+     private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++        // Paper start
++        return getChunkFutureMainThread(i, j, chunkstatus, flag, false);
++    }
++    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag, boolean isUrgent) {
++        // Paper end
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+         long k = chunkcoordintpair.pair();
+         int l = 33 + ChunkStatus.a(chunkstatus);
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                 }
+             }
+         }
++        // Paper start
++        if (playerchunk != null && isUrgent) {
++            playerchunk.markChunkUrgent(chunkstatus);
++        }
++        // Paper end
+ 
+         return this.a(playerchunk, l) ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : playerchunk.a(chunkstatus, this.playerChunkMap);
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
@@ -196,6 +208,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private void d(int i) {
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+                     Chunk fullChunk = either.left().get();
+                     PlayerChunk.this.isFullChunkReady = true;
+                     fullChunk.playerChunk = PlayerChunk.this;
++                    this.clearChunkUrgent();
+ 
+ 
+                 }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
@@ -279,3 +299,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture1 = completablefuture.thenApplyAsync((either) -> {
              return either.flatMap((list) -> {
                  Chunk chunk = (Chunk) list.get(list.size() / 2);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@
+ package org.bukkit.craftbukkit;
+ 
++import com.destroystokyo.paper.io.PrioritizedTaskQueue;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+             }
+         }
+ 
+-        return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
++        CompletableFuture<Chunk> future = this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
+             net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) either.left().orElse(null);
+             return CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());
+         }, MinecraftServer.getServer());
++        if (urgent) {
++            world.asyncChunkTaskManager.raisePriority(x, z, PrioritizedTaskQueue.HIGHEST_PRIORITY);
++        }
++        return future;
++
+     }
+     // Paper end
+ 

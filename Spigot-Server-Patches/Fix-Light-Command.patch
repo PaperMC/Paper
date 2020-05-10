@@ -81,7 +81,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            sender.sendMessage("All Chunks Light updated");
 +            return;
 +        }
-+        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, chunk -> {
++        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, false).whenCompleteAsync((either, ex) -> {
++            if (ex != null) {
++                sender.sendMessage("Error loading chunk " + coord);
++                updateLight(sender, world, lightengine, queue);
++                return;
++            }
++            Chunk chunk = (Chunk) either.left().orElse(null);
++            if (chunk == null) {
++                updateLight(sender, world, lightengine, queue);
++                return;
++            }
 +            lightengine.a(world.paperConfig.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
 +            sender.sendMessage("Updating Light " + coord);
 +            for (int y = 0; y < world.getHeight(); y++) {
@@ -105,7 +115,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                updateLight(sender, world, lightengine, queue);
 +            }
 +            lightengine.a(world.paperConfig.lightQueueSize);
-+        });
++        }, MinecraftServer.getServer());
 +    }
 +
      private void doSyncLoadInfo(CommandSender sender, String[] args) {
