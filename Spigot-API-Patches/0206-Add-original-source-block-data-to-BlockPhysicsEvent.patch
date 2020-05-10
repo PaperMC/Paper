@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Sun, 10 May 2020 09:26:14 -0500
+Subject: [PATCH] Add original source block data to BlockPhysicsEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockPhysicsEvent.java b/src/main/java/org/bukkit/event/block/BlockPhysicsEvent.java
+index c382f9fc2b8c5b959df7071007110dab737e400e..b7ffc22aeec457276c3d3cd215c96791533395b9 100644
+--- a/src/main/java/org/bukkit/event/block/BlockPhysicsEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockPhysicsEvent.java
+@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
+ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private final BlockData changed;
++    private final BlockData originalSourceData; // Paper
+     private final Block sourceBlock;
+     private boolean cancel = false;
+ 
+@@ -47,11 +48,35 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
+         super(block);
+         this.changed = changed;
+         this.sourceBlock = sourceBlock;
++        this.originalSourceData = sourceBlock.getBlockData(); // Paper
++    }
++
++    // Paper start
++    public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed, @NotNull final BlockData originalSourceData) {
++        this(block, changed, block, originalSourceData);
++    }
++
++    public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed, @NotNull final Block sourceBlock, @NotNull final BlockData originalSourceData) {
++        super(block);
++        this.changed = changed;
++        this.sourceBlock = sourceBlock;
++        this.originalSourceData = originalSourceData;
+     }
+ 
+     /**
+-     * Gets the source block that triggered this event.
++     * Gets the Original BlockData of the block that triggered this event which may not be the same as the sourceBlock.
+      *
++     * @return The source block data
++     */
++    @NotNull
++    public BlockData getOriginalSourceData() {
++        return originalSourceData;
++    }
++    // Paper end
++
++    /**
++     * Gets the source block that triggered this event.
++     * <p>
+      * Note: This will default to block if not set.
+      *
+      * @return The source block
