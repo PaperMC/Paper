@@ -19,19 +19,28 @@ This change ensures the chunks are always loaded when entities are
 added to the world, or a valid entity moves between chunks.
 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 955003d5f830b3a6988bf1b3b4058c28d5d48f77..6da2392915eb197a6e4193470f2d9a31981f1f98 100644
+index 955003d5f830b3a6988bf1b3b4058c28d5d48f77..b8b83554e2a7d7d0119ecf479d8e0bef556f775f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -707,7 +707,7 @@ public class WorldServer extends World {
-                 this.getChunkAt(entity.chunkX, entity.chunkZ).a(entity, entity.chunkY);
+@@ -703,11 +703,14 @@ public class WorldServer extends World {
+         int k = MathHelper.floor(entity.locZ() / 16.0D);
+ 
+         if (!entity.inChunk || entity.chunkX != i || entity.chunkY != j || entity.chunkZ != k) {
+-            if (entity.inChunk && this.isChunkLoaded(entity.chunkX, entity.chunkZ)) {
+-                this.getChunkAt(entity.chunkX, entity.chunkZ).a(entity, entity.chunkY);
++            // Paper start - remove entity if its in a chunk more correctly.
++            Chunk currentChunk = entity.getCurrentChunk();
++            if (currentChunk != null) {
++                currentChunk.removeEntity(entity);
              }
++            // Paper end
  
 -            if (!entity.cc() && !this.isChunkLoaded(i, k)) {
 +            if (!entity.valid && !entity.cc() && !this.isChunkLoaded(i, k)) { // Paper - always load chunks to register valid entities location
                  entity.inChunk = false;
              } else {
                  this.getChunkAt(i, k).a(entity);
-@@ -1032,7 +1032,7 @@ public class WorldServer extends World {
+@@ -1032,7 +1035,7 @@ public class WorldServer extends World {
                  return false;
              }
              // CraftBukkit end
