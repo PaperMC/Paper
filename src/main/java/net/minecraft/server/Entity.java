@@ -389,7 +389,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
 
     public void setPosition(double d0, double d1, double d2) {
         this.setPositionRaw(d0, d1, d2);
-        this.a(this.size.a(d0, d1, d2));
+        //this.a(this.size.a(d0, d1, d2)); // Paper - move into setPositionRaw
         if (valid) ((WorldServer) world).chunkCheck(this); // CraftBukkit
     }
 
@@ -2896,6 +2896,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         return new AxisAlignedBB(vec3d, vec3d1);
     }
 
+    public final void setBoundingBox(AxisAlignedBB axisalignedbb) { a(axisalignedbb); } // Paper - OBFHELPER
     public void a(AxisAlignedBB axisalignedbb) {
         // CraftBukkit start - block invalid bounding boxes
         double minX = axisalignedbb.minX,
@@ -3334,6 +3335,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
 
     public void setPositionRaw(double d0, double d1, double d2) {
+        // Paper start - never allow AABB to become desynced from position
+        // hanging has its own special logic
+        if (!(this instanceof EntityHanging) && (this.loc.x != d0 || this.loc.y != d1 || this.loc.z != d2)) {
+            this.setBoundingBox(this.size.a(d0, d1, d2));
+        }
+        // Paper end
         if (this.loc.x != d0 || this.loc.y != d1 || this.loc.z != d2) {
             this.loc = new Vec3D(d0, d1, d2);
             int i = MathHelper.floor(d0);
