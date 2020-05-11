@@ -935,6 +935,35 @@ public final class CraftServer implements Server {
         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
     }
 
+    // Paper start
+    public void waitForAsyncTasksShutdown() {
+        int pollCount = 0;
+
+        // Wait for at most 5 seconds for plugins to close their threads
+        while (pollCount < 10*5 && getScheduler().getActiveWorkers().size() > 0) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+            pollCount++;
+        }
+
+        List<BukkitWorker> overdueWorkers = getScheduler().getActiveWorkers();
+        for (BukkitWorker worker : overdueWorkers) {
+            Plugin plugin = worker.getOwner();
+            String author = "<NoAuthorGiven>";
+            if (plugin.getDescription().getAuthors().size() > 0) {
+                author = plugin.getDescription().getAuthors().get(0);
+            }
+            getLogger().log(Level.SEVERE, String.format(
+                "Nag author: '%s' of '%s' about the following: %s",
+                author,
+                plugin.getDescription().getName(),
+                "This plugin is not properly shutting down its async tasks when it is being shut down. This task may throw errors during the final shutdown logs and might not complete before process dies."
+            ));
+        }
+    }
+    // Paper end
+
     @Override
     public void reloadData() {
         CommandReload.reload(console);

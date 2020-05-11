@@ -771,6 +771,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         // CraftBukkit start
         if (this.server != null) {
             this.server.disablePlugins();
+            this.server.waitForAsyncTasksShutdown(); // Paper
         }
         // CraftBukkit end
         if (this.getServerConnection() != null) {
