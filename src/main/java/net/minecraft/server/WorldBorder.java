@@ -42,6 +42,7 @@ public class WorldBorder {
         return (double) chunkcoordintpair.f() > this.e() && (double) chunkcoordintpair.d() < this.g() && (double) chunkcoordintpair.g() > this.f() && (double) chunkcoordintpair.e() < this.h();
     }
 
+    public final boolean isInBounds(AxisAlignedBB aabb) { return this.a(aabb); } // Paper - OBFHELPER
     public boolean a(AxisAlignedBB axisalignedbb) {
         return axisalignedbb.maxX > this.e() && axisalignedbb.minX < this.g() && axisalignedbb.maxZ > this.f() && axisalignedbb.minZ < this.h();
     }

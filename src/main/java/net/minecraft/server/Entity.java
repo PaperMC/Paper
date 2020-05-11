@@ -817,7 +817,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
         AxisAlignedBB axisalignedbb = this.getBoundingBox();
         VoxelShapeCollision voxelshapecollision = VoxelShapeCollision.a(this);
         VoxelShape voxelshape = this.world.getWorldBorder().c();
-        Stream<VoxelShape> stream = VoxelShapes.c(voxelshape, VoxelShapes.a(axisalignedbb.shrink(1.0E-7D)), OperatorBoolean.AND) ? Stream.empty() : Stream.of(voxelshape);
+        Stream<VoxelShape> stream = !this.world.getWorldBorder().isInBounds(axisalignedbb) ? Stream.empty() : Stream.of(voxelshape); // Paper
         Stream<VoxelShape> stream1 = this.world.c(this, axisalignedbb.b(vec3d), (entity) -> {
             return true;
         });

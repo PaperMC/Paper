@@ -128,10 +128,10 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
         AxisAlignedBB axisalignedbb = this.a.getBoundingBox();
 
         if (!a(worldborder, axisalignedbb)) {
-            VoxelShape voxelshape = worldborder.c();
-
-            if (!b(voxelshape, axisalignedbb) && a(voxelshape, axisalignedbb)) {
-                consumer.accept(voxelshape);
+            // Paper start
+            if (worldborder.isInBounds(axisalignedbb.shrink(1.0E-7D)) && !worldborder.isInBounds(axisalignedbb.grow(1.0E-7D))) {
+                consumer.accept(worldborder.asVoxelShape());
+            // Paper end
                 return true;
             }
         }
