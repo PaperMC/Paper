@@ -143,14 +143,14 @@
 +    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
 +
 +    private CraftEntity bukkitEntity;
- 
++
 +    public CraftEntity getBukkitEntity() {
 +        if (this.bukkitEntity == null) {
 +            this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
 +        }
 +        return this.bukkitEntity;
 +    }
-+
+ 
 +    // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
 +    public int getDefaultMaxAirSupply() {
 +        return Entity.TOTAL_AIR_SUPPLY;
@@ -169,7 +169,7 @@
      private static final EntityDataAccessor<Integer> DATA_TICKS_FROZEN = SynchedEntityData.defineId(Entity.class, EntityDataSerializers.INT);
      private EntityInLevelCallback levelCallback;
      private final VecDeltaCodec packetPositionCodec;
-@@ -253,7 +385,65 @@
+@@ -253,6 +385,64 @@
      private final List<Entity.Movement> movementThisTick;
      private final Set<BlockState> blocksInside;
      private final LongSet visitedBlocks;
@@ -221,7 +221,7 @@
 +    public float getBukkitYaw() {
 +        return this.yRot;
 +    }
- 
++
 +    public boolean isChunkLoaded() {
 +        return this.level.hasChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
 +    }
@@ -231,10 +231,9 @@
 +        return this.dimensions.makeBoundingBox(x, y, z);
 +    }
 +    // Paper end
-+
+ 
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-         this.passengers = ImmutableList.of();
 @@ -261,7 +451,7 @@
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
@@ -380,6 +379,17 @@
          this.setYRot(yaw % 360.0F);
          this.setXRot(pitch % 360.0F);
      }
+@@ -426,8 +678,8 @@
+     }
+ 
+     public void setPos(double x, double y, double z) {
+-        this.setPosRaw(x, y, z);
+-        this.setBoundingBox(this.makeBoundingBox());
++        this.setPosRaw(x, y, z, true); // Paper - Block invalid positions and bounding box; force update
++        // this.setBoundingBox(this.makeBoundingBox()); // Paper - Block invalid positions and bounding box; move into setPosRaw
+     }
+ 
+     protected final AABB makeBoundingBox() {
 @@ -462,6 +714,15 @@
          this.baseTick();
      }
@@ -538,15 +548,17 @@
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission entity_movementemission = this.getMovementEmission();
  
-@@ -1133,6 +1457,20 @@
-         return SoundEvents.GENERIC_SPLASH;
-     }
+@@ -1131,8 +1455,22 @@
  
+     protected SoundEvent getSwimHighSpeedSplashSound() {
+         return SoundEvents.GENERIC_SPLASH;
++    }
++
 +    // CraftBukkit start - Add delegate methods
 +    public SoundEvent getSwimSound0() {
 +        return this.getSwimSound();
-+    }
-+
+     }
+ 
 +    public SoundEvent getSwimSplashSound0() {
 +        return this.getSwimSplashSound();
 +    }
@@ -633,18 +645,17 @@
      }
  
      public CompoundTag saveWithoutId(CompoundTag nbt) {
--        try {
--            if (this.vehicle != null) {
--                nbt.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
--            } else {
--                nbt.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
 +        // CraftBukkit start - allow excluding certain data when saving
 +        return this.saveWithoutId(nbt, true);
 +    }
 +
 +    public CompoundTag saveWithoutId(CompoundTag nbttagcompound, boolean includeAll) {
 +        // CraftBukkit end
-+        try {
+         try {
+-            if (this.vehicle != null) {
+-                nbt.put("Pos", this.newDoubleList(this.vehicle.getX(), this.getY(), this.vehicle.getZ()));
+-            } else {
+-                nbt.put("Pos", this.newDoubleList(this.getX(), this.getY(), this.getZ()));
 +            // CraftBukkit start - selectively save position
 +            if (includeAll) {
 +                if (this.vehicle != null) {
@@ -807,10 +818,11 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being saved");
-@@ -2080,6 +2513,68 @@
+@@ -2079,7 +2512,69 @@
+                 }
              } else {
                  throw new IllegalStateException("Entity has invalid position");
-             }
++            }
 +
 +            // CraftBukkit start
 +            // Spigot start
@@ -833,7 +845,7 @@
 +                boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");
 +                this.setInvisible(bukkitInvisible);
 +                this.persistentInvisibility = bukkitInvisible;
-+            }
+             }
 +            // CraftBukkit end
 +
 +            // Paper start
@@ -1509,7 +1521,50 @@
          return this.type.getDimensions();
      }
  
-@@ -3818,8 +4572,16 @@
+@@ -3714,7 +4468,29 @@
+         return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
+     }
+ 
++    // Paper start - Block invalid positions and bounding box
++    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
++        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
++            return true;
++        }
++
++        String entityInfo;
++        try {
++            entityInfo = entity.toString();
++        } catch (Exception ex) {
++            entityInfo = "[Entity info unavailable] ";
++        }
++        LOGGER.error("New entity position is invalid! Tried to set invalid position ({},{},{}) for entity {} located at {}, entity info: {}", newX, newY, newZ, entity.getClass().getName(), entity.position, entityInfo, new Throwable());
++        return false;
++    }
+     public final void setPosRaw(double x, double y, double z) {
++        this.setPosRaw(x, y, z, false);
++    }
++    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        if (!checkPosition(this, x, y, z)) {
++            return;
++        }
++        // Paper end - Block invalid positions and bounding box
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);
+@@ -3732,6 +4508,12 @@
+             this.levelCallback.onMove();
+         }
+ 
++        // Paper start - Block invalid positions and bounding box; don't allow desync of pos and AABB
++        // hanging has its own special logic
++        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.makeBoundingBox());
++        }
++        // Paper end - Block invalid positions and bounding box
+     }
+ 
+     public void checkDespawn() {}
+@@ -3818,8 +4600,16 @@
  
      @Override
      public final void setRemoved(Entity.RemovalReason reason) {
@@ -1527,7 +1582,7 @@
          }
  
          if (this.removalReason.shouldDestroy()) {
-@@ -3827,8 +4589,8 @@
+@@ -3827,8 +4617,8 @@
          }
  
          this.getPassengers().forEach(Entity::stopRiding);
@@ -1538,7 +1593,7 @@
      }
  
      public void unsetRemoved() {
-@@ -3887,7 +4649,7 @@
+@@ -3887,7 +4677,7 @@
      }
  
      public Vec3 getKnownMovement() {
