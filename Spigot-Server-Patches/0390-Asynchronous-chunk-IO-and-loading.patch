@@ -2305,7 +2305,7 @@ index 0000000000000000000000000000000000000000..2b20c159f6bb425be70201cf33159aa9
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 4c9c8e483974f8869d6711626620cfd7d814d956..cabe2a5908dd9ee721c13c1825e65a37f72361d4 100644
+index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb408b20bde 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -299,11 +299,136 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -2406,7 +2406,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..cabe2a5908dd9ee721c13c1825e65a37
 +    }
 +
 +    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> bringToStatusAsync(int x, int z, ChunkCoordIntPair chunkPos, ChunkStatus status, boolean isUrgent) {
-+        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getChunkFutureMainThread(x, z, status, true);
++        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.getChunkFutureMainThread(x, z, status, true, isUrgent);
 +        Long identifier = Long.valueOf(this.asyncLoadSeqCounter++);
 +        int ticketLevel = MCUtil.getTicketLevelFor(status);
 +        this.addTicketAtLevel(TicketType.ASYNC_LOAD, chunkPos, ticketLevel, identifier);
@@ -2445,8 +2445,12 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..cabe2a5908dd9ee721c13c1825e65a37
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -329,8 +454,13 @@ public class ChunkProviderServer extends IChunkProvider {
-             CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
+@@ -326,11 +451,16 @@ public class ChunkProviderServer extends IChunkProvider {
+             }
+ 
+             gameprofilerfiller.c("getChunkCacheMiss");
+-            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag);
++            CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = this.getChunkFutureMainThread(i, j, chunkstatus, flag, true); // Paper
  
              if (!completablefuture.isDone()) { // Paper
 +                // Paper start - async chunk io/loading
@@ -2459,7 +2463,19 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..cabe2a5908dd9ee721c13c1825e65a37
                  this.world.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -835,11 +965,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -396,6 +526,11 @@ public class ChunkProviderServer extends IChunkProvider {
+     }
+ 
+     private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++        // Paper start - add isUrgent - old sig left in place for dirty nms plugins
++        return getChunkFutureMainThread(i, j, chunkstatus, flag, false);
++    }
++    private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag, boolean isUrgent) {
++        // Paper end
+         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
+         long k = chunkcoordintpair.pair();
+         int l = 33 + ChunkStatus.a(chunkstatus);
+@@ -835,11 +970,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {
