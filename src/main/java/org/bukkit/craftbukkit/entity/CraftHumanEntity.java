@@ -127,6 +127,22 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return getHandle().sleepTicks;
     }
 
+    // Paper start - Potential bed api
+    @Override
+    public Location getPotentialBedLocation() {
+        EntityPlayer handle = (EntityPlayer) getHandle();
+        BlockPosition bed = handle.getSpawn();
+        if (bed == null) {
+            return null;
+        }
+
+        net.minecraft.server.WorldServer worldServer = handle.server.getWorldServer(handle.getSpawnDimension());
+        if (worldServer == null) {
+            return null;
+        }
+        return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
+    }
+    // Paper end
     @Override
     public boolean sleep(Location location, boolean force) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
