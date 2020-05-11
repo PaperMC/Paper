@@ -308,6 +308,19 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     public int getSleepTicks();
 
+
+    // Paper start - Potential bed api
+    /**
+     * Gets the Location of the player's bed, null if they have not slept
+     * in one. This method will not attempt to validate if the current bed
+     * is still valid.
+     *
+     * @return Bed Location if has slept in one, otherwise null.
+     */
+    @Nullable
+    public Location getPotentialBedLocation();
+    // Paper end
+
     /**
      * Attempts to make the entity sleep at the given location.
      * <br>
