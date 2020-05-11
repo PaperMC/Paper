@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Sun, 10 May 2020 23:06:30 -0400
+Subject: [PATCH] Async bed spawn api
+
+Adds two new methods regarding fetching the bed locations without inducing sync loads.
+
+getBedSpawnLocationAsync - Gets the location where a player will spawn at their bed but first loads the bed's chunk asynchronously to prevent a sync load.
+
+getPotentialBedLocation - Gets the last known location of a player's bed. This does not preform any check if the bed is still valid and does not load any chunks.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index a5e9fc90ffae794b9b14468337ce7b091fd0dc35..04b9c735632f6bbf4b5f09066086b2576a3e52aa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -143,6 +143,32 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         return null;
+     }
+ 
++    // Paper start - Async bed spawn api
++    @Override
++    public Location getPotentialBedLocation() {
++        BlockPosition bed = getHandle().getBed();
++        if (bed == null) {
++            return null;
++        }
++        return new Location(getServer().getWorld(getHandle().spawnWorld), bed.getX(), bed.getY(), bed.getZ());
++    }
++
++    @Override
++    public java.util.concurrent.CompletableFuture<Location> getBedSpawnLocationAsync() {
++        java.util.concurrent.CompletableFuture<Location> future = new java.util.concurrent.CompletableFuture<>();
++        BlockPosition bed = getHandle().getBed();
++        if (bed == null) {
++            future.complete(null);
++        } else {
++            getServer().getWorld(getHandle().spawnWorld).getChunkAtAsync(bed.getX(), bed.getZ()).thenAccept(chunk -> future.complete(getBedSpawnLocation())).exceptionally(ex -> {
++                future.completeExceptionally(ex);
++                return null;
++            });
++        }
++        return future;
++    }
++    // Paper end
++
+     @Override
+     public void setBedSpawnLocation(Location location) {
+         setBedSpawnLocation(location, false);

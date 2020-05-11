@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Sun, 10 May 2020 23:06:41 -0400
+Subject: [PATCH] Async bed spawn api
+
+Adds two new methods regarding fetching the bed locations without inducing sync loads.
+
+getBedSpawnLocationAsync - Gets the location where a player will spawn at their bed but first loads the bed's chunk asynchronously to prevent a sync load.
+
+getPotentialBedLocation - Gets the last known location of a player's bed. This does not preform any check if the bed is still valid and does not load any chunks.
+
+diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
+index 79569a329aa19ed954b9b65b78ef5d6d313501a1..4bbfd0ebe6155a51961e4e320667ab4ce8e4e0a5 100644
+--- a/src/main/java/org/bukkit/entity/HumanEntity.java
++++ b/src/main/java/org/bukkit/entity/HumanEntity.java
+@@ -248,6 +248,29 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+     @Nullable
+     public Location getBedSpawnLocation();
+ 
++    // Paper start - Async bed spawn api
++    /**
++     * Gets the Location of the player's bed, null if they have not slept
++     * in one. This method will not attempt to validate if the current bed
++     * is still valid.
++     *
++     * @return Bed Location if has slept in one, otherwise null.
++     */
++    @Nullable
++    public Location getPotentialBedLocation();
++
++    /**
++     * Gets the Location where the player will spawn at their bed
++     * asynchronously, null if they have not slept in one or their current
++     * bed spawn is invalid.
++     *
++     * @return A future that will be completed with the bed spawn
++     * location, otherwise null.
++     */
++    @NotNull
++    public java.util.concurrent.CompletableFuture<Location> getBedSpawnLocationAsync();
++    // Paper end
++
+     /**
+      * Sets the Location where the player will spawn at their bed.
+      *
