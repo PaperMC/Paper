@@ -105,7 +105,7 @@ index 958279249fdadfe5c2808d2a046636f06c3bd500..a8e64dfdab1e73894144a65c10c15d22
              this.world.b(this.position, this);
              if (!this.c.isAir()) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
-index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec8f4565e3 100644
+index 907d088c8691eec5d72836ccda420a7a0703ad22..c755faed4f63884cb6a66bf951104a27dbaf887f 100644
 --- a/src/main/java/net/minecraft/server/TileEntityHopper.java
 +++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
 @@ -168,6 +168,160 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
@@ -121,9 +121,10 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
 +        skipPushModeEventFire = skipHopperEvents;
 +        boolean foundItem = false;
 +        for (int i = 0; i < this.getSize(); ++i) {
-+            if (!this.getItem(i).isEmpty()) {
++            ItemStack item = this.getItem(i);
++            if (!item.isEmpty()) {
 +                foundItem = true;
-+                ItemStack origItemStack = this.getItem(i);
++                ItemStack origItemStack = item;
 +                ItemStack itemstack = origItemStack;
 +
 +                final int origCount = origItemStack.getCount();
@@ -160,8 +161,7 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
 +        return false;
 +    }
 +
-+    private static boolean hopperPull(IHopper ihopper, IInventory iinventory, int i) {
-+        ItemStack origItemStack = iinventory.getItem(i);
++    private static boolean hopperPull(IHopper ihopper, IInventory iinventory, ItemStack origItemStack, int i) {
 +        ItemStack itemstack = origItemStack;
 +        final int origCount = origItemStack.getCount();
 +        final World world = ihopper.getWorld();
@@ -286,23 +286,100 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
              }
          }
      }
-@@ -246,6 +401,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -225,18 +380,54 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return iinventory instanceof IWorldInventory ? IntStream.of(((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) : IntStream.range(0, iinventory.getSize());
+     }
+ 
+-    private boolean b(IInventory iinventory, EnumDirection enumdirection) {
+-        return a(iinventory, enumdirection).allMatch((i) -> {
+-            ItemStack itemstack = iinventory.getItem(i);
++    private static boolean allMatch(IInventory iinventory, EnumDirection enumdirection, java.util.function.BiPredicate<ItemStack, Integer> test) {
++        if (iinventory instanceof IWorldInventory) {
++            for (int i : ((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) {
++                if (!test.test(iinventory.getItem(i), i)) {
++                    return false;
++                }
++            }
++        } else {
++            int size = iinventory.getSize();
++            for (int i = 0; i < size; i++) {
++                if (!test.test(iinventory.getItem(i), i)) {
++                    return false;
++                }
++            }
++        }
++        return true;
++    }
+ 
+-            return itemstack.getCount() >= itemstack.getMaxStackSize();
+-        });
++    private static boolean anyMatch(IInventory iinventory, EnumDirection enumdirection, java.util.function.BiPredicate<ItemStack, Integer> test) {
++        if (iinventory instanceof IWorldInventory) {
++            for (int i : ((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) {
++                if (test.test(iinventory.getItem(i), i)) {
++                    return true;
++                }
++            }
++        } else {
++            int size = iinventory.getSize();
++            for (int i = 0; i < size; i++) {
++                if (test.test(iinventory.getItem(i), i)) {
++                    return true;
++                }
++            }
++        }
++        return true;
++    }
++    private static final java.util.function.BiPredicate<ItemStack, Integer> STACK_SIZE_TEST = (itemstack, i) -> itemstack.getCount() >= itemstack.getMaxStackSize();
++    private static final java.util.function.BiPredicate<ItemStack, Integer> IS_EMPTY_TEST = (itemstack, i) -> itemstack.isEmpty();
++
++    // Paper end
++
++    private boolean b(IInventory iinventory, EnumDirection enumdirection) {
++        // Paper start - no streams
++        return allMatch(iinventory, enumdirection, STACK_SIZE_TEST);
++        // Paper end
+     }
+ 
+     private static boolean c(IInventory iinventory, EnumDirection enumdirection) {
+-        return a(iinventory, enumdirection).allMatch((i) -> {
+-            return iinventory.getItem(i).isEmpty();
+-        });
++        return allMatch(iinventory, enumdirection, IS_EMPTY_TEST);
+     }
+ 
+     public static boolean a(IHopper ihopper) {
+@@ -245,9 +436,17 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         if (iinventory != null) {
              EnumDirection enumdirection = EnumDirection.DOWN;
  
-             return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
-+                skipPullModeEventFire = skipHopperEvents; // Paper
-                 return a(ihopper, iinventory, i, enumdirection);
+-            return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
+-                return a(ihopper, iinventory, i, enumdirection);
++            // Paper start - optimize hoppers and remove streams
++            skipPullModeEventFire = skipHopperEvents;
++            return !c(iinventory, enumdirection) && anyMatch(iinventory, enumdirection, (item, i) -> {
++                // Logic copied from below to avoid extra getItem calls
++                if (!item.isEmpty() && canTakeItem(iinventory, item, i, enumdirection)) {
++                    return hopperPull(ihopper, iinventory, item, i);
++                } else {
++                    return false;
++                }
              });
++            // Paper end
          } else {
-@@ -269,6 +425,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+             Iterator iterator = c(ihopper).iterator();
+ 
+@@ -268,7 +467,8 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+     private static boolean a(IHopper ihopper, IInventory iinventory, int i, EnumDirection enumdirection) {
          ItemStack itemstack = iinventory.getItem(i);
  
-         if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
-+            return hopperPull(ihopper, iinventory, i); /* // Paper - disable rest
+-        if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
++        if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left inused incase reflective plugins
++            return hopperPull(ihopper, iinventory, itemstack, i); /* // Paper - disable rest
              ItemStack itemstack1 = itemstack.cloneItemStack();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
-@@ -305,7 +462,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -305,7 +505,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              }
  
              itemstack1.subtract(origCount - itemstack2.getCount()); // Spigot
@@ -311,7 +388,7 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
          }
  
          return false;
-@@ -314,7 +471,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -314,7 +514,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      public static boolean a(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
          // CraftBukkit start
@@ -320,7 +397,15 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
          entityitem.world.getServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
-@@ -368,7 +525,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -356,6 +556,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return !iinventory.b(i, itemstack) ? false : !(iinventory instanceof IWorldInventory) || ((IWorldInventory) iinventory).canPlaceItemThroughFace(i, itemstack, enumdirection);
+     }
+ 
++    private static boolean canTakeItem(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) { return b(iinventory, itemstack, i, enumdirection); } // Paper - OBFHELPER
+     private static boolean b(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
+         return !(iinventory instanceof IWorldInventory) || ((IWorldInventory) iinventory).canTakeItemThroughFace(i, itemstack, enumdirection);
+     }
+@@ -368,7 +569,9 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              boolean flag1 = iinventory1.isEmpty();
  
              if (itemstack1.isEmpty()) {
@@ -330,7 +415,7 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
                  itemstack = ItemStack.a;
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
-@@ -419,18 +578,24 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -419,18 +622,24 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      }
  
      public static List<EntityItem> c(IHopper ihopper) {
@@ -360,7 +445,7 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
          Object object = null;
          BlockPosition blockposition = new BlockPosition(d0, d1, d2);
          if ( !world.isLoaded( blockposition ) ) return null; // Spigot
-@@ -450,7 +615,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+@@ -450,7 +659,7 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              }
          }
  
@@ -369,6 +454,32 @@ index 907d088c8691eec5d72836ccda420a7a0703ad22..280c4e99e828114d6b517d5b7bb018ec
              List<Entity> list = world.getEntities((Entity) null, new AxisAlignedBB(d0 - 0.5D, d1 - 0.5D, d2 - 0.5D, d0 + 0.5D, d1 + 0.5D, d2 + 0.5D), IEntitySelector.d);
  
              if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
+index d4cbce3243fe1f4973c9c0ae0dbdab10e3390897..3b394c2726e0fbe595641a022e59c8967d525f82 100644
+--- a/src/main/java/net/minecraft/server/TileEntityLootable.java
++++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
+@@ -72,12 +72,19 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+     @Override
+     public boolean isEmpty() {
+         this.d((EntityHuman) null);
+-        return this.f().stream().allMatch(ItemStack::isEmpty);
++        // Paper start
++        for (ItemStack itemStack : this.f()) {
++            if (!itemStack.isEmpty()) {
++                return false;
++            }
++        }
++        // Paper end
++        return true;
+     }
+ 
+     @Override
+     public ItemStack getItem(int i) {
+-        this.d((EntityHuman) null);
++        if (i == 0) this.d((EntityHuman) null); // Paper
+         return (ItemStack) this.f().get(i);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 568e04faa314552e14286efdfcdfb79e682fda95..9e161746f2acbe544140979bddb51ac26ee0d20f 100644
 --- a/src/main/java/net/minecraft/server/World.java
