@@ -121,9 +121,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        skipPushModeEventFire = skipHopperEvents;
 +        boolean foundItem = false;
 +        for (int i = 0; i < this.getSize(); ++i) {
-+            if (!this.getItem(i).isEmpty()) {
++            ItemStack item = this.getItem(i);
++            if (!item.isEmpty()) {
 +                foundItem = true;
-+                ItemStack origItemStack = this.getItem(i);
++                ItemStack origItemStack = item;
 +                ItemStack itemstack = origItemStack;
 +
 +                final int origCount = origItemStack.getCount();
@@ -160,8 +161,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return false;
 +    }
 +
-+    private static boolean hopperPull(IHopper ihopper, IInventory iinventory, int i) {
-+        ItemStack origItemStack = iinventory.getItem(i);
++    private static boolean hopperPull(IHopper ihopper, IInventory iinventory, ItemStack origItemStack, int i) {
 +        ItemStack itemstack = origItemStack;
 +        final int origCount = origItemStack.getCount();
 +        final World world = ihopper.getWorld();
@@ -287,18 +287,95 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return iinventory instanceof IWorldInventory ? IntStream.of(((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) : IntStream.range(0, iinventory.getSize());
+     }
+ 
+-    private boolean b(IInventory iinventory, EnumDirection enumdirection) {
+-        return a(iinventory, enumdirection).allMatch((i) -> {
+-            ItemStack itemstack = iinventory.getItem(i);
++    private static boolean allMatch(IInventory iinventory, EnumDirection enumdirection, java.util.function.BiPredicate<ItemStack, Integer> test) {
++        if (iinventory instanceof IWorldInventory) {
++            for (int i : ((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) {
++                if (!test.test(iinventory.getItem(i), i)) {
++                    return false;
++                }
++            }
++        } else {
++            int size = iinventory.getSize();
++            for (int i = 0; i < size; i++) {
++                if (!test.test(iinventory.getItem(i), i)) {
++                    return false;
++                }
++            }
++        }
++        return true;
++    }
+ 
+-            return itemstack.getCount() >= itemstack.getMaxStackSize();
+-        });
++    private static boolean anyMatch(IInventory iinventory, EnumDirection enumdirection, java.util.function.BiPredicate<ItemStack, Integer> test) {
++        if (iinventory instanceof IWorldInventory) {
++            for (int i : ((IWorldInventory) iinventory).getSlotsForFace(enumdirection)) {
++                if (test.test(iinventory.getItem(i), i)) {
++                    return true;
++                }
++            }
++        } else {
++            int size = iinventory.getSize();
++            for (int i = 0; i < size; i++) {
++                if (test.test(iinventory.getItem(i), i)) {
++                    return true;
++                }
++            }
++        }
++        return true;
++    }
++    private static final java.util.function.BiPredicate<ItemStack, Integer> STACK_SIZE_TEST = (itemstack, i) -> itemstack.getCount() >= itemstack.getMaxStackSize();
++    private static final java.util.function.BiPredicate<ItemStack, Integer> IS_EMPTY_TEST = (itemstack, i) -> itemstack.isEmpty();
++
++    // Paper end
++
++    private boolean b(IInventory iinventory, EnumDirection enumdirection) {
++        // Paper start - no streams
++        return allMatch(iinventory, enumdirection, STACK_SIZE_TEST);
++        // Paper end
+     }
+ 
+     private static boolean c(IInventory iinventory, EnumDirection enumdirection) {
+-        return a(iinventory, enumdirection).allMatch((i) -> {
+-            return iinventory.getItem(i).isEmpty();
+-        });
++        return allMatch(iinventory, enumdirection, IS_EMPTY_TEST);
+     }
+ 
+     public static boolean a(IHopper ihopper) {
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         if (iinventory != null) {
              EnumDirection enumdirection = EnumDirection.DOWN;
  
-             return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
-+                skipPullModeEventFire = skipHopperEvents; // Paper
-                 return a(ihopper, iinventory, i, enumdirection);
+-            return c(iinventory, enumdirection) ? false : a(iinventory, enumdirection).anyMatch((i) -> {
+-                return a(ihopper, iinventory, i, enumdirection);
++            // Paper start - optimize hoppers and remove streams
++            skipPullModeEventFire = skipHopperEvents;
++            return !c(iinventory, enumdirection) && anyMatch(iinventory, enumdirection, (item, i) -> {
++                // Logic copied from below to avoid extra getItem calls
++                if (!item.isEmpty() && canTakeItem(iinventory, item, i, enumdirection)) {
++                    return hopperPull(ihopper, iinventory, item, i);
++                } else {
++                    return false;
++                }
              });
++            // Paper end
          } else {
+             Iterator iterator = c(ihopper).iterator();
+ 
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+     private static boolean a(IHopper ihopper, IInventory iinventory, int i, EnumDirection enumdirection) {
          ItemStack itemstack = iinventory.getItem(i);
  
-         if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
-+            return hopperPull(ihopper, iinventory, i); /* // Paper - disable rest
+-        if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
++        if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) { // If this logic changes, update above. this is left inused incase reflective plugins
++            return hopperPull(ihopper, iinventory, itemstack, i); /* // Paper - disable rest
              ItemStack itemstack1 = itemstack.cloneItemStack();
              // ItemStack itemstack2 = addItem(iinventory, ihopper, iinventory.splitStack(i, 1), (EnumDirection) null);
              // CraftBukkit start - Call event on collection of items from inventories into the hopper
@@ -320,6 +397,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          entityitem.world.getServer().getPluginManager().callEvent(event);
          if (event.isCancelled()) {
              return false;
+@@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
+         return !iinventory.b(i, itemstack) ? false : !(iinventory instanceof IWorldInventory) || ((IWorldInventory) iinventory).canPlaceItemThroughFace(i, itemstack, enumdirection);
+     }
+ 
++    private static boolean canTakeItem(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) { return b(iinventory, itemstack, i, enumdirection); } // Paper - OBFHELPER
+     private static boolean b(IInventory iinventory, ItemStack itemstack, int i, EnumDirection enumdirection) {
+         return !(iinventory instanceof IWorldInventory) || ((IWorldInventory) iinventory).canTakeItemThroughFace(i, itemstack, enumdirection);
+     }
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              boolean flag1 = iinventory1.isEmpty();
  
@@ -369,6 +454,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              List<Entity> list = world.getEntities((Entity) null, new AxisAlignedBB(d0 - 0.5D, d1 - 0.5D, d2 - 0.5D, d0 + 0.5D, d1 + 0.5D, d2 + 0.5D), IEntitySelector.d);
  
              if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntityLootable.java
++++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
+@@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+     @Override
+     public boolean isEmpty() {
+         this.d((EntityHuman) null);
+-        return this.f().stream().allMatch(ItemStack::isEmpty);
++        // Paper start
++        for (ItemStack itemStack : this.f()) {
++            if (!itemStack.isEmpty()) {
++                return false;
++            }
++        }
++        // Paper end
++        return true;
+     }
+ 
+     @Override
+     public ItemStack getItem(int i) {
+-        this.d((EntityHuman) null);
++        if (i == 0) this.d((EntityHuman) null); // Paper
+         return (ItemStack) this.f().get(i);
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
