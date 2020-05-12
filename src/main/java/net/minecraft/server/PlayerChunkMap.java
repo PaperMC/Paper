@@ -1959,12 +1959,112 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
 
     }
 
+    // Paper start
+    private static int getLightMask(final Chunk chunk) {
+        final ChunkSection[] chunkSections = chunk.getSections();
+        int mask = 0;
+
+        for (int i = 0; i < chunkSections.length; ++i) {
+            /*
+
+
+Lightmasks have 18 bits, from the -1 (void) section until the 17th (air) section.
+Sections go from 0..16. Now whenever a section is not empty, it can potentially change lighting for the section itself, the section below and the section above, hence the bitmask 111b, which is 7d.
+
+             */
+            mask |= (ChunkSection.isEmpty(chunkSections[i]) ? 0 : 7) << i;
+        }
+
+        return mask;
+    }
+
+    private static int getCeilingLightMask(final Chunk chunk) {
+        int mask = getLightMask(chunk);
+
+        /*
+         It is similar to get highest bit, it would turn an 001010 into an 001111 so basically the highest bit and all below.
+         We then invert this, so we'd have 110000 and compare that to the "main" chunk.
+         This is because the bug only appears when the current chunks lightmaps are higher than those of the neighbors, thus we can omit sending neighbors which are lower than the current chunks lights.
+
+         so TLDR is that getCeilingLightMask returns a light mask with all bits set below the highest affected section. We could also count the number of leading zeros and invert them, somehow.
+         @TODO: Implement Leafs suggestion
+         either use Integer#numberOfLeadingZeros or document what this bithack is supposed to be doing then
+         */
+        mask |= mask >> 1;
+        mask |= mask >> 2;
+        mask |= mask >> 4;
+        mask |= mask >> 8;
+        mask |= mask >> 16;
+
+        return mask;
+    }
+    // Paper end
+
     final void sendChunk(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) { this.a(entityplayer, apacket, chunk); } // Paper - OBFHELPER
     private void a(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) {
         if (apacket[0] == null) {
+            // Paper start - add 8 for light fix workaround
+            if (apacket.length != 10) { // in case Plugins call sendChunk, resize
+                apacket = new Packet[10];
+            }
+            // Paper end
             apacket[0] = new PacketPlayOutMapChunk(chunk, 65535);
             apacket[1] = new PacketPlayOutLightUpdate(chunk.getPos(), this.lightEngine, true);
+
+            // Paper start - Fix MC-162253
+            final int lightMask = getLightMask(chunk);
+            int i = 1;
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x == 0 && z == 0) {
+                        continue;
+                    }
+
+                    ++i;
+
+                    if (!chunk.isNeighbourLoaded(x, z)) {
+                        continue;
+                    }
+
+                    final Chunk neighbor = chunk.getRelativeNeighbourIfLoaded(x, z);
+                    final int updateLightMask = lightMask & ~getCeilingLightMask(neighbor);
+
+                    if (updateLightMask == 0) {
+                        continue;
+                    }
+
+                    apacket[i] = new PacketPlayOutLightUpdate(new ChunkCoordIntPair(chunk.getPos().x + x, chunk.getPos().z + z), lightEngine, updateLightMask, 0, true);
+                }
+            }
         }
+
+        final int viewDistance = playerViewDistanceBroadcastMap.getLastViewDistance(entityplayer);
+        final long lastPosition = playerViewDistanceBroadcastMap.getLastCoordinate(entityplayer);
+
+        int j = 1;
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (x == 0 && z == 0) {
+                    continue;
+                }
+
+                ++j;
+
+                Packet<?> packet = apacket[j];
+                if (packet == null) {
+                    continue;
+                }
+
+                final int distX = Math.abs(MCUtil.getCoordinateX(lastPosition) - (chunk.getPos().x + x));
+                final int distZ = Math.abs(MCUtil.getCoordinateZ(lastPosition) - (chunk.getPos().z + z));
+
+                if (Math.max(distX, distZ) > viewDistance) {
+                    continue;
+                }
+                entityplayer.playerConnection.sendPacket(packet);
+            }
+        }
+        // Paper end - Fix MC-162253
 
         entityplayer.a(chunk.getPos(), apacket[0], apacket[1]);
         PacketDebug.a(this.world, chunk.getPos());

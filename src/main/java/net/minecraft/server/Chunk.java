@@ -230,7 +230,7 @@ public class Chunk implements IChunkAccess {
 
                     // broadcast
                     Object[] backingSet = inRange.getBackingSet();
-                    Packet[] chunkPackets = new Packet[2];
+                    Packet[] chunkPackets = new Packet[10];
                     for (int index = 0, len = backingSet.length; index < len; ++index) {
                         Object temp = backingSet[index];
                         if (!(temp instanceof EntityPlayer)) {

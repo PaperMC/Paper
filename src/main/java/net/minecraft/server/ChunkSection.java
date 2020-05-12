@@ -100,6 +100,7 @@ public class ChunkSection {
         return this.nonEmptyBlockCount == 0;
     }
 
+    public static boolean isEmpty(@Nullable ChunkSection chunksection) { return a(chunksection) ; } // Paper - OBFHELPER
     public static boolean a(@Nullable ChunkSection chunksection) {
         return chunksection == Chunk.a || chunksection.c();
     }
