@@ -5,10 +5,10 @@ Subject: [PATCH] Add effect to block break naturally
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index db446c25c41ec3122155510f9d96dfdeee626896..01c524cc01768fe0f2dbf062bcc19fcb982d32da 100644
+index 1fc7f55fcaa1f9aaa4c675f9fcd508ffb80e9629..a5f981cd0d373db45f22384803c323be428dce0c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-@@ -606,12 +606,20 @@ public class CraftBlock implements Block {
+@@ -606,6 +606,13 @@ public class CraftBlock implements Block {
  
      @Override
      public boolean breakNaturally(ItemStack item) {
@@ -20,11 +20,12 @@ index db446c25c41ec3122155510f9d96dfdeee626896..01c524cc01768fe0f2dbf062bcc19fcb
 +    public boolean breakNaturally(ItemStack item, boolean triggerEffect) {
 +        // Paper end
          // Order matters here, need to drop before setting to air so skulls can get their data
-         net.minecraft.server.Block block = this.getNMSBlock();
-         boolean result = false;
- 
-         if (block != null && block != Blocks.AIR) {
-             net.minecraft.server.Block.dropItems(getNMS(), world.getMinecraftWorld(), position, world.getTileEntity(position), null, CraftItemStack.asNMSCopy(item));
+         net.minecraft.server.IBlockData iblockdata = this.getNMS();
+         net.minecraft.server.Block block = iblockdata.getBlock();
+@@ -615,6 +622,7 @@ public class CraftBlock implements Block {
+         // Modelled off EntityHuman#hasBlock
+         if (block != Blocks.AIR && (iblockdata.getMaterial().isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
+             net.minecraft.server.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
 +            if (triggerEffect) world.triggerEffect(org.bukkit.Effect.STEP_SOUND.getId(), position, net.minecraft.server.Block.getCombinedId(block.getBlockData())); // Paper
              result = true;
          }
