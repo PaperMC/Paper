@@ -9,7 +9,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player clicks a recipe in the recipe book.
+ * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
  */
+@Deprecated(forRemoval = true) // Paper
+@org.bukkit.Warning(false) // Paper
 public class PlayerRecipeBookClickEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
