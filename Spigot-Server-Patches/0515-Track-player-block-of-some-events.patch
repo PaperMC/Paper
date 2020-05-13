@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Wed, 13 May 2020 08:30:48 -0500
+Subject: [PATCH] Track player/block of some events
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index d6e43313bf0c678cf78fe77de2f8f4b6f819e3f4..e847724e564d24fccce4fa4f78316cd475f56544 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -187,6 +187,10 @@ public final class ItemStack {
+                 }
+             }
+             Item item = this.getItem();
++
++            world.currentBlockEventPlayer = (Player) entityhuman.getBukkitEntity(); // Paper
++            world.currentBlockEventBlock = CraftBlock.at(world, blockposition); // Paper
++
+             EnumInteractionResult enuminteractionresult = item.a(itemactioncontext);
+             NBTTagCompound newData = this.getTagClone();
+             int newCount = this.getCount();
+@@ -323,6 +327,9 @@ public final class ItemStack {
+             world.capturedBlockStates.clear();
+             // CraftBukkit end
+ 
++            world.currentBlockEventPlayer = null; // Paper
++            world.currentBlockEventBlock = null; // Paper
++
+             return enuminteractionresult;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index ce66090b8dcd846db4507b99e3ef1a2d6104d19b..2d27ee4f1fd63464137ab6d32c422d587727d30b 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -354,6 +354,10 @@ public class PlayerInteractManager {
+                 org.bukkit.block.BlockState state = bblock.getState();
+                 world.captureDrops = new ArrayList<>();
+                 // CraftBukkit end
++
++                world.currentBlockEventPlayer = this.player.getBukkitEntity(); // Paper
++                world.currentBlockEventBlock = CraftBlock.at(world, blockposition); // Paper
++
+                 block.a((World) this.world, blockposition, iblockdata, (EntityHuman) this.player);
+                 boolean flag = this.world.a(blockposition, false);
+ 
+@@ -375,6 +379,10 @@ public class PlayerInteractManager {
+ 
+                     // return true; // CraftBukkit
+                 }
++
++                world.currentBlockEventPlayer = null; // Paper
++                world.currentBlockEventBlock = null; // Paper
++
+                 // CraftBukkit start
+                 if (event.isDropItems()) {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, world.captureDrops);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 4039d407f60308acc34dfa8ef326ebfa339c22fe..560afb34d1ed234a229f91d7a9f46cc1d71a231b 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -29,8 +29,10 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.block.CapturedBlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.CraftBlockState;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.entity.Player;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ // CraftBukkit end
+ 
+@@ -90,6 +92,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+     public final co.aikar.timings.WorldTimingsHandler timings; // Paper
+     public static BlockPosition lastPhysicsProblem; // Spigot
++    public Player currentBlockEventPlayer; // Paper
++    public CraftBlock currentBlockEventBlock; // Paper
+     private org.spigotmc.TickLimiter entityLimiter;
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
