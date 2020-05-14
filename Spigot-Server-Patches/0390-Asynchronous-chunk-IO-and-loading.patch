@@ -2305,10 +2305,10 @@ index 0000000000000000000000000000000000000000..2b20c159f6bb425be70201cf33159aa9
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb408b20bde 100644
+index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931888141c2 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -299,11 +299,136 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -299,11 +299,137 @@ public class ChunkProviderServer extends IChunkProvider {
          return playerChunk.getAvailableChunkNow();
  
      }
@@ -2331,7 +2331,8 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.asyncChunks) {
-+            return CompletableFuture.completedFuture(Either.left(getChunkAt(x, z, gen)));
++            Chunk chunk = getChunkAt(x, z, gen);
++            return CompletableFuture.completedFuture(chunk != null ? Either.left(chunk) : PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
 +        long k = ChunkCoordIntPair.pair(x, z);
@@ -2379,7 +2380,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
 +
 +        if (status != null && status != ChunkStatus.FULL) {
 +            // does not exist on disk
-+            return CompletableFuture.completedFuture(Either.left(null));
++            return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
 +        if (status == ChunkStatus.FULL) {
@@ -2394,7 +2395,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
 +            IChunkAccess chunk = either.left().orElse(null);
 +            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof Chunk)) {
 +                // the chunk on disk was not a full status chunk
-+                return CompletableFuture.completedFuture(Either.left(null));
++                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +            }
 +            ; // bring to full status if required
 +            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
@@ -2445,7 +2446,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -326,11 +451,16 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -326,11 +452,16 @@ public class ChunkProviderServer extends IChunkProvider {
              }
  
              gameprofilerfiller.c("getChunkCacheMiss");
@@ -2463,7 +2464,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
                  this.world.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -396,6 +526,11 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -396,6 +527,11 @@ public class ChunkProviderServer extends IChunkProvider {
      }
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
@@ -2475,7 +2476,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..5f91b311f3512233c3c21563832afbb4
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
          long k = chunkcoordintpair.pair();
          int l = 33 + ChunkStatus.a(chunkstatus);
-@@ -835,11 +970,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -835,11 +971,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {
@@ -2989,25 +2990,18 @@ index ed8c4a87b52e6375e354a28316f8f24608082417..996c8326387b5a7fe62db6a76e000144
          return this.a == null ? new NibbleArray() : new NibbleArray((byte[]) this.a.clone());
      }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayInTabComplete.java b/src/main/java/net/minecraft/server/PacketPlayInTabComplete.java
-index 4c52c57c02571353f71772e3650932f314da62ca..631106920cdca4162b2e039e631d86a4c1b92ce1 100644
+index 4c52c57c02571353f71772e3650932f314da62ca..71daa0cb08d69c16bded510d1a49053477faf600 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayInTabComplete.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayInTabComplete.java
-@@ -12,13 +12,13 @@ public class PacketPlayInTabComplete implements Packet<PacketListenerPlayIn> {
+@@ -12,7 +12,7 @@ public class PacketPlayInTabComplete implements Packet<PacketListenerPlayIn> {
      @Override
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.i();
 -        this.b = packetdataserializer.e(32500);
-+        this.b = packetdataserializer.e(256);
++        this.b = packetdataserializer.e(2048);
      }
  
      @Override
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
-         packetdataserializer.d(this.a);
--        packetdataserializer.a(this.b, 32500);
-+        packetdataserializer.a(this.b, 256);
-     }
- 
-     public void a(PacketListenerPlayIn packetlistenerplayin) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
 index 040d4b41ea2223937ca22de2d40560f97b310f9a..bf592125f4ce5d7ea6e802e637ee3bfbe25d23aa 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
@@ -3542,6 +3536,24 @@ index 94b0c54d9d4d77b724087be55ffe6ce464a0bbe7..963ce3eeec6f9eea087054ea48b714ee
      protected VillagePlace h() {
          return this.m;
      }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 65c171cec3cc7c7c7433c63b3718fa7e1c16f148..0a06ed36795afad00839174fc1a7e7f7b9e4a8c8 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -541,6 +541,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+             return;
+         }
++        // Paper start
++        String str = packetplayintabcomplete.c(); int index = -1;
++        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
++            minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
++            return;
++        }
++        // Paper end
+         // CraftBukkit end
+         StringReader stringreader = new StringReader(packetplayintabcomplete.c());
+ 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
 index d37abf2cf304f81405e570588c8accbc44a629f4..df728e2c0a2bf660a91e0bd6342c4b4b1471dcb7 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java

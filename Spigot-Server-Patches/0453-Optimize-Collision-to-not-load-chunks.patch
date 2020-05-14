@@ -13,11 +13,37 @@ If that serting is not enabled, collisions will be ignored for players, since
 movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 7434f859f7f9acff0f881ff594c8dffdfa249c76..7fb34a86dc35cb4bf51e1ce5220e56642096fece 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -80,6 +80,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     private CraftEntity bukkitEntity;
+ 
+     PlayerChunkMap.EntityTracker tracker; // Paper
++    boolean collisionLoadChunks = false; // Paper
+     Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+         if (bukkitEntity == null) {
 diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
-index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..8b0670b8db0bb739fb54fee368a53eadeb72937e 100644
+index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..667e6c8f94162b620a7157c7d3caba9369c37de1 100644
 --- a/src/main/java/net/minecraft/server/ICollisionAccess.java
 +++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -83,19 +83,33 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -39,7 +39,12 @@ public interface ICollisionAccess extends IBlockAccess {
+     }
+ 
+     default boolean getCubes(Entity entity, AxisAlignedBB axisalignedbb) {
+-        return this.a(entity, axisalignedbb, Collections.emptySet());
++        // Paper start - load chunks for getCubes
++        entity.collisionLoadChunks = true;
++        boolean result = this.a(entity, axisalignedbb, Collections.emptySet());
++        entity.collisionLoadChunks = false;
++        return result;
++        // Paper end
+     }
+ 
+     default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+@@ -83,19 +88,33 @@ public interface ICollisionAccess extends IBlockAccess {
                  }
  
                  while (cursorposition.a()) {
@@ -44,7 +70,7 @@ index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..8b0670b8db0bb739fb54fee368a53ead
 +                        blockposition_mutableblockposition.setValues(x, y, z);
 +
 +                        boolean isRegionLimited = ICollisionAccess.this instanceof RegionLimitedWorldAccess;
-+                        IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : (!far && entity instanceof EntityPlayer
++                        IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
 +                            ? ICollisionAccess.this.getType(blockposition_mutableblockposition)
 +                            : ICollisionAccess.this.getTypeIfLoaded(blockposition_mutableblockposition)
 +                        );
@@ -62,7 +88,7 @@ index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..8b0670b8db0bb739fb54fee368a53ead
                              if ((j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
                                  VoxelShape voxelshape2 = iblockdata.b((IBlockAccess) ICollisionAccess.this, blockposition_mutableblockposition, voxelshapecollision);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 909d86e14c7860cd6d8a6f38ef4aedb183acae3f..b2c2d56e2be893dac5eb13d6648c5df65eb3ea4e 100644
+index b5389cc46bf7afffe59522149e3d5567ad455ef3..90a491491272cfc6787e7ac778c23def0cf4b33a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -677,6 +677,7 @@ public abstract class PlayerList {
