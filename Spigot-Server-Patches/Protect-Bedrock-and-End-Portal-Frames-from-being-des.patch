@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 13 May 2020 23:01:26 -0400
+Subject: [PATCH] Protect Bedrock and End Portal/Frames from being destroyed
+
+This fixes exploits that let players destroy bedrock by Pistons, explosions
+and Mushrooom/Tree generation.
+
+These blocks are designed to not be broken except by creative players/commands.
+So protect them from a multitude of methods of destroying them.
+
+A config is provided if you rather let players use these exploits, and let
+them destroy the worlds End Portals and get on top of the nether easy.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -0,0 +0,0 @@ public class PaperConfig {
+     private static void midTickChunkTasks() {
+         midTickChunkTasks = getInt("settings.chunk-tasks-per-tick", midTickChunkTasks);
+     }
++
++    public static boolean allowBlockPermanentBreakingExploits = false;
++    private static void allowBlockPermanentBreakingExploits() {
++        allowBlockPermanentBreakingExploits = getBoolean("allow-perm-block-break-exploits", allowBlockPermanentBreakingExploits);
++    }
++
+ }
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+     protected final SoundEffectType stepSound;
+     protected final Material material;
+     // Paper start
++    public final boolean isDestroyable() {
++        return com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits ||
++            this != Blocks.BEDROCK &&
++            this != Blocks.END_PORTAL_FRAME &&
++            this != Blocks.END_PORTAL &&
++            this != Blocks.END_GATEWAY;
++    }
+     public co.aikar.timings.Timing timing;
+     public co.aikar.timings.Timing getTiming() {
+         if (timing == null) {
+@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+ 
+     @Deprecated
+     public boolean a(IBlockData iblockdata, BlockActionContext blockactioncontext) {
+-        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem());
++        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem()) && (iblockdata.isDestroyable() || (blockactioncontext.getEntity() != null && blockactioncontext.getEntity().abilities.canInstantlyBuild)); // Paper
+     }
+ 
+     @Deprecated
+@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+ 
+     @Deprecated
+     public EnumPistonReaction getPushReaction(IBlockData iblockdata) {
+-        return this.material.getPushReaction();
++        return !blockData.isDestroyable() ? EnumPistonReaction.BLOCK : this.material.getPushReaction(); // Paper
+     }
+ 
+     public void fallOn(World world, BlockPosition blockposition, Entity entity, float f) {
+diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Explosion.java
++++ b/src/main/java/net/minecraft/server/Explosion.java
+@@ -0,0 +0,0 @@ public class Explosion {
+                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
+                             BlockPosition blockposition = new BlockPosition(d4, d5, d6);
+                             IBlockData iblockdata = this.world.getType(blockposition);
++                            if (!iblockdata.isDestroyable()) continue; // Paper
+                             Fluid fluid = iblockdata.getFluid(); // Paper
+ 
+                             if (!iblockdata.isAir() || !fluid.isEmpty()) {
+@@ -0,0 +0,0 @@ public class Explosion {
+                 IBlockData iblockdata = this.world.getType(blockposition);
+                 Block block = iblockdata.getBlock();
+ 
+-                if (!iblockdata.isAir()) {
++                if (!iblockdata.isAir() && iblockdata.isDestroyable()) { // Paper
+                     BlockPosition blockposition1 = blockposition.immutableCopy();
+ 
+                     this.world.getMethodProfiler().enter("explosion_blocks");
+diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/IBlockData.java
++++ b/src/main/java/net/minecraft/server/IBlockData.java
+@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
+         return (CraftBlockData) cachedCraftBlockData.clone();
+     }
+     // Paper end
++    // Paper start
++    public final boolean isDestroyable() {
++        return getBlock().isDestroyable();
++    }
++    // Paper end
+ 
+     public Material getMaterial() {
+         return this.getBlock().k(this);
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
++            // Paper start
++            IBlockData type = getType(blockposition);
++            if (!type.isDestroyable()) return false;
++            // Paper end
+             CraftBlockState blockstate = capturedBlockStates.get(blockposition);
+             if (blockstate == null) {
+                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);
