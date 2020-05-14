@@ -2331,7 +2331,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.asyncChunks) {
-+            return CompletableFuture.completedFuture(Either.left(getChunkAt(x, z, gen)));
++            Chunk chunk = getChunkAt(x, z, gen);
++            return CompletableFuture.completedFuture(chunk != null ? Either.left(chunk) : PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
 +        long k = ChunkCoordIntPair.pair(x, z);
@@ -2379,7 +2380,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        if (status != null && status != ChunkStatus.FULL) {
 +            // does not exist on disk
-+            return CompletableFuture.completedFuture(Either.left(null));
++            return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
 +        if (status == ChunkStatus.FULL) {
@@ -2394,7 +2395,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            IChunkAccess chunk = either.left().orElse(null);
 +            if (!(chunk instanceof ProtoChunkExtension) && !(chunk instanceof Chunk)) {
 +                // the chunk on disk was not a full status chunk
-+                return CompletableFuture.completedFuture(Either.left(null));
++                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +            }
 +            ; // bring to full status if required
 +            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
@@ -2997,17 +2998,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
          this.a = packetdataserializer.i();
 -        this.b = packetdataserializer.e(32500);
-+        this.b = packetdataserializer.e(256);
++        this.b = packetdataserializer.e(2048);
      }
  
      @Override
-     public void b(PacketDataSerializer packetdataserializer) throws IOException {
-         packetdataserializer.d(this.a);
--        packetdataserializer.a(this.b, 32500);
-+        packetdataserializer.a(this.b, 256);
-     }
- 
-     public void a(PacketListenerPlayIn packetlistenerplayin) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
@@ -3542,6 +3536,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected VillagePlace h() {
          return this.m;
      }
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+             return;
+         }
++        // Paper start
++        String str = packetplayintabcomplete.c(); int index = -1;
++        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
++            minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
++            return;
++        }
++        // Paper end
+         // CraftBukkit end
+         StringReader stringreader = new StringReader(packetplayintabcomplete.c());
+ 
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java

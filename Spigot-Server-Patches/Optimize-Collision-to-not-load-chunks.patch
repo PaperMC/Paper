@@ -13,10 +13,36 @@ If that serting is not enabled, collisions will be ignored for players, since
 movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     private CraftEntity bukkitEntity;
+ 
+     PlayerChunkMap.EntityTracker tracker; // Paper
++    boolean collisionLoadChunks = false; // Paper
+     Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+         if (bukkitEntity == null) {
 diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ICollisionAccess.java
 +++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
+@@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
+     }
+ 
+     default boolean getCubes(Entity entity, AxisAlignedBB axisalignedbb) {
+-        return this.a(entity, axisalignedbb, Collections.emptySet());
++        // Paper start - load chunks for getCubes
++        entity.collisionLoadChunks = true;
++        boolean result = this.a(entity, axisalignedbb, Collections.emptySet());
++        entity.collisionLoadChunks = false;
++        return result;
++        // Paper end
+     }
+ 
+     default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
 @@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
                  }
  
@@ -44,7 +70,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        blockposition_mutableblockposition.setValues(x, y, z);
 +
 +                        boolean isRegionLimited = ICollisionAccess.this instanceof RegionLimitedWorldAccess;
-+                        IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : (!far && entity instanceof EntityPlayer
++                        IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
 +                            ? ICollisionAccess.this.getType(blockposition_mutableblockposition)
 +                            : ICollisionAccess.this.getTypeIfLoaded(blockposition_mutableblockposition)
 +                        );
