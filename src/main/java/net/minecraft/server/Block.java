@@ -23,6 +23,19 @@ public class Block extends BlockBase implements IMaterial {
     protected final BlockStateList<Block, IBlockData> blockStateList;
     private IBlockData blockData;
     // Paper start
+    public final boolean isDestroyable() {
+        return com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits ||
+            this != Blocks.BEDROCK &&
+            this != Blocks.END_PORTAL_FRAME &&
+            this != Blocks.END_PORTAL &&
+            this != Blocks.END_GATEWAY &&
+            this != Blocks.COMMAND_BLOCK &&
+            this != Blocks.REPEATING_COMMAND_BLOCK &&
+            this != Blocks.CHAIN_COMMAND_BLOCK &&
+            this != Blocks.BARRIER &&
+            this != Blocks.STRUCTURE_BLOCK &&
+            this != Blocks.JIGSAW;
+    }
     public co.aikar.timings.Timing timing;
     public co.aikar.timings.Timing getTiming() {
         if (timing == null) {

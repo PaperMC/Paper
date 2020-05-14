@@ -165,6 +165,12 @@ public class BlockPiston extends BlockDirectional {
     @Override
     public boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, int i, int j) {
         EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockPiston.FACING);
+        // Paper start - prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
+        EnumDirection directionQueuedAs = EnumDirection.fromType1(j & 7); // Paper - copied from below
+        if (!com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits && enumdirection != directionQueuedAs) {
+            return false;
+        }
+        // Paper end - prevent retracting when we're facing the wrong way
 
         if (!world.isClientSide) {
             boolean flag = this.a(world, blockposition, enumdirection);
@@ -196,7 +202,7 @@ public class BlockPiston extends BlockDirectional {
             IBlockData iblockdata1 = (IBlockData) ((IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPistonMoving.a, enumdirection)).set(BlockPistonMoving.b, this.sticky ? BlockPropertyPistonType.STICKY : BlockPropertyPistonType.DEFAULT);
 
             world.setTypeAndData(blockposition, iblockdata1, 20);
-            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true));
+            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction - copy this above
             world.update(blockposition, iblockdata1.getBlock());
             iblockdata1.a(world, blockposition, 2);
             if (this.sticky) {
@@ -225,7 +231,14 @@ public class BlockPiston extends BlockDirectional {
                     }
                 }
             } else {
-                world.a(blockposition.shift(enumdirection), false);
+                // Paper start - fix headless pistons breaking blocks
+                BlockPosition headPos = blockposition.shift(enumdirection);
+                if (com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits || world.getType(headPos) == Blocks.PISTON_HEAD.getBlockData().set(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
+                    world.setAir(headPos, false);
+                } else {
+                    ((WorldServer)world).getChunkProvider().flagDirty(headPos); // ... fix client desync
+                }
+                // Paper end - fix headless pistons breaking blocks
             }
 
             world.playSound((EntityHuman) null, blockposition, SoundEffects.BLOCK_PISTON_CONTRACT, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);

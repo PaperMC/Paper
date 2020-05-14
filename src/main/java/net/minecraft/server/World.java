@@ -362,6 +362,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
     public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
         // CraftBukkit start - tree generation
         if (this.captureTreeGeneration) {
+            // Paper start
+            IBlockData type = getType(blockposition);
+            if (!type.isDestroyable()) return false;
+            // Paper end
             CraftBlockState blockstate = capturedBlockStates.get(blockposition);
             if (blockstate == null) {
                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);

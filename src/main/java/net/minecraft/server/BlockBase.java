@@ -138,7 +138,7 @@ public abstract class BlockBase {
 
     @Deprecated
     public boolean a(IBlockData iblockdata, BlockActionContext blockactioncontext) {
-        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem());
+        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem()) && (iblockdata.isDestroyable() || (blockactioncontext.getEntity() != null && blockactioncontext.getEntity().abilities.canInstantlyBuild)); // Paper
     }
 
     @Deprecated
@@ -342,7 +342,11 @@ public abstract class BlockBase {
         public Block getBlock() {
             return (Block) this.c;
         }
-
+        // Paper start
+        public final boolean isDestroyable() {
+            return getBlock().isDestroyable();
+        }
+        // Paper end
         public Material getMaterial() {
             return this.g;
         }
@@ -432,7 +436,7 @@ public abstract class BlockBase {
         }
 
         public EnumPistonReaction getPushReaction() {
-            return this.getBlock().getPushReaction(this.p());
+            return !isDestroyable() ? EnumPistonReaction.BLOCK : this.getBlock().getPushReaction(this.p()); // Paper
         }
 
         public boolean i(IBlockAccess iblockaccess, BlockPosition blockposition) {

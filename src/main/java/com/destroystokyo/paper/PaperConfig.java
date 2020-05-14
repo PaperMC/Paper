@@ -411,4 +411,17 @@ public class PaperConfig {
     private static void midTickChunkTasks() {
         midTickChunkTasks = getInt("settings.chunk-tasks-per-tick", midTickChunkTasks);
     }
+
+    public static boolean allowBlockPermanentBreakingExploits = false;
+    private static void allowBlockPermanentBreakingExploits() {
+        if (config.contains("allow-perm-block-break-exploits")) {
+            allowBlockPermanentBreakingExploits = config.getBoolean("allow-perm-block-break-exploits", false);
+            config.set("allow-perm-block-break-exploits", null);
+        }
+
+        config.set("settings.unsupported-settings.allow-permanent-block-break-exploits-readme", "This setting controls if players should be able to break bedrock, end portals and other intended to be permanent blocks.");
+        allowBlockPermanentBreakingExploits = getBoolean("settings.unsupported-settings.allow-permanent-block-break-exploits", allowBlockPermanentBreakingExploits);
+
+    }
+
 }
