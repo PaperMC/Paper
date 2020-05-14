@@ -1,11 +1,30 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -292,15 +292,41 @@
-             });
-             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
-         }
-+
+@@ -88,6 +88,21 @@
+     public static final int UPDATE_LIMIT = 512;
+     protected final StateDefinition<Block, BlockState> stateDefinition;
+     private BlockState defaultBlockState;
++    // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++    public final boolean isDestroyable() {
++        return io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits ||
++            this != Blocks.BARRIER &&
++            this != Blocks.BEDROCK &&
++            this != Blocks.END_PORTAL_FRAME &&
++            this != Blocks.END_PORTAL &&
++            this != Blocks.END_GATEWAY &&
++            this != Blocks.COMMAND_BLOCK &&
++            this != Blocks.REPEATING_COMMAND_BLOCK &&
++            this != Blocks.CHAIN_COMMAND_BLOCK &&
++            this != Blocks.STRUCTURE_BLOCK &&
++            this != Blocks.JIGSAW;
 +    }
++    // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
+     @Nullable
+     private Item item;
+     private static final int CACHE_SIZE = 256;
+@@ -295,12 +310,38 @@
+ 
+     }
  
 +    // Paper start - Add BlockBreakBlockEvent
 +    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
@@ -25,9 +44,9 @@
 +            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
 +        }
 +        return true;
-     }
++    }
 +    // Paper end - Add BlockBreakBlockEvent
- 
++
      public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
 +    // Paper start - Properly handle xp dropping
 +        dropResources(state, world, pos, blockEntity, entity, tool, true);
@@ -43,7 +62,7 @@
          }
  
      }
-@@ -340,7 +366,13 @@
+@@ -340,7 +381,13 @@
                  ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
  
                  entityitem.setDefaultPickUpDelay();
@@ -58,7 +77,7 @@
                  return;
              }
          }
-@@ -348,8 +380,13 @@
+@@ -348,8 +395,13 @@
      }
  
      public void popExperience(ServerLevel world, BlockPos pos, int size) {
@@ -73,7 +92,7 @@
          }
  
      }
-@@ -367,10 +404,18 @@
+@@ -367,10 +419,18 @@
          return this.defaultBlockState();
      }
  
@@ -94,7 +113,7 @@
      }
  
      public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
-@@ -490,15 +535,35 @@
+@@ -490,15 +550,35 @@
          return this.builtInRegistryHolder;
      }
  

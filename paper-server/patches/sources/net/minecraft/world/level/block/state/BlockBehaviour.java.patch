@@ -37,6 +37,15 @@
          if (state.hasBlockEntity() && !state.is(newState.getBlock())) {
              world.removeBlockEntity(pos);
          }
+@@ -166,7 +178,7 @@
+     }
+ 
+     protected void onExplosionHit(BlockState state, ServerLevel world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+-        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
++        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+             Block block = state.getBlock();
+             boolean flag = explosion.getIndirectSourceEntity() instanceof Player;
+ 
 @@ -174,8 +186,10 @@
                  BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
                  LootParams.Builder lootparams_a = (new LootParams.Builder(world)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos)).withParameter(LootContextParams.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParams.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
@@ -50,6 +59,15 @@
                  }
  
                  state.spawnAfterBreak(world, pos, ItemStack.EMPTY, flag);
+@@ -243,7 +257,7 @@
+     }
+ 
+     protected boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+-        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem()));
++        return state.canBeReplaced() && (context.getItemInHand().isEmpty() || !context.getItemInHand().is(this.asItem())) && (state.isDestroyable() || (context.getPlayer() != null && context.getPlayer().getAbilities().instabuild)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+     }
+ 
+     protected boolean canBeReplaced(BlockState state, Fluid fluid) {
 @@ -851,7 +865,15 @@
              this.spawnTerrainParticles = blockbase_info.spawnTerrainParticles;
              this.instrument = blockbase_info.instrument;
@@ -81,7 +99,20 @@
  
              this.legacySolid = this.calculateSolid();
              this.occlusionShape = this.canOcclude ? ((Block) this.owner).getOcclusionShape(this.asState()) : Shapes.empty();
-@@ -945,19 +969,19 @@
+@@ -925,6 +949,12 @@
+             return this.legacySolid;
+         }
+ 
++        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++        public final boolean isDestroyable() {
++            return getBlock().isDestroyable();
++        }
++        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
++
+         public boolean isValidSpawn(BlockGetter world, BlockPos pos, EntityType<?> type) {
+             return this.getBlock().properties.isValidSpawn.test(this.asState(), world, pos, type);
+         }
+@@ -945,19 +975,19 @@
              return this.occlusionShape;
          }
  
@@ -106,7 +137,15 @@
              return this.isAir;
          }
  
-@@ -1035,7 +1059,7 @@
+@@ -1028,14 +1058,14 @@
+         }
+ 
+         public PushReaction getPistonPushReaction() {
+-            return this.pushReaction;
++            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+         }
+ 
+         public boolean isSolidRender() {
              return this.solidRender;
          }
  
@@ -115,24 +154,22 @@
              return this.canOcclude;
          }
  
-@@ -1125,9 +1149,15 @@
+@@ -1125,7 +1155,13 @@
          }
  
          public void onPlace(Level world, BlockPos pos, BlockState state, boolean notify) {
 -            this.getBlock().onPlace(this.asState(), world, pos, state, notify);
 +            // CraftBukkit start
 +            this.onPlace(world, pos, state, notify, null);
-         }
- 
++        }
++
 +        public void onPlace(Level world, BlockPos blockposition, BlockState iblockdata, boolean flag, @Nullable UseOnContext context) {
 +            this.getBlock().onPlace(this.asState(), world, blockposition, iblockdata, flag, context);
 +            // CraftBukkit end
-+        }
-+
-         public void onRemove(Level world, BlockPos pos, BlockState state, boolean moved) {
-             this.getBlock().onRemove(this.asState(), world, pos, state, moved);
          }
-@@ -1154,6 +1184,7 @@
+ 
+         public void onRemove(Level world, BlockPos pos, BlockState state, boolean moved) {
+@@ -1154,6 +1190,7 @@
  
          public void spawnAfterBreak(ServerLevel world, BlockPos pos, ItemStack tool, boolean dropExperience) {
              this.getBlock().spawnAfterBreak(this.asState(), world, pos, tool, dropExperience);
@@ -140,7 +177,7 @@
          }
  
          public List<ItemStack> getDrops(LootParams.Builder builder) {
-@@ -1250,11 +1281,11 @@
+@@ -1250,11 +1287,11 @@
              return this.getBlock().builtInRegistryHolder().is(key);
          }
  
