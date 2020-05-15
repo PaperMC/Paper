@@ -63,9 +63,14 @@ public class TileEntityEndGateway extends TileEntityEnderPortal implements ITick
         } else if (!this.world.isClientSide) {
             List<Entity> list = this.world.a(Entity.class, new AxisAlignedBB(this.getPosition()), TileEntityEndGateway::a);
 
-            if (!list.isEmpty()) {
-                this.b((Entity) list.get(this.world.random.nextInt(list.size())));
+            // Paper start
+            for (Entity entity : list) {
+                if (entity.canPortal()) {
+                    this.b(entity);
+                    break;
+                }
             }
+            // Paper end
 
             if (this.age % 2400L == 0L) {
                 this.h();
