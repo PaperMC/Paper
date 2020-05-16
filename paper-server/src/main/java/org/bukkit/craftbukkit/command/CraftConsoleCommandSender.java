@@ -93,5 +93,15 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
         this.sendRawMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
     }
+
+    @Override
+    public boolean hasPermission(String name) {
+        return io.papermc.paper.configuration.GlobalConfiguration.get().console.hasAllPermissions || super.hasPermission(name);
+    }
+
+    @Override
+    public boolean hasPermission(org.bukkit.permissions.Permission perm) {
+        return io.papermc.paper.configuration.GlobalConfiguration.get().console.hasAllPermissions || super.hasPermission(perm);
+    }
     // Paper end
 }
