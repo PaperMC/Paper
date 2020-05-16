@@ -446,14 +446,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
 +        CraftMob craftMob = (CraftMob) mob;
-+        checkType(craftMob, goal.getTypes());
 +        getHandle(craftMob, goal.getTypes()).addGoal(priority, new PaperCustomGoal<>(goal));
 +    }
 +
 +    @Override
 +    public <T extends Mob> void removeGoal(T mob, Goal<T> goal) {
 +        CraftMob craftMob = (CraftMob) mob;
-+        checkType(craftMob, goal.getTypes());
 +        if (goal instanceof PaperCustomGoal) {
 +            getHandle(craftMob, goal.getTypes()).removeGoal((PathfinderGoal) goal);
 +        } else if (goal instanceof PaperVanillaGoal) {
@@ -631,16 +629,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return goals;
 +    }
 +
-+    private void checkType(CraftMob mob, EnumSet<GoalType> types) {
-+        if (!hasHandle(types)) {
-+            throw new IllegalArgumentException(mob + " has no goal selector for types " + types);
-+        }
-+    }
-+
-+    private boolean hasHandle(EnumSet<GoalType> type) {
-+        return !type.isEmpty();
-+    }
-+
 +    private PathfinderGoalSelector getHandle(CraftMob mob, EnumSet<GoalType> types) {
 +        if (types.contains(GoalType.TARGET)) {
 +            return mob.getHandle().targetSelector;
@@ -693,12 +681,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public boolean shouldActivate() {
-+        return handle.shouldActivate();
++        return handle.shouldActivate2();
 +    }
 +
 +    @Override
 +    public boolean shouldStayActive() {
-+        return handle.shouldStayActive();
++        return handle.shouldStayActive2();
 +    }
 +
 +    @Override
@@ -748,10 +736,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public PathfinderGoal() {}
  
 -    public abstract boolean a();
-+    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} // Paper - OBFHELPER
++    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} public boolean shouldActivate2() { return a(); } // Paper - OBFHELPER, for both directions...
  
 -    public boolean b() {
-+    public boolean b() { return this.shouldStayActive(); } public boolean shouldStayActive() { // Paper - OBFHELPER
++    public boolean b() { return this.shouldStayActive(); } public boolean shouldStayActive2() { return b(); } public boolean shouldStayActive() { // Paper - OBFHELPER, for both directions...
          return this.a();
      }
  
