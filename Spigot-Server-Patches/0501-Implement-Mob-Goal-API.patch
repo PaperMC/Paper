@@ -417,10 +417,10 @@ index 0000000000000000000000000000000000000000..8e4dc2708d71edcb8f32bb72a64f3c49
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d9df0236e8224d54587bbeac856a4d125f25f865
+index 0000000000000000000000000000000000000000..45b383f4d118d076e41c42b5b158b2a3713341a8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperMobGoals.java
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,224 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import net.minecraft.server.PathfinderGoal;
@@ -446,14 +446,12 @@ index 0000000000000000000000000000000000000000..d9df0236e8224d54587bbeac856a4d12
 +    @Override
 +    public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
 +        CraftMob craftMob = (CraftMob) mob;
-+        checkType(craftMob, goal.getTypes());
 +        getHandle(craftMob, goal.getTypes()).addGoal(priority, new PaperCustomGoal<>(goal));
 +    }
 +
 +    @Override
 +    public <T extends Mob> void removeGoal(T mob, Goal<T> goal) {
 +        CraftMob craftMob = (CraftMob) mob;
-+        checkType(craftMob, goal.getTypes());
 +        if (goal instanceof PaperCustomGoal) {
 +            getHandle(craftMob, goal.getTypes()).removeGoal((PathfinderGoal) goal);
 +        } else if (goal instanceof PaperVanillaGoal) {
@@ -631,16 +629,6 @@ index 0000000000000000000000000000000000000000..d9df0236e8224d54587bbeac856a4d12
 +        return goals;
 +    }
 +
-+    private void checkType(CraftMob mob, EnumSet<GoalType> types) {
-+        if (!hasHandle(types)) {
-+            throw new IllegalArgumentException(mob + " has no goal selector for types " + types);
-+        }
-+    }
-+
-+    private boolean hasHandle(EnumSet<GoalType> type) {
-+        return !type.isEmpty();
-+    }
-+
 +    private PathfinderGoalSelector getHandle(CraftMob mob, EnumSet<GoalType> types) {
 +        if (types.contains(GoalType.TARGET)) {
 +            return mob.getHandle().targetSelector;
@@ -659,7 +647,7 @@ index 0000000000000000000000000000000000000000..d9df0236e8224d54587bbeac856a4d12
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..263e8c65b9e108bafb03638b3c27dd065eab86ee
+index 0000000000000000000000000000000000000000..2988e3d1b37d73b6d1ef514acd237e88a5cc079e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperVanillaGoal.java
 @@ -0,0 +1,63 @@
@@ -693,12 +681,12 @@ index 0000000000000000000000000000000000000000..263e8c65b9e108bafb03638b3c27dd06
 +
 +    @Override
 +    public boolean shouldActivate() {
-+        return handle.shouldActivate();
++        return handle.shouldActivate2();
 +    }
 +
 +    @Override
 +    public boolean shouldStayActive() {
-+        return handle.shouldStayActive();
++        return handle.shouldStayActive2();
 +    }
 +
 +    @Override
@@ -740,7 +728,7 @@ index 9df0006c1a283f77c4d01d9fce9062fc1c9bbb1f..b3329c6fcd6758a781a51f5ba8f5052a
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
-index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..2dfbecf3905d9b3712dab240bba5dda3f11d5312 100644
+index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..f1c4ce9e4b83aa966b4ae4dcd6a283e08f8db783 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
 @@ -10,9 +10,9 @@ public abstract class PathfinderGoal {
@@ -748,10 +736,10 @@ index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..2dfbecf3905d9b3712dab240bba5dda3
      public PathfinderGoal() {}
  
 -    public abstract boolean a();
-+    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} // Paper - OBFHELPER
++    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} public boolean shouldActivate2() { return a(); } // Paper - OBFHELPER, for both directions...
  
 -    public boolean b() {
-+    public boolean b() { return this.shouldStayActive(); } public boolean shouldStayActive() { // Paper - OBFHELPER
++    public boolean b() { return this.shouldStayActive(); } public boolean shouldStayActive2() { return b(); } public boolean shouldStayActive() { // Paper - OBFHELPER, for both directions...
          return this.a();
      }
  
