@@ -7,10 +7,10 @@ Implements Pathfinding API for mobs
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f68a07cb9636787f5ae337d8a2ba9798eaa645a5
+index 0000000000000000000000000000000000000000..af1bac9680028130e99c5e7130f258c196b33275
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,141 @@
 +package com.destroystokyo.paper.entity;
 +
 +import net.minecraft.server.EntityInsentient;
@@ -78,6 +78,36 @@ index 0000000000000000000000000000000000000000..f68a07cb9636787f5ae337d8a2ba9798
 +        Validate.notNull(path, "PathResult can not be null");
 +        PathEntity pathEntity = ((PaperPathResult) path).path;
 +        return entity.getNavigation().setDestination(pathEntity, speed);
++    }
++
++    @Override
++    public boolean canOpenDoors() {
++        return entity.getNavigation().getPathfinder().getPathfinder().shouldOpenDoors();
++    }
++
++    @Override
++    public void setCanOpenDoors(boolean canOpenDoors) {
++        entity.getNavigation().getPathfinder().getPathfinder().setShouldOpenDoors(canOpenDoors);
++    }
++
++    @Override
++    public boolean canPassDoors() {
++        return entity.getNavigation().getPathfinder().getPathfinder().shouldPassDoors();
++    }
++
++    @Override
++    public void setCanPassDoors(boolean canPassDoors) {
++        entity.getNavigation().getPathfinder().getPathfinder().setShouldPassDoors(canPassDoors);
++    }
++
++    @Override
++    public boolean canFloat() {
++        return entity.getNavigation().getPathfinder().getPathfinder().shouldFloat();
++    }
++
++    @Override
++    public void setCanFloat(boolean canFloat) {
++        entity.getNavigation().getPathfinder().getPathfinder().setShouldFloat(canFloat);
 +    }
 +
 +    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
@@ -226,6 +256,23 @@ index b1db95daa976f61da07a37ec1787ef49785e016a..18cdd2a6f290bf1f00db58efdb9a42f8
      private final int m;
      public int d = -1;
      public float e;
+diff --git a/src/main/java/net/minecraft/server/PathfinderAbstract.java b/src/main/java/net/minecraft/server/PathfinderAbstract.java
+index af3b09f59a38020c1a45403526fca81c1da144d5..477b762e9c0c51cb3f387f70ba7ec9d35dc04132 100644
+--- a/src/main/java/net/minecraft/server/PathfinderAbstract.java
++++ b/src/main/java/net/minecraft/server/PathfinderAbstract.java
+@@ -11,9 +11,9 @@ public abstract class PathfinderAbstract {
+     protected int d;
+     protected int e;
+     protected int f;
+-    protected boolean g;
+-    protected boolean h;
+-    protected boolean i;
++    protected boolean g; public boolean shouldPassDoors() { return g; } public void setShouldPassDoors(boolean b) { g = b; } // Paper - obfhelper
++    protected boolean h; public boolean shouldOpenDoors() { return h; } public void setShouldOpenDoors(boolean b) { h = b; } // Paper - obfhelper
++    protected boolean i; public boolean shouldFloat() { return i; } public void setShouldFloat(boolean b) { i = b; } // Paper - obfhelper
+ 
+     public PathfinderAbstract() {}
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 index 90e63fbf292488732434ed9cf20645d8306eb21d..c89bc7024b650c3b6d2c551f0e4e156975570cca 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
