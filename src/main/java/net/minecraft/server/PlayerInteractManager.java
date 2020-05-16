@@ -353,7 +353,7 @@ public class PlayerInteractManager {
             TileEntity tileentity = this.world.getTileEntity(blockposition);
             Block block = iblockdata.getBlock();
 
-            if ((block instanceof BlockCommand || block instanceof BlockStructure || block instanceof BlockJigsaw) && !this.player.isCreativeAndOp()) {
+            if ((block instanceof BlockCommand || block instanceof BlockStructure || block instanceof BlockJigsaw) && !this.player.isCreativeAndOp() && !(block instanceof BlockCommand && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
                 this.world.notify(blockposition, iblockdata, iblockdata, 3);
                 return false;
             } else if (this.player.a((World) this.world, blockposition, this.gamemode)) {

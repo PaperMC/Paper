@@ -179,7 +179,7 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
     }
 
     public EnumInteractionResult a(EntityHuman entityhuman) {
-        if (!entityhuman.isCreativeAndOp()) {
+        if (!entityhuman.isCreativeAndOp() && !entityhuman.isCreative() && !entityhuman.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
             return EnumInteractionResult.PASS;
         } else {
             if (entityhuman.getWorld().isClientSide) {

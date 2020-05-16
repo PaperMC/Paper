@@ -607,7 +607,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
         PlayerConnectionUtils.ensureMainThread(packetplayinsetcommandblock, this, this.player.getWorldServer());
         if (!this.minecraftServer.getEnableCommandBlock()) {
             this.player.sendMessage(new ChatMessage("advMode.notEnabled"), SystemUtils.b);
-        } else if (!this.player.isCreativeAndOp()) {
+        } else if (!this.player.isCreativeAndOp() && !this.player.isCreative() && !this.player.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
             this.player.sendMessage(new ChatMessage("advMode.notAllowed"), SystemUtils.b);
         } else {
             CommandBlockListenerAbstract commandblocklistenerabstract = null;
@@ -670,7 +670,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
         PlayerConnectionUtils.ensureMainThread(packetplayinsetcommandminecart, this, this.player.getWorldServer());
         if (!this.minecraftServer.getEnableCommandBlock()) {
             this.player.sendMessage(new ChatMessage("advMode.notEnabled"), SystemUtils.b);
-        } else if (!this.player.isCreativeAndOp()) {
+        } else if (!this.player.isCreativeAndOp() && !this.player.isCreative() && !this.player.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
             this.player.sendMessage(new ChatMessage("advMode.notAllowed"), SystemUtils.b);
         } else {
             CommandBlockListenerAbstract commandblocklistenerabstract = packetplayinsetcommandminecart.a(this.player.world);

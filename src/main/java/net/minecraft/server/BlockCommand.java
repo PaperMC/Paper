@@ -105,7 +105,7 @@ public class BlockCommand extends BlockTileEntity {
     public EnumInteractionResult interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) {
         TileEntity tileentity = world.getTileEntity(blockposition);
 
-        if (tileentity instanceof TileEntityCommand && entityhuman.isCreativeAndOp()) {
+        if (tileentity instanceof TileEntityCommand && (entityhuman.isCreativeAndOp() || (entityhuman.isCreative() && entityhuman.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
             entityhuman.a((TileEntityCommand) tileentity);
             return EnumInteractionResult.a(world.isClientSide);
         } else {
