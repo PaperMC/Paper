@@ -278,7 +278,7 @@
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-@@ -449,19 +583,72 @@
+@@ -449,20 +583,73 @@
                  d10 = d6 * d6 + d7 * d7 + d8 * d8;
                  boolean flag2 = false;
  
@@ -297,8 +297,8 @@
 +                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
                      return;
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start - fire PlayerMoveEvent
 +                Player player = this.getCraftPlayer();
 +                if (!this.hasMoved) {
@@ -347,11 +347,12 @@
 +                        this.justTeleported = false;
 +                        return;
 +                    }
-                 }
++                }
 +                // CraftBukkit end
- 
++
                  this.player.serverLevel().getChunkSource().move(this.player);
                  entity.recordMovementThroughBlocks(new Vec3(d0, d1, d2), entity.position());
+                 Vec3 vec3d = new Vec3(entity.getX() - d0, entity.getY() - d1, entity.getZ() - d2);
 @@ -499,6 +686,7 @@
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
@@ -453,6 +454,24 @@
          });
      }
  
+@@ -568,7 +816,7 @@
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (!this.server.isCommandBlockEnabled()) {
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
+-        } else if (!this.player.canUseGameMasterBlocks()) {
++        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
+         } else {
+             BaseCommandBlock commandblocklistenerabstract = null;
+@@ -635,7 +883,7 @@
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (!this.server.isCommandBlockEnabled()) {
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
+-        } else if (!this.player.canUseGameMasterBlocks()) {
++        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+             this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
+         } else {
+             BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level());
 @@ -668,7 +916,7 @@
                  ItemStack itemstack = iblockdata.getCloneItemStack(worldserver, blockposition, flag);
  
@@ -983,10 +1002,12 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1296,6 +1863,47 @@
-                     this.player.absRotateTo(f, f1);
-                 }
+@@ -1294,8 +1861,49 @@
  
+                 if (f1 != this.player.getXRot() || f != this.player.getYRot()) {
+                     this.player.absRotateTo(f, f1);
++                }
++
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
 +                double d0 = this.player.getX();
@@ -1017,8 +1038,8 @@
 +                        cancelled = event.useItemInHand() == Event.Result.DENY;
 +                    }
 +                    this.player.gameMode.firedInteract = false;
-+                }
-+
+                 }
+ 
 +                if (cancelled) {
 +                    this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
 +                    return;
@@ -1558,7 +1579,7 @@
 +                                ItemStack itemInHand = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand);
 +                                boolean triggerLeashUpdate = itemInHand != null && itemInHand.getItem() == Items.LEAD && entity instanceof Mob;
 +                                Item origItem = ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null ? null : ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem();
- 
++
 +                                ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
 +
 +                                // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
@@ -1566,7 +1587,7 @@
 +                                    entity.getBukkitEntity().update(ServerGamePacketListenerImpl.this.player);
 +                                    ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                }
-+
+ 
 +                                if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
 +                                    // Refresh the current leash state
 +                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEntityLinkPacket(entity, ((Mob) entity).getLeashHolder()));
