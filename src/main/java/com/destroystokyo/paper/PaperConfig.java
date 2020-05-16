@@ -424,4 +424,9 @@ public class PaperConfig {
 
     }
 
+    public static boolean consoleHasAllPermissions = false;
+    private static void consoleHasAllPermissions() {
+        consoleHasAllPermissions = getBoolean("settings.console-has-all-permissions", consoleHasAllPermissions);
+    }
+
 }

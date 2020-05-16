@@ -74,4 +74,16 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     public boolean isConversing() {
         return conversationTracker.isConversing();
     }
+
+    // Paper start
+    @Override
+    public boolean hasPermission(String name) {
+        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(name);
+    }
+
+    @Override
+    public boolean hasPermission(org.bukkit.permissions.Permission perm) {
+        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
+    }
+    // Paper end
 }

@@ -39,4 +39,16 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
     public void setOp(boolean value) {
         throw new UnsupportedOperationException("Cannot change operator status of remote controller.");
     }
+
+    // Paper start
+    @Override
+    public boolean hasPermission(String name) {
+        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(name);
+    }
+
+    @Override
+    public boolean hasPermission(org.bukkit.permissions.Permission perm) {
+        return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
+    }
+    // Paper end
 }
