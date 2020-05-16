@@ -101,7 +101,7 @@ index 7cd4e2912351eae35b46dba1c8a471af781dc98b..942efe62fe5cefd6373ea568c7a62c52
                  if (flag1) {
                      ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 6e8179b4651fca214b8957992ec6c9438c0da799..e32c458dfe5f22572a365cbcdf45140b61f31d56 100644
+index 0560eca744cb2032bb6a3faf5aeafa95a7a6815e..07a6fc3d88e7d44bfab7f3d6a0eef7dc132ab422 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -111,6 +111,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -600,10 +600,10 @@ index 899c535c4056cd2375ab8f834f03267d405f4bda..0e6368d0fb3beccb492ae3867fb4e228
  
              if (!this.isClientSide && (i & 1) != 0) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 64c643aa15d6ea68f9dad3104cc41e412255cee3..874240d9dddc3150d65d56d95c459b59f07b8815 100644
+index 64c643aa15d6ea68f9dad3104cc41e412255cee3..1e9802ff26e9df7516d88c03124eedcc3ce88a03 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2488,10 +2488,39 @@ public class CraftWorld implements World {
+@@ -2488,10 +2488,43 @@ public class CraftWorld implements World {
      // Spigot start
      @Override
      public int getViewDistance() {
@@ -621,6 +621,7 @@ index 64c643aa15d6ea68f9dad3104cc41e412255cee3..874240d9dddc3150d65d56d95c459b59
 +        net.minecraft.server.PlayerChunkMap chunkMap = getHandle().getChunkProvider().playerChunkMap;
 +        if (viewDistance != chunkMap.getEffectiveViewDistance()) {
 +            chunkMap.setViewDistance(viewDistance);
++            if (viewDistance > getNoTickViewDistance()) setNoTickViewDistance(viewDistance);
 +        }
 +    }
 +
@@ -633,6 +634,9 @@ index 64c643aa15d6ea68f9dad3104cc41e412255cee3..874240d9dddc3150d65d56d95c459b59
 +    public void setNoTickViewDistance(int viewDistance) {
 +        if ((viewDistance < 2 || viewDistance > 32) && viewDistance != -1) {
 +            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
++        }
++        if (viewDistance < getViewDistance() && viewDistance != -1) {
++            throw new IllegalArgumentException("View distance " + viewDistance + " is smaller than current ticking view distance (" + getViewDistance() + ")");
 +        }
 +        net.minecraft.server.PlayerChunkMap chunkMap = getHandle().getChunkProvider().playerChunkMap;
 +        if (viewDistance != chunkMap.getRawNoTickViewDistance()) {
