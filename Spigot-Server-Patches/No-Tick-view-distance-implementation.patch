@@ -231,6 +231,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final int getEffectiveNoTickViewDistance() {
 +        return this.noTickViewDistance == -1 ? this.getEffectiveViewDistance() : this.noTickViewDistance;
 +    }
++    public final int getLoadViewDistance() {
++        return Math.max(this.getEffectiveViewDistance(), this.getEffectiveNoTickViewDistance());
++    }
 +
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceBroadcastMap;
 +    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerViewDistanceTickMap;
@@ -370,19 +373,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.viewDistance = j;
 -            this.chunkDistanceManager.a(this.viewDistance);
 -            ObjectIterator objectiterator = this.updatingChunks.values().iterator();
-+            if (this.world != null && this.world.players != null) { // this can be called from constructor, where these aren't set
-+                // Paper start - no-tick view distance
-+                for (EntityPlayer player : this.world.players) {
-+                    PlayerConnection connection = player.playerConnection;
-+                    if (connection != null) {
-+                        // moved in from PlayerList
-+                        connection.sendPacket(new PacketPlayOutViewDistance(this.getEffectiveNoTickViewDistance()));
-+                    }
-+                    this.updateMaps(player); // distance map handles the chunk sending (and ticket level changes)
-+                }
-+                this.setNoTickViewDistance(this.getRawNoTickViewDistance()); // propagate changes to no-tick, which does the actual chunk loading/sending
-+                // Paper end - no-tick view distance
-+            }
++            this.setNoTickViewDistance(this.getRawNoTickViewDistance()); //Paper - no-tick view distance - propagate changes to no-tick, which does the actual chunk loading/sending
 +        }
  
 -            while (objectiterator.hasNext()) {
@@ -390,29 +381,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
 -                Packet<?>[] apacket = new Packet[2];
 +    }
-+
-+    // Paper start - no-tick view distance
-+    public final void setNoTickViewDistance(int viewDistance) {
-+        viewDistance = viewDistance == -1 ? -1 : MathHelper.clamp(viewDistance, 2, 32);
-+        if (viewDistance == this.noTickViewDistance && viewDistance != -1) {
-+            return;
-+        }
  
 -                this.a(chunkcoordintpair, false).forEach((entityplayer) -> {
 -                    int l = b(chunkcoordintpair, entityplayer, true);
 -                    boolean flag = l <= k;
 -                    boolean flag1 = l <= this.viewDistance;
-+        this.noTickViewDistance = viewDistance;
-+        this.chunkDistanceManager.setNoTickViewDistance(this.getEffectiveNoTickViewDistance() + 2 + 2); // add 2 to account for the change to 31 -> 33 tickets // see notes in the distance map updating for the other + 2
++    // Paper start - no-tick view distance
++    public final void setNoTickViewDistance(int viewDistance) {
++        viewDistance = viewDistance == -1 ? -1 : MathHelper.clamp(viewDistance, 2, 32);
  
 -                    this.sendChunk(entityplayer, chunkcoordintpair, apacket, flag, flag1);
 -                });
++        this.noTickViewDistance = viewDistance;
++        int loadViewDistance = this.getLoadViewDistance();
++        this.chunkDistanceManager.setNoTickViewDistance(loadViewDistance + 2 + 2); // add 2 to account for the change to 31 -> 33 tickets // see notes in the distance map updating for the other + 2
++
 +        if (this.world != null && this.world.players != null) { // this can be called from constructor, where these aren't set
 +            for (EntityPlayer player : this.world.players) {
 +                PlayerConnection connection = player.playerConnection;
 +                if (connection != null) {
 +                    // moved in from PlayerList
-+                    connection.sendPacket(new PacketPlayOutViewDistance(this.getEffectiveNoTickViewDistance()));
++                    connection.sendPacket(new PacketPlayOutViewDistance(loadViewDistance));
 +                }
 +                this.updateMaps(player);
              }
@@ -558,7 +547,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Spigot - view distance
          networkmanager.queueImmunity = true; // Paper
 -        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.spigotConfig.viewDistance, flag1, !flag));
-+        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.getChunkProvider().playerChunkMap.getEffectiveNoTickViewDistance(), flag1, !flag)); // Paper - no-tick view distance
++        playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.getChunkProvider().playerChunkMap.getLoadViewDistance(), flag1, !flag)); // Paper - no-tick view distance
          entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
          playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.a, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
          playerconnection.sendPacket(new PacketPlayOutServerDifficulty(worlddata.getDifficulty(), worlddata.isDifficultyLocked()));
@@ -567,7 +556,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          entityplayer1.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.worldProvider.getDimensionManager().getType(),  WorldData.c(worldserver.getWorldData().getSeed()), worldserver.getWorldData().getType(), entityplayer1.playerInteractManager.getGameMode()));
 -        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver.spigotConfig.viewDistance)); // Spigot
-+        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver.getChunkProvider().playerChunkMap.getEffectiveNoTickViewDistance())); // Paper - no-tick view distance
++        entityplayer1.playerConnection.sendPacket(new PacketPlayOutViewDistance(worldserver.getChunkProvider().playerChunkMap.getLoadViewDistance())); // Paper - no-tick view distance
          entityplayer1.spawnIn(worldserver);
          entityplayer1.dead = false;
          entityplayer1.playerConnection.teleport(new Location(worldserver.getWorld(), entityplayer1.locX(), entityplayer1.locY(), entityplayer1.locZ(), entityplayer1.yaw, entityplayer1.pitch));
@@ -621,7 +610,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        net.minecraft.server.PlayerChunkMap chunkMap = getHandle().getChunkProvider().playerChunkMap;
 +        if (viewDistance != chunkMap.getEffectiveViewDistance()) {
 +            chunkMap.setViewDistance(viewDistance);
-+            if (viewDistance > getNoTickViewDistance()) setNoTickViewDistance(viewDistance);
 +        }
 +    }
 +
@@ -634,9 +622,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void setNoTickViewDistance(int viewDistance) {
 +        if ((viewDistance < 2 || viewDistance > 32) && viewDistance != -1) {
 +            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
-+        }
-+        if (viewDistance < getViewDistance() && viewDistance != -1) {
-+            throw new IllegalArgumentException("View distance " + viewDistance + " is smaller than current ticking view distance (" + getViewDistance() + ")");
 +        }
 +        net.minecraft.server.PlayerChunkMap chunkMap = getHandle().getChunkProvider().playerChunkMap;
 +        if (viewDistance != chunkMap.getRawNoTickViewDistance()) {
