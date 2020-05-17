@@ -2083,84 +2083,167 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.util.pooled;
 +
++import net.minecraft.server.MCUtil;
 +import org.apache.commons.lang3.mutable.MutableInt;
++
 +import java.util.ArrayDeque;
 +import java.util.concurrent.ThreadLocalRandom;
++import java.util.concurrent.atomic.AtomicLong;
 +import java.util.concurrent.locks.ReentrantLock;
++import java.util.function.Consumer;
 +
++/**
++ * Object pooling with thread safe, low contention design. Pooled objects have no additional object overhead
++ * due to usage of ArrayDeque per insertion/removal unless a resizing is needed in the buckets.
++ * Supports up to bucket size (default 8) threads concurrently accessing if all buckets have a value.
++ * Releasing may conditionally have contention if multiple buckets have same current size, but randomization will be used.
++ *
++ * Original interface API by Spottedleaf
++ * Implementation by Aikar <aikar@aikar.co>
++ * @license MIT
++ */
 +public final class PooledObjects<E> {
 +
-+    public static final PooledObjects<MutableInt> POOLED_MUTABLE_INTEGERS = new PooledObjects<>(MutableInt::new, 200, -1);
++    /**
++     * Wrapper for an object that will be have a cleaner registered for it, and may be automatically returned to pool.
++     */
++    public class AutoReleased {
++        private final E object;
++        private final Runnable cleaner;
++
++        public AutoReleased(E object, Runnable cleaner) {
++            this.object = object;
++            this.cleaner = cleaner;
++        }
++
++        public final E getObject() {
++            return object;
++        }
++
++        public final Runnable getCleaner() {
++            return cleaner;
++        }
++    }
++
++    public static final PooledObjects<MutableInt> POOLED_MUTABLE_INTEGERS = new PooledObjects<>(MutableInt::new, 1024, 16);
 +
 +    private final PooledObjectHandler<E> handler;
-+    private final int maxPoolSize;
-+    private final int expectingThreads;
++    private final int bucketCount;
++    private final int bucketSize;
++    private final ArrayDeque<E>[] buckets;
++    private final ReentrantLock[] locks;
++    private final AtomicLong bucketIdCounter = new AtomicLong(0);
 +
-+    private final IsolatedPool<E> mainPool;
-+    // use these under contention
-+    private final IsolatedPool<E>[] contendedPools;
-+
-+    public PooledObjects(final PooledObjectHandler<E> handler, final int maxPoolSize, int expectingThreads) {
++    public PooledObjects(final PooledObjectHandler<E> handler, int maxPoolSize) {
++        this(handler, maxPoolSize, 8);
++    }
++    public PooledObjects(final PooledObjectHandler<E> handler, int maxPoolSize, int bucketCount) {
 +        if (handler == null) {
 +            throw new NullPointerException("Handler must not be null");
 +        }
 +        if (maxPoolSize <= 0) {
 +            throw new IllegalArgumentException("Max pool size must be greater-than 0");
 +        }
-+        if (expectingThreads <= 0) {
-+            expectingThreads = Runtime.getRuntime().availableProcessors();
++        if (bucketCount < 1) {
++            throw new IllegalArgumentException("Bucket count must be greater-than 0");
 +        }
-+
++        int remainder = maxPoolSize % bucketCount;
++        if (remainder > 0) {
++            // Auto adjust up to the next bucket divisible size
++            maxPoolSize = maxPoolSize - remainder + bucketCount;
++        }
++        //noinspection unchecked
++        this.buckets = new ArrayDeque[bucketCount];
++        this.locks = new ReentrantLock[bucketCount];
++        this.bucketCount = bucketCount;
 +        this.handler = handler;
-+        this.maxPoolSize = maxPoolSize;
-+        this.expectingThreads = expectingThreads;
-+        this.mainPool = new IsolatedPool<>(handler, maxPoolSize);
-+        final IsolatedPool<E>[] contendedPools = new IsolatedPool[2 * expectingThreads];
++        this.bucketSize = maxPoolSize / bucketCount;
++        for (int i = 0; i < bucketCount; i++) {
++            this.buckets[i] = new ArrayDeque<>(bucketSize / 4);
++            this.locks[i] = new ReentrantLock();
++        }
++    }
 +
-+        for (int i = 0; i < contendedPools.length; ++i) {
-+            contendedPools[i] = new IsolatedPool<>(handler, Math.max(1, maxPoolSize / 2));
++    public AutoReleased acquireCleaner(Object holder) {
++        return acquireCleaner(holder, this::release);
++    }
++
++    public AutoReleased acquireCleaner(Object holder, Consumer<E> releaser) {
++        E resource = acquire();
++        Runnable cleaner = MCUtil.registerCleaner(holder, resource, releaser);
++        return new AutoReleased(resource, cleaner);
++    }
++
++
++    public long size() {
++        long size = 0;
++        for (int i = 0; i < bucketCount; i++) {
++            size += this.buckets[i].size();
 +        }
 +
-+        this.contendedPools = contendedPools;
++        return size;
 +    }
-+
-+    // Taken from
-+    // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-+    // https://github.com/lemire/Code-used-on-Daniel-Lemire-s-blog/blob/master/2016/06/25/fastrange.c
-+    // Original license is public domain
-+    public static int fastRandomBounded(final long randomInteger, final long limit) {
-+        // randomInteger must be [0, pow(2, 32))
-+        // limit must be [0, pow(2, 32))
-+        return (int)((randomInteger * limit) >>> 32);
-+    }
-+
 +    public E acquire() {
-+        E ret;
-+        PooledObjects.IsolatedPool<E> pooled = this.mainPool;
-+        int lastIndex = -1;
-+        while ((ret = pooled.tryAcquireUncontended()) == null) {
-+            int index;
-+            while (lastIndex == (index = fastRandomBounded(ThreadLocalRandom.current().nextInt() & 0xFFFFFFFFL, this.contendedPools.length)));
-+            lastIndex = index;
-+            pooled = this.contendedPools[index];
++        for (int base = (int) (this.bucketIdCounter.getAndIncrement() % bucketCount), i = 0; i < bucketCount; i++ ) {
++            int bucketId = (base + i) % bucketCount;
++            if (this.buckets[bucketId].isEmpty()) continue;
++            // lock will alloc an object if blocked, so spinwait instead since lock duration is super fast
++            lockBucket(bucketId);
++            E value = this.buckets[bucketId].poll();
++            this.locks[bucketId].unlock();
++            if (value != null) {
++                this.handler.onAcquire(value);
++                return value;
++            }
 +        }
++        return this.handler.createNew();
++    }
 +
-+        return ret;
++    private void lockBucket(int bucketId) {
++        // lock will alloc an object if blocked, try to avoid unless 2 failures
++        ReentrantLock lock = this.locks[bucketId];
++        if (!lock.tryLock()) {
++            Thread.yield();
++        } else {
++            return;
++        }
++        if (!lock.tryLock()) {
++            Thread.yield();
++            lock.lock();
++        }
 +    }
 +
 +    public void release(final E value) {
-+        PooledObjects.IsolatedPool<E> pooled = this.mainPool;
-+        int lastIndex = -1;
-+        while (!pooled.tryReleaseUncontended(value)) {
-+            int index;
-+            while (lastIndex == (index = fastRandomBounded(ThreadLocalRandom.current().nextInt() & 0xFFFFFFFFL, this.contendedPools.length)));
-+            lastIndex = index;
-+            pooled = this.contendedPools[index];
-+        }
++        int attempts = 3; // cap on contention
++        do {
++            // find least filled bucket before locking
++            int smallestIdx = -1;
++            int smallest = Integer.MAX_VALUE;
++            for (int i = 0; i < bucketCount; i++ ) {
++                ArrayDeque<E> bucket = this.buckets[i];
++                int size = bucket.size();
++                if (size < this.bucketSize && (smallestIdx == -1 || size < smallest || (size == smallest && ThreadLocalRandom.current().nextBoolean()))) {
++                    smallestIdx = i;
++                    smallest = size;
++                }
++            }
++            if (smallestIdx == -1) return; // Can not find a bucket to fill
++
++            lockBucket(smallestIdx);
++            ArrayDeque<E> bucket = this.buckets[smallestIdx];
++            if (bucket.size() < this.bucketSize) {
++                this.handler.onRelease(value);
++                bucket.push(value);
++                this.locks[smallestIdx].unlock();
++                return;
++            } else {
++                this.locks[smallestIdx].unlock();
++            }
++        } while (attempts-- > 0);
 +    }
 +
 +    /** This object is restricted from interacting with any pool */
-+    public static interface PooledObjectHandler<E> {
++    public interface PooledObjectHandler<E> {
 +
 +        /**
 +         * Must return a non-null object
@@ -2170,89 +2253,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        default void onAcquire(final E value) {}
 +
 +        default void onRelease(final E value) {}
-+    }
-+
-+    protected static class IsolatedPool<E> {
-+
-+        protected final PooledObjectHandler<E> handler;
-+
-+        // We use arraydeque as it doesn't create garbage per element...
-+        protected final ArrayDeque<E> pool;
-+        protected final int maxPoolSize;
-+
-+        protected final ReentrantLock lock = new ReentrantLock();
-+
-+        public IsolatedPool(final PooledObjectHandler<E> handler, final int maxPoolSize) {
-+            this.handler = handler;
-+            this.pool = new ArrayDeque<>();
-+            this.maxPoolSize = maxPoolSize;
-+        }
-+
-+        protected E acquireOrCreateNoLock() {
-+            E ret;
-+
-+            ret = this.pool.poll();
-+
-+            if (ret == null) {
-+                ret = this.handler.createNew();
-+            }
-+            this.handler.onAcquire(ret);
-+
-+            return ret;
-+        }
-+
-+        public E tryAcquireUncontended() {
-+            if (!this.lock.tryLock()) {
-+                return null;
-+            }
-+            try {
-+                return this.acquireOrCreateNoLock();
-+            } finally {
-+                this.lock.unlock();
-+            }
-+        }
-+
-+        public E acquire() {
-+            this.lock.lock();
-+            try {
-+                return this.acquireOrCreateNoLock();
-+            } finally {
-+                this.lock.unlock();
-+            }
-+        }
-+
-+        protected void releaseNoLock(final E value) {
-+            if (this.pool.size() >= this.maxPoolSize) {
-+                this.handler.onRelease(value);
-+                return; // can't accept, we're at capacity
-+            }
-+
-+            this.pool.add(value);
-+            this.handler.onRelease(value);
-+        }
-+
-+        public boolean tryReleaseUncontended(final E value) {
-+            if (!this.lock.tryLock()) {
-+                return false;
-+            }
-+
-+            try {
-+                this.releaseNoLock(value);
-+            } finally {
-+                this.lock.unlock();
-+            }
-+
-+            return true;
-+        }
-+
-+        public void release(final E value) {
-+            this.lock.lock();
-+            try {
-+                this.releaseNoLock(value);
-+            } finally {
-+                this.lock.unlock();
-+            }
-+        }
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
@@ -3355,21 +3355,80 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Queue;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
-+import java.util.concurrent.Executor;
-+import java.util.concurrent.Executors;
++import java.util.concurrent.LinkedBlockingQueue;
++import java.util.concurrent.ThreadPoolExecutor;
 +import java.util.concurrent.TimeUnit;
 +import java.util.concurrent.TimeoutException;
++import java.util.concurrent.atomic.AtomicBoolean;
++import java.util.function.Consumer;
 +import java.util.function.Supplier;
 +
 +public final class MCUtil {
-+    private static final Executor asyncExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build());
++    public static final ThreadPoolExecutor asyncExecutor = new ThreadPoolExecutor(
++        0, 2, 60L, TimeUnit.SECONDS,
++        new LinkedBlockingQueue<Runnable>(),
++        new ThreadFactoryBuilder().setNameFormat("Paper Async Task Handler Thread - %1$d").build()
++    );
++    public static final ThreadPoolExecutor cleanerExecutor = new ThreadPoolExecutor(
++        1, 1, 0L, TimeUnit.SECONDS,
++        new LinkedBlockingQueue<Runnable>(),
++        new ThreadFactoryBuilder().setNameFormat("Paper Object Cleaner").build()
++    );
 +
 +    public static final long INVALID_CHUNK_KEY = getCoordinateKey(Integer.MAX_VALUE, Integer.MAX_VALUE);
 +
-+    public static void ensureTickThread(final String reason) {
-+        if (MinecraftServer.getServer().serverThread != Thread.currentThread()) {
-+            throw new IllegalStateException(reason);
-+        }
++
++    public static Runnable once(Runnable run) {
++        AtomicBoolean ran = new AtomicBoolean(false);
++        return () -> {
++            if (ran.compareAndSet(false, true)) {
++                run.run();
++            }
++        };
++    }
++
++    private static Runnable makeCleanerCallback(Runnable run) {
++        return once(() -> cleanerExecutor.execute(run));
++    }
++
++    /**
++     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
++     * @param obj
++     * @param run
++     * @return
++     */
++    public static Runnable registerCleaner(Object obj, Runnable run) {
++        // Wrap callback in its own method above or the lambda will leak object
++        Runnable cleaner = makeCleanerCallback(run);
++        co.aikar.cleaner.Cleaner.register(obj, cleaner);
++        return cleaner;
++    }
++
++    /**
++     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
++     * @param obj
++     * @param list
++     * @param cleaner
++     * @param <T>
++     * @return
++     */
++    public static <T> Runnable registerListCleaner(Object obj, List<T> list, Consumer<T> cleaner) {
++        return registerCleaner(obj, () -> {
++            list.forEach(cleaner);
++            list.clear();
++        });
++    }
++
++    /**
++     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
++     * @param obj
++     * @param resource
++     * @param cleaner
++     * @param <T>
++     * @return
++     */
++    public static <T> Runnable registerCleaner(Object obj, T resource, java.util.function.Consumer<T> cleaner) {
++        return registerCleaner(obj, () -> cleaner.accept(resource));
 +    }
 +
 +    public static List<ChunkCoordIntPair> getSpiralOutChunks(BlockPosition blockposition, int radius) {
@@ -3753,6 +3812,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         }
+ 
+         // Spigot start
++        MCUtil.asyncExecutor.shutdown(); // Paper
++        try { MCUtil.asyncExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
++        } catch (java.lang.InterruptedException ignored) {} // Paper
+         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
+             LOGGER.info("Saving usercache.json");
+             this.getUserCache().c();
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
