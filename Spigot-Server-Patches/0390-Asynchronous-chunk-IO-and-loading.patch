@@ -1489,10 +1489,10 @@ index 0000000000000000000000000000000000000000..ee906b594b306906c170180a29a8b619
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac9bc3e2316a9dc28d13f54296ee6fd5e81188a1
+index 0000000000000000000000000000000000000000..044c3da825505f9dc002c02296bf2de51ceef01e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkLoadTask.java
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,146 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import co.aikar.timings.Timing;
@@ -1587,11 +1587,8 @@ index 0000000000000000000000000000000000000000..ac9bc3e2316a9dc28d13f54296ee6fd5
 +            // apply fixes
 +
 +            try {
-+                if (chunkData.poiData != null) {
-+                    chunkData.poiData = chunkData.poiData.clone(); // clone data for safety, file IO thread does not clone
-+                }
 +                chunkData.chunkData = chunkManager.getChunkData(this.world.getWorldProvider().getDimensionManager(),
-+                    chunkManager.getWorldPersistentDataSupplier(), chunkData.chunkData.clone(), chunkPos, this.world); // clone data for safety, file IO thread does not clone
++                    chunkManager.getWorldPersistentDataSupplier(), chunkData.chunkData, chunkPos, this.world); // clone data for safety, file IO thread does not clone
 +            } catch (final Throwable ex) {
 +                PaperFileIOThread.LOGGER.error("Could not apply datafixers for chunk task: " + this.toString(), ex);
 +                this.complete(ChunkLoadTask.createEmptyHolder());
@@ -2930,10 +2927,10 @@ index 2f95174fcc467908808ed3f2dc956bdcafdc3558..134c76065bf382912e6c28d15449db3f
 +//    Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index 2dcecc1bbd00e46b0a9b5e48bc580475fc8b4cb3..d9941b38ca037a31f520784b3706080f1d322fb4 100644
+index de8b8f54cd906c1154a6790b9220d3e0976c74bd..f8a1f0b96f2eb8535e3080db979bb383d5a18a11 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -627,4 +627,9 @@ public final class MCUtil {
+@@ -686,4 +686,9 @@ public final class MCUtil {
              out.print(fileData);
          }
      }
@@ -2944,10 +2941,10 @@ index 2dcecc1bbd00e46b0a9b5e48bc580475fc8b4cb3..d9941b38ca037a31f520784b3706080f
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7ecf781263179d87c943b08e192d8f010cf20d3e..26be34987047370b0a8971f387cf959468031ebd 100644
+index cfed5f51431ec5aecb538a321327bfb6e8a0bd88..aadc4635ecef4e5ba19ff56c37ecbdc5a1721ec6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -777,6 +777,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -780,6 +780,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
          // Spigot end
@@ -3537,7 +3534,7 @@ index 94b0c54d9d4d77b724087be55ffe6ce464a0bbe7..963ce3eeec6f9eea087054ea48b714ee
          return this.m;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 65c171cec3cc7c7c7433c63b3718fa7e1c16f148..0a06ed36795afad00839174fc1a7e7f7b9e4a8c8 100644
+index 1c4a8d95d02dac65e01bb42fb1cc491af07c0cdc..9d001f816d0b8b6d6cf80ee6bce548f1017960b7 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -541,6 +541,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
