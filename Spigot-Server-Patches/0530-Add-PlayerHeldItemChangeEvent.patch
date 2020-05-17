@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nesaak <52047222+Nesaak@users.noreply.github.com>
+Date: Sun, 17 May 2020 18:39:01 -0400
+Subject: [PATCH] Add PlayerHeldItemChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 3fc2360a103a5399f2878eccb0c13eb6e41e824d..6eb4ba6c938ab4b33abfe8571ed653a551bbe76f 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
++import com.destroystokyo.paper.event.player.PlayerHeldItemChangeEvent;
+ import com.google.common.base.Objects;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableSet;
+@@ -2497,11 +2498,17 @@ public abstract class EntityLiving extends Entity {
+             ItemStack itemstack1 = this.getEquipment(enumitemslot);
+ 
+             if (!ItemStack.matches(itemstack1, itemstack)) {
+-                // Paper start - PlayerArmorChangeEvent
+-                if (this instanceof EntityPlayer && enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
+-                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
+-                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
+-                    new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
++                // Paper start - PlayerArmorChangeEvent, PlayerHeldItemChangeEvent
++                if (this instanceof EntityPlayer) {
++                    if (enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
++                        final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
++                        final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
++                        new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
++                    } else if (enumitemslot.getType() == EnumItemSlot.Function.HAND) {
++                        final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
++                        final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
++                        new PlayerHeldItemChangeEvent((Player) this.getBukkitEntity(), enumitemslot == EnumItemSlot.MAINHAND, oldItem, newItem).callEvent();
++                    }
+                 }
+                 // Paper end
+                 ((WorldServer) this.world).getChunkProvider().broadcast(this, new PacketPlayOutEntityEquipment(this.getId(), enumitemslot, itemstack1));
