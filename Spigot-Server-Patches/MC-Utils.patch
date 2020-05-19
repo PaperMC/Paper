@@ -1132,6 +1132,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected final ChangeCallback<E> addCallback;
 +    protected final ChangeCallback<E> removeCallback;
++    protected final ChangeSourceCallback<E> changeSourceCallback;
 +
 +    public AreaMap() {
 +        this(new PooledLinkedHashSets<>());
@@ -1143,9 +1144,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets, final ChangeCallback<E> addCallback, final ChangeCallback<E> removeCallback) {
++        this(pooledHashSets, addCallback, removeCallback, null);
++    }
++    public AreaMap(final PooledLinkedHashSets<E> pooledHashSets, final ChangeCallback<E> addCallback, final ChangeCallback<E> removeCallback, final ChangeSourceCallback<E> changeSourceCallback) {
 +        this.pooledHashSets = pooledHashSets;
 +        this.addCallback = addCallback;
 +        this.removeCallback = removeCallback;
++        this.changeSourceCallback = changeSourceCallback;
 +    }
 +
 +    @Nullable
@@ -1208,7 +1213,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    // called after the distance map updates
-+    protected void updateObjectCallback(final E Object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {}
++    protected void updateObjectCallback(final E Object, final long oldPosition, final long newPosition, final int oldViewDistance, final int newViewDistance) {
++        if (newPosition != oldPosition && this.changeSourceCallback != null) {
++            this.changeSourceCallback.accept(Object, oldPosition, newPosition);
++        }
++    }
 +
 +    public final boolean add(final E object, final int chunkX, final int chunkZ, final int viewDistance) {
 +        final int oldViewDistance = this.objectToViewDistance.putIfAbsent(object, viewDistance);
@@ -1537,6 +1546,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    final PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> newState);
 +
 +    }
++
++    @FunctionalInterface
++    public static interface ChangeSourceCallback<E> {
++        void accept(final E object, final long prevPos, final long newPos);
++    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/DistanceTrackingAreaMap.java
 new file mode 100644
@@ -1744,7 +1758,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public PlayerAreaMap(final PooledLinkedHashSets<EntityPlayer> pooledHashSets, final ChangeCallback<EntityPlayer> addCallback,
 +                         final ChangeCallback<EntityPlayer> removeCallback) {
-+        super(pooledHashSets, addCallback, removeCallback);
++        this(pooledHashSets, addCallback, removeCallback, null);
++    }
++
++    public PlayerAreaMap(final PooledLinkedHashSets<EntityPlayer> pooledHashSets, final ChangeCallback<EntityPlayer> addCallback,
++                         final ChangeCallback<EntityPlayer> removeCallback, final ChangeSourceCallback<EntityPlayer> changeSourceCallback) {
++        super(pooledHashSets, addCallback, removeCallback, changeSourceCallback);
 +    }
 +
 +    @Override
@@ -3465,6 +3484,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static int fastFloor(double x) {
 +        int truncated = (int)x;
 +        return x < (double)truncated ? truncated - 1 : truncated;
++    }
++
++    public static float normalizeYaw(float f) {
++        float f1 = f % 360.0F;
++
++        if (f1 >= 180.0F) {
++            f1 -= 360.0F;
++        }
++
++        if (f1 < -180.0F) {
++            f1 += 360.0F;
++        }
++
++        return f1;
 +    }
 +
 +    public static int fastFloor(float x) {

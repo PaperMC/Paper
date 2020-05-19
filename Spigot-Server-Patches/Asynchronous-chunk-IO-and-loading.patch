@@ -202,8 +202,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        asyncChunks = getBoolean("settings.async-chunks.enable", true);
 +        int threads = getInt("settings.async-chunks.threads", -1);
++        int cpus = Runtime.getRuntime().availableProcessors();
 +        if (threads <= 0) {
-+            threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
++            threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, cpus - 1));
++        }
++        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
++            asyncChunks = false;
 +        }
 +
 +        // Let Shared Host set some limits
@@ -3845,6 +3849,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/SystemUtils.java
++++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -0,0 +0,0 @@ public class SystemUtils {
+         i = Integer.getInteger("Paper.WorkerThreadCount", i); // Paper - allow overriding
+         Object object;
+ 
+-        if (i <= 0) {
++        if (i <= 0 || (Runtime.getRuntime().availableProcessors() == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore"))) { // Paper - disable server worker queue if single core system
+             object = MoreExecutors.newDirectExecutorService();
+         } else {
+             object = new ForkJoinPool(i, (forkjoinpool) -> {
 diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TicketType.java
