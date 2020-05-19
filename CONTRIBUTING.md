@@ -36,7 +36,7 @@ just need to add it to our import script to be ran during the patch process.
 
 1. Save (rebuild) any patches you are in the middle of working on!
 2. Identify the names of the files you want to import.
-   - A complete list of all possible file names can be found at ```./work/Minecraft/$MCVER/net/minecraft/server```
+   - A complete list of all possible file names can be found at ```./work/Minecraft/$MCVER/spigot/net/minecraft/server```
 3. Open the file at `./scripts/importmcdev.sh` and add the name of your file to the script.
 4. Re-patch the server `./paper patch`
 5. Edit away!
