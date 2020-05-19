@@ -161,7 +161,7 @@ index fa1c920ea6092259149f9e7f9cd7cc1ed27bf338..98acbfa44dd9042b26fdf719d7748f92
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index dbd14399707cdd43f98af40191be8ff3e76edf43..f4836e2da1061e7aa62ddb01c8ca7b3467b18415 100644
+index dbd14399707cdd43f98af40191be8ff3e76edf43..74295466e53db06d0d019a13768f3575ac61d699 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,5 +1,6 @@
@@ -171,7 +171,7 @@ index dbd14399707cdd43f98af40191be8ff3e76edf43..f4836e2da1061e7aa62ddb01c8ca7b34
  import com.google.common.base.Strings;
  import com.google.common.base.Throwables;
  
-@@ -367,4 +368,50 @@ public class PaperConfig {
+@@ -367,4 +368,54 @@ public class PaperConfig {
          maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
@@ -202,8 +202,12 @@ index dbd14399707cdd43f98af40191be8ff3e76edf43..f4836e2da1061e7aa62ddb01c8ca7b34
 +
 +        asyncChunks = getBoolean("settings.async-chunks.enable", true);
 +        int threads = getInt("settings.async-chunks.threads", -1);
++        int cpus = Runtime.getRuntime().availableProcessors();
 +        if (threads <= 0) {
-+            threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
++            threads = (int) Math.min(Integer.getInteger("paper.maxChunkThreads", 8), Math.max(1, cpus - 1));
++        }
++        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
++            asyncChunks = false;
 +        }
 +
 +        // Let Shared Host set some limits
@@ -2927,10 +2931,10 @@ index 2f95174fcc467908808ed3f2dc956bdcafdc3558..134c76065bf382912e6c28d15449db3f
 +//    Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index de8b8f54cd906c1154a6790b9220d3e0976c74bd..f8a1f0b96f2eb8535e3080db979bb383d5a18a11 100644
+index f75f48a3d0b0bc1da3c5ae3b3cf20b64f1e8288a..0e01e5c2c008823355e370d0c9ced79130e5fb92 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -686,4 +686,9 @@ public final class MCUtil {
+@@ -700,4 +700,9 @@ public final class MCUtil {
              out.print(fileData);
          }
      }
@@ -3845,6 +3849,19 @@ index db9f0196bda4c987de6cf63eea437b7154d47b57..a6d8ef5eb44f3f851a3a1be4032ca21a
      }
 +    // Paper end
  }
+diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+index 60d7c06d4c5bd054a411c915af3ae685df24ccd4..47dbcb70a6b41438a5bf3196495cfdaf02bd2b74 100644
+--- a/src/main/java/net/minecraft/server/SystemUtils.java
++++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -70,7 +70,7 @@ public class SystemUtils {
+         i = Integer.getInteger("Paper.WorkerThreadCount", i); // Paper - allow overriding
+         Object object;
+ 
+-        if (i <= 0) {
++        if (i <= 0 || (Runtime.getRuntime().availableProcessors() == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore"))) { // Paper - disable server worker queue if single core system
+             object = MoreExecutors.newDirectExecutorService();
+         } else {
+             object = new ForkJoinPool(i, (forkjoinpool) -> {
 diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
 index 75ab9f185b3231113dfa387c956a707b403bb2db..8055f5998213ab1c6c10d03d88d2b14d220a5e40 100644
 --- a/src/main/java/net/minecraft/server/TicketType.java
