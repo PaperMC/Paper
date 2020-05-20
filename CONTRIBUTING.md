@@ -117,7 +117,7 @@ All modifications to non-Paper files should be marked
 - For example:
 ````java
 entity.getWorld().dontbeStupid(); // Paper - was beStupid() which is bad
-entity.getFriends().forEach(Entity::explode());
+entity.getFriends().forEach(Entity::explode);
 entity.a();
 entity.b();
 // Paper start - use plugin-set spawn
