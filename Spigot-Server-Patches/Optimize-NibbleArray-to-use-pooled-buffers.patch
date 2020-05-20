@@ -13,6 +13,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
+             if (flag) {
+                 if (nbttagcompound2.hasKeyOfType("BlockLight", 7)) {
+                     // Paper start - delay this task since we're executing off-main
+-                    NibbleArray blockLight = new NibbleArray(nbttagcompound2.getByteArray("BlockLight"));
++                    // Pool safe get and clean
++                    NBTTagByteArray blockLightArray = nbttagcompound2.getByteArrayTag("BlockLight");
++                    // NibbleArray will copy the data in the ctor
++                    NibbleArray blockLight = new NibbleArray(blockLightArray.getBytesPoolSafe());
++                    blockLightArray.cleanPooledBytes();
+                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
+                     tasksToExecuteOnMain.add(() -> {
+                         lightengine.a(EnumSkyBlock.BLOCK, SectionPosition.a(chunkcoordintpair, b0), blockLight);
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
+ 
+                 if (flag2 && nbttagcompound2.hasKeyOfType("SkyLight", 7)) {
+                     // Paper start - delay this task since we're executing off-main
+-                    NibbleArray skyLight = new NibbleArray(nbttagcompound2.getByteArray("SkyLight"));
++                    // Pool safe get and clean
++                    NBTTagByteArray skyLightArray = nbttagcompound2.getByteArrayTag("SkyLight");
++                    // NibbleArray will copy the data in the ctor
++                    NibbleArray skyLight = new NibbleArray(skyLightArray.getBytesPoolSafe());
++                    skyLightArray.cleanPooledBytes();
+                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
+                     tasksToExecuteOnMain.add(() -> {
+                         lightengine.a(EnumSkyBlock.SKY, SectionPosition.a(chunkcoordintpair, b0), skyLight);
+@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
                  }
  
                  if (nibblearray != null && !nibblearray.c()) {
@@ -73,13 +99,74 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            NBTTagByteArray nbt = new NBTTagByteArray(abyte);
 +            if (abyte.length == 2048) {
 +                // register cleaner
-+                MCUtil.registerCleaner(nbt, abyte, NibbleArray::releaseBytes);
++                nbt.cleaner = MCUtil.registerCleaner(nbt, abyte, NibbleArray::releaseBytes);
 +            }
 +            return nbt;
 +            // Paper end
          }
  
          @Override
+@@ -0,0 +0,0 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+     }
+ 
+     public byte[] getBytes() {
++        // Paper start
++        Runnable cleaner = this.cleaner;
++        if (cleaner != null) { // This will only be possible for 2048 byte arrays
++            // cleaners are thread safe if it tries to run twice, if getBytes is accessed concurrently, worse
++            // case is multiple clones
++            this.data = this.data.clone();
++            this.cleaner = null;
++            cleaner.run();
++        }
++        if (this.data == null) {
++            new Throwable("Horrible thing happened! Something hooked into Chunk Loading internals and accessed NBT after chunk was done loading. Please tell plugin to stop doing this, clone the memory before hand.").printStackTrace();
++        }
++        return this.data;
++    }
++    Runnable cleaner;
++    public void cleanPooledBytes() {
++        Runnable cleaner = this.cleaner;
++        if (cleaner != null) { // This will only be possible for 2048 byte arrays
++            this.cleaner = null;
++            this.data = null;
++            cleaner.run();
++        }
++    }
++    /**
++     * Use ONLY if you know the life of your usage of the bytes matches the life of the nbt node itself.
++     * If this NBT node can go unreachable before your usage of the bytes is over with, DO NOT use this
++     */
++    public byte[] getBytesPoolSafe() {
++        // Paper end
+         return this.data;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NBTTagCompound.java
++++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
+@@ -0,0 +0,0 @@ public class NBTTagCompound implements NBTBase {
+         return new byte[0];
+     }
+ 
++    // Paper start
++    public NBTTagByteArray getByteArrayTag(String s) {
++        try {
++            if (this.hasKeyOfType(s, 7)) {
++                return ((NBTTagByteArray) this.map.get(s));
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.a(s, NBTTagByteArray.a, classcastexception));
++        }
++
++        return new NBTTagByteArray(new byte[0]);
++    }
++    // Paper end
++
+     public int[] getIntArray(String s) {
+         try {
+             if (this.hasKeyOfType(s, 11)) {
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NibbleArray.java
