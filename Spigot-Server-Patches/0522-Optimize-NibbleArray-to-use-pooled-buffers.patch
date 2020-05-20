@@ -9,10 +9,36 @@ an object pool for these.
 Uses lots of advanced new capabilities of the Paper codebase :)
 
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-index e625842e524f18e469f7695b27d52d4d04892266..82264bf651b9d1f6614fef5efc29419947407eca 100644
+index e625842e524f18e469f7695b27d52d4d04892266..7c7b5212d8603627f260344a2fdcf575f81d7f63 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-@@ -387,11 +387,15 @@ public class ChunkRegionLoader {
+@@ -105,7 +105,11 @@ public class ChunkRegionLoader {
+             if (flag) {
+                 if (nbttagcompound2.hasKeyOfType("BlockLight", 7)) {
+                     // Paper start - delay this task since we're executing off-main
+-                    NibbleArray blockLight = new NibbleArray(nbttagcompound2.getByteArray("BlockLight"));
++                    // Pool safe get and clean
++                    NBTTagByteArray blockLightArray = nbttagcompound2.getByteArrayTag("BlockLight");
++                    // NibbleArray will copy the data in the ctor
++                    NibbleArray blockLight = new NibbleArray(blockLightArray.getBytesPoolSafe());
++                    blockLightArray.cleanPooledBytes();
+                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
+                     tasksToExecuteOnMain.add(() -> {
+                         lightengine.a(EnumSkyBlock.BLOCK, SectionPosition.a(chunkcoordintpair, b0), blockLight);
+@@ -115,7 +119,11 @@ public class ChunkRegionLoader {
+ 
+                 if (flag2 && nbttagcompound2.hasKeyOfType("SkyLight", 7)) {
+                     // Paper start - delay this task since we're executing off-main
+-                    NibbleArray skyLight = new NibbleArray(nbttagcompound2.getByteArray("SkyLight"));
++                    // Pool safe get and clean
++                    NBTTagByteArray skyLightArray = nbttagcompound2.getByteArrayTag("SkyLight");
++                    // NibbleArray will copy the data in the ctor
++                    NibbleArray skyLight = new NibbleArray(skyLightArray.getBytesPoolSafe());
++                    skyLightArray.cleanPooledBytes();
+                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
+                     tasksToExecuteOnMain.add(() -> {
+                         lightengine.a(EnumSkyBlock.SKY, SectionPosition.a(chunkcoordintpair, b0), skyLight);
+@@ -387,11 +395,15 @@ public class ChunkRegionLoader {
                  }
  
                  if (nibblearray != null && !nibblearray.c()) {
@@ -57,7 +83,7 @@ index 06bc8371fe9de4d23fdd47e5a3919541bb399fd8..bf37e4ec1f3f4f73c27e1eecffa96423
                  return new NibbleArray();
              }
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-index 034244c2465b9999c6fba63ab2310becef51b887..a964647d1464d33c69b860cce44d918a20054532 100644
+index 034244c2465b9999c6fba63ab2310becef51b887..5310246ec97b8a78848214b152a67195fd8ddef9 100644
 --- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
 +++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
 @@ -17,10 +17,17 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
@@ -73,13 +99,74 @@ index 034244c2465b9999c6fba63ab2310becef51b887..a964647d1464d33c69b860cce44d918a
 +            NBTTagByteArray nbt = new NBTTagByteArray(abyte);
 +            if (abyte.length == 2048) {
 +                // register cleaner
-+                MCUtil.registerCleaner(nbt, abyte, NibbleArray::releaseBytes);
++                nbt.cleaner = MCUtil.registerCleaner(nbt, abyte, NibbleArray::releaseBytes);
 +            }
 +            return nbt;
 +            // Paper end
          }
  
          @Override
+@@ -121,6 +128,35 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
+     }
+ 
+     public byte[] getBytes() {
++        // Paper start
++        Runnable cleaner = this.cleaner;
++        if (cleaner != null) { // This will only be possible for 2048 byte arrays
++            // cleaners are thread safe if it tries to run twice, if getBytes is accessed concurrently, worse
++            // case is multiple clones
++            this.data = this.data.clone();
++            this.cleaner = null;
++            cleaner.run();
++        }
++        if (this.data == null) {
++            new Throwable("Horrible thing happened! Something hooked into Chunk Loading internals and accessed NBT after chunk was done loading. Please tell plugin to stop doing this, clone the memory before hand.").printStackTrace();
++        }
++        return this.data;
++    }
++    Runnable cleaner;
++    public void cleanPooledBytes() {
++        Runnable cleaner = this.cleaner;
++        if (cleaner != null) { // This will only be possible for 2048 byte arrays
++            this.cleaner = null;
++            this.data = null;
++            cleaner.run();
++        }
++    }
++    /**
++     * Use ONLY if you know the life of your usage of the bytes matches the life of the nbt node itself.
++     * If this NBT node can go unreachable before your usage of the bytes is over with, DO NOT use this
++     */
++    public byte[] getBytesPoolSafe() {
++        // Paper end
+         return this.data;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
+index 02a2ed1baa3f82d302432b7bc627f3179751f886..5f38c962115f732fae20b61410dfc35b09248f4c 100644
+--- a/src/main/java/net/minecraft/server/NBTTagCompound.java
++++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
+@@ -298,6 +298,20 @@ public class NBTTagCompound implements NBTBase {
+         return new byte[0];
+     }
+ 
++    // Paper start
++    public NBTTagByteArray getByteArrayTag(String s) {
++        try {
++            if (this.hasKeyOfType(s, 7)) {
++                return ((NBTTagByteArray) this.map.get(s));
++            }
++        } catch (ClassCastException classcastexception) {
++            throw new ReportedException(this.a(s, NBTTagByteArray.a, classcastexception));
++        }
++
++        return new NBTTagByteArray(new byte[0]);
++    }
++    // Paper end
++
+     public int[] getIntArray(String s) {
+         try {
+             if (this.hasKeyOfType(s, 11)) {
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
 index 996c8326387b5a7fe62db6a76e000144565cb85b..1fcb1bdab28f79320aef50a9bbb2fbee8c7a2964 100644
 --- a/src/main/java/net/minecraft/server/NibbleArray.java
