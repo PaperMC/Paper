@@ -22,6 +22,54 @@ view distance holds on you.
 Chunks in front of the player have higher priority, to help with
 fast traveling players keep up with their movement.
 
+diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
++++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
+@@ -0,0 +0,0 @@ import com.destroystokyo.paper.io.PaperFileIOThread;
+ import com.destroystokyo.paper.io.IOUtil;
+ import com.destroystokyo.paper.io.PrioritizedTaskQueue;
+ import com.destroystokyo.paper.io.QueueExecutorThread;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkRegionLoader;
++import net.minecraft.server.ChunkStatus;
+ import net.minecraft.server.IAsyncTaskHandler;
+ import net.minecraft.server.IChunkAccess;
+ import net.minecraft.server.MinecraftServer;
+@@ -0,0 +0,0 @@ public final class ChunkTaskManager {
+             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
+             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + PlayerChunk.getChunkStatus(chunkHolder.getTicketLevel()));
+             PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Priority - " + chunkHolder.getCurrentPriority());
++            synchronized (chunkHolder.neighborPriorities) {
++                if (!chunkHolder.neighborPriorities.isEmpty()) {
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Neighbors Requested Priority: ");
++                    for (Long2ObjectMap.Entry<Integer> entry : chunkHolder.neighborPriorities.long2ObjectEntrySet()) {
++                        ChunkCoordIntPair r = new ChunkCoordIntPair(entry.getLongKey());
++                        PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + " (" + r.x + "," + r.z + "): " + entry.getValue());
++                    }
++                }
++            }
++
++            synchronized (chunkHolder.neighbors) {
++                if (!chunkHolder.neighbors.isEmpty()) {
++                    PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Neighbors: ");
++                    for (PlayerChunk neighbor : chunkHolder.neighbors.keySet()) {
++                        ChunkStatus status = neighbor.getChunkHolderStatus();
++                        if (status != null && status.isAtLeastStatus(PlayerChunk.getChunkStatus(neighbor.getTicketLevel()))) {
++                            continue;
++                        }
++                        int nx = neighbor.location.x;
++                        int nz = neighbor.location.z;
++                        PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "  " + nx + "," + nz + " in " + chunkHolder.getWorld().getWorld().getName() + ":");
++                        dumpChunkInfo(neighbor, nx, nz, indent + 1);
++                    }
++                }
++            }
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
@@ -31,7 +79,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          ticket1.a(this.currentTick);
 -        if (ticket.b() < j) {
-+        if (ticket.b() < j || (ticket.getTicketType() == TicketType.PRIORITY && ((Ticket<Integer>) ticket).getObjectReason() < j)) { // Paper - check priority tickets too
++        if (ticket.b() < j || (ticket.getTicketType() == TicketType.PRIORITY && (30 - ticket.priority) < j)) { // Paper - check priority tickets too
              this.e.b(i, ticket.b(), true);
          }
  
@@ -45,8 +93,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    public boolean markHighPriority(ChunkCoordIntPair coords, int priority) {
 +        priority = Math.min(30, Math.max(1, priority));
-+        Ticket<Integer> ticket = new Ticket<Integer>(TicketType.PRIORITY, 31, priority);
-+        return this.addTicket(coords.pair(), ticket);
++        long pair = coords.pair();
++        int currentPriority = getChunkPriority(coords);
++        if (currentPriority > priority) {
++            return false;
++        }
++        Ticket<Integer> ticket = new Ticket<Integer>(TicketType.PRIORITY, 31, 0);
++        ticket.priority = priority;
++        this.removeTicket(pair, ticket);
++        return this.addTicket(pair, ticket);
 +    }
 +    public int getChunkPriority(ChunkCoordIntPair coords) {
 +        int priority = 0;
@@ -55,30 +110,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return priority;
 +        }
 +        for (Ticket<?> ticket : tickets) {
-+            if (ticket.getTicketType() != TicketType.PRIORITY) {
-+                continue;
-+            }
-+            //noinspection unchecked
-+            Ticket<Integer> prioTicket = (Ticket<Integer>) ticket;
-+            if (prioTicket.getObjectReason() > priority) {
-+                priority = prioTicket.getObjectReason();
++            if (ticket.getTicketType() == TicketType.PRIORITY && ticket.priority > 0) {
++                return ticket.priority;
 +            }
 +        }
 +        return priority;
 +    }
-+    public void clearPriorityTickets(ChunkCoordIntPair coords) {
++
++    public void refreshUrgentTicket(ChunkCoordIntPair coords) {
 +        ArraySetSorted<Ticket<?>> tickets = this.tickets.get(coords.pair());
-+        java.util.List<Ticket<?>> toRemove = new java.util.ArrayList<>();
-+        if (tickets == null) return;
++        if (tickets == null) {
++            markUrgent(coords);
++            return;
++        }
 +        for (Ticket<?> ticket : tickets) {
 +            if (ticket.getTicketType() == TicketType.PRIORITY) {
-+                toRemove.add(ticket);
++                ticket.setCurrentTick(this.currentTick);
++                return;
 +            }
 +        }
-+        for (Ticket<?> ticket : toRemove) {
-+            this.removeTicket(coords.pair(), ticket);
-+        }
 +
++    }
++    public void clearPriorityTickets(ChunkCoordIntPair coords) {
++        this.removeTicket(coords.pair(), new Ticket<Integer>(TicketType.PRIORITY, 31, 0));
 +    }
 +    // Paper end
      public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
@@ -124,8 +178,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                  // Paper end
-@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-             this.serverThreadQueue.awaitTasks(completablefuture::isDone);
+                 com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.world, x, z); // Paper - sync load info
+                 this.world.timings.syncChunkLoad.startTiming(); // Paper
+-            this.serverThreadQueue.awaitTasks(completablefuture::isDone);
++                // Paper start - keep priority ticket refreshed
++                this.serverThreadQueue.awaitTasks(() -> {
++                    this.chunkMapDistance.refreshUrgentTicket(pair);
++                    return completablefuture.isDone();
++                });
++                // PAper end
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
                  this.world.timings.syncChunkLoad.stopTiming(); // Paper
 +                this.clearPriorityTickets(pair); // Paper
@@ -189,18 +250,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int oldTicketLevel;
      private int ticketLevel;
 -    private int n;
-+    private int n; public final int getCurrentPriority() { return n; } // Paper - OBFHELPER
-     final ChunkCoordIntPair location; // Paper - private -> package
+-    final ChunkCoordIntPair location; // Paper - private -> package
++    volatile int n; public final int getCurrentPriority() { return n; } // Paper - OBFHELPER - make volatile since this is concurrently accessed
++    public final ChunkCoordIntPair location; // Paper - private -> public
      private final short[] dirtyBlocks;
      private int dirtyCount;
+     private int r;
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+     private boolean hasBeenLoaded;
+ 
+     private final PlayerChunkMap chunkMap; // Paper
++    public WorldServer getWorld() { return chunkMap.world; } // Paper
+ 
+     long lastAutoSaveTime; // Paper - incremental autosave
+     long inactiveTimeStart; // Paper - incremental autosave
 @@ -0,0 +0,0 @@ public class PlayerChunk {
          return null;
      }
      // Paper end - no-tick view distance
 +    // Paper start - Chunk gen/load priority system
 +    volatile int neighborPriority = -1;
-+    final java.util.concurrent.ConcurrentHashMap<PlayerChunk, Integer> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
-+    final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++    public final java.util.concurrent.ConcurrentHashMap<PlayerChunk, ChunkStatus> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
++    public final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
 +
 +    public int getPreferredPriority() {
 +        int priority = neighborPriority; // if we have a neighbor priority, use it
@@ -221,10 +292,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return Math.max(1, Math.min(PlayerChunkMap.GOLDEN_TICKET, priority));
 +    }
 +    public void onNeighborRequest(PlayerChunk neighbor, ChunkStatus status) {
-+        int currentPriority = getCurrentPriority();
-+        if (!neighborPriorities.containsKey(neighbor.location.pair()) && (neighbor.neighborPriority == -1 || neighbor.neighborPriority > currentPriority)) {
-+            this.neighbors.put(neighbor, currentPriority);
-+            neighbor.setNeighborPriority(this, Math.max(1, currentPriority));
++        int priority = getCurrentPriority() + 1;
++        if (!neighborPriorities.containsKey(neighbor.location.pair()) && (neighbor.neighborPriority == -1 || neighbor.neighborPriority > priority)) {
++            this.neighbors.put(neighbor, status);
++            neighbor.setNeighborPriority(this, Math.max(1, priority));
 +        }
 +    }
 +
@@ -305,19 +376,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    private void setPriority(int i) { d(i); } // Paper - OBFHELPER
      private void d(int i) {
-+        if (i == n) return; // Paper
          this.n = i;
-+        // Paper start
-+        this.neighbors.keySet().forEach(neighbor -> {
-+            if (neighbor.getCurrentPriority() > i) {
-+                neighbor.setNeighborPriority(this, i);
-+                this.w.changePriority(neighbor.location, neighbor::getCurrentPriority, neighbor.getCurrentPriority(), neighbor::setPriority);
-+            }
-+        });
-+        // Paper end
      }
- 
-     public void a(int i) {
 @@ -0,0 +0,0 @@ public class PlayerChunk {
                      Chunk fullChunk = either.left().get();
                      PlayerChunk.this.isFullChunkReady = true;
@@ -327,11 +387,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  }
 @@ -0,0 +0,0 @@ public class PlayerChunk {
+             this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
              this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          }
- 
+-
 -        this.w.a(this.location, this::k, this.ticketLevel, this::d);
-+        this.w.a(this.location, this::k, getPreferredPriority(), this::d); // Paper - preferred priority
++        // Paper start - raise IO/load priority if priority changes, use our preferred priority
++        int priority = getPreferredPriority();
++        if (getCurrentPriority() > priority) {
++            int ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY;
++            if (priority <= 10) {
++                ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY;
++            } else if (priority <= 20) {
++                ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
++            }
++            chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
++        }
++        this.w.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
++        this.neighbors.forEach((neighbor, neighborDesired) -> {
++            ChunkStatus neighborCurrent = neighbor.getChunkHolderStatus();
++            if (neighborCurrent == null || !neighborCurrent.isAtLeastStatus(neighborDesired)) {
++                if (neighbor.getCurrentPriority() > priority + 1 && neighbor.neighborPriority > priority + 1) {
++                    neighbor.setNeighborPriority(this, priority + 1);
++                    // Pending chunk update will run this same code here for the neighbor to update their priority
++                    // And since we are in the poll loop when this method runs, it should happen immediately after this.
++                    chunkMap.chunkDistanceManager.pendingChunkUpdates.add(neighbor);
++                }
++            }
++        });
++        // Paper end
          this.oldTicketLevel = this.ticketLevel;
          // CraftBukkit start
          // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
@@ -489,6 +573,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
      }
  
+diff --git a/src/main/java/net/minecraft/server/Ticket.java b/src/main/java/net/minecraft/server/Ticket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Ticket.java
++++ b/src/main/java/net/minecraft/server/Ticket.java
+@@ -0,0 +0,0 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+     private final int b;
+     public final T identifier; public final T getObjectReason() { return this.identifier; } // Paper - OBFHELPER
+     private long d; public final long getCreationTick() { return this.d; } // Paper - OBFHELPER
++    public int priority = 0; // Paper
+ 
+     protected Ticket(TicketType<T> tickettype, int i, T t0) {
+         this.a = tickettype;
+@@ -0,0 +0,0 @@ public final class Ticket<T> implements Comparable<Ticket<?>> {
+         return this.b;
+     }
+ 
++    protected final void setCurrentTick(long i) { a(i); } // Paper - OBFHELPER
+     protected void a(long i) {
+         this.d = i;
+     }
 diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TicketType.java

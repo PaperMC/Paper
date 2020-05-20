@@ -13,7 +13,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
      private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
 -    private final Set<PlayerChunk> pendingChunkUpdates = Sets.newHashSet();
-+    private final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<>(); // PAIL pendingChunkUpdates // Paper - use a queue
++    // Paper start use a queue, but still keep unique requirement
++    public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
++        @Override
++        public boolean add(PlayerChunk o) {
++            if (o.isUpdateQueued) return true;
++            o.isUpdateQueued = true;
++            return super.add(o);
++        }
++    };
++    // Paper end
      private final ChunkTaskQueueSorter i;
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> j;
      private final Mailbox<ChunkTaskQueueSorter.b> k;
@@ -43,9 +52,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            // CraftBukkit end
 -
 +            while(!this.pendingChunkUpdates.isEmpty()) {
-+                this.pendingChunkUpdates.remove().a(playerchunkmap);
++                PlayerChunk remove = this.pendingChunkUpdates.remove();
++                remove.isUpdateQueued = false;
++                remove.a(playerchunkmap);
 +            }
 +            // Paper end
              return true;
          } else {
              if (!this.l.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+     private static final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> UNLOADED_CHUNK_FUTURE = CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK);
+     private static final List<ChunkStatus> CHUNK_STATUSES = ChunkStatus.a();
+     private static final PlayerChunk.State[] CHUNK_STATES = PlayerChunk.State.values();
++    boolean isUpdateQueued = false; // Paper
+     private final AtomicReferenceArray<CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>>> statusFutures;
+     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> fullChunkFuture; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
+     private volatile CompletableFuture<Either<Chunk, PlayerChunk.Failure>> tickingFuture; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage

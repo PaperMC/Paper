@@ -160,6 +160,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static Timing getTickList(WorldServer worldserver, String timingsType) {
+diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
++++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -0,0 +0,0 @@
+ package com.destroystokyo.paper;
+ 
++import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
+ import com.google.common.base.Functions;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.Lists;
+@@ -0,0 +0,0 @@ public class PaperCommand extends Command {
+     public PaperCommand(String name) {
+         super(name);
+         this.description = "Paper related commands";
+-        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
++        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo]";
+         this.setPermission("bukkit.command.paper");
+     }
+ 
+     @Override
+     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
+         if (args.length <= 1)
+-            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
++            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo");
+ 
+         switch (args[0].toLowerCase(Locale.ENGLISH))
+         {
+@@ -0,0 +0,0 @@ public class PaperCommand extends Command {
+             case "debug":
+                 doDebug(sender, args);
+                 break;
++            case "dumpwaiting":
++                ChunkTaskManager.dumpAllChunkLoadInfo();
++                break;
+             case "chunkinfo":
+                 doChunkInfo(sender, args);
+                 break;
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
@@ -1824,7 +1862,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.IChunkAccess;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NBTTagCompound;
++import net.minecraft.server.PlayerChunk;
 +import net.minecraft.server.WorldServer;
++import org.apache.commons.lang.StringUtils;
 +import org.apache.logging.log4j.Level;
 +import org.bukkit.Bukkit;
 +import org.spigotmc.AsyncCatcher;
@@ -1912,17 +1952,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
-+                if (chunkHolder == null) {
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - null");
-+                } else {
-+                    IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
-+                    net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder - non-null");
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
-+                    PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
-+                }
-+
++                dumpChunkInfo(chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
++        }
++    }
++
++    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z) {
++        dumpChunkInfo(chunkHolder, x, z, 0);
++    }
++    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z, int indent) {
++        String indentStr = StringUtils.repeat("  ", indent);
++        if (chunkHolder == null) {
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - null for (" + x +"," + z +")");
++        } else {
++            IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
++            net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - non-null");
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + PlayerChunk.getChunkStatus(chunkHolder.getTicketLevel()));
++            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder Status - " + ((holderStatus == null) ? "null" : holderStatus.toString()));
 +        }
 +    }
 +
