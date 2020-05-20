@@ -79,10 +79,10 @@ index 750fb07756f7e40b21f8ab0925f2e842aae50f7b..8c1f3290d23795b58a30274c9437dc7d
  
      public final boolean areNeighboursLoaded(final int radius) {
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index b98abed74f214932b4a226f12645f987191b0097..716d4eab382244ee9bc4855bf0f026e65ec057d6 100644
+index 353b186060b2c0417a49ab3865ea5972c859b016..586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-@@ -252,7 +252,7 @@ public abstract class ChunkMapDistance {
+@@ -263,7 +263,7 @@ public abstract class ChunkMapDistance {
          return s;
      }
  
@@ -91,7 +91,7 @@ index b98abed74f214932b4a226f12645f987191b0097..716d4eab382244ee9bc4855bf0f026e6
          this.g.a(i);
      }
  
-@@ -371,7 +371,7 @@ public abstract class ChunkMapDistance {
+@@ -382,7 +382,7 @@ public abstract class ChunkMapDistance {
  
          private void a(long i, int j, boolean flag, boolean flag1) {
              if (flag != flag1) {
@@ -114,20 +114,10 @@ index 0560eca744cb2032bb6a3faf5aeafa95a7a6815e..07a6fc3d88e7d44bfab7f3d6a0eef7dc
          super((World) worldserver, gameprofile);
          playerinteractmanager.player = this;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index c4aad20a2952cc34e334ba665a6e0910d5609497..845e5d2a8ee025ac61cf916de04e0797e32db568 100644
+index 6980d19f36c18cdbed6679dbdf04afd694e078b6..03fb688fe4bdc19b4bc36b1f1d5b40c61e7bef9b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -47,14 +47,28 @@ public class PlayerChunk {
-     // cached here to avoid a map lookup
-     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersInMobSpawnRange;
-     com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersInChunkTickRange;
-+    com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersInTickingRange;
- 
-     void updateRanges() {
-         long key = net.minecraft.server.MCUtil.getCoordinateKey(this.location);
-         this.playersInMobSpawnRange = this.chunkMap.playerMobSpawnMap.getObjectsInRange(key);
-         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
-+        this.playersInTickingRange = this.chunkMap.playerViewDistanceTickMap.getObjectsInRange(key);
+@@ -56,6 +56,18 @@ public class PlayerChunk {
      }
      // Paper end - optimise isOutsideOfRange
  
@@ -146,7 +136,7 @@ index c4aad20a2952cc34e334ba665a6e0910d5609497..845e5d2a8ee025ac61cf916de04e0797
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
-@@ -210,7 +224,7 @@ public class PlayerChunk {
+@@ -211,7 +223,7 @@ public class PlayerChunk {
      }
  
      public void a(int i, int j, int k) {
@@ -155,7 +145,7 @@ index c4aad20a2952cc34e334ba665a6e0910d5609497..845e5d2a8ee025ac61cf916de04e0797
  
          if (chunk != null) {
              this.r |= 1 << (j >> 4);
-@@ -230,7 +244,7 @@ public class PlayerChunk {
+@@ -231,7 +243,7 @@ public class PlayerChunk {
      }
  
      public void a(EnumSkyBlock enumskyblock, int i) {
@@ -164,7 +154,7 @@ index c4aad20a2952cc34e334ba665a6e0910d5609497..845e5d2a8ee025ac61cf916de04e0797
  
          if (chunk != null) {
              chunk.setNeedsSaving(true);
-@@ -315,9 +329,48 @@ public class PlayerChunk {
+@@ -316,9 +328,48 @@ public class PlayerChunk {
      }
  
      private void a(Packet<?> packet, boolean flag) {

@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize isOutsideRange to use distance maps
 Use a distance map to find the players in range quickly
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987191b0097 100644
+index 4e0ea454f00c69f03023f01c1d4bd2eda5553a02..353b186060b2c0417a49ab3865ea5972c859b016 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -31,7 +31,7 @@ public abstract class ChunkMapDistance {
@@ -16,9 +16,9 @@ index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987
 -    private final ChunkMapDistance.b f = new ChunkMapDistance.b(8);
 +    public static final int MOB_SPAWN_RANGE = 8; //private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
      private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
-     private final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<>(); // PAIL pendingChunkUpdates // Paper - use a queue
-     private final ChunkTaskQueueSorter i;
-@@ -41,6 +41,8 @@ public abstract class ChunkMapDistance {
+     // Paper start use a queue, but still keep unique requirement
+     public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
+@@ -50,6 +50,8 @@ public abstract class ChunkMapDistance {
      private final Executor m;
      private long currentTick;
  
@@ -27,7 +27,7 @@ index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987
      protected ChunkMapDistance(Executor executor, Executor executor1) {
          executor1.getClass();
          Mailbox<Runnable> mailbox = Mailbox.a("player ticket throttler", executor1::execute);
-@@ -85,7 +87,7 @@ public abstract class ChunkMapDistance {
+@@ -94,7 +96,7 @@ public abstract class ChunkMapDistance {
      protected abstract PlayerChunk a(long i, int j, @Nullable PlayerChunk playerchunk, int k);
  
      public boolean a(PlayerChunkMap playerchunkmap) {
@@ -36,7 +36,7 @@ index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987
          this.g.a();
          int i = Integer.MAX_VALUE - this.e.a(Integer.MAX_VALUE);
          boolean flag = i != 0;
-@@ -219,7 +221,7 @@ public abstract class ChunkMapDistance {
+@@ -230,7 +232,7 @@ public abstract class ChunkMapDistance {
          ((ObjectSet) this.c.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(entityplayer);
@@ -45,7 +45,7 @@ index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987
          this.g.b(i, 0, true);
      }
  
-@@ -231,7 +233,7 @@ public abstract class ChunkMapDistance {
+@@ -242,7 +244,7 @@ public abstract class ChunkMapDistance {
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
              this.c.remove(i);
@@ -54,7 +54,7 @@ index 534bb87caf88f0f1bf7988494274b762ab7210e1..b98abed74f214932b4a226f12645f987
              this.g.b(i, Integer.MAX_VALUE, false);
          }
  
-@@ -255,13 +257,17 @@ public abstract class ChunkMapDistance {
+@@ -266,13 +268,17 @@ public abstract class ChunkMapDistance {
      }
  
      public int b() {
@@ -161,10 +161,10 @@ index 79c2187b7383336e7574709e6d4ad805e557976f..0560eca744cb2032bb6a3faf5aeafa95
          super((World) worldserver, gameprofile);
          playerinteractmanager.player = this;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 3d610e41969768da0d2848fa1ae195035ccfd660..c4aad20a2952cc34e334ba665a6e0910d5609497 100644
+index afc92dd031cdaf725b85c0b301d5a5a21da54720..6980d19f36c18cdbed6679dbdf04afd694e078b6 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -43,6 +43,18 @@ public class PlayerChunk {
+@@ -44,6 +44,18 @@ public class PlayerChunk {
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
  
@@ -183,7 +183,7 @@ index 3d610e41969768da0d2848fa1ae195035ccfd660..c4aad20a2952cc34e334ba665a6e0910
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
-@@ -59,6 +71,7 @@ public class PlayerChunk {
+@@ -60,6 +72,7 @@ public class PlayerChunk {
          this.n = this.oldTicketLevel;
          this.a(i);
          this.chunkMap = (PlayerChunkMap)playerchunk_d; // Paper
