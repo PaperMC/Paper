@@ -13,10 +13,10 @@ This should result in siginificant memory use reduction and improved GC behavior
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java b/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e0ad725b2e63ffd329fc4725d15290cbf494b790
+index 0000000000000000000000000000000000000000..f6ff4d8132a95895680f5bc81f8f873e78f0bbdb
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/map/Long2ObjectLinkedOpenHashMapFastCopy.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,39 @@
 +package com.destroystokyo.paper.util.map;
 +
 +import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
@@ -24,16 +24,16 @@ index 0000000000000000000000000000000000000000..e0ad725b2e63ffd329fc4725d15290cb
 +public class Long2ObjectLinkedOpenHashMapFastCopy<V> extends Long2ObjectLinkedOpenHashMap<V> {
 +
 +    public void copyFrom(Long2ObjectLinkedOpenHashMapFastCopy<V> map) {
-+        if (key.length < map.key.length) {
++        if (key.length != map.key.length) {
 +            key = null;
 +            key = new long[map.key.length];
 +        }
-+        if (value.length < map.value.length) {
++        if (value.length != map.value.length) {
 +            value = null;
 +            //noinspection unchecked
 +            value = (V[]) new Object[map.value.length];
 +        }
-+        if (link.length < map.link.length) {
++        if (link.length != map.link.length) {
 +            link = null;
 +            link = new long[map.link.length];
 +        }
@@ -47,6 +47,13 @@ index 0000000000000000000000000000000000000000..e0ad725b2e63ffd329fc4725d15290cb
 +        this.n = map.n;
 +        this.maxFill = map.maxFill;
 +        this.containsNullKey = map.containsNullKey;
++    }
++
++    @Override
++    public Long2ObjectLinkedOpenHashMapFastCopy<V> clone() {
++        Long2ObjectLinkedOpenHashMapFastCopy<V> clone = (Long2ObjectLinkedOpenHashMapFastCopy<V>) super.clone();
++        clone.copyFrom(this);
++        return clone;
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -76,23 +83,46 @@ index 0e01e5c2c008823355e370d0c9ced79130e5fb92..d129c7f54d9f65fff6f512d8ff5f1c38
              List<PlayerChunk> allChunks = new ArrayList<>(visibleChunks.values());
              List<EntityPlayer> players = world.players;
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349ef28dd7e 100644
+index 4beae504c875767ff00e26461fe7240498750e27..75906f794205f5b7fe894163e1b13bfd85c2b419 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -55,8 +55,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -55,8 +55,33 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      private static final Logger LOGGER = LogManager.getLogger();
      public static final int GOLDEN_TICKET = 33 + ChunkStatus.b();
 -    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new Long2ObjectLinkedOpenHashMap();
 -    public volatile Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks;
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> updatingChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - faster copying
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> visibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - faster copying
-+    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> pendingVisibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - this is used if the visible chunks is updated while iterating only
-+    public transient Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunksClone; // Paper - used for async access of visible chunks, clone and cache only when needed
++    // Paper start - faster copying
++    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> updatingChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<>(); // Paper - faster copying
++    public final Long2ObjectLinkedOpenHashMap<PlayerChunk> visibleChunks = new ProtectedVisibleChunksMap(); // Paper - faster copying
++
++    private class ProtectedVisibleChunksMap extends com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> {
++        @Override
++        public PlayerChunk put(long k, PlayerChunk playerChunk) {
++            throw new UnsupportedOperationException("Updating visible Chunks");
++        }
++
++        @Override
++        public PlayerChunk remove(long k) {
++            throw new UnsupportedOperationException("Removing visible Chunks");
++        }
++
++        @Override
++        public PlayerChunk get(long k) {
++            return PlayerChunkMap.this.getVisibleChunk(k);
++        }
++
++        public PlayerChunk safeGet(long k) {
++            return super.get(k);
++        }
++    }
++    // Paper end
++    public final com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> pendingVisibleChunks = new com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk>(); // Paper - this is used if the visible chunks is updated while iterating only
++    public transient com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk> visibleChunksClone; // Paper - used for async access of visible chunks, clone and cache only when needed
      private final Long2ObjectLinkedOpenHashMap<PlayerChunk> pendingUnload;
      final LongSet loadedChunks; // Paper - private -> package
      public final WorldServer world;
-@@ -130,7 +132,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -130,7 +155,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      public PlayerChunkMap(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator<?> chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i) {
          super(new File(worldserver.getWorldProvider().getDimensionManager().a(file), "region"), datafixer);
@@ -101,7 +131,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
          this.pendingUnload = new Long2ObjectLinkedOpenHashMap();
          this.loadedChunks = new LongOpenHashSet();
          this.unloadQueue = new LongOpenHashSet();
-@@ -221,9 +223,52 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -221,9 +246,52 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return (PlayerChunk) this.updatingChunks.get(i);
      }
  
@@ -120,7 +150,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
 +        } finally {
 +            this.isIterating = prev;
 +            if (!this.isIterating && this.hasPendingVisibleUpdate) {
-+                this.visibleChunks.copyFrom(this.pendingVisibleChunks);
++                ((ProtectedVisibleChunksMap)this.visibleChunks).copyFrom(this.pendingVisibleChunks);
 +                this.pendingVisibleChunks.clear();
 +                this.hasPendingVisibleUpdate = false;
 +            }
@@ -133,7 +163,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
 +            synchronized (this.visibleChunks) {
 +                if (DEBUG_ASYNC_VISIBLE_CHUNKS) new Throwable("Async getVisibleChunks").printStackTrace();
 +                if (this.visibleChunksClone == null) {
-+                    this.visibleChunksClone = this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.clone() : this.visibleChunks.clone();
++                    this.visibleChunksClone = this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.clone() : ((ProtectedVisibleChunksMap)this.visibleChunks).clone();
 +                }
 +                return this.visibleChunksClone;
 +            }
@@ -147,15 +177,15 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
 +        // Paper start - mt safe get
 +        if (Thread.currentThread() != this.world.serverThread) {
 +            synchronized (this.visibleChunks) {
-+                return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : this.visibleChunks.get(i));
++                return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : ((ProtectedVisibleChunksMap)this.visibleChunks).safeGet(i));
 +            }
 +        }
-+        return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : this.visibleChunks.get(i));
++        return (PlayerChunk) (this.hasPendingVisibleUpdate ? this.pendingVisibleChunks.get(i) : ((ProtectedVisibleChunksMap)this.visibleChunks).safeGet(i));
 +        // Paper end
      }
  
      protected IntSupplier c(long i) {
-@@ -411,8 +456,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -411,8 +479,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      // Paper end
  
      protected void save(boolean flag) {
@@ -166,7 +196,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
              MutableBoolean mutableboolean = new MutableBoolean();
  
              do {
-@@ -440,7 +486,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -440,7 +509,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  //            this.i(); // Paper - nuke IOWorker
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.w.getName());
          } else {
@@ -175,7 +205,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
                  IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkSave().getNow(null); // CraftBukkit - decompile error
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
-@@ -610,7 +656,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -610,7 +679,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          if (!this.updatingChunksModified) {
              return false;
          } else {
@@ -184,11 +214,11 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
 +            synchronized (this.visibleChunks) {
 +                if (isIterating) {
 +                    hasPendingVisibleUpdate = true;
-+                    this.pendingVisibleChunks.copyFrom(this.updatingChunks);
++                    this.pendingVisibleChunks.copyFrom((com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk>)this.updatingChunks);
 +                } else {
 +                    hasPendingVisibleUpdate = false;
 +                    this.pendingVisibleChunks.clear();
-+                    this.visibleChunks.copyFrom(this.updatingChunks);
++                    ((ProtectedVisibleChunksMap)this.visibleChunks).copyFrom((com.destroystokyo.paper.util.map.Long2ObjectLinkedOpenHashMapFastCopy<PlayerChunk>)this.updatingChunks);
 +                    this.visibleChunksClone = null;
 +                }
 +            }
@@ -197,7 +227,7 @@ index 4beae504c875767ff00e26461fe7240498750e27..00f26ae23da65453073fc06ffec8a349
              this.updatingChunksModified = false;
              return true;
          }
-@@ -1076,12 +1135,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1076,12 +1158,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      protected Iterable<PlayerChunk> f() {
