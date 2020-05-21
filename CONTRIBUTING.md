@@ -69,7 +69,7 @@ The PaperMC build tool provides a handy command to automatically do this type of
 4. Type `./paper edit continue` to finish and rebuild patches.
 5. PR your modifications back to this project.
 
-#### Manual method
+#### Manual method - Stashing
 In case you need something more complex or want more control, this step-by-step instruction does
 exactly what the above slightly automated system does.
 
@@ -89,7 +89,7 @@ exactly what the above slightly automated system does.
    - This will modify the appropriate patches based on your commits.
 9. PR your modifications back to this project.
 
-### Method 2 (sometimes easier)
+### Method 2 (sometimes easier) - Manually moving commits
 If you are simply editing a more recent commit or your change is small, simply making the change at HEAD and then moving the commit after you have tested it may be easier.
 
 This method has the benefit of being able to compile to test your change without messing with your API HEAD.
@@ -102,6 +102,15 @@ This method has the benefit of being able to compile to test your change without
    - This will modify the appropriate patches based on your commits
 6. PR your modifications to github
 
+### Method 3 - Fixup Commits
+This is the automated way of doing Method 2. Basically, you make your changes at HEAD, but use fixup commits to modify earlier patches and git will rebase the commits to the right place and squash them.
+
+1. Make your change while at HEAD
+2. Make a fixup commit. `git --fixup <hashOfPatchToFix>`. You can get the hash by logging at `git log` or `git blame`, your IDE can assist you too.
+3. Rebase with autosquash: `git rebase --autosquash -i upstream/upstream`. It will move your fixup commit to the right place.
+5. Type `./paper rebuild` in the main directory
+   - This will modify the appropriate patches based on your commits
+6. PR your modifications to github
 
 ## PR Policy
 We'll accept changes that make sense. You should be able to justify their existence, along with any maintenance costs that come with them. Remember, these changes will affect everyone who runs Paper, not just you and your server.
