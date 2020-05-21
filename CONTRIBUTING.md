@@ -106,7 +106,8 @@ This method has the benefit of being able to compile to test your change without
 This is the automated way of doing Method 2. Basically, you make your changes at HEAD, but use fixup commits to modify earlier patches and git will rebase the commits to the right place and squash them.
 
 1. Make your change while at HEAD
-2. Make a fixup commit. `git --fixup <hashOfPatchToFix>`. You can get the hash by looking at `git log` or `git blame`, your IDE can assist you too.
+2. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`. You can get the hash by looking at `git log` or `git blame`, your IDE can assist you too.  
+Alternatively, if you only know the name of the patch, you can do `git commit -a --fixup "Subject of Patch name"`
 3. Rebase with autosquash: `git rebase --autosquash -i upstream/upstream`. It will move your fixup commit to the right place.
 5. Type `./paper rebuild` in the main directory
    - This will modify the appropriate patches based on your commits
