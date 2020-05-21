@@ -20,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // Pool safe get and clean
 +                    NBTTagByteArray blockLightArray = nbttagcompound2.getByteArrayTag("BlockLight");
 +                    // NibbleArray will copy the data in the ctor
-+                    NibbleArray blockLight = new NibbleArray(blockLightArray.getBytesPoolSafe());
++                    NibbleArray blockLight = new NibbleArray().markPoolSafe().cloneAndSet(blockLightArray.getBytesPoolSafe()); // This is going to light engine which handles releasing
 +                    blockLightArray.cleanPooledBytes();
                      // Note: We move the block light nibble array creation here for perf & in case the compound is modified
                      tasksToExecuteOnMain.add(() -> {
@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // Pool safe get and clean
 +                    NBTTagByteArray skyLightArray = nbttagcompound2.getByteArrayTag("SkyLight");
 +                    // NibbleArray will copy the data in the ctor
-+                    NibbleArray skyLight = new NibbleArray(skyLightArray.getBytesPoolSafe());
++                    NibbleArray skyLight = new NibbleArray().markPoolSafe().cloneAndSet(skyLightArray.getBytesPoolSafe()); // This is going to light engine which handles releasing
 +                    skyLightArray.cleanPooledBytes();
                      // Note: We move the block light nibble array creation here for perf & in case the compound is modified
                      tasksToExecuteOnMain.add(() -> {
@@ -61,6 +61,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/LightEngineStorage.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorage.java
 @@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+     protected NibbleArray j(long i) {
+         NibbleArray nibblearray = (NibbleArray) this.i.get(i);
+ 
+-        return nibblearray != null ? nibblearray : new NibbleArray();
++        return nibblearray != null ? nibblearray : new NibbleArray().markPoolSafe(); // Paper
+     }
+ 
+     protected void a(LightEngineLayer<?, ?> lightenginelayer, long i) {
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
          if (nibblearray != null) {
              this.i.put(i, nibblearray);
          } else {
@@ -69,6 +78,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
++++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+ 
+     public void a(long i) {
+         if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+-        this.data.queueUpdate(i, ((NibbleArray) this.data.getUpdating(i)).b()); // Paper - avoid copying light data
++        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(this.data.getUpdating(i).getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
+         this.c();
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageSky.java b/src/main/java/net/minecraft/server/LightEngineStorageSky.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageSky.java
@@ -78,10 +100,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
  
 -                return new NibbleArray((new NibbleArrayFlat(nibblearray1, 0)).asBytes());
-+                return new NibbleArray((new NibbleArrayFlat(nibblearray1, 0)).asBytes(), true); // Paper - mark buffer as safe
++                return new NibbleArray().markPoolSafe(new NibbleArrayFlat(nibblearray1, 0).asBytes()); // Paper - mark pool use as safe (no auto cleaner)
              } else {
-                 return new NibbleArray();
+-                return new NibbleArray();
++                return new NibbleArray().markPoolSafe(); // Paper - mark pool use as safe (no auto cleaner)
              }
+         }
+     }
 diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
@@ -185,7 +210,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static byte[] EMPTY_NIBBLE = new byte[2048];
 +    private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
 +    private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
-+    public static final PooledObjects<byte[]> BYTE_2048 = new PooledObjects<>(() -> new byte[2048], maxPoolSize, 8);
++    public static final PooledObjects<byte[]> BYTE_2048 = new PooledObjects<>(() -> new byte[2048], maxPoolSize);
 +    public static void releaseBytes(byte[] bytes) {
 +        if (bytes != null && bytes != EMPTY_NIBBLE && bytes.length == 2048) {
 +            System.arraycopy(EMPTY_NIBBLE, 0, bytes, 0, 2048);
@@ -193,6 +218,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
++    public NibbleArray markPoolSafe(byte[] bytes) {
++        if (bytes != EMPTY_NIBBLE) this.a = bytes;
++        return markPoolSafe();
++    }
++    public NibbleArray markPoolSafe() {
++        poolSafe = true;
++        return this;
++    }
 +    public byte[] getIfSet() {
 +        return this.a != null ? this.a : EMPTY_NIBBLE;
 +    }
@@ -204,8 +237,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        System.arraycopy(getIfSet(), 0, ret, 0, 2048);
 +        return ret;
 +    }
++
++    public NibbleArray cloneAndSet(byte[] bytes) {
++        if (bytes != null && bytes != EMPTY_NIBBLE) {
++            this.a = BYTE_2048.acquire();
++            System.arraycopy(bytes, 0, this.a, 0, 2048);
++        }
++        return this;
++    }
++    boolean poolSafe = false;
 +    public java.lang.Runnable cleaner;
-+    private void registerCleaner() { cleaner = MCUtil.registerCleaner(this, this.a, NibbleArray::releaseBytes); }
++    private void registerCleaner() {
++        if (!poolSafe) {
++            cleaner = MCUtil.registerCleaner(this, this.a, NibbleArray::releaseBytes);
++        } else {
++            cleaner = MCUtil.once(() -> NibbleArray.releaseBytes(this.a));
++        }
++    }
 +    // Paper end
 +    @Nullable protected byte[] a;
 +

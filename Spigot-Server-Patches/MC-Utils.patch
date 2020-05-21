@@ -2106,21 +2106,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.apache.commons.lang3.mutable.MutableInt;
 +
 +import java.util.ArrayDeque;
-+import java.util.concurrent.ThreadLocalRandom;
-+import java.util.concurrent.atomic.AtomicLong;
-+import java.util.concurrent.locks.ReentrantLock;
 +import java.util.function.Consumer;
++import java.util.function.Supplier;
 +
-+/**
-+ * Object pooling with thread safe, low contention design. Pooled objects have no additional object overhead
-+ * due to usage of ArrayDeque per insertion/removal unless a resizing is needed in the buckets.
-+ * Supports up to bucket size (default 8) threads concurrently accessing if all buckets have a value.
-+ * Releasing may conditionally have contention if multiple buckets have same current size, but randomization will be used.
-+ *
-+ * Original interface API by Spottedleaf
-+ * Implementation by Aikar <aikar@aikar.co>
-+ * @license MIT
-+ */
 +public final class PooledObjects<E> {
 +
 +    /**
@@ -2144,43 +2132,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public static final PooledObjects<MutableInt> POOLED_MUTABLE_INTEGERS = new PooledObjects<>(MutableInt::new, 1024, 16);
++    public static final PooledObjects<MutableInt> POOLED_MUTABLE_INTEGERS = new PooledObjects<>(MutableInt::new, 1024);
 +
-+    private final PooledObjectHandler<E> handler;
-+    private final int bucketCount;
-+    private final int bucketSize;
-+    private final ArrayDeque<E>[] buckets;
-+    private final ReentrantLock[] locks;
-+    private final AtomicLong bucketIdCounter = new AtomicLong(0);
++    private final Supplier<E> creator;
++    private final Consumer<E> releaser;
++    private final int maxPoolSize;
++    private final ArrayDeque<E> queue;
 +
-+    public PooledObjects(final PooledObjectHandler<E> handler, int maxPoolSize) {
-+        this(handler, maxPoolSize, 8);
++    public PooledObjects(final Supplier<E> creator, int maxPoolSize) {
++        this(creator, maxPoolSize, null);
 +    }
-+    public PooledObjects(final PooledObjectHandler<E> handler, int maxPoolSize, int bucketCount) {
-+        if (handler == null) {
-+            throw new NullPointerException("Handler must not be null");
++    public PooledObjects(final Supplier<E> creator, int maxPoolSize, Consumer<E> releaser) {
++        if (creator == null) {
++            throw new NullPointerException("Creator must not be null");
 +        }
 +        if (maxPoolSize <= 0) {
 +            throw new IllegalArgumentException("Max pool size must be greater-than 0");
 +        }
-+        if (bucketCount < 1) {
-+            throw new IllegalArgumentException("Bucket count must be greater-than 0");
-+        }
-+        int remainder = maxPoolSize % bucketCount;
-+        if (remainder > 0) {
-+            // Auto adjust up to the next bucket divisible size
-+            maxPoolSize = maxPoolSize - remainder + bucketCount;
-+        }
-+        //noinspection unchecked
-+        this.buckets = new ArrayDeque[bucketCount];
-+        this.locks = new ReentrantLock[bucketCount];
-+        this.bucketCount = bucketCount;
-+        this.handler = handler;
-+        this.bucketSize = maxPoolSize / bucketCount;
-+        for (int i = 0; i < bucketCount; i++) {
-+            this.buckets[i] = new ArrayDeque<>(bucketSize / 4);
-+            this.locks[i] = new ReentrantLock();
-+        }
++
++        this.queue = new ArrayDeque<>(maxPoolSize);
++        this.maxPoolSize = maxPoolSize;
++        this.creator = creator;
++        this.releaser = releaser;
 +    }
 +
 +    public AutoReleased acquireCleaner(Object holder) {
@@ -2193,85 +2166,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new AutoReleased(resource, cleaner);
 +    }
 +
-+
-+    public long size() {
-+        long size = 0;
-+        for (int i = 0; i < bucketCount; i++) {
-+            size += this.buckets[i].size();
++    public final E acquire() {
++        E value;
++        synchronized (queue) {
++            value = this.queue.pollLast();
 +        }
-+
-+        return size;
++        return value != null ? value : this.creator.get();
 +    }
-+    public E acquire() {
-+        for (int base = (int) (this.bucketIdCounter.getAndIncrement() % bucketCount), i = 0; i < bucketCount; i++ ) {
-+            int bucketId = (base + i) % bucketCount;
-+            if (this.buckets[bucketId].isEmpty()) continue;
-+            // lock will alloc an object if blocked, so spinwait instead since lock duration is super fast
-+            lockBucket(bucketId);
-+            E value = this.buckets[bucketId].poll();
-+            this.locks[bucketId].unlock();
-+            if (value != null) {
-+                this.handler.onAcquire(value);
-+                return value;
++
++    public final void release(final E value) {
++        if (this.releaser != null) {
++            this.releaser.accept(value);
++        }
++        synchronized (this.queue) {
++            if (queue.size() < this.maxPoolSize) {
++                this.queue.addLast(value);
 +            }
 +        }
-+        return this.handler.createNew();
-+    }
-+
-+    private void lockBucket(int bucketId) {
-+        // lock will alloc an object if blocked, try to avoid unless 2 failures
-+        ReentrantLock lock = this.locks[bucketId];
-+        if (!lock.tryLock()) {
-+            Thread.yield();
-+        } else {
-+            return;
-+        }
-+        if (!lock.tryLock()) {
-+            Thread.yield();
-+            lock.lock();
-+        }
-+    }
-+
-+    public void release(final E value) {
-+        int attempts = 3; // cap on contention
-+        do {
-+            // find least filled bucket before locking
-+            int smallestIdx = -1;
-+            int smallest = Integer.MAX_VALUE;
-+            for (int i = 0; i < bucketCount; i++ ) {
-+                ArrayDeque<E> bucket = this.buckets[i];
-+                int size = bucket.size();
-+                if (size < this.bucketSize && (smallestIdx == -1 || size < smallest || (size == smallest && ThreadLocalRandom.current().nextBoolean()))) {
-+                    smallestIdx = i;
-+                    smallest = size;
-+                }
-+            }
-+            if (smallestIdx == -1) return; // Can not find a bucket to fill
-+
-+            lockBucket(smallestIdx);
-+            ArrayDeque<E> bucket = this.buckets[smallestIdx];
-+            if (bucket.size() < this.bucketSize) {
-+                this.handler.onRelease(value);
-+                bucket.push(value);
-+                this.locks[smallestIdx].unlock();
-+                return;
-+            } else {
-+                this.locks[smallestIdx].unlock();
-+            }
-+        } while (attempts-- > 0);
-+    }
-+
-+    /** This object is restricted from interacting with any pool */
-+    public interface PooledObjectHandler<E> {
-+
-+        /**
-+         * Must return a non-null object
-+         */
-+        E createNew();
-+
-+        default void onAcquire(final E value) {}
-+
-+        default void onRelease(final E value) {}
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java b/src/main/java/com/destroystokyo/paper/util/set/OptimizedSmallEnumSet.java
