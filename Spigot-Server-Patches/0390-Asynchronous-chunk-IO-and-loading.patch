@@ -1847,10 +1847,10 @@ index 0000000000000000000000000000000000000000..1dfa8abfd869ca97e4cc566d44e509b4
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a5f4cdaf06bfbb0dd957db9a1335c17b073d646d
+index 0000000000000000000000000000000000000000..b5c2e1f4a2b5fdcaa6bb01f4b3b6847cd5b73ae8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,509 @@
+@@ -0,0 +1,511 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1929,22 +1929,20 @@ index 0000000000000000000000000000000000000000..a5f4cdaf06bfbb0dd957db9a1335c17b
 +        }
 +    }
 +
-+    public static String getChunkWaitInfo() {
++    private static ChunkInfo[] getChunkInfos() {
++        ChunkInfo[] chunks;
 +        synchronized (WAITING_CHUNKS) {
-+            return WAITING_CHUNKS.toString();
++            chunks = WAITING_CHUNKS.toArray(new ChunkInfo[0]);
 +        }
++        return chunks;
 +    }
 +
 +    public static void dumpAllChunkLoadInfo() {
-+        synchronized (WAITING_CHUNKS) {
-+            if (WAITING_CHUNKS.isEmpty()) {
-+                return;
-+            }
-+
++        ChunkInfo[] chunks = getChunkInfos();
++        if (chunks.length > 0) {
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
-+            Set<PlayerChunk> seenChunks = new HashSet<>();
 +
-+            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
++            for (final ChunkInfo chunkInfo : chunks) {
 +                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
 +                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
 +                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
@@ -1955,16 +1953,20 @@ index 0000000000000000000000000000000000000000..a5f4cdaf06bfbb0dd957db9a1335c17b
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
-+                dumpChunkInfo(seenChunks, chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
++                dumpChunkInfo(new HashSet<>(), chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
 +        }
 +    }
 +
 +    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z) {
-+        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0);
++        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 1);
 +    }
-+    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent) {
++
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent, int maxDepth) {
 +        if (seenChunks.contains(chunkHolder)) {
++            return;
++        }
++        if (indent > maxDepth) {
 +            return;
 +        }
 +        seenChunks.add(chunkHolder);
@@ -2987,10 +2989,10 @@ index 2f95174fcc467908808ed3f2dc956bdcafdc3558..134c76065bf382912e6c28d15449db3f
 +//    Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index f75f48a3d0b0bc1da3c5ae3b3cf20b64f1e8288a..0e01e5c2c008823355e370d0c9ced79130e5fb92 100644
+index 20f54baacebe98435539d4cbef41f182040db2e9..9f8c0e10e42d233a8b74ee5a71fb8fb6ea8e7480 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -700,4 +700,9 @@ public final class MCUtil {
+@@ -726,4 +726,9 @@ public final class MCUtil {
              out.print(fileData);
          }
      }
