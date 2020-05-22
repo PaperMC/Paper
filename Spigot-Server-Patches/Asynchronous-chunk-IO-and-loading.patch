@@ -1929,22 +1929,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public static String getChunkWaitInfo() {
++    private static ChunkInfo[] getChunkInfos() {
++        ChunkInfo[] chunks;
 +        synchronized (WAITING_CHUNKS) {
-+            return WAITING_CHUNKS.toString();
++            chunks = WAITING_CHUNKS.toArray(new ChunkInfo[0]);
 +        }
++        return chunks;
 +    }
 +
 +    public static void dumpAllChunkLoadInfo() {
-+        synchronized (WAITING_CHUNKS) {
-+            if (WAITING_CHUNKS.isEmpty()) {
-+                return;
-+            }
-+
++        ChunkInfo[] chunks = getChunkInfos();
++        if (chunks.length > 0) {
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
-+            Set<PlayerChunk> seenChunks = new HashSet<>();
 +
-+            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
++            for (final ChunkInfo chunkInfo : chunks) {
 +                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
 +                final ChunkLoadTask loadTask = chunkInfo.world.asyncChunkTaskManager.chunkLoadTasks.get(key);
 +                final ChunkSaveTask saveTask = chunkInfo.world.asyncChunkTaskManager.chunkSaveTasks.get(key);
@@ -1955,16 +1953,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
-+                dumpChunkInfo(seenChunks, chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
++                dumpChunkInfo(new HashSet<>(), chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
 +        }
 +    }
 +
 +    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z) {
-+        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0);
++        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0, 1);
 +    }
-+    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent) {
++
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent, int maxDepth) {
 +        if (seenChunks.contains(chunkHolder)) {
++            return;
++        }
++        if (indent > maxDepth) {
 +            return;
 +        }
 +        seenChunks.add(chunkHolder);

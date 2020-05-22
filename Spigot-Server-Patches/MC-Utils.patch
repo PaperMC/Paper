@@ -3273,6 +3273,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.destroystokyo.paper.block.TargetBlockInfo;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import org.apache.commons.lang.exception.ExceptionUtils;
 +import org.bukkit.Location;
 +import org.bukkit.block.BlockFace;
 +import org.bukkit.craftbukkit.CraftWorld;
@@ -3290,6 +3291,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.concurrent.TimeUnit;
 +import java.util.concurrent.TimeoutException;
 +import java.util.concurrent.atomic.AtomicBoolean;
++import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
 +import java.util.function.Supplier;
 +
@@ -3315,6 +3317,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                run.run();
 +            }
 +        };
++    }
++
++    public static <T> Runnable once(List<T> list, Consumer<T> cb) {
++        return once(() -> {
++            list.forEach(cb);
++        });
 +    }
 +
 +    private static Runnable makeCleanerCallback(Runnable run) {
@@ -3384,15 +3392,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return list;
 +    }
 +
-+    public static long getCoordinateKey(final BlockPosition blockPos) {
-+        return ((long)(blockPos.getZ() >> 4) << 32) | ((blockPos.getX() >> 4) & 0xFFFFFFFFL);
-+    }
-+
-+    public static long getCoordinateKey(final Entity entity) {
-+        return ((long)(MCUtil.fastFloor(entity.locZ()) >> 4) << 32) | ((MCUtil.fastFloor(entity.locX()) >> 4) & 0xFFFFFFFFL);
-+    }
-+
 +    public static int fastFloor(double x) {
++        int truncated = (int)x;
++        return x < (double)truncated ? truncated - 1 : truncated;
++    }
++
++    public static int fastFloor(float x) {
 +        int truncated = (int)x;
 +        return x < (double)truncated ? truncated - 1 : truncated;
 +    }
@@ -3411,9 +3416,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return f1;
 +    }
 +
-+    public static int fastFloor(float x) {
-+        int truncated = (int)x;
-+        return x < (double)truncated ? truncated - 1 : truncated;
++    /**
++     * Quickly generate a stack trace for current location
++     *
++     * @return Stacktrace
++     */
++    public static String stack() {
++        return ExceptionUtils.getFullStackTrace(new Throwable());
++    }
++
++    /**
++     * Quickly generate a stack trace for current location with message
++     *
++     * @param str
++     * @return Stacktrace
++     */
++    public static String stack(String str) {
++        return ExceptionUtils.getFullStackTrace(new Throwable(str));
++    }
++
++    public static long getCoordinateKey(final BlockPosition blockPos) {
++        return ((long)(blockPos.getZ() >> 4) << 32) | ((blockPos.getX() >> 4) & 0xFFFFFFFFL);
++    }
++
++    public static long getCoordinateKey(final Entity entity) {
++        return ((long)(MCUtil.fastFloor(entity.locZ()) >> 4) << 32) | ((MCUtil.fastFloor(entity.locX()) >> 4) & 0xFFFFFFFFL);
 +    }
 +
 +    public static long getCoordinateKey(final ChunkCoordIntPair pair) {
@@ -3466,6 +3493,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private MCUtil() {}
 +
++    public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
++        if (!isMainThread()) {
++            MinecraftServer.getServer().execute(run);
++        } else {
++            run.run();
++        }
++    };
++
++    public static <T> CompletableFuture<T> ensureMain(CompletableFuture<T> future) {
++        return future.thenApplyAsync(r -> r, MAIN_EXECUTOR);
++    }
++
++    public static <T> void thenOnMain(CompletableFuture<T> future, Consumer<T> consumer) {
++        future.thenAcceptAsync(consumer, MAIN_EXECUTOR);
++    }
++    public static <T> void thenOnMain(CompletableFuture<T> future, BiConsumer<T, Throwable> consumer) {
++        future.whenCompleteAsync(consumer, MAIN_EXECUTOR);
++    }
 +
 +    public static boolean isMainThread() {
 +        return MinecraftServer.getServer().isMainThread();
