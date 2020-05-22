@@ -13,46 +13,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 +++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
-             if (flag) {
-                 if (nbttagcompound2.hasKeyOfType("BlockLight", 7)) {
-                     // Paper start - delay this task since we're executing off-main
--                    NibbleArray blockLight = new NibbleArray(nbttagcompound2.getByteArray("BlockLight"));
-+                    // Pool safe get and clean
-+                    NBTTagByteArray blockLightArray = nbttagcompound2.getByteArrayTag("BlockLight");
-+                    // NibbleArray will copy the data in the ctor
-+                    NibbleArray blockLight = new NibbleArray().markPoolSafe().cloneAndSet(blockLightArray.getBytesPoolSafe()); // This is going to light engine which handles releasing
-+                    blockLightArray.cleanPooledBytes();
-                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
-                     tasksToExecuteOnMain.add(() -> {
-                         lightengine.a(EnumSkyBlock.BLOCK, SectionPosition.a(chunkcoordintpair, b0), blockLight);
-@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
- 
-                 if (flag2 && nbttagcompound2.hasKeyOfType("SkyLight", 7)) {
-                     // Paper start - delay this task since we're executing off-main
--                    NibbleArray skyLight = new NibbleArray(nbttagcompound2.getByteArray("SkyLight"));
-+                    // Pool safe get and clean
-+                    NBTTagByteArray skyLightArray = nbttagcompound2.getByteArrayTag("SkyLight");
-+                    // NibbleArray will copy the data in the ctor
-+                    NibbleArray skyLight = new NibbleArray().markPoolSafe().cloneAndSet(skyLightArray.getBytesPoolSafe()); // This is going to light engine which handles releasing
-+                    skyLightArray.cleanPooledBytes();
-                     // Note: We move the block light nibble array creation here for perf & in case the compound is modified
-                     tasksToExecuteOnMain.add(() -> {
-                         lightengine.a(EnumSkyBlock.SKY, SectionPosition.a(chunkcoordintpair, b0), skyLight);
-@@ -0,0 +0,0 @@ public class ChunkRegionLoader {
                  }
  
                  if (nibblearray != null && !nibblearray.c()) {
 -                    nbttagcompound2.setByteArray("BlockLight", nibblearray.asBytes());
-+                    byte[] bytes = nibblearray.getCloneIfSet(); // Paper
-+                    nbttagcompound2.setByteArray("BlockLight", bytes); // Paper
-+                    MCUtil.registerCleaner(nbttagcompound2, bytes, NibbleArray::releaseBytes); // Paper - we can't really hook when this chunk is done without a ton of yuck efort, so just reclaim it once GC gets to it.
++                    nbttagcompound2.setByteArray("BlockLight", nibblearray.asBytesPoolSafe().clone()); // Paper
                  }
  
                  if (nibblearray1 != null && !nibblearray1.c()) {
 -                    nbttagcompound2.setByteArray("SkyLight", nibblearray1.asBytes());
-+                    byte[] bytes = nibblearray1.getCloneIfSet(); // Paper
-+                    nbttagcompound2.setByteArray("SkyLight", bytes); // Paper
-+                    MCUtil.registerCleaner(nbttagcompound2, bytes, NibbleArray::releaseBytes); // Paper - we can't really hook when this chunk is done without a ton of yuck efort, so just reclaim it once GC gets to it.
++                    nbttagcompound2.setByteArray("SkyLight", nibblearray1.asBytesPoolSafe().clone()); // Paper
                  }
  
                  nbttaglist.add(nbttagcompound2);
@@ -107,91 +77,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
      }
-diff --git a/src/main/java/net/minecraft/server/NBTTagByteArray.java b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/NBTTagByteArray.java
-+++ b/src/main/java/net/minecraft/server/NBTTagByteArray.java
-@@ -0,0 +0,0 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
-             com.google.common.base.Preconditions.checkArgument( j < 1 << 24); // Spigot
+@@ -0,0 +0,0 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+                                 ((LightEngineStorageSky.a) this.f).a(i);
+                             }
  
-             nbtreadlimiter.a(8L * (long) j);
--            byte[] abyte = new byte[j];
-+            byte[] abyte = j == 2048 ? NibbleArray.BYTE_2048.acquire() : new byte[j]; // Paper - use nibble buffer if right size
- 
-             datainput.readFully(abyte);
--            return new NBTTagByteArray(abyte);
-+            // Paper start - use pooled
-+            NBTTagByteArray nbt = new NBTTagByteArray(abyte);
-+            if (abyte.length == 2048) {
-+                // register cleaner
-+                nbt.cleaner = MCUtil.registerCleaner(nbt, abyte, NibbleArray::releaseBytes);
-+            }
-+            return nbt;
-+            // Paper end
-         }
- 
-         @Override
-@@ -0,0 +0,0 @@ public class NBTTagByteArray extends NBTList<NBTTagByte> {
-     }
- 
-     public byte[] getBytes() {
-+        // Paper start
-+        Runnable cleaner = this.cleaner;
-+        if (cleaner != null) { // This will only be possible for 2048 byte arrays
-+            // cleaners are thread safe if it tries to run twice, if getBytes is accessed concurrently, worse
-+            // case is multiple clones
-+            this.data = this.data.clone();
-+            this.cleaner = null;
-+            cleaner.run();
-+        }
-+        if (this.data == null) {
-+            new Throwable("Horrible thing happened! Something hooked into Chunk Loading internals and accessed NBT after chunk was done loading. Please tell plugin to stop doing this, clone the memory before hand.").printStackTrace();
-+        }
-+        return this.data;
-+    }
-+    Runnable cleaner;
-+    public void cleanPooledBytes() {
-+        Runnable cleaner = this.cleaner;
-+        if (cleaner != null) { // This will only be possible for 2048 byte arrays
-+            this.cleaner = null;
-+            this.data = null;
-+            cleaner.run();
-+        }
-+    }
-+    /**
-+     * Use ONLY if you know the life of your usage of the bytes matches the life of the nbt node itself.
-+     * If this NBT node can go unreachable before your usage of the bytes is over with, DO NOT use this
-+     */
-+    public byte[] getBytesPoolSafe() {
-+        // Paper end
-         return this.data;
-     }
- 
-diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/NBTTagCompound.java
-+++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
-@@ -0,0 +0,0 @@ public class NBTTagCompound implements NBTBase {
-         return new byte[0];
-     }
- 
-+    // Paper start
-+    public NBTTagByteArray getByteArrayTag(String s) {
-+        try {
-+            if (this.hasKeyOfType(s, 7)) {
-+                return ((NBTTagByteArray) this.map.get(s));
-+            }
-+        } catch (ClassCastException classcastexception) {
-+            throw new ReportedException(this.a(s, NBTTagByteArray.a, classcastexception));
-+        }
-+
-+        return new NBTTagByteArray(new byte[0]);
-+    }
-+    // Paper end
-+
-     public int[] getIntArray(String s) {
-         try {
-             if (this.hasKeyOfType(s, 11)) {
+-                            Arrays.fill(this.a(i, true).asBytes(), (byte) -1);
++                            Arrays.fill(this.a(i, true).asBytesPoolSafe(), (byte) -1); // Paper
+                             k = SectionPosition.c(SectionPosition.b(i));
+                             l = SectionPosition.c(SectionPosition.c(i));
+                             int i1 = SectionPosition.c(SectionPosition.d(i));
 diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NibbleArray.java
@@ -200,6 +94,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  package net.minecraft.server;
  
 +import com.destroystokyo.paper.util.pooled.PooledObjects; // Paper
++
++import javax.annotation.Nonnull;
  import javax.annotation.Nullable;
  
  public class NibbleArray {
@@ -283,16 +179,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          int k = this.d(i);
 @@ -0,0 +0,0 @@ public class NibbleArray {
- 
      public byte[] asBytes() {
          if (this.a == null) {
--            this.a = new byte[2048];
+             this.a = new byte[2048];
++        } else { // Paper start
++            // Accessor may need this object past garbage collection so need to clone it and return pooled value
++            // If we know its safe for pre GC access, use asBytesPoolSafe(). If you just need read, use getIfSet()
++            Runnable cleaner = this.cleaner;
++            if (cleaner != null) {
++                this.a = this.a.clone();
++                cleaner.run(); // release the previously pooled value
++                this.cleaner = null;
++            }
++        }
++        // Paper end
++
++        return this.a;
++    }
++
++    @Nonnull
++    public byte[] asBytesPoolSafe() {
++        if (this.a == null) {
 +            this.a = BYTE_2048.acquire(); // Paper
-+            registerCleaner();// Paper
++            registerCleaner(); // Paper
          }
  
++        //noinspection ConstantConditions
          return this.a;
-@@ -0,0 +0,0 @@ public class NibbleArray {
+     }
++    // Paper end
  
      public NibbleArray copy() { return this.b(); } // Paper - OBFHELPER
      public NibbleArray b() {
@@ -305,6 +220,15 @@ diff --git a/src/main/java/net/minecraft/server/NibbleArrayFlat.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NibbleArrayFlat.java
 +++ b/src/main/java/net/minecraft/server/NibbleArrayFlat.java
+@@ -0,0 +0,0 @@ public class NibbleArrayFlat extends NibbleArray {
+ 
+     public NibbleArrayFlat(NibbleArray nibblearray, int i) {
+         super(128);
+-        System.arraycopy(nibblearray.asBytes(), i * 128, this.a, 0, 128);
++        System.arraycopy(nibblearray.getIfSet(), i * 128, this.a, 0, 128); // Paper
+     }
+ 
+     @Override
 @@ -0,0 +0,0 @@ public class NibbleArrayFlat extends NibbleArray {
  
      @Override
@@ -410,3 +334,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  } else {
                      this.d &= ~(1 << k);
                      if (nibblearray != null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
+                     sectionSkyLights[i] = emptyLight;
+                 } else {
+                     sectionSkyLights[i] = new byte[2048];
+-                    System.arraycopy(skyLightArray.asBytes(), 0, sectionSkyLights[i], 0, 2048);
++                    System.arraycopy(skyLightArray.getIfSet(), 0, sectionSkyLights[i], 0, 2048); // Paper
+                 }
+                 NibbleArray emitLightArray = lightengine.a(EnumSkyBlock.BLOCK).a(SectionPosition.a(x, i, z));
+                 if (emitLightArray == null) {
+                     sectionEmitLights[i] = emptyLight;
+                 } else {
+                     sectionEmitLights[i] = new byte[2048];
+-                    System.arraycopy(emitLightArray.asBytes(), 0, sectionEmitLights[i], 0, 2048);
++                    System.arraycopy(emitLightArray.getIfSet(), 0, sectionEmitLights[i], 0, 2048); // Paper
+                 }
+             }
+         }
