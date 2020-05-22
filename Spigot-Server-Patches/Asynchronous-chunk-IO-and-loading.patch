@@ -1870,6 +1870,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.spigotmc.AsyncCatcher;
 +
 +import java.util.ArrayDeque;
++import java.util.HashSet;
++import java.util.Set;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.ConcurrentLinkedQueue;
@@ -1940,6 +1942,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
++            Set<PlayerChunk> seenChunks = new HashSet<>();
 +
 +            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
 +                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
@@ -1952,15 +1955,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
-+                dumpChunkInfo(chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
++                dumpChunkInfo(seenChunks, chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
 +        }
 +    }
 +
-+    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z) {
-+        dumpChunkInfo(chunkHolder, x, z, 0);
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z) {
++        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0);
 +    }
-+    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z, int indent) {
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent) {
++        if (seenChunks.contains(chunkHolder)) {
++            return;
++        }
++        seenChunks.add(chunkHolder);
 +        String indentStr = StringUtils.repeat("  ", indent);
 +        if (chunkHolder == null) {
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - null for (" + x +"," + z +")");
@@ -2380,7 +2387,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.asyncChunks) {
-+            Chunk chunk = getChunkAt(x, z, gen);
++            world.getWorld().loadChunk(x, z, gen);
++            Chunk chunk = getChunkAtIfLoadedMainThread(x, z);
 +            return CompletableFuture.completedFuture(chunk != null ? Either.left(chunk) : PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
@@ -2419,7 +2427,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        IChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
 +        if (current != null) {
 +            if (!(current instanceof ProtoChunkExtension) && !(current instanceof net.minecraft.server.Chunk)) {
-+                return CompletableFuture.completedFuture(Either.left(null));
++                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +            }
 +            // we know the chunk is at full status here (either in read-only mode or the real thing)
 +            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
