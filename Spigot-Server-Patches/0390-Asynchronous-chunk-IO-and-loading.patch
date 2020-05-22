@@ -1847,10 +1847,10 @@ index 0000000000000000000000000000000000000000..1dfa8abfd869ca97e4cc566d44e509b4
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d9580eb998801edd34c610ced3f82f9627c6685b
+index 0000000000000000000000000000000000000000..a5f4cdaf06bfbb0dd957db9a1335c17b073d646d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/chunk/ChunkTaskManager.java
-@@ -0,0 +1,502 @@
+@@ -0,0 +1,509 @@
 +package com.destroystokyo.paper.io.chunk;
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
@@ -1870,6 +1870,8 @@ index 0000000000000000000000000000000000000000..d9580eb998801edd34c610ced3f82f96
 +import org.spigotmc.AsyncCatcher;
 +
 +import java.util.ArrayDeque;
++import java.util.HashSet;
++import java.util.Set;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.ConcurrentLinkedQueue;
@@ -1940,6 +1942,7 @@ index 0000000000000000000000000000000000000000..d9580eb998801edd34c610ced3f82f96
 +            }
 +
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, "Chunk wait task info below: ");
++            Set<PlayerChunk> seenChunks = new HashSet<>();
 +
 +            for (final ChunkInfo chunkInfo : WAITING_CHUNKS) {
 +                final long key = IOUtil.getCoordinateKey(chunkInfo.chunkX, chunkInfo.chunkZ);
@@ -1952,15 +1955,19 @@ index 0000000000000000000000000000000000000000..d9580eb998801edd34c610ced3f82f96
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
 +                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
-+                dumpChunkInfo(chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
++                dumpChunkInfo(seenChunks, chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
 +        }
 +    }
 +
-+    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z) {
-+        dumpChunkInfo(chunkHolder, x, z, 0);
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z) {
++        dumpChunkInfo(seenChunks, chunkHolder, x, z, 0);
 +    }
-+    static void dumpChunkInfo(PlayerChunk chunkHolder, int x, int z, int indent) {
++    static void dumpChunkInfo(Set<PlayerChunk> seenChunks, PlayerChunk chunkHolder, int x, int z, int indent) {
++        if (seenChunks.contains(chunkHolder)) {
++            return;
++        }
++        seenChunks.add(chunkHolder);
 +        String indentStr = StringUtils.repeat("  ", indent);
 +        if (chunkHolder == null) {
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - null for (" + x +"," + z +")");
@@ -2354,10 +2361,10 @@ index 0000000000000000000000000000000000000000..d9580eb998801edd34c610ced3f82f96
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931888141c2 100644
+index 4c9c8e483974f8869d6711626620cfd7d814d956..a88e8598aab55ac769a5f186507f362e4f99cef4 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -299,11 +299,137 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -299,11 +299,138 @@ public class ChunkProviderServer extends IChunkProvider {
          return playerChunk.getAvailableChunkNow();
  
      }
@@ -2380,7 +2387,8 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931
 +        }
 +
 +        if (!com.destroystokyo.paper.PaperConfig.asyncChunks) {
-+            Chunk chunk = getChunkAt(x, z, gen);
++            world.getWorld().loadChunk(x, z, gen);
++            Chunk chunk = getChunkAtIfLoadedMainThread(x, z);
 +            return CompletableFuture.completedFuture(chunk != null ? Either.left(chunk) : PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +        }
 +
@@ -2419,7 +2427,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931
 +        IChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
 +        if (current != null) {
 +            if (!(current instanceof ProtoChunkExtension) && !(current instanceof net.minecraft.server.Chunk)) {
-+                return CompletableFuture.completedFuture(Either.left(null));
++                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +            }
 +            // we know the chunk is at full status here (either in read-only mode or the real thing)
 +            return this.bringToFullStatusAsync(x, z, chunkPos, isUrgent);
@@ -2495,7 +2503,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931
          if (Thread.currentThread() != this.serverThread) {
              return (IChunkAccess) CompletableFuture.supplyAsync(() -> {
                  return this.getChunkAt(i, j, chunkstatus, flag);
-@@ -326,11 +452,16 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -326,11 +453,16 @@ public class ChunkProviderServer extends IChunkProvider {
              }
  
              gameprofilerfiller.c("getChunkCacheMiss");
@@ -2513,7 +2521,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931
                  this.world.timings.syncChunkLoad.stopTiming(); // Paper
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
-@@ -396,6 +527,11 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -396,6 +528,11 @@ public class ChunkProviderServer extends IChunkProvider {
      }
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getChunkFutureMainThread(int i, int j, ChunkStatus chunkstatus, boolean flag) {
@@ -2525,7 +2533,7 @@ index 4c9c8e483974f8869d6711626620cfd7d814d956..54325d9305953fa7520feec6c80e2931
          ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
          long k = chunkcoordintpair.pair();
          int l = 33 + ChunkStatus.a(chunkstatus);
-@@ -835,11 +971,12 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -835,11 +972,12 @@ public class ChunkProviderServer extends IChunkProvider {
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          try {

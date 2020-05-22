@@ -65,6 +65,9 @@ fi
 
 folder="$basedir/Paper-Server"
 jar="$folder/target/paper-${minecraftversion}.jar"
+if [ ! -z "$PAPER_JAR" ]; then
+    jar="$PAPER_JAR"
+fi
 if [ ! -d "$folder" ]; then
 (
     echo "Building Patched Repo"
@@ -73,14 +76,13 @@ if [ ! -d "$folder" ]; then
 )
 fi
 
-if [ ! -f "$jar" ] || [ "$2" == "build" ] || [ "$3" == "build" ]; then
+if [ "$2" == "build" ] || [ "$3" == "build" ]; then
 (
     echo "Building Paper"
     cd "$basedir"
     mvn package
 )
 fi
-
 #
 # JVM FLAGS
 #
@@ -102,7 +104,9 @@ tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
 
 multiplex=${PAPER_TEST_MULTIPLEXER}
 
-if [ "$multiplex" == "screen" ]; then
+if [ ! -z "$PAPER_NO_MULTIPLEX" ]; then
+	cmd="$cmd"
+elif [ "$multiplex" == "screen" ]; then
     if command -v "screen" >/dev/null 2>&1 ; then
         cmd="$screen_command"
     else
@@ -136,6 +140,6 @@ if [ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]; then
 else
     echo "Running command: $cmd"
     echo "In directory: $(pwd)"
-    sleep 1
+    #sleep 1
     /usr/bin/env bash -c "$cmd"
 fi
