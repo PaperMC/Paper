@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 23 May 2020 17:03:41 -0400
+Subject: [PATCH] Optimize sending packets to nearby locations (sounds/effects)
+
+Instead of using the entire world or player list, use the distance
+maps to only iterate players who are even seeing the chunk the packet
+is originating from.
+
+This will drastically cut down on packet sending cost for worlds with
+lots of players in them.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 9b726de6daeba42120f3a948fbdcf080d0e72917..cc5d75049d3553e0b01068e4e0c5677fe81f8387 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1027,11 +1027,22 @@ public abstract class PlayerList {
+             world = (WorldServer) entityhuman.world;
+         }
+ 
+-        List<? extends EntityHuman> players1 = world == null ? players : world.players;
+-        for (int j = 0; j < players1.size(); ++j) {
+-            EntityHuman entity = players1.get(j);
+-            if (!(entity instanceof EntityPlayer)) continue;
+-            EntityPlayer entityplayer = (EntityPlayer) entity;
++        // Paper start
++        if (world == null && dimensionmanager != null) {
++            world = dimensionmanager.world;
++        }
++        if (world == null) {
++            LOGGER.error("Sending packet to invalid world" + entityhuman + " " + dimensionmanager + " - " + packet.getClass().getName(), new Throwable());
++            return; // ??? shouldn't happen...
++        }
++        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = world.getChunkProvider().playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
++        if (nearbyPlayers == null) {
++            return;
++        }
++        Object[] backingSet = nearbyPlayers.getBackingSet();
++        for (Object object : backingSet) {
++            if (!(object instanceof EntityPlayer)) continue;
++            EntityPlayer entityplayer = (EntityPlayer) object;
+             // Paper end
+ 
+             // CraftBukkit start - Test if player receiving packet can see the source of the packet
