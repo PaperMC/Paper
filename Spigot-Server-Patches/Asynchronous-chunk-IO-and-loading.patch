@@ -4182,6 +4182,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (immediate != null) {
 +                return CompletableFuture.completedFuture(immediate.getBukkitChunk());
 +            }
++        } else {
++            CompletableFuture<Chunk> future = new CompletableFuture<Chunk>();
++            world.getMinecraftServer().execute(() -> {
++                getChunkAtAsync(x, z, gen, urgent).whenComplete((chunk, err) -> {
++                    if (err != null) {
++                        future.completeExceptionally(err);
++                    } else {
++                        future.complete(chunk);
++                    }
++                });
++            });
++            return future;
 +        }
 +
 +        return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
