@@ -520,6 +520,7 @@ public abstract class EntityArrow extends IProjectile {
         }
     }
 
+    public final ItemStack getOriginalItemStack() { return getItemStack(); }  // Paper - OBFHELPER - exists purely due to overrides all as protected and dont want to change them all
     protected abstract ItemStack getItemStack();
 
     @Override

@@ -102,6 +102,13 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
         getHandle().fromPlayer = EntityArrow.PickupStatus.a(status.ordinal());
     }
 
+    // Paper start
+    @Override
+    public org.bukkit.craftbukkit.inventory.CraftItemStack getItemStack() {
+        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(getHandle().getOriginalItemStack());
+    }
+    //Paper end
+
     @Override
     public void setTicksLived(int value) {
         super.setTicksLived(value);
