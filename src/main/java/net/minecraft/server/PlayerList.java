@@ -1073,16 +1073,40 @@ public abstract class PlayerList {
     }
 
     public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, ResourceKey<World> resourcekey, Packet<?> packet) {
-        for (int i = 0; i < this.players.size(); ++i) {
-            EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
+        WorldServer world = null;
+        if (entityhuman != null && entityhuman.world instanceof WorldServer) {
+            world = (WorldServer) entityhuman.world;
+        }
+
+        // Paper start
+        if (world == null) {
+            world = server.getWorldServer(resourcekey);
+        }
+        PlayerChunkMap chunkMap = world != null ? world.getChunkProvider().playerChunkMap : null;
+        Object[] backingSet;
+        if (chunkMap == null) {
+            // Really shouldn't happen...
+            backingSet = world != null ? world.players.toArray() : players.toArray();
+        } else {
+            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
+            if (nearbyPlayers == null) {
+                return;
+            }
+            backingSet = nearbyPlayers.getBackingSet();
+        }
+
+        for (Object object : backingSet) {
+            if (!(object instanceof EntityPlayer)) continue;
+            EntityPlayer entityplayer = (EntityPlayer) object;
+            // Paper end
 
             // CraftBukkit start - Test if player receiving packet can see the source of the packet
-            if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
-               continue;
-            }
+            //if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) { // Paper
+               //continue; // Paper
+            //} // Paper
             // CraftBukkit end
 
-            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey) {
+            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey && (!(entityhuman instanceof EntityPlayer) || entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity()))) { // Paper
                 double d4 = d0 - entityplayer.locX();
                 double d5 = d1 - entityplayer.locY();
                 double d6 = d2 - entityplayer.locZ();
