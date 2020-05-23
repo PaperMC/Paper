@@ -156,9 +156,9 @@ public class ChunkRegionLoader {
                 object2 = protochunkticklist1;
             }
 
-            object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, (chunk) -> {
-                loadEntities(nbttagcompound1, chunk);
-            });
+            object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, // Paper start - fix massive nbt memory leak due to lambda. move lambda into a container method to not leak scope. Only clone needed NBT keys.
+                createLoadEntitiesConsumer(new SafeNBTCopy(nbttagcompound1, "TileEntities", "Entities"))
+            );// Paper end
         } else {
             ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray - Add parameter
 
@@ -264,6 +264,37 @@ public class ChunkRegionLoader {
             return new InProgressChunkHolder(protochunk1, tasksToExecuteOnMain); // Paper - Async chunk loading
         }
     }
+    // Paper start
+
+    /**
+     * This wrapper will error out if any key is accessed that wasn't copied so we can catch it easy on an update
+     */
+    private static class SafeNBTCopy extends NBTTagCompound {
+        private final java.util.Set<String> keys = new java.util.HashSet<String>();
+        public SafeNBTCopy(NBTTagCompound base, String... keys) {
+            for (String key : keys) {
+                this.keys.add(key);
+                this.set(key, base.get(key));
+            }
+        }
+
+        @Override
+        public boolean hasKey(String s) {
+            if (this.keys.contains(s)) {
+                return true;
+            }
+            throw new IllegalStateException("Missing Key " + s + " in SafeNBTCopy");
+        }
+
+        @Override
+        public boolean hasKeyOfType(String s, int i) {
+            return hasKey(s) && super.hasKeyOfType(s, i);
+        }
+    }
+    private static java.util.function.Consumer<Chunk> createLoadEntitiesConsumer(NBTTagCompound nbt) {
+        return (chunk) -> loadEntities(nbt, chunk);
+    }
+    // Paper end
 
     // Paper start - async chunk save for unload
     public static final class AsyncSaveData {
