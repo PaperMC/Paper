@@ -4127,7 +4127,7 @@ index 58018bfcee5396d440b0f022a7aa9ed452e67ec5..f84248ad9f90aaaf02afa35a4147fb11
      }
      public void removeTicketsForSpawn(int radiusInBlocks, BlockPosition spawn) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 50467656df0b54c2dcba8696b5677a2fc975b178..711bb5c5f4a37357007e8c6441b61c474952ba4d 100644
+index 50467656df0b54c2dcba8696b5677a2fc975b178..1c5154f8f1b02d8e84fc54afeacb56a86e244ec3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -75,6 +75,7 @@ import net.minecraft.server.GroupDataEntity;
@@ -4170,7 +4170,7 @@ index 50467656df0b54c2dcba8696b5677a2fc975b178..711bb5c5f4a37357007e8c6441b61c47
  
              // fall through to load
              // we do this so we do not re-read the chunk data on disk
-@@ -2443,6 +2445,22 @@ public class CraftWorld implements World {
+@@ -2443,6 +2445,34 @@ public class CraftWorld implements World {
  
          return new CraftDragonBattle(((WorldProviderTheEnd) worldProvider).o()); // PAIL rename getDragonBattle
      }
@@ -4182,6 +4182,18 @@ index 50467656df0b54c2dcba8696b5677a2fc975b178..711bb5c5f4a37357007e8c6441b61c47
 +            if (immediate != null) {
 +                return CompletableFuture.completedFuture(immediate.getBukkitChunk());
 +            }
++        } else {
++            CompletableFuture<Chunk> future = new CompletableFuture<Chunk>();
++            world.getMinecraftServer().execute(() -> {
++                getChunkAtAsync(x, z, gen, urgent).whenComplete((chunk, err) -> {
++                    if (err != null) {
++                        future.completeExceptionally(err);
++                    } else {
++                        future.complete(chunk);
++                    }
++                });
++            });
++            return future;
 +        }
 +
 +        return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
