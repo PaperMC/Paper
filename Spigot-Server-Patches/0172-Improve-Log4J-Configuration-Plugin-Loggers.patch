@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Sat, 23 Sep 2017 21:07:20 +0200
+Subject: [PATCH] Improve Log4J Configuration / Plugin Loggers
+
+Add full exceptions to log4j to not truncate stack traces
+
+Disable logger prefix for various plugins bypassing the plugin logger
+
+Some plugins bypass the plugin logger and add the plugin prefix
+manually to the log message. Since they use other logger names
+(e.g. qualified class names) these would now also appear in the
+log. Disable the logger prefix for these plugins so the messages
+show up correctly.
+
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index a8bdaaeaa1a9316848416f0533739b9b083ca151..476f4a5cbe664ddd05474cb88553018bd334a5b8 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -6,19 +6,21 @@
+         </Queue>
+         <TerminalConsole name="TerminalConsole">
+             <PatternLayout>
+-                <LoggerNamePatternSelector defaultPattern="%highlightError{[%d{HH:mm:ss} %level]: [%logger] %minecraftFormatting{%msg}%n%xEx}">
++                <LoggerNamePatternSelector defaultPattern="%highlightError{[%d{HH:mm:ss} %level]: [%logger] %minecraftFormatting{%msg}%n%xEx{full}}">
+                     <!-- Log root, Minecraft, Mojang and Bukkit loggers without prefix -->
+-                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang."
+-                                  pattern="%highlightError{[%d{HH:mm:ss} %level]: %minecraftFormatting{%msg}%n%xEx}" />
++                    <!-- Disable prefix for various plugins that bypass the plugin logger -->
++                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang.,com.sk89q.,ru.tehkode.,Minecraft.AWE"
++                                  pattern="%highlightError{[%d{HH:mm:ss} %level]: %minecraftFormatting{%msg}%n%xEx{full}}" />
+                 </LoggerNamePatternSelector>
+             </PatternLayout>
+         </TerminalConsole>
+         <RollingRandomAccessFile name="File" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+             <PatternLayout>
+-                <LoggerNamePatternSelector defaultPattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %minecraftFormatting{%msg}{strip}%n">
++                <LoggerNamePatternSelector defaultPattern="[%d{HH:mm:ss}] [%t/%level]: [%logger] %minecraftFormatting{%msg}{strip}%n%xEx{full}">
+                     <!-- Log root, Minecraft, Mojang and Bukkit loggers without prefix -->
+-                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang."
+-                                  pattern="[%d{HH:mm:ss}] [%t/%level]: %minecraftFormatting{%msg}{strip}%n" />
++                    <!-- Disable prefix for various plugins that bypass the plugin logger -->
++                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang.,com.sk89q.,ru.tehkode.,Minecraft.AWE"
++                                  pattern="[%d{HH:mm:ss}] [%t/%level]: %minecraftFormatting{%msg}{strip}%n%xEx{full}" />
+                 </LoggerNamePatternSelector>
+             </PatternLayout>
+             <Policies>
