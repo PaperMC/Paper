@@ -40,6 +40,20 @@ This is to ensure that if main isn't truely stuck, it's not manipulating state w
 This also moves all plugins who register "delayed init" tasks to occur just before "Done" so they
 are properly accounted for and wont trip watchdog on init.
 
+diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -0,0 +0,0 @@ public class Metrics {
+         timer.scheduleAtFixedRate(new TimerTask() {
+             @Override
+             public void run() {
++                if (MinecraftServer.getServer().hasStopped()) {
++                    return;
++                }
+                 submitData();
+             }
+         }, 1000 * 60 * 5, 1000 * 60 * 30);
 diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/CrashReport.java
@@ -210,6 +224,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return new TickTask(this.ticks, runnable);
      }
  
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+             MutableBoolean mutableboolean = new MutableBoolean();
+ 
+             do {
++                boolean isShuttingDown = world.getMinecraftServer().hasStopped(); // Paper
+                 mutableboolean.setFalse();
+                 list.stream().map((playerchunk) -> {
+                     CompletableFuture completablefuture;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     return (IChunkAccess) completablefuture.join();
+                 }).filter((ichunkaccess) -> {
+                     return ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk;
+-                }).filter(this::saveChunk).forEach((ichunkaccess) -> {
++                }).filter(ichunkaccess1 -> saveChunk(ichunkaccess1, !isShuttingDown)).forEach((ichunkaccess) -> { // Paper - dont save async during shutdown
+                     mutableboolean.setTrue();
+                 });
+             } while (mutableboolean.isTrue());
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
@@ -268,6 +303,108 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -0,0 +0,0 @@ public class Main {
+ 
+         OptionSet options = null;
+ 
++        // Paper start - preload logger classes to avoid plugins mixing versions
++        tryPreloadClass("com.destroystokyo.paper.log.LogFullPolicy");
++        tryPreloadClass("org.apache.logging.log4j.core.Core");
++        tryPreloadClass("org.apache.logging.log4j.core.Appender");
++        tryPreloadClass("org.apache.logging.log4j.core.ContextDataInjector");
++        tryPreloadClass("org.apache.logging.log4j.core.Filter");
++        tryPreloadClass("org.apache.logging.log4j.core.ErrorHandler");
++        tryPreloadClass("org.apache.logging.log4j.core.LogEvent");
++        tryPreloadClass("org.apache.logging.log4j.core.Logger");
++        tryPreloadClass("org.apache.logging.log4j.core.LoggerContext");
++        tryPreloadClass("org.apache.logging.log4j.core.LogEventListener");
++        tryPreloadClass("org.apache.logging.log4j.core.AbstractLogEvent");
++        tryPreloadClass("org.apache.logging.log4j.message.AsynchronouslyFormattable");
++        tryPreloadClass("org.apache.logging.log4j.message.FormattedMessage");
++        tryPreloadClass("org.apache.logging.log4j.message.ParameterizedMessage");
++        tryPreloadClass("org.apache.logging.log4j.message.Message");
++        tryPreloadClass("org.apache.logging.log4j.message.MessageFactory");
++        tryPreloadClass("org.apache.logging.log4j.message.TimestampMessage");
++        tryPreloadClass("org.apache.logging.log4j.message.SimpleMessage");
++        tryPreloadClass("org.apache.logging.log4j.core.async.AsyncLogger");
++        tryPreloadClass("org.apache.logging.log4j.core.async.AsyncLoggerContext");
++        tryPreloadClass("org.apache.logging.log4j.core.async.AsyncQueueFullPolicy");
++        tryPreloadClass("org.apache.logging.log4j.core.async.AsyncLoggerDisruptor");
++        tryPreloadClass("org.apache.logging.log4j.core.async.RingBufferLogEvent");
++        tryPreloadClass("org.apache.logging.log4j.core.async.DisruptorUtil");
++        tryPreloadClass("org.apache.logging.log4j.core.async.RingBufferLogEventHandler");
++        tryPreloadClass("org.apache.logging.log4j.core.impl.ThrowableProxy");
++        tryPreloadClass("org.apache.logging.log4j.core.impl.ThrowableProxy$CacheEntry");
++        tryPreloadClass("org.apache.logging.log4j.core.impl.ExtendedClassInfo");
++        tryPreloadClass("org.apache.logging.log4j.core.impl.ExtendedStackTraceElement");
++        // Paper end
+         try {
+             options = parser.parse(args);
+         } catch (joptsimple.OptionException ex) {
+@@ -0,0 +0,0 @@ public class Main {
+             } catch (Throwable t) {
+                 t.printStackTrace();
+             }
++            // Paper start
++            // load some required classes to avoid errors during shutdown if jar is replaced
++            // also to guarantee our version loads over plugins
++            tryPreloadClass("com.destroystokyo.paper.util.SneakyThrow");
++            tryPreloadClass("com.google.common.collect.Iterators$PeekingImpl");
++            tryPreloadClass("com.google.common.collect.MapMakerInternalMap$Values");
++            tryPreloadClass("com.google.common.collect.MapMakerInternalMap$ValueIterator");
++            tryPreloadClass("com.google.common.collect.Iterables");
++            for (int i = 1; i <= 15; i++) {
++                tryPreloadClass("com.google.common.collect.Iterables$" + i, false);
++            }
++            tryPreloadClass("org.apache.commons.lang3.mutable.MutableBoolean");
++            tryPreloadClass("org.apache.commons.lang3.mutable.MutableInt");
++            tryPreloadClass("org.jline.terminal.impl.MouseSupport");
++            tryPreloadClass("org.jline.terminal.impl.MouseSupport$1");
++            tryPreloadClass("org.jline.terminal.Terminal$MouseTracking");
++            tryPreloadClass("co.aikar.timings.TimingHistory");
++            tryPreloadClass("co.aikar.timings.TimingHistory$MinuteReport");
++            tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext");
++            tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext$11");
++            tryPreloadClass("io.netty.channel.AbstractChannel$AbstractUnsafe$8");
++            tryPreloadClass("io.netty.util.concurrent.DefaultPromise");
++            tryPreloadClass("io.netty.util.concurrent.DefaultPromise$1");
++            tryPreloadClass("io.netty.util.internal.PromiseNotificationUtil");
++            tryPreloadClass("io.netty.util.internal.SystemPropertyUtil");
++            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler");
++            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$1");
++            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$2");
++            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$3");
++            tryPreloadClass("org.bukkit.craftbukkit.scheduler.CraftScheduler$4");
++            tryPreloadClass("org.slf4j.helpers.MessageFormatter");
++            tryPreloadClass("org.slf4j.helpers.FormattingTuple");
++            tryPreloadClass("org.slf4j.helpers.BasicMarker");
++            tryPreloadClass("org.slf4j.helpers.Util");
++            // Minecraft, seen during saving
++            tryPreloadClass("net.minecraft.server.LightEngineLayerEventListener$Void");
++            tryPreloadClass("net.minecraft.server.LightEngineLayerEventListener");
++            // Paper end
++        }
++    }
++
++    // Paper start
++    private static void tryPreloadClass(String className) {
++        tryPreloadClass(className, true);
++    }
++    private static void tryPreloadClass(String className, boolean printError) {
++        try {
++            Class.forName(className);
++        } catch (ClassNotFoundException e) {
++            if (printError) System.err.println("An expected class  " + className + " was not found for preloading: " + e.getMessage());
+         }
+     }
++    // Paper end
+ 
+     private static List<String> asList(String... params) {
+         return Arrays.asList(params);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
