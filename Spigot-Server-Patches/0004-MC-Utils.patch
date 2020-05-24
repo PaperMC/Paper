@@ -3005,19 +3005,17 @@ index 774a8f543424853be5fc8c0367d734ddf196d7f9..d5f5a51872dfabdbb828b6c20d61893a
          this.a();
          packetdataserializer.writeByte(this.i);
 diff --git a/src/main/java/net/minecraft/server/DimensionManager.java b/src/main/java/net/minecraft/server/DimensionManager.java
-index 5724fe6e57d3671b4978aecaf217ac4c2e0d7f82..951db04bca7ee9021a5d4707f1907b2c8f734a92 100644
+index 5724fe6e57d3671b4978aecaf217ac4c2e0d7f82..393bc4dc700bbf8653db0662c7957f676b0a647a 100644
 --- a/src/main/java/net/minecraft/server/DimensionManager.java
 +++ b/src/main/java/net/minecraft/server/DimensionManager.java
-@@ -55,7 +55,9 @@ public class DimensionManager implements MinecraftSerializable {
+@@ -55,6 +55,7 @@ public class DimensionManager implements MinecraftSerializable {
          return this.folder.isEmpty() ? file : new File(file, this.folder);
      }
  
 +    public WorldServer world; // Paper - store ref to world this manager is for
      public WorldProvider getWorldProvider(World world) {
-+        if (this.world == null) this.world = (WorldServer) world; // Paper
          return (WorldProvider) this.providerFactory.apply(world, this);
      }
- 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index f4863852b04c5fa55b79acabe40ce59909b9bbbd..7e01f6a1807f9885a7f4b163ce6bb626d8786a9a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -4361,7 +4359,7 @@ index 143be566c683ae035997f9a4058381a109f3de23..0e30d8c9933dc6595b9715ef6dc99cc8
          return VoxelShapes.b;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 2e1eabba14a3757d03fd90741651001e78c6322f..2a4fa455ff3065f9b1ad9bcf8d236bbb6f830bc9 100644
+index 2e1eabba14a3757d03fd90741651001e78c6322f..d9ff52eda71fcdf88d4c9114450237bcba2ccb08 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -4372,7 +4370,15 @@ index 2e1eabba14a3757d03fd90741651001e78c6322f..2a4fa455ff3065f9b1ad9bcf8d236bbb
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.event.block.BlockPhysicsEvent;
  // CraftBukkit end
-@@ -183,6 +184,39 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -94,6 +95,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
+         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
+         this.generator = gen;
++        dimensionmanager.world = (WorldServer) this; // Paper
+         this.world = new CraftWorld((WorldServer) this, gen, env);
+         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
+         this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
+@@ -183,6 +185,39 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
          return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
      }
  
@@ -4412,7 +4418,7 @@ index 2e1eabba14a3757d03fd90741651001e78c6322f..2a4fa455ff3065f9b1ad9bcf8d236bbb
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
          IChunkAccess ichunkaccess = this.chunkProvider.getChunkAt(i, j, chunkstatus, flag);
-@@ -336,8 +370,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -336,8 +371,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  

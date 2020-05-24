@@ -11,10 +11,10 @@ This will drastically cut down on packet sending cost for worlds with
 lots of players in them.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 9b726de6daeba42120f3a948fbdcf080d0e72917..cc5d75049d3553e0b01068e4e0c5677fe81f8387 100644
+index 9b726de6daeba42120f3a948fbdcf080d0e72917..269580ae2a6edca979ccc1e46df144468ea70a18 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1027,11 +1027,22 @@ public abstract class PlayerList {
+@@ -1027,11 +1027,27 @@ public abstract class PlayerList {
              world = (WorldServer) entityhuman.world;
          }
  
@@ -31,7 +31,12 @@ index 9b726de6daeba42120f3a948fbdcf080d0e72917..cc5d75049d3553e0b01068e4e0c5677f
 +            LOGGER.error("Sending packet to invalid world" + entityhuman + " " + dimensionmanager + " - " + packet.getClass().getName(), new Throwable());
 +            return; // ??? shouldn't happen...
 +        }
-+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = world.getChunkProvider().playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
++        ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
++        if (chunkProvider == null) {
++            // ??? Shouldn't be possible but seem some hacky plugins apparently do hack things.
++            return;
++        }
++        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkProvider.playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
 +        if (nearbyPlayers == null) {
 +            return;
 +        }
