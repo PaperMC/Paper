@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nesaak <52047222+Nesaak@users.noreply.github.com>
+Date: Mon, 25 May 2020 08:17:06 -0400
+Subject: [PATCH] Fix black meta components not serializing
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index c28ea1cef0620ba2956139c074fead3c2da2e5cb..fbc9620782ef61b4f54e740d83c26ad1b1b185d9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -1357,14 +1357,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     @Overridden
+     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         if (hasDisplayName()) {
+-            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName));
++            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName, EnumChatFormat.RESET)); // Paper - Fix black name not serializing
+         }
+         if (hasLocalizedName()) {
+             builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName));
+         }
+ 
+         if (hasLore()) {
+-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, CraftChatMessage::fromComponent)));
++            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, lore -> { return CraftChatMessage.fromComponent(lore, EnumChatFormat.RESET); }))); // Paper - Fix SPIGOT-5749
+         }
+ 
+         if (hasCustomModelData()) {
