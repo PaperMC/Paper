@@ -18,17 +18,17 @@ We will now detect these chunks in that iteration, and automatically
 add it to the unload queue when the chunk is found without any tickets.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..c9516d2d6724e84095e0e3c27c14870519fc05f9 100644
+index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..899a49974acf60eb7a160a4b55d1ab389249d3b0 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -898,6 +898,37 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -898,6 +898,29 @@ public class ChunkProviderServer extends IChunkProvider {
                          if (chunksTicked[0]++ % 10 == 0) this.world.getMinecraftServer().midTickLoadChunks(); // Paper
                      }
                  }
 +                // Paper start - remove inaccessible chunks leaked
 +                else if (playerchunk.getTicketLevel() == playerchunk.oldTicketLevel &&
 +                    playerChunkMap.unloadQueue.size() < 100 &&
-+                    (playerchunk.lastStatusChange == 0 || world.getTime() - playerchunk.lastStatusChange > 20) &&
++                    (playerchunk.lastActivity == 0 || world.getTime() - playerchunk.lastActivity > 20*15) &&
 +                    PlayerChunk.getChunkState(playerchunk.getTicketLevel()) == PlayerChunk.State.INACCESSIBLE
 +                ) {
 +                    ChunkStatus chunkHolderStatus = playerchunk.getChunkHolderStatus();
@@ -36,23 +36,15 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..c9516d2d6724e84095e0e3c27c148705
 +                    if (chunkHolderStatus != null && !chunkHolderStatus.isAtLeastStatus(desiredStatus)) {
 +                        return;
 +                    }
-+
-+                    if (playerchunk.lastStatusChange == 0) {
-+                        playerchunk.lastStatusChange = world.getTime();
-+                    } else {
-+                        Chunk chunk = playerchunk.getChunk();
-+                        if (chunk != null && chunk.isAnyNeighborsLoaded()) {
-+                            playerchunk.lastStatusChange = world.getTime()+(20*5);
-+                            return;
-+                        }
-+                        long key = playerchunk.location.pair();
-+                        ArraySetSorted<Ticket<?>> tickets = playerChunkMap.chunkDistanceManager.tickets.get(key);
-+                        if (tickets == null || tickets.isEmpty()) {
-+                            playerchunk.lastStatusChange = world.getTime()+(20*30);
-+                            playerChunkMap.unloadQueue.add(key);
-+                        } else {
-+                            playerchunk.lastStatusChange = world.getTime()+(20*5);
-+                        }
++                    playerchunk.lastActivity = world.getTime();
++                    Chunk chunk = playerchunk.getChunk();
++                    if ((chunk != null && chunk.isAnyNeighborsLoaded()) || !playerchunk.neighborPriorities.isEmpty()) {
++                        return;
++                    }
++                    long key = playerchunk.location.pair();
++                    ArraySetSorted<Ticket<?>> tickets = playerChunkMap.chunkDistanceManager.tickets.get(key);
++                    if (tickets == null || tickets.isEmpty()) {
++                        playerChunkMap.unloadQueue.add(key);
 +                    }
 +                    // Paper end
 +                }
@@ -60,14 +52,14 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..c9516d2d6724e84095e0e3c27c148705
              this.world.getMethodProfiler().enter("customSpawners");
              if (flag1) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index b8fe42e8123e972b1ec97b048c35d90118076e66..7e4d37128738ad0ef44d14ef3b48d8c5aca0c2f5 100644
+index b8fe42e8123e972b1ec97b048c35d90118076e66..ecac7b72759a3884020b9c19c58d3db3338e0fc3 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -44,6 +44,7 @@ public class PlayerChunk {
  
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
-+    long lastStatusChange; // Paper - fix chunk leak
++    long lastActivity; // Paper - fix chunk leak
  
      // Paper start - optimise isOutsideOfRange
      // cached here to avoid a map lookup
@@ -75,7 +67,28 @@ index b8fe42e8123e972b1ec97b048c35d90118076e66..7e4d37128738ad0ef44d14ef3b48d8c5
      protected void a(PlayerChunkMap playerchunkmap) {
          ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
-+        if (oldTicketLevel != ticketLevel) lastStatusChange = chunkMap.world.getTime(); // Paper - chunk leak
++        if (oldTicketLevel != ticketLevel) lastActivity = chunkMap.world.getTime(); // Paper - chunk leak
          boolean flag = this.oldTicketLevel <= PlayerChunkMap.GOLDEN_TICKET;
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 2b09437642ec846d025b226692f2290f9bb5b556..f0bb519450d5ff2a5c8f7364fa8d8ecac03a6c59 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -639,6 +639,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         }
+                     }));
+                 }
++                playerchunk.lastActivity = world.getTime(); // Paper - chunk leak
+ 
+                 ChunkStatus chunkstatus = (ChunkStatus) intfunction.apply(j1);
+                 CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = playerchunk.a(chunkstatus, this);
+@@ -871,6 +872,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         while (longiterator.hasNext()) { // Spigot
+             long j = longiterator.nextLong();
+             longiterator.remove(); // Spigot
++            ArraySetSorted<Ticket<?>> tickets = chunkDistanceManager.tickets.get(j); // Paper - chunk leak
++            if (tickets != null && !tickets.isEmpty()) continue; // Paper - ticket got added, don't remove
+             PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
+ 
+             if (playerchunk != null) {
