@@ -18,10 +18,18 @@ We will now detect these chunks in that iteration, and automatically
 add it to the unload queue when the chunk is found without any tickets.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..5254e436ce42dd2ab5e0aac5168a9f1f92c9da26 100644
+index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..59f19c38b06dd3370f9e1604af59535934715abc 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -898,6 +898,33 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -560,6 +560,7 @@ public class ChunkProviderServer extends IChunkProvider {
+             }
+         }
+         // Paper start
++        if (playerchunk != null) playerchunk.lastActivity = world.getTime(); // Paper
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> future = this.a(playerchunk, l) ? PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE : playerchunk.a(chunkstatus, this.playerChunkMap);
+         if (isUrgent) {
+             future.thenAccept(either -> this.chunkMapDistance.clearUrgent(chunkcoordintpair));
+@@ -898,6 +899,33 @@ public class ChunkProviderServer extends IChunkProvider {
                          if (chunksTicked[0]++ % 10 == 0) this.world.getMinecraftServer().midTickLoadChunks(); // Paper
                      }
                  }
@@ -104,3 +112,16 @@ index 2b09437642ec846d025b226692f2290f9bb5b556..b7d8a7487e303c2c44160ec1093987b3
              PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
  
              if (playerchunk != null) {
+diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
+index acfe732af5b9f63fc2f6b78499defabe2e73ee45..25b19346fc1c702cc37275d0ec16abbbfacfb418 100644
+--- a/src/main/java/net/minecraft/server/StructureGenerator.java
++++ b/src/main/java/net/minecraft/server/StructureGenerator.java
+@@ -160,7 +160,7 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
+         while (longiterator.hasNext()) {
+             long k = longiterator.nextLong();
+             IChunkAccess ichunkaccess1 = generatoraccess.getChunkAt(ChunkCoordIntPair.getX(k), ChunkCoordIntPair.getZ(k), ChunkStatus.STRUCTURE_STARTS, false); // CraftBukkit - don't load chunks
+-            StructureStart structurestart = ichunkaccess1.a(this.b());
++            StructureStart structurestart = ichunkaccess1 != null ? ichunkaccess1.a(this.b()) : null; // Paper - make sure not null
+ 
+             if (structurestart != null) {
+                 list.add(structurestart);
