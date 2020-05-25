@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 25 May 2020 11:02:42 -0400
+Subject: [PATCH] Unload leaked Cached Chunks
+
+Due to some complexity in mojangs complicated chain of juggling
+whether or not a chunk should be unloaded when the last ticket is
+removed, many chunks are remaining around in the cache.
+
+These chunks are never being targetted for unload because they are
+vastly out of view distance range and have no reason to be looked at.
+
+This is a huge issue for performance because we have to iterate these
+chunks EVERY TICK... This is what's been leading to high SELF time in
+Ticking Chunks timings/profiler results.
+
+We will now detect these chunks in that iteration, and automatically
+add it to the unload queue when the chunk is found without any tickets.
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                         if (chunksTicked[0]++ % 10 == 0) this.world.getMinecraftServer().midTickLoadChunks(); // Paper
+                     }
+                 }
++                // Paper start - remove inaccessible chunks leaked
++                else if (playerchunk.getTicketLevel() == playerchunk.oldTicketLevel &&
++                    playerChunkMap.unloadQueue.size() < 100 &&
++                    (playerchunk.lastStatusChange == 0 || world.getTime() - playerchunk.lastStatusChange > 20) &&
++                    PlayerChunk.getChunkState(playerchunk.getTicketLevel()) == PlayerChunk.State.INACCESSIBLE
++                ) {
++                    ChunkStatus chunkHolderStatus = playerchunk.getChunkHolderStatus();
++                    ChunkStatus desiredStatus = PlayerChunk.getChunkStatus(playerchunk.getTicketLevel());
++                    if (chunkHolderStatus != null && !chunkHolderStatus.isAtLeastStatus(desiredStatus)) {
++                        return;
++                    }
++
++                    if (playerchunk.lastStatusChange == 0) {
++                        playerchunk.lastStatusChange = world.getTime();
++                    } else {
++                        Chunk chunk = playerchunk.getChunk();
++                        if (chunk != null && chunk.isAnyNeighborsLoaded()) {
++                            playerchunk.lastStatusChange = world.getTime()+(20*5);
++                            return;
++                        }
++                        long key = playerchunk.location.pair();
++                        ArraySetSorted<Ticket<?>> tickets = playerChunkMap.chunkDistanceManager.tickets.get(key);
++                        if (tickets == null || tickets.isEmpty()) {
++                            playerchunk.lastStatusChange = world.getTime()+(20*30);
++                            playerChunkMap.unloadQueue.add(key);
++                        } else {
++                            playerchunk.lastStatusChange = world.getTime()+(20*5);
++                        }
++                    }
++                    // Paper end
++                }
+             });
+             this.world.getMethodProfiler().enter("customSpawners");
+             if (flag1) {
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+ 
+     long lastAutoSaveTime; // Paper - incremental autosave
+     long inactiveTimeStart; // Paper - incremental autosave
++    long lastStatusChange; // Paper - fix chunk leak
+ 
+     // Paper start - optimise isOutsideOfRange
+     // cached here to avoid a map lookup
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+     protected void a(PlayerChunkMap playerchunkmap) {
+         ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
+         ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
++        if (oldTicketLevel != ticketLevel) lastStatusChange = chunkMap.world.getTime(); // Paper - chunk leak
+         boolean flag = this.oldTicketLevel <= PlayerChunkMap.GOLDEN_TICKET;
+         boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
+         PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
