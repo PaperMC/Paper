@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import net.minecraft.server.Block;
 import net.minecraft.server.Item;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -18,6 +19,9 @@ public class CraftEffect {
             break;
         case POTION_BREAK:
             datavalue = ((Potion) data).toDamageValue() & 0x3F;
+            break;
+        case INSTANT_POTION_BREAK:
+            datavalue = ((Color) data).asRGB();
             break;
         case RECORD_PLAY:
             Validate.isTrue(data == Material.AIR || ((Material) data).isRecord(), "Invalid record type!");
