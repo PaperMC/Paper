@@ -1219,14 +1219,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Overridden
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         if (hasDisplayName()) {
-            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName));
+            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE));
         }
         if (hasLocalizedName()) {
-            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName));
+            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName, EnumChatFormat.WHITE));
         }
 
         if (hasLore()) {
-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, CraftChatMessage::fromComponent)));
+            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, (line) -> CraftChatMessage.fromComponent(line, EnumChatFormat.DARK_PURPLE))));
         }
 
         if (hasCustomModelData()) {
