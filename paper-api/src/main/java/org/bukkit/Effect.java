@@ -109,6 +109,11 @@ public enum Effect {
      */
     POTION_BREAK(2002, Type.VISUAL, Potion.class),
     /**
+     * Visual effect of an instant splash potion breaking. Needs color data
+     * value as additional info.
+     */
+    INSTANT_POTION_BREAK(2007, Type.VISUAL, Color.class),
+    /**
      * An ender eye signal; a visual effect.
      */
     ENDER_SIGNAL(2003, Type.VISUAL),
