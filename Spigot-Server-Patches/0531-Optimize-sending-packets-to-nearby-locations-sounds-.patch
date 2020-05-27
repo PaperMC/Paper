@@ -11,10 +11,10 @@ This will drastically cut down on packet sending cost for worlds with
 lots of players in them.
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 9b726de6daeba42120f3a948fbdcf080d0e72917..269580ae2a6edca979ccc1e46df144468ea70a18 100644
+index 9b726de6daeba42120f3a948fbdcf080d0e72917..ada082e67ac8a3e79bab5b360f09c9402f683b86 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -1027,11 +1027,27 @@ public abstract class PlayerList {
+@@ -1027,11 +1027,30 @@ public abstract class PlayerList {
              world = (WorldServer) entityhuman.world;
          }
  
@@ -24,26 +24,50 @@ index 9b726de6daeba42120f3a948fbdcf080d0e72917..269580ae2a6edca979ccc1e46df14446
 -            if (!(entity instanceof EntityPlayer)) continue;
 -            EntityPlayer entityplayer = (EntityPlayer) entity;
 +        // Paper start
-+        if (world == null && dimensionmanager != null) {
++        if ((world == null || world.chunkProvider == null) && dimensionmanager != null) {
 +            world = dimensionmanager.world;
 +        }
 +        if (world == null) {
 +            LOGGER.error("Sending packet to invalid world" + entityhuman + " " + dimensionmanager + " - " + packet.getClass().getName(), new Throwable());
 +            return; // ??? shouldn't happen...
 +        }
-+        ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+        if (chunkProvider == null) {
-+            // ??? Shouldn't be possible but seem some hacky plugins apparently do hack things.
-+            return;
++        PlayerChunkMap chunkMap = world.chunkMap;
++        Object[] backingSet;
++        if (chunkMap == null) {
++            // Really shouldn't happen...
++            backingSet = world.players.toArray();
++        } else {
++            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
++            if (nearbyPlayers == null) {
++                return;
++            }
++            backingSet = nearbyPlayers.getBackingSet();
 +        }
-+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkProvider.playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
-+        if (nearbyPlayers == null) {
-+            return;
-+        }
-+        Object[] backingSet = nearbyPlayers.getBackingSet();
++
 +        for (Object object : backingSet) {
 +            if (!(object instanceof EntityPlayer)) continue;
 +            EntityPlayer entityplayer = (EntityPlayer) object;
              // Paper end
  
              // CraftBukkit start - Test if player receiving packet can see the source of the packet
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 9e32e2db10f5faaa3c5f4adc5cbc2c1a2e4d3073..854c97bddb711ed252c2ae8398247641fdfb10be 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -70,6 +70,7 @@ public class WorldServer extends World {
+         }
+     }
+     // Paper end
++    public final PlayerChunkMap chunkMap; // Paper
+     private final MinecraftServer server;
+     private final WorldNBTStorage dataManager;
+     public boolean savingDisabled;
+@@ -208,6 +209,8 @@ public class WorldServer extends World {
+         }, gameprofilerfiller, false, gen, env);
+         this.pvpMode = minecraftserver.getPVP();
+         worlddata.world = this;
++        if (chunkProvider == null) { chunkMap = null; new Throwable("World created without a ChunkProvider!").printStackTrace(); } // Paper - figure out if something weird happened here
++        else chunkMap = ((ChunkProviderServer) chunkProvider).playerChunkMap;
+         // CraftBukkit end
+         if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
+             this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> { // Paper - optimise TickListServer
