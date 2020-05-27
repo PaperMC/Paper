@@ -24,26 +24,50 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (!(entity instanceof EntityPlayer)) continue;
 -            EntityPlayer entityplayer = (EntityPlayer) entity;
 +        // Paper start
-+        if (world == null && dimensionmanager != null) {
++        if ((world == null || world.chunkProvider == null) && dimensionmanager != null) {
 +            world = dimensionmanager.world;
 +        }
 +        if (world == null) {
 +            LOGGER.error("Sending packet to invalid world" + entityhuman + " " + dimensionmanager + " - " + packet.getClass().getName(), new Throwable());
 +            return; // ??? shouldn't happen...
 +        }
-+        ChunkProviderServer chunkProvider = (ChunkProviderServer) world.chunkProvider;
-+        if (chunkProvider == null) {
-+            // ??? Shouldn't be possible but seem some hacky plugins apparently do hack things.
-+            return;
++        PlayerChunkMap chunkMap = world.chunkMap;
++        Object[] backingSet;
++        if (chunkMap == null) {
++            // Really shouldn't happen...
++            backingSet = world.players.toArray();
++        } else {
++            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
++            if (nearbyPlayers == null) {
++                return;
++            }
++            backingSet = nearbyPlayers.getBackingSet();
 +        }
-+        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkProvider.playerChunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
-+        if (nearbyPlayers == null) {
-+            return;
-+        }
-+        Object[] backingSet = nearbyPlayers.getBackingSet();
++
 +        for (Object object : backingSet) {
 +            if (!(object instanceof EntityPlayer)) continue;
 +            EntityPlayer entityplayer = (EntityPlayer) object;
              // Paper end
  
              // CraftBukkit start - Test if player receiving packet can see the source of the packet
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         }
+     }
+     // Paper end
++    public final PlayerChunkMap chunkMap; // Paper
+     private final MinecraftServer server;
+     private final WorldNBTStorage dataManager;
+     public boolean savingDisabled;
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+         }, gameprofilerfiller, false, gen, env);
+         this.pvpMode = minecraftserver.getPVP();
+         worlddata.world = this;
++        if (chunkProvider == null) { chunkMap = null; new Throwable("World created without a ChunkProvider!").printStackTrace(); } // Paper - figure out if something weird happened here
++        else chunkMap = ((ChunkProviderServer) chunkProvider).playerChunkMap;
+         // CraftBukkit end
+         if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
+             this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> { // Paper - optimise TickListServer
