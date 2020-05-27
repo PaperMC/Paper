@@ -6,16 +6,17 @@ Subject: [PATCH] Fix CraftServer.unloadWorld Leak
 The dimension manager was still registered which leaked the entire World
 
 diff --git a/src/main/java/net/minecraft/server/DimensionManager.java b/src/main/java/net/minecraft/server/DimensionManager.java
-index 5724fe6e57d3671b4978aecaf217ac4c2e0d7f82..3af9709a8717b1d9c445c3b04163027177a81711 100644
+index 393bc4dc700bbf8653db0662c7957f676b0a647a..410ab224fbb05bfbf4aa847d69b150bfe75d32f6 100644
 --- a/src/main/java/net/minecraft/server/DimensionManager.java
 +++ b/src/main/java/net/minecraft/server/DimensionManager.java
-@@ -20,6 +20,14 @@ public class DimensionManager implements MinecraftSerializable {
+@@ -20,6 +20,15 @@ public class DimensionManager implements MinecraftSerializable {
      private final boolean hasSkyLight;
      private final GenLayerZoomer genLayerZoomer;
  
 +    // Paper start
 +    public static void unregister(String s, DimensionManager dimensionmanager) {
-+        MinecraftServer.getServer().execute(() -> {
++        if (dimensionmanager == OVERWORLD || dimensionmanager == NETHER || dimensionmanager == THE_END) { return; } // do not unregister the default worlds
++        MCUtil.MAIN_EXECUTOR.execute(() -> {
 +            RegistryMaterials<DimensionManager> registry = (RegistryMaterials<DimensionManager>) IRegistry.DIMENSION_TYPE;
 +            registry.deleteValue(new MinecraftKey(s), dimensionmanager);
 +        });
