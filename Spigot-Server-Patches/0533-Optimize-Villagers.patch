@@ -39,10 +39,10 @@ So we cache that and only rebuild it if professions change, which should be neve
 a plugin manipulates and adds custom professions, which it will handle by rebuilding.
 
 diff --git a/src/main/java/net/minecraft/server/BehaviorFindPosition.java b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..be85c20bdc7dc10e6389d4ad8738fd5866b83ebd 100644
+index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..6861b1a345496a83900b0ef702ba34315a030ef6 100644
 --- a/src/main/java/net/minecraft/server/BehaviorFindPosition.java
 +++ b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-@@ -29,8 +29,54 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -29,8 +29,55 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
  
      protected void a(WorldServer worldserver, EntityCreature entitycreature, long i) {
          this.f = 0;
@@ -79,14 +79,13 @@ index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..be85c20bdc7dc10e6389d4ad8738fd58
 +                            ++poiAttempts;
 +                            PathEntity pathentity = entitycreature.getNavigation().a(com.google.common.collect.ImmutableSet.of(pos), 8, false, this.a.d());
 +
-+                            if (poiAttempts <= maxPoiAttempts && pathentity != null && pathentity.h()) {
++                            if (pathentity != null && pathentity.h()) {
 +                                record.decreaseVacancy();
 +                                GlobalPos globalPos = GlobalPos.create(worldserver.getWorldProvider().getDimensionManager(), pos);
 +                                entitycreature.getBehaviorController().setMemory(this.b, globalPos);
 +                                break OUT;
 +                            }
-+                            if (poiAttempts > maxPoiAttempts) {
-+                                this.e.long2LongEntrySet().removeIf((entry) -> entry.getLongValue() < this.d);
++                            if (poiAttempts >= maxPoiAttempts) {
 +                                break OUT;
 +                            }
 +                        }
@@ -94,11 +93,13 @@ index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..be85c20bdc7dc10e6389d4ad8738fd58
 +                }
 +            }
 +        }
++        // Clean up - vanilla does this only when it runs out, but that would push it to try farther POI's...
++        this.e.long2LongEntrySet().removeIf((entry) -> entry.getLongValue() < this.d);
 +        /*
          Predicate<BlockPosition> predicate = (blockposition) -> {
              long j = blockposition.asLong();
  
-@@ -61,6 +107,6 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -61,6 +108,6 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
                  return entry.getLongValue() < this.d;
              });
          }
