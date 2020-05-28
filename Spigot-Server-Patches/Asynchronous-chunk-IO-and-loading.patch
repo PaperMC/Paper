@@ -447,48 +447,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    // Hack start
-+    /**
-+     * if {@code waitForRead} is true, then this task will wait on an available read task, else it will wait on an available
-+     * write task
-+     * if {@code poiTask} is true, then this task will wait on a poi task, else it will wait on chunk data task
-+     * @deprecated API is garbage and will only work for main thread queueing of tasks (which is vanilla), plugins messing
-+     *            around asynchronously will give unexpected results
-+     * @return whether the task succeeded, or {@code null} if there is no task
-+     */
-+    @Deprecated
-+    public Boolean waitForIOToComplete(final WorldServer world, final int chunkX, final int chunkZ, final boolean waitForRead,
-+                                       final boolean poiTask) {
-+        final ChunkDataTask task;
-+
-+        final Long key = IOUtil.getCoordinateKey(chunkX, chunkZ);
-+        if (poiTask) {
-+            task = world.poiDataController.tasks.get(key);
-+        } else {
-+            task = world.chunkDataController.tasks.get(key);
-+        }
-+
-+        if (task == null) {
-+            return null;
-+        }
-+
-+        if (waitForRead) {
-+            ChunkDataController.InProgressRead read = task.inProgressRead;
-+            if (read == null) {
-+                return null;
-+            }
-+            return Boolean.valueOf(read.readFuture.join() != PaperFileIOThread.FAILURE_VALUE);
-+        }
-+
-+        // wait for write
-+        ChunkDataController.InProgressWrite write = task.inProgressWrite;
-+        if (write == null) {
-+            return null;
-+        }
-+        return Boolean.valueOf(write.wrote.join() != PaperFileIOThread.FAILURE_VALUE);
-+    }
-+    // Hack end
-+
 +    public NBTTagCompound getPendingWrite(final WorldServer world, final int chunkX, final int chunkZ, final boolean poiData) {
 +        final ChunkDataController taskController = poiData ? world.poiDataController : world.chunkDataController;
 +
@@ -826,11 +784,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public static final class InProgressWrite {
 +            public long writeCounter;
 +            public NBTTagCompound data;
-+
-+            // Hack start
-+            @Deprecated
-+            public CompletableFuture<NBTTagCompound> wrote = new CompletableFuture<>();
-+            // Hack end
 +        }
 +
 +        public static final class InProgressRead {
@@ -883,7 +836,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        void reschedule(final int priority) {
 +            // priority is checked before this stage // TODO what
 +            this.queue.lazySet(null);
-+            this.inProgressWrite.wrote = new CompletableFuture<>(); // Hack
 +            this.priority.lazySet(priority);
 +            PaperFileIOThread.Holder.INSTANCE.queueTask(this);
 +        }
@@ -936,7 +888,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                LOGGER.fatal("Couldn't save chunk; already in use by another instance of Minecraft?", ex);
 +                // we don't need to set the write counter to -1 as we know at this stage there's no point in re-scheduling
 +                // writes since they'll fail anyways.
-+                write.wrote.complete(PaperFileIOThread.FAILURE_VALUE); // Hack - However we need to fail the write
 +                return;
 +            }
 +
@@ -966,19 +917,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                ChunkDataTask inMap = this.taskController.tasks.compute(chunkKey, (final Long keyInMap, final ChunkDataTask valueInMap) -> {
 +                    if (valueInMap == null) {
-+                        ChunkDataTask.this.inProgressWrite.wrote.complete(PaperFileIOThread.FAILURE_VALUE); // Hack
 +                        throw new IllegalStateException("Write completed concurrently, expected this task: " + ChunkDataTask.this.toString() + ", report this!");
 +                    }
 +                    if (valueInMap != ChunkDataTask.this) {
-+                        ChunkDataTask.this.inProgressWrite.wrote.complete(PaperFileIOThread.FAILURE_VALUE); // Hack
 +                        throw new IllegalStateException("Chunk task mismatch, expected this task: " + ChunkDataTask.this.toString() + ", got: " + valueInMap.toString() + ", report this!");
 +                    }
 +                    if (valueInMap.inProgressWrite.writeCounter == writeCounter) {
 +                        if (finalFailWrite) {
 +                            valueInMap.inProgressWrite.writeCounter = -1L;
-+                            valueInMap.inProgressWrite.wrote.complete(PaperFileIOThread.FAILURE_VALUE);
-+                        } else {
-+                            valueInMap.inProgressWrite.wrote.complete(data);
 +                        }
 +
 +                        return null;
@@ -3308,21 +3254,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -                if (nbttagcompound != null) {try (Timing ignored2 = this.world.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
 -                    boolean flag = nbttagcompound.hasKeyOfType("Level", 10) && nbttagcompound.getCompound("Level").hasKeyOfType("Status", 8);
--
--                    if (flag) {
--                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.io.IOUtil.rethrow(ioThrowable);
 +                }
  
--                        protochunk.setLastSaved(this.world.getTime());
--                        return Either.left(protochunk);
--                    }
+-                    if (flag) {
+-                        ProtoChunk protochunk = ChunkRegionLoader.loadChunk(this.world, this.definedStructureManager, this.m, chunkcoordintpair, nbttagcompound);
 +                this.getVillagePlace().loadInData(chunkcoordintpair, chunkHolder.poiData);
 +                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper - async load completes this
 +                // Paper end
  
+-                        protochunk.setLastSaved(this.world.getTime());
+-                        return Either.left(protochunk);
+-                    }
+-
 -                    PlayerChunkMap.LOGGER.error("Chunk file at {} is missing level data, skipping", chunkcoordintpair);
 -                }} // Paper
 +                // Paper start - This is done async
@@ -3369,43 +3315,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> b(PlayerChunk playerchunk, ChunkStatus chunkstatus) {
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         return this.u.get();
      }
  
-+    // Paper start - async chunk io
-+    private boolean writeDataAsync(ChunkCoordIntPair chunkPos, NBTTagCompound poiData, NBTTagCompound chunkData, boolean async) {
-+        com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkPos.x, chunkPos.z,
-+            poiData, chunkData, !async ? com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY : com.destroystokyo.paper.io.PrioritizedTaskQueue.LOW_PRIORITY);
-+
-+        if (async) {
-+            return true;
-+        }
-+
-+        try (co.aikar.timings.Timing ignored = this.world.timings.chunkSaveIOWait.startTiming()) { // Paper
-+        Boolean successPoi = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.waitForIOToComplete(this.world, chunkPos.x, chunkPos.z, true, true);
-+        Boolean successChunk = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.waitForIOToComplete(this.world, chunkPos.x, chunkPos.z, true, false);
-+
-+        if (successPoi == Boolean.FALSE || successChunk == Boolean.FALSE) {
-+            return false;
-+        }
-+
-+        // null indicates no task existed, which means our write completed before we waited on it
-+
-+        return true;
-+        } // Paper
-+    }
-+    // Paper end
-+
      public boolean saveChunk(IChunkAccess ichunkaccess) {
--        this.m.a(ichunkaccess.getPos());
-+        // Paper start - async param
-+        return this.saveChunk(ichunkaccess, true);
-+    }
-+    public boolean saveChunk(IChunkAccess ichunkaccess, boolean async) {
-+        try (co.aikar.timings.Timing ignored = this.world.timings.chunkSave.startTiming()) {
-+        NBTTagCompound poiData = this.getVillagePlace().getData(ichunkaccess.getPos()); // Paper
-+        //this.m.a(ichunkaccess.getPos()); // Delay
-+        // Paper end
++        try (co.aikar.timings.Timing ignored = this.world.timings.chunkSave.startTiming()) { // Paper
+         this.m.a(ichunkaccess.getPos());
          if (!ichunkaccess.isNeedsSaving()) {
              return false;
          } else {
@@ -3428,29 +3342,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      // Paper start - Optimize save by using status cache
                      ChunkStatus statusOnDisk = this.getChunkStatusOnDisk(chunkcoordintpair);
                      if (statusOnDisk != null && statusOnDisk.getType() == ChunkStatus.Type.LEVELCHUNK) {
-                         // Paper end
-+                        this.writeDataAsync(ichunkaccess.getPos(), poiData, null, async); // Paper - Async chunk io
-                         return false;
-                     }
- 
-                     if (chunkstatus == ChunkStatus.EMPTY && ichunkaccess.h().values().stream().noneMatch(StructureStart::e)) {
-+                        this.writeDataAsync(ichunkaccess.getPos(), poiData, null, async); // Paper - Async chunk io
-                         return false;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                      }
                  }
  
-                 this.world.getMethodProfiler().c("chunkSave");
 +                } // Paper
+                 this.world.getMethodProfiler().c("chunkSave");
 +                try (co.aikar.timings.Timing ignored1 = this.world.timings.chunkSaveDataSerialization.startTiming()) { // Paper
                  nbttagcompound = ChunkRegionLoader.saveChunk(this.world, ichunkaccess);
 -                this.a(chunkcoordintpair, nbttagcompound);
--                return true;
 +                } // Paper
-+                return this.writeDataAsync(ichunkaccess.getPos(), poiData, nbttagcompound, async); // Paper - Async chunk io
-+                //return true; // Paper
++                // Paper start - async chunk io
++                com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(this.world, chunkcoordintpair.x, chunkcoordintpair.z,
++                    null, nbttagcompound, com.destroystokyo.paper.io.PrioritizedTaskQueue.NORMAL_PRIORITY);
++                // Paper end - async chunk io
+                 return true;
              } catch (Exception exception) {
                  PlayerChunkMap.LOGGER.error("Failed to save chunk {},{}", chunkcoordintpair.x, chunkcoordintpair.z, exception);
-                 com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return false;
              }
          }
@@ -3485,13 +3394,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(
 +                this.world, chunkcoordintpair.x, chunkcoordintpair.z, null, nbttagcompound,
 +                com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread());
-+
-+            Boolean ret = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.waitForIOToComplete(this.world,
-+                chunkcoordintpair.x, chunkcoordintpair.z, true, false);
-+
-+            if (ret == Boolean.FALSE) {
-+                throw new IOException("See logs for further detail");
-+            }
 +            return;
 +        }
 +        super.write(chunkcoordintpair, nbttagcompound);
@@ -4026,13 +3928,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.scheduleSave(
 +                this.world, chunkcoordintpair.x, chunkcoordintpair.z, nbttagcompound, null,
 +                com.destroystokyo.paper.io.IOUtil.getPriorityForCurrentThread());
-+
-+            Boolean ret = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE.waitForIOToComplete(this.world,
-+                chunkcoordintpair.x, chunkcoordintpair.z, true, true);
-+
-+            if (ret == Boolean.FALSE) {
-+                throw new java.io.IOException("See logs for further detail");
-+            }
 +            return;
 +        }
 +        super.write(chunkcoordintpair, nbttagcompound);
