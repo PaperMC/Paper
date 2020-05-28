@@ -245,4 +245,14 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertNotNull(material.createBlockData());
         }
     }
+
+    @Test
+    public void testCraftingRemainingItem() {
+        if (material.isItem()) {
+            Item expectedItem = CraftMagicNumbers.getItem(material).p(); // PAIL rename p() -> getCraftingRemainingItem()
+            Material expected = expectedItem == null ? null : CraftMagicNumbers.getMaterial(expectedItem);
+
+            assertThat(material.getCraftingRemainingItem(), is(expected));
+        }
+    }
 }
