@@ -63,7 +63,7 @@ index a3f919816eb2a742ed09b553995e6508684e5ea5..88277d23c36696fdd5363e41a130c9a4
          }
  
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-index b978723a66d001f70325df0c7521025e079d7cfa..278aec8846d3bd448e359095063a711e78213ee5 100644
+index b978723a66d001f70325df0c7521025e079d7cfa..fe35e297d9283d2826e8985806ee268ac2020bfb 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 @@ -8,10 +8,17 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
@@ -87,7 +87,7 @@ index b978723a66d001f70325df0c7521025e079d7cfa..278aec8846d3bd448e359095063a711e
          this.c();
          this.d = true;
      }
-@@ -19,12 +26,13 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -19,26 +26,33 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      public abstract M b();
  
      public void a(long i) {
@@ -103,16 +103,36 @@ index b978723a66d001f70325df0c7521025e079d7cfa..278aec8846d3bd448e359095063a711e
      }
  
      @Nullable
-@@ -37,7 +45,7 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+     public NibbleArray c(long i) {
++        // Paper start - remove cache - not thread safe
++        /*
+         if (this.d) {
+             for (int j = 0; j < 2; ++j) {
+                 if (i == this.b[j]) {
+                     return this.c[j];
+                 }
              }
-         }
+-        }
++        }*/
++        // Paper end
  
 -        NibbleArray nibblearray = (NibbleArray) this.a.get(i);
 +        NibbleArray nibblearray = (NibbleArray) (this.isVisible ? this.data.getVisibleAsync(i) : this.data.getUpdating(i)); // Paper - avoid copying light data
  
++        // Paper start - remove cache - not thread safe
++        return nibblearray;
++        /*
          if (nibblearray == null) {
              return null;
-@@ -58,11 +66,13 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+         } else {
+@@ -53,24 +67,28 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+             }
+ 
+             return nibblearray;
+-        }
++        }*/
++        // Paper end
+     }
  
      @Nullable
      public NibbleArray d(long i) {
@@ -128,6 +148,16 @@ index b978723a66d001f70325df0c7521025e079d7cfa..278aec8846d3bd448e359095063a711e
      }
  
      public void c() {
++        /* // Paper - remove cache
+         for (int i = 0; i < 2; ++i) {
+             this.b[i] = Long.MAX_VALUE;
+             this.c[i] = null;
+         }
+-
++        */
+     }
+ 
+     public void d() {
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java b/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
 index 0f7f4744d9f9e5174fb38ccc72248397a4b064ea..292d8c742d3be41ba8ad7fb7f1251dc7f790b62b 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java

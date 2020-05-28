@@ -49,15 +49,17 @@ index 88277d23c36696fdd5363e41a130c9a443fac2c0..fa8039d38d5b3110fd85abf850248ba7
  
      }
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-index 278aec8846d3bd448e359095063a711e78213ee5..f17b16d5c52cd77dd53807222dff4631d185e159 100644
+index fe35e297d9283d2826e8985806ee268ac2020bfb..cbeb6387e1e05961d2b747bbb05d3f577f82399c 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-@@ -27,7 +27,7 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -27,7 +27,9 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
  
      public void a(long i) {
          if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
 -        this.data.queueUpdate(i, ((NibbleArray) this.data.getUpdating(i)).b()); // Paper - avoid copying light data
-+        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(this.data.getUpdating(i).getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
++        NibbleArray updating = this.data.getUpdating(i); // Paper - pool nibbles
++        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(updating.getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
++        if (updating.cleaner != null) updating.cleaner.run(); // Paper
          this.c();
      }
  
