@@ -7978,4 +7978,30 @@ public enum Material implements Keyed {
             // </editor-fold>
         }
     }
+
+    /**
+     * Determines the remaining item in a crafting grid after crafting with this
+     * ingredient.
+     * <br>
+     * Only available when {@link #isItem()} is true.
+     *
+     * @return the item left behind when crafting, or null if nothing is.
+     */
+    @Nullable
+    public Material getCraftingRemainingItem() {
+        Validate.isTrue(isItem(), "The Material is not an item!");
+        switch (this) {
+            // <editor-fold defaultstate="collapsed" desc="getCraftingRemainingItem">
+            case WATER_BUCKET:
+            case LAVA_BUCKET:
+            case MILK_BUCKET:
+                return BUCKET;
+            case DRAGON_BREATH:
+            case HONEY_BOTTLE:
+                return GLASS_BOTTLE;
+            default:
+                return null;
+            // </editor-fold>
+        }
+    }
 }
