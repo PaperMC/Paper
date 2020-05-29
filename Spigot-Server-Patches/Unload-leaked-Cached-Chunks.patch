@@ -17,6 +17,41 @@ Ticking Chunks timings/profiler results.
 We will now detect these chunks in that iteration, and automatically
 add it to the unload queue when the chunk is found without any tickets.
 
+diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
++++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
+@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+     public final Long2ObjectOpenHashMap<ArraySetSorted<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
+     private final ChunkMapDistance.a e = new ChunkMapDistance.a();
+     public static final int MOB_SPAWN_RANGE = 8; //private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
+-    private final ChunkMapDistance.c g = new ChunkMapDistance.c(33);
++    private final ChunkMapDistance.c g = new ChunkMapDistance.c(33); public final ChunkMapDistance.c getLevelTracker() { return g; } // Paper
+     // Paper start use a queue, but still keep unique requirement
+     public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
+         @Override
+@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+             this.e = i;
+         }
+ 
++        // Paper start - check diff below
++        public boolean isChunkLoaded(long i) {
++            return this.c(this.c(i));
++        }
++        // Paper end
++
+         private void a(long i, int j, boolean flag, boolean flag1) {
+             if (flag != flag1) {
+                 Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
+@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+                 if (flag1) {
+                     ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
+                         ChunkMapDistance.this.m.execute(() -> {
+-                            if (this.c(this.c(i))) {
++                            if (this.c(this.c(i))) { // Paper - diff above isChunkLoaded
+                                 ChunkMapDistance.this.addTicket(i, ticket);
+                                 ChunkMapDistance.this.l.add(i);
+                             } else {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -54,9 +89,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private void checkInactiveChunk(PlayerChunk playerchunk, long time) {
 +        int ticketLevel = playerchunk.getTicketLevel();
 +        if (ticketLevel > 33 && ticketLevel == playerchunk.oldTicketLevel &&
-+            (playerchunk.lastActivity == 0 || time - playerchunk.lastActivity > 20*180) &&
-+            playerchunk.location.pair() % 20 == 0 && playerChunkMap.unloadQueue.size() < 100 &&
-+            PlayerChunk.getChunkState(ticketLevel) == PlayerChunk.State.INACCESSIBLE
++            (playerchunk.lastActivity == 0 || time - playerchunk.lastActivity > 20*5) &&
++            playerchunk.location.pair() % 20 == 0 && playerChunkMap.unloadQueue.size() < 100
 +        ) {
 +            ChunkStatus chunkHolderStatus = playerchunk.getChunkHolderStatus();
 +            ChunkStatus desiredStatus = PlayerChunk.getChunkStatus(ticketLevel);
@@ -69,12 +103,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            playerchunk.lastActivity = time;
 +            Chunk chunk = playerchunk.getChunk();
-+            if ((chunk != null && chunk.isAnyNeighborsLoaded()) || !playerchunk.neighborPriorities.isEmpty()) {
++            if ((chunk != null && chunk.isAnyNeighborsLoaded()) || !playerchunk.neighborPriorities.isEmpty() || !playerchunk.dependendedOnBy.isEmpty()) {
 +                return;
 +            }
 +            long key = playerchunk.location.pair();
-+            ArraySetSorted<Ticket<?>> tickets = playerChunkMap.chunkDistanceManager.tickets.get(key);
-+            if (tickets == null || tickets.isEmpty()) {
++            if (playerChunkMap.playerViewDistanceNoTickMap.getObjectsInRange(key) != null) {
++                return;
++            }
++            PlayerChunkMap.a distanceManager = playerChunkMap.chunkDistanceManager;
++            ArraySetSorted<Ticket<?>> tickets = distanceManager.tickets.get(key);
++            if ((tickets == null || tickets.isEmpty()) && !distanceManager.getLevelTracker().isChunkLoaded(key)) {
 +                playerChunkMap.unloadQueue.add(key);
 +            }
 +        }
@@ -93,6 +131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
 +    long lastActivity; // Paper - fix chunk leak
++    java.util.concurrent.ConcurrentHashMap<ChunkCoordIntPair, Boolean> dependendedOnBy = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
  
      // Paper start - optimise isOutsideOfRange
      // cached here to avoid a map lookup
@@ -133,6 +172,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
  
              if (playerchunk != null) {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         return completablefuture.thenComposeAsync((either) -> {
+             return either.map((list) -> { // Paper - Shut up.
+                 try {
++                    // Paper start
++                    list.forEach(chunk -> {
++                            PlayerChunk updatingChunk = getUpdatingChunk(chunk.getPos().pair());
++                            if (updatingChunk != null) {
++                                updatingChunk.dependendedOnBy.put(playerchunk.location, true);
++                                updatingChunk.lastActivity = world.getTime();
++                            }
++                        });
++                    // Paper end
+                     CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture1 = chunkstatus.a(this.world, this.chunkGenerator, this.definedStructureManager, this.lightEngine, (ichunkaccess) -> {
+                         return this.c(playerchunk);
+                     }, list);
++                    // Paper start
++                    completablefuture1.whenComplete((unused, unused2) -> list.forEach(chunk -> {
++                        PlayerChunk updatingChunk = getUpdatingChunk(chunk.getPos().pair());
++                        if (updatingChunk != null) {
++                            updatingChunk.dependendedOnBy.remove(playerchunk.location);
++                            updatingChunk.lastActivity = world.getTime();
++                        }
++                    }));
++                    // Paper end
+ 
+                     this.worldLoadListener.a(chunkcoordintpair, chunkstatus);
+                     return completablefuture1;
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
+             });
+         }, (runnable) -> {
++            playerchunk.lastActivity = world.getTime(); // Paper
+             this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
+         });
+     }
 diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/StructureGenerator.java
