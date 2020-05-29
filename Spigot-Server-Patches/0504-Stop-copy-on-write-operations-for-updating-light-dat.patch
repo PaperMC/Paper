@@ -63,19 +63,21 @@ index a3f919816eb2a742ed09b553995e6508684e5ea5..88277d23c36696fdd5363e41a130c9a4
          }
  
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-index b978723a66d001f70325df0c7521025e079d7cfa..fe35e297d9283d2826e8985806ee268ac2020bfb 100644
+index b978723a66d001f70325df0c7521025e079d7cfa..d441c4e4744d68b3d934ca6034c32966e486327a 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-@@ -8,10 +8,17 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -8,10 +8,23 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      private final long[] b = new long[2];
      private final NibbleArray[] c = new NibbleArray[2];
      private boolean d;
 -    protected final Long2ObjectOpenHashMap<NibbleArray> a;
-+    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
-+    protected final boolean isVisible; // Paper - avoid copying light data
- 
+-
 -    protected LightEngineStorageArray(Long2ObjectOpenHashMap<NibbleArray> long2objectopenhashmap) {
 -        this.a = long2objectopenhashmap;
++    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
++    protected final boolean isVisible; // Paper - avoid copying light data
++    java.util.function.Function<Long, NibbleArray> lookup; // Paper - faster branchless lookup
++
 +    // Paper start - avoid copying light data
 +    protected LightEngineStorageArray(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, boolean isVisible) {
 +        if (isVisible) {
@@ -83,11 +85,16 @@ index b978723a66d001f70325df0c7521025e079d7cfa..fe35e297d9283d2826e8985806ee268a
 +        }
 +        this.data = data;
 +        this.isVisible = isVisible;
++        if (isVisible) {
++            lookup = data::getVisibleAsync;
++        } else {
++            lookup = data::getUpdating;
++        }
 +        // Paper end - avoid copying light data
          this.c();
          this.d = true;
      }
-@@ -19,26 +26,33 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -19,26 +32,32 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      public abstract M b();
  
      public void a(long i) {
@@ -99,11 +106,12 @@ index b978723a66d001f70325df0c7521025e079d7cfa..fe35e297d9283d2826e8985806ee268a
  
      public boolean b(long i) {
 -        return this.a.containsKey(i);
-+        return this.isVisible ? this.data.visibleContainsKeyAsync(i) : this.data.updatingContainsKey(i); // Paper - avoid copying light data
++        return lookup.apply(i) != null; // Paper - avoid copying light data
      }
  
      @Nullable
-     public NibbleArray c(long i) {
+-    public NibbleArray c(long i) {
++    public final NibbleArray c(long i) { // Paper - final
 +        // Paper start - remove cache - not thread safe
 +        /*
          if (this.d) {
@@ -117,15 +125,14 @@ index b978723a66d001f70325df0c7521025e079d7cfa..fe35e297d9283d2826e8985806ee268a
 +        // Paper end
  
 -        NibbleArray nibblearray = (NibbleArray) this.a.get(i);
-+        NibbleArray nibblearray = (NibbleArray) (this.isVisible ? this.data.getVisibleAsync(i) : this.data.getUpdating(i)); // Paper - avoid copying light data
++        return lookup.apply(i); // Paper - avoid copying light data
  
 +        // Paper start - remove cache - not thread safe
-+        return nibblearray;
 +        /*
          if (nibblearray == null) {
              return null;
          } else {
-@@ -53,24 +67,28 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -53,24 +72,28 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
              }
  
              return nibblearray;

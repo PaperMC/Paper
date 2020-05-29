@@ -18,7 +18,7 @@ We will now detect these chunks in that iteration, and automatically
 add it to the unload queue when the chunk is found without any tickets.
 
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 9805361e2d49fa1cfecf0c5811187fc503d0ad8e..91b9946f987a397960a08c7a606fcf4e2607e0ae 100644
+index 9805361e2d49fa1cfecf0c5811187fc503d0ad8e..62ed8e653c2060c314b407f698842e9c7c3312c0 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -33,7 +33,7 @@ public abstract class ChunkMapDistance {
@@ -30,20 +30,7 @@ index 9805361e2d49fa1cfecf0c5811187fc503d0ad8e..91b9946f987a397960a08c7a606fcf4e
      // Paper start use a queue, but still keep unique requirement
      public final java.util.Queue<PlayerChunk> pendingChunkUpdates = new java.util.ArrayDeque<PlayerChunk>() {
          @Override
-@@ -471,6 +471,12 @@ public abstract class ChunkMapDistance {
-             this.e = i;
-         }
- 
-+        // Paper start - check diff below
-+        public boolean isChunkLoaded(long i) {
-+            return this.c(this.c(i));
-+        }
-+        // Paper end
-+
-         private void a(long i, int j, boolean flag, boolean flag1) {
-             if (flag != flag1) {
-                 Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
-@@ -478,7 +484,7 @@ public abstract class ChunkMapDistance {
+@@ -478,7 +478,7 @@ public abstract class ChunkMapDistance {
                  if (flag1) {
                      ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
@@ -53,7 +40,7 @@ index 9805361e2d49fa1cfecf0c5811187fc503d0ad8e..91b9946f987a397960a08c7a606fcf4e
                                  ChunkMapDistance.this.l.add(i);
                              } else {
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..32b6d28cd28d60937eca14187287645ea2797da7 100644
+index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..144e91b303cbd9c58c9e6d598e9c9334f2a75c73 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -560,6 +560,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -81,7 +68,7 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..32b6d28cd28d60937eca14187287645e
              });
              this.world.getMethodProfiler().enter("customSpawners");
              if (flag1) {
-@@ -913,6 +915,40 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -913,6 +915,30 @@ public class ChunkProviderServer extends IChunkProvider {
          this.playerChunkMap.g();
      }
  
@@ -89,7 +76,7 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..32b6d28cd28d60937eca14187287645e
 +    private void checkInactiveChunk(PlayerChunk playerchunk, long time) {
 +        int ticketLevel = playerchunk.getTicketLevel();
 +        if (ticketLevel > 33 && ticketLevel == playerchunk.oldTicketLevel &&
-+            (playerchunk.lastActivity == 0 || time - playerchunk.lastActivity > 20*5) &&
++            (playerchunk.lastActivity == 0 || time - playerchunk.lastActivity > 20*120) &&
 +            playerchunk.location.pair() % 20 == 0 && playerChunkMap.unloadQueue.size() < 100
 +        ) {
 +            ChunkStatus chunkHolderStatus = playerchunk.getChunkHolderStatus();
@@ -102,18 +89,8 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..32b6d28cd28d60937eca14187287645e
 +                return;
 +            }
 +            playerchunk.lastActivity = time;
-+            Chunk chunk = playerchunk.getChunk();
-+            if ((chunk != null && chunk.isAnyNeighborsLoaded()) || !playerchunk.neighborPriorities.isEmpty() || !playerchunk.dependendedOnBy.isEmpty()) {
-+                return;
-+            }
-+            long key = playerchunk.location.pair();
-+            if (playerChunkMap.playerViewDistanceNoTickMap.getObjectsInRange(key) != null) {
-+                return;
-+            }
-+            PlayerChunkMap.a distanceManager = playerChunkMap.chunkDistanceManager;
-+            ArraySetSorted<Ticket<?>> tickets = distanceManager.tickets.get(key);
-+            if ((tickets == null || tickets.isEmpty()) && !distanceManager.getLevelTracker().isChunkLoaded(key)) {
-+                playerChunkMap.unloadQueue.add(key);
++            if (playerchunk.shouldBeUnloaded()) {
++                playerChunkMap.unloadQueue.add(playerchunk.location.pair());
 +            }
 +        }
 +    }
@@ -123,19 +100,33 @@ index 54e89c9cc6c47ff2c4f4dd5d4c22a391f8a3d6e0..32b6d28cd28d60937eca14187287645e
      public String getName() {
          return "ServerChunkCache: " + this.h();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index b8fe42e8123e972b1ec97b048c35d90118076e66..f213a08e42db20c511f7d70434b03ee4040676bc 100644
+index b8fe42e8123e972b1ec97b048c35d90118076e66..18f9a2590f7fa5dfc9070fc5e13121d77f06e79f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -44,6 +44,8 @@ public class PlayerChunk {
+@@ -44,6 +44,22 @@ public class PlayerChunk {
  
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
-+    long lastActivity; // Paper - fix chunk leak
-+    java.util.concurrent.ConcurrentHashMap<ChunkCoordIntPair, Boolean> dependendedOnBy = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
++    // Paper start - unload leaked chunks
++    long lastActivity;
++    java.util.concurrent.ConcurrentHashMap<ChunkCoordIntPair, Boolean> dependendedOnBy = new java.util.concurrent.ConcurrentHashMap<>();
++    public boolean shouldBeUnloaded() {
++        if (!neighborPriorities.isEmpty() || !dependendedOnBy.isEmpty()) {
++            return false;
++        }
++        long key = location.pair();
++        if (chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(key) != null) {
++            return false;
++        }
++        PlayerChunkMap.a distanceManager = chunkMap.chunkDistanceManager;
++        ArraySetSorted<Ticket<?>> tickets = distanceManager.tickets.get(key);
++        return (tickets == null || tickets.isEmpty()) TODO: Figure out level map;
++    }
++    // Paper end
  
      // Paper start - optimise isOutsideOfRange
      // cached here to avoid a map lookup
-@@ -562,6 +564,7 @@ public class PlayerChunk {
+@@ -562,6 +578,7 @@ public class PlayerChunk {
      protected void a(PlayerChunkMap playerchunkmap) {
          ChunkStatus chunkstatus = getChunkStatus(this.oldTicketLevel);
          ChunkStatus chunkstatus1 = getChunkStatus(this.ticketLevel);
@@ -144,7 +135,7 @@ index b8fe42e8123e972b1ec97b048c35d90118076e66..f213a08e42db20c511f7d70434b03ee4
          boolean flag1 = this.ticketLevel <= PlayerChunkMap.GOLDEN_TICKET; // Paper - diff on change: (flag1 = new ticket level is in loadable range)
          PlayerChunk.State playerchunk_state = getChunkState(this.oldTicketLevel);
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index f42507f5a17f9388db738218f58ca76f863274ff..d4bcbf8c1030eee55064b246b25391c0a5201d83 100644
+index f42507f5a17f9388db738218f58ca76f863274ff..9ee13c741fdcc6b40d175e375e61bffa4c14f45f 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -639,6 +639,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -163,16 +154,20 @@ index f42507f5a17f9388db738218f58ca76f863274ff..d4bcbf8c1030eee55064b246b25391c0
                          requestingNeighbor.onNeighborDone(playerchunk, chunkstatus, either.left().orElse(null));
                      });
                  }
-@@ -871,6 +873,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         while (longiterator.hasNext()) { // Spigot
-             long j = longiterator.nextLong();
-             longiterator.remove(); // Spigot
-+            ArraySetSorted<Ticket<?>> tickets = chunkDistanceManager.tickets.get(j); // Paper - chunk leak
-+            if (tickets != null && !tickets.isEmpty()) continue; // Paper - ticket got added, don't remove
+@@ -874,6 +876,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              PlayerChunk playerchunk = (PlayerChunk) this.updatingChunks.remove(j);
  
              if (playerchunk != null) {
-@@ -1147,9 +1151,27 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
++                // Paper start - don't unload chunks that should be loaded
++                if (!playerchunk.shouldBeUnloaded()) {
++                    this.updatingChunks.put(j, playerchunk);
++                    continue;
++                }
++                // Paper end
+                 this.pendingUnload.put(j, playerchunk);
+                 this.updatingChunksModified = true;
+                 this.a(j, playerchunk); // Paper - Move up - don't leak chunks
+@@ -1147,9 +1155,27 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          return completablefuture.thenComposeAsync((either) -> {
              return either.map((list) -> { // Paper - Shut up.
                  try {
@@ -200,7 +195,7 @@ index f42507f5a17f9388db738218f58ca76f863274ff..d4bcbf8c1030eee55064b246b25391c0
  
                      this.worldLoadListener.a(chunkcoordintpair, chunkstatus);
                      return completablefuture1;
-@@ -1167,6 +1189,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1167,6 +1193,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return CompletableFuture.completedFuture(Either.right(playerchunk_failure));
              });
          }, (runnable) -> {
