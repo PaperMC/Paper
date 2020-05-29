@@ -78,7 +78,7 @@ index b5c2e1f4a2b5fdcaa6bb01f4b3b6847cd5b73ae8..6209b33d8497ec56bbde507e523db064
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..771d879711988bbece02c8b375db786b733925b5 100644
+index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..9805361e2d49fa1cfecf0c5811187fc503d0ad8e 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
@@ -119,7 +119,7 @@ index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..771d879711988bbece02c8b375db786b
              // Paper end
              return true;
          } else {
-@@ -147,14 +152,16 @@ public abstract class ChunkMapDistance {
+@@ -147,21 +152,31 @@ public abstract class ChunkMapDistance {
              return flag;
          }
      }
@@ -133,11 +133,18 @@ index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..771d879711988bbece02c8b375db786b
  
          ticket1.a(this.currentTick);
 -        if (ticket.b() < j) {
-+        if (ticket.getTicketLevel() < j || ticket.getTicketType() == TicketType.URGENT || (ticket.getTicketType() == TicketType.PRIORITY && ticket.getTicketLevel() - ticket.priority < j)) { // Paper - check priority tickets too
++        if (ticket.getTicketLevel() < j) {
              this.e.b(i, ticket.b(), true);
++            // Paper start - queue update if priority ticket add
++        } else if (ticket.getTicketType() == TicketType.URGENT || ticket.getTicketType() == TicketType.PRIORITY) {
++            PlayerChunk updatingChunk = chunkMap.getUpdatingChunk(i);
++            if (updatingChunk != null) {
++                pendingChunkUpdates.add(updatingChunk);
++            }
++            // Paper end
          }
  
-@@ -162,6 +169,7 @@ public abstract class ChunkMapDistance {
+         return ticket == ticket1; // CraftBukkit
      }
  
      private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
@@ -145,7 +152,7 @@ index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..771d879711988bbece02c8b375db786b
          ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
  
          boolean removed = false; // CraftBukkit
-@@ -182,6 +190,82 @@ public abstract class ChunkMapDistance {
+@@ -182,6 +197,82 @@ public abstract class ChunkMapDistance {
          this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
      }
  
@@ -228,7 +235,7 @@ index 586a20fe5c77c2ad5fa26f337a94a16e21d8b5e2..771d879711988bbece02c8b375db786b
      public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
          return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier));
          // CraftBukkit end
-@@ -397,12 +481,14 @@ public abstract class ChunkMapDistance {
+@@ -397,12 +488,14 @@ public abstract class ChunkMapDistance {
  
                          });
                      }, i, () -> {
@@ -602,7 +609,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..b8fe42e8123e972b1ec97b048c35d901
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 4a9d6f0c193c6d8a65d548ac1dd1461e7056f0a4..2b09437642ec846d025b226692f2290f9bb5b556 100644
+index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..f42507f5a17f9388db738218f58ca76f863274ff 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -50,6 +50,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
