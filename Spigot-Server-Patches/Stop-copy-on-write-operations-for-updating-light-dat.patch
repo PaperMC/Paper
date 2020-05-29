@@ -71,11 +71,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final NibbleArray[] c = new NibbleArray[2];
      private boolean d;
 -    protected final Long2ObjectOpenHashMap<NibbleArray> a;
-+    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
-+    protected final boolean isVisible; // Paper - avoid copying light data
- 
+-
 -    protected LightEngineStorageArray(Long2ObjectOpenHashMap<NibbleArray> long2objectopenhashmap) {
 -        this.a = long2objectopenhashmap;
++    protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
++    protected final boolean isVisible; // Paper - avoid copying light data
++    java.util.function.Function<Long, NibbleArray> lookup; // Paper - faster branchless lookup
++
 +    // Paper start - avoid copying light data
 +    protected LightEngineStorageArray(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, boolean isVisible) {
 +        if (isVisible) {
@@ -83,6 +85,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        this.data = data;
 +        this.isVisible = isVisible;
++        if (isVisible) {
++            lookup = data::getVisibleAsync;
++        } else {
++            lookup = data::getUpdating;
++        }
 +        // Paper end - avoid copying light data
          this.c();
          this.d = true;
@@ -99,11 +106,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public boolean b(long i) {
 -        return this.a.containsKey(i);
-+        return this.isVisible ? this.data.visibleContainsKeyAsync(i) : this.data.updatingContainsKey(i); // Paper - avoid copying light data
++        return lookup.apply(i) != null; // Paper - avoid copying light data
      }
  
      @Nullable
-     public NibbleArray c(long i) {
+-    public NibbleArray c(long i) {
++    public final NibbleArray c(long i) { // Paper - final
 +        // Paper start - remove cache - not thread safe
 +        /*
          if (this.d) {
@@ -117,10 +125,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
  
 -        NibbleArray nibblearray = (NibbleArray) this.a.get(i);
-+        NibbleArray nibblearray = (NibbleArray) (this.isVisible ? this.data.getVisibleAsync(i) : this.data.getUpdating(i)); // Paper - avoid copying light data
++        return lookup.apply(i); // Paper - avoid copying light data
  
 +        // Paper start - remove cache - not thread safe
-+        return nibblearray;
 +        /*
          if (nibblearray == null) {
              return null;
