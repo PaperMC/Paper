@@ -1099,7 +1099,7 @@ index e056fbcb216977401fd2778fcd3ee7ed5f020214..eeb7eee925d31d1ed8e6bbd55888cb5e
  
      public int j() {
 diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
-index 2c1d1b1a5568ab104fb1a0f283f289680d59e81e..2c7872bd0516c820a42682b5281dbbaa1b467beb 100644
+index 3da575929fcf878ebfe18e3240fac84325159225..abe86b4607e014e280e29daae6e1617763c53131 100644
 --- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -1118,8 +1118,8 @@ index 2c1d1b1a5568ab104fb1a0f283f289680d59e81e..2c7872bd0516c820a42682b5281dbbaa
      protected DataBits a; protected DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
      private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
      private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
-@@ -46,14 +48,47 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
-         this.j.unlock();
+@@ -43,14 +45,47 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+         //this.j.unlock(); // Paper - disable this
      }
  
 -    public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0) {
@@ -1168,7 +1168,7 @@ index 2c1d1b1a5568ab104fb1a0f283f289680d59e81e..2c7872bd0516c820a42682b5281dbbaa
  
      private static int b(int i, int j, int k) {
          return j << 8 | k << 4 | i;
-@@ -88,6 +123,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+@@ -85,6 +120,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
  
          int j;
  
@@ -1176,17 +1176,17 @@ index 2c1d1b1a5568ab104fb1a0f283f289680d59e81e..2c7872bd0516c820a42682b5281dbbaa
          for (j = 0; j < databits.b(); ++j) {
              T t1 = datapalette.a(databits.a(j));
  
-@@ -137,24 +173,38 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+@@ -134,24 +170,38 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
          return t0 == null ? this.g : t0;
      }
  
 -    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
--    public void b(PacketDataSerializer packetdataserializer) {
+-    public synchronized void b(PacketDataSerializer packetdataserializer) { // Paper - synchronize
 +    // Paper start - Anti-Xray - Add chunk packet info
 +    @Deprecated public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // OBFHELPER // Notice for updates: Please make sure this method isn't used anywhere
 +    @Deprecated public void b(PacketDataSerializer packetdataserializer) { this.writeDataPaletteBlock(packetdataserializer, null, 0); } // Notice for updates: Please make sure this method isn't used anywhere
 +    public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer, ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { this.b(packetDataSerializer, chunkPacketInfo, chunkSectionIndex); } // OBFHELPER
-+    public void b(PacketDataSerializer packetdataserializer, ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) {
++    public synchronized void b(PacketDataSerializer packetdataserializer, ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { // Paper - synchronize
 +        // Paper end
          this.a();
          packetdataserializer.writeByte(this.i);
@@ -1203,7 +1203,7 @@ index 2c1d1b1a5568ab104fb1a0f283f289680d59e81e..2c7872bd0516c820a42682b5281dbbaa
          this.b();
      }
  
-     public void a(NBTTagList nbttaglist, long[] along) {
+     public synchronized void a(NBTTagList nbttaglist, long[] along) { // Paper - synchronize
          this.a();
 -        int i = Math.max(4, MathHelper.d(nbttaglist.size()));
 +        // Paper - Anti-Xray - TODO: Should this.predefinedObjects.length just be added here (faster) or should the contents be compared to calculate the size (less RAM)?
