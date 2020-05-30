@@ -23,7 +23,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
     private final ReentrantLock j = new ReentrantLock();
 
-    public void a() {
+    public void a() { /* // Paper start - disable this - use proper synchronization
         if (this.j.isLocked() && !this.j.isHeldByCurrentThread()) {
             String s = (String) Thread.getAllStackTraces().keySet().stream().filter(Objects::nonNull).map((thread) -> {
                 return thread.getName() + ": \n\tat " + (String) Arrays.stream(thread.getStackTrace()).map(Object::toString).collect(Collectors.joining("\n\tat "));
@@ -35,11 +35,11 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
             throw new ReportedException(crashreport);
         } else {
             this.j.lock();
-        }
+        } */ // Paper end
     }
 
     public void b() {
-        this.j.unlock();
+        //this.j.unlock(); // Paper - disable this
     }
 
     public DataPaletteBlock(DataPalette<T> datapalette, RegistryBlockID<T> registryblockid, Function<NBTTagCompound, T> function, Function<T, NBTTagCompound> function1, T t0) {
@@ -75,7 +75,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     }
 
     @Override
-    public int onResize(int i, T t0) {
+    public synchronized int onResize(int i, T t0) { // Paper - synchronize
         this.a();
         DataBits databits = this.a;
         DataPalette<T> datapalette = this.h;
@@ -98,18 +98,18 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     }
 
     public T setBlock(int i, int j, int k, T t0) {
-        this.a();
-        T t1 = this.a(b(i, j, k), t0);
+        //this.a(); // Paper - remove to reduce ops - synchronize handled below
+        return this.a(b(i, j, k), t0); // Paper
 
-        this.b();
-        return t1;
+        //this.b(); // Paper
+        //return t1; // PAper
     }
 
     public T b(int i, int j, int k, T t0) {
         return this.a(b(i, j, k), t0);
     }
 
-    protected T a(int i, T t0) {
+    protected synchronized T a(int i, T t0) { // Paper - synchronize - writes
         int j = this.h.a(t0);
         int k = this.a.a(i, j);
         T t1 = this.h.a(k);
@@ -134,7 +134,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
     }
 
     public void writeDataPaletteBlock(PacketDataSerializer packetDataSerializer) { this.b(packetDataSerializer); } // Paper - OBFHELPER
-    public void b(PacketDataSerializer packetdataserializer) {
+    public synchronized void b(PacketDataSerializer packetdataserializer) { // Paper - synchronize
         this.a();
         packetdataserializer.writeByte(this.i);
         this.h.b(packetdataserializer);
@@ -142,7 +142,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         this.b();
     }
 
-    public void a(NBTTagList nbttaglist, long[] along) {
+    public synchronized void a(NBTTagList nbttaglist, long[] along) { // Paper - synchronize
         this.a();
         int i = Math.max(4, MathHelper.e(nbttaglist.size()));
 
@@ -175,7 +175,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
         this.b();
     }
 
-    public void a(NBTTagCompound nbttagcompound, String s, String s1) {
+    public synchronized void a(NBTTagCompound nbttagcompound, String s, String s1) { // Paper - synchronize
         this.a();
         DataPaletteHash<T> datapalettehash = new DataPaletteHash<>(this.d, this.i, this.c, this.e, this.f);
         T t0 = this.g;
