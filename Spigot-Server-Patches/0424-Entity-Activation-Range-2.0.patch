@@ -135,6 +135,88 @@ index 6d4d41c88c206ad63f3733b5c8b3f23eb40dde52..193dbfc5f684bfe46f69cb2ab2c52dbb
      public boolean fd() {
          return this.bJ != null;
      }
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index 6e0020ae0b4d2f2597843129b83fff0d194de337..b3462576469f67dca618c54bb35fd53454afcd1f 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -135,17 +135,30 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+     @Override
+     public void inactiveTick() {
+         // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
+-        if (world.spigotConfig.tickInactiveVillagers && this.doAITick()) {
+-            this.mobTick();
++        // Paper start
++        if (this.getUnhappy() > 0) {
++            this.setUnhappy(this.getUnhappy() - 1);
++        }
++        if (this.doAITick()) {
++            if (world.spigotConfig.tickInactiveVillagers) {
++                this.mobTick();
++            } else {
++                this.mobTick(true);
++            }
+         }
++        doReputationTick();
++        // Paper end
++
+         super.inactiveTick();
+     }
+     // Spigot End
+ 
+-    @Override
+-    protected void mobTick() {
++    @Override // Paper start - tick trades while inactive
++    protected void mobTick() { mobTick(false); }
++    protected void mobTick(boolean inactive) {
++        // Paper end
+         this.world.getMethodProfiler().enter("brain");
+-        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
++        if (!inactive) this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error // Paper
+         this.world.getMethodProfiler().exit();
+         if (!this.et() && this.bB > 0) {
+             --this.bB;
+@@ -165,7 +178,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+             this.bD = null;
+         }
+ 
+-        if (!this.isNoAI() && this.random.nextInt(100) == 0) {
++        if (!inactive && !this.isNoAI() && this.random.nextInt(100) == 0) { // Paper
+             Raid raid = ((WorldServer) this.world).c_(new BlockPosition(this));
+ 
+             if (raid != null && raid.v() && !raid.a()) {
+@@ -176,6 +189,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.et()) {
+             this.ey();
+         }
++        if (inactive) return; // Paper
+ 
+         super.mobTick();
+     }
+@@ -819,6 +833,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+         }
+     }
+ 
++    private void doReputationTick() { fa(); } // Paper - OBFHELPER
+     private void fa() {
+         long i = this.world.getTime();
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+index 9b75c67c72bc2837cf12bf7ef8172031831deb6e..463528532026e9757431a90cc2540af0f7903faf 100644
+--- a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+@@ -43,10 +43,12 @@ public abstract class EntityVillagerAbstract extends EntityAgeable implements NP
+         return super.prepare(generatoraccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
+     }
+ 
++    public final int getUnhappy() { return eq(); } // Paper - OBFHELPER
+     public int eq() {
+         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bx);
+     }
+ 
++    public final void setUnhappy(int i) { s(i); } // Paper - OBFHELPER
+     public void s(int i) {
+         this.datawatcher.set(EntityVillagerAbstract.bx, i);
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index f22f12eeb0b10d038fcd74cc4b19e888b134c3c7..bdb90a346639db37d3c72359c28b72d021d1b389 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
@@ -249,7 +331,7 @@ index 5a8c60ad909394413427851db8068ba79c058b63..29657fed75184aee0c89e56f5e642a5d
          return this.c;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 9e161746f2acbe544140979bddb51ac26ee0d20f..228e6e9ab997394dc99775a5f787455b8b7d6d63 100644
+index 6b6612de65081895825858f52d0f1c6f23c8edb6..3742be65afebcf4c61a9efbd1c207f968e5f7473 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -76,6 +76,12 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -653,7 +735,7 @@ index 92601c581cffac471872226abeb93ef9aa24f079..d873b8cf3aec01b791565c33b252889f
              isActive = false;
          }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 5e932a5d979a7253059e3c29c6ee846ad39214a5..9d706626bf25c278eb1c3a232eeacc4d241a466e 100644
+index 37ef07338e0e7ebb778b4446c8e7a630f597c7be..69454bc3c51c0d7c6f1b6d1fbcba93322205bab6 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -180,13 +180,59 @@ public class SpigotWorldConfig
