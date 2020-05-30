@@ -337,6 +337,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              for (int i = 0; i < this.inventory.getSize(); ++i) {
                  ItemStack itemstack = this.inventory.getItem(i);
+diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
++++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
+@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+         ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
+ 
+         ichunkaccess.b(false);
+-        this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
++        // Paper start
++        IntSupplier defSupplier = this.d.c(chunkcoordintpair.pair());
++        IntSupplier priority = () -> Math.max(defSupplier.getAsInt() - (flag ? 2 : 0), 1);
++        // Paper end
++        this.a(chunkcoordintpair.x, chunkcoordintpair.z, priority, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> { // Paper - boost light priority
+             ChunkSection[] achunksection = ichunkaccess.getSections();
+ 
+             for (int i = 0; i < 16; ++i) {
+@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+             super.b(chunkcoordintpair, false);
+             return ichunkaccess;
+         }, (runnable) -> {
+-            this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.POST_UPDATE, runnable);
++            this.a(chunkcoordintpair.x, chunkcoordintpair.z, priority, LightEngineThreaded.Update.POST_UPDATE, runnable); // Paper - boost light priority
+         });
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
