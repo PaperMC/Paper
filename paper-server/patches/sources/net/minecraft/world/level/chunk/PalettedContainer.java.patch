@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -30,14 +30,14 @@
+     public final IdMap<T> registry;
+     private volatile PalettedContainer.Data<T> data;
+     private final PalettedContainer.Strategy strategy;
+-    private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
++    // private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
+ 
+     public void acquire() {
+-        this.threadingDetector.checkAndLock();
++        // this.threadingDetector.checkAndLock(); // Paper - disable this - use proper synchronization
+     }
+ 
+     public void release() {
+-        this.threadingDetector.checkAndUnlock();
++        // this.threadingDetector.checkAndUnlock(); // Paper - disable this
+     }
+ 
+     public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+@@ -110,7 +110,7 @@
+     }
+ 
+     @Override
+-    public int onResize(int newBits, T object) {
++    public synchronized int onResize(int newBits, T object) { // Paper - synchronize
+         PalettedContainer.Data<T> data = this.data;
+         PalettedContainer.Data<T> data2 = this.createOrReuseData(data, newBits);
+         data2.copyFrom(data.palette, data.storage);
+@@ -135,7 +135,7 @@
+         return this.getAndSet(this.strategy.getIndex(x, y, z), value);
+     }
+ 
+-    private T getAndSet(int index, T value) {
++    private synchronized T getAndSet(int index, T value) { // Paper - synchronize
+         int i = this.data.palette.idFor(value);
+         int j = this.data.storage.getAndSet(index, i);
+         return this.data.palette.valueFor(j);
+@@ -151,7 +151,7 @@
+         }
+     }
+ 
+-    private void set(int index, T value) {
++    private synchronized void set(int index, T value) { // Paper - synchronize
+         int i = this.data.palette.idFor(value);
+         this.data.storage.set(index, i);
+     }
+@@ -174,7 +174,7 @@
+         intSet.forEach(id -> action.accept(palette.valueFor(id)));
+     }
+ 
+-    public void read(FriendlyByteBuf buf) {
++    public synchronized void read(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -189,7 +189,7 @@
+     }
+ 
+     @Override
+-    public void write(FriendlyByteBuf buf) {
++    public synchronized void write(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -237,7 +237,7 @@
+     }
+ 
+     @Override
+-    public PalettedContainerRO.PackedData<T> pack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider) {
++    public synchronized PalettedContainerRO.PackedData<T> pack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider) { // Paper - synchronize
+         this.acquire();
+ 
+         PalettedContainerRO.PackedData var12;
