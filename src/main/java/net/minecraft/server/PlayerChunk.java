@@ -58,6 +58,13 @@ public class PlayerChunk {
         this.playersInChunkTickRange = this.chunkMap.playerChunkTickRangeMap.getObjectsInRange(key);
     }
     // Paper end - optimise isOutsideOfRange
+    // Paper start - optimize chunk status progression without jumping through thread pool
+    public boolean canAdvanceStatus() {
+        ChunkStatus status = getChunkHolderStatus();
+        IChunkAccess chunk = getAvailableChunkNow();
+        return chunk != null && (status == null || chunk.getChunkStatus().isAtLeastStatus(getNextStatus(status)));
+    }
+    // Paper end
 
     // Paper start - no-tick view distance
     public final Chunk getSendingChunk() {
