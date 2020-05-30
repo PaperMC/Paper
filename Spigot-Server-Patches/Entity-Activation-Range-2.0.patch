@@ -135,6 +135,88 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean fd() {
          return this.bJ != null;
      }
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+     @Override
+     public void inactiveTick() {
+         // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
+-        if (world.spigotConfig.tickInactiveVillagers && this.doAITick()) {
+-            this.mobTick();
++        // Paper start
++        if (this.getUnhappy() > 0) {
++            this.setUnhappy(this.getUnhappy() - 1);
++        }
++        if (this.doAITick()) {
++            if (world.spigotConfig.tickInactiveVillagers) {
++                this.mobTick();
++            } else {
++                this.mobTick(true);
++            }
+         }
++        doReputationTick();
++        // Paper end
++
+         super.inactiveTick();
+     }
+     // Spigot End
+ 
+-    @Override
+-    protected void mobTick() {
++    @Override // Paper start - tick trades while inactive
++    protected void mobTick() { mobTick(false); }
++    protected void mobTick(boolean inactive) {
++        // Paper end
+         this.world.getMethodProfiler().enter("brain");
+-        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
++        if (!inactive) this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error // Paper
+         this.world.getMethodProfiler().exit();
+         if (!this.et() && this.bB > 0) {
+             --this.bB;
+@@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+             this.bD = null;
+         }
+ 
+-        if (!this.isNoAI() && this.random.nextInt(100) == 0) {
++        if (!inactive && !this.isNoAI() && this.random.nextInt(100) == 0) { // Paper
+             Raid raid = ((WorldServer) this.world).c_(new BlockPosition(this));
+ 
+             if (raid != null && raid.v() && !raid.a()) {
+@@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.et()) {
+             this.ey();
+         }
++        if (inactive) return; // Paper
+ 
+         super.mobTick();
+     }
+@@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+         }
+     }
+ 
++    private void doReputationTick() { fa(); } // Paper - OBFHELPER
+     private void fa() {
+         long i = this.world.getTime();
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+@@ -0,0 +0,0 @@ public abstract class EntityVillagerAbstract extends EntityAgeable implements NP
+         return super.prepare(generatoraccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
+     }
+ 
++    public final int getUnhappy() { return eq(); } // Paper - OBFHELPER
+     public int eq() {
+         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bx);
+     }
+ 
++    public final void setUnhappy(int i) { s(i); } // Paper - OBFHELPER
+     public void s(int i) {
+         this.datawatcher.set(EntityVillagerAbstract.bx, i);
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
