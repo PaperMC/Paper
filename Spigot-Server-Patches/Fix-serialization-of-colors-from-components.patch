@@ -18,6 +18,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 @@ -0,0 +0,0 @@ public final class CraftChatMessage {
+                 case 1:
+                     EnumChatFormat format = formatMap.get(match.toLowerCase(java.util.Locale.ENGLISH).charAt(1));
+                     if (format == EnumChatFormat.RESET) {
+-                        modifier = new ChatModifier();
++                        modifier = new ChatModifier().setColor(format); // Paper
+                     } else if (format.isFormat()) {
+                         switch (format) {
+                         case BOLD:
+@@ -0,0 +0,0 @@ public final class CraftChatMessage {
          if (component == null) return "";
          StringBuilder out = new StringBuilder();
  
@@ -26,13 +35,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
              ChatModifier modi = c.getChatModifier();
 -            out.append(modi.getColor() == null ? defaultColor : modi.getColor());
++            EnumChatFormat color = modi.getColor();
 +            if (first) {
-+                if (modi.getColor() != null) {
-+                    out.append(modi.getColor());
++                if (color != null) {
++                    out.append(color);
 +                }
-+                first = false;
-+            } else {
-+                out.append(modi.getColor() == null ? defaultColor : modi.getColor());
++                if (!c.getText().isEmpty() || color != null) {
++                    first = false;
++                }
++            } else if (!c.getText().isEmpty() || color != null) {
++                if (color != null) {
++                    out.append(color);
++                } else if (defaultColor != null) {
++                    out.append(defaultColor);
++                }
 +            }
 +            // Paper end
              if (modi.isBold()) {
@@ -47,3 +63,65 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static IChatBaseComponent fixComponent(IChatBaseComponent component) {
+diff --git a/src/test/java/org/bukkit/craftbukkit/CraftChatMessageTest.java b/src/test/java/org/bukkit/craftbukkit/CraftChatMessageTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/CraftChatMessageTest.java
+@@ -0,0 +0,0 @@
++package org.bukkit.craftbukkit;
++
++import net.minecraft.server.EnumChatFormat;
++import net.minecraft.server.IChatBaseComponent;
++import org.bukkit.ChatColor;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.Test;
++
++import static org.junit.Assert.assertEquals;
++
++public class CraftChatMessageTest extends AbstractTestingBase {
++    @Test
++    public void testSimpleStrings() {
++        testString("&fFoo", EnumChatFormat.WHITE);
++        testString("Foo", EnumChatFormat.WHITE);
++        testString("Foo&bBar", EnumChatFormat.WHITE);
++        testString("Foo&bBar", EnumChatFormat.AQUA);
++        testString("&fFoo&bBar", EnumChatFormat.WHITE);
++        testString("&rFoo", EnumChatFormat.WHITE);
++    }
++
++    @Test
++    public void testComponents() {
++        testComponent("Foo&bBar&fBaz", EnumChatFormat.WHITE, create("Foo", "&bBar", "Baz"));
++        testComponent("&fFoo&bBar&fBaz", EnumChatFormat.WHITE, create("", "&fFoo", "&bBar", "Baz"));
++        testComponent("Foo&bBar&fBaz", EnumChatFormat.WHITE, create("", "Foo", "&bBar", "Baz"));
++        testComponent("&fFoo&bBar&fBaz", EnumChatFormat.WHITE, create("&fFoo", "&bBar", "Baz"));
++        testComponent("F&foo&bBar&fBaz", EnumChatFormat.WHITE, create("F&foo", "&bBar", "Baz"));
++    }
++
++    private IChatBaseComponent create(String txt, String ...rest) {
++        IChatBaseComponent cmp = toComp(txt);
++        for (String s : rest) {
++            cmp.addSibling(toComp(s));
++        }
++
++        return cmp;
++    }
++
++    private IChatBaseComponent toComp(String txt) {
++        return CraftChatMessage.fromString(ChatColor.translateAlternateColorCodes('&', txt))[0];
++    }
++
++    private void testString(String expected, EnumChatFormat defColor) {
++        expected = ChatColor.translateAlternateColorCodes('&', expected);
++        IChatBaseComponent cmp = CraftChatMessage.fromStringOrNull(expected);
++        testComponent(expected, defColor, cmp);
++    }
++
++    private void testComponent(String expected, EnumChatFormat defColor, IChatBaseComponent components) {
++        expected = ChatColor.translateAlternateColorCodes('&', expected);
++        String actual = CraftChatMessage.fromComponent(components, defColor);
++        assertEquals(expected, actual);
++    }
++}
