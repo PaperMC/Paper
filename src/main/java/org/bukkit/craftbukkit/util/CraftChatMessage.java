@@ -38,7 +38,9 @@ public final class CraftChatMessage {
     }
 
     private static final class StringMessage {
-        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|(\\n)|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))", Pattern.CASE_INSENSITIVE);
+        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))|(\\n)", Pattern.CASE_INSENSITIVE);
+        // Separate pattern with no group 3, new lines are part of previous string
+        private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
         private IChatBaseComponent currentChatComponent = new ChatComponentText("");
@@ -55,20 +57,23 @@ public final class CraftChatMessage {
             }
             list.add(currentChatComponent);
 
-            Matcher matcher = INCREMENTAL_PATTERN.matcher(message);
+            Matcher matcher = (keepNewlines ? INCREMENTAL_PATTERN_KEEP_NEWLINES : INCREMENTAL_PATTERN).matcher(message);
             String match = null;
+            boolean needsAdd = false;
             while (matcher.find()) {
                 int groupId = 0;
                 while ((match = matcher.group(++groupId)) == null) {
                     // NOOP
                 }
-                appendNewComponent(matcher.start(groupId));
+                int index = matcher.start(groupId);
+                if (index > currentIndex) {
+                    needsAdd = false;
+                    appendNewComponent(index);
+                }
                 switch (groupId) {
                 case 1:
                     EnumChatFormat format = formatMap.get(match.toLowerCase(java.util.Locale.ENGLISH).charAt(1));
-                    if (format == EnumChatFormat.RESET) {
-                        modifier = new ChatModifier();
-                    } else if (format.isFormat()) {
+                    if (format.isFormat() && format != EnumChatFormat.RESET) {
                         switch (format) {
                         case BOLD:
                             modifier.setBold(Boolean.TRUE);
@@ -91,26 +96,27 @@ public final class CraftChatMessage {
                     } else { // Color resets formatting
                         modifier = new ChatModifier().setColor(format);
                     }
+                    needsAdd = true;
                     break;
                 case 2:
-                    if (keepNewlines) {
-                        currentChatComponent.addSibling(new ChatComponentText("\n"));
-                    } else {
-                        currentChatComponent = null;
-                    }
-                    break;
-                case 3:
                     if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                         match = "http://" + match;
                     }
                     modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
                     appendNewComponent(matcher.end(groupId));
                     modifier.setChatClickable((ChatClickable) null);
+                    break;
+                case 3:
+                    if (needsAdd) {
+                        appendNewComponent(index);
+                    }
+                    currentChatComponent = null;
+                    break;
                 }
                 currentIndex = matcher.end(groupId);
             }
 
-            if (currentIndex < message.length()) {
+            if (currentIndex < message.length() || needsAdd) {
                 appendNewComponent(message.length());
             }
 
@@ -118,12 +124,12 @@ public final class CraftChatMessage {
         }
 
         private void appendNewComponent(int index) {
-            if (index <= currentIndex) {
-                return;
-            }
             IChatBaseComponent addition = new ChatComponentText(message.substring(currentIndex, index)).setChatModifier(modifier);
             currentIndex = index;
             modifier = modifier.clone();
+            if (modifier.getColor() == EnumChatFormat.RESET) {
+                modifier.setColor(null);
+            }
             if (currentChatComponent == null) {
                 currentChatComponent = new ChatComponentText("");
                 list.add(currentChatComponent);
@@ -160,21 +166,29 @@ public final class CraftChatMessage {
         return new StringMessage(message, keepNewlines).getOutput();
     }
 
-    public static String fromComponent(IChatBaseComponent component) {
-        return fromComponent(component, EnumChatFormat.BLACK);
-    }
-
     public static String toJSON(IChatBaseComponent component) {
         return IChatBaseComponent.ChatSerializer.a(component);
     }
 
-    public static String fromComponent(IChatBaseComponent component, EnumChatFormat defaultColor) {
+    public static String fromComponent(IChatBaseComponent component) {
         if (component == null) return "";
         StringBuilder out = new StringBuilder();
 
-        for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
+        boolean hadFormat = false;
+        for (IChatBaseComponent c : component) {
             ChatModifier modi = c.getChatModifier();
-            out.append(modi.getColor() == null ? defaultColor : modi.getColor());
+            EnumChatFormat color = modi.getColor();
+            if (!c.getText().isEmpty() || color != null) {
+                if (color != null) {
+                    out.append(color);
+                    if (color != EnumChatFormat.RESET) {
+                        hadFormat = true;
+                    }
+                } else if (hadFormat) {
+                    out.append(ChatColor.RESET);
+                    hadFormat = false;
+                }
+            }
             if (modi.isBold()) {
                 out.append(EnumChatFormat.BOLD);
             }
@@ -192,7 +206,7 @@ public final class CraftChatMessage {
             }
             out.append(c.getText());
         }
-        return out.toString().replaceFirst("^(" + defaultColor + ")*", "");
+        return out.toString();
     }
 
     public static IChatBaseComponent fixComponent(IChatBaseComponent component) {

@@ -135,7 +135,6 @@ import net.minecraft.server.EntityWolf;
 import net.minecraft.server.EntityZombie;
 import net.minecraft.server.EntityZombieHusk;
 import net.minecraft.server.EntityZombieVillager;
-import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.EntityEffect;
@@ -782,7 +781,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public String getName() {
-        return CraftChatMessage.fromComponent(getHandle().getDisplayName(), EnumChatFormat.WHITE);
+        return CraftChatMessage.fromComponent(getHandle().getDisplayName());
     }
 
     @Override

@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.server.ChatComponentText;
-import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumItemSlot;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
@@ -675,7 +674,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         NBTTagList tagList = new NBTTagList();
         for (IChatBaseComponent value : list) {
             // SPIGOT-5342 - horrible hack as 0 version does not go through the Mojang updater
-            tagList.add(NBTTagString.a(version <= 0 || version >= 1803 ? CraftChatMessage.toJSON(value) : CraftChatMessage.fromComponent(value, EnumChatFormat.DARK_PURPLE))); // SPIGOT-4935
+            tagList.add(NBTTagString.a(version <= 0 || version >= 1803 ? CraftChatMessage.toJSON(value) : CraftChatMessage.fromComponent(value))); // SPIGOT-4935
         }
 
         return tagList;
@@ -755,7 +754,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public String getDisplayName() {
-        return CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE);
+        return CraftChatMessage.fromComponent(displayName);
     }
 
     @Override
@@ -770,7 +769,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public String getLocalizedName() {
-        return CraftChatMessage.fromComponent(locName, EnumChatFormat.WHITE);
+        return CraftChatMessage.fromComponent(locName);
     }
 
     @Override
@@ -883,7 +882,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public List<String> getLore() {
-        return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, (line) -> CraftChatMessage.fromComponent(line, EnumChatFormat.DARK_PURPLE)));
+        return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, CraftChatMessage::fromComponent));
     }
 
     @Override
@@ -1219,14 +1218,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Overridden
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         if (hasDisplayName()) {
-            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName, EnumChatFormat.WHITE));
+            builder.put(NAME.BUKKIT, CraftChatMessage.fromComponent(displayName));
         }
         if (hasLocalizedName()) {
-            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName, EnumChatFormat.WHITE));
+            builder.put(LOCNAME.BUKKIT, CraftChatMessage.fromComponent(locName));
         }
 
         if (hasLore()) {
-            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, (line) -> CraftChatMessage.fromComponent(line, EnumChatFormat.DARK_PURPLE))));
+            builder.put(LORE.BUKKIT, ImmutableList.copyOf(Lists.transform(lore, CraftChatMessage::fromComponent)));
         }
 
         if (hasCustomModelData()) {
