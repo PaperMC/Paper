@@ -35,7 +35,6 @@ import net.minecraft.server.Container;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.EnumColor;
 import net.minecraft.server.EnumGamemode;
 import net.minecraft.server.IChatBaseComponent;
@@ -220,7 +219,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public String getPlayerListName() {
-        return getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(getHandle().listName, EnumChatFormat.WHITE);
+        return getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(getHandle().listName);
     }
 
     @Override
