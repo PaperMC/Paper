@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: wea_ondara <wea_ondara@alpenblock.net>
-Date: Sat, 2 Nov 2019 22:25:40 +0100
+From: Aikar <aikar@aikar.co>
+Date: Sun, 31 May 2020 21:55:52 -0400
 Subject: [PATCH] Fix serialization of colors from components
 
 This patch fixes the serialization of display names, item lores and
@@ -12,6 +12,9 @@ code in the beginning of the text when the item was serialized (e.g.
 saving an ItemStack in a Yaml config).
 
 Spigot has now made the issue worse and expanded the scope to more places.
+
+Original work by (but impl pretty much fully changed):
+Co-Authored-By: wea_ondara <wea_ondara@alpenblock.net>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -27,27 +30,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          switch (format) {
                          case BOLD:
 @@ -0,0 +0,0 @@ public final class CraftChatMessage {
+                     break;
+                 case 2:
+                     if (keepNewlines) {
+-                        currentChatComponent.addSibling(new ChatComponentText("\n"));
++                        // Paper start - retain formatting for new lines
++                        ChatComponentText ichatbasecomponent = new ChatComponentText("\n");
++                        ichatbasecomponent.setChatModifier(modifier.clone());
++                        currentChatComponent.addSibling(ichatbasecomponent);
++                        // Paper end
+                     } else {
+                         currentChatComponent = null;
+                     }
+@@ -0,0 +0,0 @@ public final class CraftChatMessage {
          if (component == null) return "";
          StringBuilder out = new StringBuilder();
  
 +        // Paper start - fix deletion of color codes at the beginning of result string
-+        boolean first = true;
++        boolean hadColor = false;
          for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
              ChatModifier modi = c.getChatModifier();
 -            out.append(modi.getColor() == null ? defaultColor : modi.getColor());
 +            EnumChatFormat color = modi.getColor();
-+            if (first) {
++            if (!c.getText().isEmpty() || color != null) {
 +                if (color != null) {
 +                    out.append(color);
-+                }
-+                if (!c.getText().isEmpty() || color != null) {
-+                    first = false;
-+                }
-+            } else if (!c.getText().isEmpty() || color != null) {
-+                if (color != null) {
-+                    out.append(color);
-+                } else if (defaultColor != null) {
-+                    out.append(defaultColor);
++                    hadColor = true;
++                } else if (hadColor) {
++                    out.append(ChatColor.RESET);
++                    hadColor = false;
 +                }
 +            }
 +            // Paper end
@@ -71,9 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package org.bukkit.craftbukkit;
 +
-+import net.minecraft.server.EnumChatFormat;
 +import net.minecraft.server.IChatBaseComponent;
-+import org.bukkit.ChatColor;
 +import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.support.AbstractTestingBase;
 +import org.junit.Test;
@@ -83,21 +92,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +public class CraftChatMessageTest extends AbstractTestingBase {
 +    @Test
 +    public void testSimpleStrings() {
-+        testString("&fFoo", EnumChatFormat.WHITE);
-+        testString("Foo", EnumChatFormat.WHITE);
-+        testString("Foo&bBar", EnumChatFormat.WHITE);
-+        testString("Foo&bBar", EnumChatFormat.AQUA);
-+        testString("&fFoo&bBar", EnumChatFormat.WHITE);
-+        testString("&rFoo", EnumChatFormat.WHITE);
++        testString("§fFoo");
++        testString("Foo");
++        testString("Foo§bBar");
++        testString("Foo§bBar");
++        testString("§fFoo§bBar");
++        testString("§fFoo§bBar§rBaz");
++        testString("§rFoo");
++        testString("Test§0\n§0\n§5Test");
 +    }
 +
 +    @Test
 +    public void testComponents() {
-+        testComponent("Foo&bBar&fBaz", EnumChatFormat.WHITE, create("Foo", "&bBar", "Baz"));
-+        testComponent("&fFoo&bBar&fBaz", EnumChatFormat.WHITE, create("", "&fFoo", "&bBar", "Baz"));
-+        testComponent("Foo&bBar&fBaz", EnumChatFormat.WHITE, create("", "Foo", "&bBar", "Baz"));
-+        testComponent("&fFoo&bBar&fBaz", EnumChatFormat.WHITE, create("&fFoo", "&bBar", "Baz"));
-+        testComponent("F&foo&bBar&fBaz", EnumChatFormat.WHITE, create("F&foo", "&bBar", "Baz"));
++        testComponent("Foo§bBar§rBaz", create("Foo", "§bBar", "Baz"));
++        testComponent("§fFoo§bBar§rBaz", create("", "§fFoo", "§bBar", "Baz"));
++        testComponent("§fFoo§bBar§rBaz", create("", "§fFoo", "§bBar", "", "Baz"));
++        testComponent("§fFoo§bBar§rBaz", create("§fFoo", "§bBar", "Baz"));
++        testComponent("Foo§bBar§rBaz", create("", "Foo", "§bBar", "Baz"));
++        testComponent("§fFoo§bBar§rBaz", create("§fFoo", "§bBar", "Baz"));
++        testComponent("F§foo§bBar§rBaz", create("F§foo", "§bBar", "Baz"));
 +    }
 +
 +    private IChatBaseComponent create(String txt, String ...rest) {
@@ -110,18 +123,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private IChatBaseComponent toComp(String txt) {
-+        return CraftChatMessage.fromString(ChatColor.translateAlternateColorCodes('&', txt))[0];
++        return CraftChatMessage.fromString(txt, true)[0];
 +    }
 +
-+    private void testString(String expected, EnumChatFormat defColor) {
-+        expected = ChatColor.translateAlternateColorCodes('&', expected);
-+        IChatBaseComponent cmp = CraftChatMessage.fromStringOrNull(expected);
-+        testComponent(expected, defColor, cmp);
-+    }
-+
-+    private void testComponent(String expected, EnumChatFormat defColor, IChatBaseComponent components) {
-+        expected = ChatColor.translateAlternateColorCodes('&', expected);
-+        String actual = CraftChatMessage.fromComponent(components, defColor);
++    private void testString(String expected) {
++        IChatBaseComponent cmp = toComp(expected);
++        String actual = CraftChatMessage.fromComponent(cmp);
 +        assertEquals(expected, actual);
++    }
++
++    private void testComponent(String expected, IChatBaseComponent components) {
++        String actual = CraftChatMessage.fromComponent(components);
++        assertEquals(expected, actual);
++
++        IChatBaseComponent expectedCmp = toComp(expected);
++        String actualExpectedCmp = CraftChatMessage.fromComponent(expectedCmp);
++        assertEquals(expected, actualExpectedCmp);
 +    }
 +}
