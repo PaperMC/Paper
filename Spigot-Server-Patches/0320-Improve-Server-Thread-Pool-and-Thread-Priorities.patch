@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 23 Oct 2018 23:14:38 -0400
+Subject: [PATCH] Improve Server Thread Pool and Thread Priorities
+
+Use a simple executor since Fork join is a much more complex pool
+type and we are not using its capabilities.
+
+Set thread priorities so main thread has above normal priority over
+server threads
+
+Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index bbda856c148588402731c03cd166acd2e1f4eee3..5d54825171d5214d504b3fad03342c0769ff50f9 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1361,6 +1361,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 dedicatedserver.setEraseCache(true);
+             }
+ 
++            dedicatedserver.serverThread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
+             dedicatedserver.serverThread.start();
+             // CraftBukkit end
+         } catch (Exception exception) {
+diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..59cfb76d737f923c7e424743ef370c969ae14c26
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+@@ -0,0 +1,24 @@
++package net.minecraft.server;
++
++import java.util.concurrent.CompletionException;
++import java.util.concurrent.atomic.AtomicInteger;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target) {
++        super(target, "Server-Worker-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY-1); // Deprioritize over main
++        this.setUncaughtExceptionHandler((thread, throwable) -> {
++            if (throwable instanceof CompletionException) {
++                throwable = throwable.getCause();
++            }
++
++            if (throwable instanceof ReportedException) {
++                DispenserRegistry.a(((ReportedException) throwable).a().e());
++                System.exit(-1);
++            }
++
++            MinecraftServer.LOGGER.error(String.format("Caught exception in thread %s", thread), throwable);
++        });
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+index 7e224ebeff3bf34270df173a47b08d3290c00670..20d803ad68ea65fd725d6eb3317b998c1692a7b3 100644
+--- a/src/main/java/net/minecraft/server/SystemUtils.java
++++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -66,14 +66,17 @@ public class SystemUtils {
+     }
+ 
+     private static ExecutorService k() {
+-        int i = MathHelper.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
+-        Object object;
++        // Paper start - use simpler thread pool that allows 1 thread
++        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
++        i = Integer.getInteger("Paper.WorkerThreadCount", i);
++        ExecutorService object;
+ 
+         if (i <= 0) {
+             object = MoreExecutors.newDirectExecutorService();
+         } else {
+-            object = new ForkJoinPool(i, (forkjoinpool) -> {
+-                ForkJoinWorkerThread forkjoinworkerthread = new ForkJoinWorkerThread(forkjoinpool) {
++            object = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), ServerWorkerThread::new);
++        }
++        /*
+                     protected void onTermination(Throwable throwable) {
+                         if (throwable != null) {
+                             SystemUtils.LOGGER.warn("{} died", this.getName(), throwable);
+@@ -100,7 +103,7 @@ public class SystemUtils {
+ 
+                 SystemUtils.LOGGER.error(String.format("Caught exception in thread %s", thread), throwable);
+             }, true);
+-        }
++        }*/ // Paper end
+ 
+         return (ExecutorService) object;
+     }
