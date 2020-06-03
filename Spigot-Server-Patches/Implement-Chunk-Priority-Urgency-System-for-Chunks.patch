@@ -142,13 +142,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
          int j = a(arraysetsorted);
          Ticket<?> ticket1 = (Ticket) arraysetsorted.a(ticket); // CraftBukkit - decompile error
- 
-         ticket1.a(this.currentTick);
--        if (ticket.b() < j) {
-+        if (ticket.getTicketLevel() < j) {
-             this.e.b(i, ticket.b(), true);
-         }
- 
 @@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
      }
  
@@ -163,11 +156,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start
 +    public static final int PRIORITY_TICKET_LEVEL = 33;
++    public static final int URGENT_PRIORITY = 29;
 +    public boolean markUrgent(ChunkCoordIntPair coords) {
-+        return addPriorityTicket(coords, TicketType.URGENT, 30);
++        return addPriorityTicket(coords, TicketType.URGENT, URGENT_PRIORITY);
 +    }
 +    public boolean markHighPriority(ChunkCoordIntPair coords, int priority) {
-+        priority = Math.min(28, Math.max(1, priority));
++        priority = Math.min(URGENT_PRIORITY - 1, Math.max(1, priority));
 +        return addPriorityTicket(coords, TicketType.PRIORITY, priority);
 +    }
 +
@@ -221,7 +215,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        for (Ticket<?> ticket : tickets) {
 +            if (ticket.getTicketType() == TicketType.URGENT) {
-+                return 30;
++                return URGENT_PRIORITY;
 +            }
 +        }
 +        for (Ticket<?> ticket : tickets) {
@@ -409,7 +403,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
 +        // Paper start
 +        IntSupplier defSupplier = this.d.c(chunkcoordintpair.pair());
-+        IntSupplier priority = () -> Math.max(defSupplier.getAsInt() - (flag ? 2 : 0), 1);
++        IntSupplier priority = () -> Math.max(defSupplier.getAsInt() - 1, 1);
 +        // Paper end
 +        this.a(chunkcoordintpair.x, chunkcoordintpair.z, priority, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> { // Paper - boost light priority
              ChunkSection[] achunksection = ichunkaccess.getSections();
@@ -481,8 +475,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private int getMyPriority() {
-+        if (priorityBoost == 30) {
-+            return 1; // Urgent - ticket level isn't always 31 so 33-30 = 3
++        if (priorityBoost == ChunkMapDistance.URGENT_PRIORITY) {
++            return 2; // Urgent - ticket level isn't always 31 so 33-30 = 3, but allow 1 more tasks to go below this for dependents
 +        }
 +        int basePriority = ticketLevel - priorityBoost;
 +        if (ticketLevel >= 33 && priorityBoost == 0 && (neighborPriority >= 34 || neighborPriorities.isEmpty())) {
@@ -553,15 +547,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    private void checkPriority() {
 +        if (getCurrentPriority() != getDemandedPriority()) this.chunkMap.queueHolderUpdate(this);
-+    }
-+
-+    public final double getDistanceFromPointInFront(EntityPlayer player, int dist) {
-+        int inFront = dist * 16;
-+        final float yaw = MCUtil.normalizeYaw(player.yaw);
-+        double rads = Math.toRadians(yaw);
-+        final double x = player.locX() + inFront * Math.cos(rads);
-+        final double z = player.locZ() + inFront * Math.sin(rads);
-+        return getDistance(x, z);
 +    }
 +
 +    public final double getDistance(EntityPlayer player) {
@@ -751,7 +736,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper end - no-tick view distance
      }
 +    // Paper start - Chunk Prioritization
-+    private static final int[][] neighborMatrix = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
 +    public void queueHolderUpdate(PlayerChunk playerchunk) {
 +        Runnable runnable = () -> {
 +            if (isUnloading(playerchunk)) {
@@ -831,7 +815,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            // Prioritize immediate
 +            if (dist <= dist3Sq) {
-+                chunkDistanceManager.markHighPriority(coord, (int) (28 - dist));
++                chunkDistanceManager.markHighPriority(coord, (int) (27 - dist));
 +                return;
 +            }
 +
