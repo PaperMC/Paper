@@ -96,7 +96,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Material getType(int x, int y, int z) {
-        return CraftBlockType.minecraftToBukkit(this.getTypeId(x, y, z).getBlock());
+        return this.getTypeId(x, y, z).getBukkitMaterial(); // Paper - optimise getType calls
     }
 
     @Override

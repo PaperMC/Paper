@@ -220,7 +220,7 @@ public class CraftBlock implements Block {
 
     @Override
     public Material getType() {
-        return CraftBlockType.minecraftToBukkit(this.world.getBlockState(this.position).getBlock());
+        return this.world.getBlockState(this.position).getBukkitMaterial(); // Paper - optimise getType calls
     }
 
     @Override

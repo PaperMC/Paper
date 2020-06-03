@@ -175,7 +175,7 @@ public class CraftBlockState implements BlockState {
 
     @Override
     public Material getType() {
-        return CraftBlockType.minecraftToBukkit(this.data.getBlock());
+        return this.data.getBukkitMaterial(); // Paper - optimise getType calls
     }
 
     public void setFlag(int flag) {
