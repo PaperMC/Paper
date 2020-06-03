@@ -587,7 +587,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean breakNaturally() {
-        return breakNaturally(new ItemStack(Material.AIR));
+        return breakNaturally(null);
     }
 
     @Override
@@ -599,7 +599,7 @@ public class CraftBlock implements Block {
         boolean result = false;
 
         // Modelled off EntityHuman#hasBlock
-        if (block != Blocks.AIR && (iblockdata.getMaterial().isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
+        if (block != Blocks.AIR && (item == null || iblockdata.getMaterial().isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
             net.minecraft.server.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
             result = true;
         }
@@ -609,7 +609,7 @@ public class CraftBlock implements Block {
 
     @Override
     public Collection<ItemStack> getDrops() {
-        return getDrops(new ItemStack(Material.AIR));
+        return getDrops(null);
     }
 
     @Override
@@ -623,7 +623,7 @@ public class CraftBlock implements Block {
         net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
-        if (iblockdata.getMaterial().isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
+        if (item == null || iblockdata.getMaterial().isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
             return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {
