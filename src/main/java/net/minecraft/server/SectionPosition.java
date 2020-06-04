@@ -16,7 +16,7 @@ public class SectionPosition extends BaseBlockPosition {
     }
 
     public static SectionPosition a(BlockPosition blockposition) {
-        return new SectionPosition(a(blockposition.getX()), a(blockposition.getY()), a(blockposition.getZ()));
+        return new SectionPosition(blockposition.getX() >> 4, blockposition.getY() >> 4, blockposition.getZ() >> 4); // Paper
     }
 
     public static SectionPosition a(ChunkCoordIntPair chunkcoordintpair, int i) {
@@ -28,15 +28,23 @@ public class SectionPosition extends BaseBlockPosition {
     }
 
     public static SectionPosition a(long i) {
-        return new SectionPosition(b(i), c(i), d(i));
+        return new SectionPosition((int) (i >> 42), (int) (i << 44 >> 44), (int) (i << 22 >> 42)); // Paper
     }
 
     public static long a(long i, EnumDirection enumdirection) {
         return a(i, enumdirection.getAdjacentX(), enumdirection.getAdjacentY(), enumdirection.getAdjacentZ());
     }
 
+    // Paper start
+    public static long getAdjacentFromBlockPos(int x, int y, int z, EnumDirection enumdirection) {
+        return (((long) ((x >> 4) + enumdirection.getAdjacentX()) & 4194303L) << 42) | (((long) ((y >> 4) + enumdirection.getAdjacentY()) & 1048575L)) | (((long) ((z >> 4) + enumdirection.getAdjacentZ()) & 4194303L) << 20);
+    }
+    public static long getAdjacentFromSectionPos(int x, int y, int z, EnumDirection enumdirection) {
+        return (((long) (x + enumdirection.getAdjacentX()) & 4194303L) << 42) | (((long) ((y) + enumdirection.getAdjacentY()) & 1048575L)) | (((long) (z + enumdirection.getAdjacentZ()) & 4194303L) << 20);
+    }
+    // Paper end
     public static long a(long i, int j, int k, int l) {
-        return b(b(i) + j, c(i) + k, d(i) + l);
+        return (((long) ((int) (i >> 42) + j) & 4194303L) << 42) | (((long) ((int) (i << 44 >> 44) + k) & 1048575L)) | (((long) ((int) (i << 22 >> 42) + l) & 4194303L) << 20); // Simplify to reduce instruction count
     }
 
     public static int a(int i) {
@@ -48,11 +56,7 @@ public class SectionPosition extends BaseBlockPosition {
     }
 
     public static short b(BlockPosition blockposition) {
-        int i = b(blockposition.getX());
-        int j = b(blockposition.getY());
-        int k = b(blockposition.getZ());
-
-        return (short) (i << 8 | k << 4 | j << 0);
+        return (short) ((blockposition.getX() & 15) << 8 | (blockposition.getZ() & 15) << 4 | blockposition.getY() & 15); // Paper - simplify/inline
     }
 
     public static int a(short short0) {
@@ -111,16 +115,16 @@ public class SectionPosition extends BaseBlockPosition {
         return this.getZ();
     }
 
-    public int d() {
-        return this.a() << 4;
+    public final int d() { // Paper
+        return this.getX() << 4; // Paper
     }
 
-    public int e() {
-        return this.b() << 4;
+    public final int e() { // Paper
+        return this.getY() << 4; // Paper
     }
 
-    public int f() {
-        return this.c() << 4;
+    public final int f() { // Paper
+        return this.getZ() << 4; // Paper
     }
 
     public int g() {
@@ -135,8 +139,10 @@ public class SectionPosition extends BaseBlockPosition {
         return (this.c() << 4) + 15;
     }
 
+    public static long blockToSection(long i) { return e(i); } // Paper - OBFHELPER
     public static long e(long i) {
-        return b(a(BlockPosition.b(i)), a(BlockPosition.c(i)), a(BlockPosition.d(i)));
+        // b(a(BlockPosition.b(i)), a(BlockPosition.c(i)), a(BlockPosition.d(i)));
+        return (((long) (int) (i >> 42) & 4194303L) << 42) | (((long) (int) ((i << 52) >> 56) & 1048575L)) | (((long) (int) ((i << 26) >> 42) & 4194303L) << 20); // Simplify to reduce instruction count
     }
 
     public static long f(long i) {
@@ -157,17 +163,18 @@ public class SectionPosition extends BaseBlockPosition {
         return new ChunkCoordIntPair(this.a(), this.c());
     }
 
+    // Paper start
+    public static long blockPosAsSectionLong(int i, int j, int k) {
+        return (((long) (i >> 4) & 4194303L) << 42) | (((long) (j >> 4) & 1048575L)) | (((long) (k >> 4) & 4194303L) << 20);
+    }
+    // Paper end
+    public static long asLong(int i, int j, int k) { return b(i, j, k); } // Paper - OBFHELPER
     public static long b(int i, int j, int k) {
-        long l = 0L;
-
-        l |= ((long) i & 4194303L) << 42;
-        l |= ((long) j & 1048575L) << 0;
-        l |= ((long) k & 4194303L) << 20;
-        return l;
+        return (((long) i & 4194303L) << 42) | (((long) j & 1048575L)) | (((long) k & 4194303L) << 20); // Paper - Simplify to reduce instruction count
     }
 
     public long s() {
-        return b(this.a(), this.b(), this.c());
+        return (((long) getX() & 4194303L) << 42) | (((long) getY() & 1048575L)) | (((long) getZ() & 4194303L) << 20); // Paper - Simplify to reduce instruction count
     }
 
     public Stream<BlockPosition> t() {
@@ -175,18 +182,11 @@ public class SectionPosition extends BaseBlockPosition {
     }
 
     public static Stream<SectionPosition> a(SectionPosition sectionposition, int i) {
-        int j = sectionposition.a();
-        int k = sectionposition.b();
-        int l = sectionposition.c();
-
-        return a(j - i, k - i, l - i, j + i, k + i, l + i);
+        return a(sectionposition.getX() - i, sectionposition.getY() - i, sectionposition.getZ() - i, sectionposition.getX() + i, sectionposition.getY() + i, sectionposition.getZ() + i); // Paper - simplify/inline
     }
 
     public static Stream<SectionPosition> b(ChunkCoordIntPair chunkcoordintpair, int i) {
-        int j = chunkcoordintpair.x;
-        int k = chunkcoordintpair.z;
-
-        return a(j - i, 0, k - i, j + i, 15, k + i);
+        return a(chunkcoordintpair.x - i, 0, chunkcoordintpair.z - i, chunkcoordintpair.x + i, 15, chunkcoordintpair.z + i); // Paper - simplify/inline
     }
 
     public static Stream<SectionPosition> a(final int i, final int j, final int k, final int l, final int i1, final int j1) {

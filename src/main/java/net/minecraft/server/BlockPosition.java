@@ -25,14 +25,16 @@ public class BlockPosition extends BaseBlockPosition {
     }).stable();
     private static final Logger LOGGER = LogManager.getLogger();
     public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
-    private static final int f = 1 + MathHelper.f(MathHelper.c(30000000));
-    private static final int g = BlockPosition.f;
-    private static final int h = 64 - BlockPosition.f - BlockPosition.g;
-    private static final long i = (1L << BlockPosition.f) - 1L;
-    private static final long j = (1L << BlockPosition.h) - 1L;
-    private static final long k = (1L << BlockPosition.g) - 1L;
-    private static final int l = BlockPosition.h;
-    private static final int m = BlockPosition.h + BlockPosition.g;
+    // Paper start - static constants
+    private static final int f = 26;
+    private static final int g = 26;
+    private static final int h = 12;
+    private static final long i = 67108863;
+    private static final long j = 4095;
+    private static final long k = 67108863;
+    private static final int l = 12;
+    private static final int m = 38;
+    // Paper end
 
     public BlockPosition(int i, int j, int k) {
         super(i, j, k);
@@ -54,28 +56,29 @@ public class BlockPosition extends BaseBlockPosition {
         this(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
     }
 
+    public static long getAdjacent(int baseX, int baseY, int baseZ, EnumDirection enumdirection) { return asLong(baseX + enumdirection.getAdjacentX(), baseY + enumdirection.getAdjacentY(), baseZ + enumdirection.getAdjacentZ()); } // Paper
     public static long a(long i, EnumDirection enumdirection) {
         return a(i, enumdirection.getAdjacentX(), enumdirection.getAdjacentY(), enumdirection.getAdjacentZ());
     }
 
     public static long a(long i, int j, int k, int l) {
-        return a(b(i) + j, c(i) + k, d(i) + l);
+        return a((int) (i >> 38) + j, (int) ((i << 52) >> 52) + k, (int) ((i << 26) >> 38) + l); // Paper - simplify/inline
     }
 
     public static int b(long i) {
-        return (int) (i << 64 - BlockPosition.m - BlockPosition.f >> 64 - BlockPosition.f);
+        return (int) (i >> 38); // Paper - simplify/inline
     }
 
     public static int c(long i) {
-        return (int) (i << 64 - BlockPosition.h >> 64 - BlockPosition.h);
+        return (int) ((i << 52) >> 52); // Paper - simplify/inline
     }
 
     public static int d(long i) {
-        return (int) (i << 64 - BlockPosition.l - BlockPosition.g >> 64 - BlockPosition.g);
+        return (int) ((i << 26) >> 38);  // Paper - simplify/inline
     }
 
     public static BlockPosition fromLong(long i) {
-        return new BlockPosition(b(i), c(i), d(i));
+        return new BlockPosition((int) (i >> 38), (int) ((i << 52) >> 52), (int) ((i << 26) >> 38)); // Paper - simplify/inline
     }
 
     public long asLong() {
@@ -84,12 +87,7 @@ public class BlockPosition extends BaseBlockPosition {
 
     public static long asLong(int x, int y, int z) { return a(x, y, z); } // Paper - OBFHELPER
     public static long a(int i, int j, int k) {
-        long l = 0L;
-
-        l |= ((long) i & BlockPosition.i) << BlockPosition.m;
-        l |= ((long) j & BlockPosition.j) << 0;
-        l |= ((long) k & BlockPosition.k) << BlockPosition.l;
-        return l;
+        return (((long) i & (long) 67108863) << 38) | (((long) j & (long) 4095)) | (((long) k & (long) 67108863) << 12); // Paper - inline constants and simplify
     }
 
     public static long f(long i) {
