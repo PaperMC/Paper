@@ -27,7 +27,7 @@ index e625842e524f18e469f7695b27d52d4d04892266..d752e793f13a9caf5d255293f7ce9d56
  
                  nbttaglist.add(nbttagcompound2);
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorage.java b/src/main/java/net/minecraft/server/LightEngineStorage.java
-index 88277d23c36696fdd5363e41a130c9a443fac2c0..fa8039d38d5b3110fd85abf850248ba7948374c3 100644
+index 88277d23c36696fdd5363e41a130c9a443fac2c0..b0b7544592981bcff22c8acee7230a211918ef28 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorage.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorage.java
 @@ -148,7 +148,7 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
@@ -39,9 +39,12 @@ index 88277d23c36696fdd5363e41a130c9a443fac2c0..fa8039d38d5b3110fd85abf850248ba7
      }
  
      protected void a(LightEngineLayer<?, ?> lightenginelayer, long i) {
-@@ -319,7 +319,7 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+@@ -317,9 +317,9 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+ 
+     protected void a(long i, @Nullable NibbleArray nibblearray) {
          if (nibblearray != null) {
-             this.i.put(i, nibblearray);
+-            this.i.put(i, nibblearray);
++            NibbleArray remove = this.i.put(i, nibblearray); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
          } else {
 -            this.i.remove(i);
 +            NibbleArray remove = this.i.remove(i); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
@@ -49,7 +52,7 @@ index 88277d23c36696fdd5363e41a130c9a443fac2c0..fa8039d38d5b3110fd85abf850248ba7
  
      }
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-index d441c4e4744d68b3d934ca6034c32966e486327a..cc6d3f000e2ea1c519cd0342a67b545fa9d71871 100644
+index 53199595da71a25710bd1ff8ee2868ee63edc0e1..d5702b22f06ba4ad787fe2fcf788c3d4d147c927 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 @@ -33,7 +33,9 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
@@ -59,7 +62,7 @@ index d441c4e4744d68b3d934ca6034c32966e486327a..cc6d3f000e2ea1c519cd0342a67b545f
 -        this.data.queueUpdate(i, ((NibbleArray) this.data.getUpdating(i)).b()); // Paper - avoid copying light data
 +        NibbleArray updating = this.data.getUpdating(i); // Paper - pool nibbles
 +        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(updating.getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
-+        if (updating.cleaner != null) updating.cleaner.run(); // Paper
++        if (updating.cleaner != null) MCUtil.scheduleTask(2, updating.cleaner); // Paper - delay clean incase anything holding ref was still using it
          this.c();
      }
  
@@ -241,7 +244,7 @@ index 67c960292db9d99ac85b5d0dda50ae48ef942c1b..5e3efa1fa6c089df35971ce5c83da384
          for (int i = 0; i < 16; ++i) {
              System.arraycopy(this.a, 0, abyte, i * 128, 128);
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java b/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
-index cd1ad45469aa163b9bc41774ae80adfa617fd97b..1946aae7424593100279834baa89c19f2522437f 100644
+index cd1ad45469aa163b9bc41774ae80adfa617fd97b..4b090757fceab6310f70ce34ba1041f890ddfd8f 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
 @@ -16,13 +16,42 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
@@ -262,7 +265,7 @@ index cd1ad45469aa163b9bc41774ae80adfa617fd97b..1946aae7424593100279834baa89c19f
 +    public void onPacketDispatchFinish(EntityPlayer player, io.netty.channel.ChannelFuture future) {
 +        if (remainingSends.decrementAndGet() <= 0) {
 +            // incase of any race conditions, schedule this delayed
-+            MCUtil.scheduleTask(1, () -> {
++            MCUtil.scheduleTask(5, () -> {
 +                if (remainingSends.get() == 0) {
 +                    cleaner1.run();
 +                    cleaner2.run();
