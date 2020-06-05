@@ -3,58 +3,48 @@ From: Spottedleaf <spottedleaf@spottedleaf.dev>
 Date: Mon, 27 Apr 2020 02:48:06 -0700
 Subject: [PATCH] Reduce MutableInt allocations from light engine
 
+We can abuse the fact light is single threaded and share an instance
+per light engine instance
 
 diff --git a/src/main/java/net/minecraft/server/LightEngineBlock.java b/src/main/java/net/minecraft/server/LightEngineBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineBlock.java
 +++ b/src/main/java/net/minecraft/server/LightEngineBlock.java
 @@ -0,0 +0,0 @@ public final class LightEngineBlock extends LightEngineLayer<LightEngineStorageB
+ 
+     private static final EnumDirection[] e = EnumDirection.values();
+     private final BlockPosition.MutableBlockPosition f = new BlockPosition.MutableBlockPosition();
++    private final MutableInt mutableint = new MutableInt(); // Paper
+ 
+     public LightEngineBlock(ILightAccess ilightaccess) {
+         super(ilightaccess, EnumSkyBlock.BLOCK, new LightEngineStorageBlock(ilightaccess));
+@@ -0,0 +0,0 @@ public final class LightEngineBlock extends LightEngineLayer<LightEngineStorageB
              if (enumdirection == null) {
                  return 15;
              } else {
 -                MutableInt mutableint = new MutableInt();
-+                // Paper start - reduce mutableint allocations
-+                MutableInt mutableint = com.destroystokyo.paper.util.pooled.PooledObjects.POOLED_MUTABLE_INTEGERS.acquire();
-+                try {
-+                // Paper end - reduce mutableint allocations
++                //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
                  IBlockData iblockdata = this.a(j, mutableint);
  
                  if (mutableint.getValue() >= 15) {
-@@ -0,0 +0,0 @@ public final class LightEngineBlock extends LightEngineLayer<LightEngineStorageB
- 
-                     return VoxelShapes.b(voxelshape, voxelshape1) ? 15 : k + Math.max(1, mutableint.getValue());
-                 }
-+                } finally { // Paper start - reduce mutableint allocations
-+                    com.destroystokyo.paper.util.pooled.PooledObjects.POOLED_MUTABLE_INTEGERS.release(mutableint);
-+                }
-+                // Paper end - reduce mutableint allocations
-             }
-         }
-     }
 diff --git a/src/main/java/net/minecraft/server/LightEngineSky.java b/src/main/java/net/minecraft/server/LightEngineSky.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineSky.java
 +++ b/src/main/java/net/minecraft/server/LightEngineSky.java
 @@ -0,0 +0,0 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+ 
+     private static final EnumDirection[] e = EnumDirection.values();
+     private static final EnumDirection[] f = new EnumDirection[]{EnumDirection.NORTH, EnumDirection.SOUTH, EnumDirection.WEST, EnumDirection.EAST};
++    private final MutableInt mutableint = new MutableInt(); // Paper
+ 
+     public LightEngineSky(ILightAccess ilightaccess) {
+         super(ilightaccess, EnumSkyBlock.SKY, new LightEngineStorageSky(ilightaccess));
+@@ -0,0 +0,0 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
              if (k >= 15) {
                  return k;
              } else {
 -                MutableInt mutableint = new MutableInt();
-+                // Paper start - reduce mutableint allocations
-+                MutableInt mutableint = com.destroystokyo.paper.util.pooled.PooledObjects.POOLED_MUTABLE_INTEGERS.acquire();
-+                try {
-+                // Paper end - reduce mutableint allocations
++                //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
                  IBlockData iblockdata = this.a(j, mutableint);
  
                  if (mutableint.getValue() >= 15) {
-@@ -0,0 +0,0 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
- 
-                     return flag1 && k == 0 && mutableint.getValue() == 0 ? 0 : k + Math.max(1, mutableint.getValue());
-                 }
-+                } finally { // Paper start - reduce mutableint allocations
-+                    com.destroystokyo.paper.util.pooled.PooledObjects.POOLED_MUTABLE_INTEGERS.release(mutableint);
-+                }
-+                // Paper end - reduce mutableint allocations
-             }
-         }
-     }
