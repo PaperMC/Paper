@@ -109,7 +109,8 @@ public class ThreadedMailbox<T> implements Mailbox<T>, AutoCloseable, Runnable {
 
     }
 
-    @Override
+
+    public final void queue(T t0) { a(t0); } @Override // Paper - OBFHELPER
     public void a(T t0) {
         this.a.a(t0);
         this.f();

@@ -22,7 +22,12 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
 
     @Override
     protected int d(long i) {
-        long j = SectionPosition.e(i);
+        // Paper start
+        int baseX = (int) (i >> 38);
+        int baseY = (int) ((i << 52) >> 52);
+        int baseZ = (int) ((i << 26) >> 38);
+        long j = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
+        // Paper end
         int k = SectionPosition.c(j);
         synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
         LightEngineStorageSky.a lightenginestoragesky_a = (LightEngineStorageSky.a) this.e_visible; // Paper - avoid copying light data - must be after lock acquire
@@ -43,7 +48,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                 }
             }
 
-            return nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
+            return nibblearray.a(baseX & 15, (int) ((i << 52) >> 52) & 15, (int) baseZ & 15); // Paper - y changed above
         } else {
             return 15;
         }
@@ -162,7 +167,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
             if (k != ((LightEngineStorageSky.a) this.f).b && SectionPosition.c(j) < k) {
                 NibbleArray nibblearray1;
 
-                while ((nibblearray1 = this.a(j, true)) == null) {
+                while ((nibblearray1 = this.updating.getUpdatingOptimized(j)) == null) { // Paper
                     j = SectionPosition.a(j, EnumDirection.UP);
                 }
 
@@ -186,7 +191,10 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                 longiterator = this.m.iterator();
 
                 while (longiterator.hasNext()) {
-                    i = (Long) longiterator.next();
+                    i = longiterator.nextLong(); // Paper
+                    int baseX = (int) (i >> 42) << 4; // Paper
+                    int baseY = (int) (i << 44 >> 44) << 4; // Paper
+                    int baseZ = (int) (i << 22 >> 42) << 4; // Paper
                     j = this.c(i);
                     if (j != 2 && !this.n.contains(i) && this.l.add(i)) {
                         int l;
@@ -197,10 +205,10 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                                 ((LightEngineStorageSky.a) this.f).a(i);
                             }
 
-                            Arrays.fill(this.a(i, true).asBytesPoolSafe(), (byte) -1); // Paper
-                            k = SectionPosition.c(SectionPosition.b(i));
-                            l = SectionPosition.c(SectionPosition.c(i));
-                            int i1 = SectionPosition.c(SectionPosition.d(i));
+                            Arrays.fill(this.updating.getUpdatingOptimized(i).asBytesPoolSafe(), (byte) -1); // Paper - use optimized
+                            k = baseX; // Paper
+                            l = baseY; // Paper
+                            int i1 = baseZ; // Paper
                             EnumDirection[] aenumdirection = LightEngineStorageSky.k;
                             int j1 = aenumdirection.length;
 
@@ -209,7 +217,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                             for (int l1 = 0; l1 < j1; ++l1) {
                                 EnumDirection enumdirection = aenumdirection[l1];
 
-                                k1 = SectionPosition.a(i, enumdirection);
+                                k1 = SectionPosition.getAdjacentFromBlockPos(baseX, baseY, baseZ, enumdirection); // Paper
                                 if ((this.n.contains(k1) || !this.l.contains(k1) && !this.m.contains(k1)) && this.g(k1)) {
                                     for (int i2 = 0; i2 < 16; ++i2) {
                                         for (int j2 = 0; j2 < 16; ++j2) {
@@ -242,16 +250,16 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
 
                             for (int i3 = 0; i3 < 16; ++i3) {
                                 for (j1 = 0; j1 < 16; ++j1) {
-                                    long j3 = BlockPosition.a(SectionPosition.c(SectionPosition.b(i)) + i3, SectionPosition.c(SectionPosition.c(i)), SectionPosition.c(SectionPosition.d(i)) + j1);
+                                    long j3 = BlockPosition.a(baseX + i3, baseY, baseZ + j1); // Paper
 
-                                    k1 = BlockPosition.a(SectionPosition.c(SectionPosition.b(i)) + i3, SectionPosition.c(SectionPosition.c(i)) - 1, SectionPosition.c(SectionPosition.d(i)) + j1);
+                                    k1 = BlockPosition.a(baseX + i3, baseY - 1, baseZ + j1); // Paper
                                     lightenginelayer.a(j3, k1, lightenginelayer.b(j3, k1, 0), true);
                                 }
                             }
                         } else {
                             for (k = 0; k < 16; ++k) {
                                 for (l = 0; l < 16; ++l) {
-                                    long k3 = BlockPosition.a(SectionPosition.c(SectionPosition.b(i)) + k, SectionPosition.c(SectionPosition.c(i)) + 16 - 1, SectionPosition.c(SectionPosition.d(i)) + l);
+                                    long k3 = BlockPosition.a(baseX + k, baseY + 16 - 1, baseZ + l); // Paper
 
                                     lightenginelayer.a(Long.MAX_VALUE, k3, 0, true);
                                 }
@@ -266,11 +274,14 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
                 longiterator = this.n.iterator();
 
                 while (longiterator.hasNext()) {
-                    i = (Long) longiterator.next();
+                    i = longiterator.nextLong(); // Paper
+                    int baseX = (int) (i >> 42) << 4; // Paper
+                    int baseY = (int) (i << 44 >> 44) << 4; // Paper
+                    int baseZ = (int) (i << 22 >> 42) << 4; // Paper
                     if (this.l.remove(i) && this.g(i)) {
                         for (j = 0; j < 16; ++j) {
                             for (k = 0; k < 16; ++k) {
-                                long l3 = BlockPosition.a(SectionPosition.c(SectionPosition.b(i)) + j, SectionPosition.c(SectionPosition.c(i)) + 16 - 1, SectionPosition.c(SectionPosition.d(i)) + k);
+                                long l3 = BlockPosition.a(baseX + j, baseY + 16 - 1, baseZ + k); // Paper
 
                                 lightenginelayer.a(Long.MAX_VALUE, l3, 15, false);
                             }

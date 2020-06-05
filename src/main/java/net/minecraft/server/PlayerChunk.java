@@ -724,6 +724,7 @@ public class PlayerChunk {
                 ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
             }
             chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
+            chunkMap.world.getChunkProvider().getLightEngine().queue.changePriority(location.pair(), getCurrentPriority(), priority);
         }
         if (getCurrentPriority() != priority) {
             this.u.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority

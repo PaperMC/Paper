@@ -1046,7 +1046,7 @@ public class ChunkProviderServer extends IChunkProvider {
             if (ChunkProviderServer.this.tickDistanceManager()) {
                 return true;
             } else {
-                ChunkProviderServer.this.lightEngine.queueUpdate();
+                //ChunkProviderServer.this.lightEngine.queueUpdate(); // Paper - not needed
                 return super.executeNext() || execChunkTask; // Paper
             }
         } finally {

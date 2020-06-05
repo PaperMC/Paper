@@ -10,10 +10,14 @@ public class LightEngineStorageBlock extends LightEngineStorage<LightEngineStora
 
     @Override
     protected int d(long i) {
-        long j = SectionPosition.e(i);
-        NibbleArray nibblearray = this.a(j, false);
-
-        return nibblearray == null ? 0 : nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
+        // Paper start
+        int baseX = (int) (i >> 38);
+        int baseY = (int) ((i << 52) >> 52);
+        int baseZ = (int) ((i << 26) >> 38);
+        long j = (((long) (baseX >> 4) & 4194303L) << 42) | (((long) (baseY >> 4) & 1048575L)) | (((long) (baseZ >> 4) & 4194303L) << 20);
+        NibbleArray nibblearray = this.e_visible.lookup.apply(j);
+        return nibblearray == null ? 0 : nibblearray.a(baseX & 15, baseY & 15, baseZ & 15);
+        // Paper end
     }
 
     public static final class a extends LightEngineStorageArray<LightEngineStorageBlock.a> {

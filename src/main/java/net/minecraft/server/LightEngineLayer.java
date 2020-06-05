@@ -11,10 +11,37 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
     protected final EnumSkyBlock b;
     protected final S c;
     private boolean f;
-    protected final BlockPosition.MutableBlockPosition d = new BlockPosition.MutableBlockPosition();
+    protected final BlockPosition.MutableBlockPosition d = new BlockPosition.MutableBlockPosition(); protected final BlockPosition.MutableBlockPosition pos = d; // Paper
     private final long[] g = new long[2];
-    private final IBlockAccess[] h = new IBlockAccess[2];
+    private final IChunkAccess[] h = new IChunkAccess[2]; // Paper
 
+    // Paper start - see fully commented out method below (look for Bedrock)
+    // optimized method with less branching for when scenarios arent needed.
+    // avoid using mutable version if can
+    protected final IBlockData getBlockOptimized(int x, int y, int z, MutableInt mutableint) {
+        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
+
+        if (iblockaccess == null) {
+            mutableint.setValue(16);
+            return Blocks.BEDROCK.getBlockData();
+        } else {
+            this.pos.setValues(x, y, z);
+            IBlockData iblockdata = iblockaccess.getType(x, y, z);
+            mutableint.setValue(iblockdata.b(this.a.getWorld(), this.pos));
+            return iblockdata.l() && iblockdata.e() ? iblockdata : Blocks.AIR.getBlockData();
+        }
+    }
+    protected final IBlockData getBlockOptimized(int x, int y, int z) {
+        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
+
+        if (iblockaccess == null) {
+            return Blocks.BEDROCK.getBlockData();
+        } else {
+            IBlockData iblockdata = iblockaccess.getType(x, y, z);
+            return iblockdata.l() && iblockdata.e() ? iblockdata : Blocks.AIR.getBlockData();
+        }
+    }
+    // Paper end
     public LightEngineLayer(ILightAccess ilightaccess, EnumSkyBlock enumskyblock, S s0) {
         super(16, 256, 8192);
         this.a = ilightaccess;
@@ -33,7 +60,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
     }
 
     @Nullable
-    private IBlockAccess a(int i, int j) {
+    private IChunkAccess a(int i, int j) { // Paper
         long k = ChunkCoordIntPair.pair(i, j);
 
         for (int l = 0; l < 2; ++l) {
@@ -42,7 +69,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
             }
         }
 
-        IBlockAccess iblockaccess = this.a.c(i, j);
+        IChunkAccess iblockaccess = (IChunkAccess) this.a.c(i, j); // Paper
 
         for (int i1 = 1; i1 > 0; --i1) {
             this.g[i1] = this.g[i1 - 1];
@@ -59,37 +86,39 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
         Arrays.fill(this.h, (Object) null);
     }
 
-    protected IBlockData a(long i, @Nullable MutableInt mutableint) {
-        if (i == Long.MAX_VALUE) {
-            if (mutableint != null) {
-                mutableint.setValue(0);
-            }
-
-            return Blocks.AIR.getBlockData();
-        } else {
-            int j = SectionPosition.a(BlockPosition.b(i));
-            int k = SectionPosition.a(BlockPosition.d(i));
-            IBlockAccess iblockaccess = this.a(j, k);
-
-            if (iblockaccess == null) {
-                if (mutableint != null) {
-                    mutableint.setValue(16);
-                }
-
-                return Blocks.BEDROCK.getBlockData();
-            } else {
-                this.d.g(i);
-                IBlockData iblockdata = iblockaccess.getType(this.d);
-                boolean flag = iblockdata.l() && iblockdata.e();
-
-                if (mutableint != null) {
-                    mutableint.setValue(iblockdata.b(this.a.getWorld(), (BlockPosition) this.d));
-                }
-
-                return flag ? iblockdata : Blocks.AIR.getBlockData();
-            }
-        }
-    }
+    // Paper start - comment out, see getBlockOptimized
+//    protected IBlockData a(long i, @Nullable MutableInt mutableint) {
+//        if (i == Long.MAX_VALUE) {
+//            if (mutableint != null) {
+//                mutableint.setValue(0);
+//            }
+//
+//            return Blocks.AIR.getBlockData();
+//        } else {
+//            int j = SectionPosition.a(BlockPosition.b(i));
+//            int k = SectionPosition.a(BlockPosition.d(i));
+//            IBlockAccess iblockaccess = this.a(j, k);
+//
+//            if (iblockaccess == null) {
+//                if (mutableint != null) {
+//                    mutableint.setValue(16);
+//                }
+//
+//                return Blocks.BEDROCK.getBlockData();
+//            } else {
+//                this.d.g(i);
+//                IBlockData iblockdata = iblockaccess.getType(this.d);
+//                boolean flag = iblockdata.l() && iblockdata.e();
+//
+//                if (mutableint != null) {
+//                    mutableint.setValue(iblockdata.b(this.a.getWorld(), (BlockPosition) this.d));
+//                }
+//
+//                return flag ? iblockdata : Blocks.AIR.getBlockData();
+//            }
+//        }
+//    }
+    // Paper end
 
     protected VoxelShape a(IBlockData iblockdata, long i, EnumDirection enumdirection) {
         return iblockdata.l() ? iblockdata.a(this.a.getWorld(), this.d.g(i), enumdirection) : VoxelShapes.a();
@@ -124,8 +153,9 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
         return i == Long.MAX_VALUE ? 0 : 15 - this.c.i(i);
     }
 
+    protected int getNibbleLightInverse(NibbleArray nibblearray, int x, int y, int z) { return 15 - nibblearray.a(x & 15, y & 15, z & 15); } // Paper - x/y/z version of below
     protected int a(NibbleArray nibblearray, long i) {
-        return 15 - nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
+        return 15 - nibblearray.a((int) (i >> 38) & 15, (int) ((i << 52) >> 52) & 15, (int) ((i << 26) >> 38) & 15); // Paper
     }
 
     @Override

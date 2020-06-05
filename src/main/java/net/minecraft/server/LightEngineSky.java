@@ -29,21 +29,25 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                 return k;
             } else {
                 //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
-                IBlockData iblockdata = this.a(j, mutableint);
-
-                if (mutableint.getValue() >= 15) {
+                // Paper start - use x/y/z and optimized block lookup
+                int jx = (int) (j >> 38);
+                int jy = (int) ((j << 52) >> 52);
+                int jz = (int) ((j << 26) >> 38);
+                IBlockData iblockdata = this.getBlockOptimized(jx, jy, jz, mutableint);
+                int blockedLight = mutableint.getValue();
+                if (blockedLight >= 15) {
+                    // Paper end
                     return 15;
                 } else {
-                    int l = BlockPosition.b(i);
-                    int i1 = BlockPosition.c(i);
-                    int j1 = BlockPosition.d(i);
-                    int k1 = BlockPosition.b(j);
-                    int l1 = BlockPosition.c(j);
-                    int i2 = BlockPosition.d(j);
-                    boolean flag = l == k1 && j1 == i2;
-                    int j2 = Integer.signum(k1 - l);
-                    int k2 = Integer.signum(l1 - i1);
-                    int l2 = Integer.signum(i2 - j1);
+                    // Paper start - inline math
+                    int ix = (int) (i >> 38);
+                    int iy = (int) ((i << 52) >> 52);
+                    int iz = (int) ((i << 26) >> 38);
+                    boolean flag = ix == jx && iz == jz;
+                    int j2 = Integer.signum(jx - ix);
+                    int k2 = Integer.signum(jy - iy);
+                    int l2 = Integer.signum(jz - iz);
+                    // Paper end
                     EnumDirection enumdirection;
 
                     if (i == Long.MAX_VALUE) {
@@ -52,7 +56,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                         enumdirection = EnumDirection.a(j2, k2, l2);
                     }
 
-                    IBlockData iblockdata1 = this.a(i, (MutableInt) null);
+                    IBlockData iblockdata1 = i == Long.MAX_VALUE ? Blocks.AIR.getBlockData() : this.getBlockOptimized(ix, iy, iz); // Paper
                     VoxelShape voxelshape;
 
                     if (enumdirection != null) {
@@ -82,9 +86,9 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                         }
                     }
 
-                    boolean flag1 = i == Long.MAX_VALUE || flag && i1 > l1;
+                    boolean flag1 = i == Long.MAX_VALUE || flag && iy > jy; // Paper rename vars to iy > jy
 
-                    return flag1 && k == 0 && mutableint.getValue() == 0 ? 0 : k + Math.max(1, mutableint.getValue());
+                    return flag1 && k == 0 && blockedLight == 0 ? 0 : k + Math.max(1, blockedLight); // Paper
                 }
             }
         }
@@ -92,10 +96,14 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
 
     @Override
     protected void a(long i, int j, boolean flag) {
-        long k = SectionPosition.e(i);
-        int l = BlockPosition.c(i);
-        int i1 = SectionPosition.b(l);
-        int j1 = SectionPosition.a(l);
+        // Paper start
+        int baseX = (int) (i >> 38);
+        int baseY = (int) ((i << 52) >> 52);
+        int baseZ = (int) ((i << 26) >> 38);
+        long k = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
+        int i1 = baseY & 15;
+        int j1 = baseY >> 4;
+        // Paper end
         int k1;
 
         if (i1 != 0) {
@@ -110,15 +118,16 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
             k1 = l1;
         }
 
-        long i2 = BlockPosition.a(i, 0, -1 - k1 * 16, 0);
-        long j2 = SectionPosition.e(i2);
+        int newBaseY = baseY + (-1 - k1 * 16); // Paper
+        long i2 = BlockPosition.asLong(baseX, newBaseY, baseZ); // Paper
+        long j2 = SectionPosition.blockPosAsSectionLong(baseX, newBaseY, baseZ); // Paper
 
         if (k == j2 || ((LightEngineStorageSky) this.c).g(j2)) {
             this.b(i, i2, j, flag);
         }
 
-        long k2 = BlockPosition.a(i, EnumDirection.UP);
-        long l2 = SectionPosition.e(k2);
+        long k2 = BlockPosition.asLong(baseX, baseY + 1, baseZ); // Paper
+        long l2 = SectionPosition.blockPosAsSectionLong(baseX, baseY + 1, baseZ); // Paper
 
         if (k == l2 || ((LightEngineStorageSky) this.c).g(l2)) {
             this.b(i, k2, j, flag);
@@ -133,8 +142,8 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
             int k3 = 0;
 
             while (true) {
-                long l3 = BlockPosition.a(i, enumdirection.getAdjacentX(), -k3, enumdirection.getAdjacentZ());
-                long i4 = SectionPosition.e(l3);
+                long l3 = BlockPosition.asLong(baseX + enumdirection.getAdjacentX(), baseY - k3, baseZ + enumdirection.getAdjacentZ()); // Paper
+                long i4 = SectionPosition.blockPosAsSectionLong(baseX + enumdirection.getAdjacentX(), baseY - k3, baseZ + enumdirection.getAdjacentZ()); // Paper
 
                 if (k == i4) {
                     this.b(i, l3, j, flag);
@@ -172,26 +181,36 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
             }
         }
 
-        long j1 = SectionPosition.e(i);
-        NibbleArray nibblearray = ((LightEngineStorageSky) this.c).a(j1, true);
+        // Paper start
+        int baseX = (int) (i >> 38);
+        int baseY = (int) ((i << 52) >> 52);
+        int baseZ = (int) ((i << 26) >> 38);
+        long j1 = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
+        NibbleArray nibblearray = this.c.updating.getUpdatingOptimized(j1);
+        // Paper end
         EnumDirection[] aenumdirection = LightEngineSky.e;
         int k1 = aenumdirection.length;
 
         for (int l1 = 0; l1 < k1; ++l1) {
             EnumDirection enumdirection = aenumdirection[l1];
-            long i2 = BlockPosition.a(i, enumdirection);
-            long j2 = SectionPosition.e(i2);
+            // Paper start
+            int newX = baseX + enumdirection.getAdjacentX();
+            int newY = baseY + enumdirection.getAdjacentY();
+            int newZ = baseZ + enumdirection.getAdjacentZ();
+            long i2 = BlockPosition.asLong(newX, newY, newZ);
+            long j2 = SectionPosition.blockPosAsSectionLong(newX, newY, newZ);
+            // Paper end
             NibbleArray nibblearray1;
 
             if (j1 == j2) {
                 nibblearray1 = nibblearray;
             } else {
-                nibblearray1 = ((LightEngineStorageSky) this.c).a(j2, true);
+                nibblearray1 = ((LightEngineStorageSky) this.c).updating.getUpdatingOptimized(j2); // Paper
             }
 
             if (nibblearray1 != null) {
                 if (i2 != j) {
-                    int k2 = this.b(i2, i, this.a(nibblearray1, i2));
+                    int k2 = this.b(i2, i, this.getNibbleLightInverse(nibblearray1, newX, newY, newZ)); // Paper
 
                     if (l > k2) {
                         l = k2;
@@ -206,7 +225,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                     j2 = SectionPosition.a(j2, EnumDirection.UP);
                 }
 
-                NibbleArray nibblearray2 = ((LightEngineStorageSky) this.c).a(j2, true);
+                NibbleArray nibblearray2 = this.c.updating.getUpdatingOptimized(j2); // Paper
 
                 if (i2 != j) {
                     int l2;

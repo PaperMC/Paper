@@ -20,9 +20,9 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
     protected final LongSet c = new LongOpenHashSet();
     protected final LongSet d = new LongOpenHashSet();
     protected volatile M e_visible; protected final Object visibleUpdateLock = new Object(); // Paper - diff on change, should be "visible" - force compile fail on usage change
-    protected final M f; // Paper - diff on change, should be "updating"
+    protected final M f; protected final M updating; // Paper - diff on change, should be "updating"
     protected final LongSet g = new LongOpenHashSet();
-    protected final LongSet h = new LongOpenHashSet();
+    protected final LongSet h = new LongOpenHashSet(); LongSet dirty = h; // Paper - OBFHELPER
     protected final Long2ObjectMap<NibbleArray> i = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap());
     private final LongSet n = new LongOpenHashSet();
     private final LongSet o = new LongOpenHashSet();
@@ -30,33 +30,33 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
     protected volatile boolean j;
 
     protected LightEngineStorage(EnumSkyBlock enumskyblock, ILightAccess ilightaccess, M m0) {
-        super(3, 16, 256);
+        super(3, 256, 256); // Paper - bump expected size of level sets to improve collisions and reduce rehashing (seen a lot of it)
         this.l = enumskyblock;
         this.m = ilightaccess;
-        this.f = m0;
+        this.f = m0; updating = m0; // Paper
         this.e_visible = m0.b(); // Paper - avoid copying light data
         this.e_visible.d(); // Paper - avoid copying light data
     }
 
-    protected boolean g(long i) {
-        return this.a(i, true) != null;
+    protected final boolean g(long i) { // Paper - final to help inlining
+        return this.updating.getUpdatingOptimized(i) != null; // Paper - inline to avoid branching
     }
 
     @Nullable
     protected NibbleArray a(long i, boolean flag) {
         // Paper start - avoid copying light data
         if (flag) {
-            return this.a(this.f, i);
+            return this.updating.getUpdatingOptimized(i);
         } else {
             synchronized (this.visibleUpdateLock) {
-                return this.a(this.e_visible, i);
+                return this.e_visible.lookup.apply(i);
             }
         }
         // Paper end - avoid copying light data
     }
 
     @Nullable
-    protected NibbleArray a(M m0, long i) {
+    protected final NibbleArray a(M m0, long i) { // Paper
         return m0.c(i);
     }
 
@@ -70,27 +70,57 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
     protected abstract int d(long i);
 
     protected int i(long i) {
-        long j = SectionPosition.e(i);
-        NibbleArray nibblearray = this.a(j, true);
+        // Paper start - reuse and inline math, use Optimized Updating path
+        final int x = (int) (i >> 38);
+        final int y = (int) ((i << 52) >> 52);
+        final int z = (int) ((i << 26) >> 38);
+        long j = SectionPosition.blockPosAsSectionLong(x, y, z);
+        NibbleArray nibblearray = this.updating.getUpdatingOptimized(j);
+        //  BUG: Sometimes returns null and crashes, try to recover, but to prevent crash just return no light.
+        if (nibblearray == null) {
+            nibblearray = this.e_visible.lookup.apply(j);
+        }
+        if (nibblearray == null) {
+            System.err.println("Null nibble, preventing crash " + BlockPosition.fromLong(i));
+            return 0;
+        }
 
-        return nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
+        return nibblearray.a(x & 15, y & 15, z & 15); // Paper - inline operations
+        // Paper end
     }
 
     protected void b(long i, int j) {
-        long k = SectionPosition.e(i);
+        // Paper start - cache part of the math done in loop below
+        int x = (int) (i >> 38);
+        int y = (int) ((i << 52) >> 52);
+        int z = (int) ((i << 26) >> 38);
+        long k = SectionPosition.blockPosAsSectionLong(x, y, z);
+        // Paper end
 
         if (this.g.add(k)) {
             this.f.a(k);
         }
 
         NibbleArray nibblearray = this.a(k, true);
+        nibblearray.a(x & 15, y & 15, z & 15, j); // Paper - use already calculated x/y/z
 
-        nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)), j);
-
-        for (int l = -1; l <= 1; ++l) {
-            for (int i1 = -1; i1 <= 1; ++i1) {
-                for (int j1 = -1; j1 <= 1; ++j1) {
-                    this.h.add(SectionPosition.e(BlockPosition.a(i, i1, j1, l)));
+        // Paper start - credit to JellySquid for a major optimization here:
+        /*
+         * An extremely important optimization is made here in regards to adding items to the pending notification set. The
+         * original implementation attempts to add the coordinate of every chunk which contains a neighboring block position
+         * even though a huge number of loop iterations will simply map to block positions within the same updating chunk.
+         *
+         * Our implementation here avoids this by pre-calculating the min/max chunk coordinates so we can iterate over only
+         * the relevant chunk positions once. This reduces what would always be 27 iterations to just 1-8 iterations.
+         *
+         * @reason Use faster implementation
+         * @author JellySquid
+         */
+        for (int z2 = (z - 1) >> 4; z2 <= (z + 1) >> 4; ++z2) {
+            for (int x2 = (x - 1) >> 4; x2 <= (x + 1) >> 4; ++x2) {
+                for (int y2 = (y - 1) >> 4; y2 <= (y + 1) >> 4; ++y2) {
+                    this.dirty.add(SectionPosition.asLong(x2, y2, z2));
+                    // Paper end
                 }
             }
         }
@@ -122,17 +152,23 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
         }
 
         if (k >= 2 && j != 2) {
-            if (this.p.contains(i)) {
-                this.p.remove(i);
-            } else {
+            if (!this.p.remove(i)) { // Paper - remove useless contains - credit to JellySquid
+                //this.p.remove(i); // Paper
+            //} else { // Paper
                 this.f.a(i, this.j(i));
                 this.g.add(i);
                 this.k(i);
 
-                for (int l = -1; l <= 1; ++l) {
-                    for (int i1 = -1; i1 <= 1; ++i1) {
-                        for (int j1 = -1; j1 <= 1; ++j1) {
-                            this.h.add(SectionPosition.e(BlockPosition.a(i, i1, j1, l)));
+                // Paper start - reuse x/y/z and only notify valid chunks - Credit to JellySquid (See above method for notes)
+                int x = (int) (i >> 38);
+                int y = (int) ((i << 52) >> 52);
+                int z = (int) ((i << 26) >> 38);
+
+                for (int z2 = (z - 1) >> 4; z2 <= (z + 1) >> 4; ++z2) {
+                    for (int x2 = (x - 1) >> 4; x2 <= (x + 1) >> 4; ++x2) {
+                        for (int y2 = (y - 1) >> 4; y2 <= (y + 1) >> 4; ++y2) {
+                            this.dirty.add(SectionPosition.asLong(x2, y2, z2));
+                            // Paper end
                         }
                     }
                 }
@@ -158,9 +194,9 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
                 return SectionPosition.e(j) == i;
             });
         } else {
-            int j = SectionPosition.c(SectionPosition.b(i));
-            int k = SectionPosition.c(SectionPosition.c(i));
-            int l = SectionPosition.c(SectionPosition.d(i));
+            int j = (int) (i >> 42) << 4; // Paper - inline
+            int k = (int) (i << 44 >> 44) << 4; // Paper - inline
+            int l = (int) (i << 22 >> 42) << 4; // Paper - inline
 
             for (int i1 = 0; i1 < 16; ++i1) {
                 for (int j1 = 0; j1 < 16; ++j1) {
@@ -187,7 +223,7 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
             NibbleArray nibblearray;
 
             while (longiterator.hasNext()) {
-                i = (Long) longiterator.next();
+                i = longiterator.nextLong(); // Paper
                 this.a(lightenginelayer, i);
                 NibbleArray nibblearray1 = (NibbleArray) this.i.remove(i);
 
@@ -205,7 +241,7 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
             longiterator = this.p.iterator();
 
             while (longiterator.hasNext()) {
-                i = (Long) longiterator.next();
+                i = longiterator.nextLong(); // Paper
                 this.l(i);
             }
 
@@ -216,12 +252,13 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
             Entry entry;
             long j;
 
+            NibbleArray test = null; // Paper
             while (objectiterator.hasNext()) {
                 entry = (Entry) objectiterator.next();
                 j = entry.getLongKey();
-                if (this.g(j)) {
+                if ((test = this.updating.getUpdatingOptimized(j)) != null) { // Paper - dont look up nibble twice
                     nibblearray = (NibbleArray) entry.getValue();
-                    if (this.f.c(j) != nibblearray) {
+                    if (test != nibblearray) { // Paper
                         this.a(lightenginelayer, j);
                         this.f.a(j, nibblearray);
                         this.g.add(j);
@@ -234,14 +271,14 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
                 longiterator = this.i.keySet().iterator();
 
                 while (longiterator.hasNext()) {
-                    i = (Long) longiterator.next();
+                    i = longiterator.nextLong(); // Paper
                     this.b(lightenginelayer, i);
                 }
             } else {
                 longiterator = this.n.iterator();
 
                 while (longiterator.hasNext()) {
-                    i = (Long) longiterator.next();
+                    i = longiterator.nextLong(); // Paper
                     this.b(lightenginelayer, i);
                 }
             }
@@ -262,15 +299,20 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
 
     private void b(LightEngineLayer<M, ?> lightenginelayer, long i) {
         if (this.g(i)) {
-            int j = SectionPosition.c(SectionPosition.b(i));
-            int k = SectionPosition.c(SectionPosition.c(i));
-            int l = SectionPosition.c(SectionPosition.d(i));
+            // Paper start
+            int secX = (int) (i >> 42);
+            int secY = (int) (i << 44 >> 44);
+            int secZ = (int) (i << 22 >> 42);
+            int j = secX << 4; // baseX
+            int k = secY << 4; // baseY
+            int l = secZ << 4; // baseZ
+            // Paper end
             EnumDirection[] aenumdirection = LightEngineStorage.k;
             int i1 = aenumdirection.length;
 
             for (int j1 = 0; j1 < i1; ++j1) {
                 EnumDirection enumdirection = aenumdirection[j1];
-                long k1 = SectionPosition.a(i, enumdirection);
+                long k1 = SectionPosition.getAdjacentFromSectionPos(secX, secY, secZ, enumdirection); // Paper - avoid extra unpacking
 
                 if (!this.i.containsKey(k1) && this.g(k1)) {
                     for (int l1 = 0; l1 < 16; ++l1) {

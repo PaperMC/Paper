@@ -710,6 +710,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
             }
             gameprofilerfiller.exit();
             timings.chunkTicksBlocks.stopTiming(); // Paper
+            getChunkProvider().getLightEngine().queueUpdate(); // Paper
             // Paper end
         }
     }
