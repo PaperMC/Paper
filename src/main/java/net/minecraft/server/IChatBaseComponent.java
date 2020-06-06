@@ -344,6 +344,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
             return jsonobject;
         }
 
+        public static String componentToJson(IChatBaseComponent ichatbasecomponent) { return a(ichatbasecomponent);} // Paper - OBFHELPER
         public static String a(IChatBaseComponent ichatbasecomponent) {
             return IChatBaseComponent.ChatSerializer.a.toJson(ichatbasecomponent);
         }

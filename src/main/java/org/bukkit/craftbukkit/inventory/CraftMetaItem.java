@@ -873,11 +873,23 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return CraftChatMessage.fromComponent(displayName);
     }
 
+    // Paper start
+    @Override
+    public net.md_5.bungee.api.chat.BaseComponent[] getDisplayNameComponent() {
+        return net.md_5.bungee.chat.ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.componentToJson(displayName));
+    }
+    // Paper end
     @Override
     public final void setDisplayName(String name) {
         this.displayName = CraftChatMessage.fromStringOrNull(name);
     }
 
+    // Paper start
+    @Override
+    public void setDisplayNameComponent(net.md_5.bungee.api.chat.BaseComponent[] component) {
+        this.displayName = IChatBaseComponent.ChatSerializer.jsonToComponent(net.md_5.bungee.chat.ComponentSerializer.toString(component));
+    }
+    // Paper end
     @Override
     public boolean hasDisplayName() {
         return displayName != null;
@@ -1008,6 +1020,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, CraftChatMessage::fromComponent));
     }
 
+    // Paper start
+    @Override
+    public List<net.md_5.bungee.api.chat.BaseComponent[]> getLoreComponents() {
+        return this.lore == null ? null : new ArrayList<>(this.lore.stream().map(entry ->
+            net.md_5.bungee.chat.ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.componentToJson(entry)
+        )).collect(java.util.stream.Collectors.toList()));
+    }
+    // Paper end
     @Override
     public void setLore(List<String> lore) { // too tired to think if .clone is better
         if (lore == null) {
@@ -1022,6 +1042,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
     }
 
+    // Paper start
+    @Override
+    public void setLoreComponents(List<net.md_5.bungee.api.chat.BaseComponent[]> lore) {
+        if (lore == null) {
+            this.lore = null;
+        } else {
+            if (this.lore == null) {
+                safelyAdd(lore, this.lore = new ArrayList<>(lore.size()), Integer.MAX_VALUE);
+            } else {
+                this.lore.clear();
+                safelyAdd(lore, this.lore, Integer.MAX_VALUE);
+            }
+        }
+    }
+    // Paper end
     @Override
     public boolean hasCustomModelData() {
         return customModelData != null;
@@ -1483,6 +1518,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         for (Object object : addFrom) {
+            // Paper start - support components
+            if(object instanceof net.md_5.bungee.api.chat.BaseComponent[]) {
+                addTo.add(IChatBaseComponent.ChatSerializer.jsonToComponent(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object)));
+            } else
+            // Paper end
             if (!(object instanceof String)) {
                 if (object != null) {
                     throw new IllegalArgumentException(addFrom + " cannot contain non-string " + object.getClass().getName());
