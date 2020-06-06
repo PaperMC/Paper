@@ -340,8 +340,7 @@ public class CraftWorld implements World {
 
     @Override
     public boolean isChunkLoaded(int x, int z) {
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAt(x, z, false);
-        return chunk != null;
+        return world.getChunkProvider().isChunkLoaded(x, z);
     }
 
     @Override
@@ -381,19 +380,18 @@ public class CraftWorld implements World {
 
     @Override
     public boolean unloadChunkRequest(int x, int z) {
-        net.minecraft.server.IChunkAccess chunk = world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, false);
-        if (chunk != null) {
-            world.getChunkProvider().removeTicket(TicketType.PLUGIN, chunk.getPos(), 1, Unit.INSTANCE);
+        if (isChunkLoaded(x, z)) {
+            world.getChunkProvider().removeTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 1, Unit.INSTANCE);
         }
 
         return true;
     }
 
     private boolean unloadChunk0(int x, int z, boolean save) {
-        net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, false);
-        if (chunk == null) {
+        if (!isChunkLoaded(x, z)) {
             return true;
         }
+        net.minecraft.server.Chunk chunk = world.getChunkAt(x, z);
 
         chunk.mustNotSave = !save;
         unloadChunkRequest(x, z);
