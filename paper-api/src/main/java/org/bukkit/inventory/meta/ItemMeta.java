@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
@@ -111,6 +112,20 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     @NotNull
     String getDisplayName();
 
+    // Paper start
+    /**
+     * Gets the display name that is set.
+     * <p>
+     * Plugins should check that hasDisplayName() returns <code>true</code>
+     * before calling this method.
+     *
+     * @return the display name that is set
+     * @deprecated use {@link #displayName()}
+     */
+    @NotNull
+    @Deprecated
+    net.md_5.bungee.api.chat.BaseComponent[] getDisplayNameComponent();
+    // Paper end
     /**
      * Sets the display name.
      *
@@ -120,6 +135,16 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     @Deprecated // Paper
     void setDisplayName(@Nullable String name);
 
+    // Paper start
+    /**
+     * Sets the display name.
+     *
+     * @param component the name component to set
+     * @deprecated use {@link #displayName(Component)}
+     */
+    @Deprecated
+    void setDisplayNameComponent(@Nullable net.md_5.bungee.api.chat.BaseComponent[] component);
+    // Paper end
     /**
      * Checks for existence of an item name.
      * <br>
@@ -257,6 +282,19 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     List<String> getLore();
 
     /**
+     * Gets the lore that is set.
+     * <p>
+     * Plugins should check if hasLore() returns <code>true</code> before
+     * calling this method.
+     *
+     * @return a list of lore that is set
+     * @deprecated use {@link #lore()}
+     */
+    @Nullable
+    @Deprecated
+    List<net.md_5.bungee.api.chat.BaseComponent[]> getLoreComponents();
+
+    /**
      * Sets the lore for this item.
      * Removes lore when given null.
      *
@@ -265,6 +303,16 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      */
     @Deprecated // Paper
     void setLore(@Nullable List<String> lore);
+
+    /**
+     * Sets the lore for this item.
+     * Removes lore when given null.
+     *
+     * @param lore the lore that will be set
+     * @deprecated use {@link #lore(List)}
+     */
+    @Deprecated
+    void setLoreComponents(@Nullable List<net.md_5.bungee.api.chat.BaseComponent[]> lore);
 
     /**
      * Checks for existence of custom model data.
