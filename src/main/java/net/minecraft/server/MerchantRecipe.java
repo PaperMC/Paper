@@ -104,7 +104,7 @@ public class MerchantRecipe {
     }
 
     public void e() {
-        this.demand = this.demand + this.uses - (this.maxUses - this.uses);
+        this.demand = Math.max(0, this.demand + this.uses - (this.maxUses - this.uses)); // Paper
     }
 
     public ItemStack f() {
