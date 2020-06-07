@@ -303,8 +303,8 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         this.worldDataServer.setThundering(flag1);
     }
 
-    @Override
-    public BiomeBase a(int i, int j, int k) {
+    public BiomeBase getBiomeBySeed(int i, int j, int k) { return a(i, j, k); } // Paper - OBFHELPER
+    @Override public BiomeBase a(int i, int j, int k) {
         return this.getChunkProvider().getChunkGenerator().getWorldChunkManager().getBiome(i, j, k);
     }
 

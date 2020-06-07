@@ -229,7 +229,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
                 for (l = 0; l < 128 * i; ++l) {
                     for (i1 = 0; i1 < 128 * i; ++i1) {
-                        abiomebase[l * 128 * i + i1] = worldserver.getBiome(new BlockPosition((j / i - 64) * i + i1, 0, (k / i - 64) * i + l));
+                        abiomebase[l * 128 * i + i1] = worldserver.getBiomeBySeed((j / i - 64) * i + i1, 0, (k / i - 64) * i + l); // Paper
                     }
                 }
 
