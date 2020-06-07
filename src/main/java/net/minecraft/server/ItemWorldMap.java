@@ -96,9 +96,9 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             int k2 = (j / i + k1 - 64) * i;
                             int l2 = (k / i + l1 - 64) * i;
                             Multiset<MaterialMapColor> multiset = LinkedHashMultiset.create();
-                            Chunk chunk = world.getChunkAtWorldCoords(new BlockPosition(k2, 0, l2));
+                            Chunk chunk = world.getChunkIfLoaded(new BlockPosition(k2, 0, l2)); // Paper - Maps shouldn't load chunks
 
-                            if (!chunk.isEmpty()) {
+                            if (chunk != null && !chunk.isEmpty()) { // Paper - Maps shouldn't load chunks
                                 ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
                                 int i3 = k2 & 15;
                                 int j3 = l2 & 15;
