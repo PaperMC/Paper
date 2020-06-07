@@ -1,11 +1,12 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: oxygencraft <21054297+oxygencraft@users.noreply.github.com>
 Date: Sat, 6 Jun 2020 17:23:48 +1000
-Subject: [PATCH] Add setters for name and uuid in AsyncPlayerPreLoginEvent
+Subject: [PATCH] Change name and id to get from profile in
+ AsyncPlayerPreLoginEvent
 
-This patch also changes setPlayerProfile to set the name and uuid
-of the event to the name and uuid defined in the new player profile.
-The name and uuid setters will also set the new name or uuid in the event.
+This patch changes the name and uuid getters to get from the player
+profile because the event's name and uuid fields won't update. This
+patch also removes the event's name and uuid fields.
 
 This patch was made because when you set a new player profile, it does
 not update the name and uuid in the event. This cause problems when the
@@ -13,7 +14,7 @@ event is passed to other listeners that use getName and getUniqueId
 which will return the old name and uuid.
 
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
-index 76c4a1a6e0c0e72b0f3f75d06f179c07f863e143..2bb27554404205badd9543540c13b226b926d9f1 100644
+index 76c4a1a6e0c0e72b0f3f75d06f179c07f863e143..10292e59257d1c33cf4800d38bc24f6b35f75de1 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 +++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 @@ -18,9 +18,9 @@ public class AsyncPlayerPreLoginEvent extends Event {
@@ -21,14 +22,14 @@ index 76c4a1a6e0c0e72b0f3f75d06f179c07f863e143..2bb27554404205badd9543540c13b226
      private Result result;
      private String message;
 -    private final String name;
-+    private String name; // Paper - Make not final for setPlayerName and setPlayerProfile
++    //private String name; // Paper - Not used anymore
      private final InetAddress ipAddress;
 -    private final UUID uniqueId;
-+    private UUID uniqueId; // Paper - Make not final for setUniqueId and setPlayerProfile
++    //private UUID uniqueId; // Paper - Not used anymore
  
      @Deprecated
      public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
-@@ -42,11 +42,32 @@ public class AsyncPlayerPreLoginEvent extends Event {
+@@ -42,7 +42,8 @@ public class AsyncPlayerPreLoginEvent extends Event {
          return profile;
      }
  
@@ -38,27 +39,33 @@ index 76c4a1a6e0c0e72b0f3f75d06f179c07f863e143..2bb27554404205badd9543540c13b226
       * @param profile The profile to use
       */
      public void setPlayerProfile(@NotNull PlayerProfile profile) {
-         this.profile = profile;
-+        name = profile.getName();
-+        uniqueId = profile.getId();
-+    }
-+
-+    /**
-+     * Changes the name of the player they will login as
-+     * @param name The name to change it to
-+     */
-+    public void setPlayerName(@NotNull String name) {
-+        this.name = name;
-+        profile.setName(name);
-+    }
-+
-+    /**
-+     * Changes the unique id the player will login as
-+     * @param uniqueId The unique id to use
-+     */
-+    public void setUniqueId(@NotNull UUID uniqueId) {
-+        this.uniqueId = uniqueId;
-+        profile.setId(uniqueId);
+@@ -55,9 +56,9 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         // Paper end
+         this.result = Result.ALLOWED;
+         this.message = "";
+-        this.name = name;
++        //this.name = name; // Paper - Not used anymore
+         this.ipAddress = ipAddress;
+-        this.uniqueId = uniqueId;
++        //this.uniqueId = uniqueId; // Paper - Not used anymore
      }
  
-     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, @NotNull PlayerProfile profile) {
+     /**
+@@ -167,7 +168,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     @NotNull
+     public String getName() {
+-        return name;
++        return profile.getName();
+     }
+ 
+     /**
+@@ -187,7 +188,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      */
+     @NotNull
+     public UUID getUniqueId() {
+-        return uniqueId;
++        return profile.getId();
+     }
+ 
+     @NotNull
