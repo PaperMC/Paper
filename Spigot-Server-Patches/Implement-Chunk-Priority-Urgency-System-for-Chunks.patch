@@ -148,14 +148,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean removeTicket(long i, Ticket<?> ticket) { // CraftBukkit - void -> boolean
 +        AsyncCatcher.catchOp("ChunkMapDistance::removeTicket"); // Paper
          ArraySetSorted<Ticket<?>> arraysetsorted = this.e(i);
++        int oldLevel = a(arraysetsorted); // Paper
  
          boolean removed = false; // CraftBukkit
+         if (arraysetsorted.remove(ticket)) {
+@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+         if (arraysetsorted.isEmpty()) {
+             this.tickets.remove(i);
+         }
+-
+-        this.e.b(i, a(arraysetsorted), false);
++        int newLevel = a(arraysetsorted); // Paper
++        if (newLevel > oldLevel) this.e.b(i, newLevel, false); // Paper
+         return removed; // CraftBukkit
+     }
+ 
 @@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
          this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
      }
  
 +    // Paper start
-+    public static final int PRIORITY_TICKET_LEVEL = 33;
++    public static final int PRIORITY_TICKET_LEVEL = PlayerChunkMap.GOLDEN_TICKET;
 +    public static final int URGENT_PRIORITY = 29;
 +    public boolean markUrgent(ChunkCoordIntPair coords) {
 +        return addPriorityTicket(coords, TicketType.URGENT, URGENT_PRIORITY);
@@ -186,7 +199,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (updatingChunk != null && updatingChunk.priorityBoost < priority) {
 +            // May not be enqueued, enqueue it if not and tick distance manager
 +            chunkMap.queueHolderUpdate(updatingChunk);
-+            chunkMap.world.getChunkProvider().tickDistanceManager();
 +        }
 +        return success;
 +    }
@@ -332,7 +344,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
-         if (flag && !currentlyUnloading) {
+             PlayerChunk.State currentChunkState = PlayerChunk.getChunkState(playerchunk.getTicketLevel());
+             currentlyUnloading = (oldChunkState.isAtLeast(PlayerChunk.State.BORDER) && !currentChunkState.isAtLeast(PlayerChunk.State.BORDER));
+         }
+-        if (flag && !currentlyUnloading) {
++        if (flag) { // Paper - don't care about unloading state
              // CraftBukkit end
              this.chunkMapDistance.a(TicketType.UNKNOWN, chunkcoordintpair, l, chunkcoordintpair);
 +            if (isUrgent) this.chunkMapDistance.markUrgent(chunkcoordintpair); // Paper
@@ -445,7 +461,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            priority = myPriority;
 +        }
 +
-+        return Math.max(1, Math.min(PlayerChunkMap.GOLDEN_TICKET, priority));
++        return Math.max(1, Math.min(Math.max(ticketLevel, PlayerChunkMap.GOLDEN_TICKET), priority));
 +    }
 +
 +    private int getMyPriority() {
@@ -716,9 +732,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return; // unloaded
 +            }
 +            chunkDistanceManager.pendingChunkUpdates.add(playerchunk);
-+            if (!chunkDistanceManager.pollingPendingChunkUpdates) {
-+                world.getChunkProvider().tickDistanceManager();
-+            }
 +        };
 +        if (MCUtil.isMainThread()) {
 +            // We can't use executor here because it will not execute tasks if its currently in the middle of executing tasks...
