@@ -4,6 +4,20 @@ Date: Mon, 20 Aug 2018 03:03:58 +0200
 Subject: [PATCH] Anti-Xray
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index dbd14399707cdd43f98af40191be8ff3e76edf43..b550f97eaeaee69b2097599cfa0a5ecd43a7bb82 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -367,4 +367,9 @@ public class PaperConfig {
+         maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
+         maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
+     }
++
++    public static int antiXrayThreads;
++    private static void antiXray() {
++        antiXrayThreads = getInt("settings.anti-xray.threads", 1);
++    }
+ }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index 48676152152faf7a7b9524ac37d8b4a8c32c4e2c..ca2ac17747d4f2acf1df056759c5c182be050125 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -100,10 +114,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9c017eb027ce52ea6a2414af2d0190b3bd52522c
+index 0000000000000000000000000000000000000000..111e4d91c25f8f64446bdeae77d24b63d1b3905e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,628 @@
+@@ -0,0 +1,640 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -117,6 +131,7 @@ index 0000000000000000000000000000000000000000..9c017eb027ce52ea6a2414af2d0190b3
 +import org.bukkit.Bukkit;
 +import org.bukkit.World.Environment;
 +
++import com.destroystokyo.paper.PaperConfig;
 +import com.destroystokyo.paper.PaperWorldConfig;
 +
 +public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
@@ -218,10 +233,14 @@ index 0000000000000000000000000000000000000000..9c017eb027ce52ea6a2414af2d0190b3
 +
 +    private static ExecutorService getExecutorServiceInstance() {
 +        if (executorServiceInstance == null) {
-+            executorServiceInstance = Executors.newSingleThreadExecutor();
++            executorServiceInstance = Executors.newFixedThreadPool(PaperConfig.antiXrayThreads);
 +        }
 +
 +        return executorServiceInstance;
++    }
++
++    private int getPredefinedBlockDataLength() {
++        return engineMode == EngineMode.HIDE ? 1 : predefinedBlockData.length;
 +    }
 +
 +    @Override
@@ -281,19 +300,26 @@ index 0000000000000000000000000000000000000000..9c017eb027ce52ea6a2414af2d0190b3
 +        }
 +    }
 +
-+    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay
-+    private int[] predefinedBlockDataBits;
-+    private final boolean[] solid = new boolean[Block.REGISTRY_ID.size()];
-+    private final boolean[] obfuscate = new boolean[Block.REGISTRY_ID.size()];
++    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay (even without ThreadLocal)
++    // If an ExecutorService with multiple threads is used, ThreadLocal must be used here
++    private final ThreadLocal<int[]> predefinedBlockDataBits = ThreadLocal.withInitial(() -> new int[getPredefinedBlockDataLength()]);
++    private static final ThreadLocal<boolean[]> solid = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
++    private static final ThreadLocal<boolean[]> obfuscate = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
 +    // These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
-+    private boolean[][] current = new boolean[16][16];
-+    private boolean[][] next = new boolean[16][16];
-+    private boolean[][] nextNext = new boolean[16][16];
-+    private final DataBitsReader dataBitsReader = new DataBitsReader();
-+    private final DataBitsWriter dataBitsWriter = new DataBitsWriter();
-+    private final ChunkSection[] nearbyChunkSections = new ChunkSection[4];
++    private static final ThreadLocal<boolean[][]> current = ThreadLocal.withInitial(() -> new boolean[16][16]);
++    private static final ThreadLocal<boolean[][]> next = ThreadLocal.withInitial(() -> new boolean[16][16]);
++    private static final ThreadLocal<boolean[][]> nextNext = ThreadLocal.withInitial(() -> new boolean[16][16]);
 +
 +    public void obfuscate(ChunkPacketInfoAntiXray chunkPacketInfoAntiXray) {
++        boolean[] solid = this.solid.get();
++        boolean[] obfuscate = this.obfuscate.get();
++        boolean[][] current = this.current.get();
++        boolean[][] next = this.next.get();
++        boolean[][] nextNext = this.nextNext.get();
++        // dataBitsReader, dataBitsWriter and nearbyChunkSections could also be reused (with ThreadLocal if necessary) but it's not worth it
++        DataBitsReader dataBitsReader = new DataBitsReader();
++        DataBitsWriter dataBitsWriter = new DataBitsWriter();
++        ChunkSection[] nearbyChunkSections = new ChunkSection[4];
 +        boolean[] solidTemp = null;
 +        boolean[] obfuscateTemp = null;
 +        dataBitsReader.setDataBits(chunkPacketInfoAntiXray.getData());
@@ -307,7 +333,7 @@ index 0000000000000000000000000000000000000000..9c017eb027ce52ea6a2414af2d0190b3
 +                if (chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex) == ChunkSection.GLOBAL_PALETTE) {
 +                    predefinedBlockDataBitsTemp = engineMode == EngineMode.HIDE ? chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.NETHER ? predefinedBlockDataBitsNetherrackGlobal : chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.THE_END ? predefinedBlockDataBitsEndStoneGlobal : predefinedBlockDataBitsStoneGlobal : predefinedBlockDataBitsGlobal;
 +                } else {
-+                    predefinedBlockDataBitsTemp = predefinedBlockDataBits == null ? predefinedBlockDataBits = engineMode == EngineMode.HIDE ? new int[1] : new int[predefinedBlockData.length] : predefinedBlockDataBits;
++                    predefinedBlockDataBitsTemp = predefinedBlockDataBits.get();
 +
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
 +                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
