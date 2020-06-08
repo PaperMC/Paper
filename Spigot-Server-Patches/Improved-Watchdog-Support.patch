@@ -128,12 +128,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            shutdownThread = Thread.currentThread();
              hasStopped = true;
 +            org.spigotmc.WatchdogThread.doStop(); // Paper
++            // Paper start - kill main thread, and kill it hard
 +            if (!isMainThread()) {
-+                this.getThread().stop();
++                while (this.getThread().isAlive()) {
++                    this.getThread().stop();
++                    try {
++                        Thread.sleep(1);
++                    } catch (InterruptedException e) {}
++                }
 +            }
++            // Paper end
          }
          // CraftBukkit end
-         MinecraftServer.LOGGER.info("Stopping server");
+-        MinecraftServer.LOGGER.info("Stopping server");
++        MinecraftServer.LOGGER.info("Stopping server (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)"); // Paper
+         MinecraftTimings.stopServer(); // Paper
+         // CraftBukkit start
+         if (this.server != null) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
@@ -224,6 +235,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return new TickTask(this.ticks, runnable);
      }
  
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                     midTickLoadChunks(); // Paper
+                 } catch (Throwable throwable) {
+                     // Spigot Start
++                    if (throwable instanceof ThreadDeath) { throw throwable; } // Paper
+                     CrashReport crashreport;
+                     try {
+                         crashreport = CrashReport.a(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
