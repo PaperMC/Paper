@@ -5,10 +5,10 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index dbd14399707cdd43f98af40191be8ff3e76edf43..b550f97eaeaee69b2097599cfa0a5ecd43a7bb82 100644
+index dbd14399707cdd43f98af40191be8ff3e76edf43..bb0b7c3b15e9d488d147db512a13c46e5218f003 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -367,4 +367,9 @@ public class PaperConfig {
+@@ -367,4 +367,10 @@ public class PaperConfig {
          maxBookPageSize = getInt("settings.book-size.page-max", maxBookPageSize);
          maxBookTotalSizeMultiplier = getDouble("settings.book-size.total-multiplier", maxBookTotalSizeMultiplier);
      }
@@ -16,6 +16,7 @@ index dbd14399707cdd43f98af40191be8ff3e76edf43..b550f97eaeaee69b2097599cfa0a5ecd
 +    public static int antiXrayThreads;
 +    private static void antiXray() {
 +        antiXrayThreads = getInt("settings.anti-xray.threads", 1);
++        antiXrayThreads = antiXrayThreads < 1 ? 1 : antiXrayThreads;
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -114,10 +115,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..111e4d91c25f8f64446bdeae77d24b63d1b3905e
+index 0000000000000000000000000000000000000000..9cbed3d3e362acbf8da9265d616f9789075f235f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,640 @@
+@@ -0,0 +1,641 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -311,6 +312,7 @@ index 0000000000000000000000000000000000000000..111e4d91c25f8f64446bdeae77d24b63
 +    private static final ThreadLocal<boolean[][]> nextNext = ThreadLocal.withInitial(() -> new boolean[16][16]);
 +
 +    public void obfuscate(ChunkPacketInfoAntiXray chunkPacketInfoAntiXray) {
++        int[] predefinedBlockDataBits = this.predefinedBlockDataBits.get();
 +        boolean[] solid = this.solid.get();
 +        boolean[] obfuscate = this.obfuscate.get();
 +        boolean[][] current = this.current.get();
@@ -333,7 +335,7 @@ index 0000000000000000000000000000000000000000..111e4d91c25f8f64446bdeae77d24b63
 +                if (chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex) == ChunkSection.GLOBAL_PALETTE) {
 +                    predefinedBlockDataBitsTemp = engineMode == EngineMode.HIDE ? chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.NETHER ? predefinedBlockDataBitsNetherrackGlobal : chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.THE_END ? predefinedBlockDataBitsEndStoneGlobal : predefinedBlockDataBitsStoneGlobal : predefinedBlockDataBitsGlobal;
 +                } else {
-+                    predefinedBlockDataBitsTemp = predefinedBlockDataBits.get();
++                    predefinedBlockDataBitsTemp = predefinedBlockDataBits;
 +
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
 +                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
