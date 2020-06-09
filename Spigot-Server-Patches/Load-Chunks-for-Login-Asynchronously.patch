@@ -100,6 +100,14 @@ diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -0,0 +0,0 @@ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.concurrent.CompletableFuture;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
@@ -143,24 +151,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        WorldServer finalWorldserver = worldserver;
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
-+        worldserver.getChunkProvider().getTickingChunkAsync(chunkX, chunkZ, (chunk -> { // use ticking - as it has at least 1 neighbours loaded
++        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
++        PlayerChunkMap playerChunkMap = finalWorldserver.getChunkProvider().playerChunkMap;
++        playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
++        worldserver.getChunkProvider().tickDistanceManager();
++        worldserver.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
++            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
++            if (updatingChunk != null) {
++                return updatingChunk.getEntityTickingFuture();
++            } else {
++                return CompletableFuture.completedFuture(chunk);
++            }
++        }).thenAccept(chunk -> {
 +            playerconnection.playerJoinReady = () -> {
 +                postChunkLoadJoin(
 +                    entityplayer, finalWorldserver, networkmanager, playerconnection,
 +                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
 +                );
++                playerChunkMap.chunkDistanceManager.removeTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
 +            };
-+        }));
-+        // boost the priorities
-+        worldserver.asyncChunkTaskManager.raisePriority(chunkX, chunkZ, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
-+        for (int cx = -1; cx <= 1; cx++) {
-+            for (int cz = -1; cz <= 1; cz++) {
-+                if (cx == 0 && cz == 0) continue;
-+                // we have to directly request it otherwise the task won't be started yet to boost priority
-+                worldserver.getChunkProvider().getFullChunkAsync(chunkX + cx, chunkZ + cz, null);
-+                worldserver.asyncChunkTaskManager.raisePriority(chunkX + cx, chunkZ + cz, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
-+            }
-+        }
++        });
 +    }
 +
 +    EntityPlayer getActivePlayer(UUID uuid) {
@@ -256,3 +266,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Iterator iterator = list.iterator();
  
+diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TicketType.java
++++ b/src/main/java/net/minecraft/server/TicketType.java
+@@ -0,0 +0,0 @@ public class TicketType<T> {
+     public static final TicketType<ChunkCoordIntPair> FORCED = a("forced", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<ChunkCoordIntPair> LIGHT = a("light", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<BlockPosition> PORTAL = a("portal", BaseBlockPosition::compareTo, 300);
++    public static final TicketType<Long> LOGIN = a("login", Long::compareTo, 100); // Paper
+     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
