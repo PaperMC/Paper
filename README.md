@@ -5,7 +5,7 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
 
 
 **Support and Project Discussion:**
- - [IRC](http://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/papermc)
+ - [IRC](https://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/papermc)
 
 
 How To (Server Admins)
@@ -56,4 +56,4 @@ Special Thanks To:
 
 ![YourKit-Logo](https://www.yourkit.com/images/yklogo.png)
 
-[YourKit](http://www.yourkit.com/), makers of the outstanding java profiler, support open source projects of all kinds with their full featured [Java](https://www.yourkit.com/java/profiler/index.jsp) and [.NET](https://www.yourkit.com/.net/profiler/index.jsp) application profilers. We thank them for granting Paper an OSS license so that we can make our software the best it can be.
+[YourKit](https://www.yourkit.com/), makers of the outstanding java profiler, support open source projects of all kinds with their full featured [Java](https://www.yourkit.com/java/profiler/index.jsp) and [.NET](https://www.yourkit.com/.net/profiler/index.jsp) application profilers. We thank them for granting Paper an OSS license so that we can make our software the best it can be.
