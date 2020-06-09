@@ -3568,30 +3568,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return MinecraftServer.getServer().isMainThread();
 +    }
 +
-+    private static class DelayedRunnable implements Runnable {
-+
-+        private final int ticks;
-+        private final Runnable run;
-+
-+        private DelayedRunnable(int ticks, Runnable run) {
-+            this.ticks = ticks;
-+            this.run = run;
-+        }
-+
-+        @Override
-+        public void run() {
-+            if (ticks <= 0) {
-+                run.run();
-+            } else {
-+                scheduleTask(ticks-1, run);
-+            }
-+        }
++    public static org.bukkit.scheduler.BukkitTask scheduleTask(int ticks, Runnable runnable) {
++        return scheduleTask(ticks, runnable, null);
 +    }
 +
-+    public static void scheduleTask(int ticks, Runnable runnable) {
-+        // We use post to main instead of process queue as we don't want to process these mid tick if
-+        // Someone uses processQueueWhileWaiting
-+        MinecraftServer.getServer().scheduleOnMain(new DelayedRunnable(ticks, runnable));
++    public static org.bukkit.scheduler.BukkitTask scheduleTask(int ticks, Runnable runnable, String taskName) {
++        return MinecraftServer.getServer().server.getScheduler().scheduleInternalTask(runnable, ticks, taskName);
 +    }
 +
 +    public static void processQueue() {
@@ -4495,6 +4477,194 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      /**
       * Mirror
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -0,0 +0,0 @@ import org.bukkit.scheduler.BukkitWorker;
+  */
+ public class CraftScheduler implements BukkitScheduler {
+ 
++    static Plugin MINECRAFT = new MinecraftInternalPlugin();
+     /**
+      * Counter for IDs. Order doesn't matter, only uniqueness.
+      */
+@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+         runTaskTimer(plugin, (Object) task, delay, period);
+     }
+ 
++    public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
++        final CraftTask task = new CraftTask(run, nextId(), taskName);
++        return handle(task, delay);
++    }
++
+     public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
+         validate(plugin, runnable);
+         if (delay < 0L) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+@@ -0,0 +0,0 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+     CraftTask(final Object task) {
+         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
+     }
++    // Paper start
++    public String taskName = null;
++    boolean internal = false;
++    CraftTask(final Object task, int id, String taskName) {
++        this.rTask = (Runnable) task;
++        this.cTask = null;
++        this.plugin = CraftScheduler.MINECRAFT;
++        this.taskName = taskName;
++        this.internal = true;
++        this.id = id;
++        this.period = CraftTask.NO_REPEATING;
++        this.taskName = taskName;
++        this.timings = null; // Will be changed in later patch
++    }
++    // Paper end
+ 
+     CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
+         this.plugin = plugin;
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
+@@ -0,0 +0,0 @@
++package org.bukkit.craftbukkit.scheduler;
++
++
++import org.bukkit.Server;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.configuration.file.FileConfiguration;
++import org.bukkit.generator.ChunkGenerator;
++import org.bukkit.plugin.PluginBase;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.bukkit.plugin.PluginLoader;
++import org.bukkit.plugin.PluginLogger;
++
++import java.io.File;
++import java.io.InputStream;
++import java.util.List;
++
++public class MinecraftInternalPlugin extends PluginBase {
++    private boolean enabled = true;
++
++    private final String pluginName;
++    private PluginDescriptionFile pdf;
++
++    public MinecraftInternalPlugin() {
++        this.pluginName = "Minecraft";
++        pdf = new PluginDescriptionFile(pluginName, "1.0", "nms");
++    }
++
++    public void setEnabled(boolean enabled) {
++        this.enabled = enabled;
++    }
++
++    @Override
++    public File getDataFolder() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public PluginDescriptionFile getDescription() {
++        return pdf;
++    }
++
++    @Override
++    public FileConfiguration getConfig() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public InputStream getResource(String filename) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void saveConfig() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void saveDefaultConfig() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void saveResource(String resourcePath, boolean replace) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void reloadConfig() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public PluginLogger getLogger() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public PluginLoader getPluginLoader() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public Server getServer() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return enabled;
++    }
++
++    @Override
++    public void onDisable() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void onLoad() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void onEnable() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public boolean isNaggable() {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public void setNaggable(boolean canNag) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++
++    @Override
++    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
++        throw new UnsupportedOperationException("Not supported.");
++    }
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java

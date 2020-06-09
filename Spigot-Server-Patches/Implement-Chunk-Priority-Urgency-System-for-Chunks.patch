@@ -182,24 +182,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        AsyncCatcher.catchOp("ChunkMapDistance::addPriorityTicket");
 +        long pair = coords.pair();
 +        PlayerChunk updatingChunk = chunkMap.getUpdatingChunk(pair);
-+        if (updatingChunk != null && updatingChunk.priorityBoost >= priority) {
-+            return true;
-+        }
++
 +        boolean success;
 +        if (!(success = updatePriorityTicket(coords, ticketType, priority))) {
 +            Ticket<ChunkCoordIntPair> ticket = new Ticket<ChunkCoordIntPair>(ticketType, PRIORITY_TICKET_LEVEL, coords);
 +            ticket.priority = priority;
 +            success = this.addTicket(pair, ticket);
-+        }
-+
-+        chunkMap.world.getChunkProvider().tickDistanceManager();
-+        if (updatingChunk == null) {
-+            updatingChunk = chunkMap.getUpdatingChunk(pair);
-+        }
-+        if (updatingChunk != null && updatingChunk.priorityBoost < priority) {
-+            // May not be enqueued, enqueue it if not and tick distance manager
++        } else {
++            if (updatingChunk == null) {
++                updatingChunk = chunkMap.getUpdatingChunk(pair);
++            }
 +            chunkMap.queueHolderUpdate(updatingChunk);
 +        }
++        chunkMap.world.getChunkProvider().tickDistanceManager();
++
 +        return success;
 +    }
 +
@@ -211,6 +207,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (Ticket<?> ticket : tickets) {
 +            if (ticket.getTicketType() == type) {
 +                // We only support increasing, not decreasing, too complicated
++                ticket.setCurrentTick(this.currentTick);
 +                ticket.priority = Math.max(ticket.priority, priority);
 +                return true;
 +            }
@@ -252,48 +249,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier));
          // CraftBukkit end
 @@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+                 Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
  
                  if (flag1) {
-                     ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
+-                    ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
 -                        ChunkMapDistance.this.m.execute(() -> {
-+                        // Paper start - smarter ticket delay based on frustum and distance
-+                        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> playersNearby = chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i);
-+                        // delay ticket add based on distance if > 4, and penalize > 8 more
-+                        int delay = j < 4 ? 0 : (j > 8 ? 20 + j * 2 : j);
-+                        if (playersNearby != null && j < 4) {
-+                            Object[] backingSet = playersNearby.getBackingSet();
-+                            BlockPosition chunkPos = new ChunkCoordIntPair(i).asPosition();
-+                            double minDist = Double.MAX_VALUE;
-+                            for (int index = 0, len = backingSet.length; index < len; ++index) {
-+                                if (!(backingSet[index] instanceof EntityPlayer)) {
-+                                    continue;
-+                                }
-+                                EntityPlayer player = (EntityPlayer) backingSet[index];
-+                                BlockPosition pointInFront = player.getPointInFront(3 * 16);
-+
-+                                double dist = MCUtil.distanceSq(pointInFront, chunkPos);
-+                                if (dist < minDist && dist >= 4*4) {
-+                                    minDist = dist;
-+                                }
-+                            }
-+                            if (minDist < Double.MAX_VALUE) {
-+                                delay += 10 + Math.sqrt(minDist)*3;
-+                            }
-+                        }
-+                        MCUtil.scheduleTask(delay, () -> {
-+                            // Paper end
-                             if (this.c(this.c(i))) {
+-                            if (this.c(this.c(i))) {
++                    // Paper start - smarter ticket delay based on frustum and distance
++                    scheduleChunkLoad(i, MinecraftServer.currentTick, (priority) -> {
++                        ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
++                            if (chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i) != null && this.c(this.c(i))) { // Copy c(c()) stuff below
++                                // Paper end
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
-@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
- 
-                         });
+                             } else {
+                                 ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
+                                 }, i, false));
+                             }
+-
+-                        });
                      }, i, () -> {
 -                        return j;
-+                        int desired = j + chunkMap.getEffectiveViewDistance() >= j ? 20 : 30; // Paper - use less priority for no tick chunks
-+                        return Math.min(PlayerChunkMap.GOLDEN_TICKET, desired); // Paper - this is based on distance to player for priority,
-+                        // ensure new no tick tickets arent higher priority than high priority tickets...
-                     }));
+-                    }));
++                        return priority; // Paper
++                    })); });
                  } else {
                      ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
@@ -302,6 +281,90 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          });
                      }, i, true));
                  }
+@@ -0,0 +0,0 @@ public abstract class ChunkMapDistance {
+ 
+         }
+ 
++        // Paper start - smart scheduling of player tickets
++        public void scheduleChunkLoad(long i, long startTick, java.util.function.Consumer<Integer> task) {
++            long elapsed = MinecraftServer.currentTick - startTick;
++            PlayerChunk updatingChunk = chunkMap.getUpdatingChunk(i);
++            if ((updatingChunk != null && updatingChunk.isFullChunkReady()) || !this.c(this.c(i))) { // Copied from above
++                // no longer needed
++                task.accept(1);
++                return;
++            }
++
++            int desireDelay = 0;
++            double minDist = Double.MAX_VALUE;
++            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i);
++            ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(i);
++            if (players != null) {
++                BlockPosition.PooledBlockPosition pos = BlockPosition.PooledBlockPosition.acquire();
++                Object[] backingSet = players.getBackingSet();
++
++                BlockPosition blockPos = chunkPos.asPosition();
++
++                boolean isFront = false;
++                for (int index = 0, len = backingSet.length; index < len; ++index) {
++                    if (!(backingSet[index] instanceof EntityPlayer)) {
++                        continue;
++                    }
++                    EntityPlayer player = (EntityPlayer) backingSet[index];
++                    BlockPosition pointInFront = player.getPointInFront(3 * 16).add(0, (int) -player.locY(), 0);
++                    pos.setValues(((int) player.locX() >> 4) << 4, 0, ((int) player.locZ() >> 4) << 4);
++                    double frontDist = MCUtil.distanceSq(pointInFront, blockPos);
++                    double center = MCUtil.distanceSq(pos, blockPos);
++                    double dist = Math.min(frontDist, center);
++                    if (!isFront) {
++                        BlockPosition pointInBack = player.getPointInFront(3 * 16 * -1).add(0, (int) -player.locY(), 0);
++                        double backDist = MCUtil.distanceSq(pointInBack, blockPos);
++                        if (frontDist < backDist) {
++                            isFront = true;
++                        }
++                    }
++                    if (dist < minDist) {
++                        minDist = dist;
++                    }
++                }
++                pos.close();
++                if (minDist < Double.MAX_VALUE) {
++                    minDist = Math.sqrt(minDist) / 16;
++                    if (minDist > 5) {
++                        desireDelay += ((isFront ? 15 : 30) * 20) * (minDist / 32);
++                    }
++                }
++            } else {
++                desireDelay = 1;
++            }
++            long delay = desireDelay - elapsed;
++            if (delay <= 0 && minDist > 4 && minDist < Double.MAX_VALUE) {
++                boolean hasAnyNeighbor = false;
++                for (int x = -1; x <= 1; x++) {
++                    for (int z = -1; z <= 1; z++) {
++                        if (x == 0 && z == 0) continue;
++                        long pair = new ChunkCoordIntPair(chunkPos.x + x, chunkPos.z + z).pair();
++                        PlayerChunk neighbor = chunkMap.getUpdatingChunk(pair);
++                        if (neighbor != null && neighbor.isFullChunkReady()) {
++                            hasAnyNeighbor = true;
++                        }
++                    }
++                }
++                if (!hasAnyNeighbor) {
++                    delay += 10;
++                }
++            }
++            if (delay <= 0) {
++                task.accept(Math.min(PlayerChunkMap.GOLDEN_TICKET, minDist < Double.MAX_VALUE ? (int) minDist : 15));
++            } else {
++                MCUtil.scheduleTask((int) Math.min(delay, 20), () -> scheduleChunkLoad(i, startTick, task), "Player Ticket Delayer");
++            }
++        }
++        // Paper end
++
+         @Override
+         public void a() {
+             super.a();
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -732,6 +795,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return; // unloaded
 +            }
 +            chunkDistanceManager.pendingChunkUpdates.add(playerchunk);
++            if (!chunkDistanceManager.pollingPendingChunkUpdates) {
++                world.getChunkProvider().tickDistanceManager();
++            }
 +        };
 +        if (MCUtil.isMainThread()) {
 +            // We can't use executor here because it will not execute tasks if its currently in the middle of executing tasks...
@@ -741,8 +807,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public boolean isUnloading(PlayerChunk playerchunk) {
-+        return playerchunk == null || MCUtil.getChunkStatus(playerchunk) == null || unloadQueue.contains(playerchunk.location.pair());
++    private boolean isUnloading(PlayerChunk playerchunk) {
++        return playerchunk == null || unloadQueue.contains(playerchunk.location.pair());
 +    }
 +
 +    public void checkHighPriorityChunks(EntityPlayer player) {

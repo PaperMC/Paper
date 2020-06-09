@@ -58,6 +58,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private MinecraftTimings() {}
 +
++    public static Timing getInternalTaskName(String taskName) {
++        return Timings.ofSafe(taskName);
++    }
++
 +    /**
 +     * Gets a timer associated with a plugins tasks.
 +     * @param bukkitTask
@@ -2026,6 +2030,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.ArrayList;
  import java.util.Comparator;
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+     }
+ 
+     public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
+-        final CraftTask task = new CraftTask(run, nextId(), taskName);
++        final CraftTask task = new CraftTask(run, nextId(), "Internal - " + (taskName != null ? taskName : "Unknown"));
++        task.internal = true;
+         return handle(task, delay);
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
                          }
                          return false;
                      }
@@ -2115,8 +2129,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
 @@ -0,0 +0,0 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
-         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
+         this.id = id;
+         this.period = CraftTask.NO_REPEATING;
+         this.taskName = taskName;
+-        this.timings = null; // Will be changed in later patch
++        this.timings = MinecraftTimings.getInternalTaskName(taskName);
      }
+     // Paper end
  
 -    CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
 +    CraftTask(final Plugin plugin, final Object task, final int id, final long period) { // Paper
