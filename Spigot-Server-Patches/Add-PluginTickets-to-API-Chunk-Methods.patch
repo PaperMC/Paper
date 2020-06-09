@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 9 Jun 2020 03:33:03 -0400
+Subject: [PATCH] Add PluginTickets to API Chunk Methods
+
+Like previous versions, plugins loading chunks kept them loaded until
+they garbage collected to avoid constant spamming of chunk loads
+
+This adds tickets to a few more places so that they can be unloaded.
+
+Additionally, this drops their ticket level to BORDER so they wont be ticking
+so they will just sit inactive instead.
+
+Using .loadChunk to keep a chunk ticking was a horrible idea for upstream
+when we have TWO methods that are able to do that already in the API.
+
+Not adding it to .getType() though to keep behavior consistent with vanilla.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+ 
+     @Override
+     public Chunk getChunkAt(int x, int z) {
++        world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 0, Unit.INSTANCE); // Paper
+         return this.world.getChunkProvider().getChunkAt(x, z, true).bukkitChunk;
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+         org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
+         net.minecraft.server.IChunkAccess chunk = world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z); // Paper
+         if (chunk != null) {
+-            world.getChunkProvider().removeTicket(TicketType.PLUGIN, chunk.getPos(), 1, Unit.INSTANCE);
++            world.getChunkProvider().removeTicket(TicketType.PLUGIN, chunk.getPos(), 0, Unit.INSTANCE); // Paper
+         }
+ 
+         return true;
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+                 if (!(immediate instanceof ProtoChunkExtension) && !(immediate instanceof net.minecraft.server.Chunk)) {
+                     return false; // not full status
+                 }
+-                world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
++                world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
+                 world.getChunkAt(x, z); // make sure we're at ticket level 32 or lower
+                 return true;
+             }
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+             // we do this so we do not re-read the chunk data on disk
+         }
+ 
+-        world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
++        world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 0, Unit.INSTANCE); // Paper
+         world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
+         return true;
+         // Paper end
+@@ -0,0 +0,0 @@ public class CraftWorld implements World {
+                     if (err != null) {
+                         future.completeExceptionally(err);
+                     } else {
++                        world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 0, Unit.INSTANCE); // Paper
+                         future.complete(chunk);
+                     }
+                 });
