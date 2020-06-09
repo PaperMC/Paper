@@ -6,10 +6,10 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..11c5f8e033689f483a64486d2f8c206ca26ff9da
+index 0000000000000000000000000000000000000000..a58ef60d9976b3afc50e94364cf474bd2e5fdfd6
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,149 @@
 +package co.aikar.timings;
 +
 +import com.google.common.collect.MapMaker;
@@ -57,6 +57,10 @@ index 0000000000000000000000000000000000000000..11c5f8e033689f483a64486d2f8c206c
 +    private static final Map<Class<?>, String> taskNameCache = new MapMaker().weakKeys().makeMap();
 +
 +    private MinecraftTimings() {}
++
++    public static Timing getInternalTaskName(String taskName) {
++        return Timings.ofSafe(taskName);
++    }
 +
 +    /**
 +     * Gets a timer associated with a plugins tasks.
@@ -2015,7 +2019,7 @@ index db0bd5cc0acb5523815183ba9c4a8b853a9e9d12..48d1397a6846c64dfa372390783ce668
  
      public Player.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696155f7160 100644
+index 533c0bc55fc7ac4cc1f493f898a85a6617371031..de332758e03a563a9b72c134332db9e6a1c5ed2b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -1,5 +1,6 @@
@@ -2025,7 +2029,17 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
  import java.util.ArrayList;
  import java.util.Comparator;
-@@ -254,7 +255,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -179,7 +180,8 @@ public class CraftScheduler implements BukkitScheduler {
+     }
+ 
+     public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
+-        final CraftTask task = new CraftTask(run, nextId(), taskName);
++        final CraftTask task = new CraftTask(run, nextId(), "Internal - " + (taskName != null ? taskName : "Unknown"));
++        task.internal = true;
+         return handle(task, delay);
+     }
+ 
+@@ -260,7 +262,7 @@ public class CraftScheduler implements BukkitScheduler {
                          }
                          return false;
                      }
@@ -2034,7 +2048,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
          handle(task, 0L);
          for (CraftTask taskPending = head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -289,7 +290,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -295,7 +297,7 @@ public class CraftScheduler implements BukkitScheduler {
                              }
                          }
                      }
@@ -2043,7 +2057,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
          handle(task, 0L);
          for (CraftTask taskPending = head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -396,9 +397,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -402,9 +404,7 @@ public class CraftScheduler implements BukkitScheduler {
              if (task.isSync()) {
                  currentTask = task;
                  try {
@@ -2053,7 +2067,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
                  } catch (final Throwable throwable) {
                      task.getOwner().getLogger().log(
                              Level.WARNING,
-@@ -425,8 +424,10 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -431,8 +431,10 @@ public class CraftScheduler implements BukkitScheduler {
                  runners.remove(task.getTaskId());
              }
          }
@@ -2064,7 +2078,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
          debugHead = debugHead.getNextHead(currentTick);
      }
  
-@@ -459,6 +460,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -465,6 +467,7 @@ public class CraftScheduler implements BukkitScheduler {
      }
  
      private void parsePending() {
@@ -2072,7 +2086,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
          CraftTask head = this.head;
          CraftTask task = head.getNext();
          CraftTask lastTask = head;
-@@ -477,6 +479,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -483,6 +486,7 @@ public class CraftScheduler implements BukkitScheduler {
              task.setNext(null);
          }
          this.head = lastTask;
@@ -2081,7 +2095,7 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..db433ed3707a1cb3a6df13b3c3fb5696
  
      private boolean isReady(final int currentTick) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index 3f55381c152b9841b524f623c9b32360e97cb8ed..0d9a466809be6733fcb7e5421318477da333850f 100644
+index d85e21b75054067b926ecfee89d62c6dd0744189..ce495907f13dd10b5daba521101a78d65a2e8836 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 @@ -1,9 +1,11 @@
@@ -2114,16 +2128,21 @@ index 3f55381c152b9841b524f623c9b32360e97cb8ed..0d9a466809be6733fcb7e5421318477d
      CraftTask() {
          this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
-@@ -40,7 +42,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
-         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
+@@ -51,11 +53,11 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+         this.id = id;
+         this.period = CraftTask.NO_REPEATING;
+         this.taskName = taskName;
+-        this.timings = null; // Will be changed in later patch
++        this.timings = MinecraftTimings.getInternalTaskName(taskName);
      }
+     // Paper end
  
 -    CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
 +    CraftTask(final Plugin plugin, final Object task, final int id, final long period) { // Paper
          this.plugin = plugin;
          if (task instanceof Runnable) {
              this.rTask = (Runnable) task;
-@@ -57,7 +59,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -72,7 +74,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          }
          this.id = id;
          this.period = period;
@@ -2132,7 +2151,7 @@ index 3f55381c152b9841b524f623c9b32360e97cb8ed..0d9a466809be6733fcb7e5421318477d
      }
  
      @Override
-@@ -77,11 +79,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -92,11 +94,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
  
      @Override
      public void run() {
@@ -2146,7 +2165,7 @@ index 3f55381c152b9841b524f623c9b32360e97cb8ed..0d9a466809be6733fcb7e5421318477d
      }
  
      long getPeriod() {
-@@ -108,7 +112,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -123,7 +127,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          this.next = next;
      }
  
@@ -2155,7 +2174,7 @@ index 3f55381c152b9841b524f623c9b32360e97cb8ed..0d9a466809be6733fcb7e5421318477d
          return (rTask != null) ? rTask.getClass() : ((cTask != null) ? cTask.getClass() : null);
      }
  
-@@ -132,9 +136,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -147,9 +151,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          return true;
      }
  
