@@ -70,7 +70,9 @@ public class WorldChunkManagerTheEnd extends WorldChunkManager {
         int l = j / 2;
         int i1 = i % 2;
         int j1 = j % 2;
-        float f = 100.0F - MathHelper.c((float) (i * i + j * j)) * 8.0F;
+        // Paper start - cast ints to long to avoid integer overflow
+        float f = 100.0F - MathHelper.sqrt((long) i * (long) i + (long) j * (long) j) * 8.0F;
+        // Paper end
 
         f = MathHelper.a(f, -100.0F, 80.0F);
 
