@@ -24,7 +24,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    public boolean antiXray;
-+    public boolean asynchronous;
 +    public EngineMode engineMode;
 +    public int maxChunkSectionIndex;
 +    public int updateRadius;
@@ -32,7 +31,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public List<String> replacementBlocks;
 +    private void antiXray() {
 +        antiXray = getBoolean("anti-xray.enabled", false);
-+        asynchronous = true;
 +        engineMode = EngineMode.getById(getInt("anti-xray.engine-mode", EngineMode.HIDE.getId()));
 +        engineMode = engineMode == null ? EngineMode.HIDE : engineMode;
 +        maxChunkSectionIndex = getInt("anti-xray.max-chunk-section-index", 3);
@@ -110,8 +108,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.HashSet;
 +import java.util.List;
 +import java.util.Set;
-+import java.util.concurrent.ExecutorService;
-+import java.util.concurrent.Executors;
++import java.util.concurrent.Executor;
 +
 +import net.minecraft.server.*;
 +import org.bukkit.Bukkit;
@@ -121,9 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockController {
 +
-+    private static ExecutorService executorServiceInstance = null;
-+    private final ExecutorService executorService;
-+    private final boolean asynchronous;
++    private final Executor executor;
 +    private final EngineMode engineMode;
 +    private final int maxChunkSectionIndex;
 +    private final int updateRadius;
@@ -140,17 +135,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final ChunkSection[] emptyNearbyChunkSections = {Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION};
 +    private final int maxBlockYUpdatePosition;
 +
-+    public ChunkPacketBlockControllerAntiXray(PaperWorldConfig paperWorldConfig) {
-+        asynchronous = paperWorldConfig.asynchronous;
++    public ChunkPacketBlockControllerAntiXray(PaperWorldConfig paperWorldConfig, Executor executor) {
 +        engineMode = paperWorldConfig.engineMode;
 +        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
 +        updateRadius = paperWorldConfig.updateRadius;
 +
-+        if (asynchronous) {
-+            executorService = getExecutorServiceInstance();
-+        } else {
-+            executorService = null;
-+        }
++        this.executor = executor;
 +
 +        List<String> toObfuscate;
 +
@@ -216,12 +206,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.maxBlockYUpdatePosition = (maxChunkSectionIndex + 1) * 16 + updateRadius - 1;
 +    }
 +
-+    private static ExecutorService getExecutorServiceInstance() {
-+        if (executorServiceInstance == null) {
-+            executorServiceInstance = Executors.newSingleThreadExecutor();
-+        }
-+
-+        return executorServiceInstance;
++    private int getPredefinedBlockDataLength() {
++        return engineMode == EngineMode.HIDE ? 1 : predefinedBlockData.length;
 +    }
 +
 +    @Override
@@ -274,26 +260,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            (Chunk) world.getChunkIfLoadedImmediately(x, z - 1),
 +            (Chunk) world.getChunkIfLoadedImmediately(x, z + 1));
 +
-+        if (asynchronous) {
-+            executorService.submit((ChunkPacketInfoAntiXray) chunkPacketInfo);
-+        } else {
-+            obfuscate((ChunkPacketInfoAntiXray) chunkPacketInfo);
-+        }
++        executor.execute((ChunkPacketInfoAntiXray) chunkPacketInfo);
 +    }
 +
-+    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay
-+    private int[] predefinedBlockDataBits;
-+    private final boolean[] solid = new boolean[Block.REGISTRY_ID.size()];
-+    private final boolean[] obfuscate = new boolean[Block.REGISTRY_ID.size()];
++    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay (even without ThreadLocal)
++    // If an ExecutorService with multiple threads is used, ThreadLocal must be used here
++    private final ThreadLocal<int[]> predefinedBlockDataBits = ThreadLocal.withInitial(() -> new int[getPredefinedBlockDataLength()]);
++    private static final ThreadLocal<boolean[]> solid = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
++    private static final ThreadLocal<boolean[]> obfuscate = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
 +    // These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
-+    private boolean[][] current = new boolean[16][16];
-+    private boolean[][] next = new boolean[16][16];
-+    private boolean[][] nextNext = new boolean[16][16];
-+    private final DataBitsReader dataBitsReader = new DataBitsReader();
-+    private final DataBitsWriter dataBitsWriter = new DataBitsWriter();
-+    private final ChunkSection[] nearbyChunkSections = new ChunkSection[4];
++    private static final ThreadLocal<boolean[][]> current = ThreadLocal.withInitial(() -> new boolean[16][16]);
++    private static final ThreadLocal<boolean[][]> next = ThreadLocal.withInitial(() -> new boolean[16][16]);
++    private static final ThreadLocal<boolean[][]> nextNext = ThreadLocal.withInitial(() -> new boolean[16][16]);
 +
 +    public void obfuscate(ChunkPacketInfoAntiXray chunkPacketInfoAntiXray) {
++        int[] predefinedBlockDataBits = this.predefinedBlockDataBits.get();
++        boolean[] solid = this.solid.get();
++        boolean[] obfuscate = this.obfuscate.get();
++        boolean[][] current = this.current.get();
++        boolean[][] next = this.next.get();
++        boolean[][] nextNext = this.nextNext.get();
++        // dataBitsReader, dataBitsWriter and nearbyChunkSections could also be reused (with ThreadLocal if necessary) but it's not worth it
++        DataBitsReader dataBitsReader = new DataBitsReader();
++        DataBitsWriter dataBitsWriter = new DataBitsWriter();
++        ChunkSection[] nearbyChunkSections = new ChunkSection[4];
 +        boolean[] solidTemp = null;
 +        boolean[] obfuscateTemp = null;
 +        dataBitsReader.setDataBits(chunkPacketInfoAntiXray.getData());
@@ -307,7 +297,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex) == ChunkSection.GLOBAL_PALETTE) {
 +                    predefinedBlockDataBitsTemp = engineMode == EngineMode.HIDE ? chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.NETHER ? predefinedBlockDataBitsNetherrackGlobal : chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.THE_END ? predefinedBlockDataBitsEndStoneGlobal : predefinedBlockDataBitsStoneGlobal : predefinedBlockDataBitsGlobal;
 +                } else {
-+                    predefinedBlockDataBitsTemp = predefinedBlockDataBits == null ? predefinedBlockDataBits = engineMode == EngineMode.HIDE ? new int[1] : new int[predefinedBlockData.length] : predefinedBlockDataBits;
++                    predefinedBlockDataBitsTemp = predefinedBlockDataBits;
 +
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
 +                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
@@ -1413,10 +1403,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      public static BlockPosition lastPhysicsProblem; // Spigot
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     protected World(WorldData worlddata, DimensionManager dimensionmanager, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
+         return ((ChunkProviderServer) this.chunkProvider).getChunkAt(x, z, false);
+     }
+ 
+-    protected World(WorldData worlddata, DimensionManager dimensionmanager, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
++    protected World(WorldData worlddata, DimensionManager dimensionmanager, java.util.concurrent.Executor executor, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) { // Paper - executor
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
-+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this.paperConfig) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this.paperConfig, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
          this.generator = gen;
          if (dimensionmanager.world == null) dimensionmanager.world = (WorldServer) this; // Paper
          this.world = new CraftWorld((WorldServer) this, gen, env);
@@ -1428,6 +1422,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (iblockdata1 == null) {
                  // CraftBukkit start - remove blockstate if failed (or the same)
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+ 
+     // Add env and gen to constructor
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+-        super(worlddata, dimensionmanager, (world, worldprovider) -> {
++        super(worlddata, dimensionmanager, executor, (world, worldprovider) -> { // Paper - pass executor down
+             // CraftBukkit start
+             ChunkGenerator<?> chunkGenerator;
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
