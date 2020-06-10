@@ -64,6 +64,13 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
         return new DoubleChest(this);
     }
 
+    // Paper start - getHolder without snapshot
+    @Override
+    public DoubleChest getHolder(boolean useSnapshot) {
+        return getHolder();
+    }
+    // Paper end
+
     @Override
     public Location getLocation() {
         return getLeftSide().getLocation().add(getRightSide().getLocation()).multiply(0.5);
