@@ -204,6 +204,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (chunk != null && chunk.isFullChunkReady()) {
 +            return false;
 +        }
++        if (chunk != null && chunk.getTicketLevel() > 33 && chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(pair) != null) {
++            Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords);
++            addTicket(pair, ticket);
++        }
 +        if (getChunkPriority(coords) >= priority) {
 +            return false;
 +        }
@@ -286,7 +290,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // Paper start - smarter ticket delay based on frustum and distance
 +                    scheduleChunkLoad(i, MinecraftServer.currentTick, j, (priority) -> {
 +                        ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
-+                            if (chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i) != null && this.c(this.c(i))) { // Copy c(c()) stuff below
++                            if (priority < 5 && this.c(this.c(i))) {
++                                // Skip throttle for near chunks
++                                ChunkMapDistance.this.addTicket(i, ticket);
++                                ChunkMapDistance.this.l.add(i);
++                            } else if (this.c(this.c(i))) { // Copy c(c()) stuff below
 +                                // Paper end
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
@@ -316,17 +324,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - smart scheduling of player tickets
 +        public void scheduleChunkLoad(long i, long startTick, int initialDistance, java.util.function.Consumer<Integer> task) {
 +            long elapsed = MinecraftServer.currentTick - startTick;
++            ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(i);
 +            PlayerChunk updatingChunk = chunkMap.getUpdatingChunk(i);
-+            if ((updatingChunk != null && updatingChunk.isFullChunkReady()) || !this.c(this.c(i))) { // Copied from above
++            if ((updatingChunk != null && updatingChunk.isFullChunkReady()) || !this.c(this.c(i)) || getChunkPriority(chunkPos) > 0) { // Copied from above
 +                // no longer needed
-+                task.accept(initialDistance);
++                task.accept(1);
 +                return;
 +            }
 +
 +            int desireDelay = 0;
 +            double minDist = Double.MAX_VALUE;
 +            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> players = chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(i);
-+            ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(i);
 +            if (elapsed == 0 && initialDistance <= 4) {
 +                // Aim for no delay on initial 6 chunk radius tickets save on performance of the below code to only > 6
 +                minDist = initialDistance;
@@ -401,7 +409,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (delay <= 0) {
 +                task.accept((int) minDist);
 +            } else {
-+                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 8 ? 60 : 20), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
++                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 10 : 20)), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
 +            }
 +        }
 +        // Paper end
