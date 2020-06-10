@@ -531,6 +531,13 @@ public class CraftInventory implements Inventory {
         return this.inventory.getOwner();
     }
 
+    // Paper start - getHolder without snapshot
+    @Override
+    public InventoryHolder getHolder(boolean useSnapshot) {
+        return inventory instanceof net.minecraft.world.level.block.entity.BlockEntity ? ((net.minecraft.world.level.block.entity.BlockEntity) inventory).getOwner(useSnapshot) : getHolder();
+    }
+    // Paper end
+
     @Override
     public int getMaxStackSize() {
         return this.inventory.getMaxStackSize();
