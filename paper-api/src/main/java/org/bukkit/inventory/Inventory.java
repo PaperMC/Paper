@@ -385,6 +385,17 @@ public interface Inventory extends Iterable<ItemStack> {
     @Nullable
     public InventoryHolder getHolder();
 
+    // Paper start - getHolder without snapshot
+    /**
+     * Gets the block or entity belonging to the open inventory
+     *
+     * @param useSnapshot Create a snapshot if the holder is a tile entity
+     * @return The holder of the inventory; null if it has no holder.
+     */
+    @Nullable
+    public InventoryHolder getHolder(boolean useSnapshot);
+    // Paper end
+
     @NotNull
     @Override
     public ListIterator<ItemStack> iterator();

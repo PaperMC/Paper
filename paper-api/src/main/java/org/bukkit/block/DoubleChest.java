@@ -34,6 +34,18 @@ public class DoubleChest implements InventoryHolder {
         return inventory.getRightSide().getHolder();
     }
 
+    // Paper start - getHolder without snapshot
+    @Nullable
+    public InventoryHolder getLeftSide(boolean useSnapshot) {
+        return inventory.getLeftSide().getHolder(useSnapshot);
+    }
+
+    @Nullable
+    public InventoryHolder getRightSide(boolean useSnapshot) {
+        return inventory.getRightSide().getHolder(useSnapshot);
+    }
+    // Paper end
+
     @NotNull
     public Location getLocation() {
         return getInventory().getLocation();
