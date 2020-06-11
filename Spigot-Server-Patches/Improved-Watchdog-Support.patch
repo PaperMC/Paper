@@ -80,6 +80,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
              }
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
+         }
+ 
++        hasFullyShutdown = true; // Paper
+         System.exit(0); // CraftBukkit
+     }
+ 
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      @Override
      public void stop() {
          super.stop();
@@ -121,6 +129,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit end
      // Spigot start
      public static final int TPS = 20;
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     // CraftBukkit start
+     private boolean hasStopped = false;
++    public volatile boolean hasFullyShutdown = false; // Paper
+     private final Object stopLock = new Object();
+     public final boolean hasStopped() {
+         synchronized (stopLock) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          // CraftBukkit start - prevent double stopping on multiple threads
          synchronized(stopLock) {
@@ -431,6 +447,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                Thread.sleep(100);
 +            }
 +            if (server.hasStopped()) {
++                while (!server.hasFullyShutdown) Thread.sleep(1000);
 +                return;
 +            }
 +            // Looks stalled, close async
@@ -438,6 +455,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              org.spigotmc.AsyncCatcher.shuttingDown = true; // Paper
 +            server.forceTicks = true;
              server.close();
++            while (!server.hasFullyShutdown) Thread.sleep(1000);
 +        } catch (InterruptedException e) {
 +            e.printStackTrace();
 +            // Paper end
@@ -534,3 +552,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
                  break;
                  } // Paper end
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -0,0 +0,0 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<Configuration status="WARN" packages="com.mojang.util">
++<Configuration status="WARN" packages="com.mojang.util" shutdownHook="disable">
+     <Appenders>
+         <Queue name="ServerGuiConsole">
+             <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
