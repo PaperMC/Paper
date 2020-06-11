@@ -54,7 +54,7 @@ index 04dcb79c6033f1dec62c5df49937a4ef067a2cb8..f8820f24075e7f42f67426fc9ecf5238
      // Paper start - no-tick view distance
      public final Chunk getSendingChunk() {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 6c0dbad8e06b02b32dcff518cc2a5f7c8c1c316c..babac7a8513a1f7698ef2fb7263f13f8f3c9717c 100644
+index 6c0dbad8e06b02b32dcff518cc2a5f7c8c1c316c..394cea57b3871c2e11d1f7e0e9546df64ff3bafe 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -88,6 +88,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -90,12 +90,21 @@ index 6c0dbad8e06b02b32dcff518cc2a5f7c8c1c316c..babac7a8513a1f7698ef2fb7263f13f8
      }
  
      @Nullable
+@@ -1056,7 +1066,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     IChunkAccess ichunkaccess = (IChunkAccess) optional.get();
+ 
+                     if (ichunkaccess.getChunkStatus().b(chunkstatus)) {
+-                        CompletableFuture completablefuture1;
++                        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture1; // Paper
+ 
+                         if (chunkstatus == ChunkStatus.LIGHT) {
+                             completablefuture1 = this.b(playerchunk, chunkstatus);
 @@ -1072,7 +1082,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                          return this.b(playerchunk, chunkstatus);
                      }
                  }
 -            }, this.executor);
-+            }, this.mainInvokingExecutor); // Paper - optimize chunk status progression without jumping through thread pool
++            }, this.mainInvokingExecutor).thenComposeAsync(CompletableFuture::completedFuture, this.mainInvokingExecutor); // Paper - optimize chunk status progression without jumping through thread pool - ensure main
          }
      }
  
