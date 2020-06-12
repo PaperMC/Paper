@@ -1092,6 +1092,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
 
                             this.player.move(EnumMoveType.PLAYER, new Vec3D(d7, d8, d9));
                             this.player.setOnGround(packetplayinflying.b()); // CraftBukkit - SPIGOT-5810, SPIGOT-5835: reset by this.player.move
+                            // Paper start - prevent position desync
+                            if (this.teleportPos != null) {
+                                return; // ... thanks Mojang for letting move calls teleport across dimensions.
+                            }
+                            // Paper end - prevent position desync
                             double d12 = d8;
 
                             d7 = d4 - this.player.locX();
