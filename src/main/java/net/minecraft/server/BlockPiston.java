@@ -370,12 +370,24 @@ public class BlockPiston extends BlockDirectional {
             }
 
             for (k = list.size() - 1; k >= 0; --k) {
-                blockposition3 = (BlockPosition) list.get(k);
-                iblockdata1 = world.getType(blockposition3);
+                // Paper start - fix a variety of piston desync dupes
+                boolean allowDesync = com.destroystokyo.paper.PaperConfig.allowPistonDuplication;
+                BlockPosition oldPos = blockposition3 = (BlockPosition) list.get(k);
+                iblockdata1 = allowDesync ? world.getType(oldPos) : null;
+                // Paper end - fix a variety of piston desync dupes
                 blockposition3 = blockposition3.shift(enumdirection1);
                 map.remove(blockposition3);
                 world.setTypeAndData(blockposition3, (IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPiston.FACING, enumdirection), 68);
-                world.setTileEntity(blockposition3, BlockPistonMoving.a((IBlockData) list1.get(k), enumdirection, flag, false));
+                // Paper start - fix a variety of piston desync dupes
+                if (!allowDesync) {
+                    iblockdata1 = world.getType(oldPos);
+                    map.replace(oldPos, iblockdata1);
+                }
+                world.setTileEntity(blockposition3, BlockPistonMoving.a(allowDesync ? list1.get(k) : iblockdata1, enumdirection, flag, false));
+                if (!allowDesync) {
+                    world.setTypeAndData(oldPos, Blocks.AIR.getBlockData(), 2 | 4 | 16 | 1024); // set air to prevent later physics updates from seeing this block
+                }
+                // Paper end - fix a variety of piston desync dupes
                 aiblockdata[j++] = iblockdata1;
             }
 

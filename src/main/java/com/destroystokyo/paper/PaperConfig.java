@@ -429,4 +429,10 @@ public class PaperConfig {
         consoleHasAllPermissions = getBoolean("settings.console-has-all-permissions", consoleHasAllPermissions);
     }
 
+    public static boolean allowPistonDuplication;
+    private static void allowPistonDuplication() {
+        config.set("settings.unsupported-settings.allow-piston-duplication-readme", "This setting controls if player should be able to use TNT duplication, but this also allows duplicating carpet, rails and potentially other items");
+        allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
+        set("settings.unsupported-settings.allow-tnt-duplication", null);
+    }
 }

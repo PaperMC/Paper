@@ -256,7 +256,7 @@ public class TileEntityPiston extends TileEntity implements ITickable {
                     IBlockData iblockdata = Block.b(this.a, (GeneratorAccess) this.world, this.position);
 
                     if (iblockdata.isAir()) {
-                        this.world.setTypeAndData(this.position, this.a, 84);
+                    this.world.setTypeAndData(this.position, this.a, com.destroystokyo.paper.PaperConfig.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
                         Block.a(this.a, iblockdata, this.world, this.position, 3);
                     } else {
                         if (iblockdata.b(BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C)) {
