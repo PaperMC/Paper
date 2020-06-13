@@ -1,10 +1,13 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.server.EntityInsentient;
 import net.minecraft.server.EnumItemSlot;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftEntityEquipment implements EntityEquipment {
@@ -13,6 +16,20 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     public CraftEntityEquipment(CraftLivingEntity entity) {
         this.entity = entity;
+    }
+
+    @Override
+    public void setItem(EquipmentSlot slot, ItemStack item) {
+        Preconditions.checkArgument(slot != null, "slot must not be null");
+        EnumItemSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
+        setEquipment(nmsSlot, item);
+    }
+
+    @Override
+    public ItemStack getItem(EquipmentSlot slot) {
+        Preconditions.checkArgument(slot != null, "slot must not be null");
+        EnumItemSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
+        return getEquipment(nmsSlot);
     }
 
     @Override
