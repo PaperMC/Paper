@@ -10,6 +10,23 @@ import org.jetbrains.annotations.Nullable;
 public interface EntityEquipment {
 
     /**
+     * Stores the ItemStack at the given equipment slot in the inventory.
+     *
+     * @param slot the slot to put the ItemStack
+     * @param item the ItemStack to set
+     */
+    public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
+
+    /**
+     * Gets the ItemStack at the given equipment slot in the inventory.
+     *
+     * @param slot the slot to get the ItemStack
+     * @return the ItemStack in the given slot
+     */
+    @NotNull
+    public ItemStack getItem(@NotNull EquipmentSlot slot);
+
+    /**
      * Gets a copy of the item the entity is currently holding
      * in their main hand.
      *
