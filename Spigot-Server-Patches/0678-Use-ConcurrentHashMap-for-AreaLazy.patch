@@ -1,0 +1,177 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@techcable.net>
+Date: Sun, 14 Jun 2020 12:23:43 -0700
+Subject: [PATCH] Use ConcurrentHashMap for AreaLazy
+
+AreaLazy internally caches its computations using
+a synchronized Long2IntLinkedOpenHashMap.
+
+In order to create treasure maps the main thread
+uses this inside ItemWorldMap.applySepiaFilter.
+This can cause contention with async world generation/chunk loading
+that is happening at the same time.
+
+See PaperMC/Paper#3536
+The server owner didn't pregenerate his world so there was often
+async chunk loading and world generation going on in the background.
+Whenver plaeyrs traded treasure maps with villagesrs,
+maps caused severe lag by contending with world generation.
+
+Since the AreaTransformer should be a thread-safe and pure function,
+we don't really need to synchronize - we can use a concurrent map instead.
+It should always return the same result even if its called twice
+with the same arguments.
+
+The cache is LRU (which is why its a linked hashmap). Since the
+AreaTransformer should be a pure function with no internal state
+the actual cache eviction strategy shouldn't really matter. We
+can blindly evict using ConcurrentHashMap.keySet().iterator().remove()
+
+diff --git a/src/main/java/net/minecraft/server/AreaLazy.java b/src/main/java/net/minecraft/server/AreaLazy.java
+index c274b9c560afbae75aab7c201559e54400c98a5f..10ed75d458eeeaa2b690817b2cd86aa430d8f628 100644
+--- a/src/main/java/net/minecraft/server/AreaLazy.java
++++ b/src/main/java/net/minecraft/server/AreaLazy.java
+@@ -1,9 +1,44 @@
+ package net.minecraft.server;
+ 
+-import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
++import com.google.common.base.Preconditions;
++
++import java.util.Iterator;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.locks.Lock;
++import java.util.concurrent.locks.ReentrantLock;
+ 
+ public final class AreaLazy implements Area {
+ 
++    // Paper start
++    /*
++     * Use ConcurrentHashMap for cache instead of synchronizing.
++     *
++     * The main thread uses this inside `ItemWorldMap.applySepiaFilter`
++     * in order to create treasure maps. This can cause contention
++     * with async world generation/chunk loading.
++     * Since the ArenaTransformer should be a thread-safe and pure function,
++     * we don't really need to synchronize - we can use a concurrent map instead.
++     *
++     * This a LRU cache. Since the ArenaTransformer should be lazy,
++     * we assume eviction order doesn't really matter. We just
++     * evict blindly from ConcurrentHashMap.
++     */
++    private final AreaTransformer8 transformer;
++    private final ConcurrentHashMap<Long, Integer> cache;
++    private final int sizeLimit;
++    private final Lock removeLock = new ReentrantLock();
++
++    public AreaLazy(ConcurrentHashMap<Long, Integer> cache, int sizeLimit, AreaTransformer8 transformer) {
++        Preconditions.checkArgument(
++            sizeLimit > 0,
++            "Invalid sizeLimit: %s",
++            sizeLimit
++        );
++        this.cache = Preconditions.checkNotNull(cache);
++        this.sizeLimit = sizeLimit;
++        this.transformer = Preconditions.checkNotNull(transformer);
++    }
++    /*
+     private final AreaTransformer8 a;
+     private final Long2IntLinkedOpenHashMap b;
+     private final int c;
+@@ -13,10 +48,53 @@ public final class AreaLazy implements Area {
+         this.c = i;
+         this.a = areatransformer8;
+     }
++    */
++    // Paper end
+ 
+     @Override
+     public int a(int i, int j) {
+         long k = ChunkCoordIntPair.pair(i, j);
++        // Paper start - rewrite
++        Integer result = this.cache.get(k);
++        if (result != null) return result;
++        /*
++         * NOTE: There is a potential multiple threads will compute this at once.
++         * This should be fine since `this.transformer` is a pure function.
++         */
++        int computedResult = this.transformer.apply(i, j);
++        Integer existing = this.cache.put(k, computedResult);
++        // Verify transformer is actually a pure function
++        if (existing != null && computedResult != existing) {
++            throw new IllegalStateException(
++                "Area lazy gave two different results for " +
++                    ChunkCoordIntPair.pair(i, j) +
++                    " " + computedResult + " and " +
++                    existing + " from " +
++                    this.transformer
++            );
++        }
++        // Check cache size
++        if (this.cache.size() > this.sizeLimit) {
++            /*
++             * NOTE: We only want one thread clearing the cache at a time!
++             * If another thread is removing we don't need to do any work....
++             */
++            if (this.removeLock.tryLock()) {
++                try {
++                    int toRemove = this.sizeLimit / 16;
++                    Iterator<Long> iter = this.cache.keySet().iterator();
++                    for (int r = 0; r < toRemove; r++) {
++                        if (!iter.hasNext()) break;
++                        iter.next();
++                        iter.remove();
++                    }
++                } finally {
++                    this.removeLock.unlock();
++                }
++            }
++        }
++        return computedResult;
++        /*
+         Long2IntLinkedOpenHashMap long2intlinkedopenhashmap = this.b;
+ 
+         synchronized (this.b) {
+@@ -37,9 +115,11 @@ public final class AreaLazy implements Area {
+                 return i1;
+             }
+         }
++         */
++        // Paper end
+     }
+ 
+     public int a() {
+-        return this.c;
++        return this.sizeLimit; // Paper - deobf
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldGenContextArea.java b/src/main/java/net/minecraft/server/WorldGenContextArea.java
+index b67d88d32a73b3a51809b91db11d54bc99169fe1..00e712c3f2c255afa813a2bcc21719a0c5699711 100644
+--- a/src/main/java/net/minecraft/server/WorldGenContextArea.java
++++ b/src/main/java/net/minecraft/server/WorldGenContextArea.java
+@@ -2,10 +2,11 @@ package net.minecraft.server;
+ 
+ import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+ import java.util.Random;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ public class WorldGenContextArea implements AreaContextTransformed<AreaLazy> {
+ 
+-    private final Long2IntLinkedOpenHashMap a;
++    private final ConcurrentHashMap<Long, Integer> a; // Paper - ConcurrentHashMap
+     private final int b;
+     private final NoiseGeneratorPerlin c;
+     private final long d;
+@@ -14,8 +15,13 @@ public class WorldGenContextArea implements AreaContextTransformed<AreaLazy> {
+     public WorldGenContextArea(int i, long j, long k) {
+         this.d = b(j, k);
+         this.c = new NoiseGeneratorPerlin(new Random(j));
++        // Paper start - Long2IntLinkedOpenHashMap -> ConcurrentHashMap
++        /*
+         this.a = new Long2IntLinkedOpenHashMap(16, 0.25F);
+         this.a.defaultReturnValue(Integer.MIN_VALUE);
++        */
++        this.a = new ConcurrentHashMap<>(16, 0.25F);
++        // Paper end
+         this.b = i;
+     }
+ 
