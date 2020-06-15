@@ -8,8 +8,8 @@ Patches to Paper are very simple, but center around the directories 'Paper-API' 
 Assuming you already have forked the repository:
 
 1. Pull the latest changes from the main repository
-2. Type `./paper patch` in git bash to apply the changes from upstream
-3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes
+1. Type `./paper patch` in git bash to apply the changes from upstream
+1. cd into `Paper-Server` for server changes, and `Paper-API` for API changes
 
 These directories aren't git repositories in the traditional sense:
 
@@ -22,10 +22,10 @@ These directories aren't git repositories in the traditional sense:
 Adding patches to Paper is very simple:
 
 1. Modify `Paper-Server` and/or `Paper-API` with the appropriate changes
-2. Type `git add .` to add your changes
-3. Run `git commit` with the desired patch message
-4. Run `./paper rebuild` in the main directory to convert your commit into a new patch
-5. PR your patches back to this repository
+1. Type `git add .` to add your changes
+1. Run `git commit` with the desired patch message
+1. Run `./paper rebuild` in the main directory to convert your commit into a new patch
+1. PR your patches back to this repository
 
 Your commit will be converted into a patch that you can then PR into Paper
 
@@ -35,11 +35,11 @@ If you would like to make changes to a file that isn't present in Paper-Server's
 just need to add it to our import script to be ran during the patch process.
 
 1. Save (rebuild) any patches you are in the middle of working on!
-2. Identify the names of the files you want to import.
+1. Identify the names of the files you want to import.
    - A complete list of all possible file names can be found at ```./work/Minecraft/$MCVER/spigot/net/minecraft/server```
-3. Open the file at `./scripts/importmcdev.sh` and add the name of your file to the script.
-4. Re-patch the server `./paper patch`
-5. Edit away!
+1. Open the file at `./scripts/importmcdev.sh` and add the name of your file to the script.
+1. Re-patch the server `./paper patch`
+1. Edit away!
 
 This change is temporary! DO NOT COMMIT CHANGES TO THIS FILE!
 Once you have made your changes to the new file, and rebuilt patches, you may undo your changes to importmcdev.sh
@@ -63,45 +63,55 @@ The PaperMC build tool provides a handy command to automatically do this type of
 
 1. Type `./paper edit server` or `./paper edit api` depending on which project you want to edit.
    - It should show something like [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159).
-2. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes
+1. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes
    - Only do this for one commit at a time.
-3. Make the changes you want to make to the patch.
-4. Type `./paper edit continue` to finish and rebuild patches.
-5. PR your modifications back to this project.
+1. Make the changes you want to make to the patch.
+1. Type `./paper edit continue` to finish and rebuild patches.
+1. PR your modifications back to this project.
 
-#### Manual method
+#### Manual method - Stashing
 In case you need something more complex or want more control, this step-by-step instruction does
 exactly what the above slightly automated system does.
 
 1. If you have changes you are working on type `git stash` to store them for later.
    - Later you can type `git stash pop` to get them back.
-2. Type `git rebase -i upstream/upstream`
+1. Type `git rebase -i upstream/upstream`
    - It should show something like [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159).
-3. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes.
+1. Replace `pick` with `edit` for the commit/patch you want to modify, and "save" the changes.
    - Only do this for one commit at a time.
-4. Make the changes you want to make to the patch.
-5. Type `git add .` to add your changes.
-6. Type `git commit --amend` to commit.
+1. Make the changes you want to make to the patch.
+1. Type `git add .` to add your changes.
+1. Type `git commit --amend` to commit.
    - **MAKE SURE TO ADD `--amend`** or else a new patch will be created.
    - You can also modify the commit message here.
-7. Type `git rebase --continue` to finish rebasing.
-8. Type `./paper rebuild` in the main directory.
+1. Type `git rebase --continue` to finish rebasing.
+1. Type `./paper rebuild` in the main directory.
    - This will modify the appropriate patches based on your commits.
-9. PR your modifications back to this project.
+1. PR your modifications back to this project.
 
-### Method 2 (sometimes easier)
+### Method 2 (sometimes easier) - Manually moving commits
 If you are simply editing a more recent commit or your change is small, simply making the change at HEAD and then moving the commit after you have tested it may be easier.
 
 This method has the benefit of being able to compile to test your change without messing with your API HEAD.
 
 1. Make your change while at HEAD
-2. Make a temporary commit. You don't need to make a message for this.
-3. Type `git rebase -i upstream/upstream`, move (cut) your temporary commit and move it under the line of the patch you wish to modify.
-4. Change the `pick` with `f` (fixup) or `s` (squash) if you need to edit the commit message 
-5. Type `./paper rebuild` in the main directory
+1. Make a temporary commit. You don't need to make a message for this.
+1. Type `git rebase -i upstream/upstream`, move (cut) your temporary commit and move it under the line of the patch you wish to modify.
+1. Change the `pick` with `f` (fixup) or `s` (squash) if you need to edit the commit message 
+1. Type `./paper rebuild` in the main directory
    - This will modify the appropriate patches based on your commits
-6. PR your modifications to github
+1. PR your modifications to github
 
+### Method 3 - Fixup Commits
+This is the automated way of doing Method 2. Basically, you make your changes at HEAD, but use fixup commits to modify earlier patches and git will rebase the commits to the right place and squash them.
+
+1. Make your change while at HEAD
+1. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`. You can get the hash by looking at `git log` or `git blame`, your IDE can assist you too.  
+Alternatively, if you only know the name of the patch, you can do `git commit -a --fixup "Subject of Patch name"`
+1. Rebase with autosquash: `git rebase --autosquash -i upstream/upstream`. It will move your fixup commit to the right place.
+1. Type `./paper rebuild` in the main directory
+   - This will modify the appropriate patches based on your commits
+1. PR your modifications to github
 
 ## PR Policy
 We'll accept changes that make sense. You should be able to justify their existence, along with any maintenance costs that come with them. Remember, these changes will affect everyone who runs Paper, not just you and your server.
