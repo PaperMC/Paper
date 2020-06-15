@@ -25,6 +25,19 @@ unaffected.
 
 This patch fixes https://bugs.mojang.com/browse/MC-188840
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -0,0 +0,0 @@ public class PaperConfig {
+         consoleHasAllPermissions = getBoolean("settings.console-has-all-permissions", consoleHasAllPermissions);
+     }
+ 
++    public static boolean allowTntDuplication = false;
++    private static void allowTntDuplication() {
++        allowTntDuplication = getBoolean("settings.unsupported-settings.allow-tnt-duplication", allowTntDuplication);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/BlockPiston.java b/src/main/java/net/minecraft/server/BlockPiston.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPiston.java
@@ -34,12 +47,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              for (k = list.size() - 1; k >= 0; --k) {
                  blockposition3 = (BlockPosition) list.get(k);
 -                iblockdata1 = world.getType(blockposition3);
-+                iblockdata1 = world.getType(blockposition3); map.replace(blockposition3, iblockdata1); // Paper - fix piston physics inconsistency
++                iblockdata1 = world.getType(blockposition3); if (!com.destroystokyo.paper.PaperConfig.allowTntDuplication) map.replace(blockposition3, iblockdata1); // Paper start - fix piston physics inconsistency
                  blockposition3 = blockposition3.shift(enumdirection1);
                  map.remove(blockposition3);
                  world.setTypeAndData(blockposition3, (IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPiston.FACING, enumdirection), 68);
 -                world.setTileEntity(blockposition3, BlockPistonMoving.a((IBlockData) list1.get(k), enumdirection, flag, false));
-+                world.setTileEntity(blockposition3, BlockPistonMoving.a(iblockdata1, enumdirection, flag, false)); // Paper - fix piston physics inconsistency
++                world.setTileEntity(blockposition3, BlockPistonMoving.a(com.destroystokyo.paper.PaperConfig.allowTntDuplication ? list1.get(k) : iblockdata1, enumdirection, flag, false)); // Paper - fix piston physics inconsistency
                  --j;
                  aiblockdata[j] = iblockdata1;
              }
@@ -52,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (iblockdata.isAir()) {
 -                    this.world.setTypeAndData(this.position, this.a, 84);
-+                    this.world.setTypeAndData(this.position, this.a, 84 | 2); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
++                    this.world.setTypeAndData(this.position, this.a, 84 | (com.destroystokyo.paper.PaperConfig.allowTntDuplication ? 0 : 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
                      Block.a(this.a, iblockdata, this.world, this.position, 3);
                  } else {
                      if (iblockdata.b((IBlockState) BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C)) {
