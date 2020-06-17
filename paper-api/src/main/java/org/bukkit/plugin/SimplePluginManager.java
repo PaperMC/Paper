@@ -266,7 +266,7 @@ public final class SimplePluginManager implements PluginManager {
                             server.getLogger().log(
                                 Level.SEVERE,
                                 "Could not load '" + entry.getValue().getPath() + "' in folder '" + directory.getPath() + "'",
-                                new UnknownDependencyException(dependency));
+                                new UnknownDependencyException("Unknown dependency " + dependency + ". Please download and install " + dependency + " to run this plugin."));
                             break;
                         }
                     }
