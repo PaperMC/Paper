@@ -46,16 +46,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return true;
              } else {
 -                ChunkProviderServer.this.lightEngine.queueUpdate();
-+                //ChunkProviderServer.this.lightEngine.queueUpdate(); // Paper - move down
++                //ChunkProviderServer.this.lightEngine.queueUpdate(); // Paper - not needed
                  return super.executeNext() || execChunkTask; // Paper
              }
          } finally {
-             playerChunkMap.chunkLoadConversionCallbackExecutor.run(); // Paper - Add chunk load conversion callback executor to prevent deadlock due to recursion in the chunk task queue sorter
-             playerChunkMap.callbackExecutor.run();
-+            ChunkProviderServer.this.lightEngine.queueUpdate(); // Paper - always run, this is rate limited now
-         }
-         // CraftBukkit end
-         }
 diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/IBlockData.java
@@ -166,7 +160,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int x = (int) (i >> 38);
 +        int y = (int) ((i << 52) >> 52);
 +        int z = (int) ((i << 26) >> 38);
-+        long k = SectionPosition.asLong(x >> 4, y >> 4, z >> 4);
++        long k = SectionPosition.blockPosAsSectionLong(x, y, z);
 +        // Paper end
          EnumDirection[] aenumdirection = LightEngineBlock.e;
          int l = aenumdirection.length;
@@ -175,8 +169,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              EnumDirection enumdirection = aenumdirection[i1];
 -            long j1 = BlockPosition.a(i, enumdirection);
 -            long k1 = SectionPosition.e(j1);
-+            long j1 = BlockPosition.asLong(x + enumdirection.getAdjacentX(), y + enumdirection.getAdjacentY(), z + enumdirection.getAdjacentZ()); // Paper
-+            long k1 = SectionPosition.asLong((x + enumdirection.getAdjacentX()) >> 4, (y + enumdirection.getAdjacentY()) >> 4, (z + enumdirection.getAdjacentZ()) >> 4); // Paper
++            long j1 = BlockPosition.getAdjacent(x, y, z, enumdirection); // Paper
++            long k1 = SectionPosition.getAdjacentFromBlockPos(x, y, z, enumdirection); // Paper
  
              if (k == k1 || ((LightEngineStorageBlock) this.c).g(k1)) {
                  this.b(i, j1, j, flag);
@@ -190,7 +184,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int baseX = (int) (i >> 38);
 +        int baseY = (int) ((i << 52) >> 52);
 +        int baseZ = (int) ((i << 26) >> 38);
-+        long j1 = (((long) (baseX >> 4) & 4194303L) << 42) | (((long) (baseY >> 4) & 1048575L)) | (((long) (baseZ >> 4) & 4194303L) << 20);
++        long j1 = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
 +        NibbleArray nibblearray = this.c.updating.getUpdatingOptimized(j1);
 +        // Paper end
          EnumDirection[] aenumdirection = LightEngineBlock.e;
@@ -199,15 +193,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          for (int l1 = 0; l1 < k1; ++l1) {
              EnumDirection enumdirection = aenumdirection[l1];
 -            long i2 = BlockPosition.a(i, enumdirection);
--
--            if (i2 != j) {
--                long j2 = SectionPosition.e(i2);
 +            // Paper start
 +            int newX = baseX + enumdirection.getAdjacentX();
 +            int newY = baseY + enumdirection.getAdjacentY();
 +            int newZ = baseZ + enumdirection.getAdjacentZ();
-+            if (newX != baseX || newY != baseY || newZ != baseZ) {
-+                long i2 = BlockPosition.asLong(newX, newY, newZ);
++            long i2 = BlockPosition.asLong(newX, newY, newZ);
+ 
+             if (i2 != j) {
+-                long j2 = SectionPosition.e(i2);
 +                long j2 = SectionPosition.blockPosAsSectionLong(newX, newY, newZ);
 +                // Paper end
                  NibbleArray nibblearray1;
@@ -477,36 +470,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected void a(long i, int j, boolean flag) {
 -        long k = SectionPosition.e(i);
 -        int l = BlockPosition.c(i);
+-        int i1 = SectionPosition.b(l);
+-        int j1 = SectionPosition.a(l);
 +        // Paper start
 +        int baseX = (int) (i >> 38);
 +        int baseY = (int) ((i << 52) >> 52);
 +        int baseZ = (int) ((i << 26) >> 38);
 +        long k = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
-+        int l = baseY;
++        int i1 = baseY & 15;
++        int j1 = baseY >> 4;
 +        // Paper end
-         int i1 = SectionPosition.b(l);
-         int j1 = SectionPosition.a(l);
          int k1;
+ 
+         if (i1 != 0) {
 @@ -0,0 +0,0 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
-         } else {
-             int l1;
- 
--            for (l1 = 0; !((LightEngineStorageSky) this.c).g(SectionPosition.a(k, 0, -l1 - 1, 0)) && ((LightEngineStorageSky) this.c).a(j1 - l1 - 1); ++l1) {
-+            // Paper start - cache and optimize base values
-+            int secX = baseX >> 4;
-+            int secY = baseY >> 4;
-+            int secZ = baseZ >> 4;
-+            for (l1 = 0; !((LightEngineStorageSky) this.c).g(SectionPosition.asLong(secX, secY + -l1 - 1, secZ)) && ((LightEngineStorageSky) this.c).a(j1 - l1 - 1); ++l1) {
-+                // Paper end
-                 ;
-             }
- 
              k1 = l1;
          }
  
 -        long i2 = BlockPosition.a(i, 0, -1 - k1 * 16, 0);
 -        long j2 = SectionPosition.e(i2);
-+        int newBaseY = baseY + -1 - k1 * 16; // Paper
++        int newBaseY = baseY + (-1 - k1 * 16); // Paper
 +        long i2 = BlockPosition.asLong(baseX, newBaseY, baseZ); // Paper
 +        long j2 = SectionPosition.blockPosAsSectionLong(baseX, newBaseY, baseZ); // Paper
  
@@ -542,7 +525,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int baseX = (int) (i >> 38);
 +        int baseY = (int) ((i << 52) >> 52);
 +        int baseZ = (int) ((i << 26) >> 38);
-+        long j1 = (((long) (baseX >> 4) & 4194303L) << 42) | (((long) (baseY >> 4) & 1048575L)) | (((long) (baseZ >> 4) & 4194303L) << 20);
++        long j1 = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
 +        NibbleArray nibblearray = this.c.updating.getUpdatingOptimized(j1);
 +        // Paper end
          EnumDirection[] aenumdirection = LightEngineSky.e;
@@ -650,10 +633,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final int x = (int) (i >> 38);
 +        final int y = (int) ((i << 52) >> 52);
 +        final int z = (int) ((i << 26) >> 38);
-+        NibbleArray nibblearray = this.updating.getUpdatingOptimized((((long) (x >> 4) & 4194303L) << 42) | (((long) (y >> 4) & 1048575L)) | (((long) (z >> 4) & 4194303L) << 20));
++        long j = SectionPosition.blockPosAsSectionLong(x, y, z);
++        NibbleArray nibblearray = this.updating.getUpdatingOptimized(j);
 +        //  BUG: Sometimes returns null and crashes, try to recover, but to prevent crash just return no light.
 +        if (nibblearray == null) {
-+            nibblearray = this.e_visible.lookup.apply((((long) (x >> 4) & 4194303L) << 42) | (((long) (y >> 4) & 1048575L)) | (((long) (z >> 4) & 4194303L) << 20));
++            nibblearray = this.e_visible.lookup.apply(j);
 +        }
 +        if (nibblearray == null) {
 +            System.err.println("Null nibble, preventing crash " + BlockPosition.fromLong(i));
@@ -671,7 +655,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int x = (int) (i >> 38);
 +        int y = (int) ((i << 52) >> 52);
 +        int z = (int) ((i << 26) >> 38);
-+        long k = SectionPosition.asLong(x >> 4, y >> 4, z >> 4);
++        long k = SectionPosition.blockPosAsSectionLong(x, y, z);
 +        // Paper end
  
          if (this.g.add(k)) {
@@ -812,12 +796,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // Paper start
 +                    i = longiterator.nextLong();
 +                    if (true) { // don't check hasLight, this iterator is filtered already
-+                        int baseX = (int) (i >> 42);
-+                        int baseY = (int) (i << 44 >> 44);
-+                        int baseZ = (int) (i << 22 >> 42);
-+                        int k = baseX << 4;
-+                        int l = baseY << 4;
-+                        int i1 = baseZ << 4;
++                        int secX = (int) (i >> 42);
++                        int secY = (int) (i << 44 >> 44);
++                        int secZ = (int) (i << 22 >> 42);
++                        int k = secX << 4; // baseX
++                        int l = secY << 4; // baseY
++                        int i1 = secZ << 4; // baseZ
 +                        // Paper end
                          EnumDirection[] aenumdirection = LightEngineStorage.k;
                          int j1 = aenumdirection.length;
@@ -827,7 +811,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            long l1 = SectionPosition.a(i, enumdirection);
 -
 -                            if (!this.i.containsKey(l1) && this.g(l1)) {
-+                            long l1 = SectionPosition.asLong(baseX + enumdirection.getAdjacentX(), baseY + enumdirection.getAdjacentY(), baseZ + enumdirection.getAdjacentZ()); // Paper - avoid unpacking
++                            long l1 = SectionPosition.getAdjacentFromSectionPos(secX, secY, secZ, enumdirection); // Paper - avoid extra unpacking
 +                            if (!propagating.contains(l1) && this.g(l1)) { // Paper - use propagating
                                  for (int i2 = 0; i2 < 16; ++i2) {
                                      for (int j2 = 0; j2 < 16; ++j2) {
@@ -855,32 +839,129 @@ diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/s
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ 
+ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<M>> {
+ 
+-    private final long[] b = new long[2];
+-    private final NibbleArray[] c = new NibbleArray[2];
++    // private final long[] b = new long[2]; // Paper - unused
++    private final NibbleArray[] c = new NibbleArray[]{NibbleArray.EMPTY_NIBBLE_ARRAY, NibbleArray.EMPTY_NIBBLE_ARRAY}; private final NibbleArray[] cache = c; // Paper - OBFHELPER
+     private boolean d;
+     protected final com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data; // Paper - avoid copying light data
+     protected final boolean isVisible; // Paper - avoid copying light data
+-    java.util.function.Function<Long, NibbleArray> lookup; // Paper - faster branchless lookup
+ 
++    // Paper start - faster lookups with less branching, use interface to avoid boxing instead of Function
++    public final NibbleArrayAccess lookup;
++    public interface NibbleArrayAccess {
++        NibbleArray apply(long id);
++    }
++    // Paper end
+     // Paper start - avoid copying light data
+     protected LightEngineStorageArray(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, boolean isVisible) {
+         if (isVisible) {
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+         }
+         this.data = data;
+         this.isVisible = isVisible;
++        // Paper end - avoid copying light data
++        // Paper start - faster lookups with less branching
+         if (isVisible) {
+             lookup = data::getVisibleAsync;
+         } else {
+-            lookup = data::getUpdating;
++            lookup = data.getUpdatingMap()::get; // jump straight the sub map
+         }
+-        // Paper end - avoid copying light data
++        // Paper end
+         this.c();
+         this.d = true;
+     }
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+     public void a(long i) {
+         if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
+         NibbleArray updating = this.data.getUpdating(i); // Paper - pool nibbles
+-        this.data.queueUpdate(i, new NibbleArray().markPoolSafe(updating.getCloneIfSet())); // Paper - avoid copying light data - pool safe clone
++        NibbleArray nibblearray = new NibbleArray().markPoolSafe(updating.getCloneIfSet()); // Paper
++        nibblearray.lightCacheKey = i; // Paper
++        this.data.queueUpdate(i, nibblearray); // Paper - avoid copying light data - pool safe clone
+         if (updating.cleaner != null) MCUtil.scheduleTask(2, updating.cleaner, "Light Engine Release"); // Paper - delay clean incase anything holding ref was still using it
+         this.c();
+     }
 @@ -0,0 +0,0 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
          return lookup.apply(i) != null; // Paper - avoid copying light data
      }
  
+-    @Nullable
+-    public final NibbleArray c(long i) { // Paper - final
+-        if (this.d) {
+-            for (int j = 0; j < 2; ++j) {
+-                if (i == this.b[j]) {
+-                    return this.c[j];
+-                }
+-            }
+-        }
+-
+-        NibbleArray nibblearray = lookup.apply(i); // Paper - avoid copying light data
 +    // Paper start - less branching as we know we are using cache and updating
-+    public final NibbleArray getUpdatingOptimized(long i) { // Paper - final
-+        if (this.b[0] == i) return this.c[0];
-+        if (this.b[1] == i) return this.c[1];
-+
-+        NibbleArray nibblearray = this.data.getUpdating(i); // Paper - avoid copying light data
-+        if (nibblearray == null) {
-+            return null;
-+        } else {
-+            this.b[1] = this.b[0];
-+            this.c[1] = this.c[0];
-+
-+            this.b[0] = i;
-+            this.c[0] = nibblearray;
-+            return nibblearray;
-+        }
-+    }
++    public final NibbleArray getUpdatingOptimized(final long i) { // Paper - final
++        final NibbleArray[] cache = this.cache;
++        if (cache[0].lightCacheKey == i) return cache[0];
++        if (cache[1].lightCacheKey == i) return cache[1];
+ 
++        final NibbleArray nibblearray = this.lookup.apply(i); // Paper - avoid copying light data
+         if (nibblearray == null) {
+             return null;
+         } else {
+-            if (this.d) {
+-                for (int k = 1; k > 0; --k) {
+-                    this.b[k] = this.b[k - 1];
+-                    this.c[k] = this.c[k - 1];
+-                }
+-
+-                this.b[0] = i;
+-                this.c[0] = nibblearray;
+-            }
+-
++            cache[1] = cache[0];
++            cache[0] = nibblearray;
+             return nibblearray;
+         }
+     }
 +    // Paper end
 +
++    @Nullable
++    public final NibbleArray c(final long i) { // Paper - final
++        // Paper start - optimize visible case or missed updating cases
++        if (this.d) {
++            // short circuit to optimized
++            return getUpdatingOptimized(i);
++        }
++
++        return this.lookup.apply(i);
++        // Paper end
++    }
+ 
      @Nullable
-     public final NibbleArray c(long i) { // Paper - final
-         if (this.d) {
+     public NibbleArray d(long i) {
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+ 
+     public void a(long i, NibbleArray nibblearray) {
+         if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
++        nibblearray.lightCacheKey = i; // Paper
+         this.data.queueUpdate(i, nibblearray); // Paper - avoid copying light data
+     }
+ 
+     public void c() {
+         for (int i = 0; i < 2; ++i) {
+-            this.b[i] = Long.MAX_VALUE;
+-            this.c[i] = null;
++            // this.b[i] = Long.MAX_VALUE; // Paper - Unused
++            this.c[i] = NibbleArray.EMPTY_NIBBLE_ARRAY; // Paper
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java b/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
@@ -890,16 +971,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected int d(long i) {
 -        long j = SectionPosition.e(i);
+-        NibbleArray nibblearray = this.a(j, false);
+-
+-        return nibblearray == null ? 0 : nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
 +        // Paper start
 +        int baseX = (int) (i >> 38);
 +        int baseY = (int) ((i << 52) >> 52);
 +        int baseZ = (int) ((i << 26) >> 38);
 +        long j = (((long) (baseX >> 4) & 4194303L) << 42) | (((long) (baseY >> 4) & 1048575L)) | (((long) (baseZ >> 4) & 4194303L) << 20);
++        NibbleArray nibblearray = this.e_visible.lookup.apply(j);
++        return nibblearray == null ? 0 : nibblearray.a(baseX & 15, baseY & 15, baseZ & 15);
 +        // Paper end
-         NibbleArray nibblearray = this.a(j, false);
- 
--        return nibblearray == null ? 0 : nibblearray.a(SectionPosition.b(BlockPosition.b(i)), SectionPosition.b(BlockPosition.c(i)), SectionPosition.b(BlockPosition.d(i)));
-+        return nibblearray == null ? 0 : nibblearray.a(baseX & 15, baseY & 15, baseZ & 15); // Paper
      }
  
      public static final class a extends LightEngineStorageArray<LightEngineStorageBlock.a> {
@@ -916,7 +998,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int baseX = (int) (i >> 38);
 +        int baseY = (int) ((i << 52) >> 52);
 +        int baseZ = (int) ((i << 26) >> 38);
-+        long j = (((long) (baseX >> 4) & 4194303L) << 42) | (((long) (baseY >> 4) & 1048575L)) | (((long) (baseZ >> 4) & 4194303L) << 20);
++        long j = SectionPosition.blockPosAsSectionLong(baseX, baseY, baseZ);
 +        // Paper end
          int k = SectionPosition.c(j);
          synchronized (this.visibleUpdateLock) { // Paper - avoid copying light data
@@ -971,7 +1053,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                  EnumDirection enumdirection = aenumdirection[l1];
  
 -                                k1 = SectionPosition.a(i, enumdirection);
-+                                k1 = SectionPosition.asLong(baseX + enumdirection.getAdjacentX(), baseY + enumdirection.getAdjacentY(), baseZ + enumdirection.getAdjacentZ()); // Paper
++                                k1 = SectionPosition.getAdjacentFromBlockPos(baseX, baseY, baseZ, enumdirection); // Paper
                                  if ((this.n.contains(k1) || !this.l.contains(k1) && !this.m.contains(k1)) && this.g(k1)) {
                                      for (int i2 = 0; i2 < 16; ++i2) {
                                          for (int j2 = 0; j2 < 16; ++j2) {
@@ -1016,50 +1098,68 @@ diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private final ThreadedMailbox<Runnable> b;
+-    private final ThreadedMailbox<Runnable> b;
 -    private final ObjectList<Pair<LightEngineThreaded.Update, Runnable>> c = new ObjectArrayList();
--    private final PlayerChunkMap d;
-+    // Paper start - add urgent queue, switch to ArrayDeque
-+    private long nextNonUrgent = 0;
-+    private boolean shouldPollNonUrgent() {
-+        return urgent.isEmpty() && !c.isEmpty() && (this.c.size() >= this.f || System.nanoTime() > nextNonUrgent);
-+    }
-+
-+    private boolean shouldPollUrgent() {
-+        return (super.a() || !urgent.isEmpty());
-+    }
-+
-+    private IntSupplier getChunkPrioritySupplier(ChunkCoordIntPair coords) {
-+        return getChunkMap().getPrioritySupplier(coords.pair());
-+    }
++    private final ThreadedMailbox<Runnable> b; ThreadedMailbox<Runnable> mailbox; // Paper
++    // Paper start
 +    private static final int MAX_PRIORITIES = PlayerChunkMap.GOLDEN_TICKET + 2;
-+    private static class LightQueueBucket extends java.util.ArrayDeque<Pair<LightEngineThreaded.Update, Runnable>> {
-+        public LightQueueBucket() {
-+            super(64);
-+        }
++
++    public void changePriority(long pair, int currentPriority, int priority) {
++        this.mailbox.queue(() -> {
++            ChunkLightQueue remove = this.queue.buckets[currentPriority].remove(pair);
++            if (remove != null) {
++                ChunkLightQueue existing = this.queue.buckets[priority].put(pair, remove);
++                if (existing != null) {
++                    remove.pre.addAll(existing.pre);
++                    remove.post.addAll(existing.post);
++                }
++            }
++        });
 +    }
++
++    static class ChunkLightQueue {
++        public boolean shouldFastUpdate;
++        java.util.ArrayDeque<Runnable> pre = new java.util.ArrayDeque<Runnable>();
++        java.util.ArrayDeque<Runnable> post = new java.util.ArrayDeque<Runnable>();
++
++        ChunkLightQueue(long chunk) {}
++    }
++
++
 +    // Retain the chunks priority level for queued light tasks
 +    private static class LightQueue {
-+
 +        private int size = 0;
 +        private int lowestPriority = MAX_PRIORITIES;
-+        private final LightQueueBucket[] buckets = new LightQueueBucket[MAX_PRIORITIES];
++        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
 +
 +        private LightQueue() {
 +            for (int i = 0; i < buckets.length; i++) {
-+                buckets[i] = new LightQueueBucket();
++                buckets[i] = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<>();
 +            }
 +        }
 +
-+        public final void add(int priority, LightEngineThreaded.Update type, Runnable run) {
++        public final void add(long chunkId, int priority, LightEngineThreaded.Update type, Runnable run) {
++            add(chunkId, priority, type, run, false);
++        }
++        public final void add(long chunkId, int priority, LightEngineThreaded.Update type, Runnable run, boolean shouldFastUpdate) {
++            ChunkLightQueue lightQueue = this.buckets[priority].computeIfAbsent(chunkId, ChunkLightQueue::new);
 +            this.size++;
-+            if (lowestPriority > priority) {
-+                lowestPriority = priority;
++            if (type == Update.PRE_UPDATE) {
++                lightQueue.pre.add(run);
++            } else {
++                lightQueue.post.add(run);
 +            }
-+            this.buckets[priority].add(new Pair<>(type, run));
++            if (shouldFastUpdate) {
++                lightQueue.shouldFastUpdate = true;
++            }
++
++            if (this.lowestPriority > priority) {
++                this.lowestPriority = priority;
++            }
 +        }
 +
 +        public final boolean isEmpty() {
@@ -1070,50 +1170,71 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return this.size;
 +        }
 +
-+        public Pair<Update, Runnable> poll() {
-+            for (; lowestPriority < MAX_PRIORITIES; lowestPriority++) {
-+                Pair<Update, Runnable> entry = buckets[lowestPriority].pollFirst();
-+                if (entry != null) {
-+                    this.size--;
-+                    return entry;
++        public boolean poll(java.util.List<Runnable> pre, java.util.List<Runnable> post) {
++            boolean hasWork = false;
++            it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
++            while (lowestPriority < MAX_PRIORITIES && !isEmpty()) {
++                it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
++                if (bucket.isEmpty()) {
++                    lowestPriority++;
++                    continue;
++                }
++                ChunkLightQueue queue = bucket.removeFirst();
++                this.size -= queue.pre.size() + queue.post.size();
++                pre.addAll(queue.pre);
++                post.addAll(queue.post);
++                queue.pre.clear();
++                queue.post.clear();
++                hasWork = true;
++                if (queue.shouldFastUpdate) {
++                    return true;
 +                }
 +            }
-+            return null;
++            return hasWork;
 +        }
 +    }
 +
-+    private final LightQueue urgent = new LightQueue();
-+    private final LightQueue c = new LightQueue();
++    private final LightQueue queue = new LightQueue();
 +    // Paper end
-+    private final PlayerChunkMap d; private PlayerChunkMap getChunkMap() { return d; } // Paper - OBFHELPER
+     private final PlayerChunkMap d;
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> e;
      private volatile int f = 5;
-     private final AtomicBoolean g = new AtomicBoolean();
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+         super(ilightaccess, true, flag);
+         this.d = playerchunkmap;
+         this.e = mailbox;
+-        this.b = threadedmailbox;
++        this.mailbox = this.b = threadedmailbox; // Paper
      }
  
+     public void close() {}
+@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+ 
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
-+        // Paper start
-+        scheduleLightTask(i, j, intsupplier, lightenginethreaded_update, runnable, false);
-+    }
-+    private void scheduleLightTask(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable, boolean urgent) {
          this.e.a(ChunkTaskQueueSorter.a(() -> { // Paper - decompile error
 -            this.c.add(Pair.of(lightenginethreaded_update, runnable));
 -            if (this.c.size() >= this.f) {
--                this.b();
--            }
-+            (urgent ? this.urgent : this.c).add(intsupplier.getAsInt(), lightenginethreaded_update, runnable);
-+            if (shouldPollUrgent() || shouldPollNonUrgent()) queueUpdate();
-+            // Paper end
++            // Paper start
++            int priority = intsupplier.getAsInt();
++            this.queue.add(ChunkCoordIntPair.pair(i, j), priority, lightenginethreaded_update, runnable); // Paper
++            if (priority <= 25) { // don't auto kick off unless priority
++                // Paper end
+                 this.b();
+             }
  
-         }, ChunkCoordIntPair.pair(i, j), intsupplier));
-     }
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
          ichunkaccess.b(false);
 -        this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
-+        this.scheduleLightTask(chunkcoordintpair.x, chunkcoordintpair.z, getChunkPrioritySupplier(chunkcoordintpair), LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> { // Paper
++        // Paper start
++        long pair = chunkcoordintpair.pair();
++        CompletableFuture<IChunkAccess> future = new CompletableFuture<>();
++        IntSupplier prioritySupplier1 = d.getPrioritySupplier(pair);
++        IntSupplier prioritySupplier = flag ? () -> Math.max(1, prioritySupplier1.getAsInt() - 10) : prioritySupplier1;
++        this.e.a(ChunkTaskQueueSorter.a(() -> {
++            this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
++                // Paper end
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
@@ -1121,31 +1242,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.d.c(chunkcoordintpair);
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
--        }));
-+        }), true); // Paper - urgent flag
-         return CompletableFuture.supplyAsync(() -> {
++            // Paper start  - merge the 2 together
+         }));
+-        return CompletableFuture.supplyAsync(() -> {
++
++        this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.POST_UPDATE, () -> {
              ichunkaccess.b(true);
              super.b(chunkcoordintpair, false);
-             return ichunkaccess;
-         }, (runnable) -> {
+-            return ichunkaccess;
+-        }, (runnable) -> {
 -            this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.POST_UPDATE, runnable);
-+            this.scheduleLightTask(chunkcoordintpair.x, chunkcoordintpair.z, getChunkPrioritySupplier(chunkcoordintpair), LightEngineThreaded.Update.POST_UPDATE, runnable, true); // Paper
-+            queueUpdate(); // Paper
++            // Paper start
++            future.complete(ichunkaccess);
          });
++            queueUpdate(); // run queue now
++        }, pair, prioritySupplier));
++        return future;
++        // Paper end
      }
  
      public void queueUpdate() {
 -        if ((!this.c.isEmpty() || super.a()) && this.g.compareAndSet(false, true)) {
-+        if ((shouldPollUrgent() || shouldPollNonUrgent()) && this.g.compareAndSet(false, true)) { // Paper - level check is now in shouldPollUrgent
++        if ((!this.queue.isEmpty() || super.a()) && this.g.compareAndSet(false, true)) { // Paper
              this.b.a((() -> { // Paper - decompile error
--                this.b();
-+                // Paper start
-+                if (shouldPollUrgent()) {
-+                    do {
-+                        this.runQueue(true);
-+                    } while (shouldPollUrgent());
-+                } else if (shouldPollNonUrgent()) this.runQueue(false); // don't loop non urgent as urgent might come in
-+                // Paper end
+                 this.b();
                  this.g.set(false);
 +                queueUpdate(); // Paper - if we still have work to do, do it!
              }));
@@ -1153,6 +1273,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
++    // Paper start - replace impl
      private void b() {
 -        int i = Math.min(this.c.size(), this.f);
 -        ObjectListIterator<Pair<LightEngineThreaded.Update, Runnable>> objectlistiterator = this.c.iterator();
@@ -1164,28 +1285,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            pair = (Pair) objectlistiterator.next();
 -            if (pair.getFirst() == LightEngineThreaded.Update.PRE_UPDATE) {
 -                ((Runnable) pair.getSecond()).run();
-+        // Paper start - replace impl, use more effecient deque, avoid single removes (iterator.remove() which does a lot of copying)
-+        runQueue(!this.urgent.isEmpty());
-+    }
-+    private void runQueue(boolean urgent) {
-+        LightQueue col = urgent ? this.urgent : c;
-+        java.util.List<Pair<LightEngineThreaded.Update, Runnable>> pre = new java.util.ArrayList<>();
-+        java.util.List<Pair<LightEngineThreaded.Update, Runnable>> post = new java.util.ArrayList<>();
-+        int i = Math.min(col.size(), 8); // process small batches so chunks can progress without waiting for everything
-+        Pair<LightEngineThreaded.Update, Runnable> pair;
-+        while (i-- > 0 && (pair = col.poll()) != null) {
-+            if (pair.getFirst() == Update.PRE_UPDATE) {
-+                pre.add(pair);
-+            } else {
-+                post.add(pair);
-             }
-         }
- 
+-            }
+-        }
+-
 -        objectlistiterator.back(j);
-+        pre.forEach(entry -> entry.getSecond().run());
-         super.a(Integer.MAX_VALUE, true, true);
-+        post.forEach(entry -> entry.getSecond().run());
- 
+-        super.a(Integer.MAX_VALUE, true, true);
+-
 -        for (j = 0; objectlistiterator.hasNext() && j < i; ++j) {
 -            pair = (Pair) objectlistiterator.next();
 -            if (pair.getFirst() == LightEngineThreaded.Update.POST_UPDATE) {
@@ -1193,12 +1298,51 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -
 -            objectlistiterator.remove();
--        }
-+        if (!urgent && this.c.isEmpty()) nextNonUrgent = System.nanoTime() + (50 * 1000000);
++        java.util.List<Runnable> pre = new java.util.ArrayList<>();
++        java.util.List<Runnable> post = new java.util.ArrayList<>();
++        int i = Math.min(queue.size(), 4);
++        while (i-- > 0 && queue.poll(pre, post)) {
++            pre.forEach(Runnable::run);
++            pre.clear();
++            super.a(Integer.MAX_VALUE, true, true);
++            post.forEach(Runnable::run);
++            post.clear();
+         }
+-
 +        // Paper end
- 
      }
  
+     public void a(int i) {
+diff --git a/src/main/java/net/minecraft/server/NibbleArray.java b/src/main/java/net/minecraft/server/NibbleArray.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NibbleArray.java
++++ b/src/main/java/net/minecraft/server/NibbleArray.java
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ public class NibbleArray {
+ 
+     // Paper start
++    static final NibbleArray EMPTY_NIBBLE_ARRAY = new NibbleArray() {
++        @Override
++        public byte[] asBytes() {
++            throw new IllegalStateException();
++        }
++    };
++    long lightCacheKey = Long.MIN_VALUE;
+     public static byte[] EMPTY_NIBBLE = new byte[2048];
+     private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
+     private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+                 ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
+             }
+             chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
++            chunkMap.world.getChunkProvider().getLightEngine().changePriority(location.pair(), getCurrentPriority(), priority);
+         }
+         if (getCurrentPriority() != priority) {
+             this.w.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
@@ -1211,3 +1355,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected IntSupplier c(long i) {
          return () -> {
              PlayerChunk playerchunk = this.getVisibleChunk(i);
+diff --git a/src/main/java/net/minecraft/server/ThreadedMailbox.java b/src/main/java/net/minecraft/server/ThreadedMailbox.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ThreadedMailbox.java
++++ b/src/main/java/net/minecraft/server/ThreadedMailbox.java
+@@ -0,0 +0,0 @@ public class ThreadedMailbox<T> implements Mailbox<T>, AutoCloseable, Runnable {
+ 
+     }
+ 
+-    @Override
++
++    public void queue(T t0) { a(t0); } @Override // Paper - OBFHELPER
+     public void a(T t0) {
+         this.a.a(t0);
+         this.f();
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World {
+             }
+             gameprofilerfiller.exit();
+             timings.chunkTicksBlocks.stopTiming(); // Paper
++            getChunkProvider().getLightEngine().queueUpdate(); // Paper
+             // Paper end
+         }
+     }
