@@ -21,13 +21,13 @@ index e865a5694f78fb9273a0625ab2c30b87d0711a90..5648ba73c533f622c35c808decdb305f
      default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
          return IEntityAccess.super.b(entity, axisalignedbb, set);
 diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
-index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf18729025 100644
+index 5e20dba0d011d20b714d784cb4a545a05bbf6f9c..5a21205a49606b294de4cd27b60438c6a5b3c526 100644
 --- a/src/main/java/net/minecraft/server/ICollisionAccess.java
 +++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -48,18 +48,39 @@ public interface ICollisionAccess extends IBlockAccess {
-     }
+@@ -44,19 +44,40 @@ public interface ICollisionAccess extends IBlockAccess {
  
      default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+         try { if (entity != null) entity.collisionLoadChunks = true; // Paper
 -        return this.c(entity, axisalignedbb, set).allMatch(VoxelShape::isEmpty);
 +        // Paper start - reduce stream usage
 +        java.util.List<VoxelShape> blockCollisions = getBlockCollision(entity, axisalignedbb, true);
@@ -39,6 +39,7 @@ index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf
 +        }
 +        return getEntityCollisions(entity, axisalignedbb, set, true).isEmpty();
 +        // Paper end
+         } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
      }
  
 +    default java.util.List<VoxelShape> getEntityCollisions(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set, boolean returnFast) { return java.util.Collections.emptyList(); } // Paper
@@ -66,7 +67,7 @@ index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf
          int i = MathHelper.floor(axisalignedbb.minX - 1.0E-7D) - 1;
          int j = MathHelper.floor(axisalignedbb.maxX + 1.0E-7D) + 1;
          int k = MathHelper.floor(axisalignedbb.minY - 1.0E-7D) - 1;
-@@ -71,19 +92,19 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -68,19 +89,19 @@ public interface ICollisionAccess extends IBlockAccess {
          final BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
          final VoxelShape voxelshape = VoxelShapes.a(axisalignedbb);
  
@@ -94,7 +95,7 @@ index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf
                      }
                  }
  
-@@ -107,9 +128,8 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -104,9 +125,8 @@ public interface ICollisionAccess extends IBlockAccess {
                          );
                          if (iblockdata == null) {
                              if (!(entity instanceof EntityPlayer) || entity.world.paperConfig.preventMovingIntoUnloadedChunks) {
@@ -106,7 +107,7 @@ index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf
                              }
                          } else {
                              //blockposition_mutableblockposition.d(k1, l1, i2); // moved up
-@@ -126,14 +146,14 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -123,14 +143,14 @@ public interface ICollisionAccess extends IBlockAccess {
  
                                  if (voxelshape2 == VoxelShapes.fullCube()) {
                                      if (axisalignedbb.intersects(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
@@ -125,7 +126,7 @@ index ace1bb5bb89be256a7dc716f97429ee64b3c575f..0295e563aa027be5ca1a7eb78727aacf
                                      }
                                      // Paper end
                                  }
-@@ -142,8 +162,9 @@ public interface ICollisionAccess extends IBlockAccess {
+@@ -139,8 +159,9 @@ public interface ICollisionAccess extends IBlockAccess {
                      }
                  }
  

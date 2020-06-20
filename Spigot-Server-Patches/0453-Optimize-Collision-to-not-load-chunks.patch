@@ -26,24 +26,20 @@ index 7434f859f7f9acff0f881ff594c8dffdfa249c76..7fb34a86dc35cb4bf51e1ce5220e5664
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
 diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
-index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..667e6c8f94162b620a7157c7d3caba9369c37de1 100644
+index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..3eefbf4d5f10b53f930759a0afa5661253b92c60 100644
 --- a/src/main/java/net/minecraft/server/ICollisionAccess.java
 +++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -39,7 +39,12 @@ public interface ICollisionAccess extends IBlockAccess {
-     }
- 
-     default boolean getCubes(Entity entity, AxisAlignedBB axisalignedbb) {
--        return this.a(entity, axisalignedbb, Collections.emptySet());
-+        // Paper start - load chunks for getCubes
-+        entity.collisionLoadChunks = true;
-+        boolean result = this.a(entity, axisalignedbb, Collections.emptySet());
-+        entity.collisionLoadChunks = false;
-+        return result;
-+        // Paper end
+@@ -43,7 +43,9 @@ public interface ICollisionAccess extends IBlockAccess {
      }
  
      default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
-@@ -83,19 +88,33 @@ public interface ICollisionAccess extends IBlockAccess {
++        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
+         return this.c(entity, axisalignedbb, set).allMatch(VoxelShape::isEmpty);
++        } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
+     }
+ 
+     default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+@@ -83,19 +85,33 @@ public interface ICollisionAccess extends IBlockAccess {
                  }
  
                  while (cursorposition.a()) {
@@ -88,7 +84,7 @@ index f851ed11df14fd9aa8017f44d82fb6cfc3bde345..667e6c8f94162b620a7157c7d3caba93
                              if ((j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
                                  VoxelShape voxelshape2 = iblockdata.b((IBlockAccess) ICollisionAccess.this, blockposition_mutableblockposition, voxelshapecollision);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index e479dedc889bdfabda99d9c2b36f6c4b7ce87a99..32d8cc7f22aaddef2e68506eeb44e01795f2aff5 100644
+index 0ba103a5c60d8f5b8f332fe63364c597925a6450..157738f452493aabdefb228cd527ba85400baad5 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -677,6 +677,7 @@ public abstract class PlayerList {
