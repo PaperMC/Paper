@@ -121,13 +121,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // Paper start
          if (!this.pendingChunkUpdates.isEmpty()) {
-+            this.pollingPendingChunkUpdates = true;
++            this.pollingPendingChunkUpdates = true; try {
              while(!this.pendingChunkUpdates.isEmpty()) {
                  PlayerChunk remove = this.pendingChunkUpdates.remove();
                  remove.isUpdateQueued = false;
                  remove.a(playerchunkmap);
              }
-+            this.pollingPendingChunkUpdates = false;
++            } finally { this.pollingPendingChunkUpdates = false; }
              // Paper end
              return true;
          } else {
@@ -201,15 +201,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        AsyncCatcher.catchOp("ChunkMapDistance::addPriorityTicket");
 +        long pair = coords.pair();
 +        PlayerChunk chunk = chunkMap.getUpdatingChunk(pair);
-+        if (chunk != null && chunk.isFullChunkReady()) {
++        if (chunk != null && chunk.isFullChunkReady() && chunk.getTicketLevel() <= 33) {
 +            return false;
 +        }
 +        if (chunk != null && chunk.getTicketLevel() > 33 && chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(pair) != null) {
 +            Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords);
 +            addTicket(pair, ticket);
-+        }
-+        if (getChunkPriority(coords) >= priority) {
-+            return false;
 +        }
 +
 +        boolean success;
@@ -289,12 +286,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            if (this.c(this.c(i))) {
 +                    // Paper start - smarter ticket delay based on frustum and distance
 +                    scheduleChunkLoad(i, MinecraftServer.currentTick, j, (priority) -> {
-+                        ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
-+                            if (priority < 5 && this.c(this.c(i))) {
-+                                // Skip throttle for near chunks
-+                                ChunkMapDistance.this.addTicket(i, ticket);
-+                                ChunkMapDistance.this.l.add(i);
-+                            } else if (this.c(this.c(i))) { // Copy c(c()) stuff below
++                        //ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
++                            if (this.c(this.c(i))) { // Copy c(c()) stuff below
 +                                // Paper end
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
@@ -304,11 +297,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              }
 -
 -                        });
-                     }, i, () -> {
+-                    }, i, () -> {
 -                        return j;
 -                    }));
-+                        return Math.min(PlayerChunkMap.GOLDEN_TICKET, (priority <= 6 ? 20 : 30) + priority); // Paper - delay new ticket adds to avoid spamming the queue
-+                    })); }); // Paper
++                    //}, i, () -> {
++                        //return Math.min(PlayerChunkMap.GOLDEN_TICKET, (priority <= 6 ? 20 : 30) + priority); // Paper - delay new ticket adds to avoid spamming the queue
++                    //})); // Paper
++                    }); // Paper
                  } else {
                      ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
@@ -380,8 +375,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +                if (minDist > 4) {
 +                    int desiredTimeDelayMax = isFront ?
-+                        (minDist < 10 ? 10 : 15) : // Front
-+                        (minDist < 10 ? 15 : 30); // Back
++                        (minDist < 10 ? 10 : 20) : // Front
++                        (minDist < 10 ? 20 : 40); // Back
 +                    desireDelay += (desiredTimeDelayMax * 20) * (minDist / 32);
 +                }
 +            } else {
@@ -409,7 +404,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (delay <= 0) {
 +                task.accept((int) minDist);
 +            } else {
-+                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 10 : 20)), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
++                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 5 : 20)), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
 +            }
 +        }
 +        // Paper end
@@ -478,6 +473,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (this.a(playerchunk, l)) {
                  GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
+                 gameprofilerfiller.enter("chunkLoad");
++                chunkMapDistance.delayDistanceManagerTick = false; // Paper - ensure this is never false
+                 this.tickDistanceManager();
+                 playerchunk = this.getChunk(k);
+                 gameprofilerfiller.exit();
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
                  }
              }
@@ -494,6 +494,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private boolean a(@Nullable PlayerChunk playerchunk, int i) {
+-        return playerchunk == null || playerchunk.oldTicketLevel > i; // CraftBukkit using oldTicketLevel for isLoaded checks
++        return playerchunk == null || playerchunk.getTicketLevel() > i; // CraftBukkit using oldTicketLevel for isLoaded checks - Paper - keep vanilla check
+     }
+ 
+     public boolean isLoaded(int i, int j) {
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
          return this.serverThreadQueue.executeNext();
      }
@@ -606,11 +611,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (priorityBoost == ChunkMapDistance.URGENT_PRIORITY) {
 +            return 2; // Urgent - ticket level isn't always 31 so 33-30 = 3, but allow 1 more tasks to go below this for dependents
 +        }
-+        int basePriority = ticketLevel - priorityBoost;
-+        if (ticketLevel >= 33 && priorityBoost == 0 && (neighborPriority >= 34 || neighborPriorities.isEmpty())) {
-+            basePriority += 5;
-+        }
-+        return basePriority;
++        return ticketLevel - priorityBoost;
 +    }
 +
 +    private int getNeighborsPriority() {
