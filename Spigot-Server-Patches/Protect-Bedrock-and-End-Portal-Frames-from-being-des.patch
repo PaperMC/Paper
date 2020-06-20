@@ -40,7 +40,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this != Blocks.BEDROCK &&
 +            this != Blocks.END_PORTAL_FRAME &&
 +            this != Blocks.END_PORTAL &&
-+            this != Blocks.END_GATEWAY;
++            this != Blocks.END_GATEWAY &&
++            this != Blocks.MOVING_PISTON; // try to prevent creation of headless pistons
 +    }
      public co.aikar.timings.Timing timing;
      public co.aikar.timings.Timing getTiming() {
@@ -63,6 +64,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void fallOn(World world, BlockPosition blockposition, Entity entity, float f) {
+diff --git a/src/main/java/net/minecraft/server/BlockPiston.java b/src/main/java/net/minecraft/server/BlockPiston.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockPiston.java
++++ b/src/main/java/net/minecraft/server/BlockPiston.java
+@@ -0,0 +0,0 @@ public class BlockPiston extends BlockDirectional {
+     @Override
+     public boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, int i, int j) {
+         EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockPiston.FACING);
++        // Paper start - prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
++        EnumDirection directionQueuedAs = EnumDirection.fromType1(j & 7); // Paper - copied from below
++        if (!com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits && enumdirection != directionQueuedAs) {
++            return false;
++        }
++        // Paper end - prevent retracting when we're facing the wrong way
+ 
+         if (!world.isClientSide) {
+             boolean flag = this.a(world, blockposition, enumdirection);
+@@ -0,0 +0,0 @@ public class BlockPiston extends BlockDirectional {
+             }
+ 
+             world.setTypeAndData(blockposition, (IBlockData) ((IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPistonMoving.a, enumdirection)).set(BlockPistonMoving.b, this.sticky ? BlockPropertyPistonType.STICKY : BlockPropertyPistonType.DEFAULT), 3);
+-            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true));
++            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction
+             if (this.sticky) {
+                 BlockPosition blockposition1 = blockposition.b(enumdirection.getAdjacentX() * 2, enumdirection.getAdjacentY() * 2, enumdirection.getAdjacentZ() * 2);
+                 IBlockData iblockdata1 = world.getType(blockposition1);
+@@ -0,0 +0,0 @@ public class BlockPiston extends BlockDirectional {
+                     }
+                 }
+             } else {
+-                world.a(blockposition.shift(enumdirection), false);
++                // Paper start - fix headless pistons breaking blocks
++                BlockPosition headPos = blockposition.shift(enumdirection);
++                if (com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits || world.getType(headPos) == Blocks.PISTON_HEAD.getBlockData().set(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
++                    world.setAir(headPos, false);
++                } else {
++                    ((WorldServer)world).getChunkProvider().flagDirty(headPos); // ... fix client desync
++                }
++                // Paper end - fix headless pistons breaking blocks
+             }
+ 
+             world.playSound((EntityHuman) null, blockposition, SoundEffects.BLOCK_PISTON_CONTRACT, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
