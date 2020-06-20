@@ -2,6 +2,18 @@ Contributing to Paper
 ==========================
 PaperMC has a very lenient policy towards PRs, but would prefer that you try and adhere to the following guidelines.
 
+## Use a Personal Fork and not Organization
+Paper will routinely modify your PR for you to rebase it on latest or take care of any minor nitpicks that we can
+just solve for you instead of making you go back for a trivial item.
+
+However, if you use an Organization for the PR, this prevents Paper from doing this, and will require us to manually
+merge it and close the PR instead of it being marked as the purple merged.
+
+We much prefer to have merged PR's show as merged, so please do not use organizations repo's for PR as GitHub sadly
+does not support maintainers pushing to them.
+
+See [https://github.com/isaacs/github/issues/1681](https://github.com/isaacs/github/issues/1681)
+
 ## Understanding Patches
 Patches to Paper are very simple, but center around the directories 'Paper-API' and 'Paper-Server'
 
