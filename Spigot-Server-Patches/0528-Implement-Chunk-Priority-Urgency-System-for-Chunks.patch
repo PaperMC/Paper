@@ -90,7 +90,7 @@ index f617636a22167b06ac8073aa25efd8c7099155f0..0f40793f004639822b9d40521cd21ec5
          return new BlockPosition(this.x << 4, 0, this.z << 4);
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkMapDistance.java b/src/main/java/net/minecraft/server/ChunkMapDistance.java
-index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa338a46c254 100644
+index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..f7be94e801e58a39e0efcc813d95bbd613afce03 100644
 --- a/src/main/java/net/minecraft/server/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/ChunkMapDistance.java
 @@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
@@ -121,13 +121,13 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
  
          // Paper start
          if (!this.pendingChunkUpdates.isEmpty()) {
-+            this.pollingPendingChunkUpdates = true;
++            this.pollingPendingChunkUpdates = true; try {
              while(!this.pendingChunkUpdates.isEmpty()) {
                  PlayerChunk remove = this.pendingChunkUpdates.remove();
                  remove.isUpdateQueued = false;
                  remove.a(playerchunkmap);
              }
-+            this.pollingPendingChunkUpdates = false;
++            } finally { this.pollingPendingChunkUpdates = false; }
              // Paper end
              return true;
          } else {
@@ -163,7 +163,7 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
          return removed; // CraftBukkit
      }
  
-@@ -182,6 +191,116 @@ public abstract class ChunkMapDistance {
+@@ -182,6 +191,113 @@ public abstract class ChunkMapDistance {
          this.addTicketAtLevel(tickettype, chunkcoordintpair, i, t0);
      }
  
@@ -201,15 +201,12 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
 +        AsyncCatcher.catchOp("ChunkMapDistance::addPriorityTicket");
 +        long pair = coords.pair();
 +        PlayerChunk chunk = chunkMap.getUpdatingChunk(pair);
-+        if (chunk != null && chunk.isFullChunkReady()) {
++        if (chunk != null && chunk.isFullChunkReady() && chunk.getTicketLevel() <= 33) {
 +            return false;
 +        }
 +        if (chunk != null && chunk.getTicketLevel() > 33 && chunkMap.playerViewDistanceNoTickMap.getObjectsInRange(pair) != null) {
 +            Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, coords);
 +            addTicket(pair, ticket);
-+        }
-+        if (getChunkPriority(coords) >= priority) {
-+            return false;
 +        }
 +
 +        boolean success;
@@ -280,7 +277,7 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
      public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
          return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier));
          // CraftBukkit end
-@@ -384,24 +503,29 @@ public abstract class ChunkMapDistance {
+@@ -384,24 +500,26 @@ public abstract class ChunkMapDistance {
                  Ticket<?> ticket = new Ticket<>(TicketType.PLAYER, 33, new ChunkCoordIntPair(i)); // Paper - no-tick view distance
  
                  if (flag1) {
@@ -289,12 +286,8 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
 -                            if (this.c(this.c(i))) {
 +                    // Paper start - smarter ticket delay based on frustum and distance
 +                    scheduleChunkLoad(i, MinecraftServer.currentTick, j, (priority) -> {
-+                        ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
-+                            if (priority < 5 && this.c(this.c(i))) {
-+                                // Skip throttle for near chunks
-+                                ChunkMapDistance.this.addTicket(i, ticket);
-+                                ChunkMapDistance.this.l.add(i);
-+                            } else if (this.c(this.c(i))) { // Copy c(c()) stuff below
++                        //ChunkMapDistance.this.j.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
++                            if (this.c(this.c(i))) { // Copy c(c()) stuff below
 +                                // Paper end
                                  ChunkMapDistance.this.addTicket(i, ticket);
                                  ChunkMapDistance.this.l.add(i);
@@ -304,11 +297,13 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
                              }
 -
 -                        });
-                     }, i, () -> {
+-                    }, i, () -> {
 -                        return j;
 -                    }));
-+                        return Math.min(PlayerChunkMap.GOLDEN_TICKET, (priority <= 6 ? 20 : 30) + priority); // Paper - delay new ticket adds to avoid spamming the queue
-+                    })); }); // Paper
++                    //}, i, () -> {
++                        //return Math.min(PlayerChunkMap.GOLDEN_TICKET, (priority <= 6 ? 20 : 30) + priority); // Paper - delay new ticket adds to avoid spamming the queue
++                    //})); // Paper
++                    }); // Paper
                  } else {
                      ChunkMapDistance.this.k.a(ChunkTaskQueueSorter.a(() -> { // CraftBukkit - decompile error
                          ChunkMapDistance.this.m.execute(() -> {
@@ -317,7 +312,7 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
                          });
                      }, i, true));
                  }
-@@ -409,6 +533,99 @@ public abstract class ChunkMapDistance {
+@@ -409,6 +527,99 @@ public abstract class ChunkMapDistance {
  
          }
  
@@ -380,8 +375,8 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
 +                }
 +                if (minDist > 4) {
 +                    int desiredTimeDelayMax = isFront ?
-+                        (minDist < 10 ? 10 : 15) : // Front
-+                        (minDist < 10 ? 15 : 30); // Back
++                        (minDist < 10 ? 10 : 20) : // Front
++                        (minDist < 10 ? 20 : 40); // Back
 +                    desireDelay += (desiredTimeDelayMax * 20) * (minDist / 32);
 +                }
 +            } else {
@@ -409,7 +404,7 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
 +            if (delay <= 0) {
 +                task.accept((int) minDist);
 +            } else {
-+                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 10 : 20)), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
++                MCUtil.scheduleTask((int) Math.min(delay, minDist >= 10 ? 40 : (minDist < 6 ? 5 : 20)), () -> scheduleChunkLoad(i, startTick, initialDistance, task), "Player Ticket Delayer");
 +            }
 +        }
 +        // Paper end
@@ -418,7 +413,7 @@ index 7702fbefa598bce7e6a2d287f7ec36b78a62bff8..02d07d3ff5c3b824047402ff1f58aa33
          public void a() {
              super.a();
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 7a275bf3260f9fbefc41883c5ebdc1eb2196daf0..340d6e992786e8877243ccb472b462e88ec1e6fb 100644
+index 7a275bf3260f9fbefc41883c5ebdc1eb2196daf0..81a200ea4c533744890b6e19dd0d83f57351906c 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -432,6 +432,26 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -466,7 +461,7 @@ index 7a275bf3260f9fbefc41883c5ebdc1eb2196daf0..340d6e992786e8877243ccb472b462e8
              } // Paper
              ichunkaccess = (IChunkAccess) ((Either) completablefuture.join()).map((ichunkaccess1) -> {
                  return ichunkaccess1;
-@@ -527,9 +551,10 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -527,13 +551,15 @@ public class ChunkProviderServer extends IChunkProvider {
              PlayerChunk.State currentChunkState = PlayerChunk.getChunkState(playerchunk.getTicketLevel());
              currentlyUnloading = (oldChunkState.isAtLeast(PlayerChunk.State.BORDER) && !currentChunkState.isAtLeast(PlayerChunk.State.BORDER));
          }
@@ -478,7 +473,12 @@ index 7a275bf3260f9fbefc41883c5ebdc1eb2196daf0..340d6e992786e8877243ccb472b462e8
              if (this.a(playerchunk, l)) {
                  GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
-@@ -542,8 +567,13 @@ public class ChunkProviderServer extends IChunkProvider {
+                 gameprofilerfiller.enter("chunkLoad");
++                chunkMapDistance.delayDistanceManagerTick = false; // Paper - ensure this is never false
+                 this.tickDistanceManager();
+                 playerchunk = this.getChunk(k);
+                 gameprofilerfiller.exit();
+@@ -542,12 +568,17 @@ public class ChunkProviderServer extends IChunkProvider {
                  }
              }
          }
@@ -494,7 +494,12 @@ index 7a275bf3260f9fbefc41883c5ebdc1eb2196daf0..340d6e992786e8877243ccb472b462e8
      }
  
      private boolean a(@Nullable PlayerChunk playerchunk, int i) {
-@@ -593,7 +623,8 @@ public class ChunkProviderServer extends IChunkProvider {
+-        return playerchunk == null || playerchunk.oldTicketLevel > i; // CraftBukkit using oldTicketLevel for isLoaded checks
++        return playerchunk == null || playerchunk.getTicketLevel() > i; // CraftBukkit using oldTicketLevel for isLoaded checks - Paper - keep vanilla check
+     }
+ 
+     public boolean isLoaded(int i, int j) {
+@@ -593,7 +624,8 @@ public class ChunkProviderServer extends IChunkProvider {
          return this.serverThreadQueue.executeNext();
      }
  
@@ -559,7 +564,7 @@ index ce0bf608b71cf492fc31e89a360ecd83fa5c23a6..87d58002116f361d8255d79fc0dbd120
                  chunkData.addProperty("queued-for-unload", chunkMap.unloadQueue.contains(playerChunk.location.pair()));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef067a2cb8 100644
+index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..bc5e380aa37101382c359f1c9a25803e09cd238c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -26,8 +26,8 @@ public class PlayerChunk {
@@ -581,7 +586,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
  
      long lastAutoSaveTime; // Paper - incremental autosave
      long inactiveTimeStart; // Paper - incremental autosave
-@@ -67,6 +68,124 @@ public class PlayerChunk {
+@@ -67,6 +68,120 @@ public class PlayerChunk {
          return null;
      }
      // Paper end - no-tick view distance
@@ -606,11 +611,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
 +        if (priorityBoost == ChunkMapDistance.URGENT_PRIORITY) {
 +            return 2; // Urgent - ticket level isn't always 31 so 33-30 = 3, but allow 1 more tasks to go below this for dependents
 +        }
-+        int basePriority = ticketLevel - priorityBoost;
-+        if (ticketLevel >= 33 && priorityBoost == 0 && (neighborPriority >= 34 || neighborPriorities.isEmpty())) {
-+            basePriority += 5;
-+        }
-+        return basePriority;
++        return ticketLevel - priorityBoost;
 +    }
 +
 +    private int getNeighborsPriority() {
@@ -706,7 +707,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
  
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
-@@ -165,6 +284,15 @@ public class PlayerChunk {
+@@ -165,6 +280,15 @@ public class PlayerChunk {
          }
          return null;
      }
@@ -722,7 +723,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
      // Paper end
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
-@@ -418,6 +546,7 @@ public class PlayerChunk {
+@@ -418,6 +542,7 @@ public class PlayerChunk {
          return this.n;
      }
  
@@ -730,7 +731,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
      private void d(int i) {
          this.n = i;
      }
-@@ -436,7 +565,7 @@ public class PlayerChunk {
+@@ -436,7 +561,7 @@ public class PlayerChunk {
          // CraftBukkit start
          // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
          if (playerchunk_state.isAtLeast(PlayerChunk.State.BORDER) && !playerchunk_state1.isAtLeast(PlayerChunk.State.BORDER)) {
@@ -739,7 +740,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
                  Chunk chunk = (Chunk)either.left().orElse(null);
                  if (chunk != null) {
                      playerchunkmap.callbackExecutor.execute(() -> {
-@@ -501,12 +630,13 @@ public class PlayerChunk {
+@@ -501,12 +626,13 @@ public class PlayerChunk {
          if (!flag2 && flag3) {
              // Paper start - cache ticking ready status
              int expectCreateCount = ++this.fullChunkCreateCount;
@@ -754,7 +755,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
  
  
                  }
-@@ -531,7 +661,7 @@ public class PlayerChunk {
+@@ -531,7 +657,7 @@ public class PlayerChunk {
  
          if (!flag4 && flag5) {
              // Paper start - cache ticking ready status
@@ -763,7 +764,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
                  if (either.left().isPresent()) {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      Chunk tickingChunk = either.left().get();
-@@ -562,7 +692,7 @@ public class PlayerChunk {
+@@ -562,7 +688,7 @@ public class PlayerChunk {
              }
  
              // Paper start - cache ticking ready status
@@ -772,7 +773,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
                  if (either.left().isPresent()) {
                      // note: Here is a very good place to add callbacks to logic waiting on this.
                      Chunk entityTickingChunk = either.left().get();
-@@ -581,13 +711,29 @@ public class PlayerChunk {
+@@ -581,13 +707,29 @@ public class PlayerChunk {
              this.entityTickingFuture.complete(PlayerChunk.UNLOADED_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
              this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          }
@@ -805,7 +806,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..04dcb79c6033f1dec62c5df49937a4ef
                  Chunk chunk = (Chunk)either.left().orElse(null);
                  if (chunk != null) {
                      playerchunkmap.callbackExecutor.execute(() -> {
-@@ -669,6 +815,7 @@ public class PlayerChunk {
+@@ -669,6 +811,7 @@ public class PlayerChunk {
  
      public interface c {
  
