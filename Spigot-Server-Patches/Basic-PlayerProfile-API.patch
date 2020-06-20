@@ -151,9 +151,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public boolean completeFromCache(boolean lookupName) {
-+        if (profile.isComplete()) {
-+            return true;
-+        }
 +        MinecraftServer server = MinecraftServer.getServer();
 +        String name = profile.getName();
 +        UserCache userCache = server.getUserCache();
@@ -167,14 +164,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
 +            }
 +            if (profile != null) {
++                // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
++                copyProfileProperties(this.profile, profile);
 +                this.profile = profile;
 +            }
 +        }
 +
-+        if (profile.getName() == null) {
-+            // If we need textures, skip this check, as we will get it below anyways.
++        if (profile.getName() == null || !hasTextures()) {
 +            GameProfile profile = userCache.getProfile(this.profile.getId());
 +            if (profile != null) {
++                // if old has it, assume its newer, so overwrite, else use cached if it was set and ours wasn't
++                copyProfileProperties(this.profile, profile);
 +                this.profile = profile;
 +            }
 +        }
@@ -189,22 +189,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (isOnlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
 +            GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
 +            if (result != null) {
-+                this.profile = result;
++                copyProfileProperties(result, this.profile, true);
 +            }
++            server.getUserCache().saveProfile(this.profile);
 +        }
 +        return profile.isComplete() && (!isOnlineMode || !textures || hasTextures());
 +    }
 +
 +    private static void copyProfileProperties(GameProfile source, GameProfile target) {
++        copyProfileProperties(source, target, false);
++    }
++
++    private static void copyProfileProperties(GameProfile source, GameProfile target, boolean clearTarget) {
 +        PropertyMap sourceProperties = source.getProperties();
++        PropertyMap targetProperties = target.getProperties();
++        if (clearTarget) targetProperties.clear();
 +        if (sourceProperties.isEmpty()) {
 +            return;
 +        }
-+        PropertyMap properties = target.getProperties();
-+        properties.clear();
 +
 +        for (Property property : sourceProperties.values()) {
-+            properties.put(property.getName(), property);
++            targetProperties.put(property.getName(), property);
 +        }
 +    }
 +
@@ -450,6 +455,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public MinecraftSessionService getMinecraftSessionService() {
          return this.minecraftSessionService;
      }
+diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntitySkull.java
++++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
+@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+     private void f() {
+         // Spigot start
+         GameProfile profile = this.gameProfile;
++        if (profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
+         b(profile, new Predicate<GameProfile>() {
+ 
+             @Override
+@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+             } else if (MinecraftServer.getServer() == null) {
+                 callback.apply(gameprofile);
+             } else {
+-                GameProfile profile = skinCache.getIfPresent(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
++                // Paper start
++                com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(gameprofile);
++                if (sync) {
++                    // might complete by cache, but if not, go ahead and do it now, avoid the code below
++                    paperProfile.complete(true);
++                } else {
++                    paperProfile.completeFromCache();
++                }
++                GameProfile profile = paperProfile.getGameProfile();
++                // Paper end
+                 if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
+                     callback.apply(profile);
+ 
+@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+                     Callable<GameProfile> callable = new Callable<GameProfile>() {
+                         @Override
+                         public GameProfile call() {
+-                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
++                            // Paper start
++                            paperProfile.complete(true);
++                            final GameProfile profile = paperProfile.getGameProfile();
++                            // Paper end
+                             MinecraftServer.getServer().processQueue.add(new Runnable() {
+                                 @Override
+                                 public void run() {
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
@@ -463,6 +510,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
      private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
      private final GameProfileRepository g;
+@@ -0,0 +0,0 @@ public class UserCache {
+         return UserCache.c;
+     }
+ 
++    public void saveProfile(GameProfile gameprofile) { a(gameprofile); } // Paper - OBFHELPER
+     public void a(GameProfile gameprofile) {
+         this.a(gameprofile, (Date) null);
+     }
 @@ -0,0 +0,0 @@ public class UserCache {
          return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
      }
@@ -525,3 +580,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
+@@ -0,0 +0,0 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+     }
+ 
+     private void setProfile(GameProfile profile) {
++        // Paper start
++        com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
++        paperProfile.completeFromCache();
++        profile = paperProfile.getGameProfile();
++        // Paper end
+         this.profile = profile;
+         this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
+     }
