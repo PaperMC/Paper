@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jan Tuck <jan@tuck.dk>
+Date: Mon, 22 Jun 2020 00:29:05 +0200
+Subject: [PATCH] Expose the minecraftkey associated with the biome that is
+ associated with the chunk.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index ec3f560556c3056bdfc11cc6a7eb76420f13abad..787b4c95dda44cc176e9341882516ac6d6f5ae4f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
+ import java.lang.ref.WeakReference;
+ import java.util.Arrays;
+ import java.util.Collection;
+
++import net.minecraft.server.BiomeBase; // Paper
+ import net.minecraft.server.BiomeStorage;
+ import net.minecraft.server.BlockPosition;
+ import net.minecraft.server.Blocks;
+@@ -14,7 +16,9 @@ import net.minecraft.server.EnumSkyBlock;
+ import net.minecraft.server.GameProfileSerializer;
+ import net.minecraft.server.HeightMap;
+ import net.minecraft.server.IBlockData;
++import net.minecraft.server.IRegistry; // Paper
+ import net.minecraft.server.LightEngine;
++import net.minecraft.server.MinecraftKey; // Paper
+ import net.minecraft.server.NBTTagCompound;
+ import net.minecraft.server.NibbleArray;
+ import net.minecraft.server.SectionPosition;
+@@ -23,6 +27,7 @@ import net.minecraft.server.WorldChunkManager;
+ import net.minecraft.server.WorldServer;
+ import org.bukkit.Chunk;
+ import org.bukkit.ChunkSnapshot;
++import org.bukkit.NamespacedKey; // Paper
+ import org.bukkit.World;
+ import org.bukkit.block.Block;
+ import org.bukkit.block.BlockState;
+@@ -235,6 +240,23 @@ public class CraftChunk implements Chunk {
+         return false;
+     }
+ 
++    // Paper - Start
++    @Override
++    public NamespacedKey getMinecraftKey() {
++        net.minecraft.server.Chunk chunk = weakChunk.get();
++        if (chunk == null)
++            return null;
++        BiomeStorage biomeStorage = chunk.getBiomeIndex();
++        if (biomeStorage == null)
++            return null;
++        BiomeBase biomeBase = biomeStorage.getBiome(0, 0,0);
++        MinecraftKey minecraftKey = IRegistry.BIOME.getKey(biomeBase);
++        if (minecraftKey == null)
++            return null;
++        return NamespacedKey.minecraft(minecraftKey.getKey());
++    }
++    // Paper - End
++
+     @Override
+     public ChunkSnapshot getChunkSnapshot() {
+         return getChunkSnapshot(true, false, false);
