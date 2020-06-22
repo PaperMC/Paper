@@ -7,10 +7,10 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f98f4d55b14a59e06fb17a7f7500a2f98cba58a5
+index 0000000000000000000000000000000000000000..676cc44f544715ef375012fa04bdd2d79f79a3aa
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,287 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -20,6 +20,7 @@ index 0000000000000000000000000000000000000000..f98f4d55b14a59e06fb17a7f7500a2f9
 +import com.mojang.authlib.properties.PropertyMap;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.UserCache;
++import org.apache.commons.lang3.Validate;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.spigotmc.SpigotConfig;
 +
@@ -46,6 +47,7 @@ index 0000000000000000000000000000000000000000..f98f4d55b14a59e06fb17a7f7500a2f9
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
++        Validate.notNull(profile, "GameProfile cannot be null!");
 +        this.profile = profile;
 +    }
 +
@@ -456,14 +458,14 @@ index ed32242bd169e9f28607942aa31aa48a5799b215..54f80cb8e1b771f2a493543e04f8bc83
          return this.minecraftSessionService;
      }
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 177cceb77f8783fe93ba7e4342de9c589f155c1b..e2544aeb5a28fd98a4dc162227276b23a99424fc 100644
+index 177cceb77f8783fe93ba7e4342de9c589f155c1b..27613d2e7d2a0de43b1cd8a45cfcfd5553642561 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -158,6 +158,7 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
      private void f() {
          // Spigot start
          GameProfile profile = this.gameProfile;
-+        if (profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
++        if (profile != null && profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
          b(profile, new Predicate<GameProfile>() {
  
              @Override
@@ -581,17 +583,19 @@ index f01bd38d0b600a69224f610fd77a542ec6d1c322..95f4abddf57eb8c59cb5a5410b8d551d
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 4fb27cc7ed062696239f75b6f85ddb0a31866568..52c8d31590ea8e355395fa95cf690cc3770f5f71 100644
+index 4fb27cc7ed062696239f75b6f85ddb0a31866568..35eda0a03cfec244103cfe4b998f9d2b9322fe69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-@@ -71,6 +71,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -71,6 +71,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
      }
  
      private void setProfile(GameProfile profile) {
 +        // Paper start
-+        com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
-+        paperProfile.completeFromCache();
-+        profile = paperProfile.getGameProfile();
++        if (profile != null) {
++            com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
++            paperProfile.completeFromCache();
++            profile = paperProfile.getGameProfile();
++        }
 +        // Paper end
          this.profile = profile;
          this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
