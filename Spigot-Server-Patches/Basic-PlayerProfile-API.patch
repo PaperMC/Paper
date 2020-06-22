@@ -20,6 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.authlib.properties.PropertyMap;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.UserCache;
++import org.apache.commons.lang3.Validate;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.spigotmc.SpigotConfig;
 +
@@ -46,6 +47,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
++        Validate.notNull(profile, "GameProfile cannot be null!");
 +        this.profile = profile;
 +    }
 +
@@ -463,7 +465,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private void f() {
          // Spigot start
          GameProfile profile = this.gameProfile;
-+        if (profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
++        if (profile != null && profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
          b(profile, new Predicate<GameProfile>() {
  
              @Override
@@ -589,9 +591,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private void setProfile(GameProfile profile) {
 +        // Paper start
-+        com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
-+        paperProfile.completeFromCache();
-+        profile = paperProfile.getGameProfile();
++        if (profile != null) {
++            com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
++            paperProfile.completeFromCache();
++            profile = paperProfile.getGameProfile();
++        }
 +        // Paper end
          this.profile = profile;
          this.serializedProfile = (profile == null) ? null : GameProfileSerializer.serialize(new NBTTagCompound(), profile);
