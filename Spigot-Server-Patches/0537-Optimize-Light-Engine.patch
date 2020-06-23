@@ -38,7 +38,7 @@ index d2207a2c95690de586ab2d181b64955a6d2ea70d..66244a9d0e253b3709df4ae2adcd21e4
          return this.j;
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 81a200ea4c533744890b6e19dd0d83f57351906c..46d62aa414b340a14302e52bb882be08b58fa9a9 100644
+index b6a7e475c6ebe499c641db5967adb1674323a517..75c22a3f4e2df9cf7f2d22cafbde9acce01589e1 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -1090,7 +1090,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -1095,7 +1095,7 @@ index 097f58e9ac3f4096d3b9dad75b6ebe76021fa92c..f744f62c93370d096c113f92ee81a823
                                  lightenginelayer.a(Long.MAX_VALUE, l3, 15, false);
                              }
 diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..604fe85313969bf1ad5b5ef75b46f9a23f79764a 100644
+index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..9ef39f1f51f9960865f6418115b08e8d7de86509 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
 @@ -14,8 +14,98 @@ import org.apache.logging.log4j.Logger;
@@ -1238,7 +1238,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..604fe85313969bf1ad5b5ef75b46f9a2
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
-@@ -155,52 +255,45 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -155,52 +255,51 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
              this.d.c(chunkcoordintpair);
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
@@ -1274,6 +1274,8 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..604fe85313969bf1ad5b5ef75b46f9a2
      }
  
 +    // Paper start - replace impl
++    private final java.util.List<Runnable> pre = new java.util.ArrayList<>();
++    private final java.util.List<Runnable> post = new java.util.ArrayList<>();
      private void b() {
 -        int i = Math.min(this.c.size(), this.f);
 -        ObjectListIterator<Pair<LightEngineThreaded.Update, Runnable>> objectlistiterator = this.c.iterator();
@@ -1286,7 +1288,16 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..604fe85313969bf1ad5b5ef75b46f9a2
 -            if (pair.getFirst() == LightEngineThreaded.Update.PRE_UPDATE) {
 -                ((Runnable) pair.getSecond()).run();
 -            }
--        }
++        int i = Math.min(queue.size(), 4);
++        boolean ran = false;
++        while (i-- > 0 && queue.poll(pre, post)) {
++            pre.forEach(Runnable::run);
++            pre.clear();
++            super.a(Integer.MAX_VALUE, true, true);
++            post.forEach(Runnable::run);
++            post.clear();
++            ran = true;
+         }
 -
 -        objectlistiterator.back(j);
 -        super.a(Integer.MAX_VALUE, true, true);
@@ -1298,15 +1309,9 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..604fe85313969bf1ad5b5ef75b46f9a2
 -            }
 -
 -            objectlistiterator.remove();
-+        java.util.List<Runnable> pre = new java.util.ArrayList<>();
-+        java.util.List<Runnable> post = new java.util.ArrayList<>();
-+        int i = Math.min(queue.size(), 4);
-+        while (i-- > 0 && queue.poll(pre, post)) {
-+            pre.forEach(Runnable::run);
-+            pre.clear();
++        if (!ran) {
++            // might have level updates to go still
 +            super.a(Integer.MAX_VALUE, true, true);
-+            post.forEach(Runnable::run);
-+            post.clear();
          }
 -
 +        // Paper end
