@@ -1274,6 +1274,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start - replace impl
++    private final java.util.List<Runnable> pre = new java.util.ArrayList<>();
++    private final java.util.List<Runnable> post = new java.util.ArrayList<>();
      private void b() {
 -        int i = Math.min(this.c.size(), this.f);
 -        ObjectListIterator<Pair<LightEngineThreaded.Update, Runnable>> objectlistiterator = this.c.iterator();
@@ -1286,7 +1288,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (pair.getFirst() == LightEngineThreaded.Update.PRE_UPDATE) {
 -                ((Runnable) pair.getSecond()).run();
 -            }
--        }
++        int i = Math.min(queue.size(), 4);
++        boolean ran = false;
++        while (i-- > 0 && queue.poll(pre, post)) {
++            pre.forEach(Runnable::run);
++            pre.clear();
++            super.a(Integer.MAX_VALUE, true, true);
++            post.forEach(Runnable::run);
++            post.clear();
++            ran = true;
+         }
 -
 -        objectlistiterator.back(j);
 -        super.a(Integer.MAX_VALUE, true, true);
@@ -1298,15 +1309,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -
 -            objectlistiterator.remove();
-+        java.util.List<Runnable> pre = new java.util.ArrayList<>();
-+        java.util.List<Runnable> post = new java.util.ArrayList<>();
-+        int i = Math.min(queue.size(), 4);
-+        while (i-- > 0 && queue.poll(pre, post)) {
-+            pre.forEach(Runnable::run);
-+            pre.clear();
++        if (!ran) {
++            // might have level updates to go still
 +            super.a(Integer.MAX_VALUE, true, true);
-+            post.forEach(Runnable::run);
-+            post.clear();
          }
 -
 +        // Paper end
