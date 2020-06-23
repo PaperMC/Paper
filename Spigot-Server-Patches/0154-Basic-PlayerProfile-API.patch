@@ -7,10 +7,10 @@ Establishes base extension of profile systems for future edits too
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..676cc44f544715ef375012fa04bdd2d79f79a3aa
+index 0000000000000000000000000000000000000000..00b7630ccb2be7a78ab5471c8e8bdcd5a92209a0
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,287 @@
+@@ -0,0 +1,294 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.destroystokyo.paper.PaperConfig;
@@ -149,18 +149,22 @@ index 0000000000000000000000000000000000000000..676cc44f544715ef375012fa04bdd2d7
 +
 +    @Override
 +    public boolean completeFromCache() {
-+        return completeFromCache(false);
++        MinecraftServer server = MinecraftServer.getServer();
++        return completeFromCache(false, server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode));
 +    }
 +
-+    public boolean completeFromCache(boolean lookupName) {
++    public boolean completeFromCache(boolean onlineMode) {
++        return completeFromCache(false, onlineMode);
++    }
++
++    public boolean completeFromCache(boolean lookupUUID, boolean onlineMode) {
 +        MinecraftServer server = MinecraftServer.getServer();
 +        String name = profile.getName();
 +        UserCache userCache = server.getUserCache();
 +        if (profile.getId() == null) {
 +            final GameProfile profile;
-+            boolean isOnlineMode = server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode);
-+            if (isOnlineMode) {
-+                profile = lookupName ? userCache.getProfile(name) : userCache.getProfileIfCached(name);
++            if (onlineMode) {
++                profile = lookupUUID ? userCache.getProfile(name) : userCache.getProfileIfCached(name);
 +            } else {
 +                // Make an OfflinePlayer using an offline mode UUID since the name has no profile
 +                profile = new GameProfile(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
@@ -185,17 +189,20 @@ index 0000000000000000000000000000000000000000..676cc44f544715ef375012fa04bdd2d7
 +
 +    public boolean complete(boolean textures) {
 +        MinecraftServer server = MinecraftServer.getServer();
++        return complete(textures, server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode));
++    }
++    public boolean complete(boolean textures, boolean onlineMode) {
++        MinecraftServer server = MinecraftServer.getServer();
 +
-+        boolean isOnlineMode = server.getOnlineMode() || (SpigotConfig.bungee && PaperConfig.bungeeOnlineMode);
-+        boolean isCompleteFromCache = this.completeFromCache(true);
-+        if (isOnlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
++        boolean isCompleteFromCache = this.completeFromCache(false, onlineMode);
++        if (onlineMode && (!isCompleteFromCache || textures && !hasTextures())) {
 +            GameProfile result = server.getSessionService().fillProfileProperties(profile, true);
 +            if (result != null) {
 +                copyProfileProperties(result, this.profile, true);
 +            }
 +            server.getUserCache().saveProfile(this.profile);
 +        }
-+        return profile.isComplete() && (!isOnlineMode || !textures || hasTextures());
++        return profile.isComplete() && (!onlineMode || !textures || hasTextures());
 +    }
 +
 +    private static void copyProfileProperties(GameProfile source, GameProfile target) {
@@ -458,7 +465,7 @@ index ed32242bd169e9f28607942aa31aa48a5799b215..54f80cb8e1b771f2a493543e04f8bc83
          return this.minecraftSessionService;
      }
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 177cceb77f8783fe93ba7e4342de9c589f155c1b..27613d2e7d2a0de43b1cd8a45cfcfd5553642561 100644
+index 177cceb77f8783fe93ba7e4342de9c589f155c1b..83faa9dc5f74df4609cab34a66e4feed12990463 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -158,6 +158,7 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
@@ -478,9 +485,9 @@ index 177cceb77f8783fe93ba7e4342de9c589f155c1b..27613d2e7d2a0de43b1cd8a45cfcfd55
 +                com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(gameprofile);
 +                if (sync) {
 +                    // might complete by cache, but if not, go ahead and do it now, avoid the code below
-+                    paperProfile.complete(true);
++                    paperProfile.complete(true, true);
 +                } else {
-+                    paperProfile.completeFromCache();
++                    paperProfile.completeFromCache(false, true);
 +                }
 +                GameProfile profile = paperProfile.getGameProfile();
 +                // Paper end
@@ -493,7 +500,7 @@ index 177cceb77f8783fe93ba7e4342de9c589f155c1b..27613d2e7d2a0de43b1cd8a45cfcfd55
                          public GameProfile call() {
 -                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
 +                            // Paper start
-+                            paperProfile.complete(true);
++                            paperProfile.complete(true, true);
 +                            final GameProfile profile = paperProfile.getGameProfile();
 +                            // Paper end
                              MinecraftServer.getServer().processQueue.add(new Runnable() {
@@ -583,7 +590,7 @@ index f01bd38d0b600a69224f610fd77a542ec6d1c322..95f4abddf57eb8c59cb5a5410b8d551d
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 4fb27cc7ed062696239f75b6f85ddb0a31866568..35eda0a03cfec244103cfe4b998f9d2b9322fe69 100644
+index 4fb27cc7ed062696239f75b6f85ddb0a31866568..c31011ff91f4ea8368e3afbc5ec07eff84e93fe2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 @@ -71,6 +71,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
@@ -593,7 +600,7 @@ index 4fb27cc7ed062696239f75b6f85ddb0a31866568..35eda0a03cfec244103cfe4b998f9d2b
 +        // Paper start
 +        if (profile != null) {
 +            com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(profile);
-+            paperProfile.completeFromCache();
++            paperProfile.completeFromCache(false, true);
 +            profile = paperProfile.getGameProfile();
 +        }
 +        // Paper end
