@@ -111,6 +111,20 @@ public interface AbstractArrow extends Projectile {
     public void setPickupStatus(@NotNull PickupStatus status);
 
     /**
+     * Gets if this arrow was shot from a crossbow.
+     *
+     * @return if shot from a crossbow
+     */
+    public boolean isShotFromCrossbow();
+
+    /**
+     * Sets if this arrow was shot from a crossbow.
+     *
+     * @param shotFromCrossbow if shot from a crossbow
+     */
+    public void setShotFromCrossbow(boolean shotFromCrossbow);
+
+    /**
      * Represents the pickup status of this arrow.
      */
     public enum PickupStatus {
