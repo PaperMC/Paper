@@ -42,7 +42,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
         if (tileEntity instanceof BeaconBlockEntity) {
             BeaconBlockEntity beacon = (BeaconBlockEntity) tileEntity;
 
-            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels);
+            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper - Custom beacon ranges
             Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
 
             for (Player human : nms) {
@@ -145,4 +145,21 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
     public CraftBeacon copy(Location location) {
         return new CraftBeacon(this, location);
     }
+
+    // Paper start
+    @Override
+    public double getEffectRange() {
+        return this.getSnapshot().getEffectRange();
+    }
+
+    @Override
+    public void setEffectRange(double range) {
+        this.getSnapshot().setEffectRange(range);
+    }
+
+    @Override
+    public void resetEffectRange() {
+        this.getSnapshot().resetEffectRange();
+    }
+    // Paper end
 }
