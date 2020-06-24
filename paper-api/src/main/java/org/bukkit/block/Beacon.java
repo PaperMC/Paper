@@ -64,4 +64,26 @@ public interface Beacon extends TileState, Lockable, Nameable {
      * @param effect desired secondary effect
      */
     void setSecondaryEffect(@Nullable PotionEffectType effect);
+
+    // Paper start - Custom effect ranges
+    /**
+     * Gets the effect range of this beacon.
+     * A negative range value means the beacon is using its default range based on tier.
+     * @return Either the custom range set with {@link #setEffectRange(double)} or the range based on the beacon tier.
+     */
+    double getEffectRange();
+
+    /**
+     * Sets the effect range of the beacon
+     * A negative range value means the beacon is using its default range based on tier.
+     * @param range Radius of effect range.
+     */
+    void setEffectRange(double range);
+
+    /**
+     * Resets the custom range from this beacon and falls back to the range based on the beacon tier.
+     * Shortcut for setting the effect range to a negative number.
+     */
+    void resetEffectRange();
+    // Paper end
 }
