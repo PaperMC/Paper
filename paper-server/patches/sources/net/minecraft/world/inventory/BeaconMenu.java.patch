@@ -43,18 +43,35 @@
          return stillValid(this.access, player, Blocks.BEACON);
      }
  
-@@ -150,8 +159,8 @@
+@@ -148,12 +157,25 @@
+         return BeaconMenu.decodeEffect(this.beaconData.get(2));
+     }
  
++    // Paper start - Add PlayerChangeBeaconEffectEvent
++    private static @Nullable org.bukkit.potion.PotionEffectType convert(Optional<Holder<MobEffect>> optionalEffect) {
++        return optionalEffect.map(org.bukkit.craftbukkit.potion.CraftPotionEffectType::minecraftHolderToBukkit).orElse(null);
++    }
++    // Paper end - Add PlayerChangeBeaconEffectEvent
++
      public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) {
          if (this.paymentSlot.hasItem()) {
 -            this.beaconData.set(1, BeaconMenu.encodeEffect((Holder) primary.orElse((Object) null)));
 -            this.beaconData.set(2, BeaconMenu.encodeEffect((Holder) secondary.orElse((Object) null)));
-+            this.beaconData.set(1, BeaconMenu.encodeEffect((Holder) primary.orElse(null)));// CraftBukkit - decompile error
-+            this.beaconData.set(2, BeaconMenu.encodeEffect((Holder) secondary.orElse(null)));// CraftBukkit - decompile error
++            // Paper start - Add PlayerChangeBeaconEffectEvent
++            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
++            if (event.callEvent()) {
++                // Paper end - Add PlayerChangeBeaconEffectEvent
++                this.beaconData.set(1, BeaconMenu.encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getPrimary())));// CraftBukkit - decompile error
++                this.beaconData.set(2, BeaconMenu.encodeEffect(event.getSecondary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getSecondary())));// CraftBukkit - decompile error
++            if (event.willConsumeItem()) { // Paper
              this.paymentSlot.remove(1);
++            } // Paper
              this.access.execute(Level::blockEntityChanged);
++            } // Paper end - Add PlayerChangeBeaconEffectEvent
          }
-@@ -178,4 +187,17 @@
+ 
+     }
+@@ -178,4 +200,17 @@
              return 1;
          }
      }
