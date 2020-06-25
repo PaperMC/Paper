@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 12 Sep 2018 21:47:01 -0400
+Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
+
+Uses an EnumMap as well as a Set paired List for O(1) contains calls.
+
+diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+index ae0ac8d383ca11a683465d8c83a8b8a66e567079..4c656f434f2637a6af4cdb9efe3414de81e4ea9b 100644
+--- a/src/main/java/net/minecraft/server/BiomeBase.java
++++ b/src/main/java/net/minecraft/server/BiomeBase.java
+@@ -69,7 +69,7 @@ public class BiomeBase {
+     protected final Map<WorldGenStage.Decoration, List<WorldGenFeatureConfigured<?, ?>>> r;
+     protected final List<WorldGenFeatureConfigured<?, ?>> s = Lists.newArrayList();
+     private final Map<StructureGenerator<?>, StructureFeature<?, ?>> u;
+-    private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> v;
++    private final Map<EnumCreatureType, List<BiomeBase.BiomeMeta>> v = Maps.newEnumMap(EnumCreatureType.class); // Paper
+     private final Map<EntityTypes<?>, BiomeBase.e> w = Maps.newHashMap();
+     private final List<BiomeBase.d> x;
+     private final ThreadLocal<Long2FloatLinkedOpenHashMap> y = ThreadLocal.withInitial(() -> {
+@@ -127,7 +127,7 @@ public class BiomeBase {
+             for (j = 0; j < i; ++j) {
+                 EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
+ 
+-                this.v.put(enumcreaturetype, Lists.newArrayList());
++                this.v.put(enumcreaturetype, new MobList()); // Paper
+             }
+ 
+         } else {
+@@ -433,6 +433,38 @@ public class BiomeBase {
+         return this.l;
+     }
+ 
++    // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++    public static class MobList extends java.util.ArrayList<BiomeMeta> {
++        java.util.Set<BiomeMeta> biomes = new java.util.HashSet<>();
++
++        @Override
++        public boolean contains(Object o) {
++            return biomes.contains(o);
++        }
++
++        @Override
++        public boolean add(BiomeMeta biomeMeta) {
++            biomes.add(biomeMeta);
++            return super.add(biomeMeta);
++        }
++
++        @Override
++        public BiomeMeta remove(int index) {
++            BiomeMeta removed = super.remove(index);
++            if (removed != null) {
++                biomes.remove(removed);
++            }
++            return removed;
++        }
++
++        @Override
++        public void clear() {
++            biomes.clear();
++            super.clear();
++        }
++    }
++    // Paper end
++
+     public static class d {
+ 
+         public static final Codec<BiomeBase.d> a = RecordCodecBuilder.create((instance) -> {

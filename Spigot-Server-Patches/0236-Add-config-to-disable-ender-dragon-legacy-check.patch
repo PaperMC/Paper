@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 22 Jun 2018 10:38:31 -0500
+Subject: [PATCH] Add config to disable ender dragon legacy check
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 33ce9a500430a01650e69a3568c8b03db325a936..cea15d50ed89430ee8d8cff9de21e1fc7982e1d8 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -372,4 +372,9 @@ public class PaperWorldConfig {
+     private void shieldBlockingDelay() {
+         shieldBlockingDelay = getInt("game-mechanics.shield-blocking-delay", 5);
+     }
++
++    public boolean scanForLegacyEnderDragon = true;
++    private void scanForLegacyEnderDragon() {
++        scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 87ddabbbca4ac8444ad6ff69889d7fd0542045d4..785146bfb64fe1a467120d706aff7450cb9a8b96 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -28,10 +28,10 @@ public class EnderDragonBattle {
+     private int h;
+     private int i;
+     private int j;
+-    private boolean dragonKilled;
++    private boolean dragonKilled; private void setDragonKilled(boolean dragonKilled) { this.dragonKilled = dragonKilled; } // Paper - OBFHELPER
+     private boolean previouslyKilled;
+     public UUID dragonUUID;
+-    private boolean n;
++    private boolean n; private void setScanForLegacyFight(boolean scanForLegacyFight) { this.n = scanForLegacyFight; } private boolean scanForLegacyFight() { return this.n; } // Paper - OBFHELPER
+     public BlockPosition exitPortalLocation;
+     public EnumDragonRespawn respawnPhase;
+     private int q;
+@@ -41,6 +41,10 @@ public class EnderDragonBattle {
+         this.bossBattle = (BossBattleServer) (new BossBattleServer(new ChatMessage("entity.minecraft.ender_dragon"), BossBattle.BarColor.PINK, BossBattle.BarStyle.PROGRESS)).setPlayMusic(true).c(true);
+         this.gateways = Lists.newArrayList();
+         this.n = true;
++        // Paper start
++        setScanForLegacyFight(worldserver.paperConfig.scanForLegacyEnderDragon);
++        if (!scanForLegacyFight()) setDragonKilled(true);
++        // Paper end
+         this.world = worldserver;
+         if (nbttagcompound.hasKeyOfType("DragonKilled", 99)) {
+             if (nbttagcompound.b("Dragon")) {
