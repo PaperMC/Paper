@@ -12,6 +12,16 @@ public class CraftPiglin extends CraftMonster implements Piglin {
     }
 
     @Override
+    public boolean isBaby() {
+        return getHandle().isBaby();
+    }
+
+    @Override
+    public void setBaby(boolean flag) {
+        getHandle().a(flag);
+    }
+
+    @Override
     public EntityPiglin getHandle() {
         return (EntityPiglin) super.getHandle();
     }
