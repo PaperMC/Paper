@@ -21,9 +21,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
                      double d5 = j >= 3 ? nbttaglist.h(2) : (double) blockposition.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
  
-                     if (world.a(((EntityTypes) optional.get()).a(d3, d4, d5)) && EntityPositionTypes.a((EntityTypes) optional.get(), world.getMinecraftWorld(), EnumMobSpawn.SPAWNER, new BlockPosition(d3, d4, d5), world.getRandom())) {
+                     if (world.b(((EntityTypes) optional.get()).a(d3, d4, d5)) && EntityPositionTypes.a((EntityTypes) optional.get(), world.getMinecraftWorld(), EnumMobSpawn.SPAWNER, new BlockPosition(d3, d4, d5), world.getRandom())) {
 +                        // Paper start
-+                        EntityTypes entityType = optional.get();
++                        EntityTypes<?> entityType = optional.get();
 +                        String key = EntityTypes.getName(entityType).getKey();
 +
 +                        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(key);
@@ -51,37 +51,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
-                     BiomeBase.BiomeMeta biomebase_biomemeta = null;
-                     GroupDataEntity groupdataentity = null;
-                     int l1 = MathHelper.f(Math.random() * 4.0D);
--                    int i2 = 0;
-+                    int i2 = 0; // Paper - force diff on name change
-                     int j2 = 0;
+                                         j1 = biomebase_biomemeta.d + worldserver.random.nextInt(1 + biomebase_biomemeta.e - biomebase_biomemeta.d);
+                                     }
  
-                     while (true) {
+-                                    if (a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomebase_biomemeta, blockposition_mutableblockposition, d2) && spawnercreature_c.test(biomebase_biomemeta.c, blockposition_mutableblockposition, ichunkaccess)) {
++                                    // Paper start
++                                    Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomebase_biomemeta, blockposition_mutableblockposition, d2);
++                                    if (doSpawning == null) {
++                                        return;
++                                    }
++                                    if (doSpawning.booleanValue() && spawnercreature_c.test(biomebase_biomemeta.c, blockposition_mutableblockposition, ichunkaccess)) { // Paper end
+                                         EntityInsentient entityinsentient = a(worldserver, biomebase_biomemeta.c);
+ 
+                                         if (entityinsentient == null) {
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
-                                                     if (a(entitypositiontypes_surface, (IWorldReader) worldserver, (BlockPosition) blockposition_mutableblockposition, entitytypes) && EntityPositionTypes.a(entitytypes, worldserver, EnumMobSpawn.NATURAL, blockposition_mutableblockposition, worldserver.random) && worldserver.a(entitytypes.a((double) f, (double) k, (double) f1))) {
-                                                         EntityInsentient entityinsentient;
+         }
+     }
  
-+                                                    // Paper start
-+                                                    com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                                                    EntityTypes<?> cls = biomebase_biomemeta.b;
-+                                                    org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(cls).getKey());
-+                                                    if (type != null) {
-+                                                        event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                                                            MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
-+                                                            type, SpawnReason.NATURAL
-+                                                        );
-+                                                        if (!event.callEvent()) {
-+                                                            if (event.shouldAbortSpawn()) {
-+                                                                return;
-+                                                            }
-+                                                            ++i2;
-+                                                            continue;
-+                                                        }
-+                                                    }
-+                                                    // Paper end
-+
-                                                         try {
-                                                             Entity entity = entitytypes.a((World) worldserver);
+-    private static boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) {
++    private static Boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) { // Paper
+         EntityTypes<?> entitytypes = biomebase_biomemeta.c;
++        // Paper start
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(entitytypes).getKey());
++        if (type != null) {
++            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
++                type, SpawnReason.NATURAL
++            );
++            if (!event.callEvent()) {
++                if (event.shouldAbortSpawn()) {
++                    return null;
++                }
++                return false; // TODO is this handled correctly?
++            }
++        }
++        // Paper end
  
+         if (entitytypes.e() == EnumCreatureType.MISC) {
+             return false;

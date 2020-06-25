@@ -46,19 +46,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
 +        if (!event.isHandled()) {
 +            if (!event.isCancelled()) {
-+                // Paper end - async tab completion
-+                this.minecraftServer.scheduleOnMain(() -> { // Paper - This needs to be on main
-+            ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
  
-         this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
-             if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
+-        this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-            if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestions));
 -        });
-+                this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
-+            });
-+        }); // Paper - This needs to be on main
++                this.minecraftServer.scheduleOnMain(() -> { // Paper - This needs to be on main
++                    ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
++
++                    this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
++                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
++                        this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestions));
++                    });
++                });
 +            }
-+        // Paper start - async tab completion
 +        } else if (!completions.isEmpty()) {
 +            com.mojang.brigadier.suggestion.SuggestionsBuilder builder = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packetplayintabcomplete.c(), stringreader.getTotalLength());
 +
@@ -67,7 +68,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), builder.buildFuture().join()));
 +        }
 +        // Paper end - async tab completion
-+
      }
  
      @Override

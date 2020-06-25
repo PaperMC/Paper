@@ -45,6 +45,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -        if (i - this.lastKeepAlive >= 25000L) { // CraftBukkit
 -            if (this.awaitingKeepAlive) {
+-                this.disconnect(new ChatMessage("disconnect.timeout"));
+-            } else {
+-                this.awaitingKeepAlive = true;
+-                this.lastKeepAlive = i;
+-                this.h = i;
+-                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
 +        // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
 +        long currentTime = SystemUtils.getMonotonicMillis();
@@ -53,12 +59,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.isPendingPing()) {
 +            if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                PlayerConnection.LOGGER.warn("{} was kicked due to keepalive timeout!", this.player.getName()); // more info
-                 this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
--            } else {
--                this.awaitingKeepAlive = true;
--                this.lastKeepAlive = i;
--                this.h = i;
--                this.sendPacket(new PacketPlayOutKeepAlive(this.h));
++                this.disconnect(new ChatMessage("disconnect.timeout", new Object[0]));
 +            }
 +        } else {
 +            if (elapsedTime >= 15000L) { // 15 seconds
@@ -66,7 +67,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.setLastPing(currentTime);
 +                this.setKeepAliveID(currentTime);
 +                this.sendPacket(new PacketPlayOutKeepAlive(this.getKeepAliveID()));
-+
              }
          }
 +        // Paper end
