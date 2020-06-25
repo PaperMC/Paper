@@ -372,9 +372,11 @@
 +        if (this.isSleeping()) return this; // CraftBukkit - SPIGOT-3154
 +        // this.worldChangeInvuln = true; // CraftBukkit - Moved down and into PlayerList#changeDimension
          WorldServer worldserver1 = this.getWorldServer();
-         ResourceKey<World> resourcekey = worldserver1.getDimensionKey();
+-        ResourceKey<World> resourcekey = worldserver1.getDimensionKey();
++        ResourceKey<DimensionManager> resourcekey = worldserver1.getTypeKey(); // CraftBukkit
  
-         if (resourcekey == World.THE_END && worldserver.getDimensionKey() == World.OVERWORLD) {
+-        if (resourcekey == World.THE_END && worldserver.getDimensionKey() == World.OVERWORLD) {
++        if (resourcekey == DimensionManager.THE_END && worldserver.getTypeKey() == DimensionManager.OVERWORLD) { // CraftBukkit
 +            this.worldChangeInvuln = true; // CraftBukkit - Moved down from above
              this.decouple();
              this.getWorldServer().removePlayer(this);
@@ -397,13 +399,24 @@
              double d0 = this.locX();
              double d1 = this.locY();
              double d2 = this.locZ();
-@@ -567,6 +777,7 @@
+@@ -567,7 +777,8 @@
              worldserver1.getMethodProfiler().enter("moving");
              double d3;
  
+-            if (worldserver.getDimensionKey() == World.THE_END) {
 +            if (worldserver == null) { } else // CraftBukkit - empty to fall through to null to event
-             if (worldserver.getDimensionKey() == World.THE_END) {
++            if (worldserver.getTypeKey() == DimensionManager.THE_END) { // CraftBukkit
                  BlockPosition blockposition = WorldServer.a;
+ 
+                 d0 = (double) blockposition.getX();
+@@ -576,7 +787,7 @@
+                 f1 = 90.0F;
+                 f = 0.0F;
+             } else {
+-                if (resourcekey == World.OVERWORLD && worldserver.getDimensionKey() == World.THE_NETHER) {
++                if (resourcekey == DimensionManager.OVERWORLD && worldserver.getTypeKey() == DimensionManager.THE_NETHER) { // CraftBukkit
+                     this.cp = this.getPositionVector();
+                 }
  
 @@ -593,7 +804,26 @@
                  }
@@ -413,7 +426,7 @@
 +            // CraftBukkit start
 +            Location enter = this.getBukkitEntity().getLocation();
 +            Location exit = (worldserver == null) ? null : new Location(worldserver.getWorld(), d0, d1, d2, f1, f);
-+            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, resourcekey == World.THE_END ? 0 : 16);
++            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, resourcekey == DimensionManager.THE_END ? 0 : 16);
 +            Bukkit.getServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled() || event.getTo() == null) {
 +                return null;
@@ -438,11 +451,7 @@
              d0 = MathHelper.a(d0, d4, d5);
              d2 = MathHelper.a(d2, d3, d6);
 -            this.setPositionRotation(d0, d1, d2, f1, f);
-+            // this.setPositionRotation(d0, d1, d2, f1, f); // CraftBukkit - PlayerTeleportEvent handles position changes
-+            // CraftBukkit start - PlayerPortalEvent implementation
-+            Vec3D exitVelocity = Vec3D.a;
-+            BlockPosition exitPosition = new BlockPosition(d0, d1, d2);
-             if (worldserver.getDimensionKey() == World.THE_END) {
+-            if (worldserver.getDimensionKey() == World.THE_END) {
 -                int i = MathHelper.floor(this.locX());
 -                int j = MathHelper.floor(this.locY()) - 1;
 -                int k = MathHelper.floor(this.locZ());
@@ -453,6 +462,11 @@
 -            } else if (!worldserver.getTravelAgent().findAndTeleport(this, f2)) {
 -                worldserver.getTravelAgent().createPortal(this);
 -                worldserver.getTravelAgent().findAndTeleport(this, f2);
++            // this.setPositionRotation(d0, d1, d2, f1, f); // CraftBukkit - PlayerTeleportEvent handles position changes
++            // CraftBukkit start - PlayerPortalEvent implementation
++            Vec3D exitVelocity = Vec3D.a;
++            BlockPosition exitPosition = new BlockPosition(d0, d1, d2);
++            if (worldserver.getTypeKey() == DimensionManager.THE_END) { // CraftBukkit
 +                int i = exitPosition.getX();
 +                int j = exitPosition.getY() - 1;
 +                int k = exitPosition.getZ();
