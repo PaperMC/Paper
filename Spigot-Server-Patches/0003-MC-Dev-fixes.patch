@@ -50,65 +50,154 @@ index a3afe60b0d85cf90bf7a170dc0a0b61a796381a7..85f799a713db0c822d46b689010f9f6b
              System.arraycopy(this.b, 0, au, 0, this.c);
              if (au.length > this.c) {
 diff --git a/src/main/java/net/minecraft/server/BehaviorFindPosition.java b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-index 37006ec1bbb8fa285257edacdf337591595852a2..35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b 100644
+index 84a872dfd35249972129130083d51d71d75bff1e..b4976b9e00e631c1431543c0cb2064e153f3a2ef 100644
 --- a/src/main/java/net/minecraft/server/BehaviorFindPosition.java
 +++ b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-@@ -53,7 +53,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
-                 villageplace.a(this.a.c(), (blockposition1) -> {
+@@ -81,7 +81,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+                 villageplace.a(this.b.c(), (blockposition1) -> {
                      return blockposition1.equals(blockposition);
                  }, blockposition, 1);
--                entitycreature.getBehaviorController().setMemory(this.b, (Object) GlobalPos.create(worldserver.getWorldProvider().getDimensionManager(), blockposition));
-+                entitycreature.getBehaviorController().setMemory(this.b, GlobalPos.create(worldserver.getWorldProvider().getDimensionManager(), blockposition));
+-                entitycreature.getBehaviorController().setMemory(this.c, (Object) GlobalPos.create(worldserver.getDimensionKey(), blockposition));
++                entitycreature.getBehaviorController().setMemory(this.c, GlobalPos.create(worldserver.getDimensionKey(), blockposition)); // Paper - decompile fix
+                 this.f.clear();
                  PacketDebug.c(worldserver, blockposition);
              });
-         } else if (this.f < 5) {
 diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
-index 960dce23072bbb5fad36760677f0fe2efb661552..253890e53702f9ba1c6628cc860a4ca10756626a 100644
+index 6c2ed9c1b8567abcdb11bdc3dbaeed217a2f61e7..ae0ac8d383ca11a683465d8c83a8b8a66e567079 100644
 --- a/src/main/java/net/minecraft/server/BiomeBase.java
 +++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -54,7 +54,7 @@ public abstract class BiomeBase {
+@@ -26,76 +26,31 @@ import org.apache.logging.log4j.Logger;
+ public class BiomeBase {
+ 
+     public static final Logger LOGGER = LogManager.getLogger();
+-    public static final Codec<BiomeBase> b = RecordCodecBuilder.create((instance) -> {
+-        RecordCodecBuilder recordcodecbuilder = BiomeBase.Precipitation.d.fieldOf("precipitation").forGetter((biomebase) -> {
+-            return biomebase.o;
+-        });
+-        RecordCodecBuilder recordcodecbuilder1 = BiomeBase.Geography.r.fieldOf("category").forGetter((biomebase) -> {
+-            return biomebase.n;
+-        });
+-        RecordCodecBuilder recordcodecbuilder2 = Codec.FLOAT.fieldOf("depth").forGetter((biomebase) -> {
+-            return biomebase.h;
+-        });
+-        RecordCodecBuilder recordcodecbuilder3 = Codec.FLOAT.fieldOf("scale").forGetter((biomebase) -> {
+-            return biomebase.i;
+-        });
+-        RecordCodecBuilder recordcodecbuilder4 = Codec.FLOAT.fieldOf("temperature").forGetter((biomebase) -> {
+-            return biomebase.j;
+-        });
+-        RecordCodecBuilder recordcodecbuilder5 = Codec.FLOAT.fieldOf("downfall").forGetter((biomebase) -> {
+-            return biomebase.k;
+-        });
+-        RecordCodecBuilder recordcodecbuilder6 = BiomeFog.a.fieldOf("effects").forGetter((biomebase) -> {
+-            return biomebase.p;
+-        });
+-        RecordCodecBuilder recordcodecbuilder7 = Codec.INT.fieldOf("sky_color").forGetter((biomebase) -> {
+-            return biomebase.t;
+-        });
+-        RecordCodecBuilder recordcodecbuilder8 = WorldGenSurfaceComposite.a.fieldOf("surface_builder").forGetter((biomebase) -> {
+-            return biomebase.m;
+-        });
+-        Codec codec = WorldGenStage.Features.c;
+-        Codec codec1 = WorldGenCarverWrapper.a.listOf();
+-        Logger logger = BiomeBase.LOGGER;
+-
+-        logger.getClass();
+-        RecordCodecBuilder recordcodecbuilder9 = Codec.simpleMap(codec, codec1.promotePartial(SystemUtils.a("Carver: ", logger::error)), INamable.a(WorldGenStage.Features.values())).fieldOf("carvers").forGetter((biomebase) -> {
+-            return biomebase.q;
+-        });
+-
+-        codec1 = WorldGenStage.Decoration.k;
+-        Codec codec2 = WorldGenFeatureConfigured.b.listOf();
+-        Logger logger1 = BiomeBase.LOGGER;
+-
+-        logger1.getClass();
+-        RecordCodecBuilder recordcodecbuilder10 = Codec.simpleMap(codec1, codec2.promotePartial(SystemUtils.a("Feature: ", logger1::error)), INamable.a(WorldGenStage.Decoration.values())).fieldOf("features").forGetter((biomebase) -> {
+-            return biomebase.r;
+-        });
+-
+-        codec2 = StructureFeature.a.listOf();
+-        logger1 = BiomeBase.LOGGER;
+-        logger1.getClass();
+-        RecordCodecBuilder recordcodecbuilder11 = codec2.promotePartial(SystemUtils.a("Structure start: ", logger1::error)).fieldOf("starts").forGetter((biomebase) -> {
+-            return (List) biomebase.u.values().stream().sorted(Comparator.comparing((structurefeature) -> {
+-                return IRegistry.STRUCTURE_FEATURE.getKey(structurefeature.b);
+-            })).collect(Collectors.toList());
+-        });
+-        Codec codec3 = EnumCreatureType.g;
+-        Codec codec4 = BiomeBase.BiomeMeta.b.listOf();
+-        Logger logger2 = BiomeBase.LOGGER;
+-
+-        logger2.getClass();
+-        return instance.group(recordcodecbuilder, recordcodecbuilder1, recordcodecbuilder2, recordcodecbuilder3, recordcodecbuilder4, recordcodecbuilder5, recordcodecbuilder6, recordcodecbuilder7, recordcodecbuilder8, recordcodecbuilder9, recordcodecbuilder10, recordcodecbuilder11, Codec.simpleMap(codec3, codec4.promotePartial(SystemUtils.a("Spawn data: ", logger2::error)), INamable.a(EnumCreatureType.values())).fieldOf("spawners").forGetter((biomebase) -> {
+-            return biomebase.v;
+-        }), BiomeBase.d.a.listOf().fieldOf("climate_parameters").forGetter((biomebase) -> {
+-            return biomebase.x;
+-        }), Codec.STRING.optionalFieldOf("parent").forGetter((biomebase) -> {
+-            return Optional.ofNullable(biomebase.l);
+-        })).apply(instance, BiomeBase::new);
++    // Paper decompile error - Spigots stupid decompiler
++    public static final Codec<BiomeBase> b = RecordCodecBuilder.create(i -> {
++        Codec k1 = WorldGenStage.Decoration.k; // Erase type - WorldGenstage.Decoration has wrong type
++        return i.group(
++            Precipitation.d.fieldOf("precipitation").forGetter(biome -> biome.o),
++            Geography.r.fieldOf("category").forGetter(biome -> biome.n),
++            Codec.FLOAT.fieldOf("depth").forGetter(biome -> biome.h),
++            Codec.FLOAT.fieldOf("scale").forGetter(biome -> biome.i),
++            Codec.FLOAT.fieldOf("temperature").forGetter(biome -> biome.j),
++            Codec.FLOAT.fieldOf("downfall").forGetter(biome -> biome.k),
++            BiomeFog.a.fieldOf("effects").forGetter(biome -> biome.p),
++            Codec.INT.fieldOf("sky_color").forGetter(biome -> biome.t),
++            WorldGenSurfaceComposite.a.fieldOf("surface_builder").forGetter(biome -> biome.m),
++            Codec.simpleMap(WorldGenStage.Features.c, WorldGenCarverWrapper.a.listOf().promotePartial(SystemUtils.a("Carver: ", LOGGER::error)), INamable.a(WorldGenStage.Features.values())).fieldOf("carvers").forGetter(biome -> biome.q),
++            Codec.simpleMap((Codec<WorldGenStage.Decoration>) k1, WorldGenFeatureConfigured.b.listOf().promotePartial(SystemUtils.a("Feature: ", LOGGER::error)), INamable.a(WorldGenStage.Decoration.values())).fieldOf("features").forGetter(biome -> biome.r),
++            StructureFeature.a.listOf().promotePartial(SystemUtils.a("Structure start: ", LOGGER::error)).fieldOf("starts").forGetter(biome -> biome.u.values().stream().sorted(Comparator.comparing(cf -> IRegistry.STRUCTURE_FEATURE.getKey(cf.b))).collect(Collectors.toList())),
++            Codec.simpleMap(EnumCreatureType.g, BiomeMeta.b.listOf().promotePartial(SystemUtils.a("Spawn data: ", LOGGER::error)), INamable.a(EnumCreatureType.values())).fieldOf("spawners").forGetter(biome -> biome.v),
++            d.a.listOf().fieldOf("climate_parameters").forGetter(biome -> biome.x),
++            Codec.STRING.optionalFieldOf("parent").forGetter(biome -> Optional.ofNullable(biome.l))
++        ).apply(i, BiomeBase::new);
++        // Paper end
+     });
+     public static final Set<BiomeBase> c = Sets.newHashSet();
+-    public static final RegistryBlockID<BiomeBase> d = new RegistryBlockID<>();
+-    protected static final NoiseGenerator3 e = new NoiseGenerator3(new SeededRandom(1234L), ImmutableList.of(0));
++    public static final RegistryBlockID<BiomeBase> reg = new RegistryBlockID<>(); // Paper - decompile error - rename
++    protected static final NoiseGenerator3 NOISE_GENERATOR_3 = new NoiseGenerator3(new SeededRandom(1234L), ImmutableList.of(0)); // Paper - decompile error - rename
+     public static final NoiseGenerator3 f = new NoiseGenerator3(new SeededRandom(2345L), ImmutableList.of(0));
+     @Nullable
+     protected String g;
+@@ -130,7 +85,7 @@ public class BiomeBase {
  
      @Nullable
      public static BiomeBase a(BiomeBase biomebase) {
--        return (BiomeBase) BiomeBase.c.fromId(IRegistry.BIOME.a((Object) biomebase));
-+        return (BiomeBase) BiomeBase.c.fromId(IRegistry.BIOME.a(biomebase)); // Paper - decompile fix
+-        return (BiomeBase) BiomeBase.d.fromId(IRegistry.BIOME.a((Object) biomebase));
++        return (BiomeBase) BiomeBase.reg.fromId(IRegistry.BIOME.a(biomebase)); // Paper - decompile fix / rename
      }
  
      public static <C extends WorldGenCarverConfiguration> WorldGenCarverWrapper<C> a(WorldGenCarverAbstract<C> worldgencarverabstract, C c0) {
-@@ -236,7 +236,7 @@ public abstract class BiomeBase {
+@@ -197,7 +152,7 @@ public class BiomeBase {
+         }, Function.identity()));
+         this.v = map2;
+         this.x = list1;
+-        this.l = (String) optional.orElse((Object) null);
++        this.l = (String) optional.orElse(null); // Paper - decompile fix
+         Stream stream = map1.values().stream().flatMap(Collection::stream).filter((worldgenfeatureconfigured) -> {
+             return worldgenfeatureconfigured.d == WorldGenerator.DECORATED_FLOWER;
+         });
+@@ -250,7 +205,7 @@ public class BiomeBase {
  
-     @Nullable
-     public <C extends WorldGenFeatureConfiguration> C b(StructureGenerator<C> structuregenerator) {
--        return (WorldGenFeatureConfiguration) this.t.get(structuregenerator);
-+        return (C) this.t.get(structuregenerator); // Paper - decompile fix
-     }
+     protected float a(BlockPosition blockposition) {
+         if (blockposition.getY() > 64) {
+-            float f = (float) (BiomeBase.e.a((double) ((float) blockposition.getX() / 8.0F), (double) ((float) blockposition.getZ() / 8.0F), false) * 4.0D);
++            float f = (float) (BiomeBase.NOISE_GENERATOR_3.a((double) ((float) blockposition.getX() / 8.0F), (double) ((float) blockposition.getZ() / 8.0F), false) * 4.0D); // Paper - decompile error - rename
  
-     public List<WorldGenFeatureConfigured<?, ?>> g() {
-diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index e40f9c153b4f1f8f11ea467e6bd8e670959282d6..c88a62f6b72a8851b95587bb49c898569d74e0c6 100644
---- a/src/main/java/net/minecraft/server/BlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -57,12 +57,12 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         OfInt ofint = dynamic.asIntStream().spliterator();
-         int[] aint = new int[3];
- 
--        if (ofint.tryAdvance((i) -> {
-+        if (ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decomile fix
-             aint[0] = i;
--        }) && ofint.tryAdvance((i) -> {
-+        }) && ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decompile fix
-             aint[1] = i;
-         })) {
--            ofint.tryAdvance((i) -> {
-+            ofint.tryAdvance((Consumer<? super Integer>) (i) -> { // Paper - decompile fix
-                 aint[2] = i;
-             });
-         }
+             return this.getTemperature() - (f + (float) blockposition.getY() - 64.0F) * 0.05F / 30.0F;
+         } else {
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 28cfbaae287653d21e06f0017396b937e99fc3ad..1486d460c8ec3d117b4dc3d28b2c3f1b632e187b 100644
+index 771841e08591955e61c7bcc5b09c8457652c1b9c..8162c11d14b8e88c2b572f9ddf6b7a15977047f8 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
-@@ -20,10 +20,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+@@ -20,10 +20,10 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends IBlockState<T>
      protected BlockStateEnum(String s, Class<T> oclass, Collection<T> collection) {
          super(s, oclass);
          this.a = ImmutableSet.copyOf(collection);
@@ -122,10 +211,10 @@ index 28cfbaae287653d21e06f0017396b937e99fc3ad..1486d460c8ec3d117b4dc3d28b2c3f1b
  
              if (this.b.containsKey(s1)) {
 diff --git a/src/main/java/net/minecraft/server/ChunkStatus.java b/src/main/java/net/minecraft/server/ChunkStatus.java
-index 68a601bac587294b46a79be6df7ee4e6e38e5f28..efdf611e66ffd782291de749d8a48f3bf08f2129 100644
+index 026c51b5ce80ff4161d2f126e8df9dc493a46957..fb3ddcc5d5a1154a7e0583135ecd541e8f67ff0b 100644
 --- a/src/main/java/net/minecraft/server/ChunkStatus.java
 +++ b/src/main/java/net/minecraft/server/ChunkStatus.java
-@@ -84,7 +84,7 @@ public class ChunkStatus {
+@@ -90,7 +90,7 @@ public class ChunkStatus {
          return (CompletableFuture) function.apply(ichunkaccess);
      });
      private static final List<ChunkStatus> q = ImmutableList.of(ChunkStatus.FULL, ChunkStatus.FEATURES, ChunkStatus.LIQUID_CARVERS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS);
@@ -135,10 +224,10 @@ index 68a601bac587294b46a79be6df7ee4e6e38e5f28..efdf611e66ffd782291de749d8a48f3b
  
          for (int j = a().size() - 1; j >= 0; --j) {
 diff --git a/src/main/java/net/minecraft/server/CraftingManager.java b/src/main/java/net/minecraft/server/CraftingManager.java
-index ca9ed573914558d51318c713b14665480efdc5bf..f0d7a91fa06632d5731e277a9199aa9804d3a96a 100644
+index fbb708f5f7e4d2da9d96b595498da436b088a408..f27c7041cdc2f062f0abb222b02026194ab33c60 100644
 --- a/src/main/java/net/minecraft/server/CraftingManager.java
 +++ b/src/main/java/net/minecraft/server/CraftingManager.java
-@@ -63,7 +63,7 @@ public class CraftingManager extends ResourceDataJson {
+@@ -64,7 +64,7 @@ public class CraftingManager extends ResourceDataJson {
          }
  
          this.recipes = (Map) map1.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, (entry1) -> {
@@ -148,7 +237,7 @@ index ca9ed573914558d51318c713b14665480efdc5bf..f0d7a91fa06632d5731e277a9199aa98
          CraftingManager.LOGGER.info("Loaded {} recipes", map1.size());
      }
 diff --git a/src/main/java/net/minecraft/server/EntityVindicator.java b/src/main/java/net/minecraft/server/EntityVindicator.java
-index 7d44348c78b0e468cef5c137d3a69aeb5704d881..73ecdd22ea1157abe00795d90c3e7b748650dbc8 100644
+index 4ab6e82a1415c40f3e2eee7414bf7de97f53b420..9c152b79164710d3d4175d0acbc9548d61390097 100644
 --- a/src/main/java/net/minecraft/server/EntityVindicator.java
 +++ b/src/main/java/net/minecraft/server/EntityVindicator.java
 @@ -25,7 +25,7 @@ public class EntityVindicator extends EntityIllagerAbstract {
@@ -160,21 +249,8 @@ index 7d44348c78b0e468cef5c137d3a69aeb5704d881..73ecdd22ea1157abe00795d90c3e7b74
          this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, true));
          this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityVillagerAbstract.class, true));
          this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityIronGolem.class, true));
-diff --git a/src/main/java/net/minecraft/server/Fluid.java b/src/main/java/net/minecraft/server/Fluid.java
-index 035f05e82769445f213c225a731db6d95626f6cd..7c9ba128620f54c9cd691d350d1ee225d867fe70 100644
---- a/src/main/java/net/minecraft/server/Fluid.java
-+++ b/src/main/java/net/minecraft/server/Fluid.java
-@@ -74,7 +74,7 @@ public interface Fluid extends IBlockDataHolder<Fluid> {
-         if (immutablemap.isEmpty()) {
-             object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.FLUID.getKey(fluid.getType()).toString())));
-         } else {
--            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.FLUID.getKey(fluid.getType()).toString()), dynamicops.createString("Properties"), dynamicops.createMap((Map) immutablemap.entrySet().stream().map((entry) -> {
-+            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.FLUID.getKey(fluid.getType()).toString()), dynamicops.createString("Properties"), dynamicops.createMap(immutablemap.entrySet().stream().map((entry) -> { // Paper - decompile fix
-                 return Pair.of(dynamicops.createString(((IBlockState) entry.getKey()).a()), dynamicops.createString(IBlockDataHolder.b((IBlockState) entry.getKey(), (Comparable) entry.getValue())));
-             }).collect(Collectors.toMap(Pair::getFirst, Pair::getSecond)))));
-         }
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 447f6a55b619402447b5cf4db9b22ea8cfc7d51d..1890c760f9ffd7628d6ae3db40c36f5272379227 100644
+index 8886cedfe8809fe4711b5f2451e3e6456d2a6513..b77a0f0c2ee30df44b113aa6c8d4fa9206d3e2ba 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -55,7 +55,7 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
@@ -203,68 +279,11 @@ index 447f6a55b619402447b5cf4db9b22ea8cfc7d51d..1890c760f9ffd7628d6ae3db40c36f52
              return true;
          }
      }
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 3be9efd22c1cc659265a80c843b543ca771505d3..3a1ad2346b4cae833de90dafb716c56e6e2f606d 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -281,12 +281,12 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
- 
-     public static <T> Dynamic<T> a(DynamicOps<T> dynamicops, IBlockData iblockdata) {
-         ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap = iblockdata.getStateMap();
--        Object object;
-+        T object; // Paper - decompile fix
- 
-         if (immutablemap.isEmpty()) {
-             object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString())));
-         } else {
--            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString()), dynamicops.createString("Properties"), dynamicops.createMap((Map) immutablemap.entrySet().stream().map((entry) -> {
-+            object = dynamicops.createMap(ImmutableMap.of(dynamicops.createString("Name"), dynamicops.createString(IRegistry.BLOCK.getKey(iblockdata.getBlock()).toString()), dynamicops.createString("Properties"), dynamicops.createMap(immutablemap.entrySet().stream().map((entry) -> { // Paper - decompile fix
-                 return Pair.of(dynamicops.createString(((IBlockState) entry.getKey()).a()), dynamicops.createString(IBlockDataHolder.b((IBlockState) entry.getKey(), (Comparable) entry.getValue())));
-             }).collect(Collectors.toMap(Pair::getFirst, Pair::getSecond)))));
-         }
-@@ -348,9 +348,9 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-             if (!iblockdata.o()) {
-                 this.f = null;
-             } else {
--                this.f = new VoxelShape[IBlockData.a.a.length];
-+                this.f = new VoxelShape[a.length]; // Paper - decompile fix
-                 VoxelShape voxelshape = block.i(iblockdata, BlockAccessAir.INSTANCE, BlockPosition.ZERO);
--                EnumDirection[] aenumdirection = IBlockData.a.a;
-+                EnumDirection[] aenumdirection = a; // Paper - decompile fix
- 
-                 i = aenumdirection.length;
- 
-@@ -366,7 +366,7 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-                 return this.g.b(enumdirection_enumaxis) < 0.0D || this.g.c(enumdirection_enumaxis) > 1.0D;
-             });
-             this.i = new boolean[6];
--            EnumDirection[] aenumdirection1 = IBlockData.a.a;
-+            EnumDirection[] aenumdirection1 = a; // Paper - decompile fix
-             int k = aenumdirection1.length;
- 
-             for (i = 0; i < k; ++i) {
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index 534e70671a624e58ed98df9dd62bd7f5ffdf91af..d5c284cdd10d33f5f1b7f456d6a384a44eafb139 100644
+index 2517b70ddeb985ae7d708c6a1708b42c6a67dd00..c469b5db81fb040fc27cd2e4f7cd61797f56a62d 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -47,7 +47,7 @@ public interface IEntityAccess {
-             return Stream.empty();
-         } else {
-             AxisAlignedBB axisalignedbb1 = axisalignedbb.g(1.0E-7D);
--            Stream stream = this.getEntities(entity, axisalignedbb1).stream().filter((entity1) -> {
-+            Stream<AxisAlignedBB> stream = this.getEntities(entity, axisalignedbb1).stream().filter((entity1) -> { // Paper - decompile fix
-                 return !set.contains(entity1);
-             }).filter((entity1) -> {
-                 return entity == null || !entity.isSameVehicle(entity1);
-@@ -55,7 +55,6 @@ public interface IEntityAccess {
-                 return Stream.of(entity1.au(), entity == null ? null : entity.j(entity1));
-             }).filter(Objects::nonNull);
- 
--            axisalignedbb1.getClass();
-             return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
-         }
-     }
-@@ -157,22 +156,22 @@ public interface IEntityAccess {
+@@ -150,22 +150,22 @@ public interface IEntityAccess {
  
      @Nullable
      default <T extends EntityLiving> T a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, @Nullable EntityLiving entityliving, double d0, double d1, double d2, AxisAlignedBB axisalignedbb) {
@@ -291,7 +310,7 @@ index 534e70671a624e58ed98df9dd62bd7f5ffdf91af..d5c284cdd10d33f5f1b7f456d6a384a4
  
              if (pathfindertargetcondition.a(entityliving, t1)) {
                  double d4 = t1.g(d0, d1, d2);
-@@ -205,10 +204,10 @@ public interface IEntityAccess {
+@@ -198,10 +198,10 @@ public interface IEntityAccess {
      default <T extends EntityLiving> List<T> a(Class<? extends T> oclass, PathfinderTargetCondition pathfindertargetcondition, EntityLiving entityliving, AxisAlignedBB axisalignedbb) {
          List<T> list = this.a(oclass, axisalignedbb, (Predicate) null);
          List<T> list1 = Lists.newArrayList();
@@ -305,45 +324,34 @@ index 534e70671a624e58ed98df9dd62bd7f5ffdf91af..d5c284cdd10d33f5f1b7f456d6a384a4
              if (pathfindertargetcondition.a(entityliving, t0)) {
                  list1.add(t0);
 diff --git a/src/main/java/net/minecraft/server/IOWorker.java b/src/main/java/net/minecraft/server/IOWorker.java
-index a986f2912fc04a7fdd49d648cbcd570464597937..c5658c0779b0e0d51fd4921456b6fef0711d7be3 100644
+index c5a95f51ba43b94fd07f8df6576f45c3dd0216a3..38ccfd78639a85abcefb915c5c231be5881cebc1 100644
 --- a/src/main/java/net/minecraft/server/IOWorker.java
 +++ b/src/main/java/net/minecraft/server/IOWorker.java
-@@ -46,7 +46,7 @@ public class IOWorker implements AutoCloseable {
-                     if (throwable != null) {
-                         completablefuture.completeExceptionally(throwable);
-                     } else {
--                        completablefuture.complete((Object) null);
-+                        completablefuture.complete(null); // Paper - Decompile fix
-                     }
+@@ -83,7 +83,7 @@ public class IOWorker implements AutoCloseable {
+             return this.a(() -> {
+                 try {
+                     this.d.a();
+-                    return Either.left((Object) null);
++                    return Either.left(null); // Paper - decompile error
+                 } catch (Exception exception) {
+                     IOWorker.LOGGER.warn("Failed to synchronized chunks", exception);
+                     return Either.right(exception);
+@@ -117,13 +117,13 @@ public class IOWorker implements AutoCloseable {
+     }
  
-                 });
-@@ -106,7 +106,7 @@ public class IOWorker implements AutoCloseable {
-                 }));
+     private void c() {
+-        this.c.a((Object) (new PairedQueue.b(IOWorker.Priority.LOW.ordinal(), this::b)));
++        this.c.a((new PairedQueue.b(IOWorker.Priority.LOW.ordinal(), this::b))); // Paper - decompile error
+     }
  
-                 completablefuture1.whenComplete((object, throwable) -> {
--                    completablefuture.complete((Object) null);
-+                    completablefuture.complete(null); // Paper - decompile fix
-                 });
-             };
-         });
-@@ -165,7 +165,7 @@ public class IOWorker implements AutoCloseable {
      private void a(ChunkCoordIntPair chunkcoordintpair, IOWorker.a ioworker_a) {
          try {
-             this.e.write(chunkcoordintpair, ioworker_a.a);
+             this.d.write(chunkcoordintpair, ioworker_a.a);
 -            ioworker_a.b.complete((Object) null);
 +            ioworker_a.b.complete(null); // Paper - decompile fix
          } catch (Exception exception) {
              IOWorker.LOGGER.error("Failed to store chunk {}", chunkcoordintpair, exception);
              ioworker_a.b.completeExceptionally(exception);
-@@ -176,7 +176,7 @@ public class IOWorker implements AutoCloseable {
-     private void g() {
-         try {
-             this.e.close();
--            this.h.complete((Object) null);
-+            this.h.complete(null); // Paper - decompile fix
-         } catch (Exception exception) {
-             IOWorker.LOGGER.error("Failed to close storage", exception);
-             this.h.completeExceptionally(exception);
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageSky.java b/src/main/java/net/minecraft/server/LightEngineStorageSky.java
 index 1e1f7ec6e6e6fc698a8a5118ce21321d104dc5eb..75d9065b32731dc635d9d09c48fb9643172381a9 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageSky.java
@@ -362,18 +370,9 @@ index 1e1f7ec6e6e6fc698a8a5118ce21321d104dc5eb..75d9065b32731dc635d9d09c48fb9643
                      ++k;
                      if (k >= l) {
 diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-index ef315377579ca425ecb8d41aaf59eb1dd5b39e12..8776799de033f02b0f87e9ea7e4a4ce912e94dd4 100644
+index 8b1f9116afd92b13426eb0e97066297705d202fb..a9dc8466278f9ec2becbcb643e6e1c973df72b82 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-@@ -110,7 +110,7 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
-     }
- 
-     private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
--        this.e.a((Object) ChunkTaskQueueSorter.a(() -> {
-+        this.e.a(ChunkTaskQueueSorter.a(() -> { // Paper - decompile error
-             this.c.add(Pair.of(lightenginethreaded_update, runnable));
-             if (this.c.size() >= this.f) {
-                 this.b();
 @@ -167,7 +167,7 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      public void queueUpdate() {
@@ -384,23 +383,23 @@ index ef315377579ca425ecb8d41aaf59eb1dd5b39e12..8776799de033f02b0f87e9ea7e4a4ce9
                  this.g.set(false);
              }));
 diff --git a/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java b/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java
-index fa11b2fc6364dc6fb6a951e092ea01f5e74c2c1d..5fe0da76bd172c2c552b2dd210e89be214c4385c 100644
+index 3aa5cc4281cdba8738890e9ffd5c7a129e60c310..32a98e758b9df48005ddc5283eacdc5123a32c39 100644
 --- a/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java
 +++ b/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java
-@@ -69,7 +69,7 @@ public class LootItemFunctionExplorationMap extends LootItemFunctionConditional
-         }
+@@ -73,7 +73,7 @@ public class LootItemFunctionExplorationMap extends LootItemFunctionConditional
+         public b() {}
  
          public void a(JsonObject jsonobject, LootItemFunctionExplorationMap lootitemfunctionexplorationmap, JsonSerializationContext jsonserializationcontext) {
 -            super.a(jsonobject, (LootItemFunctionConditional) lootitemfunctionexplorationmap, jsonserializationcontext);
 +            super.a(jsonobject, lootitemfunctionexplorationmap, jsonserializationcontext); // Paper - decompile fix
-             if (!lootitemfunctionexplorationmap.d.equals("Buried_Treasure")) {
-                 jsonobject.add("destination", jsonserializationcontext.serialize(lootitemfunctionexplorationmap.d));
+             if (!lootitemfunctionexplorationmap.e.equals(LootItemFunctionExplorationMap.a)) {
+                 jsonobject.add("destination", jsonserializationcontext.serialize(lootitemfunctionexplorationmap.e.i()));
              }
 diff --git a/src/main/java/net/minecraft/server/LootSelectorEntry.java b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-index 59bb53543113660cd2514350a24a4908a8464f24..3ed6a1e785f68c4bb6c5afe024c43150915968a3 100644
+index 998101592723abb26c91d1f92e98be1cf24c954d..ee9069c744df63cbb7f21dd9d28d6d554593674c 100644
 --- a/src/main/java/net/minecraft/server/LootSelectorEntry.java
 +++ b/src/main/java/net/minecraft/server/LootSelectorEntry.java
-@@ -125,7 +125,7 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+@@ -123,7 +123,7 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
          @Override
          public T b(LootItemFunction.a lootitemfunction_a) {
              this.c.add(lootitemfunction_a.b());
@@ -409,7 +408,7 @@ index 59bb53543113660cd2514350a24a4908a8464f24..3ed6a1e785f68c4bb6c5afe024c43150
          }
  
          protected LootItemFunction[] a() {
-@@ -134,12 +134,12 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
+@@ -132,12 +132,12 @@ public abstract class LootSelectorEntry extends LootEntryAbstract {
  
          public T a(int i) {
              this.a = i;
@@ -438,7 +437,7 @@ index 829a7ae0a2b77205fb8e8c5754d0d4333afa224d..8b9e47b4c7f5dc464fa617a59583df9e
      default String asString() {
          return this.toString();
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index 22035b6c0b76687404e4df92f5796dbf244c50bc..5406f4c40f86e74f8ed4e7e986b23d19141ddc30 100644
+index b8bb5027ecccfc9b664145a1bfe3755f1a8af3eb..ad8a506bb430b26fe147a657a2f826daf9bf4d45 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
 +++ b/src/main/java/net/minecraft/server/NBTTagList.java
 @@ -51,7 +51,7 @@ public class NBTTagList extends NBTList<NBTBase> {
@@ -472,31 +471,6 @@ index 8471920b8b92f0bbd0d3ee827e1b0a120f405f6c..e9c405fb5376c5733b9b0191cd530917
          });
      }
  
-diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index 737afc7d71f415e942602efb4bd91fba6c6baa72..db9f0196bda4c987de6cf63eea437b7154d47b57 100644
---- a/src/main/java/net/minecraft/server/RegionFileSection.java
-+++ b/src/main/java/net/minecraft/server/RegionFileSection.java
-@@ -83,9 +83,9 @@ public class RegionFileSection<R extends MinecraftSerializable> implements AutoC
-         Optional<R> optional = this.d(i);
- 
-         if (optional.isPresent()) {
--            return (MinecraftSerializable) optional.get();
-+            return optional.get(); // Paper - decompile fix
-         } else {
--            R r0 = (MinecraftSerializable) this.f.apply(() -> {
-+            R r0 =  this.f.apply(() -> { // Paper - decompile fix
-                 this.a(i);
-             });
- 
-@@ -124,7 +124,7 @@ public class RegionFileSection<R extends MinecraftSerializable> implements AutoC
-             for (int l = 0; l < 16; ++l) {
-                 long i1 = SectionPosition.a(chunkcoordintpair, l).v();
-                 Optional<R> optional = optionaldynamic.get(Integer.toString(l)).get().map((dynamic2) -> {
--                    return (MinecraftSerializable) this.e.apply(() -> {
-+                    return this.e.apply(() -> { // Paper - decompile fix
-                         this.a(i1);
-                     }, dynamic2);
-                 });
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
 index 7f89562e90ede1bdd06b71c0798d986ccbb7886e..4efcb8b595750891b421e524812542f0f67e9f3f 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
@@ -511,7 +485,7 @@ index 7f89562e90ede1bdd06b71c0798d986ccbb7886e..4efcb8b595750891b421e524812542f0
  
          this.c.set(i, t0);
 diff --git a/src/main/java/net/minecraft/server/RegistryID.java b/src/main/java/net/minecraft/server/RegistryID.java
-index 4cb78c6a3feb15eb15f76f967e724829655e8617..e15d286710ed66a01bfb6b60f8735b837efb3fd7 100644
+index 2dc20b5c930c6845af41b35d69cdb03db639d63e..6cdd4d46d987132c3c241800b5d59cee2dfa25e2 100644
 --- a/src/main/java/net/minecraft/server/RegistryID.java
 +++ b/src/main/java/net/minecraft/server/RegistryID.java
 @@ -17,9 +17,9 @@ public class RegistryID<K> implements Registry<K> {
@@ -526,7 +500,7 @@ index 4cb78c6a3feb15eb15f76f967e724829655e8617..e15d286710ed66a01bfb6b60f8735b83
      }
  
      public int getId(@Nullable K k0) {
-@@ -55,9 +55,9 @@ public class RegistryID<K> implements Registry<K> {
+@@ -59,9 +59,9 @@ public class RegistryID<K> implements Registry<K> {
          K[] ak = this.b;
          int[] aint = this.c;
  
@@ -539,10 +513,10 @@ index 4cb78c6a3feb15eb15f76f967e724829655e8617..e15d286710ed66a01bfb6b60f8735b83
          this.f = 0;
  
 diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
-index 8534585eb17cd46f1e392d8f09bb671abe27ef52..7b92ecfff94e3c4a69269139ebed75fc59bbd4f1 100644
+index a1a5460e429356b52a75037c809cec85bd99084a..80ee8d196436e271833503a0e123401d1b3314a9 100644
 --- a/src/main/java/net/minecraft/server/SystemUtils.java
 +++ b/src/main/java/net/minecraft/server/SystemUtils.java
-@@ -45,8 +45,8 @@ public class SystemUtils {
+@@ -55,8 +55,8 @@ public class SystemUtils {
          return Collectors.toMap(Entry::getKey, Entry::getValue);
      }
  
@@ -553,7 +527,7 @@ index 8534585eb17cd46f1e392d8f09bb671abe27ef52..7b92ecfff94e3c4a69269139ebed75fc
      }
  
      public static String a(String s, @Nullable MinecraftKey minecraftkey) {
-@@ -168,8 +168,8 @@ public class SystemUtils {
+@@ -224,8 +224,8 @@ public class SystemUtils {
      public static <T> T b(Iterable<T> iterable, @Nullable T t0) {
          Iterator<T> iterator = iterable.iterator();
  
@@ -564,16 +538,16 @@ index 8534585eb17cd46f1e392d8f09bb671abe27ef52..7b92ecfff94e3c4a69269139ebed75fc
  
          for (object1 = null; iterator.hasNext(); object1 = object) {
              object = iterator.next();
-@@ -194,7 +194,7 @@ public class SystemUtils {
+@@ -250,7 +250,7 @@ public class SystemUtils {
      }
  
-     public static <K> Strategy<K> i() {
+     public static <K> Strategy<K> k() {
 -        return SystemUtils.IdentityHashingStrategy.INSTANCE;
 +        return (Strategy<K>) SystemUtils.IdentityHashingStrategy.INSTANCE; // Paper - decompile fix
      }
  
      public static <V> CompletableFuture<List<V>> b(List<? extends CompletableFuture<? extends V>> list) {
-@@ -205,7 +205,7 @@ public class SystemUtils {
+@@ -261,7 +261,7 @@ public class SystemUtils {
          list.forEach((completablefuture1) -> {
              int i = list1.size();
  
@@ -583,10 +557,10 @@ index 8534585eb17cd46f1e392d8f09bb671abe27ef52..7b92ecfff94e3c4a69269139ebed75fc
                  if (throwable != null) {
                      completablefuture.completeExceptionally(throwable);
 diff --git a/src/main/java/net/minecraft/server/ThreadedMailbox.java b/src/main/java/net/minecraft/server/ThreadedMailbox.java
-index 8dbb33e749a282ab1e41bfdc616a22744dc7b162..8082569022384a3ba03fb4a6f1ae12b443598dcb 100644
+index b64fc6e3dc8f628ead2c243baa48f2872bd8da0c..35f4d2d9591e625ab0bbeab7b606761e74965eec 100644
 --- a/src/main/java/net/minecraft/server/ThreadedMailbox.java
 +++ b/src/main/java/net/minecraft/server/ThreadedMailbox.java
-@@ -83,7 +83,7 @@ public class ThreadedMailbox<T> implements Mailbox<T>, AutoCloseable, Runnable {
+@@ -99,7 +99,7 @@ public class ThreadedMailbox<T> implements Mailbox<T>, AutoCloseable, Runnable {
  
      public void run() {
          try {
@@ -609,10 +583,10 @@ index ee2059cf8ef0a0372e02b91a4bf6fa8a0ab31bca..77bb6b092a0763ff27f90f0401a8a81b
      }
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityPiston.java b/src/main/java/net/minecraft/server/TileEntityPiston.java
-index 79df42f5e53464f07e76d22cd1317637145e2056..489175abd8e582a3c082364fec357c4f061a22d7 100644
+index dc52856856796524e4519c34ab92e37031013759..5b941321a7fdc561e6b794a1dce5d600083c505d 100644
 --- a/src/main/java/net/minecraft/server/TileEntityPiston.java
 +++ b/src/main/java/net/minecraft/server/TileEntityPiston.java
-@@ -137,7 +137,7 @@ public class TileEntityPiston extends TileEntity implements ITickable {
+@@ -140,7 +140,7 @@ public class TileEntityPiston extends TileEntity implements ITickable {
      private static void a(EnumDirection enumdirection, Entity entity, double d0, EnumDirection enumdirection1) {
          TileEntityPiston.h.set(enumdirection);
          entity.move(EnumMoveType.PISTON, new Vec3D(d0 * (double) enumdirection1.getAdjacentX(), d0 * (double) enumdirection1.getAdjacentY(), d0 * (double) enumdirection1.getAdjacentZ()));
@@ -622,28 +596,31 @@ index 79df42f5e53464f07e76d22cd1317637145e2056..489175abd8e582a3c082364fec357c4f
  
      private void g(float f) {
 diff --git a/src/main/java/net/minecraft/server/VillagePlace.java b/src/main/java/net/minecraft/server/VillagePlace.java
-index c137484f66a022f7f4581d0657210d60c619c5fa..c999f8c9bf8a59e19b3d6d1b7ad8b5fb6e48b928 100644
+index bc2fab806ee1cc7628841a065436f0339f17ecce..b8c15047771bd4527b86e514a3b950b2ffc6eef0 100644
 --- a/src/main/java/net/minecraft/server/VillagePlace.java
 +++ b/src/main/java/net/minecraft/server/VillagePlace.java
-@@ -165,7 +165,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+@@ -170,9 +170,9 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
      }
  
      private static boolean a(ChunkSection chunksection) {
--        Stream stream = VillagePlaceType.e();
-+        Stream<IBlockData> stream = VillagePlaceType.e(); // Paper - decompile fix
+-        Set set = VillagePlaceType.x;
++        Set<IBlockData> set = VillagePlaceType.x; // Paper - decompile error
  
-         chunksection.getClass();
-         return stream.anyMatch(chunksection::a);
-@@ -185,7 +185,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+-        set.getClass();
++        //set.getClass(); // Paper - decompile error
+         return chunksection.a(set::contains);
+     }
+ 
+@@ -190,7 +190,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
          SectionPosition.b(new ChunkCoordIntPair(blockposition), Math.floorDiv(i, 16)).map((sectionposition) -> {
-             return Pair.of(sectionposition, this.d(sectionposition.v()));
+             return Pair.of(sectionposition, this.d(sectionposition.s()));
          }).filter((pair) -> {
 -            return !(Boolean) ((Optional) pair.getSecond()).map(VillagePlaceSection::a).orElse(false);
 +            return !(Boolean) (pair.getSecond()).map(VillagePlaceSection::a).orElse(false); // Paper - decompile fix
          }).map((pair) -> {
-             return ((SectionPosition) pair.getFirst()).u();
+             return ((SectionPosition) pair.getFirst()).r();
          }).filter((chunkcoordintpair) -> {
-@@ -237,7 +237,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
+@@ -242,7 +242,7 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
  
          private final Predicate<? super VillagePlaceRecord> d;
  
@@ -653,25 +630,25 @@ index c137484f66a022f7f4581d0657210d60c619c5fa..c999f8c9bf8a59e19b3d6d1b7ad8b5fb
          }
  
 diff --git a/src/main/java/net/minecraft/server/VillagerTrades.java b/src/main/java/net/minecraft/server/VillagerTrades.java
-index a06a31534e5bdfddcd3914f68e5b60ae0ec43117..3bcf0b385d1f707176dae9c3ee49370e2e6dd481 100644
+index b0ec371c058c428a909faafe027e58e9c7f0cb38..532460e7549192dfe6170e2bf489edb46b8b5737 100644
 --- a/src/main/java/net/minecraft/server/VillagerTrades.java
 +++ b/src/main/java/net/minecraft/server/VillagerTrades.java
-@@ -15,12 +15,12 @@ import javax.annotation.Nullable;
+@@ -14,12 +14,12 @@ import javax.annotation.Nullable;
  
  public class VillagerTrades {
  
 -    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.IMerchantRecipeOption[]>> a = (Map) SystemUtils.a((Object) Maps.newHashMap(), (hashmap) -> {
 +    public static final Map<VillagerProfession, Int2ObjectMap<VillagerTrades.IMerchantRecipeOption[]>> a = SystemUtils.a(Maps.newHashMap(), (hashmap) -> { // Paper - decompile fix
          hashmap.put(VillagerProfession.FARMER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WHEAT, 20, 16, 2), new VillagerTrades.b(Items.POTATO, 26, 16, 2), new VillagerTrades.b(Items.CARROT, 22, 16, 2), new VillagerTrades.b(Items.BEETROOT, 15, 16, 2), new VillagerTrades.h(Items.BREAD, 1, 6, 16, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Blocks.PUMPKIN, 6, 12, 10), new VillagerTrades.h(Items.PUMPKIN_PIE, 1, 4, 5), new VillagerTrades.h(Items.APPLE, 1, 4, 16, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.COOKIE, 3, 18, 10), new VillagerTrades.b(Blocks.MELON, 4, 12, 20)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Blocks.CAKE, 1, 1, 12, 15), new VillagerTrades.i(MobEffects.NIGHT_VISION, 100, 15), new VillagerTrades.i(MobEffects.JUMP, 160, 15), new VillagerTrades.i(MobEffects.WEAKNESS, 140, 15), new VillagerTrades.i(MobEffects.BLINDNESS, 120, 15), new VillagerTrades.i(MobEffects.POISON, 280, 15), new VillagerTrades.i(MobEffects.SATURATION, 7, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.GOLDEN_CARROT, 3, 3, 30), new VillagerTrades.h(Items.GLISTERING_MELON_SLICE, 4, 3, 30)})));
--        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 20, 16, 2), new VillagerTrades.b(Items.COAL, 10, 16, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COD, 15, 16, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.h(Items.pT, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.SALMON, 13, 16, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.c(1, 12, 30, ImmutableMap.builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())})));
-+        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 20, 16, 2), new VillagerTrades.b(Items.COAL, 10, 16, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COD, 15, 16, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.h(Items.pT, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.SALMON, 13, 16, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.c(1, 12, 30, ImmutableMap.<VillagerType, Item>builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())}))); // Paper - decompile fix
+-        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 20, 16, 2), new VillagerTrades.b(Items.COAL, 10, 16, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COD, 15, 16, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.h(Items.rm, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.SALMON, 13, 16, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.c(1, 12, 30, ImmutableMap.builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())})));
++        hashmap.put(VillagerProfession.FISHERMAN, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 20, 16, 2), new VillagerTrades.b(Items.COAL, 10, 16, 2), new VillagerTrades.g(Items.COD, 6, Items.COOKED_COD, 6, 16, 1), new VillagerTrades.h(Items.COD_BUCKET, 3, 1, 16, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COD, 15, 16, 10), new VillagerTrades.g(Items.SALMON, 6, Items.COOKED_SALMON, 6, 16, 5), new VillagerTrades.h(Items.rm, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.SALMON, 13, 16, 20), new VillagerTrades.e(Items.FISHING_ROD, 3, 3, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.TROPICAL_FISH, 6, 12, 30)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PUFFERFISH, 4, 12, 30), new VillagerTrades.c(1, 12, 30, ImmutableMap.<VillagerType, Item>builder().put(VillagerType.PLAINS, Items.OAK_BOAT).put(VillagerType.TAIGA, Items.SPRUCE_BOAT).put(VillagerType.SNOW, Items.SPRUCE_BOAT).put(VillagerType.DESERT, Items.JUNGLE_BOAT).put(VillagerType.JUNGLE, Items.JUNGLE_BOAT).put(VillagerType.SAVANNA, Items.ACACIA_BOAT).put(VillagerType.SWAMP, Items.DARK_OAK_BOAT).build())}))); // <VillagerType, Item>
          hashmap.put(VillagerProfession.SHEPHERD, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Blocks.WHITE_WOOL, 18, 16, 2), new VillagerTrades.b(Blocks.BROWN_WOOL, 18, 16, 2), new VillagerTrades.b(Blocks.BLACK_WOOL, 18, 16, 2), new VillagerTrades.b(Blocks.GRAY_WOOL, 18, 16, 2), new VillagerTrades.h(Items.SHEARS, 2, 1, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WHITE_DYE, 12, 16, 10), new VillagerTrades.b(Items.GRAY_DYE, 12, 16, 10), new VillagerTrades.b(Items.BLACK_DYE, 12, 16, 10), new VillagerTrades.b(Items.LIGHT_BLUE_DYE, 12, 16, 10), new VillagerTrades.b(Items.LIME_DYE, 12, 16, 10), new VillagerTrades.h(Blocks.WHITE_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.ORANGE_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.MAGENTA_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.LIGHT_BLUE_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.YELLOW_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.LIME_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.PINK_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.GRAY_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.LIGHT_GRAY_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.CYAN_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.PURPLE_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.BLUE_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.BROWN_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.GREEN_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.RED_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.BLACK_WOOL, 1, 1, 16, 5), new VillagerTrades.h(Blocks.WHITE_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.ORANGE_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.MAGENTA_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.LIGHT_BLUE_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.YELLOW_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.LIME_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.PINK_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.GRAY_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.LIGHT_GRAY_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.CYAN_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.PURPLE_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.BLUE_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.BROWN_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.GREEN_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.RED_CARPET, 1, 4, 16, 5), new VillagerTrades.h(Blocks.BLACK_CARPET, 1, 4, 16, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.YELLOW_DYE, 12, 16, 20), new VillagerTrades.b(Items.LIGHT_GRAY_DYE, 12, 16, 20), new VillagerTrades.b(Items.ORANGE_DYE, 12, 16, 20), new VillagerTrades.b(Items.RED_DYE, 12, 16, 20), new VillagerTrades.b(Items.PINK_DYE, 12, 16, 20), new VillagerTrades.h(Blocks.WHITE_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.YELLOW_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.RED_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.BLACK_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.BLUE_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.BROWN_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.CYAN_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.GRAY_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.GREEN_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.LIGHT_BLUE_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.LIGHT_GRAY_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.LIME_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.MAGENTA_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.ORANGE_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.PINK_BED, 3, 1, 12, 10), new VillagerTrades.h(Blocks.PURPLE_BED, 3, 1, 12, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.BROWN_DYE, 12, 16, 30), new VillagerTrades.b(Items.PURPLE_DYE, 12, 16, 30), new VillagerTrades.b(Items.BLUE_DYE, 12, 16, 30), new VillagerTrades.b(Items.GREEN_DYE, 12, 16, 30), new VillagerTrades.b(Items.MAGENTA_DYE, 12, 16, 30), new VillagerTrades.b(Items.CYAN_DYE, 12, 16, 30), new VillagerTrades.h(Items.WHITE_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.BLUE_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.LIGHT_BLUE_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.RED_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.PINK_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.GREEN_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.LIME_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.GRAY_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.BLACK_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.PURPLE_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.MAGENTA_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.CYAN_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.BROWN_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.YELLOW_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.ORANGE_BANNER, 3, 1, 12, 15), new VillagerTrades.h(Items.LIGHT_GRAY_BANNER, 3, 1, 12, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.PAINTING, 2, 3, 30)})));
-         hashmap.put(VillagerProfession.FLETCHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STICK, 32, 16, 2), new VillagerTrades.h(Items.ARROW, 1, 16, 1), new VillagerTrades.g(Blocks.GRAVEL, 10, Items.FLINT, 10, 12, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.FLINT, 26, 12, 10), new VillagerTrades.h(Items.BOW, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 14, 16, 20), new VillagerTrades.h(Items.CROSSBOW, 3, 1, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.FEATHER, 24, 16, 30), new VillagerTrades.e(Items.BOW, 2, 3, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.dE, 8, 12, 30), new VillagerTrades.e(Items.CROSSBOW, 3, 3, 15), new VillagerTrades.j(Items.ARROW, 5, Items.TIPPED_ARROW, 5, 2, 12, 30)})));
--        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.builder().put(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.BOOK, 4, 12, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.pR, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.INK_SAC, 5, 12, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.am, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build()));
-+        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.<Integer, VillagerTrades.IMerchantRecipeOption[]>builder().put(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.BOOK, 4, 12, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.pR, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.INK_SAC, 5, 12, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.am, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build())); // Paper - decompile fix
-         hashmap.put(VillagerProfession.CARTOGRAPHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.h(Items.MAP, 7, 1, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.df, 11, 16, 10), new VillagerTrades.k(13, "Monument", MapIcon.Type.MONUMENT, 12, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COMPASS, 1, 12, 20), new VillagerTrades.k(14, "Mansion", MapIcon.Type.MANSION, 12, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.ITEM_FRAME, 7, 1, 15), new VillagerTrades.h(Items.WHITE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.RED_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PINK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GREEN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIME_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GRAY_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLACK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PURPLE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.MAGENTA_BANNER, 3, 1, 15), new VillagerTrades.h(Items.CYAN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BROWN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.YELLOW_BANNER, 3, 1, 15), new VillagerTrades.h(Items.ORANGE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_GRAY_BANNER, 3, 1, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.GLOBE_BANNER_PATTERN, 8, 1, 30)})));
+         hashmap.put(VillagerProfession.FLETCHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STICK, 32, 16, 2), new VillagerTrades.h(Items.ARROW, 1, 16, 1), new VillagerTrades.g(Blocks.GRAVEL, 10, Items.FLINT, 10, 12, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.FLINT, 26, 12, 10), new VillagerTrades.h(Items.BOW, 2, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.STRING, 14, 16, 20), new VillagerTrades.h(Items.CROSSBOW, 3, 1, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.FEATHER, 24, 16, 30), new VillagerTrades.e(Items.BOW, 2, 3, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.es, 8, 12, 30), new VillagerTrades.e(Items.CROSSBOW, 3, 3, 15), new VillagerTrades.j(Items.ARROW, 5, Items.TIPPED_ARROW, 5, 2, 12, 30)})));
+-        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.builder().put(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.BOOK, 4, 12, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.rj, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.INK_SAC, 5, 12, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.az, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build()));
++        hashmap.put(VillagerProfession.LIBRARIAN, a(ImmutableMap.<Integer, IMerchantRecipeOption[]>builder().put(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.d(1), new VillagerTrades.h(Blocks.BOOKSHELF, 9, 1, 12, 1)}).put(2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.BOOK, 4, 12, 10), new VillagerTrades.d(5), new VillagerTrades.h(Items.rj, 1, 1, 5)}).put(3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.INK_SAC, 5, 12, 20), new VillagerTrades.d(10), new VillagerTrades.h(Items.az, 1, 4, 10)}).put(4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.WRITABLE_BOOK, 2, 12, 30), new VillagerTrades.d(15), new VillagerTrades.h(Items.CLOCK, 5, 1, 15), new VillagerTrades.h(Items.COMPASS, 4, 1, 15)}).put(5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.NAME_TAG, 20, 1, 30)}).build())); // Integer, IMerchantRecipeOption[]
+         hashmap.put(VillagerProfession.CARTOGRAPHER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.PAPER, 24, 16, 2), new VillagerTrades.h(Items.MAP, 7, 1, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.dP, 11, 16, 10), new VillagerTrades.k(13, StructureGenerator.MONUMENT, MapIcon.Type.MONUMENT, 12, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COMPASS, 1, 12, 20), new VillagerTrades.k(14, StructureGenerator.MANSION, MapIcon.Type.MANSION, 12, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.ITEM_FRAME, 7, 1, 15), new VillagerTrades.h(Items.WHITE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_BLUE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.RED_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PINK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GREEN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIME_BANNER, 3, 1, 15), new VillagerTrades.h(Items.GRAY_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BLACK_BANNER, 3, 1, 15), new VillagerTrades.h(Items.PURPLE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.MAGENTA_BANNER, 3, 1, 15), new VillagerTrades.h(Items.CYAN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.BROWN_BANNER, 3, 1, 15), new VillagerTrades.h(Items.YELLOW_BANNER, 3, 1, 15), new VillagerTrades.h(Items.ORANGE_BANNER, 3, 1, 15), new VillagerTrades.h(Items.LIGHT_GRAY_BANNER, 3, 1, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.h(Items.GLOBE_BANNER_PATTERN, 8, 1, 30)})));
          hashmap.put(VillagerProfession.CLERIC, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.ROTTEN_FLESH, 32, 16, 2), new VillagerTrades.h(Items.REDSTONE, 1, 2, 1)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.GOLD_INGOT, 3, 12, 10), new VillagerTrades.h(Items.LAPIS_LAZULI, 1, 1, 5)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.RABBIT_FOOT, 2, 12, 20), new VillagerTrades.h(Blocks.GLOWSTONE, 4, 1, 12, 10)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.SCUTE, 4, 12, 30), new VillagerTrades.b(Items.GLASS_BOTTLE, 9, 12, 30), new VillagerTrades.h(Items.ENDER_PEARL, 5, 1, 15)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.NETHER_WART, 22, 12, 30), new VillagerTrades.h(Items.EXPERIENCE_BOTTLE, 3, 1, 30)})));
-         hashmap.put(VillagerProfession.ARMORER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COAL, 15, 16, 2), new VillagerTrades.h(new ItemStack(Items.IRON_LEGGINGS), 7, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_BOOTS), 4, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_HELMET), 5, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_CHESTPLATE), 9, 1, 12, 1, 0.2F)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.IRON_INGOT, 4, 12, 10), new VillagerTrades.h(new ItemStack(Items.pQ), 36, 1, 12, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_BOOTS), 1, 1, 12, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_LEGGINGS), 3, 1, 12, 5, 0.2F)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.LAVA_BUCKET, 1, 12, 20), new VillagerTrades.b(Items.DIAMOND, 1, 12, 20), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_HELMET), 1, 1, 12, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_CHESTPLATE), 4, 1, 12, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.SHIELD), 5, 1, 12, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.e(Items.DIAMOND_LEGGINGS, 14, 3, 15, 0.2F), new VillagerTrades.e(Items.DIAMOND_BOOTS, 8, 3, 15, 0.2F)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.e(Items.DIAMOND_HELMET, 8, 3, 30, 0.2F), new VillagerTrades.e(Items.DIAMOND_CHESTPLATE, 16, 3, 30, 0.2F)})));
+         hashmap.put(VillagerProfession.ARMORER, a(ImmutableMap.of(1, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.COAL, 15, 16, 2), new VillagerTrades.h(new ItemStack(Items.IRON_LEGGINGS), 7, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_BOOTS), 4, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_HELMET), 5, 1, 12, 1, 0.2F), new VillagerTrades.h(new ItemStack(Items.IRON_CHESTPLATE), 9, 1, 12, 1, 0.2F)}, 2, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.IRON_INGOT, 4, 12, 10), new VillagerTrades.h(new ItemStack(Items.ri), 36, 1, 12, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_BOOTS), 1, 1, 12, 5, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_LEGGINGS), 3, 1, 12, 5, 0.2F)}, 3, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.b(Items.LAVA_BUCKET, 1, 12, 20), new VillagerTrades.b(Items.DIAMOND, 1, 12, 20), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_HELMET), 1, 1, 12, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.CHAINMAIL_CHESTPLATE), 4, 1, 12, 10, 0.2F), new VillagerTrades.h(new ItemStack(Items.SHIELD), 5, 1, 12, 10, 0.2F)}, 4, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.e(Items.DIAMOND_LEGGINGS, 14, 3, 15, 0.2F), new VillagerTrades.e(Items.DIAMOND_BOOTS, 8, 3, 15, 0.2F)}, 5, new VillagerTrades.IMerchantRecipeOption[]{new VillagerTrades.e(Items.DIAMOND_HELMET, 8, 3, 30, 0.2F), new VillagerTrades.e(Items.DIAMOND_CHESTPLATE, 16, 3, 30, 0.2F)})));
 diff --git a/src/main/java/net/minecraft/server/VoxelShapeMergerList.java b/src/main/java/net/minecraft/server/VoxelShapeMergerList.java
 index e8daa74986f07163fd5318f431398b4f0efde6e8..71d2ae2a9c5a05351241b5a313e66ca15b0624ef 100644
 --- a/src/main/java/net/minecraft/server/VoxelShapeMergerList.java
@@ -685,18 +662,6 @@ index e8daa74986f07163fd5318f431398b4f0efde6e8..71d2ae2a9c5a05351241b5a313e66ca1
                      this.b.add(i - 1);
                      this.c.add(j - 1);
                      this.a.add(d1);
-diff --git a/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java b/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
-index 555cf6be79985b686eb71cffe25453648f4cbc17..22e14fe1e98c8439f8db74c9464137a497fdaf7c 100644
---- a/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
-+++ b/src/main/java/net/minecraft/server/WorldGenFeatureStateProviderWeighted.java
-@@ -40,6 +40,6 @@ public class WorldGenFeatureStateProviderWeighted extends WorldGenFeatureStatePr
-         builder.put(dynamicops.createString("type"), dynamicops.createString(IRegistry.t.getKey(this.a).toString())).put(dynamicops.createString("entries"), this.b.a(dynamicops, (iblockdata) -> {
-             return IBlockData.a(dynamicops, iblockdata);
-         }));
--        return (new Dynamic(dynamicops, dynamicops.createMap(builder.build()))).getValue();
-+        return (new Dynamic<T>(dynamicops, dynamicops.createMap(builder.build()))).getValue(); // Paper - decompile fix
-     }
- }
 diff --git a/src/main/java/net/minecraft/server/WorldPersistentData.java b/src/main/java/net/minecraft/server/WorldPersistentData.java
 index 55fe7625af2207062f69188e9ab345ea68fac6ca..19e68a78310de787bca701bc2597c64e34a77d7c 100644
 --- a/src/main/java/net/minecraft/server/WorldPersistentData.java
