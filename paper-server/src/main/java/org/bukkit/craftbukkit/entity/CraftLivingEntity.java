@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.EntityArmorStand;
 import net.minecraft.server.EntityArrow;
@@ -609,6 +610,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean isCollidable() {
         return getHandle().collides;
+    }
+
+    @Override
+    public Set<UUID> getCollidableExemptions() {
+        return getHandle().collidableExemptions;
     }
 
     @Override
