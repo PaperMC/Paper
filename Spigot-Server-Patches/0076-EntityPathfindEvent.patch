@@ -6,20 +6,20 @@ Subject: [PATCH] EntityPathfindEvent
 Fires when an Entity decides to start moving to a location.
 
 diff --git a/src/main/java/net/minecraft/server/Navigation.java b/src/main/java/net/minecraft/server/Navigation.java
-index 3fdeda0cea0b1df2d1f1051f5654e06bcbccd410..abf450917e605972d84cb603b966feb013ae0002 100644
+index 3303edadf722557212ab973cb4f1684a0a8ae0f2..681465d8a74831461dce4615d2d19c7ed46bc299 100644
 --- a/src/main/java/net/minecraft/server/Navigation.java
 +++ b/src/main/java/net/minecraft/server/Navigation.java
 @@ -60,7 +60,7 @@ public class Navigation extends NavigationAbstract {
  
      @Override
      public PathEntity a(Entity entity, int i) {
--        return this.a(new BlockPosition(entity), i);
-+        return this.a(new BlockPosition(entity), entity, i); // Paper - Forward target entity
+-        return this.a(entity.getChunkCoordinates(), i);
++        return this.a(entity.getChunkCoordinates(), entity, i); // Paper - Forward target entity
      }
  
      private int t() {
 diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
-index a600ee7654aa0898c17c8a433580d92ce447320c..5e7158ba1053ae77fc5c5811d49214e877a5fe30 100644
+index 6c65bab60d21b6c431855bc6516d4fd840a0efb8..0ed4b1d9c636a9051718f800ba5717e3ae46cdc9 100644
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -8,7 +8,7 @@ import javax.annotation.Nullable;
@@ -31,7 +31,7 @@ index a600ee7654aa0898c17c8a433580d92ce447320c..5e7158ba1053ae77fc5c5811d49214e8
      protected final World b;
      @Nullable
      protected PathEntity c;
-@@ -91,16 +91,26 @@ public abstract class NavigationAbstract {
+@@ -94,16 +94,26 @@ public abstract class NavigationAbstract {
  
      @Nullable
      public PathEntity a(BlockPosition blockposition, int i) {
@@ -46,8 +46,8 @@ index a600ee7654aa0898c17c8a433580d92ce447320c..5e7158ba1053ae77fc5c5811d49214e8
  
      @Nullable
      public PathEntity a(Entity entity, int i) {
--        return this.a(ImmutableSet.of(new BlockPosition(entity)), 16, true, i);
-+        return this.a(ImmutableSet.of(new BlockPosition(entity)), entity, 16, true, i); // Paper
+-        return this.a(ImmutableSet.of(entity.getChunkCoordinates()), 16, true, i);
++        return this.a(ImmutableSet.of(entity.getChunkCoordinates()), entity, 16, true, i); // Paper
      }
  
      @Nullable
@@ -60,8 +60,8 @@ index a600ee7654aa0898c17c8a433580d92ce447320c..5e7158ba1053ae77fc5c5811d49214e8
          if (set.isEmpty()) {
              return null;
          } else if (this.a.locY() < 0.0D) {
-@@ -110,6 +120,23 @@ public abstract class NavigationAbstract {
-         } else if (this.c != null && !this.c.b() && set.contains(this.q)) {
+@@ -113,6 +123,23 @@ public abstract class NavigationAbstract {
+         } else if (this.c != null && !this.c.b() && set.contains(this.p)) {
              return this.c;
          } else {
 +            // Paper start - Pathfind event
@@ -82,18 +82,18 @@ index a600ee7654aa0898c17c8a433580d92ce447320c..5e7158ba1053ae77fc5c5811d49214e8
 +            }
 +            // Paper end
              this.b.getMethodProfiler().enter("pathfind");
-             float f = (float) this.p.getValue();
-             BlockPosition blockposition = flag ? (new BlockPosition(this.a)).up() : new BlockPosition(this.a);
+             float f = (float) this.a.b(GenericAttributes.FOLLOW_RANGE);
+             BlockPosition blockposition = flag ? this.a.getChunkCoordinates().up() : this.a.getChunkCoordinates();
 diff --git a/src/main/java/net/minecraft/server/NavigationFlying.java b/src/main/java/net/minecraft/server/NavigationFlying.java
-index 5b057e96db5e12bace186f449ae5658b25123000..f16c6d1faac21478cc9b828c478f3f38a90615fc 100644
+index d9f0d446fceeba33fdf47e6ff88f888e6e17d019..0c33a0c9d59d79a39826b5ee14144604717ffebe 100644
 --- a/src/main/java/net/minecraft/server/NavigationFlying.java
 +++ b/src/main/java/net/minecraft/server/NavigationFlying.java
 @@ -25,7 +25,7 @@ public class NavigationFlying extends NavigationAbstract {
  
      @Override
      public PathEntity a(Entity entity, int i) {
--        return this.a(new BlockPosition(entity), i);
-+        return this.a(new BlockPosition(entity), entity, i); // Paper - Forward target entity
+-        return this.a(entity.getChunkCoordinates(), i);
++        return this.a(entity.getChunkCoordinates(), entity, i); // Paper - Forward target entity
      }
  
      @Override

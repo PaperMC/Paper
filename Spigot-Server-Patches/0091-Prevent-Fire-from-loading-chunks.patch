@@ -7,37 +7,37 @@ This causes the nether to spam unload/reload chunks, plus overall
 bad behavior.
 
 diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
-index 2909f78f87b3d8870740f166e82d5e97b0ebdd48..d32857c8724f97c7625208cf815c275264179209 100644
+index 65a17acf90486f11b8efc32a33fc4d7b71c8a432..0cbf4d7d460a3e9e632fd0c9cfd318f3065f18d6 100644
 --- a/src/main/java/net/minecraft/server/BlockFire.java
 +++ b/src/main/java/net/minecraft/server/BlockFire.java
-@@ -78,7 +78,7 @@ public class BlockFire extends Block {
-                 BlockStateBoolean blockstateboolean = (BlockStateBoolean) BlockFire.g.get(enumdirection);
+@@ -95,7 +95,7 @@ public class BlockFire extends BlockFireAbstract {
+                 BlockStateBoolean blockstateboolean = (BlockStateBoolean) BlockFire.p.get(enumdirection);
  
                  if (blockstateboolean != null) {
--                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.h(iblockaccess.getType(blockposition.shift(enumdirection))));
-+                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.h(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))); // Paper - prevent chunk loads
+-                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.e(iblockaccess.getType(blockposition.shift(enumdirection))));
++                    iblockdata1 = (IBlockData) iblockdata1.set(blockstateboolean, this.e(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))); // Paper - prevent chunk loads
                  }
              }
  
-@@ -163,6 +163,7 @@ public class BlockFire extends Block {
+@@ -175,6 +175,7 @@ public class BlockFire extends BlockFireAbstract {
                                  }
  
-                                 blockposition_mutableblockposition.g(blockposition).e(l, j1, i1);
+                                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, l, j1, i1);
 +                                if (!worldserver.isLoaded(blockposition_mutableblockposition)) continue; // Paper
                                  int l1 = this.a((IWorldReader) worldserver, (BlockPosition) blockposition_mutableblockposition);
  
                                  if (l1 > 0) {
-@@ -208,10 +209,16 @@ public class BlockFire extends Block {
+@@ -220,10 +221,16 @@ public class BlockFire extends BlockFireAbstract {
      }
  
-     private void a(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
--        int k = this.i(world.getType(blockposition));
+     private void trySpread(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
+-        int k = this.getBurnChance(world.getType(blockposition));
 +        // Paper start
 +        final IBlockData iblockdata = world.getTypeIfLoaded(blockposition);
 +        if (iblockdata == null) {
 +            return;
 +        }
-+        int k = this.i(iblockdata);
++        int k = this.getBurnChance(iblockdata);
 +        // Paper end
  
          if (random.nextInt(i) < k) {
@@ -46,36 +46,35 @@ index 2909f78f87b3d8870740f166e82d5e97b0ebdd48..d32857c8724f97c7625208cf815c2752
  
              // CraftBukkit start
              org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-@@ -251,7 +258,7 @@ public class BlockFire extends Block {
+@@ -269,7 +276,7 @@ public class BlockFire extends BlockFireAbstract {
          for (int j = 0; j < i; ++j) {
              EnumDirection enumdirection = aenumdirection[j];
  
--            if (this.h(iblockaccess.getType(blockposition.shift(enumdirection)))) {
-+            if (this.h(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))) { // Paper - prevent chunk loads
+-            if (this.e(iblockaccess.getType(blockposition.shift(enumdirection)))) {
++            if (this.e(iblockaccess.getTypeIfLoaded(blockposition.shift(enumdirection)))) { // Paper - prevent chunk loads
                  return true;
              }
          }
-@@ -269,8 +276,12 @@ public class BlockFire extends Block {
+@@ -287,7 +294,12 @@ public class BlockFire extends BlockFireAbstract {
  
              for (int k = 0; k < j; ++k) {
                  EnumDirection enumdirection = aenumdirection[k];
 -                IBlockData iblockdata = iworldreader.getType(blockposition.shift(enumdirection));
--
 +                // Paper start
 +                IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition.shift(enumdirection));
 +                if (iblockdata == null) {
 +                    continue;
 +                }
 +                // Paper end
-                 i = Math.max(this.r(iblockdata), i);
+ 
+                 i = Math.max(this.getFlameChance(iblockdata), i);
              }
+@@ -298,7 +310,7 @@ public class BlockFire extends BlockFireAbstract {
  
-@@ -279,7 +290,7 @@ public class BlockFire extends Block {
-     }
- 
-     public boolean h(IBlockData iblockdata) {
--        return this.r(iblockdata) > 0;
-+        return iblockdata != null && this.r(iblockdata) > 0; // Paper - iblockdata can be nullable if chunk is unloaded now
+     @Override
+     protected boolean e(IBlockData iblockdata) {
+-        return this.getFlameChance(iblockdata) > 0;
++        return iblockdata != null && this.getFlameChance(iblockdata) > 0;  // Paper - iblockdata can be nullable if chunk is unloaded now
      }
  
      @Override

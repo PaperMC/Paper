@@ -6,7 +6,7 @@ Subject: [PATCH] Faster redstone torch rapid clock removal
 Only resize the the redstone torch list once, since resizing arrays / lists is costly
 
 diff --git a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
-index 98a255ae578d4cdc6c0081c5fe7991a8a9b574f2..4c3062ece97409056b614cf36fefea22ad22864d 100644
+index d88d435b7777f731bc0bb728ebe4d4cb31c6376e..a63a60348fe45f63deec6fcb27b6be09cd2f088c 100644
 --- a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
 +++ b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
 @@ -11,7 +11,7 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
@@ -16,29 +16,29 @@ index 98a255ae578d4cdc6c0081c5fe7991a8a9b574f2..4c3062ece97409056b614cf36fefea22
 -    private static final Map<IBlockAccess, List<BlockRedstoneTorch.RedstoneUpdateInfo>> b = new WeakHashMap();
 +    // Paper - Move the mapped list to World
  
-     protected BlockRedstoneTorch(Block.Info block_info) {
-         super(block_info);
-@@ -66,11 +66,16 @@ public class BlockRedstoneTorch extends BlockTorch {
-     }
- 
-     public static void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random, boolean flag) {
--        List list = (List) BlockRedstoneTorch.b.get(world);
-+        // Paper start
-+        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos = world.redstoneUpdateInfos;
- 
--        while (list != null && !list.isEmpty() && world.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
+     protected BlockRedstoneTorch(BlockBase.Info blockbase_info) {
+         super(blockbase_info, ParticleParamRedstone.a);
+@@ -58,11 +58,15 @@ public class BlockRedstoneTorch extends BlockTorch {
+     @Override
+     public void tickAlways(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
+         boolean flag = this.a((World) worldserver, blockposition, iblockdata);
+-        List list = (List) BlockRedstoneTorch.b.get(worldserver);
+-
+-        while (list != null && !list.isEmpty() && worldserver.getTime() - ((BlockRedstoneTorch.RedstoneUpdateInfo) list.get(0)).b > 60L) {
 -            list.remove(0);
++        // Paper start
++        java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos = worldserver.redstoneUpdateInfos;
 +        if (redstoneUpdateInfos != null) {
 +            BlockRedstoneTorch.RedstoneUpdateInfo curr;
-+            while ((curr = redstoneUpdateInfos.peek()) != null && world.getTime() - curr.getTime() > 60L) {
++            while ((curr = redstoneUpdateInfos.peek()) != null && worldserver.getTime() - curr.getTime() > 60L) {
 +                redstoneUpdateInfos.poll();
 +            }
          }
 +        // Paper end
  
          // CraftBukkit start
-         org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
-@@ -140,9 +145,12 @@ public class BlockRedstoneTorch extends BlockTorch {
+         org.bukkit.plugin.PluginManager manager = worldserver.getServer().getPluginManager();
+@@ -127,9 +131,12 @@ public class BlockRedstoneTorch extends BlockTorch {
      }
  
      private static boolean a(World world, BlockPosition blockposition, boolean flag) {
@@ -54,7 +54,7 @@ index 98a255ae578d4cdc6c0081c5fe7991a8a9b574f2..4c3062ece97409056b614cf36fefea22
  
          if (flag) {
              list.add(new BlockRedstoneTorch.RedstoneUpdateInfo(blockposition.immutableCopy(), world.getTime()));
-@@ -150,9 +158,9 @@ public class BlockRedstoneTorch extends BlockTorch {
+@@ -137,9 +144,9 @@ public class BlockRedstoneTorch extends BlockTorch {
  
          int i = 0;
  
@@ -67,7 +67,7 @@ index 98a255ae578d4cdc6c0081c5fe7991a8a9b574f2..4c3062ece97409056b614cf36fefea22
              if (blockredstonetorch_redstoneupdateinfo.a.equals(blockposition)) {
                  ++i;
                  if (i >= 8) {
-@@ -167,7 +175,7 @@ public class BlockRedstoneTorch extends BlockTorch {
+@@ -154,7 +161,7 @@ public class BlockRedstoneTorch extends BlockTorch {
      public static class RedstoneUpdateInfo {
  
          private final BlockPosition a;
@@ -77,10 +77,10 @@ index 98a255ae578d4cdc6c0081c5fe7991a8a9b574f2..4c3062ece97409056b614cf36fefea22
          public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
              this.a = blockposition;
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 6647b9aca46b7db5e2466984f14d787a1c5daa10..5dd504ea0b0d0ca7e7cd8c33473177f95c54bd8c 100644
+index be3e6b398f20467f843fea8296ad5ceea5efb18a..3e6dc44ede30846b8c612b043c1bd625576980e8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -84,6 +84,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -89,6 +89,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
      public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
