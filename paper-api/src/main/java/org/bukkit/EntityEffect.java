@@ -2,12 +2,17 @@ package org.bukkit;
 
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Fox;
 import org.bukkit.entity.Guardian;
 import org.bukkit.entity.IronGolem;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Squid;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.TippedArrow;
@@ -145,7 +150,67 @@ public enum EntityEffect {
     /**
      * Entity hurt due to explosion damage.
      */
-    HURT_EXPLOSION(37, LivingEntity.class);
+    HURT_EXPLOSION(37, LivingEntity.class),
+    /**
+     * Dolphin has been fed and is locating a structure.
+     */
+    DOLPHIN_FED(38, Dolphin.class),
+    /**
+     * Ravager has been stunned for 40 ticks.
+     */
+    RAVAGER_STUNNED(39, Ravager.class),
+    /**
+     * Cat taming failed.
+     */
+    CAT_TAME_FAIL(40, Cat.class),
+    /**
+     * Cat taming succeeded.
+     */
+    CAT_TAME_SUCCESS(41, Cat.class),
+    /**
+     * Villager splashes particles during a raid.
+     */
+    VILLAGER_SPLASH(42, Villager.class),
+    /**
+     * Player's bad omen effect removed to start or increase raid difficult.
+     */
+    PLAYER_BAD_OMEN_RAID(43, Player.class),
+    /**
+     * Entity hurt due to berry bush. Prickly!
+     */
+    HURT_BERRY_BUSH(44, LivingEntity.class),
+    /**
+     * Fox chews the food in its mouth
+     */
+    FOX_CHEW(45, Fox.class),
+    /**
+     * Entity teleported as a result of chorus fruit or as an enderman
+     */
+    TELEPORT_ENDER(46, LivingEntity.class),
+    /**
+     * Entity breaks item in main hand
+     */
+    BREAK_EQUIPMENT_MAIN_HAND(47, LivingEntity.class),
+    /**
+     * Entity breaks item in off hand
+     */
+    BREAK_EQUIPMENT_OFF_HAND(48, LivingEntity.class),
+    /**
+     * Entity breaks item in helmet slot
+     */
+    BREAK_EQUIPMENT_HELMET(49, LivingEntity.class),
+    /**
+     * Entity breaks item in chestplate slot
+     */
+    BREAK_EQUIPMENT_CHESTPLATE(50, LivingEntity.class),
+    /**
+     * Entity breaks item in legging slot
+     */
+    BREAK_EQUIPMENT_LEGGINGS(51, LivingEntity.class),
+    /**
+     * Entity breaks item in boot slot
+     */
+    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class);
 
     private final byte data;
     private final Class<? extends Entity> applicable;
