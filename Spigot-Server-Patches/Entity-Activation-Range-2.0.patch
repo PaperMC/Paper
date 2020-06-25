@@ -17,13 +17,13 @@ diff --git a/src/main/java/net/minecraft/server/BehaviorController.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BehaviorController.java
 +++ b/src/main/java/net/minecraft/server/BehaviorController.java
-@@ -0,0 +0,0 @@ public class BehaviorController<E extends EntityLiving> implements MinecraftSeri
-         });
+@@ -0,0 +0,0 @@ public class BehaviorController<E extends EntityLiving> {
+ 
      }
  
 +    public boolean hasActivity(Activity activity) { return c(activity); } // Paper - OBFHELPER
      public boolean c(Activity activity) {
-         return this.g.contains(activity);
+         return this.j.contains(activity);
      }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -46,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (vec3d.equals(Vec3D.a)) {
                      return;
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-                 this.y = Vec3D.a;
+                 this.x = Vec3D.a;
                  this.setMot(Vec3D.a);
              }
 +            // Paper start - ignore movement changes while inactive.
@@ -58,13 +58,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
  
              vec3d = this.a(vec3d, enummovetype);
-             Vec3D vec3d1 = this.e(vec3d);
+             Vec3D vec3d1 = this.f(vec3d);
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         return this.am;
+         return this.al;
      }
  
-+    public boolean isPushedByWater() { return this.bM(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
-     public boolean bM() {
++    public boolean isPushedByWater() { return this.bU(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
+     public boolean bU() {
          // Paper start
          return this.pushedByWater();
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
@@ -88,10 +88,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public long lootTableSeed;
      @Nullable
 -    private Entity leashHolder;
-+    public Entity leashHolder; // Paper
-     private int bF;
++    public Entity leashHolder; // Paper - private -> public
+     private int bE;
      @Nullable
-     private NBTTagCompound bG;
+     private NBTTagCompound bF;
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
          return this.lookController;
      }
@@ -115,25 +115,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-     protected float aV;
-     protected int aW; protected int getKillCount() { return this.aW; } // Paper - OBFHELPER
+     protected float aU;
+     protected int aV; protected int getKillCount() { return this.aV; } // Paper - OBFHELPER
      public float lastDamage;
 -    protected boolean jumping;
-+    public boolean jumping; // Paper
++    public boolean jumping; // Paper protected -> public
+     public float aY;
      public float aZ;
      public float ba;
-     public float bb;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -0,0 +0,0 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
-         return this.bK != null;
+         return this.bJ != null;
      }
  
-+    public boolean inCaravan() { return this.fd(); } // Paper - OBFHELPER
-     public boolean fd() {
-         return this.bJ != null;
++    public final boolean inCaravan() { return this.fD(); } // Paper - OBFHELPER
+     public boolean fD() {
+         return this.bI != null;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -148,14 +148,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
 +        if (this.getUnhappy() > 0) {
 +            this.setUnhappy(this.getUnhappy() - 1);
-+        }
+         }
 +        if (this.doAITick()) {
 +            if (world.spigotConfig.tickInactiveVillagers) {
 +                this.mobTick();
 +            } else {
 +                this.mobTick(true);
 +            }
-         }
++        }
 +        doReputationTick();
 +        // Paper end
 +
@@ -163,30 +163,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Spigot End
  
--    @Override
+     @Override
 -    protected void mobTick() {
-+    @Override // Paper start - tick trades while inactive
 +    protected void mobTick() { mobTick(false); }
 +    protected void mobTick(boolean inactive) {
-+        // Paper end
-         this.world.getMethodProfiler().enter("brain");
+         this.world.getMethodProfiler().enter("villagerBrain");
 -        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
+-        this.world.getMethodProfiler().exit();
 +        if (!inactive) this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error // Paper
-         this.world.getMethodProfiler().exit();
-         if (!this.et() && this.bB > 0) {
-             --this.bB;
+         if (this.bM) {
+             this.bM = false;
+         }
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
-             this.bD = null;
+             this.bC = null;
          }
  
 -        if (!this.isNoAI() && this.random.nextInt(100) == 0) {
 +        if (!inactive && !this.isNoAI() && this.random.nextInt(100) == 0) { // Paper
-             Raid raid = ((WorldServer) this.world).c_(new BlockPosition(this));
+             Raid raid = ((WorldServer) this.world).c_(this.getChunkCoordinates());
  
              if (raid != null && raid.v() && !raid.a()) {
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
-         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.et()) {
-             this.ey();
+         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.eO()) {
+             this.eT();
          }
 +        if (inactive) return; // Paper
  
@@ -196,8 +195,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-+    private void doReputationTick() { fa(); } // Paper - OBFHELPER
-     private void fa() {
++    private void doReputationTick() { fv(); } // Paper - OBFHELPER
+     private void fv() {
          long i = this.world.getTime();
  
 diff --git a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
@@ -208,14 +207,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return super.prepare(generatoraccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
      }
  
-+    public final int getUnhappy() { return eq(); } // Paper - OBFHELPER
-     public int eq() {
-         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bx);
++    public final int getUnhappy() { return eL(); } // Paper - OBFHELPER
+     public int eL() {
+         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bw);
      }
  
 +    public final void setUnhappy(int i) { s(i); } // Paper - OBFHELPER
      public void s(int i) {
-         this.datawatcher.set(EntityVillagerAbstract.bx, i);
+         this.datawatcher.set(EntityVillagerAbstract.bw, i);
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -267,7 +266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public PathfinderGoalGotoTarget(EntityCreature entitycreature, double d0, int i, int j) {
          this.e = BlockPosition.ZERO;
 @@ -0,0 +0,0 @@ public abstract class PathfinderGoalGotoTarget extends PathfinderGoal {
-                         blockposition_mutableblockposition.g(blockposition).e(i1, k - 1, j1);
+                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, i1, k - 1, j1);
                          if (this.a.a((BlockPosition) blockposition_mutableblockposition) && this.a(this.a.world, blockposition_mutableblockposition)) {
                              this.e = blockposition_mutableblockposition;
 +                            setTarget(blockposition_mutableblockposition.immutableCopy()); // Paper
@@ -283,15 +282,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      };
      private final Map<PathfinderGoal.Type, PathfinderGoalWrapped> c = new EnumMap(PathfinderGoal.Type.class);
 -    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();
-+    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet();private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
-     private final GameProfilerFiller e;
++    private final Set<PathfinderGoalWrapped> d = Sets.newLinkedHashSet(); private Set<PathfinderGoalWrapped> getTasks() { return d; }// Paper - OBFHELPER
+     private final Supplier<GameProfilerFiller> e;
      private final EnumSet<PathfinderGoal.Type> f = EnumSet.noneOf(PathfinderGoal.Type.class);
 -    private int g = 3;
 +    private int g = 3;private int getTickRate() { return g; } // Paper - OBFHELPER
 +    private int curRate;private int getCurRate() { return curRate; } private void incRate() { this.curRate++; } // Paper TODO
  
-     public PathfinderGoalSelector(GameProfilerFiller gameprofilerfiller) {
-         this.e = gameprofilerfiller;
+     public PathfinderGoalSelector(Supplier<GameProfilerFiller> supplier) {
+         this.e = supplier;
 @@ -0,0 +0,0 @@ public class PathfinderGoalSelector {
          this.d.add(new PathfinderGoalWrapped(i, pathfindergoal));
      }
@@ -593,8 +592,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          if ( !( entity instanceof EntityArrow ) )
          {
--            if ( !entity.onGround || !entity.passengers.isEmpty() || entity.isPassenger() )
-+            if ( (!entity.onGround && !(entity instanceof EntityFlying)) || !entity.passengers.isEmpty() || entity.isPassenger() ) // Paper
+-            if ( !entity.isOnGround() || !entity.passengers.isEmpty() || entity.isPassenger() )
++            if ( (!entity.isOnGround() && !(entity instanceof EntityFlying)) || !entity.passengers.isEmpty() || entity.isPassenger() )
              {
 -                return true;
 +                return 10; // Paper
