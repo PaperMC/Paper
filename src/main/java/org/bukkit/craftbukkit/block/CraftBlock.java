@@ -323,6 +323,7 @@ public class CraftBlock implements Block {
         case OAK_WALL_SIGN:
         case SPRUCE_SIGN:
         case SPRUCE_WALL_SIGN:
+        case WARPED_SIGN:
             return new CraftSign(this);
         case CHEST:
         case TRAPPED_CHEST:

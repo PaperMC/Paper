@@ -208,6 +208,7 @@ public final class CraftItemFactory implements ItemFactory {
         case OAK_WALL_SIGN:
         case SPRUCE_SIGN:
         case SPRUCE_WALL_SIGN:
+        case WARPED_SIGN:
         case SPAWNER:
         case BREWING_STAND:
         case ENCHANTING_TABLE:
