@@ -469,6 +469,7 @@ public final class CraftItemStack extends ItemStack {
             case ACACIA_WALL_SIGN:
             case BIRCH_SIGN:
             case BIRCH_WALL_SIGN:
+            case CRIMSON_SIGN:
             case DARK_OAK_SIGN:
             case DARK_OAK_WALL_SIGN:
             case JUNGLE_SIGN:
