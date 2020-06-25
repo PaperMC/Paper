@@ -12,15 +12,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
-     private final ChunkSection[] sections;
-     private BiomeStorage d;
-     private final Map<BlockPosition, NBTTagCompound> e;
--    public boolean loaded;
-+    public boolean loaded; public boolean isLoaded() { return loaded; } // Paper - OBFHELPER
-     public final World world;
-     public final Map<HeightMap.Type, HeightMap> heightMap;
-     private final ChunkConverter i;
-@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          this(world, chunkcoordintpair, biomestorage, ChunkConverter.a, TickListEmpty.b(), TickListEmpty.b(), 0L, (ChunkSection[]) null, (Consumer) null);
      }
  
@@ -93,19 +84,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-     private static final DataWatcherObject<Boolean> aB = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
-     private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
-     protected static final DataWatcherObject<EntityPose> POSE = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
--    public boolean inChunk;
-+    public boolean inChunk; public boolean isAddedToChunk() { return inChunk; } // Paper - OBFHELPER
-     public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
-     public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
-     public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      public boolean isChunkLoaded() {
--        return world.isChunkLoaded((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4);
+-        return world.isChunkLoaded((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4);
 +        return getCurrentChunk() != null;
      }
      // CraftBukkit end
@@ -124,31 +106,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    public Chunk getCurrentChunk() {
 +        final Chunk chunk = currentChunk != null ? currentChunk.get() : null;
-+        if (chunk != null && chunk.isLoaded()) {
++        if (chunk != null && chunk.loaded) {
 +            return chunk;
 +        }
 +
-+        return !isAddedToChunk() ? null : ((ChunkProviderServer) world.chunkProvider).getChunkAtIfLoadedMainThreadNoCache(getChunkX(), getChunkZ());
-+    }
-+
-+    /**
-+     * Returns the chunk at the location, using the entities local cache if avail
-+     * Will only return null if the location specified is not loaded
-+     */
-+    public Chunk getCurrentChunkAt(int x, int z) {
-+        Chunk chunk = getCurrentChunk();
-+        if (chunk != null && getChunkX() == chunk.getPos().x && getChunkZ() == chunk.getPos().z) {
-+            return chunk;
-+        }
-+        return ((ChunkProviderServer) world.chunkProvider).getChunkAtIfLoadedMainThreadNoCache(getChunkX(), getChunkZ());
-+    }
-+    /**
-+     * Returns the chunk at the entities current location, using the entities local cache if avail
-+     * Ideally this is always the same as getCurrentChunk, but only becomes different in registration issues.
-+     * Will only return null if the location specified is not loaded
-+     */
-+    public Chunk getChunkAtLocation() {
-+        return getCurrentChunkAt((int)Math.floor(locX) >> 4, (int)Math.floor(locZ) >> 4);
++        return !inChunk ? null : ((WorldServer)world).getChunkProvider().getChunkAtIfLoadedMainThreadNoCache(getChunkX(), getChunkZ());
 +    }
 +
      private MinecraftKey entityKey;
