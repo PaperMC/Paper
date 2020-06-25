@@ -50,6 +50,7 @@ import net.minecraft.server.GeneratorAccess;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IInventory;
+import net.minecraft.server.IProjectile;
 import net.minecraft.server.ItemActionContext;
 import net.minecraft.server.ItemStack;
 import net.minecraft.server.Items;
@@ -208,6 +209,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.projectiles.ProjectileSource;
 
 public class CraftEventFactory {
     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
@@ -1211,6 +1213,13 @@ public class CraftEventFactory {
                 break;
             default:
                 cause = IgniteCause.FLINT_AND_STEEL;
+        }
+
+        if (igniter instanceof IProjectile) {
+            Entity shooter = ((IProjectile) igniter).getShooter();
+            if (shooter != null) {
+                bukkitIgniter = shooter.getBukkitEntity();
+            }
         }
 
         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, bukkitIgniter);
