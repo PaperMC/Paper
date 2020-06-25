@@ -608,7 +608,7 @@ public class CraftBlock implements Block {
         boolean result = false;
 
         // Modelled off EntityHuman#hasBlock
-        if (block != Blocks.AIR && (item == null || iblockdata.isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
+        if (block != Blocks.AIR && (item == null || !iblockdata.isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
             net.minecraft.server.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
             result = true;
         }
@@ -632,7 +632,7 @@ public class CraftBlock implements Block {
         net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
-        if (item == null || iblockdata.isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
+        if (item == null || !iblockdata.isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
             return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {
