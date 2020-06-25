@@ -196,6 +196,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case BIRCH_SIGN:
             case BIRCH_WALL_SIGN:
             case CRIMSON_SIGN:
+            case CRIMSON_WALL_SIGN:
             case DARK_OAK_SIGN:
             case DARK_OAK_WALL_SIGN:
             case JUNGLE_SIGN:
@@ -205,6 +206,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             case SPRUCE_SIGN:
             case SPRUCE_WALL_SIGN:
             case WARPED_SIGN:
+            case WARPED_WALL_SIGN:
             case SPAWNER:
             case BREWING_STAND:
             case ENCHANTING_TABLE:
@@ -303,6 +305,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case BIRCH_SIGN:
         case BIRCH_WALL_SIGN:
         case CRIMSON_SIGN:
+        case CRIMSON_WALL_SIGN:
         case DARK_OAK_SIGN:
         case DARK_OAK_WALL_SIGN:
         case JUNGLE_SIGN:
@@ -312,6 +315,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case SPRUCE_SIGN:
         case SPRUCE_WALL_SIGN:
         case WARPED_SIGN:
+        case WARPED_WALL_SIGN:
             if (te == null) {
                 te = new TileEntitySign();
             }
@@ -534,6 +538,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case BIRCH_SIGN:
         case BIRCH_WALL_SIGN:
         case CRIMSON_SIGN:
+        case CRIMSON_WALL_SIGN:
         case DARK_OAK_SIGN:
         case DARK_OAK_WALL_SIGN:
         case JUNGLE_SIGN:
@@ -543,6 +548,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         case SPRUCE_SIGN:
         case SPRUCE_WALL_SIGN:
         case WARPED_SIGN:
+        case WARPED_WALL_SIGN:
             valid = blockState instanceof CraftSign;
             break;
         case CHEST:
