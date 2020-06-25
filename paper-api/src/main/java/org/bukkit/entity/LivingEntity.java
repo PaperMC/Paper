@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -486,11 +487,10 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void swingOffHand();
 
     /**
-     * Set if this entity will be subject to collisions other entities.
+     * Set if this entity will be subject to collisions with other entities.
      * <p>
-     * Note that collisions are bidirectional, so this method would need to be
-     * set to false on both the collidee and the collidant to ensure no
-     * collisions take place.
+     * Exemptions to this rule can be managed with
+     * {@link #getCollidableExemptions()}
      *
      * @param collidable collision status
      */
@@ -499,6 +499,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     /**
      * Gets if this entity is subject to collisions with other entities.
      * <p>
+     * Some entities might be exempted from the collidable rule of this entity.
+     * Use {@link #getCollidableExemptions()} to get these.
+     * <p>
      * Please note that this method returns only the custom collidable state,
      * not whether the entity is non-collidable for other reasons such as being
      * dead.
@@ -506,6 +509,24 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return collision status
      */
     boolean isCollidable();
+
+    /**
+     * Gets a mutable set of UUIDs of the entities which are exempt from the
+     * entity's collidable rule and which's collision with this entity will
+     * behave the opposite of it.
+     * <p>
+     * This set can be modified to add or remove exemptions.
+     * <p>
+     * For example if collidable is true and an entity is in the exemptions set
+     * then it will not collide with it. Similarly if collidable is false and an
+     * entity is in this set then it will still collide with it.
+     * <p>
+     * Note these exemptions are not (currently) persistent.
+     *
+     * @return the collidable exemption set
+     */
+    @NotNull
+    Set<UUID> getCollidableExemptions();
 
     /**
      * Returns the value of the memory specified.
