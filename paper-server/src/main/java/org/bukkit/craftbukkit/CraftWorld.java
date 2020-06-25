@@ -1493,6 +1493,8 @@ public class CraftWorld implements World {
             } else if (LlamaSpit.class.isAssignableFrom(clazz)) {
                 entity = EntityTypes.LLAMA_SPIT.a(world);
                 entity.setPositionRotation(x, y, z, yaw, pitch);
+            } else if (Firework.class.isAssignableFrom(clazz)) {
+                entity = new EntityFireworks(world, x, y, z, net.minecraft.server.ItemStack.b);
             }
         } else if (Minecart.class.isAssignableFrom(clazz)) {
             if (PoweredMinecart.class.isAssignableFrom(clazz)) {
@@ -1760,8 +1762,6 @@ public class CraftWorld implements World {
             entity = new EntityExperienceOrb(world, x, y, z, 0);
         } else if (LightningStrike.class.isAssignableFrom(clazz)) {
             entity = EntityTypes.LIGHTNING_BOLT.a(world);
-        } else if (Firework.class.isAssignableFrom(clazz)) {
-            entity = new EntityFireworks(world, x, y, z, net.minecraft.server.ItemStack.b);
         } else if (AreaEffectCloud.class.isAssignableFrom(clazz)) {
             entity = new EntityAreaEffectCloud(world, x, y, z);
         } else if (EvokerFangs.class.isAssignableFrom(clazz)) {
