@@ -17,7 +17,7 @@ public enum Biome implements Keyed {
     TAIGA,
     SWAMP,
     RIVER,
-    NETHER,
+    NETHER_WASTES,
     THE_END,
     FROZEN_OCEAN,
     FROZEN_RIVER,
@@ -83,7 +83,11 @@ public enum Biome implements Keyed {
     MODIFIED_WOODED_BADLANDS_PLATEAU,
     MODIFIED_BADLANDS_PLATEAU,
     BAMBOO_JUNGLE,
-    BAMBOO_JUNGLE_HILLS;
+    BAMBOO_JUNGLE_HILLS,
+    SOUL_SAND_VALLEY,
+    CRIMSON_FOREST,
+    WARPED_FOREST,
+    BASALT_DELTAS;
 
     private final NamespacedKey key;
 

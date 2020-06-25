@@ -1,9 +1,14 @@
 package org.bukkit.attribute;
 
+import java.util.Locale;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Types of attributes which may be present on an {@link Attributable}.
  */
-public enum Attribute {
+public enum Attribute implements Keyed {
 
     /**
      * Maximum health of an Entity.
@@ -53,4 +58,16 @@ public enum Attribute {
      * Chance of a zombie to spawn reinforcements.
      */
     ZOMBIE_SPAWN_REINFORCEMENTS;
+
+    private final NamespacedKey key;
+
+    private Attribute() {
+        this.key = NamespacedKey.minecraft(this.name().toLowerCase(Locale.ROOT));
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
+    }
 }

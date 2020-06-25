@@ -106,7 +106,7 @@ public enum ChatColor {
      * you need to dynamically convert colour codes from your custom format.
      */
     public static final char COLOR_CHAR = '\u00A7';
-    private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf(COLOR_CHAR) + "[0-9A-FK-OR]");
+    private static final Pattern STRIP_COLOR_PATTERN = Pattern.compile("(?i)" + String.valueOf(COLOR_CHAR) + "[0-9A-FK-ORX]");
 
     private final int intCode;
     private final char code;
@@ -218,7 +218,7 @@ public enum ChatColor {
 
         char[] b = textToTranslate.toCharArray();
         for (int i = 0; i < b.length - 1; i++) {
-            if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i + 1]) > -1) {
+            if (b[i] == altColorChar && "0123456789AaBbCcDdEeFfKkLlMmNnOoRrXx".indexOf(b[i + 1]) > -1) {
                 b[i] = ChatColor.COLOR_CHAR;
                 b[i + 1] = Character.toLowerCase(b[i + 1]);
             }

@@ -3,7 +3,7 @@ package org.bukkit.entity;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.NotNull;
 
-public interface Firework extends Entity {
+public interface Firework extends Projectile {
 
     /**
      * Get a copy of the fireworks meta

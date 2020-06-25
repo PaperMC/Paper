@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.bukkit.advancement.Advancement;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.enchantments.Enchantment;
@@ -51,6 +52,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Art
      */
     Registry<Art> ART = new SimpleRegistry<>(Art.class);
+    /**
+     * Attribute.
+     *
+     * @see Attribute
+     */
+    Registry<Attribute> ATTRIBUTE = new SimpleRegistry<>(Attribute.class);
     /**
      * Server biomes.
      *

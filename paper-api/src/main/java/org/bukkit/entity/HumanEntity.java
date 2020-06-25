@@ -231,31 +231,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getSleepTicks();
 
     /**
-     * Gets the Location where the player will spawn at their bed, null if
-     * they have not slept in one or their current bed spawn is invalid.
-     *
-     * @return Bed Spawn Location if bed exists, otherwise null.
-     */
-    @Nullable
-    public Location getBedSpawnLocation();
-
-    /**
-     * Sets the Location where the player will spawn at their bed.
-     *
-     * @param location where to set the respawn location
-     */
-    public void setBedSpawnLocation(@Nullable Location location);
-
-    /**
-     * Sets the Location where the player will spawn at their bed.
-     *
-     * @param location where to set the respawn location
-     * @param force whether to forcefully set the respawn location even if a
-     *     valid bed is not present
-     */
-    public void setBedSpawnLocation(@Nullable Location location, boolean force);
-
-    /**
      * Attempts to make the entity sleep at the given location.
      * <br>
      * The location must be in the current world and have a bed placed at the

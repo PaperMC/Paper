@@ -82,6 +82,10 @@ public enum InventoryType {
      */
     ANVIL(3, "Repairing"),
     /**
+     * A smithing inventory, with 2 CRAFTING slots and 1 RESULT slot
+     */
+    SMITHING(3, "Smithing"),
+    /**
      * A beacon inventory, with 1 CRAFTING slot
      */
     BEACON(1, "container.beacon"),

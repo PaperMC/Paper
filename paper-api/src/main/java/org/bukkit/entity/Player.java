@@ -226,6 +226,32 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public boolean isSleepingIgnored();
 
     /**
+     * Gets the Location where the player will spawn at their bed, null if
+     * they have not slept in one or their current bed spawn is invalid.
+     *
+     * @return Bed Spawn Location if bed exists, otherwise null.
+     */
+    @Nullable
+    @Override
+    public Location getBedSpawnLocation();
+
+    /**
+     * Sets the Location where the player will spawn at their bed.
+     *
+     * @param location where to set the respawn location
+     */
+    public void setBedSpawnLocation(@Nullable Location location);
+
+    /**
+     * Sets the Location where the player will spawn at their bed.
+     *
+     * @param location where to set the respawn location
+     * @param force whether to forcefully set the respawn location even if a
+     *     valid bed is not present
+     */
+    public void setBedSpawnLocation(@Nullable Location location, boolean force);
+
+    /**
      * Play a note for a player at a location. This requires a note block
      * at the particular location (as far as the client is concerned). This
      * will not work without a note block. This will not work with cake.

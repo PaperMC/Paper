@@ -200,6 +200,11 @@ public abstract class Enchantment implements Keyed {
      */
     public static final Enchantment VANISHING_CURSE = new EnchantmentWrapper("vanishing_curse");
 
+    /**
+     * Walk quicker on soul blocks
+     */
+    public static final Enchantment SOUL_SPEED = new EnchantmentWrapper("soul_speed");
+
     private static final Map<NamespacedKey, Enchantment> byKey = new HashMap<NamespacedKey, Enchantment>();
     private static final Map<String, Enchantment> byName = new HashMap<String, Enchantment>();
     private static boolean acceptingNew = true;

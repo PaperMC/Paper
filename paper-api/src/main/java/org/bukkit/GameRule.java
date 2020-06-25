@@ -158,6 +158,16 @@ public final class GameRule<T> {
      */
     public static final GameRule<Boolean> DO_TRADER_SPAWNING = new GameRule<>("doTraderSpawning", Boolean.class);
 
+    /**
+     * Whether mobs should cease being angry at a player once they die.
+     */
+    public static final GameRule<Boolean> FORGIVE_DEAD_PLAYERS = new GameRule<>("forgiveDeadPlayers", Boolean.class);
+
+    /**
+     * Whether mobs will target all player entities once angered.
+     */
+    public static final GameRule<Boolean> UNIVERSAL_ANGER = new GameRule<>("universalAnger", Boolean.class);
+
     // Numerical rules
     /**
      * How often a random block tick occurs (such as plant growth, leaf decay,

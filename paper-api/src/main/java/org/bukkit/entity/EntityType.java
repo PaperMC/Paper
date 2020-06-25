@@ -213,7 +213,7 @@ public enum EntityType implements Keyed {
     ZOMBIE("zombie", Zombie.class, 54),
     SLIME("slime", Slime.class, 55),
     GHAST("ghast", Ghast.class, 56),
-    PIG_ZOMBIE("zombie_pigman", PigZombie.class, 57),
+    ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     ENDERMAN("enderman", Enderman.class, 58),
     CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
     SILVERFISH("silverfish", Silverfish.class, 60),
@@ -261,6 +261,10 @@ public enum EntityType implements Keyed {
     WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
     FOX("fox", Fox.class, -1),
     BEE("bee", Bee.class, -1),
+    HOGLIN("hoglin", Hoglin.class, -1),
+    PIGLIN("piglin", Piglin.class, -1),
+    STRIDER("strider", Strider.class, -1),
+    ZOGLIN("zoglin", Zoglin.class, -1),
     /**
      * A fishing line and bobber.
      */
@@ -309,6 +313,7 @@ public enum EntityType implements Keyed {
         NAME_MAP.put("snowman", SNOWMAN);
         NAME_MAP.put("villager_golem", IRON_GOLEM);
         NAME_MAP.put("ender_crystal", ENDER_CRYSTAL);
+        NAME_MAP.put("zombie_pigman", ZOMBIFIED_PIGLIN);
     }
 
     private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId) {

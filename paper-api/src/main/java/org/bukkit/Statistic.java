@@ -88,7 +88,10 @@ public enum Statistic implements Keyed {
     RAID_TRIGGER,
     RAID_WIN,
     INTERACT_WITH_ANVIL,
-    INTERACT_WITH_GRINDSTONE;
+    INTERACT_WITH_GRINDSTONE,
+    TARGET_HIT,
+    INTERACT_WITH_SMITHING_TABLE,
+    STRIDER_ONE_CM;
 
     private final Type type;
     private final NamespacedKey key;

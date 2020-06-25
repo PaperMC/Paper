@@ -1502,8 +1502,12 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Gets the type of this world.
      *
      * @return Type of this world.
+     * @deprecated world type is only used to select the default word generation
+     * settings and is not stored in Vanilla worlds, making it impossible for
+     * this method to always return the correct value.
      */
     @Nullable
+    @Deprecated
     public WorldType getWorldType();
 
     /**

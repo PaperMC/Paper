@@ -46,7 +46,8 @@ public enum PatternType {
     SKULL("sku"),
     FLOWER("flo"),
     MOJANG("moj"),
-    GLOBE("glb");
+    GLOBE("glb"),
+    PIGLIN("pig");
 
     private final String identifier;
     private static final Map<String, PatternType> byString = new HashMap<String, PatternType>();

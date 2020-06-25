@@ -1,7 +1,5 @@
 package org.bukkit;
 
-import com.google.common.collect.Maps;
-import java.util.Map;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -18,7 +16,6 @@ import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieVillager;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A list of all Effects that can happen to entities.
@@ -152,7 +149,6 @@ public enum EntityEffect {
 
     private final byte data;
     private final Class<? extends Entity> applicable;
-    private static final Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
 
     EntityEffect(final int data, /*@NotNull*/ Class<? extends Entity> clazz) {
         this.data = (byte) data;
@@ -178,25 +174,5 @@ public enum EntityEffect {
     @NotNull
     public Class<? extends Entity> getApplicable() {
         return applicable;
-    }
-
-    /**
-     * Gets the EntityEffect with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link EntityEffect} representing the given value, or null
-     *     if it doesn't exist
-     * @deprecated Magic value
-     */
-    @Deprecated
-    @Nullable
-    public static EntityEffect getByData(final byte data) {
-        return BY_DATA.get(data);
-    }
-
-    static {
-        for (EntityEffect entityEffect : values()) {
-            BY_DATA.put(entityEffect.data, entityEffect);
-        }
     }
 }

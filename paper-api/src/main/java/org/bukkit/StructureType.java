@@ -142,6 +142,21 @@ public final class StructureType {
      */
     public static final StructureType PILLAGER_OUTPOST = register(new StructureType("pillager_outpost", MapCursor.Type.RED_X));
 
+    /**
+     * Nether fossils.
+     */
+    public static final StructureType NETHER_FOSSIL = register(new StructureType("nether_fossil", MapCursor.Type.RED_X));
+
+    /**
+     * Ruined portal.
+     */
+    public static final StructureType RUINED_PORTAL = register(new StructureType("ruined_portal", MapCursor.Type.RED_X));
+
+    /**
+     * Bastion remnant.
+     */
+    public static final StructureType BASTION_REMNANT = register(new StructureType("bastion_remnant", MapCursor.Type.RED_X));
+
     /* ****************
      *  STRUCTURE TYPES REGISTERED ABOVE THIS
      * ****************
