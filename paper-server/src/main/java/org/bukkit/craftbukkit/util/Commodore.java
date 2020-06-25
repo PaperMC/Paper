@@ -139,6 +139,26 @@ public class Commodore
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String name, String desc)
                     {
+                        if ( owner.equals( "org/bukkit/block/Biome" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "NETHER":
+                                    super.visitFieldInsn( opcode, owner, "NETHER_WASTES", desc );
+                                    return;
+                            }
+                        }
+
+                        if ( owner.equals( "org/bukkit/entity/EntityType" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "PIG_ZOMBIE":
+                                    super.visitFieldInsn( opcode, owner, "ZOMBIFIED_PIGLIN", desc );
+                                    return;
+                            }
+                        }
+
                         if ( modern )
                         {
                             if ( owner.equals( "org/bukkit/Material" ) )
@@ -215,26 +235,6 @@ public class Commodore
                                 case "BLOCK_DUST":
                                 case "FALLING_DUST":
                                     super.visitFieldInsn( opcode, owner, "LEGACY_" + name, desc );
-                                    return;
-                            }
-                        }
-
-                        if ( owner.equals( "org/bukkit/block/Biome" ) )
-                        {
-                            switch ( name )
-                            {
-                                case "NETHER":
-                                    super.visitFieldInsn( opcode, owner, "NETHER_WASTES", desc );
-                                    return;
-                            }
-                        }
-
-                        if ( owner.equals( "org/bukkit/entity/EntityType" ) )
-                        {
-                            switch ( name )
-                            {
-                                case "PIG_ZOMBIE":
-                                    super.visitFieldInsn( opcode, owner, "ZOMBIFIED_PIGLIN", desc );
                                     return;
                             }
                         }
