@@ -15,6 +15,7 @@ import net.minecraft.server.EntityDragonFireball;
 import net.minecraft.server.EntityEgg;
 import net.minecraft.server.EntityEnderPearl;
 import net.minecraft.server.EntityFireball;
+import net.minecraft.server.EntityFireworks;
 import net.minecraft.server.EntityFishingHook;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityInsentient;
@@ -58,6 +59,7 @@ import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LingeringPotion;
@@ -436,6 +438,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             Location location = getEyeLocation();
 
             launch = new EntityShulkerBullet(world, getHandle(), null, null);
+            launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        } else if (Firework.class.isAssignableFrom(projectile)) {
+            Location location = getEyeLocation();
+
+            launch = new EntityFireworks(world, net.minecraft.server.ItemStack.b, getHandle());
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 
