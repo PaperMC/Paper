@@ -153,14 +153,6 @@ public final class CraftChatMessage {
         }
     }
 
-    public static IChatBaseComponent wrapOrNull(String message) {
-        return (message == null || message.isEmpty()) ? null : new ChatComponentText(message);
-    }
-
-    public static IChatBaseComponent wrapOrEmpty(String message) {
-        return (message == null) ? new ChatComponentText("") : new ChatComponentText(message);
-    }
-
     public static IChatBaseComponent fromStringOrNull(String message) {
         return fromStringOrNull(message, false);
     }

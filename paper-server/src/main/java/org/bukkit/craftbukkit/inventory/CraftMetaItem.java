@@ -758,7 +758,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public final void setDisplayName(String name) {
-        this.displayName = CraftChatMessage.wrapOrNull(name);
+        this.displayName = CraftChatMessage.fromStringOrNull(name);
     }
 
     @Override
@@ -773,7 +773,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setLocalizedName(String name) {
-        this.locName = CraftChatMessage.wrapOrNull(name);
+        this.locName = CraftChatMessage.fromStringOrNull(name);
     }
 
     @Override
@@ -1338,7 +1338,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                     page = page.substring(0, maxItemLength);
                 }
 
-                addTo.add(CraftChatMessage.wrapOrEmpty(page));
+                addTo.add(CraftChatMessage.fromString(page)[0]);
             }
         }
     }
