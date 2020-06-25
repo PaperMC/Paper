@@ -166,6 +166,42 @@
 +            if (dimension == 0) {
 +                worldSession = this.convertable;
 +            } else {
++                String dim = "DIM" + dimension;
++
++                File newWorld = new File(new File(name), dim);
++                File oldWorld = new File(new File(s), dim);
++                File oldLevelDat = new File(new File(s), "level.dat"); // The data folders exist on first run as they are created in the PersistentCollection constructor above, but the level.dat won't
++
++                if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
++                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
++                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
++                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
++                    MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
++
++                    if (newWorld.exists()) {
++                        MinecraftServer.LOGGER.warn("A file or folder already exists at " + newWorld + "!");
++                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
++                    } else if (newWorld.getParentFile().mkdirs()) {
++                        if (oldWorld.renameTo(newWorld)) {
++                            MinecraftServer.LOGGER.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
++                            // Migrate world data too.
++                            try {
++                                com.google.common.io.Files.copy(oldLevelDat, new File(new File(name), "level.dat"));
++                                org.apache.commons.io.FileUtils.copyDirectory(new File(new File(s), "data"), new File(new File(name), "data"));
++                            } catch (IOException exception) {
++                                MinecraftServer.LOGGER.warn("Unable to migrate world data.");
++                            }
++                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder complete ----");
++                        } else {
++                            MinecraftServer.LOGGER.warn("Could not move folder " + oldWorld + " to " + newWorld + "!");
++                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
++                        }
++                    } else {
++                        MinecraftServer.LOGGER.warn("Could not create path for " + newWorld + "!");
++                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
++                    }
++                }
++
 +                try {
 +                    worldSession = Convertable.a(server.getWorldContainer().toPath()).c(name, dimensionKey);
 +                } catch (IOException ex) {
@@ -241,42 +277,6 @@
 +                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
 +                this.persistentCommandStorage = new PersistentCommandStorage(worldpersistentdata);
 +            } else {
-+                String dim = "DIM" + dimension;
-+
-+                File newWorld = new File(new File(name), dim);
-+                File oldWorld = new File(new File(s), dim);
-+                File oldLevelDat = new File(new File(s), "level.dat"); // The data folders exist on first run as they are created in the PersistentCollection constructor above, but the level.dat won't
-+
-+                if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
-+                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
-+                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
-+                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
-+                    MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
-+
-+                    if (newWorld.exists()) {
-+                        MinecraftServer.LOGGER.warn("A file or folder already exists at " + newWorld + "!");
-+                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
-+                    } else if (newWorld.getParentFile().mkdirs()) {
-+                        if (oldWorld.renameTo(newWorld)) {
-+                            MinecraftServer.LOGGER.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
-+                            // Migrate world data too.
-+                            try {
-+                                com.google.common.io.Files.copy(oldLevelDat, new File(new File(name), "level.dat"));
-+                                org.apache.commons.io.FileUtils.copyDirectory(new File(new File(s), "data"), new File(new File(name), "data"));
-+                            } catch (IOException exception) {
-+                                MinecraftServer.LOGGER.warn("Unable to migrate world data.");
-+                            }
-+                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder complete ----");
-+                        } else {
-+                            MinecraftServer.LOGGER.warn("Could not move folder " + oldWorld + " to " + newWorld + "!");
-+                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
-+                        }
-+                    } else {
-+                        MinecraftServer.LOGGER.warn("Could not create path for " + newWorld + "!");
-+                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
-+                    }
-+                }
-+
 +                WorldLoadListener worldloadlistener = this.worldLoadListenerFactory.create(11);
 +                world = new WorldServer(this, this.executorService, worldSession, iworlddataserver, worldKey, typeKey, dimensionmanager, worldloadlistener, chunkgenerator, flag, j, ImmutableList.of(), true, org.bukkit.World.Environment.getEnvironment(dimension), gen);
 +            }
