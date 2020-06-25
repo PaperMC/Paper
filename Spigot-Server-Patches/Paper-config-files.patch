@@ -543,14 +543,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override public boolean a(Entity entity) {
          long i = ChunkCoordIntPair.pair(MathHelper.floor(entity.locX()) >> 4, MathHelper.floor(entity.locZ()) >> 4);
  
-         return this.a(i, PlayerChunk::b);
+         return this.a(i, (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
      }
  
 -    @Override
 -    public boolean a(ChunkCoordIntPair chunkcoordintpair) {
 +    public final boolean isEntityTickingChunk(ChunkCoordIntPair chunkcoordintpair) { return this.a(chunkcoordintpair); } // Paper - OBFHELPER
 +    @Override public boolean a(ChunkCoordIntPair chunkcoordintpair) {
-         return this.a(chunkcoordintpair.pair(), PlayerChunk::b);
+         return this.a(chunkcoordintpair.pair(), (Function<PlayerChunk, CompletableFuture<Either<Chunk, PlayerChunk.Failure>>>) PlayerChunk::b); // CraftBukkit - decompile error
      }
  
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
@@ -558,7 +558,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         org.spigotmc.SpigotConfig.init((File) options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.init((java.io.File) options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
 +        // Paper start
@@ -571,14 +571,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        com.destroystokyo.paper.PaperConfig.registerCommands();
 +        // Paper end
  
-         this.setSpawnAnimals(dedicatedserverproperties.spawnAnimals);
-         this.setSpawnNPCs(dedicatedserverproperties.spawnNpcs);
+         this.setPVP(dedicatedserverproperties.pvp);
+         this.setAllowFlight(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
-     private static final DataWatcherObject<Boolean> aC = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Boolean> aA = DataWatcher.a(Entity.class, DataWatcherRegistry.i);
      protected static final DataWatcherObject<EntityPose> POSE = DataWatcher.a(Entity.class, DataWatcherRegistry.s);
      public boolean inChunk;
 -    public int chunkX;
@@ -587,23 +587,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public int chunkX; public int getChunkX() { return chunkX; } // Paper - OBFHELPER
 +    public int chunkY; public int getChunkY() { return chunkY; } // Paper - OBFHELPER
 +    public int chunkZ; public int getChunkZ() { return chunkZ; } // Paper - OBFHELPER
+     private boolean aB;
      public long Z;
      public long aa;
-     public long ab;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
- import com.mojang.datafixers.DataFixUtils;
- import java.util.Collections;
+ 
+ import com.google.common.collect.ImmutableSet;
  import java.util.Optional;
 +import java.util.Set; // Paper
  import java.util.UUID;
  import java.util.function.Function;
  import java.util.stream.Stream;
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
-             return new EntityTypes<>(this.a, this.b, this.c, this.d, this.e, this.f, this.g);
+             return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i);
          }
      }
 +
@@ -628,8 +628,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private org.spigotmc.TickLimiter entityLimiter;
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
-     protected World(WorldData worlddata, DimensionManager dimensionmanager, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
+     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
 +        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
@@ -644,7 +644,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
 +        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
          for (WorldServer world : console.getWorlds()) {
-             world.worldData.setDifficulty(config.difficulty);
+             world.worldDataServer.setDifficulty(config.difficulty);
              world.setSpawnFlags(config.spawnMonsters, config.spawnAnimals);
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
                  world.ticksPerAmbientSpawns = this.getTicksPerAmbientSpawns();
