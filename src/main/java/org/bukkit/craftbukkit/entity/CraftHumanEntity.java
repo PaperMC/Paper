@@ -45,6 +45,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.HumanEntity;
@@ -317,7 +318,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         String title = container.getBukkitView().getTitle();
 
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0]));
         getHandle().activeContainer = container;
         getHandle().activeContainer.addSlotListener(player);
     }
@@ -387,7 +388,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         // Now open the window
         Containers<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
         String title = inventory.getTitle();
-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0]));
         player.activeContainer = container;
         player.activeContainer.addSlotListener(player);
     }
