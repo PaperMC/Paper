@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
@@ -985,12 +986,15 @@ public final class CraftServer implements Server {
             worldSettings = new WorldSettings(name, EnumGamemode.getById(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), console.datapackconfiguration);
             worlddata = new WorldDataServer(worldSettings, generatorsettings, Lifecycle.stable());
         }
+        worlddata.checkName(name);
         worlddata.a(console.getServerModName(), console.getModded().isPresent());
 
         if (console.options.has("forceUpgrade")) {
             net.minecraft.server.Main.convertWorld(worldSession, DataConverterRegistry.a(), console.options.has("eraseCache"), () -> {
                 return true;
-            }, worlddata.getGeneratorSettings().g());
+            }, worlddata.getGeneratorSettings().e().c().stream().map((entry) -> {
+                return ResourceKey.a(IRegistry.ad, ((ResourceKey) entry.getKey()).a());
+            }).collect(ImmutableSet.toImmutableSet()));
         }
 
         long j = BiomeManager.a(creator.seed());
