@@ -8,6 +8,24 @@ import org.jetbrains.annotations.NotNull;
  * Represents the applicable target for a {@link Enchantment}
  */
 public enum EnchantmentTarget {
+    /**
+     * Allows the Enchantment to be placed on all items
+     *
+     * @deprecated this target no longer exists in Vanilla
+     */
+    @Deprecated
+    ALL {
+        @Override
+        public boolean includes(@NotNull Material item) {
+            for (EnchantmentTarget target : EnchantmentTarget.values()) {
+                if (target != this && target.includes(item)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    },
 
     /**
      * Allows the Enchantment to be placed on armor
