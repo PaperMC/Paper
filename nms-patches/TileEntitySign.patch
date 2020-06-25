@@ -1,15 +1,18 @@
 --- a/net/minecraft/server/TileEntitySign.java
 +++ b/net/minecraft/server/TileEntitySign.java
-@@ -3,7 +3,7 @@
+@@ -1,9 +1,10 @@
+ package net.minecraft.server;
+ 
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import java.util.UUID;
  import javax.annotation.Nullable;
  
 -public class TileEntitySign extends TileEntity {
 +public class TileEntitySign extends TileEntity implements ICommandListener { // CraftBukkit - implements
  
-     public final IChatBaseComponent[] lines = new IChatBaseComponent[]{new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText(""), new ChatComponentText("")};
-     public boolean isEditable = true;
-@@ -26,6 +26,12 @@
+     public final IChatBaseComponent[] lines;
+     public boolean isEditable;
+@@ -29,6 +30,12 @@
              nbttagcompound.setString("Text" + (i + 1), s);
          }
  
@@ -19,11 +22,11 @@
 +        }
 +        // CraftBukkit end
 +
-         nbttagcompound.setString("Color", this.color.b());
+         nbttagcompound.setString("Color", this.color.c());
          return nbttagcompound;
      }
-@@ -36,18 +42,38 @@
-         super.load(nbttagcompound);
+@@ -39,18 +46,38 @@
+         super.load(iblockdata, nbttagcompound);
          this.color = EnumColor.a(nbttagcompound.getString("Color"), EnumColor.BLACK);
  
 +        // CraftBukkit start - Add an option to convert signs correctly
@@ -34,17 +37,17 @@
 +
          for (int i = 0; i < 4; ++i) {
              String s = nbttagcompound.getString("Text" + (i + 1));
--            IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
+-            IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
 +            if (s != null && s.length() > 2048) {
 +                s = "\"\"";
 +            }
 +
 +            try {
-+                IChatBaseComponent ichatbasecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
++                IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
  
 -            if (this.world instanceof WorldServer) {
 -                try {
--                    this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatbasecomponent, (Entity) null, 0);
+-                    this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatmutablecomponent, (Entity) null, 0);
 -                } catch (CommandSyntaxException commandsyntaxexception) {
 +                if (oldSign) {
 +                    lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
@@ -54,27 +57,27 @@
 +
 +                if (this.world instanceof WorldServer) {
 +                    try {
-+                        this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatbasecomponent, (Entity) null, 0);
++                        this.lines[i] = ChatComponentUtils.filterForDisplay(this.a((EntityPlayer) null), ichatmutablecomponent, (Entity) null, 0);
 +                    } catch (CommandSyntaxException commandsyntaxexception) {
-+                        this.lines[i] = ichatbasecomponent;
++                        this.lines[i] = ichatmutablecomponent;
 +                    }
 +                } else {
-                     this.lines[i] = ichatbasecomponent;
+                     this.lines[i] = ichatmutablecomponent;
                  }
 -            } else {
--                this.lines[i] = ichatbasecomponent;
+-                this.lines[i] = ichatmutablecomponent;
 +            } catch (com.google.gson.JsonParseException jsonparseexception) {
 +                this.lines[i] = new ChatComponentText(s);
              }
  
              this.g[i] = null;
-@@ -108,11 +134,37 @@
+@@ -111,11 +138,37 @@
          return true;
      }
  
 +    // CraftBukkit start
 +    @Override
-+    public void sendMessage(IChatBaseComponent ichatbasecomponent) {}
++    public void sendMessage(IChatBaseComponent ichatbasecomponent, UUID uuid) {}
 +
 +    @Override
 +    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
@@ -101,13 +104,13 @@
          String s = entityplayer == null ? "Sign" : entityplayer.getDisplayName().getString();
          Object object = entityplayer == null ? new ChatComponentText("Sign") : entityplayer.getScoreboardDisplayName();
  
--        return new CommandListenerWrapper(ICommandListener.DUMMY, new Vec3D((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
+-        return new CommandListenerWrapper(ICommandListener.DUMMY, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
 +        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, new Vec3D((double) this.position.getX() + 0.5D, (double) this.position.getY() + 0.5D, (double) this.position.getZ() + 0.5D), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
++        return new CommandListenerWrapper(this, Vec3D.a((BaseBlockPosition) this.position), Vec2F.a, (WorldServer) this.world, 2, s, (IChatBaseComponent) object, this.world.getMinecraftServer(), entityplayer);
      }
  
      public EnumColor getColor() {
-@@ -123,7 +175,7 @@
+@@ -126,7 +179,7 @@
          if (enumcolor != this.getColor()) {
              this.color = enumcolor;
              this.update();

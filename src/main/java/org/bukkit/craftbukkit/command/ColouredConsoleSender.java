@@ -50,7 +50,7 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
         // support jansi passthrough VM option when jansi doesn't detect an ANSI supported terminal
         if (jansiPassthrough || terminal.isAnsiSupported()) {
             if (!conversationTracker.isConversingModaly()) {
-                String result = message;
+                String result = message.replaceAll("(?i)" + ChatColor.COLOR_CHAR + "x(" + ChatColor.COLOR_CHAR + "[0-9a-f]){6}", ""); // Hex is not supported by ANSI console
                 for (ChatColor color : colors) {
                     if (replacements.containsKey(color)) {
                         result = result.replaceAll("(?i)" + color.toString(), replacements.get(color));

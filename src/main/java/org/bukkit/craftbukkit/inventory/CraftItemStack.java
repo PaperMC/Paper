@@ -25,16 +25,16 @@ public final class CraftItemStack extends ItemStack {
     public static net.minecraft.server.ItemStack asNMSCopy(ItemStack original) {
         if (original instanceof CraftItemStack) {
             CraftItemStack stack = (CraftItemStack) original;
-            return stack.handle == null ? net.minecraft.server.ItemStack.a : stack.handle.cloneItemStack();
+            return stack.handle == null ? net.minecraft.server.ItemStack.b : stack.handle.cloneItemStack();
         }
         if (original == null || original.getType() == Material.AIR) {
-            return net.minecraft.server.ItemStack.a;
+            return net.minecraft.server.ItemStack.b;
         }
 
         Item item = CraftMagicNumbers.getItem(original.getType(), original.getDurability());
 
         if (item == null) {
-            return net.minecraft.server.ItemStack.a;
+            return net.minecraft.server.ItemStack.b;
         }
 
         net.minecraft.server.ItemStack stack = new net.minecraft.server.ItemStack(item, original.getAmount());
@@ -410,6 +410,7 @@ public final class CraftItemStack extends ItemStack {
             case FOX_SPAWN_EGG:
             case GHAST_SPAWN_EGG:
             case GUARDIAN_SPAWN_EGG:
+            case HOGLIN_SPAWN_EGG:
             case HORSE_SPAWN_EGG:
             case HUSK_SPAWN_EGG:
             case LLAMA_SPAWN_EGG:
@@ -420,6 +421,7 @@ public final class CraftItemStack extends ItemStack {
             case PANDA_SPAWN_EGG:
             case PARROT_SPAWN_EGG:
             case PHANTOM_SPAWN_EGG:
+            case PIGLIN_SPAWN_EGG:
             case PIG_SPAWN_EGG:
             case PILLAGER_SPAWN_EGG:
             case POLAR_BEAR_SPAWN_EGG:
@@ -436,6 +438,7 @@ public final class CraftItemStack extends ItemStack {
             case SPIDER_SPAWN_EGG:
             case SQUID_SPAWN_EGG:
             case STRAY_SPAWN_EGG:
+            case STRIDER_SPAWN_EGG:
             case TRADER_LLAMA_SPAWN_EGG:
             case TROPICAL_FISH_SPAWN_EGG:
             case TURTLE_SPAWN_EGG:
@@ -446,10 +449,11 @@ public final class CraftItemStack extends ItemStack {
             case WITCH_SPAWN_EGG:
             case WITHER_SKELETON_SPAWN_EGG:
             case WOLF_SPAWN_EGG:
+            case ZOGLIN_SPAWN_EGG:
             case ZOMBIE_HORSE_SPAWN_EGG:
-            case ZOMBIE_PIGMAN_SPAWN_EGG:
             case ZOMBIE_SPAWN_EGG:
             case ZOMBIE_VILLAGER_SPAWN_EGG:
+            case ZOMBIFIED_PIGLIN_SPAWN_EGG:
                 return new CraftMetaSpawnEgg(item.getTag());
             case ARMOR_STAND:
                 return new CraftMetaArmorStand(item.getTag());

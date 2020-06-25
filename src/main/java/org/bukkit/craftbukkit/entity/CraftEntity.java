@@ -53,6 +53,7 @@ import net.minecraft.server.EntityGolem;
 import net.minecraft.server.EntityGuardian;
 import net.minecraft.server.EntityGuardianElder;
 import net.minecraft.server.EntityHanging;
+import net.minecraft.server.EntityHoglin;
 import net.minecraft.server.EntityHorse;
 import net.minecraft.server.EntityHorseAbstract;
 import net.minecraft.server.EntityHorseChestedAbstract;
@@ -92,6 +93,7 @@ import net.minecraft.server.EntityParrot;
 import net.minecraft.server.EntityPhantom;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
+import net.minecraft.server.EntityPiglin;
 import net.minecraft.server.EntityPillager;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPolarBear;
@@ -115,6 +117,7 @@ import net.minecraft.server.EntitySnowman;
 import net.minecraft.server.EntitySpectralArrow;
 import net.minecraft.server.EntitySpider;
 import net.minecraft.server.EntitySquid;
+import net.minecraft.server.EntityStrider;
 import net.minecraft.server.EntityTNTPrimed;
 import net.minecraft.server.EntityTameableAnimal;
 import net.minecraft.server.EntityThrownExpBottle;
@@ -132,6 +135,7 @@ import net.minecraft.server.EntityWitch;
 import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.EntityWolf;
+import net.minecraft.server.EntityZoglin;
 import net.minecraft.server.EntityZombie;
 import net.minecraft.server.EntityZombieHusk;
 import net.minecraft.server.EntityZombieVillager;
@@ -234,6 +238,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                     else if (entity instanceof EntityPanda) { return new CraftPanda(server, (EntityPanda) entity); }
                     else if (entity instanceof EntityFox) { return new CraftFox(server, (EntityFox) entity); }
                     else if (entity instanceof EntityBee) { return new CraftBee(server, (EntityBee) entity); }
+                    else if (entity instanceof EntityHoglin) { return new CraftHoglin(server, (EntityHoglin) entity); }
+                    else if (entity instanceof EntityStrider) { return new CraftStrider(server, (EntityStrider) entity); }
                     else  { return new CraftAnimals(server, (EntityAnimal) entity); }
                 }
                 // Monsters
@@ -278,6 +284,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         else { return new CraftIllager(server, (EntityIllagerAbstract) entity); }
                     }
                     else if (entity instanceof EntityRavager) { return new CraftRavager(server, (EntityRavager) entity); }
+                    else if (entity instanceof EntityPiglin) { return new CraftPiglin(server, (EntityPiglin) entity); }
+                    else if (entity instanceof EntityZoglin) { return new CraftZoglin(server, (EntityZoglin) entity); }
 
                     else  { return new CraftMonster(server, (EntityMonster) entity); }
                 }
@@ -426,7 +434,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (entity instanceof EntityArrow) {
             return ((EntityArrow) entity).inGround;
         }
-        return entity.onGround;
+        return entity.isOnGround();
     }
 
     @Override
@@ -468,7 +476,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
         // Let the server handle cross world teleports
         if (!location.getWorld().equals(getWorld())) {
-            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle().getWorldProvider().getDimensionManager(), new BlockPosition(location.getX(), location.getY(), location.getZ()));
+            entity.teleportTo(((CraftWorld) location.getWorld()).getHandle(), new BlockPosition(location.getX(), location.getY(), location.getZ()));
             return true;
         }
 

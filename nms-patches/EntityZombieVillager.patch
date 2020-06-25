@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/EntityZombieVillager.java
 +++ b/net/minecraft/server/EntityZombieVillager.java
-@@ -3,6 +3,11 @@
- import com.mojang.datafixers.Dynamic;
+@@ -5,6 +5,11 @@
  import java.util.UUID;
  import javax.annotation.Nullable;
+ import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.ZombieVillager;
@@ -12,15 +12,24 @@
  
  public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
-@@ -13,6 +18,7 @@
-     private NBTBase by;
-     private NBTTagCompound bz;
-     private int bA;
+@@ -15,6 +20,7 @@
+     private NBTBase bw;
+     private NBTTagCompound bx;
+     private int by;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
          super(entitytypes, world);
-@@ -75,6 +81,10 @@
+@@ -31,7 +37,7 @@
+     @Override
+     public void saveData(NBTTagCompound nbttagcompound) {
+         super.saveData(nbttagcompound);
+-        DataResult dataresult = VillagerData.a.encodeStart(DynamicOpsNBT.a, this.getVillagerData());
++        DataResult<NBTBase> dataresult = VillagerData.a.encodeStart(DynamicOpsNBT.a, this.getVillagerData()); // CraftBukkit - decompile error
+         Logger logger = EntityZombieVillager.LOGGER;
+ 
+         logger.getClass();
+@@ -87,6 +93,10 @@
      public void tick() {
          if (!this.world.isClientSide && this.isAlive() && this.isConverting()) {
              int i = this.getConversionProgress();
@@ -31,7 +40,7 @@
  
              this.conversionTime -= i;
              if (this.conversionTime <= 0) {
-@@ -83,6 +93,7 @@
+@@ -95,6 +105,7 @@
          }
  
          super.tick();
@@ -39,7 +48,7 @@
      }
  
      @Override
-@@ -123,8 +134,11 @@
+@@ -138,8 +149,11 @@
          this.conversionPlayer = uuid;
          this.conversionTime = i;
          this.getDataWatcher().set(EntityZombieVillager.CONVERTING, true);
@@ -53,7 +62,7 @@
          this.world.broadcastEntityEffect(this, (byte) 16);
      }
  
-@@ -166,7 +180,7 @@
+@@ -181,7 +195,7 @@
              entityvillager.setAgeRaw(-24000);
          }
  
@@ -62,7 +71,7 @@
          entityvillager.setNoAI(this.isNoAI());
          if (this.hasCustomName()) {
              entityvillager.setCustomName(this.getCustomName());
-@@ -178,7 +192,14 @@
+@@ -193,7 +207,14 @@
          }
  
          entityvillager.setInvulnerable(this.isInvulnerable());
@@ -78,12 +87,12 @@
          if (this.conversionPlayer != null) {
              EntityHuman entityhuman = worldserver.b(this.conversionPlayer);
  
-@@ -188,7 +209,7 @@
+@@ -203,7 +224,7 @@
              }
          }
  
 -        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0));
 +        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
-         worldserver.a((EntityHuman) null, 1027, new BlockPosition(this), 0);
-     }
- 
+         if (!this.isSilent()) {
+             worldserver.a((EntityHuman) null, 1027, this.getChunkCoordinates(), 0);
+         }

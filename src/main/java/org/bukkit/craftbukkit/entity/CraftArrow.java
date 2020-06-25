@@ -112,12 +112,12 @@ public class CraftArrow extends AbstractProjectile implements AbstractArrow {
 
     @Override
     public boolean isShotFromCrossbow() {
-        return getHandle().r();
+        return getHandle().isShotFromCrossbow();
     }
 
     @Override
     public void setShotFromCrossbow(boolean shotFromCrossbow) {
-        getHandle().o(shotFromCrossbow);
+        getHandle().setShotFromCrossbow(shotFromCrossbow);
     }
 
     @Override

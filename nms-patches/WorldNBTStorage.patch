@@ -1,26 +1,17 @@
 --- a/net/minecraft/server/WorldNBTStorage.java
 +++ b/net/minecraft/server/WorldNBTStorage.java
-@@ -13,6 +13,11 @@
+@@ -10,6 +10,10 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
-+import java.util.UUID;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +// CraftBukkit end
 +
- public class WorldNBTStorage implements IPlayerFileData {
+ public class WorldNBTStorage {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -22,6 +27,7 @@
-     private final String f;
-     private final DefinedStructureManager g;
-     protected final DataFixer a;
-+    private UUID uuid = null; // CraftBukkit
- 
-     public WorldNBTStorage(File file, String s, @Nullable MinecraftServer minecraftserver, DataFixer datafixer) {
-         this.a = datafixer;
-@@ -165,6 +171,16 @@
+@@ -53,6 +57,16 @@
          }
  
          if (nbttagcompound != null) {
@@ -36,8 +27,8 @@
 +            // CraftBukkit end
              int i = nbttagcompound.hasKeyOfType("DataVersion", 3) ? nbttagcompound.getInt("DataVersion") : -1;
  
-             entityhuman.f(GameProfileSerializer.a(this.a, DataFixTypes.PLAYER, nbttagcompound, i));
-@@ -173,6 +189,22 @@
+             entityhuman.load(GameProfileSerializer.a(this.a, DataFixTypes.PLAYER, nbttagcompound, i));
+@@ -61,6 +75,22 @@
          return nbttagcompound;
      }
  
@@ -60,52 +51,12 @@
      public String[] getSeenPlayers() {
          String[] astring = this.playerDir.list();
  
-@@ -196,4 +228,50 @@
-     public DataFixer getDataFixer() {
-         return this.a;
+@@ -76,4 +106,10 @@
+ 
+         return astring;
      }
 +
 +    // CraftBukkit start
-+    public UUID getUUID() {
-+        if (uuid != null) return uuid;
-+        File file1 = new File(this.baseDir, "uid.dat");
-+        if (file1.exists()) {
-+            DataInputStream dis = null;
-+            try {
-+                dis = new DataInputStream(new FileInputStream(file1));
-+                return uuid = new UUID(dis.readLong(), dis.readLong());
-+            } catch (IOException ex) {
-+                LOGGER.warn("Failed to read " + file1 + ", generating new random UUID", ex);
-+            } finally {
-+                if (dis != null) {
-+                    try {
-+                        dis.close();
-+                    } catch (IOException ex) {
-+                        // NOOP
-+                    }
-+                }
-+            }
-+        }
-+        uuid = UUID.randomUUID();
-+        DataOutputStream dos = null;
-+        try {
-+            dos = new DataOutputStream(new FileOutputStream(file1));
-+            dos.writeLong(uuid.getMostSignificantBits());
-+            dos.writeLong(uuid.getLeastSignificantBits());
-+        } catch (IOException ex) {
-+            LOGGER.warn("Failed to write " + file1, ex);
-+        } finally {
-+            if (dos != null) {
-+                try {
-+                    dos.close();
-+                } catch (IOException ex) {
-+                    // NOOP
-+                }
-+            }
-+        }
-+        return uuid;
-+    }
-+
 +    public File getPlayerDir() {
 +        return playerDir;
 +    }

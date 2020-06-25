@@ -1,28 +1,19 @@
 --- a/net/minecraft/server/EntityArrow.java
 +++ b/net/minecraft/server/EntityArrow.java
-@@ -9,6 +9,12 @@
- import java.util.UUID;
+@@ -8,6 +8,11 @@
+ import java.util.List;
  import javax.annotation.Nullable;
  
 +// CraftBukkit start
-+import org.bukkit.entity.LivingEntity;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.player.PlayerPickupArrowEvent;
 +// CraftBukkit end
 +
- public abstract class EntityArrow extends Entity implements IProjectile {
+ public abstract class EntityArrow extends IProjectile {
  
-     private static final DataWatcherObject<Byte> ao = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
-@@ -255,6 +261,7 @@
-     }
- 
-     protected void a(MovingObjectPosition movingobjectposition) {
-+        org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // CraftBukkit - Call event
-         MovingObjectPosition.EnumMovingObjectType movingobjectposition_enummovingobjecttype = movingobjectposition.getType();
- 
-         if (movingobjectposition_enummovingobjecttype == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
-@@ -336,7 +343,13 @@
-         int j = entity.ad();
+     private static final DataWatcherObject<Byte> f = DataWatcher.a(EntityArrow.class, DataWatcherRegistry.a);
+@@ -291,7 +296,13 @@
+         int k = entity.getFireTicks();
  
          if (this.isBurning() && !flag) {
 -            entity.setOnFire(5);
@@ -36,18 +27,10 @@
          }
  
          if (entity.damageEntity(damagesource, (float) i)) {
-@@ -477,6 +490,7 @@
- 
-     public void setShooter(@Nullable Entity entity) {
-         this.shooter = entity == null ? null : entity.getUniqueID();
-+        this.projectileSource = entity == null ? null : (LivingEntity) entity.getBukkitEntity(); // CraftBukkit
-         if (entity instanceof EntityHuman) {
-             this.fromPlayer = ((EntityHuman) entity).abilities.canInstantlyBuild ? EntityArrow.PickupStatus.CREATIVE_ONLY : EntityArrow.PickupStatus.ALLOWED;
-         }
-@@ -491,9 +505,23 @@
+@@ -458,9 +469,23 @@
      @Override
      public void pickup(EntityHuman entityhuman) {
-         if (!this.world.isClientSide && (this.inGround || this.v()) && this.shake <= 0) {
+         if (!this.world.isClientSide && (this.inGround || this.t()) && this.shake <= 0) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getItemStack();
 +            if (this.fromPlayer == PickupStatus.ALLOWED && !itemstack.isEmpty() && entityhuman.inventory.canHold(itemstack) > 0) {
@@ -61,7 +44,7 @@
 +                }
 +                itemstack = item.getItemStack();
 +            }
-             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.v() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
+             boolean flag = this.fromPlayer == EntityArrow.PickupStatus.ALLOWED || this.fromPlayer == EntityArrow.PickupStatus.CREATIVE_ONLY && entityhuman.abilities.canInstantlyBuild || this.t() && this.getShooter().getUniqueID() == entityhuman.getUniqueID();
  
 -            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(this.getItemStack())) {
 +            if (this.fromPlayer == EntityArrow.PickupStatus.ALLOWED && !entityhuman.inventory.pickup(itemstack)) {

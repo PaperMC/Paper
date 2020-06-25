@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -25,18 +26,19 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import net.minecraft.server.AdvancementDataPlayer;
 import net.minecraft.server.AdvancementProgress;
-import net.minecraft.server.AttributeInstance;
-import net.minecraft.server.AttributeMapServer;
+import net.minecraft.server.AttributeMapBase;
 import net.minecraft.server.AttributeModifiable;
-import net.minecraft.server.AttributeRanged;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChatComponentText;
+import net.minecraft.server.ChatMessageType;
 import net.minecraft.server.Container;
 import net.minecraft.server.Entity;
+import net.minecraft.server.EntityHuman;
 import net.minecraft.server.EntityLiving;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EnumColor;
 import net.minecraft.server.EnumGamemode;
+import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.MapIcon;
 import net.minecraft.server.MinecraftKey;
@@ -60,6 +62,7 @@ import net.minecraft.server.PacketPlayOutWorldEvent;
 import net.minecraft.server.PacketPlayOutWorldParticles;
 import net.minecraft.server.PlayerChunkMap;
 import net.minecraft.server.PlayerConnection;
+import net.minecraft.server.SystemUtils;
 import net.minecraft.server.TileEntitySign;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.WhiteListEntry;
@@ -80,6 +83,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.conversations.Conversation;
@@ -189,7 +193,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
 
         for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
-            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component));
+            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.CHAT, SystemUtils.b));
         }
     }
 
@@ -664,7 +668,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (fromWorld == toWorld) {
             entity.playerConnection.teleport(to);
         } else {
-            server.getHandle().moveToWorld(entity, toWorld.getWorldProvider().getDimensionManager(), true, to, true);
+            server.getHandle().moveToWorld(entity, toWorld, true, to, true);
         }
         return true;
     }
@@ -714,6 +718,43 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean isSleepingIgnored() {
         return getHandle().fauxSleeping;
+    }
+
+    @Override
+    public Location getBedSpawnLocation() {
+        World world = getHandle().server.getWorldServer(getHandle().getSpawnDimension()).getWorld();
+        BlockPosition bed = getHandle().getSpawn();
+
+        if (world != null && bed != null) {
+            Optional<Vec3D> spawnLoc = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isSpawnForced(), true);
+            if (spawnLoc.isPresent()) {
+                Vec3D vec = spawnLoc.get();
+                return new Location(world, vec.x, vec.y, vec.z);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void setBedSpawnLocation(Location location) {
+        setBedSpawnLocation(location, false);
+    }
+
+    @Override
+    public void setBedSpawnLocation(Location location, boolean override) {
+        if (location == null) {
+            getHandle().setRespawnPosition(null, null, override, false);
+        } else {
+            getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().getDimensionKey(), new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override, false);
+        }
+    }
+
+    @Override
+    public Location getBedLocation() {
+        Preconditions.checkState(isSleeping(), "Not sleeping");
+
+        BlockPosition bed = getHandle().getSpawn();
+        return new Location(getWorld(), bed.getX(), bed.getY(), bed.getZ());
     }
 
     @Override
@@ -1457,8 +1498,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth(boolean sendHealth) {
-        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
-        Collection<AttributeInstance> set = attributemapserver.c(); // PAIL: Rename
+        AttributeMapBase attributemapserver = getHandle().getAttributeMap();
+        Collection<AttributeModifiable> set = attributemapserver.b(); // PAIL: Rename
 
         injectScaledMaxHealth(set, true);
 
@@ -1478,17 +1519,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
     }
 
-    public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
+    public void injectScaledMaxHealth(Collection<AttributeModifiable> collection, boolean force) {
         if (!scaledHealth && !force) {
             return;
         }
-        for (AttributeInstance genericInstance : collection) {
-            if (genericInstance.getAttribute().getName().equals("generic.maxHealth")) {
-                collection.remove(genericInstance);
+        for (AttributeModifiable genericInstance : collection) {
+            if (genericInstance.getAttribute() == GenericAttributes.MAX_HEALTH) {
+                genericInstance.setValue(scaledHealth ? healthScale : getMaxHealth());
                 break;
             }
         }
-        collection.add(new AttributeModifiable(getHandle().getAttributeMap(), (new AttributeRanged(null, "generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
     }
 
     @Override

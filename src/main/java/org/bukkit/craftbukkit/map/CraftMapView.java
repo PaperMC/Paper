@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import net.minecraft.server.DimensionManager;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ResourceKey;
 import net.minecraft.server.WorldMap;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Bukkit;
@@ -60,7 +60,7 @@ public final class CraftMapView implements MapView {
 
     @Override
     public World getWorld() {
-        DimensionManager dimension = worldMap.map;
+        ResourceKey<net.minecraft.server.World> dimension = worldMap.map;
         WorldServer world = MinecraftServer.getServer().getWorldServer(dimension);
 
         return (world == null) ? null : world.getWorld();
@@ -68,7 +68,7 @@ public final class CraftMapView implements MapView {
 
     @Override
     public void setWorld(World world) {
-        worldMap.map = ((CraftWorld) world).getHandle().getWorldProvider().getDimensionManager();
+        worldMap.map = ((CraftWorld) world).getHandle().getDimensionKey();
     }
 
     @Override

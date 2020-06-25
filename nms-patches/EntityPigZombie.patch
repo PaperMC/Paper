@@ -1,42 +1,38 @@
 --- a/net/minecraft/server/EntityPigZombie.java
 +++ b/net/minecraft/server/EntityPigZombie.java
-@@ -134,16 +134,27 @@
-         } else {
-             Entity entity = damagesource.getEntity();
- 
--            if (entity instanceof EntityHuman && !((EntityHuman) entity).isCreative() && this.hasLineOfSight(entity)) {
-+            // CraftBukkit start
-+            boolean result = super.damageEntity(damagesource, f);
-+
-+            if (result && entity instanceof EntityHuman && !((EntityHuman) entity).isCreative() && this.hasLineOfSight(entity)) {
-                 this.i((EntityLiving) entity);
-             }
- 
--            return super.damageEntity(damagesource, f);
-+            return result;
-+            // CraftBukkit end
-         }
+@@ -35,7 +35,7 @@
+     protected void m() {
+         this.goalSelector.a(2, new PathfinderGoalZombieAttack(this, 1.0D, false));
+         this.goalSelector.a(7, new PathfinderGoalRandomStrollLand(this, 1.0D));
+-        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
++        this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this).a(new Class[0])); // CraftBukkit - decompile error
+         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, 10, true, false, this::b));
+         this.targetSelector.a(3, new PathfinderGoalUniversalAngerReset<>(this, true));
+     }
+@@ -108,7 +108,7 @@
+         }).filter((entitypigzombie) -> {
+             return !entitypigzombie.r(this.getGoalTarget());
+         }).forEach((entitypigzombie) -> {
+-            entitypigzombie.setGoalTarget(this.getGoalTarget());
++            entitypigzombie.setGoalTarget(this.getGoalTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit
+         });
      }
  
-     private boolean i(EntityLiving entityliving) {
--        this.angerLevel = this.ez();
+@@ -132,7 +132,16 @@
+ 
+     @Override
+     public void anger() {
+-        this.setAnger(EntityPigZombie.bw.a(this.random));
 +        // CraftBukkit start
-+        org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entityliving == null) ? null : entityliving.getBukkitEntity(), this.ez());
++        Entity entity = ((WorldServer) this.world).getEntity(getAngerTarget());
++        org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entity == null) ? null : entity.getBukkitEntity(), EntityPigZombie.bw.a(this.random));
 +        this.world.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
-+            return false;
++            this.setAngerTarget(null);
++            return;
 +        }
-+        this.angerLevel = event.getNewAnger();
++        this.setAnger(event.getNewAnger());
 +        // CraftBukkit end
-         this.soundDelay = this.random.nextInt(40);
-         this.setLastDamager(entityliving);
-         return true;
-@@ -209,7 +220,7 @@
-         @Override
-         protected void a(EntityInsentient entityinsentient, EntityLiving entityliving) {
-             if (entityinsentient instanceof EntityPigZombie && this.e.hasLineOfSight(entityliving) && ((EntityPigZombie) entityinsentient).i(entityliving)) {
--                entityinsentient.setGoalTarget(entityliving);
-+                entityinsentient.setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY, true); // CraftBukkit
-             }
+     }
  
-         }
+     public static boolean b(EntityTypes<EntityPigZombie> entitytypes, GeneratorAccess generatoraccess, EnumMobSpawn enummobspawn, BlockPosition blockposition, Random random) {

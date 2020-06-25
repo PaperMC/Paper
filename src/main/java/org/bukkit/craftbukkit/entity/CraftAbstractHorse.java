@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
-import net.minecraft.server.EntityHorse;
 import net.minecraft.server.EntityHorseAbstract;
+import net.minecraft.server.GenericAttributes;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
@@ -58,7 +58,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     @Override
     public void setJumpStrength(double strength) {
         Validate.isTrue(strength >= 0, "Jump strength cannot be less than zero");
-        getHandle().getAttributeInstance(EntityHorse.attributeJumpStrength).setValue(strength);
+        getHandle().getAttributeInstance(GenericAttributes.JUMP_STRENGTH).setValue(strength);
     }
 
     @Override

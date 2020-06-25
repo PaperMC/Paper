@@ -293,7 +293,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                     break;
             }
         }
-        TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(blockEntityTag);
+        TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(CraftMagicNumbers.getBlock(material).getBlockData(), blockEntityTag);
 
         switch (material) {
         case ACACIA_SIGN:

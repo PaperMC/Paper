@@ -19,7 +19,11 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
 
     @Override
     public void setAngry(boolean angry) {
-        getHandle().setAngry(angry);
+        if (angry) {
+            getHandle().anger();
+        } else {
+            getHandle().pacify();
+        }
     }
 
     @Override

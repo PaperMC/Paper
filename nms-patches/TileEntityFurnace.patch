@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/TileEntityFurnace.java
 +++ b/net/minecraft/server/TileEntityFurnace.java
-@@ -7,6 +7,16 @@
+@@ -9,6 +9,16 @@
+ import java.util.List;
  import java.util.Map;
- import java.util.Map.Entry;
  import javax.annotation.Nullable;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.block.CraftBlock;
@@ -17,7 +17,7 @@
  
  public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeHolder, AutoRecipeOutput, ITickable {
  
-@@ -135,6 +145,36 @@
+@@ -137,6 +147,36 @@
          return map;
      }
  
@@ -51,10 +51,10 @@
 +    }
 +    // CraftBukkit end
 +
-     private static void a(Map<Item, Integer> map, Tag<Item> tag, int i) {
-         Iterator iterator = tag.a().iterator();
- 
-@@ -211,12 +251,23 @@
+     private static boolean b(Item item) {
+         return TagsItem.NON_FLAMMABLE_WOOD.isTagged(item);
+     }
+@@ -223,12 +263,23 @@
                      this.cookTime = MathHelper.clamp(this.cookTime - 2, 0, this.cookTimeTotal);
                  }
              } else {
@@ -81,7 +81,7 @@
                          flag1 = true;
                          if (!itemstack.isEmpty()) {
                              Item item = itemstack.getItem();
-@@ -278,11 +329,38 @@
+@@ -290,11 +341,38 @@
              ItemStack itemstack1 = irecipe.getResult();
              ItemStack itemstack2 = (ItemStack) this.items.get(2);
  
@@ -120,54 +120,67 @@
  
              if (!this.world.isClientSide) {
                  this.a(irecipe);
-@@ -307,7 +385,7 @@
+@@ -319,7 +397,7 @@
      }
  
      protected int getRecipeCookingTime() {
--        return (Integer) this.world.getCraftingManager().craft(this.c, this, this.world).map(RecipeCooking::e).orElse(200);
-+        return (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::e).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
+-        return (Integer) this.world.getCraftingManager().craft(this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200);
++        return (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
      }
  
      public static boolean isFuel(ItemStack itemstack) {
-@@ -434,7 +512,7 @@
+@@ -446,14 +524,20 @@
      @Override
      public void b(EntityHuman entityhuman) {}
  
 -    public void d(EntityHuman entityhuman) {
+-        List<IRecipe<?>> list = this.a(entityhuman.world, entityhuman.getPositionVector());
 +    public void d(EntityHuman entityhuman, ItemStack itemstack, int amount) { // CraftBukkit
-         List<IRecipe<?>> list = Lists.newArrayList();
-         Iterator iterator = this.n.entrySet().iterator();
++        List<IRecipe<?>> list = this.a(entityhuman.world, entityhuman.getPositionVector(), entityhuman, itemstack, amount); // CraftBukkit
  
-@@ -443,7 +521,7 @@
- 
-             entityhuman.world.getCraftingManager().a((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
-                 list.add(irecipe);
--                a(entityhuman, (Integer) entry.getValue(), ((RecipeCooking) irecipe).b());
-+                a(entityhuman, (Integer) entry.getValue(), ((RecipeCooking) irecipe).b(), itemstack, amount); // CraftBukkit
-             });
-         }
- 
-@@ -451,7 +529,7 @@
+         entityhuman.discoverRecipes(list);
          this.n.clear();
      }
  
--    private static void a(EntityHuman entityhuman, int i, float f) {
-+    private void a(EntityHuman entityhuman, int i, float f, ItemStack itemstack, int amount) { // CraftBukkit
-         int j;
+     public List<IRecipe<?>> a(World world, Vec3D vec3d) {
++        // CraftBukkit start
++        return this.a(world, vec3d, null, null, 0);
++    }
++
++    public List<IRecipe<?>> a(World world, Vec3D vec3d, EntityHuman entityhuman, ItemStack itemstack, int amount) {
++        // CraftBukkit end
+         List<IRecipe<?>> list = Lists.newArrayList();
+         ObjectIterator objectiterator = this.n.object2IntEntrySet().iterator();
  
-         if (f == 0.0F) {
-@@ -465,6 +543,14 @@
-             i = j;
+@@ -462,14 +546,14 @@
+ 
+             world.getCraftingManager().a((MinecraftKey) entry.getKey()).ifPresent((irecipe) -> {
+                 list.add(irecipe);
+-                a(world, vec3d, entry.getIntValue(), ((RecipeCooking) irecipe).getExperience());
++                a(world, vec3d, entry.getIntValue(), ((RecipeCooking) irecipe).getExperience(), entityhuman, itemstack, amount); // CraftBukkit
+             });
+         }
+ 
+         return list;
+     }
+ 
+-    private static void a(World world, Vec3D vec3d, int i, float f) {
++    private void a(World world, Vec3D vec3d, int i, float f, EntityHuman entityhuman, ItemStack itemstack, int amount) { // CraftBukkit
+         int j = MathHelper.d((float) i * f);
+         float f1 = MathHelper.h((float) i * f);
+ 
+@@ -477,6 +561,14 @@
+             ++j;
          }
  
 +        // CraftBukkit start - fire FurnaceExtractEvent
 +        if (amount != 0) {
-+            FurnaceExtractEvent event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(world, position), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, i);
++            FurnaceExtractEvent event = new FurnaceExtractEvent((Player) entityhuman.getBukkitEntity(), CraftBlock.at(world, position), org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), amount, j);
 +            world.getServer().getPluginManager().callEvent(event);
-+            i = event.getExpToDrop();
++            j = event.getExpToDrop();
 +        }
 +        // CraftBukkit end
 +
-         while (i > 0) {
-             j = EntityExperienceOrb.getOrbValue(i);
-             i -= j;
+         while (j > 0) {
+             int k = EntityExperienceOrb.getOrbValue(j);
+ 

@@ -1,70 +1,70 @@
 --- a/net/minecraft/server/BehaviorFarm.java
 +++ b/net/minecraft/server/BehaviorFarm.java
-@@ -79,8 +79,8 @@
+@@ -58,8 +58,8 @@
  
      protected void a(WorldServer worldserver, EntityVillager entityvillager, long i) {
-         if (i > this.d && this.a != null) {
--            entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(this.a)));
--            entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new MemoryTarget(new BehaviorTarget(this.a), 0.5F, 1)));
-+            entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(this.a))); // CraftBukkit - decompile error
-+            entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (new MemoryTarget(new BehaviorTarget(this.a), 0.5F, 1))); // CraftBukkit - decompile error
+         if (i > this.c && this.farmBlock != null) {
+-            entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(this.farmBlock)));
+-            entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new MemoryTarget(new BehaviorTarget(this.farmBlock), 0.5F, 1)));
++            entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(this.farmBlock))); // CraftBukkit - decompile error
++            entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (new MemoryTarget(new BehaviorTarget(this.farmBlock), 0.5F, 1))); // CraftBukkit - decompile error
          }
  
      }
-@@ -99,7 +99,11 @@
-             Block block1 = worldserver.getType(this.a.down()).getBlock();
+@@ -79,7 +79,11 @@
+                 Block block1 = worldserver.getType(this.farmBlock.down()).getBlock();
  
-             if (block instanceof BlockCrops && ((BlockCrops) block).isRipe(iblockdata) && this.c) {
--                worldserver.a(this.a, true, entityvillager);
-+                // CraftBukkit start
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.a, Blocks.AIR.getBlockData()).isCancelled()) {
-+                    worldserver.a(this.a, true, entityvillager);
-+                }
-+                // CraftBukkit end
-             }
+                 if (block instanceof BlockCrops && ((BlockCrops) block).isRipe(iblockdata)) {
+-                    worldserver.a(this.farmBlock, true, entityvillager);
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.farmBlock, Blocks.AIR.getBlockData()).isCancelled()) {
++                        worldserver.a(this.farmBlock, true, entityvillager);
++                    }
++                    // CraftBukkit end
+                 }
  
-             if (iblockdata.isAir() && block1 instanceof BlockSoil && this.b) {
-@@ -110,19 +114,28 @@
-                     boolean flag = false;
+                 if (iblockdata.isAir() && block1 instanceof BlockSoil && entityvillager.canPlant()) {
+@@ -90,19 +94,28 @@
+                         boolean flag = false;
  
-                     if (!itemstack.isEmpty()) {
-+                        // CraftBukkit start
-+                        Block planted = null;
-                         if (itemstack.getItem() == Items.WHEAT_SEEDS) {
--                            worldserver.setTypeAndData(this.a, Blocks.WHEAT.getBlockData(), 3);
-+                            planted = Blocks.WHEAT;
-                             flag = true;
-                         } else if (itemstack.getItem() == Items.POTATO) {
--                            worldserver.setTypeAndData(this.a, Blocks.POTATOES.getBlockData(), 3);
-+                            planted = Blocks.POTATOES;
-                             flag = true;
-                         } else if (itemstack.getItem() == Items.CARROT) {
--                            worldserver.setTypeAndData(this.a, Blocks.CARROTS.getBlockData(), 3);
-+                            planted = Blocks.CARROTS;
-                             flag = true;
-                         } else if (itemstack.getItem() == Items.BEETROOT_SEEDS) {
--                            worldserver.setTypeAndData(this.a, Blocks.BEETROOTS.getBlockData(), 3);
-+                            planted = Blocks.BEETROOTS;
-                             flag = true;
-                         }
+                         if (!itemstack.isEmpty()) {
++                            // CraftBukkit start
++                            Block planted = null;
+                             if (itemstack.getItem() == Items.WHEAT_SEEDS) {
+-                                worldserver.setTypeAndData(this.farmBlock, Blocks.WHEAT.getBlockData(), 3);
++                                planted = Blocks.WHEAT;
+                                 flag = true;
+                             } else if (itemstack.getItem() == Items.POTATO) {
+-                                worldserver.setTypeAndData(this.farmBlock, Blocks.POTATOES.getBlockData(), 3);
++                                planted = Blocks.POTATOES;
+                                 flag = true;
+                             } else if (itemstack.getItem() == Items.CARROT) {
+-                                worldserver.setTypeAndData(this.farmBlock, Blocks.CARROTS.getBlockData(), 3);
++                                planted = Blocks.CARROTS;
+                                 flag = true;
+                             } else if (itemstack.getItem() == Items.BEETROOT_SEEDS) {
+-                                worldserver.setTypeAndData(this.farmBlock, Blocks.BEETROOTS.getBlockData(), 3);
++                                planted = Blocks.BEETROOTS;
+                                 flag = true;
+                             }
 +
-+                        if (planted != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.a, planted.getBlockData()).isCancelled()) {
-+                            worldserver.setTypeAndData(this.a, planted.getBlockData(), 3);
-+                        } else {
-+                            flag = false;
-+                        }
-+                        // CraftBukkit end
-                     }
++                            if (planted != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityvillager, this.farmBlock, planted.getBlockData()).isCancelled()) {
++                                worldserver.setTypeAndData(this.farmBlock, planted.getBlockData(), 3);
++                            } else {
++                                flag = false;
++                            }
++                            // CraftBukkit end
+                         }
  
-                     if (flag) {
-@@ -141,8 +154,8 @@
-                 this.a = this.a(worldserver);
-                 if (this.a != null) {
-                     this.d = i + 20L;
--                    entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new MemoryTarget(new BehaviorTarget(this.a), 0.5F, 1)));
--                    entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(this.a)));
-+                    entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (new MemoryTarget(new BehaviorTarget(this.a), 0.5F, 1))); // CraftBukkit - decompile error
-+                    entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(this.a))); // CraftBukkit - decompile error
+                         if (flag) {
+@@ -121,8 +134,8 @@
+                     this.farmBlock = this.a(worldserver);
+                     if (this.farmBlock != null) {
+                         this.c = i + 20L;
+-                        entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new MemoryTarget(new BehaviorTarget(this.farmBlock), 0.5F, 1)));
+-                        entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BehaviorTarget(this.farmBlock)));
++                        entityvillager.getBehaviorController().setMemory(MemoryModuleType.WALK_TARGET, (new MemoryTarget(new BehaviorTarget(this.farmBlock), 0.5F, 1))); // CraftBukkit - decompile error
++                        entityvillager.getBehaviorController().setMemory(MemoryModuleType.LOOK_TARGET, (new BehaviorTarget(this.farmBlock))); // CraftBukkit - decompile error
+                     }
                  }
              }
-         }

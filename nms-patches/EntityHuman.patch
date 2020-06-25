@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityHuman.java
 +++ b/net/minecraft/server/EntityHuman.java
-@@ -15,10 +15,24 @@
+@@ -16,10 +16,24 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
  
@@ -19,15 +19,15 @@
 +
  public abstract class EntityHuman extends EntityLiving {
  
-     public static final EntitySize bp = EntitySize.b(0.6F, 1.8F);
--    private static final Map<EntityPose, EntitySize> b = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.bp).put(EntityPose.SLEEPING, EntityHuman.ap).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
+     public static final EntitySize bo = EntitySize.b(0.6F, 1.8F);
+-    private static final Map<EntityPose, EntitySize> b = ImmutableMap.builder().put(EntityPose.STANDING, EntityHuman.bo).put(EntityPose.SLEEPING, EntityHuman.ao).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
 +    // CraftBukkit - decompile error
-+    private static final Map<EntityPose, EntitySize> b = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.bp).put(EntityPose.SLEEPING, EntityHuman.ap).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
++    private static final Map<EntityPose, EntitySize> b = ImmutableMap.<EntityPose, EntitySize>builder().put(EntityPose.STANDING, EntityHuman.bo).put(EntityPose.SLEEPING, EntityHuman.ao).put(EntityPose.FALL_FLYING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SWIMMING, EntitySize.b(0.6F, 0.6F)).put(EntityPose.SPIN_ATTACK, EntitySize.b(0.6F, 0.6F)).put(EntityPose.CROUCHING, EntitySize.b(0.6F, 1.5F)).put(EntityPose.DYING, EntitySize.c(0.2F, 0.2F)).build();
      private static final DataWatcherObject<Float> c = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.c);
      private static final DataWatcherObject<Integer> d = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.b);
-     protected static final DataWatcherObject<Byte> bq = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a);
-@@ -27,10 +41,10 @@
-     protected static final DataWatcherObject<NBTTagCompound> bt = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
+     protected static final DataWatcherObject<Byte> bp = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.a);
+@@ -28,10 +42,10 @@
+     protected static final DataWatcherObject<NBTTagCompound> bs = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
      private long e;
      public final PlayerInventory inventory = new PlayerInventory(this);
 -    protected InventoryEnderChest enderChest = new InventoryEnderChest();
@@ -36,16 +36,15 @@
      public Container activeContainer;
 -    protected FoodMetaData foodData = new FoodMetaData();
 +    protected FoodMetaData foodData = new FoodMetaData(this); // CraftBukkit - add "this" to constructor
-     protected int bz;
+     protected int by;
+     public float bz;
      public float bA;
-     public float bB;
-@@ -58,6 +72,17 @@
+@@ -57,6 +71,16 @@
      @Nullable
      public EntityFishingHook hookedFish;
  
 +    // CraftBukkit start
 +    public boolean fauxSleeping;
-+    public String spawnWorld = "";
 +    public int oldLevel = -1;
 +
 +    @Override
@@ -54,19 +53,19 @@
 +    }
 +    // CraftBukkit end
 +
-     public EntityHuman(World world, GameProfile gameprofile) {
+     public EntityHuman(World world, BlockPosition blockposition, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
-         this.bV = ItemStack.a;
-@@ -206,7 +231,7 @@
+         this.bS = ItemStack.b;
+@@ -194,7 +218,7 @@
          ItemStack itemstack = this.getEquipment(EnumItemSlot.HEAD);
  
-         if (itemstack.getItem() == Items.TURTLE_HELMET && !this.a(TagsFluid.WATER)) {
+         if (itemstack.getItem() == Items.TURTLE_HELMET && !this.a((Tag) TagsFluid.WATER)) {
 -            this.addEffect(new MobEffect(MobEffects.WATER_BREATHING, 200, 0, false, false, true));
 +            this.addEffect(new MobEffect(MobEffects.WATER_BREATHING, 200, 0, false, false, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.TURTLE_HELMET); // CraftBukkit
          }
  
      }
-@@ -379,7 +404,8 @@
+@@ -359,7 +383,8 @@
  
          if (this.world.getDifficulty() == EnumDifficulty.PEACEFUL && this.world.getGameRules().getBoolean(GameRules.NATURAL_REGENERATION)) {
              if (this.getHealth() < this.getMaxHealth() && this.ticksLived % 20 == 0) {
@@ -76,7 +75,7 @@
              }
  
              if (this.foodData.c() && this.ticksLived % 10 == 0) {
-@@ -563,6 +589,30 @@
+@@ -544,6 +569,30 @@
                  entityitem.setMot((double) (-f3 * f2 * 0.3F) + Math.cos((double) f5) * (double) f6, (double) (-f1 * 0.3F + 0.1F + (this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (f4 * f2 * 0.3F) + Math.sin((double) f5) * (double) f6);
              }
  
@@ -107,30 +106,7 @@
              return entityitem;
          }
      }
-@@ -637,6 +687,14 @@
-         }
- 
-         this.setScore(nbttagcompound.getInt("Score"));
-+
-+        // CraftBukkit start
-+        this.spawnWorld = nbttagcompound.getString("SpawnWorld");
-+        if ("".equals(spawnWorld)) {
-+            this.spawnWorld = this.world.getServer().getWorlds().get(0).getName();
-+        }
-+        // CraftBukkit end
-+
-         if (nbttagcompound.hasKeyOfType("SpawnX", 99) && nbttagcompound.hasKeyOfType("SpawnY", 99) && nbttagcompound.hasKeyOfType("SpawnZ", 99)) {
-             this.g = new BlockPosition(nbttagcompound.getInt("SpawnX"), nbttagcompound.getInt("SpawnY"), nbttagcompound.getInt("SpawnZ"));
-             this.bR = nbttagcompound.getBoolean("SpawnForced");
-@@ -687,6 +745,7 @@
-         if (!this.getShoulderEntityRight().isEmpty()) {
-             nbttagcompound.set("ShoulderEntityRight", this.getShoulderEntityRight());
-         }
-+        nbttagcompound.setString("SpawnWorld", spawnWorld); // CraftBukkit - fixes bed spawns for multiworld worlds
- 
-     }
- 
-@@ -700,16 +759,17 @@
+@@ -670,16 +719,17 @@
          if (this.isInvulnerable(damagesource)) {
              return false;
          } else if (this.abilities.isInvulnerable && !damagesource.ignoresInvulnerability()) {
@@ -138,7 +114,7 @@
              return false;
          } else {
              this.ticksFarFromPlayer = 0;
-             if (this.getHealth() <= 0.0F) {
+             if (this.dk()) {
                  return false;
              } else {
 -                this.releaseShoulderEntities();
@@ -150,7 +126,7 @@
                      }
  
                      if (this.world.getDifficulty() == EnumDifficulty.EASY) {
-@@ -721,7 +781,13 @@
+@@ -691,7 +741,13 @@
                      }
                  }
  
@@ -165,7 +141,7 @@
              }
          }
      }
-@@ -736,10 +802,29 @@
+@@ -706,10 +762,29 @@
      }
  
      public boolean a(EntityHuman entityhuman) {
@@ -198,8 +174,8 @@
      }
  
      @Override
-@@ -770,8 +855,13 @@
- 
+@@ -746,8 +821,13 @@
+         }
      }
  
 +    // CraftBukkit start
@@ -213,24 +189,24 @@
          if (!this.isInvulnerable(damagesource)) {
              f = this.applyArmorModifier(damagesource, f);
              f = this.applyMagicModifier(damagesource, f);
-@@ -797,6 +887,7 @@
+@@ -773,6 +853,7 @@
  
              }
          }
 +        return false; // CraftBukkit
      }
  
-     public void openSign(TileEntitySign tileentitysign) {}
-@@ -939,7 +1030,7 @@
+     @Override
+@@ -928,7 +1009,7 @@
  
                  f *= 0.2F + f2 * f2 * 0.8F;
                  f1 *= f2;
--                this.ey();
-+                // this.ey(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
+-                this.resetAttackCooldown();
++                // this.resetAttackCooldown(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
                  if (f > 0.0F || f1 > 0.0F) {
                      boolean flag = f2 > 0.9F;
                      boolean flag1 = false;
-@@ -978,8 +1069,15 @@
+@@ -967,8 +1048,15 @@
                      if (entity instanceof EntityLiving) {
                          f3 = ((EntityLiving) entity).getHealth();
                          if (j > 0 && !entity.isBurning()) {
@@ -248,20 +224,20 @@
                          }
                      }
  
-@@ -1007,8 +1105,11 @@
+@@ -996,8 +1084,11 @@
                                  EntityLiving entityliving = (EntityLiving) iterator.next();
  
                                  if (entityliving != this && entityliving != entity && !this.r(entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.h((Entity) entityliving) < 9.0D) {
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
 +                                    if (entityliving.damageEntity(DamageSource.playerAttack(this).sweep(), f4)) {
-                                     entityliving.a(this, 0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
+                                     entityliving.a(0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
 -                                    entityliving.damageEntity(DamageSource.playerAttack(this), f4);
 +                                    }
 +                                    // CraftBukkit end
                                  }
                              }
  
-@@ -1017,9 +1118,26 @@
+@@ -1006,9 +1097,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.velocityChanged) {
@@ -288,7 +264,7 @@
                          }
  
                          if (flag2) {
-@@ -1064,7 +1182,14 @@
+@@ -1053,7 +1161,14 @@
  
                              this.a(StatisticList.DAMAGE_DEALT, Math.round(f5 * 10.0F));
                              if (j > 0) {
@@ -304,7 +280,7 @@
                              }
  
                              if (this.world instanceof WorldServer && f5 > 2.0F) {
-@@ -1080,6 +1205,11 @@
+@@ -1069,6 +1184,11 @@
                          if (flag4) {
                              entity.extinguish();
                          }
@@ -316,62 +292,19 @@
                      }
                  }
  
-@@ -1139,15 +1269,15 @@
-         return this.bT;
+@@ -1129,17 +1249,40 @@
      }
  
--    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
--        EnumDirection enumdirection = (EnumDirection) this.world.getType(blockposition).get(BlockFacingHorizontal.FACING);
--
-+    // CraftBukkit start - moved bed result checks from below into separate method
-+    private Either<EntityHuman.EnumBedResult, Unit> getBedResult(BlockPosition blockposition, EnumDirection enumdirection) {
-         if (!this.world.isClientSide) {
-             if (this.isSleeping() || !this.isAlive()) {
-                 return Either.left(EntityHuman.EnumBedResult.OTHER_PROBLEM);
-             }
- 
--            if (!this.world.worldProvider.isOverworld()) {
-+            // CraftBukkit - moved world and biome check from BlockBed interact handling here
-+            if (!world.worldProvider.canRespawn() || world.getBiome(blockposition) == Biomes.NETHER || !this.world.worldProvider.isOverworld()) {
-                 return Either.left(EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE);
-             }
- 
-@@ -1177,6 +1307,34 @@
-                 }
-             }
-         }
-+        return Either.right(Unit.INSTANCE);
-+    }
-+
-+    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
-+        // CraftBukkit start - moved checks into separate method above, add force
+     public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition) {
++        // CraftBukkit start
 +        return this.sleep(blockposition, false);
 +    }
 +
 +    public Either<EntityHuman.EnumBedResult, Unit> sleep(BlockPosition blockposition, boolean force) {
-+        EnumDirection enumdirection = (EnumDirection) this.world.getType(blockposition).get(BlockFacingHorizontal.FACING);
-+        Either<EntityHuman.EnumBedResult, Unit> bedResult = this.getBedResult(blockposition, enumdirection);
-+
-+        if (bedResult.left().orElse(null) == EntityHuman.EnumBedResult.OTHER_PROBLEM) {
-+            return bedResult; // return immediately if the result is not bypassable by plugins
-+        }
-+
-+        if (force) {
-+            bedResult = Either.right(Unit.INSTANCE);
-+        }
-+
-+        if (this.getBukkitEntity() instanceof Player) {
-+            bedResult = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedEnterEvent(this, blockposition, bedResult);
-+
-+            if (bedResult.left().isPresent()) {
-+                return bedResult;
-+            }
-+        }
 +        // CraftBukkit end
- 
          this.entitySleep(blockposition);
          this.sleepTicks = 0;
-@@ -1211,11 +1369,28 @@
+         return Either.right(Unit.INSTANCE);
      }
  
      public void wakeup(boolean flag, boolean flag1) {
@@ -400,21 +333,9 @@
          this.sleepTicks = flag ? 0 : 100;
      }
  
-@@ -1267,9 +1442,11 @@
- 
-             this.g = blockposition;
-             this.bR = flag;
-+            this.spawnWorld = this.world.worldData.getName(); // CraftBukkit
-         } else {
-             this.g = null;
-             this.bR = false;
-+            this.spawnWorld = ""; // CraftBukkit
-         }
- 
-     }
-@@ -1341,7 +1518,11 @@
+@@ -1249,7 +1392,11 @@
              this.setMot(vec3d2.x, d3 * 0.6D, vec3d2.z);
-             this.aM = f;
+             this.aL = f;
              this.fallDistance = 0.0F;
 -            this.setFlag(7, false);
 +            // CraftBukkit start
@@ -423,9 +344,9 @@
 +            }
 +            // CraftBukkit end
          } else {
-             super.e(vec3d);
+             super.f(vec3d);
          }
-@@ -1467,12 +1648,24 @@
+@@ -1379,12 +1526,24 @@
      }
  
      public void startGliding() {
@@ -451,7 +372,7 @@
      }
  
      @Override
-@@ -1687,26 +1880,31 @@
+@@ -1599,26 +1758,31 @@
  
      protected void releaseShoulderEntities() {
          if (this.e + 20L < this.world.getTime()) {

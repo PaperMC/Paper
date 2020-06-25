@@ -1,11 +1,11 @@
 --- a/net/minecraft/server/ItemStack.java
 +++ b/net/minecraft/server/ItemStack.java
-@@ -16,6 +16,24 @@
+@@ -19,6 +19,24 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
-+import com.mojang.datafixers.Dynamic;
++import com.mojang.serialization.Dynamic;
 +import java.util.List;
 +import java.util.Map;
 +
@@ -24,8 +24,17 @@
 +
  public final class ItemStack {
  
+     public static final Codec<ItemStack> a = RecordCodecBuilder.create((instance) -> {
+@@ -32,7 +50,7 @@
+     });
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -54,23 +72,42 @@
+     public static final ItemStack b = new ItemStack((Item) null);
+-    public static final DecimalFormat c = (DecimalFormat) SystemUtils.a((Object) (new DecimalFormat("#.##")), (decimalformat) -> {
++    public static final DecimalFormat c = (DecimalFormat) SystemUtils.a((new DecimalFormat("#.##")), (decimalformat) -> { // CraftBukkit - decompile error
+         decimalformat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
+     });
+     private static final ChatModifier e = ChatModifier.b.setColor(EnumChatFormat.DARK_PURPLE).setItalic(true);
+@@ -67,23 +85,42 @@
          this.checkEmpty();
      }
  
@@ -40,9 +49,9 @@
 +    }
 +
      private void checkEmpty() {
-+        if (this.h && this == ItemStack.a) throw new AssertionError("TRAP"); // CraftBukkit
-         this.h = false;
-         this.h = this.isEmpty();
++        if (this.j && this == ItemStack.b) throw new AssertionError("TRAP"); // CraftBukkit
+         this.j = false;
+         this.j = this.isEmpty();
      }
  
 -    private ItemStack(NBTTagCompound nbttagcompound) {
@@ -52,10 +61,10 @@
          this.count = nbttagcompound.getByte("Count");
          if (nbttagcompound.hasKeyOfType("tag", 10)) {
 -            this.tag = nbttagcompound.getCompound("tag");
--            this.getItem().a(nbttagcompound);
+-            this.getItem().b(nbttagcompound);
 +            // CraftBukkit start - make defensive copy as this data may be coming from the save thread
 +            this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
-+            this.getItem().a(this.tag);
++            this.getItem().b(this.tag);
 +            // CraftBukkit end
          }
  
@@ -71,8 +80,8 @@
          this.checkEmpty();
      }
  
-@@ -100,7 +137,7 @@
-         return this.h ? Items.AIR : this.item;
+@@ -113,7 +150,7 @@
+         return this.j ? Items.AIR : this.item;
      }
  
 -    public EnumInteractionResult placeItem(ItemActionContext itemactioncontext) {
@@ -80,14 +89,14 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -108,12 +145,153 @@
-         if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().t(), shapedetectorblock)) {
+@@ -121,12 +158,153 @@
+         if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().p(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
 +            // CraftBukkit start - handle all block place event logic here
 +            NBTTagCompound oldData = this.getTagClone();
 +            int oldCount = this.getCount();
-+            World world = itemactioncontext.getWorld();
++            WorldServer world = (WorldServer) itemactioncontext.getWorld();
 +
 +            if (!(this.getItem() instanceof ItemBucket)) { // if not bucket
 +                world.captureBlockStates = true;
@@ -103,7 +112,7 @@
 +            this.setCount(oldCount);
 +            this.setTagClone(oldData);
 +            world.captureBlockStates = false;
-+            if (enuminteractionresult == EnumInteractionResult.SUCCESS && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
++            if (enuminteractionresult.a() && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
 +                world.captureTreeGeneration = false;
 +                Location location = new Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ());
 +                TreeType treeType = BlockSapling.treeType;
@@ -136,7 +145,7 @@
 +            }
 +            world.captureTreeGeneration = false;
  
-             if (entityhuman != null && enuminteractionresult == EnumInteractionResult.SUCCESS) {
+             if (entityhuman != null && enuminteractionresult.a()) {
 -                entityhuman.b(StatisticList.ITEM_USED.b(item));
 +                org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
 +                List<BlockState> blocks = new java.util.ArrayList<>(world.capturedBlockStates.values());
@@ -235,7 +244,7 @@
  
              return enuminteractionresult;
          }
-@@ -194,6 +372,21 @@
+@@ -207,6 +385,21 @@
                  }
  
                  i -= k;
@@ -257,7 +266,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -215,6 +408,11 @@
+@@ -228,6 +421,11 @@
                  if (this.isDamaged(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -269,7 +278,7 @@
  
                      this.subtract(1);
                      if (t0 instanceof EntityHuman) {
-@@ -346,6 +544,17 @@
+@@ -359,6 +557,17 @@
          return this.tag;
      }
  
@@ -287,7 +296,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -498,6 +707,12 @@
+@@ -516,6 +725,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -300,16 +309,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -520,7 +735,7 @@
-             object = this.getItem().a(enumitemslot);
-         }
- 
--        ((Multimap) object).values().forEach((attributemodifier1) -> {
-+        ((Multimap<String, AttributeModifier>) object).values().forEach((attributemodifier1) -> { // CraftBukkit - decompile error
-             attributemodifier1.a(false);
-         });
-         return (Multimap) object;
-@@ -543,6 +758,13 @@
+@@ -565,6 +780,13 @@
          nbttaglist.add(nbttagcompound);
      }
  
@@ -320,6 +320,6 @@
 +    }
 +    // CraftBukkit end
 +
-     public IChatBaseComponent B() {
-         IChatBaseComponent ichatbasecomponent = (new ChatComponentText("")).addSibling(this.getName());
+     public IChatBaseComponent C() {
+         IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).addSibling(this.getName());
  

@@ -10,10 +10,10 @@ import org.bukkit.attribute.AttributeModifier;
 
 public class CraftAttributeInstance implements AttributeInstance {
 
-    private final net.minecraft.server.AttributeInstance handle;
+    private final net.minecraft.server.AttributeModifiable handle;
     private final Attribute attribute;
 
-    public CraftAttributeInstance(net.minecraft.server.AttributeInstance handle, Attribute attribute) {
+    public CraftAttributeInstance(net.minecraft.server.AttributeModifiable handle, Attribute attribute) {
         this.handle = handle;
         this.attribute = attribute;
     }

@@ -25,6 +25,7 @@ public final class CraftInventoryCreator {
         converterMap.put(InventoryType.MERCHANT, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ENDER_CHEST, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.ANVIL, DEFAULT_CONVERTER);
+        converterMap.put(InventoryType.SMITHING, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.BEACON, DEFAULT_CONVERTER);
         converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter.Hopper());
         converterMap.put(InventoryType.SHULKER_BOX, DEFAULT_CONVERTER);

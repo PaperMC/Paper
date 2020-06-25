@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
+import java.util.function.Predicate;
 import net.minecraft.server.BiomeStorage;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.DataPaletteBlock;
@@ -61,7 +63,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public boolean contains(BlockData block) {
         Preconditions.checkArgument(block != null, "Block cannot be null");
 
-        IBlockData nms = ((CraftBlockData) block).getState();
+        Predicate<IBlockData> nms = Predicates.equalTo(((CraftBlockData) block).getState());
         for (DataPaletteBlock<IBlockData> palette : blockids) {
             if (palette.contains(nms)) {
                 return true;

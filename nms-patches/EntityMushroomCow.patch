@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityMushroomCow.java
 +++ b/net/minecraft/server/EntityMushroomCow.java
-@@ -3,6 +3,10 @@
+@@ -4,6 +4,10 @@
  import java.util.Random;
  import java.util.UUID;
  import org.apache.commons.lang3.tuple.Pair;
@@ -9,37 +9,42 @@
 +import org.bukkit.event.entity.EntityTransformEvent;
 +// CraftBukkit end
  
- public class EntityMushroomCow extends EntityCow {
+ public class EntityMushroomCow extends EntityCow implements IShearable {
  
-@@ -81,9 +85,14 @@
-             int i;
+@@ -75,6 +79,11 @@
+             this.playSound(soundeffect, 1.0F, 1.0F);
+             return EnumInteractionResult.a(this.world.isClientSide);
+         } else if (itemstack.getItem() == Items.SHEARS && this.canShear()) {
++            // CraftBukkit start
++            if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
++                return EnumInteractionResult.PASS;
++            }
++            // CraftBukkit end
+             this.shear(SoundCategory.PLAYERS);
+             if (!this.world.isClientSide) {
+                 itemstack.damage(1, entityhuman, (entityhuman1) -> {
+@@ -121,7 +130,7 @@
+         this.world.playSound((EntityHuman) null, (Entity) this, SoundEffects.ENTITY_MOOSHROOM_SHEAR, soundcategory, 1.0F, 1.0F);
+         if (!this.world.s_()) {
+             ((WorldServer) this.world).a(Particles.EXPLOSION, this.locX(), this.e(0.5D), this.locZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+-            this.die();
++            // this.die(); // CraftBukkit - moved down
+             EntityCow entitycow = (EntityCow) EntityTypes.COW.a(this.world);
  
-             if (itemstack.getItem() == Items.SHEARS && !this.isBaby()) {
-+                // CraftBukkit start
-+                if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
-+                    return false;
-+                }
-+                // CraftBukkit end
-                 this.world.addParticle(Particles.EXPLOSION, this.locX(), this.e(0.5D), this.locZ(), 0.0D, 0.0D, 0.0D);
-                 if (!this.world.isClientSide) {
--                    this.die();
-+                    // this.die(); // CraftBukkit - moved down
-                     EntityCow entitycow = (EntityCow) EntityTypes.COW.a(this.world);
+             entitycow.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
+@@ -137,7 +146,14 @@
+             }
  
-                     entitycow.setPositionRotation(this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
-@@ -99,7 +108,14 @@
-                     }
- 
-                     entitycow.setInvulnerable(this.isInvulnerable());
--                    this.world.addEntity(entitycow);
-+                    // CraftBukkit start
-+                    if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
-+                        return false;
-+                    }
-+                    this.world.addEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
+             entitycow.setInvulnerable(this.isInvulnerable());
+-            this.world.addEntity(entitycow);
++            // CraftBukkit start
++            if (CraftEventFactory.callEntityTransformEvent(this, entitycow, EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
++                return;
++            }
++            this.world.addEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
 +
-+                    this.die(); // CraftBukkit - from above
-+                    // CraftBukkit end
++            this.die(); // CraftBukkit - from above
++            // CraftBukkit end
  
-                     for (i = 0; i < 5; ++i) {
-                         this.world.addEntity(new EntityItem(this.world, this.locX(), this.e(1.0D), this.locZ(), new ItemStack(this.getVariant().d.getBlock())));
+             for (int i = 0; i < 5; ++i) {
+                 this.world.addEntity(new EntityItem(this.world, this.locX(), this.e(1.0D), this.locZ(), new ItemStack(this.getVariant().d.getBlock())));

@@ -10,6 +10,7 @@ import net.minecraft.server.Block;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.ChunkStatus;
 import net.minecraft.server.DifficultyDamageScaler;
+import net.minecraft.server.DimensionManager;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
 import net.minecraft.server.Fluid;
@@ -28,18 +29,12 @@ import net.minecraft.server.TileEntity;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldBorder;
 import net.minecraft.server.WorldData;
-import net.minecraft.server.WorldProvider;
 
 public class DummyGeneratorAccess implements GeneratorAccess {
 
     public static final GeneratorAccess INSTANCE = new DummyGeneratorAccess();
 
     protected DummyGeneratorAccess() {
-    }
-
-    @Override
-    public long getSeed() {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -74,11 +69,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public Random getRandom() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public void update(BlockPosition bp, Block block) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -138,7 +128,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public boolean p_() {
+    public boolean s_() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -148,7 +138,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public WorldProvider getWorldProvider() {
+    public DimensionManager getDimensionManager() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -183,7 +173,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
+    public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
         return false;
     }
 
@@ -193,7 +183,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public boolean a(BlockPosition blockposition, boolean flag, Entity entity) {
+    public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

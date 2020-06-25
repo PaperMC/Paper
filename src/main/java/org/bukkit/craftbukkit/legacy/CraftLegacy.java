@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.legacy;
 
 import com.google.common.base.Preconditions;
-import com.mojang.datafixers.Dynamic;
+import com.mojang.serialization.Dynamic;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -309,7 +309,7 @@ public final class CraftLegacy {
         SPAWN_EGGS.put((byte) EntityType.WOLF.getTypeId(), Material.WOLF_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.ZOMBIE.getTypeId(), Material.ZOMBIE_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.ZOMBIE_HORSE.getTypeId(), Material.ZOMBIE_HORSE_SPAWN_EGG);
-        SPAWN_EGGS.put((byte) EntityType.PIG_ZOMBIE.getTypeId(), Material.ZOMBIE_PIGMAN_SPAWN_EGG);
+        SPAWN_EGGS.put((byte) EntityType.ZOMBIFIED_PIGLIN.getTypeId(), Material.ZOMBIFIED_PIGLIN_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.ZOMBIE_VILLAGER.getTypeId(), Material.ZOMBIE_VILLAGER_SPAWN_EGG);
 
         DispenserRegistry.init();
@@ -338,7 +338,7 @@ public final class CraftLegacy {
                     IBlockData blockData = block.getBlockData();
                     BlockStateList states = block.getStates();
 
-                    Optional<NBTTagCompound> propMap = blockTag.getElement("Properties");
+                    Optional<NBTTagCompound> propMap = blockTag.getElement("Properties").result();
                     if (propMap.isPresent()) {
                         NBTTagCompound properties = propMap.get();
                         for (String dataKey : properties.getKeys()) {

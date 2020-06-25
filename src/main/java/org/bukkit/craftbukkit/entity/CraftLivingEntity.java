@@ -428,7 +428,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
             launch = EntityTypes.LLAMA_SPIT.a(world);
 
-            ((EntityLlamaSpit) launch).shooter = getHandle();
+            ((EntityLlamaSpit) launch).setShooter(getHandle());
             ((EntityLlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (ShulkerBullet.class.isAssignableFrom(projectile)) {
@@ -588,17 +588,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void attack(Entity target) {
         Preconditions.checkArgument(target != null, "target == null");
 
-        getHandle().B(((CraftEntity) target).getHandle()); // PAIL rename attack
+        getHandle().attackEntity(((CraftEntity) target).getHandle());
     }
 
     @Override
     public void swingMainHand() {
-        getHandle().a(EnumHand.MAIN_HAND, true); // PAIL rename swingHand
+        getHandle().swingHand(EnumHand.MAIN_HAND, true);
     }
 
     @Override
     public void swingOffHand() {
-        getHandle().a(EnumHand.OFF_HAND, true); // PAIL rename swingHand
+        getHandle().swingHand(EnumHand.OFF_HAND, true);
     }
 
     @Override

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Explosion.java
 +++ b/net/minecraft/server/Explosion.java
-@@ -14,6 +14,13 @@
+@@ -15,6 +15,13 @@
  import java.util.Set;
  import javax.annotation.Nullable;
  
@@ -14,13 +14,13 @@
  public class Explosion {
  
      private final boolean a;
-@@ -29,11 +36,12 @@
-     private DamageSource j;
+@@ -31,11 +38,12 @@
+     private final ExplosionDamageCalculator k;
      private final List<BlockPosition> blocks = Lists.newArrayList();
-     private final Map<EntityHuman, Vec3D> l = Maps.newHashMap();
+     private final Map<EntityHuman, Vec3D> m = Maps.newHashMap();
 +    public boolean wasCanceled = false; // CraftBukkit - add field
  
-     public Explosion(World world, @Nullable Entity entity, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
+     public Explosion(World world, @Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Explosion.Effect explosion_effect) {
          this.world = world;
          this.source = entity;
 -        this.size = f;
@@ -28,7 +28,7 @@
          this.posX = d0;
          this.posY = d1;
          this.posZ = d2;
-@@ -78,6 +86,11 @@
+@@ -85,6 +93,11 @@
      }
  
      public void a() {
@@ -40,25 +40,25 @@
          Set<BlockPosition> set = Sets.newHashSet();
          boolean flag = true;
  
-@@ -116,7 +129,7 @@
-                                 f -= (f2 + 0.3F) * 0.3F;
+@@ -118,7 +131,7 @@
+                                 f -= ((Float) optional.get() + 0.3F) * 0.3F;
                              }
  
--                            if (f > 0.0F && (this.source == null || this.source.a(this, this.world, blockposition, iblockdata, f))) {
-+                            if (f > 0.0F && (this.source == null || this.source.a(this, this.world, blockposition, iblockdata, f)) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
+-                            if (f > 0.0F && this.k.a(this, this.world, blockposition, iblockdata, f)) {
++                            if (f > 0.0F && this.k.a(this, this.world, blockposition, iblockdata, f) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
                                  set.add(blockposition);
                              }
  
-@@ -160,7 +173,16 @@
+@@ -162,7 +175,16 @@
                          double d12 = (double) a(vec3d, entity);
                          double d13 = (1.0D - d7) * d12;
  
--                        entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f3 + 1.0D)));
+-                        entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        // CraftBukkit start
-+                        // entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f3 + 1.0D)));
++                        // entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        CraftEventFactory.entityDamage = source;
 +                        entity.forceExplosionKnockback = false;
-+                        boolean wasDamaged = entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f3 + 1.0D)));
++                        boolean wasDamaged = entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
 +                        CraftEventFactory.entityDamage = null;
 +                        if (!wasDamaged && !(entity instanceof EntityTNTPrimed || entity instanceof EntityFallingBlock) && !entity.forceExplosionKnockback) {
 +                            continue;
@@ -67,7 +67,7 @@
                          double d14 = d13;
  
                          if (entity instanceof EntityLiving) {
-@@ -202,6 +224,51 @@
+@@ -204,6 +226,51 @@
  
              Collections.shuffle(this.blocks, this.world.random);
              Iterator iterator = this.blocks.iterator();
@@ -119,9 +119,9 @@
  
              while (iterator.hasNext()) {
                  BlockPosition blockposition = (BlockPosition) iterator.next();
-@@ -216,8 +283,8 @@
+@@ -218,8 +285,8 @@
                          TileEntity tileentity = block.isTileEntity() ? this.world.getTileEntity(blockposition) : null;
-                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.POSITION, blockposition).set(LootContextParameters.TOOL, ItemStack.a).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity).setOptional(LootContextParameters.THIS_ENTITY, this.source);
+                         LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).a(this.world.random).set(LootContextParameters.POSITION, blockposition).set(LootContextParameters.TOOL, ItemStack.b).setOptional(LootContextParameters.BLOCK_ENTITY, tileentity).setOptional(LootContextParameters.THIS_ENTITY, this.source);
  
 -                        if (this.b == Explosion.Effect.DESTROY) {
 -                            loottableinfo_builder.set(LootContextParameters.EXPLOSION_RADIUS, this.size);
@@ -130,20 +130,20 @@
                          }
  
                          iblockdata.a(loottableinfo_builder).forEach((itemstack) -> {
-@@ -247,7 +314,11 @@
+@@ -249,7 +316,11 @@
                  BlockPosition blockposition2 = (BlockPosition) iterator1.next();
  
-                 if (this.c.nextInt(3) == 0 && this.world.getType(blockposition2).isAir() && this.world.getType(blockposition2.down()).g(this.world, blockposition2.down())) {
--                    this.world.setTypeUpdate(blockposition2, Blocks.FIRE.getBlockData());
+                 if (this.c.nextInt(3) == 0 && this.world.getType(blockposition2).isAir() && this.world.getType(blockposition2.down()).i(this.world, blockposition2.down())) {
+-                    this.world.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.world, blockposition2));
 +                    // CraftBukkit start - Ignition by explosion
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(this.world, blockposition2.getX(), blockposition2.getY(), blockposition2.getZ(), this).isCancelled()) {
-+                        this.world.setTypeUpdate(blockposition2, Blocks.FIRE.getBlockData());
++                        this.world.setTypeUpdate(blockposition2, BlockFireAbstract.a((IBlockAccess) this.world, blockposition2));
 +                    }
 +                    // CraftBukkit end
                  }
              }
          }
-@@ -255,6 +326,7 @@
+@@ -257,6 +328,7 @@
      }
  
      private static void a(ObjectArrayList<Pair<ItemStack, BlockPosition>> objectarraylist, ItemStack itemstack, BlockPosition blockposition) {

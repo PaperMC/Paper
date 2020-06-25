@@ -72,7 +72,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void i(ItemStack itemstack) {
+        public void k(ItemStack itemstack) {
         }
 
         public IChatBaseComponent getScoreboardDisplayName() {
@@ -90,7 +90,7 @@ public class CraftMerchantCustom extends CraftMerchant {
         }
 
         @Override
-        public void setExperience(int i) {
+        public void setForcedExperience(int i) {
         }
 
         @Override

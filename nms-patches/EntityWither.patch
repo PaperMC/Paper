@@ -14,8 +14,8 @@
  public class EntityWither extends EntityMonster implements IRangedEntity {
  
      private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityWither.class, DataWatcherRegistry.b);
-@@ -188,14 +195,38 @@
-             i = this.eq() - 1;
+@@ -188,16 +195,40 @@
+             i = this.getInvul() - 1;
              if (i <= 0) {
                  Explosion.Effect explosion_effect = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING) ? Explosion.Effect.DESTROY : Explosion.Effect.NONE;
 +                // CraftBukkit start
@@ -29,34 +29,36 @@
 +                // CraftBukkit end
  
 -                this.world.createExplosion(this, this.locX(), this.getHeadY(), this.locZ(), 7.0F, false, explosion_effect);
--                this.world.b(1023, new BlockPosition(this), 0);
-+                // CraftBukkit start - Use relative location for far away sounds
-+                // this.world.b(1023, new BlockPosition(this), 0);
-+                int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
-+                for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
-+                    double deltaX = this.locX() - player.locX();
-+                    double deltaZ = this.locZ() - player.locZ();
-+                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
-+                    if (distanceSquared > viewDistance * viewDistance) {
-+                        double deltaLength = Math.sqrt(distanceSquared);
-+                        double relativeX = player.locX() + (deltaX / deltaLength) * viewDistance;
-+                        double relativeZ = player.locZ() + (deltaZ / deltaLength) * viewDistance;
-+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1023, new BlockPosition((int) relativeX, (int) this.locY(), (int) relativeZ), 0, true));
-+                    } else {
-+                        player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1023, new BlockPosition((int) this.locX(), (int) this.locY(), (int) this.locZ()), 0, true));
+                 if (!this.isSilent()) {
+-                    this.world.b(1023, this.getChunkCoordinates(), 0);
++                    // CraftBukkit start - Use relative location for far away sounds
++                    // this.world.b(1023, new BlockPosition(this), 0);
++                    int viewDistance = ((WorldServer) this.world).getServer().getViewDistance() * 16;
++                    for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
++                        double deltaX = this.locX() - player.locX();
++                        double deltaZ = this.locZ() - player.locZ();
++                        double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                        if (distanceSquared > viewDistance * viewDistance) {
++                            double deltaLength = Math.sqrt(distanceSquared);
++                            double relativeX = player.locX() + (deltaX / deltaLength) * viewDistance;
++                            double relativeZ = player.locZ() + (deltaZ / deltaLength) * viewDistance;
++                            player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1023, new BlockPosition((int) relativeX, (int) this.locY(), (int) relativeZ), 0, true));
++                        } else {
++                            player.playerConnection.sendPacket(new PacketPlayOutWorldEvent(1023, this.getChunkCoordinates(), 0, true));
++                        }
 +                    }
-+                }
-+                // CraftBukkit end
++                    // CraftBukkit end
+                 }
              }
  
-             this.s(i);
+             this.setInvul(i);
              if (this.ticksLived % 10 == 0) {
 -                this.heal(10.0F);
 +                this.heal(10.0F, EntityRegainHealthEvent.RegainReason.WITHER_SPAWN); // CraftBukkit
              }
  
          } else {
-@@ -247,9 +278,11 @@
+@@ -249,9 +280,11 @@
                              if (entityliving != this && entityliving.isAlive() && this.hasLineOfSight(entityliving)) {
                                  if (entityliving instanceof EntityHuman) {
                                      if (!((EntityHuman) entityliving).abilities.isInvulnerable) {
@@ -68,10 +70,10 @@
                                      this.setHeadTarget(i, entityliving.getId());
                                  }
                                  break;
-@@ -285,6 +318,11 @@
+@@ -287,6 +320,11 @@
                                  IBlockData iblockdata = this.world.getType(blockposition);
  
-                                 if (b(iblockdata)) {
+                                 if (c(iblockdata)) {
 +                                    // CraftBukkit start
 +                                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
 +                                        continue;
@@ -80,7 +82,7 @@
                                      flag = this.world.a(blockposition, true, this) || flag;
                                  }
                              }
-@@ -298,7 +336,7 @@
+@@ -300,7 +338,7 @@
              }
  
              if (this.ticksLived % 20 == 0) {

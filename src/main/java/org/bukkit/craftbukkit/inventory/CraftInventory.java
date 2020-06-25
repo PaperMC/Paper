@@ -473,6 +473,8 @@ public class CraftInventory implements Inventory {
             return InventoryType.BEACON;
         } else if (this instanceof CraftInventoryAnvil) {
             return InventoryType.ANVIL;
+        } else if (this instanceof CraftInventorySmithing) {
+            return InventoryType.SMITHING;
         } else if (inventory instanceof IHopper) {
             return InventoryType.HOPPER;
         } else if (inventory instanceof TileEntityShulkerBox) {
