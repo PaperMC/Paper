@@ -1,22 +1,22 @@
 --- a/net/minecraft/server/EntityHorseAbstract.java
 +++ b/net/minecraft/server/EntityHorseAbstract.java
-@@ -5,6 +5,7 @@
+@@ -6,6 +6,7 @@
  import java.util.UUID;
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
 +import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
  
- public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, IJumpable {
+ public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, IJumpable, ISaddleable {
  
-@@ -33,6 +34,7 @@
-     private float bS;
-     protected boolean bD = true;
-     protected int bE;
+@@ -34,6 +35,7 @@
+     private float bR;
+     protected boolean bB = true;
+     protected int bC;
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
      protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -210,7 +212,7 @@
+@@ -218,7 +220,7 @@
      public void loadChest() {
          InventorySubcontainer inventorysubcontainer = this.inventoryChest;
  
@@ -25,7 +25,7 @@
          if (inventorysubcontainer != null) {
              inventorysubcontainer.b((IInventoryListener) this);
              int i = Math.min(inventorysubcontainer.getSize(), this.inventoryChest.getSize());
-@@ -333,7 +335,7 @@
+@@ -334,7 +336,7 @@
      }
  
      public int getMaxDomestication() {
@@ -34,7 +34,7 @@
      }
  
      @Override
-@@ -394,7 +396,7 @@
+@@ -405,7 +407,7 @@
          }
  
          if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
@@ -43,7 +43,7 @@
              flag = true;
          }
  
-@@ -470,7 +472,7 @@
+@@ -481,7 +483,7 @@
          super.movementTick();
          if (!this.world.isClientSide && this.isAlive()) {
              if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
@@ -51,18 +51,18 @@
 +                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
              }
  
-             if (this.eO()) {
-@@ -717,6 +719,7 @@
+             if (this.fm()) {
+@@ -718,6 +720,7 @@
          if (this.getOwnerUUID() != null) {
-             nbttagcompound.setString("OwnerUUID", this.getOwnerUUID().toString());
+             nbttagcompound.a("Owner", this.getOwnerUUID());
          }
 +        nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
  
          if (!this.inventoryChest.getItem(0).isEmpty()) {
              nbttagcompound.set("SaddleItem", this.inventoryChest.getItem(0).save(new NBTTagCompound()));
-@@ -744,6 +747,11 @@
-         if (!s.isEmpty()) {
-             this.setOwnerUUID(UUID.fromString(s));
+@@ -745,6 +748,11 @@
+         if (uuid != null) {
+             this.setOwnerUUID(uuid);
          }
 +        // CraftBukkit start
 +        if (nbttagcompound.hasKey("Bukkit.MaxDomestication")) {
@@ -70,9 +70,9 @@
 +        }
 +        // CraftBukkit end
  
-         AttributeInstance attributeinstance = this.getAttributeMap().a("Speed");
- 
-@@ -801,6 +809,18 @@
+         if (nbttagcompound.hasKeyOfType("SaddleItem", 10)) {
+             ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("SaddleItem"));
+@@ -796,6 +804,18 @@
  
      @Override
      public void b(int i) {
@@ -89,5 +89,5 @@
 +        }
 +        // CraftBukkit end
          this.canSlide = true;
-         this.eW();
-     }
+         this.eV();
+         this.fo();

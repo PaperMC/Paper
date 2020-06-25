@@ -1,28 +1,26 @@
 --- a/net/minecraft/server/BlockFire.java
 +++ b/net/minecraft/server/BlockFire.java
-@@ -7,6 +7,15 @@
- import java.util.Map.Entry;
- import javax.annotation.Nullable;
+@@ -5,6 +5,13 @@
+ import java.util.Map;
+ import java.util.Random;
  
 +// CraftBukkit start
-+import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.block.BlockBurnEvent;
 +import org.bukkit.event.block.BlockFadeEvent;
-+import org.bukkit.event.block.BlockSpreadEvent;
 +// CraftBukkit end
 +
- public class BlockFire extends Block {
+ public class BlockFire extends BlockFireAbstract {
  
-     public static final BlockStateInteger AGE = BlockProperties.ad;
-@@ -33,7 +42,20 @@
+     public static final BlockStateInteger AGE = BlockProperties.aj;
+@@ -26,7 +33,20 @@
  
      @Override
      public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
--        return this.canPlace(iblockdata, generatoraccess, blockposition) ? (IBlockData) this.a((IBlockAccess) generatoraccess, blockposition).set(BlockFire.AGE, iblockdata.get(BlockFire.AGE)) : Blocks.AIR.getBlockData();
+-        return this.canPlace(iblockdata, generatoraccess, blockposition) ? this.a(generatoraccess, blockposition, (Integer) iblockdata.get(BlockFire.AGE)) : Blocks.AIR.getBlockData();
 +        // CraftBukkit start
-+        if (!iblockdata.canPlace(generatoraccess, blockposition)) {
++        if (!this.canPlace(iblockdata, generatoraccess, blockposition)) {
 +            CraftBlockState blockState = CraftBlockState.getBlockState(generatoraccess, blockposition);
 +            blockState.setData(Blocks.AIR.getBlockData());
 +
@@ -33,21 +31,21 @@
 +                return blockState.getHandle();
 +            }
 +        }
-+        return this.a((IBlockAccess) generatoraccess, blockposition).set(BlockFire.AGE, iblockdata.get(BlockFire.AGE));
++        return this.a(generatoraccess, blockposition, (Integer) iblockdata.get(BlockFire.AGE));
 +        // CraftBukkit end
      }
  
-     @Nullable
-@@ -82,7 +104,7 @@
-     public void tick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
+     @Override
+@@ -97,7 +117,7 @@
+         worldserver.getBlockTickList().a(blockposition, this, a(worldserver.random));
          if (worldserver.getGameRules().getBoolean(GameRules.DO_FIRE_TICK)) {
              if (!iblockdata.canPlace(worldserver, blockposition)) {
 -                worldserver.a(blockposition, false);
 +                fireExtinguished(worldserver, blockposition); // CraftBukkit - invalid place location
              }
  
-             Block block = worldserver.getType(blockposition.down()).getBlock();
-@@ -90,7 +112,7 @@
+             IBlockData iblockdata1 = worldserver.getType(blockposition.down());
+@@ -105,7 +125,7 @@
              int i = (Integer) iblockdata.get(BlockFire.AGE);
  
              if (!flag && worldserver.isRaining() && this.a((World) worldserver, blockposition) && random.nextFloat() < 0.2F + (float) i * 0.03F) {
@@ -56,7 +54,7 @@
              } else {
                  int j = Math.min(15, i + random.nextInt(3) / 2);
  
-@@ -105,14 +127,14 @@
+@@ -119,14 +139,14 @@
                          BlockPosition blockposition1 = blockposition.down();
  
                          if (!worldserver.getType(blockposition1).d(worldserver, blockposition1, EnumDirection.UP) || i > 3) {
@@ -67,57 +65,57 @@
                          return;
                      }
  
-                     if (i == 15 && random.nextInt(4) == 0 && !this.h(worldserver.getType(blockposition.down()))) {
+                     if (i == 15 && random.nextInt(4) == 0 && !this.e(worldserver.getType(blockposition.down()))) {
 -                        worldserver.a(blockposition, false);
 +                        fireExtinguished(worldserver, blockposition); // CraftBukkit
                          return;
                      }
                  }
-@@ -120,12 +142,14 @@
-                 boolean flag1 = worldserver.s(blockposition);
+@@ -134,12 +154,14 @@
+                 boolean flag1 = worldserver.u(blockposition);
                  int k = flag1 ? -50 : 0;
  
--                this.a(worldserver, blockposition.east(), 300 + k, random, i);
--                this.a(worldserver, blockposition.west(), 300 + k, random, i);
--                this.a(worldserver, blockposition.down(), 250 + k, random, i);
--                this.a(worldserver, blockposition.up(), 250 + k, random, i);
--                this.a(worldserver, blockposition.north(), 300 + k, random, i);
--                this.a(worldserver, blockposition.south(), 300 + k, random, i);
+-                this.trySpread(worldserver, blockposition.east(), 300 + k, random, i);
+-                this.trySpread(worldserver, blockposition.west(), 300 + k, random, i);
+-                this.trySpread(worldserver, blockposition.down(), 250 + k, random, i);
+-                this.trySpread(worldserver, blockposition.up(), 250 + k, random, i);
+-                this.trySpread(worldserver, blockposition.north(), 300 + k, random, i);
+-                this.trySpread(worldserver, blockposition.south(), 300 + k, random, i);
 +                // CraftBukkit start - add source blockposition to burn calls
-+                this.a(worldserver, blockposition.east(), 300 + k, random, i, blockposition);
-+                this.a(worldserver, blockposition.west(), 300 + k, random, i, blockposition);
-+                this.a(worldserver, blockposition.down(), 250 + k, random, i, blockposition);
-+                this.a(worldserver, blockposition.up(), 250 + k, random, i, blockposition);
-+                this.a(worldserver, blockposition.north(), 300 + k, random, i, blockposition);
-+                this.a(worldserver, blockposition.south(), 300 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.east(), 300 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.west(), 300 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.down(), 250 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.up(), 250 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.north(), 300 + k, random, i, blockposition);
++                this.trySpread(worldserver, blockposition.south(), 300 + k, random, i, blockposition);
 +                // CraftBukkit end
                  BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
  
                  for (int l = -1; l <= 1; ++l) {
-@@ -151,7 +175,15 @@
+@@ -165,7 +187,15 @@
                                      if (i2 > 0 && random.nextInt(k1) <= i2 && (!worldserver.isRaining() || !this.a((World) worldserver, (BlockPosition) blockposition_mutableblockposition))) {
                                          int j2 = Math.min(15, i + random.nextInt(5) / 4);
  
--                                        worldserver.setTypeAndData(blockposition_mutableblockposition, (IBlockData) this.a((IBlockAccess) worldserver, (BlockPosition) blockposition_mutableblockposition).set(BlockFire.AGE, j2), 3);
+-                                        worldserver.setTypeAndData(blockposition_mutableblockposition, this.a(worldserver, blockposition_mutableblockposition, j2), 3);
 +                                        // CraftBukkit start - Call to stop spread of fire
 +                                        if (worldserver.getType(blockposition_mutableblockposition).getBlock() != Blocks.FIRE) {
 +                                            if (CraftEventFactory.callBlockIgniteEvent(worldserver, blockposition_mutableblockposition, blockposition).isCancelled()) {
 +                                                continue;
 +                                            }
 +
-+                                            CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition_mutableblockposition, (IBlockData) this.a((IBlockAccess) worldserver, (BlockPosition) blockposition_mutableblockposition).set(BlockFire.AGE, j2), 3); // CraftBukkit
++                                            CraftEventFactory.handleBlockSpreadEvent(worldserver, blockposition, blockposition_mutableblockposition, this.a(worldserver, blockposition_mutableblockposition, j2), 3); // CraftBukkit
 +                                        }
 +                                        // CraftBukkit end
                                      }
                                  }
                              }
-@@ -175,12 +207,24 @@
-         return iblockdata.b((IBlockState) BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C) ? 0 : this.flameChances.getInt(iblockdata.getBlock());
+@@ -189,12 +219,24 @@
+         return iblockdata.b(BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C) ? 0 : this.flameChances.getInt(iblockdata.getBlock());
      }
  
--    private void a(World world, BlockPosition blockposition, int i, Random random, int j) {
-+    private void a(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
-         int k = this.i(world.getType(blockposition));
+-    private void trySpread(World world, BlockPosition blockposition, int i, Random random, int j) {
++    private void trySpread(World world, BlockPosition blockposition, int i, Random random, int j, BlockPosition sourceposition) { // CraftBukkit add sourceposition
+         int k = this.getBurnChance(world.getType(blockposition));
  
          if (random.nextInt(i) < k) {
              IBlockData iblockdata = world.getType(blockposition);
@@ -137,29 +135,3 @@
              if (random.nextInt(j + 10) < 5 && !world.isRainingAt(blockposition)) {
                  int l = Math.min(j + random.nextInt(5) / 4, 15);
  
-@@ -241,9 +285,10 @@
-     @Override
-     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
-         if (iblockdata1.getBlock() != iblockdata.getBlock()) {
--            if (world.worldProvider.getDimensionManager() != DimensionManager.OVERWORLD && world.worldProvider.getDimensionManager() != DimensionManager.NETHER || !((BlockPortal) Blocks.NETHER_PORTAL).a((GeneratorAccess) world, blockposition)) {
-+            // CraftBukkit - getType()
-+            if (world.worldProvider.getDimensionManager().getType() != DimensionManager.OVERWORLD && world.worldProvider.getDimensionManager().getType() != DimensionManager.NETHER || !((BlockPortal) Blocks.NETHER_PORTAL).a((GeneratorAccess) world, blockposition)) {
-                 if (!iblockdata.canPlace(world, blockposition)) {
--                    world.a(blockposition, false);
-+                    fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
-                 } else {
-                     world.getBlockTickList().a(blockposition, this, this.a((IWorldReader) world) + world.random.nextInt(10));
-                 }
-@@ -392,4 +437,12 @@
-         blockfire.a(Blocks.BEEHIVE, 5, 20);
-         blockfire.a(Blocks.BEE_NEST, 30, 20);
-     }
-+
-+    // CraftBukkit start
-+    private void fireExtinguished(GeneratorAccess world, BlockPosition position) {
-+        if (!CraftEventFactory.callBlockFadeEvent(world, position, Blocks.AIR.getBlockData()).isCancelled()) {
-+            world.a(position, false);
-+        }
-+    }
-+    // CraftBukkit end
- }

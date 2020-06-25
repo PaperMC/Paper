@@ -13,7 +13,7 @@
      public EntitySmallFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
          super(EntityTypes.SMALL_FIREBALL, entityliving, d0, d1, d2, world);
 +        // CraftBukkit start
-+        if (this.shooter != null && this.shooter instanceof EntityInsentient) {
++        if (this.getShooter() != null && this.getShooter() instanceof EntityInsentient) {
 +            isIncendiary = this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING);
 +        }
 +        // CraftBukkit end
@@ -21,34 +21,33 @@
  
      public EntitySmallFireball(World world, double d0, double d1, double d2, double d3, double d4, double d5) {
 @@ -24,7 +31,16 @@
-                 if (!entity.isFireProof()) {
-                     int i = entity.ad();
+                 Entity entity1 = this.getShooter();
+                 int i = entity.getFireTicks();
  
--                    entity.setOnFire(5);
-+                    // CraftBukkit start - Entity damage by entity event + combust event
-+                    if (isIncendiary) {
-+                        EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
-+                        entity.world.getServer().getPluginManager().callEvent(event);
+-                entity.setOnFire(5);
++                // CraftBukkit start - Entity damage by entity event + combust event
++                if (isIncendiary) {
++                    EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++                    entity.world.getServer().getPluginManager().callEvent(event);
 +
-+                        if (!event.isCancelled()) {
-+                            entity.setOnFire(event.getDuration(), false);
-+                        }
++                    if (!event.isCancelled()) {
++                        entity.setOnFire(event.getDuration(), false);
 +                    }
-+                    // CraftBukkit end
-                     boolean flag = entity.damageEntity(DamageSource.fireball(this, this.shooter), 5.0F);
++                }
++                // CraftBukkit end
+                 boolean flag = entity.damageEntity(DamageSource.fireball(this, entity1), 5.0F);
  
-                     if (flag) {
-@@ -33,11 +49,11 @@
-                         entity.g(i);
-                     }
-                 }
--            } else if (this.shooter == null || !(this.shooter instanceof EntityInsentient) || this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
-+            } else if (isIncendiary) { // CraftBukkit
-                 MovingObjectPositionBlock movingobjectpositionblock = (MovingObjectPositionBlock) movingobjectposition;
+                 if (!flag) {
+@@ -43,10 +59,10 @@
+         if (!this.world.isClientSide) {
+             Entity entity = this.getShooter();
+ 
+-            if (entity == null || !(entity instanceof EntityInsentient) || this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
++            if (isIncendiary) { // CraftBukkit
                  BlockPosition blockposition = movingobjectpositionblock.getBlockPosition().shift(movingobjectpositionblock.getDirection());
  
 -                if (this.world.isEmpty(blockposition)) {
 +                if (this.world.isEmpty(blockposition) && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(world, blockposition, this).isCancelled()) { // CraftBukkit
-                     this.world.setTypeUpdate(blockposition, Blocks.FIRE.getBlockData());
+                     this.world.setTypeUpdate(blockposition, BlockFireAbstract.a((IBlockAccess) this.world, blockposition));
                  }
              }

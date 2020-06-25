@@ -5,14 +5,14 @@
  
      public boolean findAndTeleport(Entity entity, float f) {
 +        // CraftBukkit start
-+        return findAndTeleport(entity, new BlockPosition(entity), f, 128, false) != null;
++        return findAndTeleport(entity, entity.getChunkCoordinates(), f, 128, false) != null;
 +    }
 +
 +    public ShapeDetector.Shape findAndTeleport(Entity entity, BlockPosition findPosition, float f, int searchRadius, boolean searchOnly) {
 +        // CraftBukkit end
          Vec3D vec3d = entity.getPortalOffset();
          EnumDirection enumdirection = entity.getPortalDirection();
--        ShapeDetector.Shape shapedetector_shape = this.a(new BlockPosition(entity), entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman);
+-        ShapeDetector.Shape shapedetector_shape = this.a(entity.getChunkCoordinates(), entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman);
 +        ShapeDetector.Shape shapedetector_shape = this.findPortal(findPosition, entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman, searchRadius); // CraftBukkit - add location and searchRadius
 +        if (searchOnly) return shapedetector_shape; // CraftBukkit - optional teleporting
  
@@ -41,16 +41,16 @@
 +    @Nullable
 +    public ShapeDetector.Shape findPortal(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag, int searchRadius) {
 +        // CraftBukkit end
-         VillagePlace villageplace = this.world.B();
+         VillagePlace villageplace = this.world.x();
  
          villageplace.a(this.world, blockposition, 128);
          List<VillagePlaceRecord> list = (List) villageplace.b((villageplacetype) -> {
-             return villageplacetype == VillagePlaceType.u;
+             return villageplacetype == VillagePlaceType.v;
 -        }, blockposition, 128, VillagePlace.Occupancy.ANY).collect(Collectors.toList());
 -        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.comparingDouble((villageplacerecord) -> {
 +        }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
 +        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.<VillagePlaceRecord>comparingDouble((villageplacerecord) -> { // CraftBukkit - decompile error
-             return villageplacerecord.f().m(blockposition);
+             return villageplacerecord.f().j(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
              return villageplacerecord.f().getY();
 @@ -56,15 +70,23 @@
@@ -63,7 +63,7 @@
  
      public boolean createPortal(Entity entity) {
 +        // CraftBukkit start - providable position and creation radius
-+        return createPortal(entity, new BlockPosition(entity), 16);
++        return createPortal(entity, entity.getChunkCoordinates(), 16);
 +    }
 +
 +    public boolean createPortal(Entity entity, BlockPosition createPosition, int createRadius) {

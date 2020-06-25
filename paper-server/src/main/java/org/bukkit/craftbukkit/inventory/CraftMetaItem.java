@@ -38,7 +38,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.EnumItemSlot;
-import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.ItemBlock;
 import net.minecraft.server.NBTBase;
@@ -429,7 +428,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 // entry is not an actual NBTTagCompound. getCompound returns empty NBTTagCompound in that case
                 continue;
             }
-            net.minecraft.server.AttributeModifier nmsModifier = GenericAttributes.a(entry);
+            net.minecraft.server.AttributeModifier nmsModifier = net.minecraft.server.AttributeModifier.a(entry);
             if (nmsModifier == null) {
                 continue;
             }
@@ -710,12 +709,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 continue;
             }
             net.minecraft.server.AttributeModifier nmsModifier = CraftAttributeInstance.convert(entry.getValue());
-            NBTTagCompound sub = GenericAttributes.a(nmsModifier);
+            NBTTagCompound sub = nmsModifier.save();
             if (sub.isEmpty()) {
                 continue;
             }
 
-            String name = CraftAttributeMap.toMinecraft(entry.getKey());
+            String name = entry.getKey().getKey().toString();
             if (name == null || name.isEmpty()) {
                 continue;
             }

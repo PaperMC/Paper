@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/BehaviorCareer.java
 +++ b/net/minecraft/server/BehaviorCareer.java
-@@ -1,6 +1,11 @@
- package net.minecraft.server;
+@@ -2,6 +2,11 @@
  
  import com.google.common.collect.ImmutableMap;
+ import java.util.Optional;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.entity.CraftVillager;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -12,10 +12,19 @@
  
  public class BehaviorCareer extends Behavior<EntityVillager> {
  
-@@ -20,7 +25,14 @@
-             IRegistry.VILLAGER_PROFESSION.d().filter((villagerprofession) -> {
-                 return villagerprofession.b() == villageplacetype;
-             }).findFirst().ifPresent((villagerprofession) -> {
+@@ -19,7 +24,7 @@
+         GlobalPos globalpos = (GlobalPos) entityvillager.getBehaviorController().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).get();
+ 
+         entityvillager.getBehaviorController().removeMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
+-        entityvillager.getBehaviorController().setMemory(MemoryModuleType.JOB_SITE, (Object) globalpos);
++        entityvillager.getBehaviorController().setMemory(MemoryModuleType.JOB_SITE, globalpos); // CraftBukkit - decompile error
+         if (entityvillager.getVillagerData().getProfession() == VillagerProfession.NONE) {
+             MinecraftServer minecraftserver = worldserver.getMinecraftServer();
+ 
+@@ -30,7 +35,14 @@
+                     return villagerprofession.b() == villageplacetype;
+                 }).findFirst();
+             }).ifPresent((villagerprofession) -> {
 -                entityvillager.setVillagerData(entityvillager.getVillagerData().withProfession(villagerprofession));
 +                // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
 +                VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(entityvillager, CraftVillager.nmsToBukkitProfession(villagerprofession), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
@@ -25,6 +34,6 @@
 +
 +                entityvillager.setVillagerData(entityvillager.getVillagerData().withProfession(CraftVillager.bukkitToNmsProfession(event.getProfession())));
 +                // CraftBukkit end
-                 entityvillager.a(worldserver);
+                 entityvillager.b(worldserver);
              });
-         });
+         }

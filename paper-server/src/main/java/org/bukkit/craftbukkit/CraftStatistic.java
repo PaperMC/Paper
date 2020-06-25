@@ -96,7 +96,10 @@ public enum CraftStatistic {
     RAID_TRIGGER(StatisticList.RAID_TRIGGER),
     RAID_WIN(StatisticList.RAID_WIN),
     INTERACT_WITH_ANVIL(StatisticList.INTERACT_WITH_ANVIL),
-    INTERACT_WITH_GRINDSTONE(StatisticList.INTERACT_WITH_GRINDSTONE);
+    INTERACT_WITH_GRINDSTONE(StatisticList.INTERACT_WITH_GRINDSTONE),
+    TARGET_HIT(StatisticList.TARGET_HIT),
+    INTERACT_WITH_SMITHING_TABLE(StatisticList.INTERACT_WITH_SMITHING_TABLE),
+    STRIDER_ONE_CM(StatisticList.STRIDER_ONE_CM);
     private final MinecraftKey minecraftKey;
     private final org.bukkit.Statistic bukkit;
     private static final BiMap<MinecraftKey, org.bukkit.Statistic> statistics;

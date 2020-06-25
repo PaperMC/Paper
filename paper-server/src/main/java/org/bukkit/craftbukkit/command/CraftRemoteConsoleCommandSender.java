@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.command;
 
 import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.RemoteControlCommandListener;
+import net.minecraft.server.SystemUtils;
 import org.bukkit.command.RemoteConsoleCommandSender;
 
 public class CraftRemoteConsoleCommandSender extends ServerCommandSender implements RemoteConsoleCommandSender {
@@ -14,7 +15,7 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
 
     @Override
     public void sendMessage(String message) {
-        listener.sendMessage(new ChatComponentText(message + "\n")); // Send a newline after each message, to preserve formatting.
+        listener.sendMessage(new ChatComponentText(message + "\n"), SystemUtils.b); // Send a newline after each message, to preserve formatting.
     }
 
     @Override

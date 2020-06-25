@@ -1,7 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import com.google.common.collect.ImmutableSet;
-import java.util.Collection;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -13,27 +11,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public final class CraftItemFactory implements ItemFactory {
     static final Color DEFAULT_LEATHER_COLOR = Color.fromRGB(0xA06540);
-    static final Collection<String> KNOWN_NBT_ATTRIBUTE_NAMES;
     private static final CraftItemFactory instance;
 
     static {
         instance = new CraftItemFactory();
         ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
-        KNOWN_NBT_ATTRIBUTE_NAMES = ImmutableSet.<String>builder()
-            .add("generic.armor")
-            .add("generic.armorToughness")
-            .add("generic.attackDamage")
-            .add("generic.followRange")
-            .add("generic.knockbackResistance")
-            .add("generic.maxHealth")
-            .add("generic.movementSpeed")
-            .add("generic.flyingSpeed")
-            .add("generic.attackSpeed")
-            .add("generic.luck")
-            .add("horse.jumpStrength")
-            .add("zombie.spawnReinforcements")
-            .add("generic.attackKnockback")
-            .build();
     }
 
     private CraftItemFactory() {
@@ -159,6 +141,7 @@ public final class CraftItemFactory implements ItemFactory {
         case FOX_SPAWN_EGG:
         case GHAST_SPAWN_EGG:
         case GUARDIAN_SPAWN_EGG:
+        case HOGLIN_SPAWN_EGG:
         case HORSE_SPAWN_EGG:
         case HUSK_SPAWN_EGG:
         case LLAMA_SPAWN_EGG:
@@ -169,6 +152,7 @@ public final class CraftItemFactory implements ItemFactory {
         case PANDA_SPAWN_EGG:
         case PARROT_SPAWN_EGG:
         case PHANTOM_SPAWN_EGG:
+        case PIGLIN_SPAWN_EGG:
         case PIG_SPAWN_EGG:
         case PILLAGER_SPAWN_EGG:
         case POLAR_BEAR_SPAWN_EGG:
@@ -185,6 +169,7 @@ public final class CraftItemFactory implements ItemFactory {
         case SPIDER_SPAWN_EGG:
         case SQUID_SPAWN_EGG:
         case STRAY_SPAWN_EGG:
+        case STRIDER_SPAWN_EGG:
         case TRADER_LLAMA_SPAWN_EGG:
         case TROPICAL_FISH_SPAWN_EGG:
         case TURTLE_SPAWN_EGG:
@@ -195,10 +180,11 @@ public final class CraftItemFactory implements ItemFactory {
         case WITCH_SPAWN_EGG:
         case WITHER_SKELETON_SPAWN_EGG:
         case WOLF_SPAWN_EGG:
+        case ZOGLIN_SPAWN_EGG:
         case ZOMBIE_HORSE_SPAWN_EGG:
-        case ZOMBIE_PIGMAN_SPAWN_EGG:
         case ZOMBIE_SPAWN_EGG:
         case ZOMBIE_VILLAGER_SPAWN_EGG:
+        case ZOMBIFIED_PIGLIN_SPAWN_EGG:
             return meta instanceof CraftMetaSpawnEgg ? meta : new CraftMetaSpawnEgg(meta);
         case ARMOR_STAND:
             return meta instanceof CraftMetaArmorStand ? meta : new CraftMetaArmorStand(meta);

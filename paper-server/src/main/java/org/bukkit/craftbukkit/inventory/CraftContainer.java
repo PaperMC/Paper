@@ -18,6 +18,7 @@ import net.minecraft.server.ContainerLoom;
 import net.minecraft.server.ContainerMerchant;
 import net.minecraft.server.ContainerProperties;
 import net.minecraft.server.ContainerShulkerBox;
+import net.minecraft.server.ContainerSmithing;
 import net.minecraft.server.ContainerSmoker;
 import net.minecraft.server.ContainerStonecutter;
 import net.minecraft.server.ContainerWorkbench;
@@ -157,6 +158,8 @@ public class CraftContainer extends Container {
                 return Containers.BEACON;
             case ANVIL:
                 return Containers.ANVIL;
+            case SMITHING:
+                return Containers.SMITHING;
             case HOPPER:
                 return Containers.HOPPER;
             case DROPPER:
@@ -220,6 +223,9 @@ public class CraftContainer extends Container {
                 break;
             case ANVIL:
                 delegate = new ContainerAnvil(windowId, bottom);
+                break;
+            case SMITHING:
+                delegate = new ContainerSmithing(windowId, bottom);
                 break;
             case BEACON:
                 delegate = new ContainerBeacon(windowId, bottom);

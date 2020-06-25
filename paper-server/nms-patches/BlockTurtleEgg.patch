@@ -13,27 +13,27 @@
  
  public class BlockTurtleEgg extends Block {
  
-@@ -35,6 +41,19 @@
-             super.stepOn(world, blockposition, entity);
-         } else {
-             if (!world.isClientSide && world.random.nextInt(i) == 0) {
-+                // CraftBukkit start - Step on eggs
-+                org.bukkit.event.Cancellable cancellable;
-+                if (entity instanceof EntityHuman) {
-+                    cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
-+                } else {
-+                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), CraftBlock.at(world, blockposition));
-+                    world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
-+                }
-+
-+                if (cancellable.isCancelled()) {
-+                    return;
-+                }
-+                // CraftBukkit end
-                 this.a(world, blockposition, world.getType(blockposition));
-             }
+@@ -36,6 +42,19 @@
+                 IBlockData iblockdata = world.getType(blockposition);
  
-@@ -60,9 +79,19 @@
+                 if (iblockdata.a(Blocks.TURTLE_EGG)) {
++                    // CraftBukkit start - Step on eggs
++                    org.bukkit.event.Cancellable cancellable;
++                    if (entity instanceof EntityHuman) {
++                        cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
++                    } else {
++                        cancellable = new EntityInteractEvent(entity.getBukkitEntity(), CraftBlock.at(world, blockposition));
++                        world.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                    }
++
++                    if (cancellable.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     this.a(world, blockposition, iblockdata);
+                 }
+             }
+@@ -62,9 +81,19 @@
              int i = (Integer) iblockdata.get(BlockTurtleEgg.a);
  
              if (i < 2) {
@@ -54,9 +54,9 @@
                  worldserver.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_EGG_HATCH, SoundCategory.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
                  worldserver.a(blockposition, false);
  
-@@ -73,7 +102,7 @@
+@@ -75,7 +104,7 @@
                      entityturtle.setAgeRaw(-24000);
-                     entityturtle.g(blockposition);
+                     entityturtle.setHomePos(blockposition);
                      entityturtle.setPositionRotation((double) blockposition.getX() + 0.3D + (double) j * 0.2D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.3D, 0.0F, 0.0F);
 -                    worldserver.addEntity(entityturtle);
 +                    worldserver.addEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit

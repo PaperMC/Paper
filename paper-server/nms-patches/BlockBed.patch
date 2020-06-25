@@ -1,54 +1,67 @@
 --- a/net/minecraft/server/BlockBed.java
 +++ b/net/minecraft/server/BlockBed.java
-@@ -43,7 +43,8 @@
+@@ -39,7 +39,8 @@
                  }
              }
  
--            if (world.worldProvider.canRespawn() && world.getBiome(blockposition) != Biomes.NETHER) {
+-            if (!a(world)) {
 +            // CraftBukkit - moved world and biome check into EntityHuman
-+            if (true || world.worldProvider.canRespawn() && world.getBiome(blockposition) != Biomes.NETHER) {
-                 if ((Boolean) iblockdata.get(BlockBed.OCCUPIED)) {
-                     if (!this.a(world, blockposition)) {
-                         entityhuman.a((IChatBaseComponent) (new ChatMessage("block.minecraft.bed.occupied", new Object[0])), true);
-@@ -51,7 +52,16 @@
++            if (false && !a(world)) {
+                 world.a(blockposition, false);
+                 BlockPosition blockposition1 = blockposition.shift(((EnumDirection) iblockdata.get(BlockBed.FACING)).opposite());
  
-                     return EnumInteractionResult.SUCCESS;
-                 } else {
-+                    // CraftBukkit start
-+                    IBlockData finaliblockdata = iblockdata;
-+                    BlockPosition finalblockposition = blockposition;
-+                    // CraftBukkit end
-                     entityhuman.sleep(blockposition).ifLeft((entityhuman_enumbedresult) -> {
-+                        // CraftBukkit start - handling bed explosion from below here
-+                        if (entityhuman_enumbedresult == EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE) {
-+                            this.explodeBed(finaliblockdata, world, finalblockposition);
-+                        } else
-+                        // CraftBukkit end
-                         if (entityhuman_enumbedresult != null) {
-                             entityhuman.a(entityhuman_enumbedresult.a(), true);
-                         }
-@@ -59,7 +69,14 @@
-                     });
-                     return EnumInteractionResult.SUCCESS;
-                 }
-+                // CraftBukkit start - moved bed explosion into separate method
+@@ -56,7 +57,16 @@
+ 
+                 return EnumInteractionResult.SUCCESS;
              } else {
++                // CraftBukkit start
++                IBlockData finaliblockdata = iblockdata;
++                BlockPosition finalblockposition = blockposition;
++                // CraftBukkit end
+                 entityhuman.sleep(blockposition).ifLeft((entityhuman_enumbedresult) -> {
++                    // CraftBukkit start - handling bed explosion from below here
++                    if (entityhuman_enumbedresult == EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE) {
++                        this.explodeBed(finaliblockdata, world, finalblockposition);
++                    } else
++                    // CraftBukkit end
+                     if (entityhuman_enumbedresult != null) {
+                         entityhuman.a(entityhuman_enumbedresult.a(), true);
+                     }
+@@ -67,8 +77,27 @@
+         }
+     }
+ 
++    // CraftBukkit start
++    private EnumInteractionResult explodeBed(IBlockData iblockdata, World world, BlockPosition blockposition) {
++        {
++            {
++                world.a(blockposition, false);
++                BlockPosition blockposition1 = blockposition.shift(((EnumDirection) iblockdata.get(BlockBed.FACING)).opposite());
++
++                if (world.getType(blockposition1).getBlock() == this) {
++                    world.a(blockposition1, false);
++                }
++
++                world.createExplosion((Entity) null, DamageSource.a(), (ExplosionDamageCalculator) null, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0F, true, Explosion.Effect.DESTROY);
 +                return EnumInteractionResult.SUCCESS;
 +            }
 +        }
 +    }
++    // CraftBukkit end
 +
-+    private EnumInteractionResult explodeBed(IBlockData iblockdata, World world, BlockPosition blockposition) {
-                 world.a(blockposition, false);
-                 BlockPosition blockposition1 = blockposition.shift(((EnumDirection) iblockdata.get(BlockBed.FACING)).opposite());
- 
-@@ -69,8 +86,7 @@
- 
-                 world.createExplosion((Entity) null, DamageSource.a(), (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0F, true, Explosion.Effect.DESTROY);
-                 return EnumInteractionResult.SUCCESS;
--            }
--        }
-+                // CraftBukkit end
+     public static boolean a(World world) {
+-        return world.getDimensionManager().isBedWorks();
++        // CraftBukkit - moved world and biome check into EntityHuman
++        return true || world.getDimensionManager().isBedWorks();
      }
  
      private boolean a(World world, BlockPosition blockposition) {
+@@ -225,7 +254,7 @@
+                     AxisAlignedBB axisalignedbb = entitytypes.a(vec3d.x, vec3d.y, vec3d.z);
+ 
+                     if (iworldreader.b(axisalignedbb)) {
+-                        Stream stream = iworldreader.a(axisalignedbb.b(0.0D, -0.20000000298023224D, 0.0D));
++                        Stream<IBlockData> stream = iworldreader.a(axisalignedbb.b(0.0D, -0.20000000298023224D, 0.0D)); // CraftBukkit - decompile error
+ 
+                         entitytypes.getClass();
+                         if (stream.noneMatch(entitytypes::a)) {

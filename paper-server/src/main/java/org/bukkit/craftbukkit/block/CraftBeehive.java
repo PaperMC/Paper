@@ -43,12 +43,12 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
 
     @Override
     public boolean isSedated() {
-        return isPlaced() && getTileEntity().k(); // PAIL rename isSedated
+        return isPlaced() && getTileEntity().isSedated();
     }
 
     @Override
     public int getEntityCount() {
-        return getSnapshot().j(); // PAIL rename beeCount
+        return getSnapshot().getBeeCount();
     }
 
     @Override
@@ -81,6 +81,6 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
     public void addEntity(Bee entity) {
         Preconditions.checkArgument(entity != null, "Entity must not be null");
 
-        getSnapshot().a(((CraftBee) entity).getHandle(), false); // PAIL rename addBee
+        getSnapshot().addBee(((CraftBee) entity).getHandle(), false);
     }
 }

@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.server.EntityHorse;
+import net.minecraft.server.HorseColor;
+import net.minecraft.server.HorseStyle;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryHorse;
@@ -26,24 +28,24 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public Color getColor() {
-        return Color.values()[getHandle().getVariant() & 0xFF];
+        return Color.values()[getHandle().getColor().a()];
     }
 
     @Override
     public void setColor(Color color) {
         Validate.notNull(color, "Color cannot be null");
-        getHandle().setVariant(color.ordinal() & 0xFF | getStyle().ordinal() << 8);
+        getHandle().setVariant(HorseColor.a(color.ordinal()), getHandle().getStyle());
     }
 
     @Override
     public Style getStyle() {
-        return Style.values()[getHandle().getVariant() >>> 8];
+        return Style.values()[getHandle().getStyle().a()];
     }
 
     @Override
     public void setStyle(Style style) {
         Validate.notNull(style, "Style cannot be null");
-        getHandle().setVariant(getColor().ordinal() & 0xFF | style.ordinal() << 8);
+        getHandle().setVariant(getHandle().getColor(), HorseStyle.a(style.ordinal()));
     }
 
     @Override

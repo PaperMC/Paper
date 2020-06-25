@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.server.DimensionManager;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.ServerStatisticManager;
 import net.minecraft.server.WhiteListEntry;
@@ -34,7 +33,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
         this.server = server;
         this.profile = profile;
-        this.storage = (WorldNBTStorage) (server.console.getWorldServer(DimensionManager.OVERWORLD).getDataManager());
+        this.storage = server.console.worldNBTStorage;
 
     }
 
@@ -287,7 +286,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -298,7 +297,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -318,7 +317,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -329,7 +328,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -340,7 +339,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.setStatistic(manager, statistic, newValue);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -351,7 +350,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic, material);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -362,7 +361,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic, material);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -382,7 +381,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic, material, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -393,7 +392,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic, material, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -404,7 +403,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.setStatistic(manager, statistic, material, newValue);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -415,7 +414,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic, entityType);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -426,7 +425,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic, entityType);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -446,7 +445,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.incrementStatistic(manager, statistic, entityType, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -457,7 +456,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.decrementStatistic(manager, statistic, entityType, amount);
-            manager.a();
+            manager.save();
         }
     }
 
@@ -468,7 +467,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         } else {
             ServerStatisticManager manager = getStatisticManager();
             CraftStatistic.setStatistic(manager, statistic, entityType, newValue);
-            manager.a();
+            manager.save();
         }
     }
 }

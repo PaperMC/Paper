@@ -13,12 +13,12 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
 
     @Override
     public int getAnger() {
-        return getHandle().angerLevel;
+        return getHandle().getAnger();
     }
 
     @Override
     public void setAnger(int level) {
-        getHandle().angerLevel = level;
+        getHandle().setAnger(level);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
 
     @Override
     public EntityType getType() {
-        return EntityType.PIG_ZOMBIE;
+        return EntityType.ZOMBIFIED_PIGLIN;
     }
 
     @Override

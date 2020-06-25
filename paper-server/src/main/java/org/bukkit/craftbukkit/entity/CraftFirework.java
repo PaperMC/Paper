@@ -11,7 +11,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.inventory.meta.FireworkMeta;
 
-public class CraftFirework extends CraftEntity implements Firework {
+public class CraftFirework extends CraftProjectile implements Firework {
 
     private final Random random = new Random();
     private final CraftItemStack item;

@@ -128,7 +128,7 @@ public class Commodore
         ClassReader cr = new ClassReader( b );
         ClassWriter cw = new ClassWriter( cr, 0 );
 
-        cr.accept( new ClassVisitor( Opcodes.ASM7, cw )
+        cr.accept( new ClassVisitor( Opcodes.ASM8, cw )
         {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions)
@@ -159,6 +159,9 @@ public class Commodore
                                         break;
                                     case "WALL_SIGN":
                                         name = "OAK_WALL_SIGN";
+                                        break;
+                                    case "ZOMBIE_PIGMAN_SPAWN_EGG":
+                                        name = "ZOMBIFIED_PIGLIN_SPAWN_EGG";
                                         break;
                                 }
                             }
@@ -212,6 +215,26 @@ public class Commodore
                                 case "BLOCK_DUST":
                                 case "FALLING_DUST":
                                     super.visitFieldInsn( opcode, owner, "LEGACY_" + name, desc );
+                                    return;
+                            }
+                        }
+
+                        if ( owner.equals( "org/bukkit/block/Biome" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "NETHER":
+                                    super.visitFieldInsn( opcode, owner, "NETHER_WASTES", desc );
+                                    return;
+                            }
+                        }
+
+                        if ( owner.equals( "org/bukkit/entity/EntityType" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "PIG_ZOMBIE":
+                                    super.visitFieldInsn( opcode, owner, "ZOMBIFIED_PIGLIN", desc );
                                     return;
                             }
                         }

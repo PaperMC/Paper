@@ -42,9 +42,9 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     @Override
     public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
+            getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
         } else {
-            getHandle().shooter = null;
+            getHandle().setShooter(null);
         }
         getHandle().projectileSource = shooter;
     }
@@ -57,13 +57,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
     @Override
     public void setDirection(Vector direction) {
         Validate.notNull(direction, "Direction can not be null");
-        double x = direction.getX();
-        double y = direction.getY();
-        double z = direction.getZ();
-        double magnitude = (double) MathHelper.sqrt(x * x + y * y + z * z);
-        getHandle().dirX = x / magnitude * 0.1D;
-        getHandle().dirY = y / magnitude * 0.1D;
-        getHandle().dirZ = z / magnitude * 0.1D;
+        getHandle().setDirection(direction.getX(), direction.getY(), direction.getZ());
     }
 
     @Override

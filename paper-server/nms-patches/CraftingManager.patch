@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/CraftingManager.java
 +++ b/net/minecraft/server/CraftingManager.java
-@@ -22,11 +22,13 @@
+@@ -23,11 +23,13 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -15,9 +15,9 @@
      private boolean d;
  
      public CraftingManager() {
-@@ -35,7 +37,12 @@
+@@ -36,7 +38,12 @@
  
-     protected void a(Map<MinecraftKey, JsonObject> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
+     protected void a(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
          this.d = false;
 -        Map<Recipes<?>, Builder<MinecraftKey, IRecipe<?>>> map1 = Maps.newHashMap();
 +        // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
@@ -29,9 +29,9 @@
          Iterator iterator = map.entrySet().iterator();
  
          while (iterator.hasNext()) {
-@@ -45,24 +52,42 @@
+@@ -46,24 +53,42 @@
              try {
-                 IRecipe<?> irecipe = a(minecraftkey, (JsonObject) entry.getValue());
+                 IRecipe<?> irecipe = a(minecraftkey, ChatDeserializer.m((JsonElement) entry.getValue(), "top element"));
  
 -                ((Builder) map1.computeIfAbsent(irecipe.g(), (recipes) -> {
 -                    return ImmutableMap.builder();
@@ -66,9 +66,9 @@
 +    // CraftBukkit end
 +
      public <C extends IInventory, T extends IRecipe<C>> Optional<T> craft(Recipes<T> recipes, C c0, World world) {
--        return this.a(recipes).values().stream().flatMap((irecipe) -> {
+-        return this.b(recipes).values().stream().flatMap((irecipe) -> {
 +        // CraftBukkit start
-+        Optional<T> recipe = this.a(recipes).values().stream().flatMap((irecipe) -> {
++        Optional<T> recipe = this.b(recipes).values().stream().flatMap((irecipe) -> {
              return SystemUtils.a(recipes.a(irecipe, world, c0));
          }).findFirst();
 +        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
@@ -76,17 +76,17 @@
 +        return recipe;
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> List<T> b(Recipes<T> recipes, C c0, World world) {
-@@ -74,7 +99,7 @@
+     public <C extends IInventory, T extends IRecipe<C>> List<T> a(Recipes<T> recipes) {
+@@ -81,7 +106,7 @@
      }
  
-     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> a(Recipes<T> recipes) {
+     private <C extends IInventory, T extends IRecipe<C>> Map<MinecraftKey, IRecipe<C>> b(Recipes<T> recipes) {
 -        return (Map) this.recipes.getOrDefault(recipes, Collections.emptyMap());
 +        return (Map) this.recipes.getOrDefault(recipes, new Object2ObjectLinkedOpenHashMap<>()); // CraftBukkit
      }
  
      public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> c(Recipes<T> recipes, C c0, World world) {
-@@ -95,7 +120,7 @@
+@@ -102,7 +127,7 @@
  
      public Optional<? extends IRecipe<?>> a(MinecraftKey minecraftkey) {
          return this.recipes.values().stream().map((map) -> {
@@ -95,7 +95,7 @@
          }).filter(Objects::nonNull).findFirst();
      }
  
-@@ -118,4 +143,14 @@
+@@ -125,4 +150,14 @@
              return new JsonSyntaxException("Invalid or unsupported recipe type '" + s + "'");
          })).a(minecraftkey, jsonobject);
      }

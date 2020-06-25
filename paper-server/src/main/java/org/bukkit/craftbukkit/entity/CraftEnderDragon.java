@@ -76,6 +76,6 @@ public class CraftEnderDragon extends CraftComplexLivingEntity implements EnderD
 
     @Override
     public int getDeathAnimationTicks() {
-        return getHandle().bA; // PAIL rename deathAnimationTicks
+        return getHandle().deathAnimationTicks;
     }
 }

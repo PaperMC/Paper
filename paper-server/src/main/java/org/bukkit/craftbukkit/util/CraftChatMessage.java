@@ -5,15 +5,18 @@ import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.server.ChatClickable;
 import net.minecraft.server.ChatClickable.EnumClickAction;
 import net.minecraft.server.ChatComponentText;
+import net.minecraft.server.ChatHexColor;
 import net.minecraft.server.ChatMessage;
 import net.minecraft.server.ChatModifier;
 import net.minecraft.server.EnumChatFormat;
 import net.minecraft.server.IChatBaseComponent;
+import net.minecraft.server.IChatMutableComponent;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {
@@ -38,15 +41,16 @@ public final class CraftChatMessage {
     }
 
     private static final class StringMessage {
-        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))|(\\n)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern INCREMENTAL_PATTERN = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))|(\\n)", Pattern.CASE_INSENSITIVE);
         // Separate pattern with no group 3, new lines are part of previous string
-        private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-or])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
+        private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
 
         private final List<IChatBaseComponent> list = new ArrayList<IChatBaseComponent>();
-        private IChatBaseComponent currentChatComponent = new ChatComponentText("");
-        private ChatModifier modifier = new ChatModifier();
+        private IChatMutableComponent currentChatComponent = new ChatComponentText("");
+        private ChatModifier modifier = ChatModifier.b;
         private final IChatBaseComponent[] output;
         private int currentIndex;
+        private StringBuilder hex;
         private final String message;
 
         private StringMessage(String message, boolean keepNewlines) {
@@ -72,29 +76,40 @@ public final class CraftChatMessage {
                 }
                 switch (groupId) {
                 case 1:
-                    EnumChatFormat format = formatMap.get(match.toLowerCase(java.util.Locale.ENGLISH).charAt(1));
-                    if (format.isFormat() && format != EnumChatFormat.RESET) {
+                    char c = match.toLowerCase(java.util.Locale.ENGLISH).charAt(1);
+                    EnumChatFormat format = formatMap.get(c);
+
+                    if (c == 'x') {
+                        hex = new StringBuilder("#");
+                    } else if (hex != null) {
+                        hex.append(c);
+
+                        if (hex.length() == 7) {
+                            modifier = modifier.setColor(ChatHexColor.a(hex.toString()));
+                            hex = null;
+                        }
+                    } else if (format.isFormat() && format != EnumChatFormat.RESET) {
                         switch (format) {
                         case BOLD:
-                            modifier.setBold(Boolean.TRUE);
+                            modifier = modifier.setBold(Boolean.TRUE);
                             break;
                         case ITALIC:
-                            modifier.setItalic(Boolean.TRUE);
+                            modifier = modifier.setItalic(Boolean.TRUE);
                             break;
                         case STRIKETHROUGH:
-                            modifier.setStrikethrough(Boolean.TRUE);
+                            modifier = modifier.setStrikethrough(Boolean.TRUE);
                             break;
                         case UNDERLINE:
-                            modifier.setUnderline(Boolean.TRUE);
+                            modifier = modifier.setUnderline(Boolean.TRUE);
                             break;
                         case OBFUSCATED:
-                            modifier.setRandom(Boolean.TRUE);
+                            modifier = modifier.setRandom(Boolean.TRUE);
                             break;
                         default:
                             throw new AssertionError("Unexpected message format");
                         }
                     } else { // Color resets formatting
-                        modifier = new ChatModifier().setColor(format);
+                        modifier = ChatModifier.b.setColor(format);
                     }
                     needsAdd = true;
                     break;
@@ -102,9 +117,9 @@ public final class CraftChatMessage {
                     if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                         match = "http://" + match;
                     }
-                    modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                    modifier = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
                     appendNewComponent(matcher.end(groupId));
-                    modifier.setChatClickable((ChatClickable) null);
+                    modifier = modifier.setChatClickable((ChatClickable) null);
                     break;
                 case 3:
                     if (needsAdd) {
@@ -126,10 +141,6 @@ public final class CraftChatMessage {
         private void appendNewComponent(int index) {
             IChatBaseComponent addition = new ChatComponentText(message.substring(currentIndex, index)).setChatModifier(modifier);
             currentIndex = index;
-            modifier = modifier.clone();
-            if (modifier.getColor() == EnumChatFormat.RESET) {
-                modifier.setColor(null);
-            }
             if (currentChatComponent == null) {
                 currentChatComponent = new ChatComponentText("");
                 list.add(currentChatComponent);
@@ -177,13 +188,18 @@ public final class CraftChatMessage {
         boolean hadFormat = false;
         for (IChatBaseComponent c : component) {
             ChatModifier modi = c.getChatModifier();
-            EnumChatFormat color = modi.getColor();
+            ChatHexColor color = modi.getColor();
             if (!c.getText().isEmpty() || color != null) {
                 if (color != null) {
-                    out.append(color);
-                    if (color != EnumChatFormat.RESET) {
-                        hadFormat = true;
+                    if (color.format != null) {
+                        out.append(color.format);
+                    } else {
+                        out.append(ChatColor.COLOR_CHAR).append("x");
+                        for (char magic : color.b().substring(1).toCharArray()) {
+                            out.append(ChatColor.COLOR_CHAR).append(magic);
+                        }
                     }
+                    hadFormat = true;
                 } else if (hadFormat) {
                     out.append(ChatColor.RESET);
                     hadFormat = false;
@@ -191,20 +207,28 @@ public final class CraftChatMessage {
             }
             if (modi.isBold()) {
                 out.append(EnumChatFormat.BOLD);
+                hadFormat = true;
             }
             if (modi.isItalic()) {
                 out.append(EnumChatFormat.ITALIC);
+                hadFormat = true;
             }
             if (modi.isUnderlined()) {
                 out.append(EnumChatFormat.UNDERLINE);
+                hadFormat = true;
             }
             if (modi.isStrikethrough()) {
                 out.append(EnumChatFormat.STRIKETHROUGH);
+                hadFormat = true;
             }
             if (modi.isRandom()) {
                 out.append(EnumChatFormat.OBFUSCATED);
+                hadFormat = true;
             }
-            out.append(c.getText());
+            c.b((x) -> {
+                out.append(x);
+                return Optional.empty();
+            });
         }
         return out.toString();
     }
@@ -221,7 +245,7 @@ public final class CraftChatMessage {
             if (matcher.reset(msg).find()) {
                 matcher.reset();
 
-                ChatModifier modifier = text.getChatModifier() != null ? text.getChatModifier() : new ChatModifier();
+                ChatModifier modifier = text.getChatModifier();
                 List<IChatBaseComponent> extras = new ArrayList<IChatBaseComponent>();
                 List<IChatBaseComponent> extrasOld = new ArrayList<IChatBaseComponent>(text.getSiblings());
                 component = text = new ChatComponentText("");
@@ -239,8 +263,7 @@ public final class CraftChatMessage {
                     extras.add(prev);
 
                     ChatComponentText link = new ChatComponentText(matcher.group());
-                    ChatModifier linkModi = modifier.clone();
-                    linkModi.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                    ChatModifier linkModi = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
                     link.setChatModifier(linkModi);
                     extras.add(link);
 
