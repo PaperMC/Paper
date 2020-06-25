@@ -8,40 +8,8 @@ object identity checks safely.
 
 Use a simpler optimized hashcode
 
-diff --git a/src/main/java/net/minecraft/server/IBlockState.java b/src/main/java/net/minecraft/server/IBlockState.java
-index 0ce77d9230f3d1c53df7c5b72a380a2fa0c6d882..00e67b567f00824b25b45e5ff5ecd62c87ea0309 100644
---- a/src/main/java/net/minecraft/server/IBlockState.java
-+++ b/src/main/java/net/minecraft/server/IBlockState.java
-@@ -28,23 +28,13 @@ public abstract class IBlockState<T extends Comparable<T>>
-     }
- 
-     public boolean equals(Object object) {
--        if (this == object) {
--            return true;
--        } else if (!(object instanceof IBlockState)) {
--            return false;
--        } else {
--            IBlockState<?> blockstate = (IBlockState) object;
--
--            return this.a.equals(blockstate.a) && this.b.equals(blockstate.b);
--        }
-+        return this == object; // Paper - only one instance per configuration
-     }
- 
-+    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
-+    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
-     public final int hashCode() {
--        if (this.c == null) {
--            this.c = this.c();
--        }
--
--        return this.c;
-+        return this.hashCode; // Paper - only one instance per configuration
-     }
- 
-     public int c() {
 diff --git a/src/main/java/net/minecraft/server/BlockStateBoolean.java b/src/main/java/net/minecraft/server/BlockStateBoolean.java
-index d8738447d794f6967307daa1271473903b76a632..7ca302b522df081755120c597a08d589193c57a6 100644
+index 8df150f4cabb3dd98cb66c9d1af7fae035a6a6fe..4ca8db630434915de4eaeac6c4ecd60714d7f5d9 100644
 --- a/src/main/java/net/minecraft/server/BlockStateBoolean.java
 +++ b/src/main/java/net/minecraft/server/BlockStateBoolean.java
 @@ -30,8 +30,7 @@ public class BlockStateBoolean extends IBlockState<Boolean> {
@@ -55,7 +23,7 @@ index d8738447d794f6967307daa1271473903b76a632..7ca302b522df081755120c597a08d589
              return true;
          } else if (object instanceof BlockStateBoolean && super.equals(object)) {
 diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/java/net/minecraft/server/BlockStateEnum.java
-index 1486d460c8ec3d117b4dc3d28b2c3f1b632e187b..7cdadc6b6abd069f9a1bc000a8f116f73b90e029 100644
+index 8162c11d14b8e88c2b572f9ddf6b7a15977047f8..8dc620b22bb904aa6a82e2127aa9da861986525c 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
 @@ -49,8 +49,7 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends IBlockState<T>
@@ -69,7 +37,7 @@ index 1486d460c8ec3d117b4dc3d28b2c3f1b632e187b..7cdadc6b6abd069f9a1bc000a8f116f7
              return true;
          } else if (object instanceof BlockStateEnum && super.equals(object)) {
 diff --git a/src/main/java/net/minecraft/server/BlockStateInteger.java b/src/main/java/net/minecraft/server/BlockStateInteger.java
-index 6f35c365f9086a2289e17b4d8e73757ad2c7f87b..0499a71705f3bdac6c94a8dc340cc15e96d9586e 100644
+index 5bd7a236b948666ca31e53cb3a8aa0dc147e274b..36b84446e96faefad3b783f73df74e0f3bce8255 100644
 --- a/src/main/java/net/minecraft/server/BlockStateInteger.java
 +++ b/src/main/java/net/minecraft/server/BlockStateInteger.java
 @@ -38,8 +38,7 @@ public class BlockStateInteger extends IBlockState<Integer> {
@@ -82,3 +50,44 @@ index 6f35c365f9086a2289e17b4d8e73757ad2c7f87b..0499a71705f3bdac6c94a8dc340cc15e
          if (this == object) {
              return true;
          } else if (object instanceof BlockStateInteger && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/server/IBlockState.java b/src/main/java/net/minecraft/server/IBlockState.java
+index 88f1f201240ef0479c4f0f93f4caca454bbe7e9e..4eea3a4fca4cea96109e54473335fd3660e2f6d6 100644
+--- a/src/main/java/net/minecraft/server/IBlockState.java
++++ b/src/main/java/net/minecraft/server/IBlockState.java
+@@ -21,7 +21,7 @@ public abstract class IBlockState<T extends Comparable<T>> {
+                 return DataResult.error("Unable to read property: " + this + " with value: " + s1);
+             });
+         }, this::a);
+-        this.e = this.d.xmap(this::b, IBlockState.a::b);
++        this.e = this.d.xmap(this::b, (IBlockState.a<T> param) -> { return param.b(); }); // Paper - decompile fix
+         this.a = oclass;
+         this.b = s;
+     }
+@@ -61,23 +61,17 @@ public abstract class IBlockState<T extends Comparable<T>> {
+     }
+ 
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (!(object instanceof IBlockState)) {
+-            return false;
+-        } else {
+-            IBlockState<?> iblockstate = (IBlockState) object;
+-
+-            return this.a.equals(iblockstate.a) && this.b.equals(iblockstate.b);
+-        }
++        return this == object; // Paper - only one instance per configuration
+     }
+ 
++    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
++    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
+     public final int hashCode() {
+         if (this.c == null) {
+             this.c = this.b();
+         }
+ 
+-        return this.c;
++        return this.hashCode; // Paper - only one instance per configuration
+     }
+ 
+     public int b() {
