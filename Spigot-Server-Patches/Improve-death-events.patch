@@ -31,8 +31,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         return false;
      }
+     // CraftBukkit end
  
 +    public void runKillTrigger(Entity entity, int kills, DamageSource damageSource) { this.a(entity, kills, damageSource); } // Paper - OBFHELPER
      public void a(Entity entity, int i, DamageSource damagesource) {
@@ -42,8 +42,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.fallDistance = 0.0F;
      }
  
-+    public void onKill(EntityLiving entityLiving) { this.b(entityLiving); } // Paper - OBFHELPER
-     public void b(EntityLiving entityliving) {}
++    public void onKill(EntityLiving entityLiving) { this.a_(entityLiving); } // Paper - OBFHELPER
+     public void a_(EntityLiving entityliving) {}
  
      protected void k(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!itemstack.isEmpty()) {
              this.a(itemstack);
-             this.setSlot(EnumItemSlot.MAINHAND, ItemStack.a);
+             this.setSlot(EnumItemSlot.MAINHAND, ItemStack.b);
          }
  
 -        super.d(damagesource);
@@ -116,23 +116,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      @Override
-     public void b(NBTTagCompound nbttagcompound) {
-         super.b(nbttagcompound);
+     public void saveData(NBTTagCompound nbttagcompound) {
+         super.saveData(nbttagcompound);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+     protected float aS;
      protected float aT;
      protected float aU;
-     protected float aV;
--    protected int aW;
-+    protected int aW; protected int getKillCount() { return this.aW; } // Paper - OBFHELPER
+-    protected int aV;
++    protected int aV; protected int getKillCount() { return this.aV; } // Paper - OBFHELPER
      public float lastDamage;
      protected boolean jumping;
-     public float aZ;
+     public float aY;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-     public boolean collides = true;
+     public Set<UUID> collidableExemptions = new HashSet<>();
      public boolean canPickUpLoot;
      public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
@@ -140,18 +140,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public float getBukkitYaw() {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
- 
-             if (this.getHealth() <= 0.0F) {
+             if (knockbackCancelled) this.world.broadcastEntityEffect(this, (byte) 2); // Paper - Disable explosion knockback
+             if (this.dk()) {
                  if (!this.f(damagesource)) {
 -                    SoundEffect soundeffect = this.getSoundDeath();
 +                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
 +                    //SoundEffect soundeffect = this.getSoundDeath();
  
 -                    if (flag1 && soundeffect != null) {
--                        this.a(soundeffect, this.getSoundVolume(), this.dn());
+-                        this.playSound(soundeffect, this.getSoundVolume(), this.dG());
 -                    }
 +//                    if (flag1 && soundeffect != null) {
-+//                        this.a(soundeffect, this.getSoundVolume(), this.dn());
++//                        this.playSound(soundeffect, this.getSoundVolume(), this.dG());
 +//                    }
 +                    this.silentDeath = !flag1; // mark entity as dying silently
 +                    // Paper end
@@ -166,8 +166,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              EntityLiving entityliving = this.getKillingEntity();
  
 +            /* // Paper - move down to make death event cancellable
-             if (this.aW >= 0 && entityliving != null) {
-                 entityliving.a(this, this.aW, damagesource);
+             if (this.aV >= 0 && entityliving != null) {
+                 entityliving.a(this, this.aV, damagesource);
              }
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              if (this.isSleeping()) {
@@ -177,7 +177,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.killed = true;
 -            this.getCombatTracker().g();
-+            //this.getCombatTracker().g();
++            //this.getCombatTracker().g(); // Paper
              if (!this.world.isClientSide) {
 -                this.d(damagesource);
 +                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.d(damagesource);
@@ -198,7 +198,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +                // Paper end
 +
-                 this.f(entityliving);
+                 this.g(entityliving);
              }
  
 +            if (this.killed) { // Paper
@@ -215,7 +215,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (entityliving instanceof EntityWither) {
 +            if (this.killed && entityliving instanceof EntityWither) { // Paper
                  if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
-                     BlockPosition blockposition = new BlockPosition(this);
+                     BlockPosition blockposition = this.getChunkCoordinates();
                      IBlockData iblockdata = Blocks.WITHER_ROSE.getBlockData();
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          }
@@ -232,7 +232,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.dropInventory(); // CraftBukkit - from below
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent; // Paper
-         if (this.isDropExperience() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+         if (this.cV() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
              this.a(damagesource, flag);
              this.dropDeathLoot(damagesource, i, flag);
              // CraftBukkit start - Call death event
@@ -274,8 +274,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return 1.0F;
      }
  
-+    public float getSoundPitch() { return dn();} // Paper - OBFHELPER
-     protected float dn() {
++    public float getSoundPitch() { return dG();} // Paper - OBFHELPER
+     protected float dG() {
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
@@ -376,7 +376,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
      }
  
-     public void injectScaledMaxHealth(Collection<AttributeInstance> collection, boolean force) {
+     public void injectScaledMaxHealth(Collection<AttributeModifiable> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java

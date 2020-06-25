@@ -15,17 +15,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.event.block.TNTPrimeEvent; // Paper - TNTPrimeEvent
  import java.util.Map;
  import java.util.Random;
- import java.util.Map.Entry;
-@@ -0,0 +0,0 @@ public class BlockFire extends Block {
  
-                 world.setTypeAndData(blockposition, (IBlockData) this.a((IBlockAccess) world, blockposition).set(BlockFire.AGE, l), 3);
+@@ -0,0 +0,0 @@ public class BlockFire extends BlockFireAbstract {
+ 
+                 world.setTypeAndData(blockposition, this.a(world, blockposition, l), 3);
              } else {
 -                world.a(blockposition, false);
 +                if(iblockdata.getBlock() != Blocks.TNT) world.a(blockposition, false); // Paper - TNTPrimeEvent - We might be cancelling it below, move the setAir down
              }
  
              Block block = iblockdata.getBlock();
-@@ -0,0 +0,0 @@ public class BlockFire extends Block {
+@@ -0,0 +0,0 @@ public class BlockFire extends BlockFireAbstract {
              if (block instanceof BlockTNT) {
                  BlockTNT blocktnt = (BlockTNT) block;
  
@@ -53,7 +53,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class BlockTNT extends Block {
      public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
-         if (iblockdata1.getBlock() != iblockdata.getBlock()) {
+         if (!iblockdata1.a(iblockdata.getBlock())) {
              if (world.isBlockIndirectlyPowered(blockposition)) {
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
@@ -80,12 +80,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void wasExploded(World world, BlockPosition blockposition, Explosion explosion) {
          if (!world.isClientSide) {
 +            // Paper start - TNTPrimeEvent
-+            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);;
++            org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
 +            org.bukkit.entity.Entity source = explosion.source != null ? explosion.source.getBukkitEntity() : null;
 +            if(!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.EXPLOSION, source).callEvent())
 +                return;
 +            // Paper end
-             EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) blockposition.getX() + 0.5F), (double) blockposition.getY(), (double) ((float) blockposition.getZ() + 0.5F), explosion.getSource());
+             EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, explosion.getSource());
  
              entitytntprimed.setFuseTicks((short) (world.random.nextInt(entitytntprimed.getFuseTicks() / 4) + entitytntprimed.getFuseTicks() / 8));
 @@ -0,0 +0,0 @@ public class BlockTNT extends Block {
@@ -106,12 +106,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = MCUtil.toBukkitBlock(world, blockposition);
-+                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.PROJECTILE, entityarrow.getBukkitEntity()).callEvent()) {
++                if (!new TNTPrimeEvent(tntBlock, TNTPrimeEvent.PrimeReason.PROJECTILE, iprojectile.getBukkitEntity()).callEvent()) {
 +                    return;
 +                }
 +                // Paper end
 +
-                 a(world, blockposition, entity1 instanceof EntityLiving ? (EntityLiving) entity1 : null);
+                 a(world, blockposition, entity instanceof EntityLiving ? (EntityLiving) entity : null);
                  world.a(blockposition, false);
              }
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
@@ -128,7 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class EntityEnderDragon extends EntityInsentient implements IMonster {
 @@ -0,0 +0,0 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
                      });
-                     craftBlock.getNMS().dropNaturally(world, blockposition, ItemStack.a);
+                     craftBlock.getNMS().dropNaturally(world, blockposition, ItemStack.b);
                  }
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = world.getWorld().getBlockAt(blockposition.x, blockposition.y, blockposition.z);

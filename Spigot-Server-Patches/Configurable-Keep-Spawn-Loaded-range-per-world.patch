@@ -36,7 +36,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        worldloadlistener.setChunkRadius(radiusBlocks / 16);
 +        // Paper end
 +
-         MinecraftServer.LOGGER.info("Preparing start region for dimension '{}'/{}", worldserver.getWorldData().getName(), DimensionManager.a(worldserver.worldProvider.getDimensionManager().getType())); // CraftBukkit
+         MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.getDimensionKey().a());
          BlockPosition blockposition = worldserver.getSpawn();
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -105,8 +105,8 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         return ((PersistentIdCounts) this.getMinecraftServer().getWorldServer(DimensionManager.OVERWORLD).getWorldPersistentData().a(PersistentIdCounts::new, "idcounts")).a();
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         return ((PersistentIdCounts) this.getMinecraftServer().D().getWorldPersistentData().a(PersistentIdCounts::new, "idcounts")).a();
      }
  
 +    // Paper start - helper function for configurable spawn radius
@@ -180,13 +180,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     @Override
      public void a_(BlockPosition blockposition) {
--        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.b(), 0, this.worldData.d()));
+-        ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
 +        // Paper - configurable spawn radius
 +        BlockPosition prevSpawn = this.getSpawn();
++        //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
  
-         super.a_(blockposition);
+         this.worldData.setSpawn(blockposition);
 -        this.getChunkProvider().removeTicket(TicketType.START, chunkcoordintpair, 11, Unit.INSTANCE);
 -        this.getChunkProvider().addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
 +        if (this.keepSpawnInMemory) {
@@ -194,10 +194,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.removeTicketsForSpawn(this.paperConfig.keepLoadedRange, prevSpawn);
 +            this.addTicketsForSpawn(this.paperConfig.keepLoadedRange, blockposition);
 +        }
-+        // Paper end
+         this.getMinecraftServer().getPlayerList().sendAll(new PacketPlayOutSpawnPosition(blockposition));
      }
  
-     public LongSet getForceLoadedChunks() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java

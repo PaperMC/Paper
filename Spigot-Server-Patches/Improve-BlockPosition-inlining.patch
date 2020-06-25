@@ -24,43 +24,7 @@ diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
-@@ -0,0 +0,0 @@ import javax.annotation.concurrent.Immutable;
- public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
- 
-     public static final BaseBlockPosition ZERO = new BaseBlockPosition(0, 0, 0);
--    @Deprecated
--    private final int a;
--    @Deprecated
--    private final int b;
--    @Deprecated
--    private final int c;
-     // Paper start
--    public boolean isValidLocation() {
--        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
-+    protected int x;
-+    protected int y;
-+    protected int z;
-+
-+    public final boolean isValidLocation() {
-+        return x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000 && y >= 0 && y < 256;
-     }
--    public boolean isInvalidYLocation() {
--        return b < 0 || b >= 256;
-+    public final boolean isInvalidYLocation() {
-+        return y < 0 || y >= 256;
-     }
-     // Paper end
- 
-     public BaseBlockPosition(int i, int j, int k) {
--        this.a = i;
--        this.b = j;
--        this.c = k;
-+        this.x = i;
-+        this.y = j;
-+        this.z = k;
-     }
- 
-     public BaseBlockPosition(double d0, double d1, double d2) {
+@@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
          this(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
      }
  
@@ -70,188 +34,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return true;
          } else if (!(object instanceof BaseBlockPosition)) {
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-         } else {
-             BaseBlockPosition baseblockposition = (BaseBlockPosition) object;
- 
--            return this.getX() != baseblockposition.getX() ? false : (this.getY() != baseblockposition.getY() ? false : this.getZ() == baseblockposition.getZ());
-+            return x == baseblockposition.x && z == baseblockposition.z && y == baseblockposition.y; // Paper
          }
      }
  
 -    public int hashCode() {
--        return (this.getY() + this.getZ() * 31) * 31 + this.getX();
 +    public final int hashCode() { // Paper
-+        return (this.y + this.z * 31) * 31 + this.x; // Paper
+         return (this.getY() + this.getZ() * 31) * 31 + this.getX();
      }
  
-     public int compareTo(BaseBlockPosition baseblockposition) {
+@@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
          return this.getY() == baseblockposition.getY() ? (this.getZ() == baseblockposition.getZ() ? this.getX() - baseblockposition.getX() : this.getZ() - baseblockposition.getZ()) : this.getY() - baseblockposition.getY();
      }
  
 -    public int getX() {
--        return this.a;
-+    // Paper start
-+    public final int getX() {
-+        return this.x;
++    public final int getX() { // Paper
+         return this.a;
      }
  
 -    public int getY() {
--        return this.b;
-+    public final int getY() {
-+        return this.y;
++    public final int getY() { // Paper
+         return this.b;
      }
  
 -    public int getZ() {
--        return this.c;
-+    public final int getZ() {
-+        return this.z;
-     }
-+    // Paper end
- 
-     public BaseBlockPosition down() {
-         return this.down(1);
-@@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-     public BaseBlockPosition shift(EnumDirection enumdirection, int i) {
-         return i == 0 ? this : new BaseBlockPosition(this.getX() + enumdirection.getAdjacentX() * i, this.getY() + enumdirection.getAdjacentY() * i, this.getZ() + enumdirection.getAdjacentZ() * i);
-     }
-+    // Paper end
- 
-     public BaseBlockPosition d(BaseBlockPosition baseblockposition) {
-         return new BaseBlockPosition(this.getY() * baseblockposition.getZ() - this.getZ() * baseblockposition.getY(), this.getZ() * baseblockposition.getX() - this.getX() * baseblockposition.getZ(), this.getX() * baseblockposition.getY() - this.getY() * baseblockposition.getX());
++    public final int getZ() { // Paper
+         return this.e;
      }
  
-     public boolean a(BaseBlockPosition baseblockposition, double d0) {
--        return this.distanceSquared((double) baseblockposition.getX(), (double) baseblockposition.getY(), (double) baseblockposition.getZ(), false) < d0 * d0;
-+        return this.distanceSquared((double) baseblockposition.x, (double) baseblockposition.y, (double) baseblockposition.z, false) < d0 * d0; // Paper
-     }
- 
-     public boolean a(IPosition iposition, double d0) {
-@@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-     }
- 
-     public int n(BaseBlockPosition baseblockposition) {
--        float f = (float) Math.abs(baseblockposition.getX() - this.getX());
--        float f1 = (float) Math.abs(baseblockposition.getY() - this.getY());
--        float f2 = (float) Math.abs(baseblockposition.getZ() - this.getZ());
-+        float f = (float) Math.abs(baseblockposition.getX() - this.x); // Paper
-+        float f1 = (float) Math.abs(baseblockposition.getY() - this.y); // Paper
-+        float f2 = (float) Math.abs(baseblockposition.getZ() - this.z); // Paper
- 
-         return (int) (f + f1 + f2);
-     }
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         return new BlockPosition(b(i), c(i), d(i));
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
+         return a(this.getX(), this.getY(), this.getZ());
      }
  
 +    public static long asLong(int x, int y, int z) { return a(x, y, z); } // Paper - OBFHELPER
      public static long a(int i, int j, int k) {
          long l = 0L;
  
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-     }
- 
-     public long asLong() {
--        return a(this.getX(), this.getY(), this.getZ());
-+        return a(this.x, this.y, this.z); // Paper
-     }
- 
-     public BlockPosition a(double d0, double d1, double d2) {
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-     }
- 
-     public static class MutableBlockPosition extends BlockPosition {
--
-+        // Paper start - comment out
-+        /*
-         protected int b;
-         protected int c;
-         protected int d;
--
-+        */
-+        // Paper end
-         public MutableBlockPosition() {
-             this(0, 0, 0);
-         }
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         }
- 
-         public MutableBlockPosition(int i, int j, int k) {
--            super(0, 0, 0);
-+            // Paper start
-+            super(i, j, k);
-+            /*
-             this.b = i;
-             this.c = j;
--            this.d = k;
-+            this.d = k;*/
-+            // Paper end
-         }
- 
-         public MutableBlockPosition(double d0, double d1, double d2) {
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-             return super.a(enumblockrotation).immutableCopy();
-         }
- 
-+
-+        /*
-+        // Paper start - use parent getters
-         @Override
-         public int getX() {
-             return this.b;
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         @Override
-         public int getZ() {
-             return this.d;
--        }
-+        }*/
-+        // Paper end
- 
-         public BlockPosition.MutableBlockPosition setValues(int i, int j, int k) { return d(i, j, k);} // Paper - OBFHELPER
-         public BlockPosition.MutableBlockPosition d(int i, int j, int k) {
--            this.b = i;
--            this.c = j;
--            this.d = k;
-+            // Paper start - use xyz
-+            this.x = i;
-+            this.y = j;
-+            this.z = k;
-+            // Paper end
-             return this;
-         }
- 
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         }
- 
-         public BlockPosition.MutableBlockPosition c(EnumDirection enumdirection, int i) {
--            return this.d(this.b + enumdirection.getAdjacentX() * i, this.c + enumdirection.getAdjacentY() * i, this.d + enumdirection.getAdjacentZ() * i);
-+            return this.d(this.x + enumdirection.getAdjacentX() * i, this.y + enumdirection.getAdjacentY() * i, this.z + enumdirection.getAdjacentZ() * i);
-         }
- 
-         public BlockPosition.MutableBlockPosition e(int i, int j, int k) {
--            return this.d(this.b + i, this.c + j, this.d + k);
-+            return this.d(this.x + i, this.y + j, this.z + k);
-         }
- 
-         public final void setX(final int x) { this.o(x); } // Paper - OBFHELPER
-         public void o(int i) {
--            this.b = i;
-+            this.x = i; // Paper change to x
-         }
- 
-         public final void setY(final int y) { this.p(y); } // Paper - OBFHELPER
-         public void p(int i) {
--            this.c = i;
-+            this.y = i; // Paper change to y
-         }
- 
-         public final void setZ(final int z) { this.q(z); } // Paper - OBFHELPER
-         public void q(int i) {
--            this.d = i;
-+            this.z = i; // Paper change to z
-         }
- 
-         @Override

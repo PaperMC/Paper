@@ -37,11 +37,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public EntityArmorStand(EntityTypes<? extends EntityArmorStand> entitytypes, World world) {
          super(entitytypes, world);
 @@ -0,0 +0,0 @@ public class EntityArmorStand extends EntityLiving {
-         this.rightArmPose = EntityArmorStand.bu;
-         this.leftLegPose = EntityArmorStand.bv;
-         this.rightLegPose = EntityArmorStand.bw;
+         this.rightArmPose = EntityArmorStand.bt;
+         this.leftLegPose = EntityArmorStand.bu;
+         this.rightLegPose = EntityArmorStand.bv;
 +        if (world != null) this.canTick = world.paperConfig.armorStandTick; // Paper - armour stand ticking
-         this.H = 0.0F;
+         this.G = 0.0F;
      }
  
 @@ -0,0 +0,0 @@ public class EntityArmorStand extends EntityLiving {
@@ -136,125 +136,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void setRightLegPose(Vector3f vector3f) {
          this.rightLegPose = vector3f;
-         this.datawatcher.set(EntityArmorStand.bp, vector3f);
+         this.datawatcher.set(EntityArmorStand.bo, vector3f);
 +        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
      }
  
      public Vector3f r() {
-diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityLiving.java
-+++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-                 }
-             }
- 
--            EnumItemSlot[] aenumitemslot = EnumItemSlot.values();
--            int k = aenumitemslot.length;
--
--            for (int l = 0; l < k; ++l) {
--                EnumItemSlot enumitemslot = aenumitemslot[l];
--                ItemStack itemstack;
--
--                switch (enumitemslot.a()) {
--                    case HAND:
--                        itemstack = (ItemStack) this.bu.get(enumitemslot.b());
--                        break;
--                    case ARMOR:
--                        itemstack = (ItemStack) this.bv.get(enumitemslot.b());
--                        break;
--                    default:
--                        continue;
--                }
--
--                ItemStack itemstack1 = this.getEquipment(enumitemslot);
--
--                if (!ItemStack.matches(itemstack1, itemstack)) {
--                    // Paper start - PlayerArmorChangeEvent
--                    if (this instanceof EntityPlayer && enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
--                        final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
--                        final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
--                        new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
--                    }
--                    // Paper end
--                    ((WorldServer) this.world).getChunkProvider().broadcast(this, new PacketPlayOutEntityEquipment(this.getId(), enumitemslot, itemstack1));
--                    if (!itemstack.isEmpty()) {
--                        this.getAttributeMap().a(itemstack.a(enumitemslot));
--                    }
--
--                    if (!itemstack1.isEmpty()) {
--                        this.getAttributeMap().b(itemstack1.a(enumitemslot));
--                    }
--
--                    switch (enumitemslot.a()) {
--                        case HAND:
--                            this.bu.set(enumitemslot.b(), itemstack1.cloneItemStack());
--                            break;
--                        case ARMOR:
--                            this.bv.set(enumitemslot.b(), itemstack1.cloneItemStack());
--                    }
--                }
--            }
-+            updateEntityEquipment(); // Paper - split into own method
- 
-             if (this.ticksLived % 20 == 0) {
-                 this.getCombatTracker().g();
-@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-         }
-     }
- 
-+    // Paper start - split into own method from above
-+    public void updateEntityEquipment() {
-+        EnumItemSlot[] aenumitemslot = EnumItemSlot.values();
-+        int k = aenumitemslot.length;
-+        for (int l = 0; l < k; ++l) {
-+            EnumItemSlot enumitemslot = aenumitemslot[l];
-+            ItemStack itemstack;
-+
-+            switch (enumitemslot.a()) {
-+                case HAND:
-+                    itemstack = (ItemStack) this.bu.get(enumitemslot.b());
-+                    break;
-+                case ARMOR:
-+                    itemstack = (ItemStack) this.bv.get(enumitemslot.b());
-+                    break;
-+                default:
-+                    continue;
-+            }
-+
-+            ItemStack itemstack1 = this.getEquipment(enumitemslot);
-+
-+            if (!ItemStack.matches(itemstack1, itemstack)) {
-+                // Paper start - PlayerArmorChangeEvent
-+                if (this instanceof EntityPlayer && enumitemslot.getType() == EnumItemSlot.Function.ARMOR) {
-+                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemstack);
-+                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemstack1);
-+                    new PlayerArmorChangeEvent((Player) this.getBukkitEntity(), PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
-+                }
-+                // Paper end
-+                ((WorldServer) this.world).getChunkProvider().broadcast(this, new PacketPlayOutEntityEquipment(this.getId(), enumitemslot, itemstack1));
-+                if (!itemstack.isEmpty()) {
-+                    this.getAttributeMap().a(itemstack.a(enumitemslot));
-+                }
-+
-+                if (!itemstack1.isEmpty()) {
-+                    this.getAttributeMap().b(itemstack1.a(enumitemslot));
-+                }
-+
-+                switch (enumitemslot.a()) {
-+                    case HAND:
-+                        this.bu.set(enumitemslot.b(), itemstack1.cloneItemStack());
-+                        break;
-+                    case ARMOR:
-+                        this.bv.set(enumitemslot.b(), itemstack1.cloneItemStack());
-+                }
-+            }
-+        }
-+    }
-+
-     protected float f(float f, float f1) {
-         float f2 = MathHelper.g(f - this.aI);
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
