@@ -8,22 +8,21 @@ diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -0,0 +0,0 @@ import org.bukkit.inventory.MainHand;
- public class EntityPlayer extends EntityHuman implements ICrafting {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
--    public String locale = "en_us"; // CraftBukkit - lowercase
-+    public String locale = null; // CraftBukkit - lowercase // Paper - default to null
-     public PlayerConnection playerConnection;
-     public final MinecraftServer server;
-     public final PlayerInteractManager playerInteractManager;
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return s;
+     }
+ 
+-    public String locale = "en_us"; // CraftBukkit - add, lowercase
++    public String locale = null; // CraftBukkit - lowercase // Paper - default to null
+     public void a(PacketPlayInSettings packetplayinsettings) {
+         // CraftBukkit start
+         if (getMainHand() != packetplayinsettings.getMainHand()) {
              PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainHand() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT);
              this.server.server.getPluginManager().callEvent(event);
          }
--        if (!this.locale.equals(packetplayinsettings.b())) {
-+        if (this.locale == null || !this.locale.equals(packetplayinsettings.b())) { // Paper - check for null
-             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(getBukkitEntity(), packetplayinsettings.b());
+-        if (!this.locale.equals(packetplayinsettings.locale)) {
++        if (this.locale == null || !this.locale.equals(packetplayinsettings.locale)) { // Paper - check for null
+             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(getBukkitEntity(), packetplayinsettings.locale);
              this.server.server.getPluginManager().callEvent(event);
          }
          this.clientViewDistance = packetplayinsettings.viewDistance;
@@ -31,14 +30,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - add PlayerLocaleChangeEvent
 +        // Since the field is initialized to null, this event should always fire the first time the packet is received
 +        String oldLocale = this.locale;
-         this.locale = packetplayinsettings.b();
++        this.locale = packetplayinsettings.locale;
 +        if (!this.locale.equals(oldLocale)) {
 +            new com.destroystokyo.paper.event.player.PlayerLocaleChangeEvent(this.getBukkitEntity(), oldLocale, this.locale).callEvent();
 +        }
 +        // Paper end
-         this.ch = packetplayinsettings.d();
-         this.ci = packetplayinsettings.e();
-         this.getDataWatcher().set(EntityPlayer.bq, (byte) packetplayinsettings.f());
+         this.cf = packetplayinsettings.d();
+         this.cg = packetplayinsettings.e();
+         this.getDataWatcher().set(EntityPlayer.bp, (byte) packetplayinsettings.f());
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -56,11 +55,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      // Paper start
-@@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-             }
-         }
- 
--        @Override
-         public Set<Player> getHiddenPlayers()
-         {
-             Set<Player> ret = new HashSet<Player>();

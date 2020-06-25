@@ -9,11 +9,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/NavigationAbstract.java
 +++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
 @@ -0,0 +0,0 @@ public abstract class NavigationAbstract {
-     private BlockPosition q;
-     private int r;
-     private float s;
--    private final Pathfinder t;
-+    private final Pathfinder t; public Pathfinder getPathfinder() { return this.t; } // Paper - OBFHELPER
+     private BlockPosition p;
+     private int q;
+     private float r;
+-    private final Pathfinder s;
++    private final Pathfinder s; public Pathfinder getPathfinder() { return this.s; } // Paper - OBFHELPER
  
      public NavigationAbstract(EntityInsentient entityinsentient, World world) {
          this.g = Vec3D.a;
@@ -22,47 +22,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Pathfinder.java
 +++ b/src/main/java/net/minecraft/server/Pathfinder.java
 @@ -0,0 +0,0 @@ public class Pathfinder {
-     private final Set<PathPoint> b = Sets.newHashSet();
-     private final PathPoint[] c = new PathPoint[32];
-     private final int d;
--    private final PathfinderAbstract e;
-+    private final PathfinderAbstract e; public PathfinderAbstract getPathfinder() { return this.e; }  // Paper - OBFHELPER
+ 
+     private final PathPoint[] a = new PathPoint[32];
+     private final int b;
+-    private final PathfinderAbstract c;
++    private final PathfinderAbstract c; public PathfinderAbstract getPathfinder() { return this.c; }  // Paper - OBFHELPER
+     private final Path d = new Path();
  
      public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {
-         this.e = pathfinderabstract;
 diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PathfinderNormal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
 @@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
-         PathType pathtype = c(iblockaccess, i, j, k);
+                 for (int j1 = -1; j1 <= 1; ++j1) {
+                     if (l != 0 || j1 != 0) {
+                         blockposition_mutableblockposition.d(i + l, j + i1, k + j1);
+-                        IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition);
++                        // Paper start
++                        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition_mutableblockposition);
++                        if (iblockdata == null) {
++                            pathtype = PathType.BLOCKED;
++                        } else {
++                        // Paper end
  
-         if (pathtype == PathType.OPEN && j >= 1) {
--            Block block = iblockaccess.getType(new BlockPosition(i, j - 1, k)).getBlock();
-+            Block block = iblockaccess.getBlockIfLoaded(new BlockPosition(i, j - 1, k)); // Paper
-+            if (block == null) return PathType.BLOCKED; // Paper
-             PathType pathtype1 = c(iblockaccess, i, j - 1, k);
- 
-             pathtype = pathtype1 != PathType.WALKABLE && pathtype1 != PathType.OPEN && pathtype1 != PathType.WATER && pathtype1 != PathType.LAVA ? PathType.WALKABLE : PathType.OPEN;
+                         if (iblockdata.a(Blocks.CACTUS)) {
+                             return PathType.DANGER_CACTUS;
 @@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
-                 for (int i1 = -1; i1 <= 1; ++i1) {
-                     for (int j1 = -1; j1 <= 1; ++j1) {
-                         if (l != 0 || j1 != 0) {
--                            Block block = iblockaccess.getType(blockposition_pooledblockposition.d(l + i, i1 + j, j1 + k)).getBlock();
--
-+                            // Paper start
-+                            Block block = iblockaccess.getBlockIfLoaded(blockposition_pooledblockposition.d(l + i, i1 + j, j1 + k));
-+                            if (block == null) {
-+                                pathtype = PathType.BLOCKED;
-+                            } else
-+                            // Paper end
-                             if (block == Blocks.CACTUS) {
-                                 pathtype = PathType.DANGER_CACTUS;
-                             } else if (block != Blocks.FIRE && block != Blocks.LAVA) {
+                         if (fluid.a((Tag) TagsFluid.LAVA)) {
+                             return PathType.LAVA;
+                         }
++                        } // Paper
+                     }
+                 }
+             }
 @@ -0,0 +0,0 @@ public class PathfinderNormal extends PathfinderAbstract {
+     }
  
-     protected static PathType c(IBlockAccess iblockaccess, int i, int j, int k) {
-         BlockPosition blockposition = new BlockPosition(i, j, k);
+     protected static PathType b(IBlockAccess iblockaccess, BlockPosition blockposition) {
 -        IBlockData iblockdata = iblockaccess.getType(blockposition);
 +        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition); // Paper
 +        if (iblockdata == null) return PathType.BLOCKED; // Paper

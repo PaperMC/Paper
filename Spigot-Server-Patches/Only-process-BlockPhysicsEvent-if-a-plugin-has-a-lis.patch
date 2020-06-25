@@ -23,8 +23,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BlockTallPlant.java
 +++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
 @@ -0,0 +0,0 @@ public class BlockTallPlant extends BlockPlant {
-     @Override
-     public void a(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+ 
+     protected static void b(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
          // CraftBukkit start
 -        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
 +        if (((WorldServer)world).hasPhysicsEvent && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) { // Paper
@@ -36,13 +36,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
          while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
- 
 +            worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-             if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-                 this.methodProfiler.a(() -> {
-                     return worldserver.getWorldData().getName() + " " + IRegistry.DIMENSION_TYPE.getKey(worldserver.worldProvider.getDimensionManager());
+ 
+             this.methodProfiler.a(() -> {
+                 return worldserver + " " + worldserver.getDimensionKey().a();
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -69,11 +69,12 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     public final Convertable.ConversionSession convertable;
+     public final UUID uuid;
  
-     // CraftBukkit start
-     private int tickPosition;
 +    boolean hasPhysicsEvent = true; // Paper
- 
-     // Add env and gen to constructor
-     public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
++
+     public Chunk getChunkIfLoaded(int x, int z) {
+         return this.chunkProvider.getChunkAt(x, z, false);
+     }
