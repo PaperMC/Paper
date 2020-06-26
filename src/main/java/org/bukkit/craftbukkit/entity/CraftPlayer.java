@@ -1399,6 +1399,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         EntityPlayer player = getHandle();
         player.abilities.walkSpeed = value / 2f;
         player.updateAbilities();
+        getHandle().getAttributeInstance(GenericAttributes.MOVEMENT_SPEED).setValue(player.abilities.walkSpeed); // SPIGOT-5833: combination of the two in 1.16+
     }
 
     @Override
