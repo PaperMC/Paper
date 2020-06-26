@@ -1,5 +1,6 @@
 package org.bukkit.persistence;
 
+import java.util.Set;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,6 +114,18 @@ public interface PersistentDataContainer {
      */
     @NotNull
     <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue);
+
+    /**
+     * Get a set of keys present on this {@link PersistentDataContainer}
+     * instance.
+     *
+     * Any changes made to the returned set will not be reflected on the
+     * instance.
+     *
+     * @return the key set
+     */
+    @NotNull
+    Set<NamespacedKey> getKeys();
 
     /**
      * Removes a custom key from the {@link PersistentDataHolder} instance.
