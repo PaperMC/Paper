@@ -260,7 +260,7 @@ public final class MapPalette {
     @Deprecated
     @NotNull
     public static Color getColor(byte index) {
-        if ((index > -49 && index < 0) || index > 127) {
+        if ((index > -21 && index < 0) || index > 127) {
             throw new IndexOutOfBoundsException();
         } else {
             // Minecraft has 143 colors, some of which have negative byte representations
