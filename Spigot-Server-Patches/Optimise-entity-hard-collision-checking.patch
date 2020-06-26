@@ -27,7 +27,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    public final void getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, List<Entity> into) {
++    public final void getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, List<Entity> into, Predicate<Entity> predicate) {
 +        // copied from getEntities
 +        int min = MathHelper.floor((axisalignedbb.minY - 2.0D) / 16.0D);
 +        int max = MathHelper.floor((axisalignedbb.maxY + 2.0D) / 16.0D);
@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                Entity entity1 = entities[i];
 +                if (entity1.shouldBeRemoved) continue; // Paper
 +
-+                if (entity1 != entity && entity1.getBoundingBox().intersects(axisalignedbb)) {
++                if (entity1 != entity && entity1.getBoundingBox().intersects(axisalignedbb) && (predicate == null || predicate.test(entity1))) {
 +                    into.add(entity1);
 +
 +                    if (!(entity1 instanceof EntityEnderDragon)) {
@@ -56,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    for (int i1 = 0; i1 < l; ++i1) {
 +                        EntityComplexPart entitycomplexpart = aentitycomplexpart[i1];
 +
-+                        if (entitycomplexpart != entity && entitycomplexpart.getBoundingBox().intersects(axisalignedbb)) {
++                        if (entitycomplexpart != entity && entitycomplexpart.getBoundingBox().intersects(axisalignedbb) && (predicate == null || predicate.test(entitycomplexpart))) {
 +                            into.add(entitycomplexpart);
 +                        }
 +                    }
@@ -106,9 +106,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Boolean hardCollides = cachedOverrides.get(this.getClass());
 +        if (hardCollides == null) {
 +            try {
-+                Object getHardCollisionBoxMethod = Entity.class.getMethod("au");
++                Object getHardCollisionBoxMethod = Entity.class.getMethod("ay");
 +                Object getHardCollisionBoxEntityMethod = Entity.class.getMethod("j", Entity.class);
-+                if (!this.getClass().getMethod("au").equals(getHardCollisionBoxMethod)) {
++                if (!this.getClass().getMethod("ay").equals(getHardCollisionBoxMethod)) {
 +                    hardCollides = Boolean.TRUE;
 +                } else if (!this.getClass().getMethod("j", Entity.class).equals(getHardCollisionBoxEntityMethod)) {
 +                    hardCollides = Boolean.TRUE;
@@ -140,8 +140,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void checkDespawn() {}
  
-+    public final EntityComplexPart[] getComplexParts() { return this.eo(); } // Paper - OBFHELPER
-     public EntityComplexPart[] eo() {
++    public final EntityComplexPart[] getComplexParts() { return this.eK(); } // Paper - OBFHELPER
+     public EntityComplexPart[] eK() {
          return this.children;
      }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
@@ -149,34 +149,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
 @@ -0,0 +0,0 @@ public interface IEntityAccess {
-         return this.b(oclass, axisalignedbb, IEntitySelector.f);
+         return this.b(oclass, axisalignedbb, IEntitySelector.g);
      }
  
 +    // Paper start - optimise hard collision
 +    /**
 +     * Not guaranteed to only return hard colliding entites
 +     */
-+    default List<Entity> getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb) {
++    default List<Entity> getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
 +        return this.getEntities(entity, axisalignedbb);
 +    }
 +    // Paper end - optimise hard collision
 +
-     default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+     default Stream<VoxelShape> c(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
          if (axisalignedbb.a() < 1.0E-7D) {
              return Stream.empty();
          } else {
              AxisAlignedBB axisalignedbb1 = axisalignedbb.g(1.0E-7D);
--            Stream<AxisAlignedBB> stream = this.getEntities(entity, axisalignedbb1).stream().filter((entity1) -> { // Paper - decompile fix
-+            Stream<AxisAlignedBB> stream = ((entity != null && entity.hardCollides()) ? this.getEntities(entity, axisalignedbb) : this.getHardCollidingEntities(entity, axisalignedbb1)).stream().filter((entity1) -> { // Paper - decompile fix // Paper - optimise hard collision
-                 return !set.contains(entity1);
-             }).filter((entity1) -> {
-                 return entity == null || !entity.isSameVehicle(entity1);
-             }).flatMap((entity1) -> {
--                return Stream.of(entity1.au(), entity == null ? null : entity.j(entity1));
-+                return Stream.of(entity1.au(), entity == null ? null : entity.j(entity1)); // Paper - optimise hard collision - diff on change, these are the methods that only hard colliding entities override
-             }).filter(Objects::nonNull);
  
-             return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
+-            return this.getEntities(entity, axisalignedbb1, predicate.and((entity1) -> {
++            // Paper start
++            Predicate<Entity> effectivePredicate = predicate.and((entity1) -> {
+                 return entity == null || !entity.isSameVehicle(entity1);
+-            })).stream().flatMap((entity1) -> {
++            });
++
++            return ((entity != null && entity.hardCollides()) ? this.getEntities(entity, axisalignedbb, effectivePredicate) : this.getHardCollidingEntities(entity, axisalignedbb1, effectivePredicate)).stream().flatMap((entity1) -> {
+                 if (entity != null) {
+-                    AxisAlignedBB axisalignedbb2 = entity.j(entity1);
++                    AxisAlignedBB axisalignedbb2 = entity.j(entity1); // Paper - diff on change, hard collision box method
+ 
+                     if (axisalignedbb2 != null && axisalignedbb2.c(axisalignedbb1)) {
+                         return Stream.of(entity1.ay(), axisalignedbb2);
+                     }
+                 }
+ 
+-                return Stream.of(entity1.ay());
++                return Stream.of(entity1.ay()); // Paper - diff on change, hard collision box method
+             }).filter(Objects::nonNull).map(VoxelShapes::a);
+         }
+     }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
@@ -187,7 +199,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - optimise hard collision handling
 +    @Override
-+    public List<Entity> getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb) {
++    public List<Entity> getHardCollidingEntities(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
 +        // copied from below
 +        List<Entity> list = Lists.newArrayList();
 +        int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
@@ -195,14 +207,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int k = MathHelper.floor((axisalignedbb.minZ - 2.0D) / 16.0D);
 +        int l = MathHelper.floor((axisalignedbb.maxZ + 2.0D) / 16.0D);
 +
-+        ChunkProviderServer chunkProvider = ((ChunkProviderServer)this.chunkProvider);
++        ChunkProviderServer chunkProvider = ((WorldServer)this).getChunkProvider();
 +
 +        for (int i1 = i; i1 <= j; ++i1) {
 +            for (int j1 = k; j1 <= l; ++j1) {
 +                Chunk chunk = chunkProvider.getChunkAtIfLoadedMainThread(i1, j1);
 +
 +                if (chunk != null) {
-+                    chunk.getHardCollidingEntities(entity, axisalignedbb, list);
++                    chunk.getHardCollidingEntities(entity, axisalignedbb, list, predicate);
 +                }
 +            }
 +        }

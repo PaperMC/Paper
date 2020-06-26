@@ -36,17 +36,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      @Nullable
-     public Entity teleportTo(DimensionManager dimensionmanager, BlockPosition location) {
+     public Entity teleportTo(WorldServer worldserver, BlockPosition location) {
          // CraftBukkit end
 +        // Paper start - fix bad state entities causing dupes
 +        if (!isAlive() || !valid) {
-+            LOGGER.warn("Illegal Entity Teleport " + this + " to " + dimensionmanager + ":" + location, new Throwable());
++            LOGGER.warn("Illegal Entity Teleport " + this + " to " + worldserver + ":" + location, new Throwable());
 +            return null;
 +        }
 +        // Paper end
-         if (!this.world.isClientSide && !this.dead) {
+         if (this.world instanceof WorldServer && !this.dead) {
              this.world.getMethodProfiler().enter("changeDimension");
-             MinecraftServer minecraftserver = this.getMinecraftServer();
+             // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                  entity.bukkitEntity = this.getBukkitEntity();
  
@@ -75,7 +75,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!itemstack.isEmpty()) {
 -                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 +                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
-                 this.handItems.set(i, ItemStack.a);
+                 this.handItems.set(i, ItemStack.b);
              }
          }
 @@ -0,0 +0,0 @@ public class EntityArmorStand extends EntityLiving {
@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!itemstack.isEmpty()) {
 -                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack)); // CraftBukkit - add to drops
 +                drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)); // CraftBukkit - add to drops // Paper - mirror so we can destroy it later - though this call site was safe
-                 this.armorItems.set(i, ItemStack.a);
+                 this.armorItems.set(i, ItemStack.b);
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java

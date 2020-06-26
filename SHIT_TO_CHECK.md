@@ -6,3 +6,4 @@
 * Mini: I definetly dropped a patch I didnt want to drop, we need to go thru in the end and see if all patches are still in, lol
 * Make sure the flat bedrock setting doesn't do anything stupid
 * Check DataBits foreach
+* Update MobGoalHelper

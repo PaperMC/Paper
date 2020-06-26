@@ -32,57 +32,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
      }
  
-     default boolean a(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+     default boolean b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
 +        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
-         return this.c(entity, axisalignedbb, set).allMatch(VoxelShape::isEmpty);
+         return this.d(entity, axisalignedbb, predicate).allMatch(VoxelShape::isEmpty);
 +        } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
      }
  
-     default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
-@@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
-                 }
- 
-                 while (cursorposition.a()) {
--                    int k1 = cursorposition.b();
--                    int l1 = cursorposition.c();
--                    int i2 = cursorposition.d();
-+                    int k1 = cursorposition.b();int x = k1; // Paper
-+                    int l1 = cursorposition.c();int y = l1; // Paper
-+                    int i2 = cursorposition.d();int z = i2; // Paper
-                     int j2 = cursorposition.e();
- 
-                     if (j2 != 3) {
--                        int k2 = k1 >> 4;
--                        int l2 = i2 >> 4;
--                        IBlockAccess iblockaccess = ICollisionAccess.this.c(k2, l2);
--
--                        if (iblockaccess != null) {
--                            blockposition_mutableblockposition.d(k1, l1, i2);
--                            IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition);
-+                        // Paper start - ensure we don't load chunks
-+                        //int k2 = k1 >> 4;
-+                        //int l2 = i2 >> 4;
-+                        boolean far = entity != null && MCUtil.distanceSq(entity.locX(), y, entity.locZ(), x, y, z) > 14;
-+                        blockposition_mutableblockposition.setValues(x, y, z);
-+
-+                        boolean isRegionLimited = ICollisionAccess.this instanceof RegionLimitedWorldAccess;
-+                        IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
-+                            ? ICollisionAccess.this.getType(blockposition_mutableblockposition)
-+                            : ICollisionAccess.this.getTypeIfLoaded(blockposition_mutableblockposition)
-+                        );
-+                        if (iblockdata == null) {
-+                            if (!(entity instanceof EntityPlayer) || entity.world.paperConfig.preventMovingIntoUnloadedChunks) {
-+                                VoxelShape voxelshape3 = VoxelShapes.of(far ? entity.getBoundingBox() : new AxisAlignedBB(new BlockPosition(x, y, z)));
-+                                consumer.accept(voxelshape3);
-+                                return true;
-+                            }
-+                        } else {
-+                            //blockposition_mutableblockposition.d(k1, l1, i2); // moved up
-+                            //IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition); // moved up
-+                            // Paper end
- 
-                             if ((j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
-                                 VoxelShape voxelshape2 = iblockdata.b((IBlockAccess) ICollisionAccess.this, blockposition_mutableblockposition, voxelshapecollision);
+     Stream<VoxelShape> c(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate);
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
@@ -92,9 +48,77 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
  
 +        worldserver.getChunkProvider().addTicket(TicketType.POST_TELEPORT, new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
-         while (avoidSuffocation && !worldserver.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
+         while (avoidSuffocation && !worldserver1.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
              entityplayer1.setPosition(entityplayer1.locX(), entityplayer1.locY() + 1.0D, entityplayer1.locZ());
          }
+diff --git a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
++++ b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+ 
+     @Nullable
+-    private final Entity a;
++    private final Entity a; final Entity getEntity() { return this.a; } // Paper - OBFHELPER
+     private final AxisAlignedBB b;
+     private final VoxelShapeCollision c;
+     private final CursorPosition d;
+-    private final BlockPosition.MutableBlockPosition e;
++    private final BlockPosition.MutableBlockPosition e; final BlockPosition.MutableBlockPosition getMutablePos() { return this.e; } // Paper - OBFHELPER
+     private final VoxelShape f;
+-    private final ICollisionAccess g;
++    private final ICollisionAccess g; final ICollisionAccess getCollisionAccess() { return this.g; } // Paper - OBFHELPER
+     private boolean h;
+     private final BiPredicate<IBlockData, BlockPosition> i;
+ 
+@@ -0,0 +0,0 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+     boolean a(Consumer<? super VoxelShape> consumer) {
+         while (true) {
+             if (this.d.a()) {
+-                int i = this.d.b();
+-                int j = this.d.c();
+-                int k = this.d.d();
++                int i = this.d.b(); final int x = i;
++                int j = this.d.c(); final int y = j;
++                int k = this.d.d(); final int z = k;
+                 int l = this.d.e();
+ 
+                 if (l == 3) {
+                     continue;
+                 }
+ 
+-                IBlockAccess iblockaccess = this.a(i, k);
+-
+-                if (iblockaccess == null) {
++                // Paper start - ensure we don't load chunks
++                Entity entity = this.getEntity();
++                BlockPosition.MutableBlockPosition blockposition_mutableblockposition = this.getMutablePos();
++                boolean far = entity != null && MCUtil.distanceSq(entity.locX(), y, entity.locZ(), x, y, z) > 14;
++                blockposition_mutableblockposition.setValues(x, y, z);
++
++                boolean isRegionLimited = this.getCollisionAccess() instanceof RegionLimitedWorldAccess;
++                IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
++                    ? this.getCollisionAccess().getType(blockposition_mutableblockposition)
++                    : this.getCollisionAccess().getTypeIfLoaded(blockposition_mutableblockposition)
++                );
++
++                if (iblockdata == null) {
++                    if (!(entity instanceof EntityPlayer) || entity.world.paperConfig.preventMovingIntoUnloadedChunks) {
++                        VoxelShape voxelshape3 = VoxelShapes.of(far ? entity.getBoundingBox() : new AxisAlignedBB(new BlockPosition(x, y, z)));
++                        consumer.accept(voxelshape3);
++                        return true;
++                    }
+                     continue;
+                 }
+-
+-                this.e.d(i, j, k);
+-                IBlockData iblockdata = iblockaccess.getType(this.e);
++                // Paper - moved up
++                // Paper end
+ 
+                 if (!this.i.test(iblockdata, this.e) || l == 1 && !iblockdata.d() || l == 2 && !iblockdata.a(Blocks.MOVING_PISTON)) {
+                     continue;
 diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/VoxelShapes.java
@@ -107,5 +131,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
 +                                if (iblockdata == null) return 0.0D; // Paper
  
-                                 if ((k2 != 1 || iblockdata.f()) && (k2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
+                                 if ((k2 != 1 || iblockdata.d()) && (k2 != 2 || iblockdata.a(Blocks.MOVING_PISTON))) {
                                      d0 = iblockdata.b((IBlockAccess) iworldreader, blockposition_mutableblockposition, voxelshapecollision).a(enumdirection_enumaxis2, axisalignedbb.d((double) (-blockposition_mutableblockposition.getX()), (double) (-blockposition_mutableblockposition.getY()), (double) (-blockposition_mutableblockposition.getZ())), d0);

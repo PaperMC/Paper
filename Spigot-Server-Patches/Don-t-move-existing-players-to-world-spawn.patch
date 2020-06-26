@@ -16,9 +16,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.serverStatisticManager = minecraftserver.getPlayerList().getStatisticManager(this);
          this.advancementDataPlayer = minecraftserver.getPlayerList().f(this);
-         this.H = 1.0F;
--        this.a(worldserver);
-+        //this.a(worldserver); // Paper - don't move to spawn on login, only first join
+         this.G = 1.0F;
+-        this.b(worldserver);
++        //this.b(worldserver); // Paper - don't move to spawn on login, only first join
  
          this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
  
@@ -26,28 +26,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // CraftBukkit end
  
-+    public void moveToSpawn(WorldServer worldserver) { a(worldserver); } // Paper - OBFHELPER
-     private void a(WorldServer worldserver) {
++    public final void moveToSpawn(WorldServer worldserver) { b(worldserver); } // Paper - OBFHELPER
+     private void b(WorldServer worldserver) {
          BlockPosition blockposition = worldserver.getSpawn();
  
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-                 position = new Vec3D(world.getSpawn());
+                 position = Vec3D.a(((WorldServer) world).getSpawn());
              }
              this.world = world;
 -            this.setPosition(position.getX(), position.getY(), position.getZ());
 +            this.setPositionRaw(position.getX(), position.getY(), position.getZ()); // Paper - don't register to chunks yet
          }
-         this.dimension = ((WorldServer) this.world).getWorldProvider().getDimensionManager();
          this.playerInteractManager.a((WorldServer) world);
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-             NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
-             s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
+             worldserver1 = worldserver;
          }
-+        if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
-         // CraftBukkit end
  
-         entityplayer.spawnIn(worldserver);
++        if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
++
+         entityplayer.spawnIn(worldserver1);
+         entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
+         String s1 = "local";

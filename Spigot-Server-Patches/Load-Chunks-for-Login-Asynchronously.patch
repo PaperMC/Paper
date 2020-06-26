@@ -4,6 +4,19 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+         return this.serverThreadQueue.executeNext();
+     }
+ 
+-    private boolean tickDistanceManager() {
++    public boolean tickDistanceManager() { // Paper - private -> public
+         boolean flag = this.chunkMapDistance.a(this.playerChunkMap);
+         boolean flag1 = this.playerChunkMap.b();
+ 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -12,18 +25,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.pitch = MathHelper.a(f1, -90.0F, 90.0F) % 360.0F;
          this.lastYaw = this.yaw;
          this.lastPitch = this.pitch;
--        world.getChunkAt((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4); // CraftBukkit
-+        if (valid) world.getChunkAt((int) Math.floor(this.locX) >> 4, (int) Math.floor(this.locZ) >> 4); // CraftBukkit // Paper
+-        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
++        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
      }
  
-     public void setPositionRotation(BlockPosition blockposition, float f, float f1) {
+     public void c(Vec3D vec3d) {
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
      private static final Logger LOGGER = LogManager.getLogger();
-     public String locale = null; // CraftBukkit - lowercase // Paper - default to null
      public PlayerConnection playerConnection;
 +    public NetworkManager networkManager; // Paper
      public final MinecraftServer server;
@@ -45,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // Paper end
          } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
--            EntityPlayer entityplayer = this.server.getPlayerList().a(this.i.getId());
+-            EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.i.getId());
 +            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
  
              if (entityplayer == null) {
@@ -54,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
              this.networkManager.sendPacket(new PacketLoginOutSuccess(this.i));
--            EntityPlayer entityplayer = this.server.getPlayerList().a(this.i.getId());
+-            EntityPlayer entityplayer = this.server.getPlayerList().getPlayer(this.i.getId());
 +            EntityPlayer entityplayer = this.server.getPlayerList().getActivePlayer(this.i.getId()); // Paper
  
              if (entityplayer != null) {
@@ -140,15 +153,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
 -        }
 +        }String lastKnownName = s; // Paper
-         if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver); // Paper - only move to spawn on first login, otherwise, stay where you are....
          // CraftBukkit end
  
+         if (nbttagcompound != null) {
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          entityplayer.B().a(entityplayer);
-         this.sendScoreboard(worldserver.getScoreboard(), entityplayer);
+         this.sendScoreboard(worldserver1.getScoreboard(), entityplayer);
          this.server.invalidatePingSample();
 +        // Paper start - async load spawn in chunk
 +        WorldServer finalWorldserver = worldserver;
++        WorldServer finalWorldserver1 = worldserver1;
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
@@ -165,7 +179,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }).thenAccept(chunk -> {
 +            playerconnection.playerJoinReady = () -> {
 +                postChunkLoadJoin(
-+                    entityplayer, finalWorldserver, networkmanager, playerconnection,
++                    entityplayer, finalWorldserver, finalWorldserver1, networkmanager, playerconnection,
 +                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
 +                );
 +                //playerChunkMap.chunkDistanceManager.removeTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
@@ -186,7 +200,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +
-+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
 +        pendingPlayers.remove(entityplayer.getUniqueID(), entityplayer);
 +        if (!networkmanager.isConnected()) {
 +            return;
@@ -196,6 +210,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ChatMessage chatmessage;
  
          if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+         entityplayer.supressTrackerForLogin = true;
+         worldserver.addPlayerJoin(entityplayer);
+         this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
+-        mountSavedVehicle(entityplayer, worldserver, nbttagcompound);
++        mountSavedVehicle(entityplayer, worldserver, worldserver1, nbttagcompound);
+         // Paper end
+         // CraftBukkit start
+         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          }
          entityplayer.sentListPacket = true;
@@ -211,7 +234,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // track entity now
          onPlayerJoinFinish(entityplayer, worldserver, s1);
      }
-     private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
+-    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
++    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NBTTagCompound nbttagcompound) {
+         // Paper end
+         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
+             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
@@ -242,7 +269,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
  
          // CraftBukkit start
-         //  this.sendAll(new PacketPlayOutPlayerInfo(EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
+         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
