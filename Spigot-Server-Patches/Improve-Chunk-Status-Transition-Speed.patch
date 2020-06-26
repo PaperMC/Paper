@@ -58,30 +58,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-     public final WorldServer world;
-     private final LightEngineThreaded lightEngine;
-     private final IAsyncTaskHandler<Runnable> executor;
-+    final java.util.concurrent.Executor mainInvokingExecutor; // Paper
-     public final ChunkGenerator<?> chunkGenerator;
-     private final Supplier<WorldPersistentData> l; public final Supplier<WorldPersistentData> getWorldPersistentDataSupplier() { return this.l; } // Paper - OBFHELPER
-     private final VillagePlace m;
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         this.world = worldserver;
-         this.chunkGenerator = chunkgenerator;
-         this.executor = iasynctaskhandler;
-+        // Paper start - optimize chunk status progression without jumping through thread pool
-+        this.mainInvokingExecutor = (run) -> {
-+            if (MCUtil.isMainThread()) {
-+                run.run();
-+            } else {
-+                iasynctaskhandler.execute(run);
-+            }
-+        };
-+        // Paper end
-         ThreadedMailbox<Runnable> threadedmailbox = ThreadedMailbox.a(executor, "worldgen");
- 
-         iasynctaskhandler.getClass();
-@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              return either.mapLeft((list) -> {
                  return (Chunk) list.get(list.size() / 2);
              });
@@ -118,6 +94,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return;
 +            }
 +            // Paper end
-             this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable)); // CraftBukkit - decompile error
+             this.mailboxWorldGen.a(ChunkTaskQueueSorter.a(playerchunk, runnable));
          });
      }

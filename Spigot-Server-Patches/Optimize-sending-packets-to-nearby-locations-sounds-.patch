@@ -15,59 +15,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
-             world = (WorldServer) entityhuman.world;
-         }
+     }
  
--        List<? extends EntityHuman> players1 = world == null ? players : world.players;
--        for (int j = 0; j < players1.size(); ++j) {
--            EntityHuman entity = players1.get(j);
--            if (!(entity instanceof EntityPlayer)) continue;
--            EntityPlayer entityplayer = (EntityPlayer) entity;
+     public void sendPacketNearby(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, double d3, ResourceKey<World> resourcekey, Packet<?> packet) {
+-        for (int i = 0; i < this.players.size(); ++i) {
+-            EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
++        WorldServer world = null;
++        if (entityhuman != null && entityhuman.world instanceof WorldServer) {
++            world = (WorldServer) entityhuman.world;
++        }
+ 
+-            // CraftBukkit start - Test if player receiving packet can see the source of the packet
+-            if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) {
+-               continue;
 +        // Paper start
-+        if ((world == null || world.chunkProvider == null) && dimensionmanager != null) {
-+            world = dimensionmanager.world;
-+        }
 +        if (world == null) {
-+            LOGGER.error("Sending packet to invalid world" + entityhuman + " " + dimensionmanager + " - " + packet.getClass().getName(), new Throwable());
-+            return; // ??? shouldn't happen...
++            world = server.getWorldServer(resourcekey);
 +        }
-+        PlayerChunkMap chunkMap = world.chunkMap;
++        PlayerChunkMap chunkMap = world != null ? world.getChunkProvider().playerChunkMap : null;
 +        Object[] backingSet;
 +        if (chunkMap == null) {
 +            // Really shouldn't happen...
-+            backingSet = world.players.toArray();
++            backingSet = world != null ? world.players.toArray() : players.toArray();
 +        } else {
 +            com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> nearbyPlayers = chunkMap.playerViewDistanceBroadcastMap.getObjectsInRange(MCUtil.fastFloor(d0) >> 4, MCUtil.fastFloor(d2) >> 4);
 +            if (nearbyPlayers == null) {
 +                return;
-+            }
+             }
 +            backingSet = nearbyPlayers.getBackingSet();
 +        }
 +
 +        for (Object object : backingSet) {
 +            if (!(object instanceof EntityPlayer)) continue;
 +            EntityPlayer entityplayer = (EntityPlayer) object;
-             // Paper end
++            // Paper end
++
++            // CraftBukkit start - Test if player receiving packet can see the source of the packet
++            //if (entityhuman != null && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) { // Paper
++               //continue; // Paper
++            //} // Paper
+             // CraftBukkit end
  
-             // CraftBukkit start - Test if player receiving packet can see the source of the packet
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         }
-     }
-     // Paper end
-+    public final PlayerChunkMap chunkMap; // Paper
-     private final MinecraftServer server;
-     private final WorldNBTStorage dataManager;
-     public boolean savingDisabled;
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         }, gameprofilerfiller, false, gen, env);
-         this.pvpMode = minecraftserver.getPVP();
-         worlddata.world = this;
-+        if (chunkProvider == null) { chunkMap = null; new Throwable("World created without a ChunkProvider!").printStackTrace(); } // Paper - figure out if something weird happened here
-+        else chunkMap = ((ChunkProviderServer) chunkProvider).playerChunkMap;
-         // CraftBukkit end
-         if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
-             this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> { // Paper - optimise TickListServer
+-            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey) {
++            if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey && entityhuman instanceof EntityPlayer && !entityplayer.getBukkitEntity().canSee(((EntityPlayer) entityhuman).getBukkitEntity())) { // Paper
+                 double d4 = d0 - entityplayer.locX();
+                 double d5 = d1 - entityplayer.locY();
+                 double d6 = d2 - entityplayer.locZ();

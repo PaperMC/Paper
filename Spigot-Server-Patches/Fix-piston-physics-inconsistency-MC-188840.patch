@@ -63,20 +63,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  blockposition3 = blockposition3.shift(enumdirection1);
                  map.remove(blockposition3);
                  world.setTypeAndData(blockposition3, (IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPiston.FACING, enumdirection), 68);
--                world.setTileEntity(blockposition3, BlockPistonMoving.a((IBlockData) list1.get(k), enumdirection, flag, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {
 +                    iblockdata1 = world.getType(oldPos);
 +                    map.replace(oldPos, iblockdata1);
 +                }
-+                world.setTileEntity(blockposition3, BlockPistonMoving.a(allowDesync ? list1.get(k) : iblockdata1, enumdirection, flag, false));
+                 world.setTileEntity(blockposition3, BlockPistonMoving.a((IBlockData) list1.get(k), enumdirection, flag, false));
 +                if (!allowDesync) {
 +                    world.setTypeAndData(oldPos, Blocks.AIR.getBlockData(), 2 | 4 | 16 | 1024); // set air to prevent later physics updates from seeing this block
 +                }
 +                // Paper end - fix a variety of piston desync dupes
-                 --j;
-                 aiblockdata[j] = iblockdata1;
+                 aiblockdata[j++] = iblockdata1;
              }
+ 
 diff --git a/src/main/java/net/minecraft/server/TileEntityPiston.java b/src/main/java/net/minecraft/server/TileEntityPiston.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityPiston.java
@@ -89,4 +88,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    this.world.setTypeAndData(this.position, this.a, com.destroystokyo.paper.PaperConfig.allowPistonDuplication ? 84 : (84 | 2)); // Paper - force notify (flag 2), it's possible the set type by the piston block (which doesn't notify) set this block to air
                      Block.a(this.a, iblockdata, this.world, this.position, 3);
                  } else {
-                     if (iblockdata.b((IBlockState) BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C)) {
+                     if (iblockdata.b(BlockProperties.C) && (Boolean) iblockdata.get(BlockProperties.C)) {

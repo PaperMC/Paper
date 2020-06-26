@@ -41,10 +41,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected void a(LightEngineLayer<?, ?> lightenginelayer, long i) {
 @@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
  
-     protected void a(long i, @Nullable NibbleArray nibblearray) {
+     protected void a(long i, @Nullable NibbleArray nibblearray, boolean flag) {
          if (nibblearray != null) {
 -            this.i.put(i, nibblearray);
 +            NibbleArray remove = this.i.put(i, nibblearray); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
+             if (!flag) {
+                 this.n.add(i);
+             }
          } else {
 -            this.i.remove(i);
 +            NibbleArray remove = this.i.remove(i); if (remove != null && remove.cleaner != null) remove.cleaner.run(); // Paper - clean up when removed
@@ -248,8 +251,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutLightUpdate.java
 @@ -0,0 +0,0 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
-     private List<byte[]> g;
      private List<byte[]> h;
+     private boolean i;
  
 +    // Paper start
 +    java.lang.Runnable cleaner1;
@@ -282,9 +285,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
      public PacketPlayOutLightUpdate() {}
  
-     public PacketPlayOutLightUpdate(ChunkCoordIntPair chunkcoordintpair, LightEngine lightengine) {
+     public PacketPlayOutLightUpdate(ChunkCoordIntPair chunkcoordintpair, LightEngine lightengine, boolean flag) {
          this.a = chunkcoordintpair.x;
          this.b = chunkcoordintpair.z;
+         this.i = flag;
 -        this.g = Lists.newArrayList();
 -        this.h = Lists.newArrayList();
 +        this.g = Lists.newArrayList();cleaner1 = MCUtil.registerListCleaner(this, this.g, NibbleArray::releaseBytes); // Paper
@@ -311,7 +315,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
 @@ -0,0 +0,0 @@ public class PacketPlayOutLightUpdate implements Packet<PacketListenerPlayOut> {
-         this.b = chunkcoordintpair.z;
+         this.i = flag;
          this.c = i;
          this.d = j;
 -        this.g = Lists.newArrayList();
