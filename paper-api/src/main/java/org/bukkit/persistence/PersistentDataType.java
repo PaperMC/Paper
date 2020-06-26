@@ -68,6 +68,11 @@ public interface PersistentDataType<T, Z> {
     PersistentDataType<long[], long[]> LONG_ARRAY = new PrimitivePersistentDataType<>(long[].class);
 
     /*
+        Complex Arrays.
+     */
+    PersistentDataType<PersistentDataContainer[], PersistentDataContainer[]> TAG_CONTAINER_ARRAY = new PrimitivePersistentDataType<>(PersistentDataContainer[].class);
+
+    /*
         Nested PersistentDataContainer.
      */
     PersistentDataType<PersistentDataContainer, PersistentDataContainer> TAG_CONTAINER = new PrimitivePersistentDataType<>(PersistentDataContainer.class);
