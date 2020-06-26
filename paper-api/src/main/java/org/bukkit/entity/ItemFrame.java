@@ -48,4 +48,40 @@ public interface ItemFrame extends Hanging {
      * @throws IllegalArgumentException if rotation is null
      */
     public void setRotation(@NotNull Rotation rotation) throws IllegalArgumentException;
+
+    /**
+     * Returns whether the item frame is be visible or not.
+     *
+     * @return whether the item frame is visible or not
+     */
+    boolean isVisible();
+
+    /**
+     * Sets whether the item frame should be visible or not.
+     *
+     * @param visible whether the item frame is visible or not
+     */
+    void setVisible(boolean visible);
+
+    /**
+     * Returns whether the item frame is "fixed" or not.
+     *
+     * When true it's not possible to destroy/move the frame (e.g. by damage,
+     * interaction, pistons, or missing supporting blocks), rotate the item or
+     * place/remove items.
+     *
+     * @return whether the item frame is fixed or not
+     */
+    boolean isFixed();
+
+    /**
+     * Sets whether the item frame should be fixed or not.
+     *
+     * When set to true it's not possible to destroy/move the frame (e.g. by
+     * damage, interaction, pistons, or missing supporting blocks), rotate the
+     * item or place/remove items.
+     *
+     * @param visible whether the item frame is fixed or not
+     */
+    void setFixed(boolean visible);
 }
