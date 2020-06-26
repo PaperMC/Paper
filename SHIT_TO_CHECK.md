@@ -5,4 +5,4 @@
 * Make sure the flat bedrock setting doesn't do anything stupid
 * Check DataBits foreach
 * lighting is bork (load chunk, fly away, come back, everything or parts are black)
-* block actions (particles/sounds) are bork (no chest opening, no bell, no noteblock)
+* chunk generation seems slow with a lot of it happening
