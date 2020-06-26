@@ -3,10 +3,9 @@ package org.bukkit.craftbukkit.util;
 import static org.junit.Assert.assertEquals;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IChatMutableComponent;
-import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
-public class CraftChatMessageTest extends AbstractTestingBase {
+public class CraftChatMessageTest {
 
     @Test
     public void testSimpleStrings() {
