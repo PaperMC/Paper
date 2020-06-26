@@ -24,10 +24,10 @@ index f578acae6fbe1ad7a0c05b96ba489482687ec1df..2b24688310f14b6a9e3fe04fe8b41cd1
      <repositories>
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e28a77c566
+index 0000000000000000000000000000000000000000..4ec476669d98ab2f03859e763cfe55904563238f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,349 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import com.google.common.collect.BiMap;
@@ -251,6 +251,10 @@ index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e2
 +        bukkitMap.put(EntityZombie.class, Zombie.class);
 +        bukkitMap.put(EntityZombieHusk.class, Husk.class);
 +        bukkitMap.put(EntityZombieVillager.class, ZombieVillager.class);
++        bukkitMap.put(EntityHoglin.class, Hoglin.class);
++        bukkitMap.put(EntityPiglin.class, Piglin.class);
++        bukkitMap.put(EntityStrider.class, Strider.class);
++        bukkitMap.put(EntityZoglin.class, Zoglin.class);
 +    }
 +
 +    public static String getUsableName(Class<?> clazz) {
@@ -851,15 +855,11 @@ index 715186249545ab2af5284ef71ab59e5ebccad8e1..7c3a66e5e6c4dece0807cc349a69d79f
  }
 diff --git a/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bca3fa43562d21fc16f0c987b8f3a4abe56278a3
+index 0000000000000000000000000000000000000000..232c382b586b0812c9f7161565c0d382177adf7d
 --- /dev/null
 +++ b/src/test/java/com/destroystokyo/paper/entity/ai/VanillaMobGoalTest.java
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,103 @@
 +package com.destroystokyo.paper.entity.ai;
-+
-+import com.destroystokyo.paper.entity.ai.GoalKey;
-+import com.destroystokyo.paper.entity.ai.MobGoalHelper;
-+import com.destroystokyo.paper.entity.ai.VanillaGoal;
 +
 +import net.minecraft.server.EntityInsentient;
 +import net.minecraft.server.PathfinderGoal;
@@ -882,11 +882,17 @@ index 0000000000000000000000000000000000000000..bca3fa43562d21fc16f0c987b8f3a4ab
 +
 +    @Test
 +    public void testKeys() {
++        List<GoalKey<?>> deprecated = new ArrayList<>();
 +        List<GoalKey<?>> keys = new ArrayList<>();
 +        for (Field field : VanillaGoal.class.getFields()) {
 +            if (field.getType().equals(GoalKey.class)) {
 +                try {
-+                    keys.add((GoalKey<?>) field.get(null));
++                    GoalKey<?> goalKey = (GoalKey<?>) field.get(null);
++                    if (field.getAnnotation(Deprecated.class) != null) {
++                        deprecated.add(goalKey);
++                    } else {
++                        keys.add(goalKey);
++                    }
 +                } catch (IllegalAccessException e) {
 +                    System.out.println("Skipping " + field.getName() + ": " + e.getMessage());
 +                }
@@ -925,6 +931,11 @@ index 0000000000000000000000000000000000000000..bca3fa43562d21fc16f0c987b8f3a4ab
 +            shouldFail = true;
 +        }
 +
++        if (deprecated.size() != 0) {
++            System.out.println("Deprecated (might want to remove them at some point): ");
++            deprecated.forEach(System.out::println);
++        }
++
 +        if (shouldFail) Assert.fail("See above");
 +    }
 +
@@ -939,12 +950,12 @@ index 0000000000000000000000000000000000000000..bca3fa43562d21fc16f0c987b8f3a4ab
 +            classes = scanResult.getSubclasses("net.minecraft.server.EntityInsentient").loadClasses();
 +        }
 +
-+        boolean shouldFail =false;
++        boolean shouldFail = false;
 +        for (Class<?> nmsClass : classes) {
 +            Class<? extends Mob> bukkitClass = MobGoalHelper.toBukkitClass((Class<? extends EntityInsentient>) nmsClass);
-+            if(bukkitClass == null) {
++            if (bukkitClass == null) {
 +                shouldFail = true;
-+                System.out.println("Missing bukkitMap.put(" + nmsClass.getSimpleName() + ".class, "+nmsClass.getSimpleName().replace("Entity","")+".class);");
++                System.out.println("Missing bukkitMap.put(" + nmsClass.getSimpleName() + ".class, " + nmsClass.getSimpleName().replace("Entity", "") + ".class);");
 +            }
 +        }
 +
