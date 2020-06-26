@@ -279,6 +279,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return true;
          }
      }
+diff --git a/src/main/java/net/minecraft/server/IBlockState.java b/src/main/java/net/minecraft/server/IBlockState.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/IBlockState.java
++++ b/src/main/java/net/minecraft/server/IBlockState.java
+@@ -0,0 +0,0 @@ public abstract class IBlockState<T extends Comparable<T>> {
+     private final Codec<IBlockState.a<T>> e;
+ 
+     protected IBlockState(String s, Class<T> oclass) {
+-        this.d = Codec.STRING.comapFlatMap((s1) -> {
+-            return (DataResult) this.b(s1).map(DataResult::success).orElseGet(() -> {
+-                return DataResult.error("Unable to read property: " + this + " with value: " + s1);
+-            });
+-        }, this::a);
+-        this.e = this.d.xmap(this::b, IBlockState.a::b);
++        this.d = Codec.STRING.comapFlatMap((s1) -> this.b(s1).map(DataResult::success).orElseGet(() -> { // Paper - decompile error
++            return DataResult.error("Unable to read property: " + this + " with value: " + s1);
++        }), this::a);
++        this.e = this.d.xmap(this::b, (IBlockState.a<T> param) -> param.b()); // Paper - decompile fix
+         this.a = oclass;
+         this.b = s;
+     }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
@@ -423,6 +444,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             ResourcePackRepository resourcepackrepository = this.resourcePackRepository;
+ 
+             this.resourcePackRepository.getClass();
+-            return stream.map(resourcepackrepository::a).filter(Objects::nonNull).map(ResourcePackLoader::d).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<ResourcePackLoader>map(resourcepackrepository::a).filter(Objects::nonNull).map(ResourcePackLoader::d).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error
+         }, this).thenCompose((immutablelist) -> {
+-            return DataPackResources.a(immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this);
++            return DataPackResources.a((List<IResourcePack>) immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this); // Paper - decompile error
+         }).thenAcceptAsync((datapackresources) -> {
+             this.dataPackResources.close();
+             this.dataPackResources = datapackresources;
 diff --git a/src/main/java/net/minecraft/server/NBTBase.java b/src/main/java/net/minecraft/server/NBTBase.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NBTBase.java
