@@ -129,6 +129,26 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
     }
 
     @Override
+    public boolean isVisible() {
+        return !getHandle().isInvisible();
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        getHandle().setInvisible(!visible);
+    }
+
+    @Override
+    public boolean isFixed() {
+        return getHandle().ao;
+    }
+
+    @Override
+    public void setFixed(boolean fixed) {
+        getHandle().ao = fixed;
+    }
+
+    @Override
     public EntityItemFrame getHandle() {
         return (EntityItemFrame) entity;
     }
