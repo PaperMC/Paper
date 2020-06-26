@@ -251,6 +251,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        bukkitMap.put(EntityZombie.class, Zombie.class);
 +        bukkitMap.put(EntityZombieHusk.class, Husk.class);
 +        bukkitMap.put(EntityZombieVillager.class, ZombieVillager.class);
++        bukkitMap.put(EntityHoglin.class, Hoglin.class);
++        bukkitMap.put(EntityPiglin.class, Piglin.class);
++        bukkitMap.put(EntityStrider.class, Strider.class);
++        bukkitMap.put(EntityZoglin.class, Zoglin.class);
 +    }
 +
 +    public static String getUsableName(Class<?> clazz) {
@@ -857,10 +861,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.entity.ai;
 +
-+import com.destroystokyo.paper.entity.ai.GoalKey;
-+import com.destroystokyo.paper.entity.ai.MobGoalHelper;
-+import com.destroystokyo.paper.entity.ai.VanillaGoal;
-+
 +import net.minecraft.server.EntityInsentient;
 +import net.minecraft.server.PathfinderGoal;
 +
@@ -882,11 +882,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Test
 +    public void testKeys() {
++        List<GoalKey<?>> deprecated = new ArrayList<>();
 +        List<GoalKey<?>> keys = new ArrayList<>();
 +        for (Field field : VanillaGoal.class.getFields()) {
 +            if (field.getType().equals(GoalKey.class)) {
 +                try {
-+                    keys.add((GoalKey<?>) field.get(null));
++                    GoalKey<?> goalKey = (GoalKey<?>) field.get(null);
++                    if (field.getAnnotation(Deprecated.class) != null) {
++                        deprecated.add(goalKey);
++                    } else {
++                        keys.add(goalKey);
++                    }
 +                } catch (IllegalAccessException e) {
 +                    System.out.println("Skipping " + field.getName() + ": " + e.getMessage());
 +                }
@@ -925,6 +931,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            shouldFail = true;
 +        }
 +
++        if (deprecated.size() != 0) {
++            System.out.println("Deprecated (might want to remove them at some point): ");
++            deprecated.forEach(System.out::println);
++        }
++
 +        if (shouldFail) Assert.fail("See above");
 +    }
 +
@@ -939,12 +950,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            classes = scanResult.getSubclasses("net.minecraft.server.EntityInsentient").loadClasses();
 +        }
 +
-+        boolean shouldFail =false;
++        boolean shouldFail = false;
 +        for (Class<?> nmsClass : classes) {
 +            Class<? extends Mob> bukkitClass = MobGoalHelper.toBukkitClass((Class<? extends EntityInsentient>) nmsClass);
-+            if(bukkitClass == null) {
++            if (bukkitClass == null) {
 +                shouldFail = true;
-+                System.out.println("Missing bukkitMap.put(" + nmsClass.getSimpleName() + ".class, "+nmsClass.getSimpleName().replace("Entity","")+".class);");
++                System.out.println("Missing bukkitMap.put(" + nmsClass.getSimpleName() + ".class, " + nmsClass.getSimpleName().replace("Entity", "") + ".class);");
 +            }
 +        }
 +
