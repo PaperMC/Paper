@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 13 Apr 2020 07:31:44 +0100
+Subject: [PATCH] Prevent opening inventories when frozen
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index ec664e43009d0878ac6a2e35ae6b4595eb7aea44..97f03d09d8e7f38b00f407b1268e30a0729d1811 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -423,7 +423,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
+         }
+         // Paper end
+-        if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
++        if (!this.world.isClientSide && this.activeContainer != this.defaultContainer && (isFrozen() || !this.activeContainer.canUse(this))) { // Paper - auto close while frozen
+             this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
+             this.activeContainer = this.defaultContainer;
+         }
+@@ -1277,7 +1277,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             } else {
+                 // CraftBukkit start
+                 this.activeContainer = container;
+-                this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle()));
++                if (!isFrozen()) this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle())); // Paper
+                 // CraftBukkit end
+                 container.addSlotListener(this);
+                 return OptionalInt.of(this.containerCounter);
+@@ -2071,7 +2071,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     @Override
+-    protected boolean isFrozen() {
++    public boolean isFrozen() { // Paper - protected > public
+         return super.isFrozen() || (this.playerConnection != null && this.playerConnection.isDisconnected()); // Paper
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 1eac3798acfc8a6859f102250bc8e49ed29d6e21..077d1a0f45c304066fedbb1f9b9a05a2e3331e88 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -317,7 +317,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+         String title = container.getBukkitView().getTitle();
+ 
+-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
++        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title))); // Paper
+         getHandle().activeContainer = container;
+         getHandle().activeContainer.addSlotListener(player);
+     }
+@@ -387,7 +387,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         // Now open the window
+         Containers<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
+         String title = inventory.getTitle();
+-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title)));
++        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title))); // Paper
+         player.activeContainer = container;
+         player.activeContainer.addSlotListener(player);
+     }
