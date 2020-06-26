@@ -245,6 +245,7 @@ public final class CraftServer implements Server {
     private int monsterSpawn = -1;
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
+    private int waterAmbientSpawn = -1;
     private int ambientSpawn = -1;
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
@@ -331,6 +332,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        waterAmbientSpawn = configuration.getInt("spawn-limits.water-ambient");
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
@@ -670,6 +672,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public int getTicksPerWaterAmbientSpawns() {
+        return this.configuration.getInt("ticks-per.water-ambient-spawns");
+    }
+
+    @Override
     public int getTicksPerAmbientSpawns() {
         return this.configuration.getInt("ticks-per.ambient-spawns");
     }
@@ -752,6 +759,7 @@ public final class CraftServer implements Server {
         monsterSpawn = configuration.getInt("spawn-limits.monsters");
         animalSpawn = configuration.getInt("spawn-limits.animals");
         waterAnimalSpawn = configuration.getInt("spawn-limits.water-animals");
+        waterAmbientSpawn = configuration.getInt("spawn-limits.water-ambient");
         ambientSpawn = configuration.getInt("spawn-limits.ambient");
         warningState = WarningState.value(configuration.getString("settings.deprecated-verbose"));
         TicketType.PLUGIN.loadPeriod = configuration.getInt("chunk-gc.period-in-ticks");
@@ -790,6 +798,12 @@ public final class CraftServer implements Server {
                 world.ticksPerWaterSpawns = 1;
             } else {
                 world.ticksPerWaterSpawns = this.getTicksPerWaterSpawns();
+            }
+
+            if (this.getTicksPerWaterAmbientSpawns() < 0) {
+                world.ticksPerWaterAmbientSpawns = 1;
+            } else {
+                world.ticksPerWaterAmbientSpawns = this.getTicksPerWaterAmbientSpawns();
             }
 
             if (this.getTicksPerAmbientSpawns() < 0) {
@@ -1645,6 +1659,11 @@ public final class CraftServer implements Server {
     @Override
     public int getWaterAnimalSpawnLimit() {
         return waterAnimalSpawn;
+    }
+
+    @Override
+    public int getWaterAmbientSpawnLimit() {
+        return waterAmbientSpawn;
     }
 
     @Override
