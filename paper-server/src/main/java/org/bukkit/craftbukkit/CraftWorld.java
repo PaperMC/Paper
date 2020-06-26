@@ -277,6 +277,7 @@ public class CraftWorld implements World {
     private int monsterSpawn = -1;
     private int animalSpawn = -1;
     private int waterAnimalSpawn = -1;
+    private int waterAmbientSpawn = -1;
     private int ambientSpawn = -1;
 
     private static final Random rand = new Random();
@@ -1945,6 +1946,16 @@ public class CraftWorld implements World {
     }
 
     @Override
+    public long getTicksPerWaterAmbientSpawns() {
+        return world.ticksPerWaterAmbientSpawns;
+    }
+
+    @Override
+    public void setTicksPerWaterAmbientSpawns(int ticksPerWaterAmbientSpawns) {
+        world.ticksPerWaterAmbientSpawns = ticksPerWaterAmbientSpawns;
+    }
+
+    @Override
     public long getTicksPerAmbientSpawns() {
         return world.ticksPerAmbientSpawns;
     }
@@ -2014,6 +2025,20 @@ public class CraftWorld implements World {
     @Override
     public void setWaterAnimalSpawnLimit(int limit) {
         waterAnimalSpawn = limit;
+    }
+
+    @Override
+    public int getWaterAmbientSpawnLimit() {
+        if (waterAmbientSpawn < 0) {
+            return server.getWaterAmbientSpawnLimit();
+        }
+
+        return waterAmbientSpawn;
+    }
+
+    @Override
+    public void setWaterAmbientSpawnLimit(int limit) {
+        waterAmbientSpawn = limit;
     }
 
     @Override
