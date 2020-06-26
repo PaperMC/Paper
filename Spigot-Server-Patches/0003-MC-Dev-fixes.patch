@@ -403,6 +403,19 @@ index 8b1f9116afd92b13426eb0e97066297705d202fb..a9dc8466278f9ec2becbcb643e6e1c97
                  this.b();
                  this.g.set(false);
              }));
+diff --git a/src/main/java/net/minecraft/server/LootEntryAbstract.java b/src/main/java/net/minecraft/server/LootEntryAbstract.java
+index 8cc8c60d3297a4ed98f3950a3971d83499ad1dfa..788078c209b8bcbd551cf0a52eb6172928d7b5f9 100644
+--- a/src/main/java/net/minecraft/server/LootEntryAbstract.java
++++ b/src/main/java/net/minecraft/server/LootEntryAbstract.java
+@@ -36,7 +36,7 @@ public abstract class LootEntryAbstract implements LootEntryChildren {
+ 
+         // CraftBukkit start
+         @Override
+-        public final void a(JsonObject jsonobject, T t0, JsonSerializationContext jsonserializationcontext) {
++        public void a(JsonObject jsonobject, T t0, JsonSerializationContext jsonserializationcontext) { // Paper - remove final
+             if (!org.apache.commons.lang3.ArrayUtils.isEmpty(t0.d)) {
+                 jsonobject.add("conditions", jsonserializationcontext.serialize(t0.d));
+             }
 diff --git a/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java b/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java
 index 3aa5cc4281cdba8738890e9ffd5c7a129e60c310..32a98e758b9df48005ddc5283eacdc5123a32c39 100644
 --- a/src/main/java/net/minecraft/server/LootItemFunctionExplorationMap.java
@@ -473,6 +486,27 @@ index 829a7ae0a2b77205fb8e8c5754d0d4333afa224d..8b9e47b4c7f5dc464fa617a59583df9e
  
      default String asString() {
          return this.toString();
+diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
+index db66d4ac7dc1bede8b674cd9ad8f56dd989b6693..c9be8c7f40917056091f63d36311a10d6302acbb 100644
+--- a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
++++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
+@@ -11,6 +11,7 @@ import java.io.InputStream;
+ import java.io.OutputStream;
+ import java.util.zip.GZIPInputStream;
+ import java.util.zip.GZIPOutputStream;
++import io.netty.buffer.ByteBufInputStream; // Paper
+ 
+ public class NBTCompressedStreamTools {
+ 
+@@ -75,7 +76,7 @@ public class NBTCompressedStreamTools {
+ 
+     public static NBTTagCompound a(DataInput datainput, NBTReadLimiter nbtreadlimiter) throws IOException {
+         // Spigot start
+-        if ( datainput instanceof io.netty.buffer.ByteBufInputStream )
++        if ( datainput instanceof ByteBufInputStream) // Paper
+         {
+             datainput = new DataInputStream(new org.spigotmc.LimitStream((InputStream) datainput, nbtreadlimiter));
+         }
 diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
 index b8bb5027ecccfc9b664145a1bfe3755f1a8af3eb..ad8a506bb430b26fe147a657a2f826daf9bf4d45 100644
 --- a/src/main/java/net/minecraft/server/NBTTagList.java
@@ -549,6 +583,19 @@ index 2dc20b5c930c6845af41b35d69cdb03db639d63e..6cdd4d46d987132c3c241800b5d59cee
          this.e = 0;
          this.f = 0;
  
+diff --git a/src/main/java/net/minecraft/server/StructureGenerator.java b/src/main/java/net/minecraft/server/StructureGenerator.java
+index 68510457b527e61bf60bf1e7dfd664578172c00a..eefad79a01de61eff5e0bd3f709bfda030ebe20d 100644
+--- a/src/main/java/net/minecraft/server/StructureGenerator.java
++++ b/src/main/java/net/minecraft/server/StructureGenerator.java
+@@ -42,7 +42,7 @@ public abstract class StructureGenerator<C extends WorldGenFeatureConfiguration>
+     private static <F extends StructureGenerator<?>> F a(String s, F f0, WorldGenStage.Decoration worldgenstage_decoration) {
+         StructureGenerator.a.put(s.toLowerCase(Locale.ROOT), f0);
+         StructureGenerator.u.put(f0, worldgenstage_decoration);
+-        return (StructureGenerator) IRegistry.a(IRegistry.STRUCTURE_FEATURE, s.toLowerCase(Locale.ROOT), (Object) f0);
++        return (F) IRegistry.<StructureGenerator<?>>a(IRegistry.STRUCTURE_FEATURE, s.toLowerCase(Locale.ROOT), f0); // Paper - decomp fix
+     }
+ 
+     public StructureGenerator(Codec<C> codec) {
 diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
 index a1a5460e429356b52a75037c809cec85bd99084a..80ee8d196436e271833503a0e123401d1b3314a9 100644
 --- a/src/main/java/net/minecraft/server/SystemUtils.java
