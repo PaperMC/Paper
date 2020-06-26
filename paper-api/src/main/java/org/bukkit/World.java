@@ -1691,6 +1691,51 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void setTicksPerWaterSpawns(int ticksPerWaterSpawns);
 
     /**
+     * Gets the default ticks per water ambient mob spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water ambient mobs
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water ambient mobs
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, ambient mobs spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per water ambient mobs spawn value
+     */
+    public long getTicksPerWaterAmbientSpawns();
+
+    /**
+     * Sets the world's ticks per water ambient mob spawns value
+     * <p>
+     * This value determines how many ticks there are between attempts to
+     * spawn water ambient mobs.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water ambient mobs in
+     *     this world on every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn weater ambient mobs
+     *     in this world every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b>
+     * If set to 0, water ambient mobs spawning will be disabled for this world.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @param ticksPerAmbientSpawns the ticks per water ambient mob spawns value you
+     *     want to set the world to
+     */
+    public void setTicksPerWaterAmbientSpawns(int ticksPerAmbientSpawns);
+
+    /**
      * Gets the world's ticks per ambient mob spawns value
      * <p>
      * This value determines how many ticks there are between attempts to
@@ -1795,6 +1840,25 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param limit the new mob limit
      */
     void setWaterAnimalSpawnLimit(int limit);
+
+    /**
+     * Gets user-specified limit for number of water ambient mobs that can spawn
+     * in a chunk.
+     *
+     * @return the water ambient spawn limit
+     */
+    int getWaterAmbientSpawnLimit();
+
+    /**
+     * Sets the limit for number of water ambient mobs that can spawn in a chunk
+     * in this world
+     * <p>
+     * <b>Note:</b> If set to a negative number the world will use the
+     * server-wide spawn limit instead.
+     *
+     * @param limit the new mob limit
+     */
+    void setWaterAmbientSpawnLimit(int limit);
 
     /**
      * Gets the limit for number of ambient mobs that can spawn in a chunk in

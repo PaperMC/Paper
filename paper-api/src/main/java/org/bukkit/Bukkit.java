@@ -398,6 +398,28 @@ public final class Bukkit {
     }
 
     /**
+     * Gets the default ticks per water ambient mob spawns value.
+     * <p>
+     * <b>Example Usage:</b>
+     * <ul>
+     * <li>A value of 1 will mean the server will attempt to spawn water ambient mobs
+     *     every tick.
+     * <li>A value of 400 will mean the server will attempt to spawn water ambient mobs
+     *     every 400th tick.
+     * <li>A value below 0 will be reset back to Minecraft's default.
+     * </ul>
+     * <p>
+     * <b>Note:</b> If set to 0, ambient mobs spawning will be disabled.
+     * <p>
+     * Minecraft default: 1.
+     *
+     * @return the default ticks per water ambient mobs spawn value
+     */
+    public static int getTicksPerWaterAmbientSpawns() {
+        return server.getTicksPerAmbientSpawns();
+    }
+
+    /**
      * Gets a player object by the given username.
      * <p>
      * This method may not return objects for offline players.
@@ -1101,6 +1123,16 @@ public final class Bukkit {
      */
     public static int getWaterAnimalSpawnLimit() {
         return server.getWaterAnimalSpawnLimit();
+    }
+
+    /**
+     * Gets user-specified limit for number of water ambient mobs that can spawn
+     * in a chunk.
+     *
+     * @return the water ambient spawn limit
+     */
+    public static int getWaterAmbientSpawnLimit() {
+        return server.getAmbientSpawnLimit();
     }
 
     /**
