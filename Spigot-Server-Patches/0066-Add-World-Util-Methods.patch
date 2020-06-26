@@ -6,10 +6,10 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f80b0b95ce650b01ecb10d3a2f7c66421ca29178..2a18a905aef50d23d9e5544f4240b2f719abd8f1 100644
+index f80b0b95ce650b01ecb10d3a2f7c66421ca29178..6e05a7deaae13f29c24fb6e364c62948a20d83a8 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -283,6 +283,18 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -283,6 +283,22 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          return chunk == null ? null : chunk.getFluid(blockposition);
      }
@@ -17,8 +17,12 @@ index f80b0b95ce650b01ecb10d3a2f7c66421ca29178..2a18a905aef50d23d9e5544f4240b2f7
 +    public boolean isLoadedAndInBounds(BlockPosition blockposition) {
 +        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
-+    public Chunk getChunkIfLoaded(BlockPosition blockposition) {
-+        return getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++
++    public Chunk getChunkIfLoaded(int x, int z) {
++        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
++    }
++    public final Chunk getChunkIfLoaded(BlockPosition blockposition) {
++        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +    }
 +
 +    //  reduces need to do isLoaded before getType
@@ -40,3 +44,16 @@ index d039e715624d33fc3ec9e87d5ad992415e7dc6b9..d5c0d394feaf8bb991245dbdcc6252cf
      public boolean a(BlockPosition blockposition) {
          return (double) (blockposition.getX() + 1) > this.e() && (double) blockposition.getX() < this.g() && (double) (blockposition.getZ() + 1) > this.f() && (double) blockposition.getZ() < this.h();
      }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 9eec2ec61777222c1290ad3112b003409001e51a..4548a38464fac65a88da26e95660542eeb482ccb 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -83,7 +83,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     public final Convertable.ConversionSession convertable;
+     public final UUID uuid;
+ 
+-    public Chunk getChunkIfLoaded(int x, int z) {
++    @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+         return this.chunkProvider.getChunkAt(x, z, false);
+     }
+ 

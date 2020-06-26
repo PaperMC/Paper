@@ -544,7 +544,7 @@ index 0000000000000000000000000000000000000000..d4ebcf8f66197299256bd6b65710a148
 +}
 diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa1c920ea6092259149f9e7f9cd7cc1ed27bf338
+index 0000000000000000000000000000000000000000..03bb2102d6952df04753ba9986aad9b494568e2d
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
 @@ -0,0 +1,118 @@
@@ -608,7 +608,7 @@ index 0000000000000000000000000000000000000000..fa1c920ea6092259149f9e7f9cd7cc1e
 +    public final Timing miscMobSpawning;
 +
 +    public WorldTimingsHandler(World server) {
-+        String name = server.worldData.getName() +" - ";
++        String name = server.getWorld().getName() +" - ";
 +
 +        mobSpawn = Timings.ofSafe(name + "mobSpawn");
 +        doChunkUnload = Timings.ofSafe(name + "doChunkUnload");
@@ -663,14 +663,14 @@ index 0000000000000000000000000000000000000000..fa1c920ea6092259149f9e7f9cd7cc1e
 +    }
 +
 +    public static Timing getTickList(WorldServer worldserver, String timingsType) {
-+        return Timings.ofSafe(worldserver.getWorldData().getName() + " - Scheduled " + timingsType);
++        return Timings.ofSafe(worldserver.getWorld().getName() + " - Scheduled " + timingsType);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index b6d470e594ce196f560ac6c94ced904b0081b205..f402a29b0904a0094ffe6e42dbdc6fbc0912d9d9 100644
+index b367bb8ea184489f433f8acc798466c38816ae62..a62f4bbb973b9cb6d1ee53f56a0897d70ae176af 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -14,11 +14,14 @@ import java.util.concurrent.TimeUnit;
+@@ -14,12 +14,15 @@ import java.util.concurrent.TimeUnit;
  import java.util.logging.Level;
  import java.util.regex.Pattern;
  
@@ -678,6 +678,7 @@ index b6d470e594ce196f560ac6c94ced904b0081b205..f402a29b0904a0094ffe6e42dbdc6fbc
  import net.minecraft.server.MinecraftServer;
  import org.bukkit.Bukkit;
  import org.bukkit.command.Command;
+ import org.bukkit.configuration.ConfigurationSection;
  import org.bukkit.configuration.InvalidConfigurationException;
  import org.bukkit.configuration.file.YamlConfiguration;
 +import co.aikar.timings.Timings;
@@ -685,7 +686,7 @@ index b6d470e594ce196f560ac6c94ced904b0081b205..f402a29b0904a0094ffe6e42dbdc6fbc
  
  public class PaperConfig {
  
-@@ -187,4 +190,27 @@ public class PaperConfig {
+@@ -188,4 +191,27 @@ public class PaperConfig {
          config.addDefault(path, def);
          return config.getString(path, config.getString(path));
      }
@@ -1116,7 +1117,7 @@ index dccb315440f7429fe881bd0d12af8f1ae8e35c3d..96a95413f74592ef0a8e9367fd3ed81f
          if (!this.world.isClientSide && this.dN() && this.aC()) {
              this.damageEntity(DamageSource.DROWN, 1.0F);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 67120e3e4a2cd77394fd7e77543223afa2d6a22e..a5284ca66043150c7132f6bee29a952fb6601007 100644
+index 10ba89eeb31adedadd34746b86843accd1869597..04d1af26aaa7005c9dcf84abfb796b848108bbf0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -65,7 +65,7 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -1560,7 +1561,7 @@ index e8ff43662b8397229cb19ea26342b66c88807379..3b8f56c0f0507ebdd9ac20be70688b4c
              this.g.clear();
              this.f.clear();
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index f4d88de468e7843585eb5c722c9e94f5d2b47e6a..03c6a1c95daaa25208917d6985594eb5f182e8e1 100644
+index f8d859cda8186d706304b4e182bca34573f09433..057d703fe73de9bb9ca6f0e263463d32abae4c13 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
 @@ -9,11 +9,12 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
@@ -1626,7 +1627,7 @@ index 42294c7c7de146be08d38eddafd8d099073b627a..8a7ce347c35e0527471b3b586a248d64
              CrashReport crashreport = CrashReport.a(throwable, "Ticking entity");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being ticked");
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f45b5ddc66024e993ac94436ee25a03e085742b4..2b39fb903c1cf6ded8aa170f5bd25f4fadb1195a 100644
+index f45b5ddc66024e993ac94436ee25a03e085742b4..dd02f7b8c0c0055a506bceab68cec98faf4a7641 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -3,6 +3,8 @@ package net.minecraft.server;
@@ -1687,7 +1688,7 @@ index f45b5ddc66024e993ac94436ee25a03e085742b4..2b39fb903c1cf6ded8aa170f5bd25f4f
  
              org.spigotmc.ActivationRange.activateEntities(this); // Spigot
              timings.entityTick.startTiming(); // Spigot
-+            TimingHistory.entityTicks += this.globalEntityList.size(); // Paper
++            TimingHistory.entityTicks += this.entitiesById.size(); // Paper
              while (objectiterator.hasNext()) {
                  Entry<Entity> entry = (Entry) objectiterator.next();
                  Entity entity = (Entity) entry.getValue();
