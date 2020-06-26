@@ -1,6 +1,15 @@
 --- a/net/minecraft/server/EntityAnimal.java
 +++ b/net/minecraft/server/EntityAnimal.java
-@@ -8,6 +8,7 @@
+@@ -3,11 +3,16 @@
+ import java.util.Random;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityEnterLoveModeEvent;
++// CraftBukkit end
+ 
+ public abstract class EntityAnimal extends EntityAgeable {
  
      public int loveTicks;
      public UUID breedCause;
@@ -8,7 +17,7 @@
  
      protected EntityAnimal(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
-@@ -44,6 +45,9 @@
+@@ -44,6 +49,9 @@
  
      }
  
@@ -18,7 +27,7 @@
      @Override
      public boolean damageEntity(DamageSource damagesource, float f) {
          if (this.isInvulnerable(damagesource)) {
-@@ -53,6 +57,7 @@
+@@ -53,6 +61,7 @@
              return super.damageEntity(damagesource, f);
          }
      }
@@ -26,7 +35,18 @@
  
      @Override
      public float a(BlockPosition blockposition, IWorldReader iworldreader) {
-@@ -147,6 +152,7 @@
+@@ -143,10 +152,17 @@
+     }
+ 
+     public void g(@Nullable EntityHuman entityhuman) {
+-        this.loveTicks = 600;
++        // CraftBukkit start
++        EntityEnterLoveModeEvent entityEnterLoveModeEvent = CraftEventFactory.callEntityEnterLoveModeEvent(entityhuman, this, 600);
++        if (entityEnterLoveModeEvent.isCancelled()) {
++            return;
++        }
++        this.loveTicks = entityEnterLoveModeEvent.getTicksInLove();
++        // CraftBukkit end
          if (entityhuman != null) {
              this.breedCause = entityhuman.getUniqueID();
          }
@@ -34,7 +54,7 @@
  
          this.world.broadcastEntityEffect(this, (byte) 18);
      }
-@@ -186,11 +192,24 @@
+@@ -186,11 +202,24 @@
          EntityAgeable entityageable = this.createChild(entityanimal);
  
          if (entityageable != null) {
@@ -59,7 +79,7 @@
  
              if (entityplayer != null) {
                  entityplayer.a(StatisticList.ANIMALS_BRED);
-@@ -203,10 +222,14 @@
+@@ -203,10 +232,14 @@
              entityanimal.resetLove();
              entityageable.a(true);
              entityageable.setPositionRotation(this.locX(), this.locY(), this.locZ(), 0.0F, 0.0F);
