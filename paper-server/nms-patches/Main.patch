@@ -34,7 +34,7 @@
                  Main.LOGGER.info("Initialized '{}' and '{}'", java_nio_file_path.toAbsolutePath(), java_nio_file_path1.toAbsolutePath());
                  return;
              }
-@@ -74,18 +77,19 @@
+@@ -74,24 +77,42 @@
                  return;
              }
  
@@ -58,7 +58,30 @@
  
              if (flag) {
                  Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
-@@ -107,6 +111,7 @@
+             }
+ 
+             ResourcePackRepository<ResourcePackLoader> resourcepackrepository = new ResourcePackRepository<>(ResourcePackLoader::new, new ResourcePackSource[]{new ResourcePackSourceVanilla(), new ResourcePackSourceFolder(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACKS).toFile(), PackSource.c)});
++            // CraftBukkit start
++            File bukkitDataPackFolder = new File(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACKS).toFile(), "bukkit");
++            if (!bukkitDataPackFolder.exists()) {
++                bukkitDataPackFolder.mkdirs();
++            }
++            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
++            try {
++                com.google.common.io.Files.write("{\n"
++                        + "    \"pack\": {\n"
++                        + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
++                        + "        \"pack_format\": " + SharedConstants.getGameVersion().getPackVersion() + "\n"
++                        + "    }\n"
++                        + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
++            } catch (java.io.IOException ex) {
++                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
++            }
++            // CraftBukkit end
+             DataPackConfiguration datapackconfiguration1 = MinecraftServer.a(resourcepackrepository, datapackconfiguration == null ? DataPackConfiguration.a : datapackconfiguration, flag);
+             CompletableFuture completablefuture = DataPackResources.a(resourcepackrepository.f(), CommandDispatcher.ServerType.DEDICATED, dedicatedserversettings.getProperties().functionPermissionLevel, SystemUtils.f(), Runnable::run);
+ 
+@@ -107,6 +128,7 @@
  
              datapackresources.i();
              IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.b();
@@ -66,7 +89,7 @@
              RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.a, datapackresources.h(), (IRegistryCustom) iregistrycustom_dimension);
              Object object = convertable_conversionsession.a((DynamicOps) registryreadops, datapackconfiguration1);
  
-@@ -134,21 +139,32 @@
+@@ -134,21 +156,32 @@
              }
  
              convertable_conversionsession.a((IRegistryCustom) iregistrycustom_dimension, (SaveData) object);
@@ -101,7 +124,7 @@
              Thread thread = new Thread("Server Shutdown Thread") {
                  public void run() {
                      dedicatedserver.safeShutdown(true);
-@@ -157,14 +173,15 @@
+@@ -157,14 +190,15 @@
  
              thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(Main.LOGGER));
              Runtime.getRuntime().addShutdownHook(thread);
