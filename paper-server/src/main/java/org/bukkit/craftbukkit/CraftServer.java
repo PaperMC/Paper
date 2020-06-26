@@ -1089,6 +1089,7 @@ public final class CraftServer implements Server {
             }
 
             handle.getChunkProvider().close(save);
+            handle.convertable.close();
         } catch (Exception ex) {
             getLogger().log(Level.SEVERE, null, ex);
         }
