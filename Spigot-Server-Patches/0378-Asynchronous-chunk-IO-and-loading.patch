@@ -3046,7 +3046,7 @@ index 3e1c1253ad5e2fa68fd8a0bac100c2e7536ea080..b6868b6b23a09e8e0dfe7a5e378dca22
                  completablefuture = (CompletableFuture) this.statusFutures.get(i);
                  if (completablefuture != null) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f54989422e5281c 100644
+index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..a10006efc52f093196e7d67a3281a87d4c5df19b 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -64,7 +64,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -3224,7 +3224,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
                      this.lightEngine.a(ichunkaccess.getPos());
                      this.lightEngine.queueUpdate();
                      this.worldLoadListener.a(ichunkaccess.getPos(), (ChunkStatus) null);
-@@ -573,19 +641,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -573,19 +641,21 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      private CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> f(ChunkCoordIntPair chunkcoordintpair) {
@@ -3241,6 +3241,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
 +                if (ioThrowable != null) {
 +                    com.destroystokyo.paper.util.SneakyThrow.sneaky(ioThrowable);
 +                }
++                chunkHolder.tasks.forEach(Runnable::run);
 +                // Paper end
  
 -                if (nbttagcompound != null) {try (Timing ignored2 = this.world.timings.chunkLoadLevelTimer.startTimingIfSync()) { // Paper start - timings
@@ -3254,7 +3255,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
  
                          protochunk.setLastSaved(this.world.getTime());
                          this.a(chunkcoordintpair, protochunk.getChunkStatus().getType());
-@@ -609,7 +678,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -609,7 +679,32 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
              this.g(chunkcoordintpair);
              return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.world)); // Paper - Anti-Xray - Add parameter
@@ -3288,7 +3289,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
      }
  
      private void g(ChunkCoordIntPair chunkcoordintpair) {
-@@ -836,6 +930,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -836,6 +931,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      public boolean saveChunk(IChunkAccess ichunkaccess) {
@@ -3296,7 +3297,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
          this.m.a(ichunkaccess.getPos());
          if (!ichunkaccess.isNeedsSaving()) {
              return false;
-@@ -848,6 +943,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -848,6 +944,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  ChunkStatus chunkstatus = ichunkaccess.getChunkStatus();
  
                  if (chunkstatus.getType() != ChunkStatus.Type.LEVELCHUNK) {
@@ -3304,7 +3305,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
                      if (this.h(chunkcoordintpair)) {
                          return false;
                      }
-@@ -855,12 +951,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -855,12 +952,20 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                      if (chunkstatus == ChunkStatus.EMPTY && ichunkaccess.h().values().stream().noneMatch(StructureStart::e)) {
                          return false;
                      }
@@ -3327,7 +3328,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
                  this.a(chunkcoordintpair, chunkstatus.getType());
                  return true;
              } catch (Exception exception) {
-@@ -869,6 +973,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -869,6 +974,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  return false;
              }
          }
@@ -3335,7 +3336,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
      }
  
      private boolean h(ChunkCoordIntPair chunkcoordintpair) {
-@@ -998,6 +1103,35 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -998,6 +1104,35 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          }
      }
  
@@ -3371,7 +3372,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
      @Nullable
      public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
-@@ -1019,33 +1153,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1019,33 +1154,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      // Paper start - chunk status cache "api"
      public ChunkStatus getChunkStatusOnDiskIfCached(ChunkCoordIntPair chunkPos) {
@@ -3438,7 +3439,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
      }
  
      public IChunkAccess getUnloadingChunk(int chunkX, int chunkZ) {
-@@ -1054,6 +1210,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1054,6 +1211,39 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
      // Paper end
  
@@ -3478,7 +3479,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..cdb72b225226083ca45ade798f549894
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
          // Spigot start
          return isOutsideOfRange(chunkcoordintpair, false);
-@@ -1399,6 +1588,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1399,6 +1589,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
