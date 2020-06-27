@@ -2,7 +2,6 @@ package org.bukkit.entity;
 
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a dropped item.
@@ -22,7 +21,7 @@ public interface Item extends Entity {
      *
      * @param stack An item stack.
      */
-    public void setItemStack(@Nullable ItemStack stack);
+    public void setItemStack(@NotNull ItemStack stack);
 
     /**
      * Gets the delay before this Item is available to be picked up by players
