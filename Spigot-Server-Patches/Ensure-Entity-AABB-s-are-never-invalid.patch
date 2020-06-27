@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:12:46 -0400
+Subject: [PATCH] Ensure Entity AABB's are never invalid
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import co.aikar.timings.MinecraftTimings;
++import co.aikar.timings.Timing;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+ import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
+ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+-import java.util.Arrays;
+-import java.util.Collection;
+-import java.util.Collections;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Locale;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.Set;
+-import java.util.UUID;
+-import java.util.concurrent.atomic.AtomicInteger;
+-import java.util.stream.Stream;
+-import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+-
+-// CraftBukkit start
+ import org.bukkit.Bukkit;
+ import org.bukkit.Server;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.command.CommandSender;
+-import org.bukkit.entity.Hanging;
+-import org.bukkit.entity.LivingEntity;
+-import org.bukkit.entity.Vehicle;
+-import co.aikar.timings.MinecraftTimings; // Paper
+-import co.aikar.timings.Timing; // Paper
+-import org.bukkit.event.entity.EntityCombustByEntityEvent;
+-import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+-import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
+-import org.bukkit.event.vehicle.VehicleEnterEvent;
+-import org.bukkit.event.vehicle.VehicleExitEvent;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftEntity;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.Hanging;
++import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Pose;
++import org.bukkit.entity.Vehicle;
+ import org.bukkit.event.entity.EntityAirChangeEvent;
++import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ import org.bukkit.event.entity.EntityCombustEvent;
+ import org.bukkit.event.entity.EntityDropItemEvent;
+ import org.bukkit.event.entity.EntityPortalEvent;
+ import org.bukkit.event.entity.EntityPoseChangeEvent;
++import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent;
++import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
++import org.bukkit.event.vehicle.VehicleEnterEvent;
++import org.bukkit.event.vehicle.VehicleExitEvent;
+ import org.bukkit.plugin.PluginManager;
++
++import javax.annotation.Nullable;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Locale;
++import java.util.Optional;
++import java.util.Random;
++import java.util.Set;
++import java.util.UUID;
++import java.util.concurrent.atomic.AtomicInteger;
++import java.util.stream.Stream;
++
++// CraftBukkit start
+ // CraftBukkit end
+ 
+ public abstract class Entity implements INamableTileEntity, ICommandListener, KeyedObject { // Paper
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+ 
+     public void setPosition(double d0, double d1, double d2) {
+         this.setPositionRaw(d0, d1, d2);
+-        float f = this.size.width / 2.0F;
+-        float f1 = this.size.height;
++        // Paper start - move into setPositionRaw
++        //float f = this.size.width / 2.0F;
++        //float f1 = this.size.height;
+ 
+-        this.a(new AxisAlignedBB(d0 - (double) f, d1, d2 - (double) f, d0 + (double) f, d1 + (double) f1, d2 + (double) f));
++        //this.a(new AxisAlignedBB(d0 - (double) f, d1, d2 - (double) f, d0 + (double) f, d1 + (double) f1, d2 + (double) f));
++        // Paper end
+         if (valid) ((WorldServer) world).chunkCheck(this); // CraftBukkit
+     }
+ 
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return new AxisAlignedBB(vec3d, vec3d1);
+     }
+ 
++    public final void setBoundingBox(AxisAlignedBB axisalignedbb) { a(axisalignedbb); } // Paper - OBFHELPER
+     public void a(AxisAlignedBB axisalignedbb) {
+         // CraftBukkit start - block invalid bounding boxes
+         double minX = axisalignedbb.minX,
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     }
+ 
+     public void setPositionRaw(double d0, double d1, double d2) {
++        // Paper start - never allow AABB to become desynced from position
++        // hanging has its own special logic
++        if (!(this instanceof EntityHanging) && (this.loc.x != d0 || this.loc.y != d1 || this.loc.z != d2)) {
++            float f = this.size.width / 2.0F;
++            float f1 = this.size.height;
++            this.setBoundingBox(new AxisAlignedBB(d0 - (double) f, d1, d2 - (double) f, d0 + (double) f, d1 + (double) f1, d2 + (double) f));
++        }
++        // Paper end
+         if (this.loc.x != d0 || this.loc.y != d1 || this.loc.z != d2) {
+             this.loc = new Vec3D(d0, d1, d2);
+             int i = MathHelper.floor(d0);
