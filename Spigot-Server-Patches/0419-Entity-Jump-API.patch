@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 8 Feb 2020 23:26:11 -0600
+Subject: [PATCH] Entity Jump API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 66bca610fbb8afc6f5b4430318c66d29af55fc19..e0a4866048276c44079e0b9034c1acea1f0498fa 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2754,8 +2754,10 @@ public abstract class EntityLiving extends Entity {
+             } else if (this.aN() && (!this.onGround || d7 > d8)) {
+                 this.c((Tag) TagsFluid.LAVA);
+             } else if ((this.onGround || flag && d7 <= d8) && this.jumpTicks == 0) {
++                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper
+                 this.jump();
+                 this.jumpTicks = 10;
++                } else { this.setJumping(false); } // Paper - setJumping(false) stops a potential loop
+             }
+         } else {
+             this.jumpTicks = 0;
+diff --git a/src/main/java/net/minecraft/server/EntityPanda.java b/src/main/java/net/minecraft/server/EntityPanda.java
+index 50fe69143a6b91f957414ff556a0e60d220ab04f..42df0d74ee24ef9ac15ee19cfd298c5721df0d7d 100644
+--- a/src/main/java/net/minecraft/server/EntityPanda.java
++++ b/src/main/java/net/minecraft/server/EntityPanda.java
+@@ -435,7 +435,9 @@ public class EntityPanda extends EntityAnimal {
+             EntityPanda entitypanda = (EntityPanda) iterator.next();
+ 
+             if (!entitypanda.isBaby() && entitypanda.onGround && !entitypanda.isInWater() && entitypanda.fi()) {
++                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper
+                 entitypanda.jump();
++                } else { this.setJumping(false); } // Paper - setJumping(false) stops a potential loop
+             }
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 39b8ab223bc708e5ee3dc967e489fdc76d944416..b3ec32b20751fbea2f6df14fc5e9f84682493bfd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -736,5 +736,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public boolean isHandRaised() {
+         return getHandle().isHandRaised();
+     }
++
++    @Override
++    public boolean isJumping() {
++        return getHandle().jumping;
++    }
++
++    @Override
++    public void setJumping(boolean jumping) {
++        getHandle().setJumping(jumping);
++        if (jumping && getHandle() instanceof EntityInsentient) {
++            // this is needed to actually make a mob jump
++            ((EntityInsentient) getHandle()).getControllerJump().jump();
++        }
++    }
++
+     // Paper end
+ }
