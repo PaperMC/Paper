@@ -33,10 +33,19 @@ public interface DragonBattle {
      *
      * This location will be at the center of the base (bottom) of the portal.
      *
-     * @return the end portal location
+     * @return the end portal location or null if not generated
      */
-    @NotNull
+    @Nullable
     public Location getEndPortalLocation();
+
+    /**
+     * Generate the end portal.
+     *
+     * @param withPortals whether or not end portal blocks should be generated
+     *
+     * @return true if generated, false if already present
+     */
+    public boolean generateEndPortal(boolean withPortals);
 
     /**
      * Check whether or not the first dragon has been killed already.
