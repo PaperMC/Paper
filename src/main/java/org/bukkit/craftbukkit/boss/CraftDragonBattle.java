@@ -30,7 +30,21 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public Location getEndPortalLocation() {
+        if (handle.exitPortalLocation == null) {
+            return null;
+        }
+
         return new Location(handle.world.getWorld(), handle.exitPortalLocation.getX(), handle.exitPortalLocation.getY(), handle.exitPortalLocation.getZ());
+    }
+
+    @Override
+    public boolean generateEndPortal(boolean withPortals) {
+        if (handle.exitPortalLocation != null || handle.j() != null) {
+            return false;
+        }
+
+        this.handle.a(withPortals);
+        return true;
     }
 
     @Override
