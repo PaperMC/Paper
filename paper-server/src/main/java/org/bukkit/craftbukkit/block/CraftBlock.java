@@ -453,6 +453,7 @@ public class CraftBlock implements Block {
         case BLAST_FURNACE:
             return new CraftBlastFurnace(this);
         case CAMPFIRE:
+        case SOUL_CAMPFIRE:
             return new CraftCampfire(this);
         case JIGSAW:
             return new CraftJigsaw(this);
