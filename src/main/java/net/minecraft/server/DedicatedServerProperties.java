@@ -100,7 +100,7 @@ public class DedicatedServerProperties extends PropertyManager<DedicatedServerPr
         this.maxWorldSize = this.a("max-world-size", (integer) -> {
             return MathHelper.clamp(integer, 1, 29999984);
         }, 29999984);
-        this.syncChunkWrites = this.getBoolean("sync-chunk-writes", true);
+        this.syncChunkWrites = this.getBoolean("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - hide behind flag
         this.enableJmxMonitoring = this.getBoolean("enable-jmx-monitoring", false);
         this.enableStatus = this.getBoolean("enable-status", true);
         this.entityBroadcastRangePercentage = this.a("entity-broadcast-range-percentage", (integer) -> {
