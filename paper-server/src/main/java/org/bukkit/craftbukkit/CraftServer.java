@@ -1032,7 +1032,7 @@ public final class CraftServer implements Server {
         ResourceKey<net.minecraft.server.World> worldKey = ResourceKey.a(IRegistry.ae, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
 
         WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, worldSession, worlddata, worldKey, typeKey, dimensionmanager, getServer().worldLoadListenerFactory.create(11),
-                chunkgenerator, worlddata.getGeneratorSettings().isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), creator.environment() == Environment.NORMAL, creator.environment(), generator);
+                chunkgenerator, worlddata.getGeneratorSettings().isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
             return null;
