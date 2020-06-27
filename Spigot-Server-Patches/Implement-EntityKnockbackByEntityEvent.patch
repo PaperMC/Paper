@@ -13,9 +13,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      if (flag5) {
                          if (i > 0) {
                              if (entity instanceof EntityLiving) {
-+                                ((EntityLiving) entity).knockingBackEntity = this; // Paper
-                                 ((EntityLiving) entity).a((float) i * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
-+                                ((EntityLiving) entity).knockingBackEntity = null; // Paper
+-                                ((EntityLiving) entity).a((float) i * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
++                                ((EntityLiving) entity).doKnockback((float) i * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)), this); // Paper
                              } else {
                                  entity.h((double) (-MathHelper.sin(this.yaw * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (MathHelper.cos(this.yaw * 0.017453292F) * (float) i * 0.5F));
                              }
@@ -23,9 +22,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                  if (entityliving != this && entityliving != entity && !this.r(entityliving) && (!(entityliving instanceof EntityArmorStand) || !((EntityArmorStand) entityliving).isMarker()) && this.h((Entity) entityliving) < 9.0D) {
                                      // CraftBukkit start - Only apply knockback if the damage hits
                                      if (entityliving.damageEntity(DamageSource.playerAttack(this).sweep(), f4)) {
-+                                        ((EntityLiving) entity).knockingBackEntity = this; // Paper
-                                     entityliving.a(0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
-+                                        ((EntityLiving) entity).knockingBackEntity = null; // Paper
+-                                    entityliving.a(0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
++                                    entityliving.doKnockback(0.4F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)), this);
                                      }
                                      // CraftBukkit end
                                  }
@@ -37,9 +35,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (flag) {
              if (f1 > 0.0F && entity instanceof EntityLiving) {
-+                ((EntityLiving) entity).knockingBackEntity = this; // Paper
-                 ((EntityLiving) entity).a(f1 * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
-+                ((EntityLiving) entity).knockingBackEntity = null; // Paper
+-                ((EntityLiving) entity).a(f1 * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)));
++                ((EntityLiving) entity).doKnockback(f1 * 0.5F, (double) MathHelper.sin(this.yaw * 0.017453292F), (double) (-MathHelper.cos(this.yaw * 0.017453292F)), this);
                  this.setMot(this.getMot().d(0.6D, 1.0D, 0.6D));
              }
  
@@ -51,9 +48,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
  
                      this.aw = (float) (MathHelper.d(d1, d0) * 57.2957763671875D - (double) this.yaw);
-+                    this.knockingBackEntity = entity1 instanceof EntityLiving ? ((EntityLiving) entity1) : null; // Paper
-                     this.a(0.4F, d0, d1);
-+                    this.knockingBackEntity = null; // Paper
+-                    this.a(0.4F, d0, d1);
++                    this.doKnockback(0.4F, d0, d1, entity1); // Paper
                  } else {
                      this.aw = (float) ((int) (Math.random() * 2.0D) * 180);
                  }
@@ -61,12 +57,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected void f(EntityLiving entityliving) {
-+        ((EntityLiving) entityliving).knockingBackEntity = this; // Paper
-         entityliving.a(0.5F, entityliving.locX() - this.locX(), entityliving.locZ() - this.locZ());
-+        ((EntityLiving) entityliving).knockingBackEntity = null; // Paper
+-        entityliving.a(0.5F, entityliving.locX() - this.locX(), entityliving.locZ() - this.locZ());
++        entityliving.doKnockback(0.5F, entityliving.locX() - this.locX(), entityliving.locZ() - this.locZ(), this);
      }
  
      private boolean f(DamageSource damagesource) {
+@@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     public void a(float f, double d0, double d1) {
++        // Paper start - add knockbacking entity parameter
++        this.doKnockback(f, d0, d1, null);
++    }
++    public void doKnockback(float f, double d0, double d1, Entity knockingBackEntity) {
++        // Paper end - add knockbacking entity parameter
+         f = (float) ((double) f * (1.0D - this.b(GenericAttributes.KNOCKBACK_RESISTANCE)));
+         if (f > 0.0F) {
+             this.impulse = true;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              Vec3D vec3d1 = (new Vec3D(d0, 0.0D, d1)).d().a((double) f);
  
@@ -83,7 +90,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
          }
      }
-+    EntityLiving knockingBackEntity; // Paper
  
-     @Nullable
-     protected SoundEffect getSoundHurt(DamageSource damagesource) {
