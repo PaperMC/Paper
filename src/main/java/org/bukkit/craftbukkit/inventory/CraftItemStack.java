@@ -515,6 +515,7 @@ public final class CraftItemStack extends ItemStack {
             case BELL:
             case BLAST_FURNACE:
             case CAMPFIRE:
+            case SOUL_CAMPFIRE:
             case JIGSAW:
             case LECTERN:
             case SMOKER:

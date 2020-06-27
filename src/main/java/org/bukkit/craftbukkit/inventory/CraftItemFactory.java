@@ -246,6 +246,7 @@ public final class CraftItemFactory implements ItemFactory {
         case BELL:
         case BLAST_FURNACE:
         case CAMPFIRE:
+        case SOUL_CAMPFIRE:
         case JIGSAW:
         case LECTERN:
         case SMOKER:
