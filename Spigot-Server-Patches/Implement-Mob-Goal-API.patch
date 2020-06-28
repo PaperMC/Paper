@@ -308,6 +308,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return GoalType.LOOK;
 +            case JUMP:
 +                return GoalType.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return GoalType.UNKNOWN_BEHAVIOR;
 +            case TARGET:
 +                return GoalType.TARGET;
 +            default:
@@ -331,6 +333,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return PathfinderGoal.Type.LOOK;
 +            case JUMP:
 +                return PathfinderGoal.Type.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return PathfinderGoal.Type.UNKNOWN_BEHAVIOR;
 +            case TARGET:
 +                return PathfinderGoal.Type.TARGET;
 +            default:
@@ -396,6 +400,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.handle = handle;
 +
 +        this.setTypes(MobGoalHelper.paperToVanilla(handle.getTypes()));
++        if (this.getGoalTypes().size() == 0) {
++            this.getGoalTypes().addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
 +    }
 +
 +    @Override
@@ -748,8 +755,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
 @@ -0,0 +0,0 @@ public abstract class PathfinderGoal {
+     private final EnumSet<PathfinderGoal.Type> a = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
+     private final OptimizedSmallEnumSet<Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
  
-     public PathfinderGoal() {}
+-    public PathfinderGoal() {}
++    // Paper start make sure goaltypes is never empty
++    public PathfinderGoal() {
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
++    }
++    // paper end
  
 -    public abstract boolean a();
 +    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} public boolean shouldActivate2() { return a(); } // Paper - OBFHELPER, for both directions...
@@ -779,6 +795,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper start - remove streams from pathfindergoalselector
          this.goalTypes.clear();
          this.goalTypes.addAllUnchecked(enumset);
++        // make sure its never empty
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
+         // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+@@ -0,0 +0,0 @@ public abstract class PathfinderGoal {
+ 
+     public static enum Type {
+ 
+-        MOVE, LOOK, JUMP, TARGET;
++        MOVE, LOOK, JUMP, TARGET, UNKNOWN_BEHAVIOR; // Paper - add unknown
+ 
+         private Type() {}
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
