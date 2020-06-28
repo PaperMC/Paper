@@ -36,7 +36,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>com.destroystokyo.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.15.2-R0.1-SNAPSHOT</version>
+    <version>1.16.1-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
  </dependency>
  ```
