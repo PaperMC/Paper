@@ -25,7 +25,7 @@ index 7b2010ec4955fb5788c60178c6e306ea3098e9ba..95e801a9a7ca405ff7e80c920fa78493
      private Entity k;
      private ShapeDetectorBlock l;
 diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index 6e049c2e2a142ce022b9dc278a3bb302f723e42c..e3ba2e8db98c94ed10e96601addb0110a8385926 100644
+index 6e049c2e2a142ce022b9dc278a3bb302f723e42c..a7560ac0719d789f2b8ebc0294190a9bd43a2512 100644
 --- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
 +++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
 @@ -274,9 +274,18 @@ public class PacketDataSerializer extends ByteBuf {
@@ -40,7 +40,7 @@ index 6e049c2e2a142ce022b9dc278a3bb302f723e42c..e3ba2e8db98c94ed10e96601addb0110
 +                if (nbttagcompound != null && nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
 +                    NBTTagCompound owner = nbttagcompound.getCompound("SkullOwner");
 +                    if (owner.hasKey("Id")) {
-+                        nbttagcompound.setString("SkullOwnerOrig", owner.getString("Id"));
++                        nbttagcompound.setUUID("SkullOwnerOrig", owner.getUUID("Id"));
 +                        TileEntitySkull.sanitizeUUID(owner);
 +                    }
 +                }
@@ -48,7 +48,7 @@ index 6e049c2e2a142ce022b9dc278a3bb302f723e42c..e3ba2e8db98c94ed10e96601addb0110
              }
  
              this.a(nbttagcompound);
-@@ -296,7 +305,17 @@ public class PacketDataSerializer extends ByteBuf {
+@@ -296,7 +305,16 @@ public class PacketDataSerializer extends ByteBuf {
              itemstack.setTag(this.l());
              // CraftBukkit start
              if (itemstack.getTag() != null) {
@@ -56,11 +56,10 @@ index 6e049c2e2a142ce022b9dc278a3bb302f723e42c..e3ba2e8db98c94ed10e96601addb0110
 +                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
 +                if (itemstack.tag.hasKey("SkullOwnerOrig")) {
 +                    NBTTagCompound owner = itemstack.tag.getCompound("SkullOwner");
-+                    String ownerOrig = itemstack.tag.getString("SkullOwnerOrig");
-+                    if (!owner.isEmpty() && !ownerOrig.isEmpty()) {
-+                        owner.setString("Id", ownerOrig);
++                    if (itemstack.tag.hasUUID("SkullOwnerOrig")) {
++                        owner.setUUID("Id", itemstack.tag.getUUID("SkullOwnerOrig"));
++                        itemstack.tag.remove("SkullOwnerOrig");
 +                    }
-+                    itemstack.tag.remove("SkullOwnerOrig");
 +                }
 +                // Paper end
 +                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
@@ -80,7 +79,7 @@ index e336437207f9d6adbab69ef2785c129ff2ec1b36..72ff0a1e6428a1776f49c26e1715f5f2
                  this.g.add(nbttagcompound);
              }
 diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 9a2efd38f28819355a271b9515ac98c3382c7383..fb7aa15c272678be7ec2a1d28891a62121695ed8 100644
+index 4fae1b3274a96b871b39de083e9b28ab6129533f..579a81e521fdfabfa0318d06c6760a8ab7a88c1e 100644
 --- a/src/main/java/net/minecraft/server/TileEntitySkull.java
 +++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
 @@ -145,9 +145,37 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
@@ -110,12 +109,12 @@ index 9a2efd38f28819355a271b9515ac98c3382c7383..fb7aa15c272678be7ec2a1d28891a621
 +        if (list != null && !list.isEmpty()) {
 +            String textures = ((NBTTagCompound)list.get(0)).getString("Value");
 +            if (textures != null && textures.length() > 3) {
-+                String uuid = UUID.nameUUIDFromBytes(textures.getBytes()).toString();
-+                owner.setString("Id", uuid);
++                UUID uuid = UUID.nameUUIDFromBytes(textures.getBytes());
++                owner.setUUID("Id", uuid);
 +                return;
 +            }
 +        }
-+        owner.setString("Id", UUID.randomUUID().toString());
++        owner.setUUID("Id", UUID.randomUUID());
 +    }
 +    // Paper end
 +
