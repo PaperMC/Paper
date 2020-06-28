@@ -24,10 +24,10 @@ index 64bd667e8b11263e483364efc3414396819a255c..e4c63bb76cb598545f9d215a8859724d
      <repositories>
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e28a77c566
+index 0000000000000000000000000000000000000000..cf720c384b639f154b3a1ea8d45836a0b28aa763
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,349 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import com.google.common.collect.BiMap;
@@ -308,6 +308,8 @@ index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e2
 +                return GoalType.LOOK;
 +            case JUMP:
 +                return GoalType.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return GoalType.UNKNOWN_BEHAVIOR;
 +            case TARGET:
 +                return GoalType.TARGET;
 +            default:
@@ -331,6 +333,8 @@ index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e2
 +                return PathfinderGoal.Type.LOOK;
 +            case JUMP:
 +                return PathfinderGoal.Type.JUMP;
++            case UNKNOWN_BEHAVIOR:
++                return PathfinderGoal.Type.UNKNOWN_BEHAVIOR;
 +            case TARGET:
 +                return PathfinderGoal.Type.TARGET;
 +            default:
@@ -375,10 +379,10 @@ index 0000000000000000000000000000000000000000..9ee1a8d5f494680ac9d4c45d7b1255e2
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java b/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8e4dc2708d71edcb8f32bb72a64f3c493052c2a8
+index 0000000000000000000000000000000000000000..5720feaaf92fc8b6a70e7f6e2d25163c42d231c1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/PaperCustomGoal.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,55 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import net.minecraft.server.PathfinderGoal;
@@ -396,6 +400,9 @@ index 0000000000000000000000000000000000000000..8e4dc2708d71edcb8f32bb72a64f3c49
 +        this.handle = handle;
 +
 +        this.setTypes(MobGoalHelper.paperToVanilla(handle.getTypes()));
++        if (this.getGoalTypes().size() == 0) {
++            this.getGoalTypes().addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
 +    }
 +
 +    @Override
@@ -744,12 +751,21 @@ index 9df0006c1a283f77c4d01d9fce9062fc1c9bbb1f..b3329c6fcd6758a781a51f5ba8f5052a
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
-index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..f1c4ce9e4b83aa966b4ae4dcd6a283e08f8db783 100644
+index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..003868a9d6a298f37cebec49046533c7325ab846 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoal.java
-@@ -10,9 +10,9 @@ public abstract class PathfinderGoal {
+@@ -8,11 +8,17 @@ public abstract class PathfinderGoal {
+     private final EnumSet<PathfinderGoal.Type> a = EnumSet.noneOf(PathfinderGoal.Type.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
+     private final OptimizedSmallEnumSet<Type> goalTypes = new OptimizedSmallEnumSet<>(PathfinderGoal.Type.class); // Paper - remove streams from pathfindergoalselector
  
-     public PathfinderGoal() {}
+-    public PathfinderGoal() {}
++    // Paper start make sure goaltypes is never empty
++    public PathfinderGoal() {
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
++    }
++    // paper end
  
 -    public abstract boolean a();
 +    public boolean a() { return this.shouldActivate(); } public boolean shouldActivate() { return false;} public boolean shouldActivate2() { return a(); } // Paper - OBFHELPER, for both directions...
@@ -759,7 +775,7 @@ index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..f1c4ce9e4b83aa966b4ae4dcd6a283e0
          return this.a();
      }
  
-@@ -20,16 +20,16 @@ public abstract class PathfinderGoal {
+@@ -20,19 +26,23 @@ public abstract class PathfinderGoal {
          return true;
      }
  
@@ -779,6 +795,22 @@ index 93009d83f07bdaf7bc424ffb99cbfe716ca0d66d..f1c4ce9e4b83aa966b4ae4dcd6a283e0
          // Paper start - remove streams from pathfindergoalselector
          this.goalTypes.clear();
          this.goalTypes.addAllUnchecked(enumset);
++        // make sure its never empty
++        if (this.goalTypes.size() == 0) {
++            this.goalTypes.addUnchecked(Type.UNKNOWN_BEHAVIOR);
++        }
+         // Paper end - remove streams from pathfindergoalselector
+     }
+ 
+@@ -48,7 +58,7 @@ public abstract class PathfinderGoal {
+ 
+     public static enum Type {
+ 
+-        MOVE, LOOK, JUMP, TARGET;
++        MOVE, LOOK, JUMP, TARGET, UNKNOWN_BEHAVIOR; // Paper - add unknown
+ 
+         private Type() {}
+     }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 index 84d2abbcb90eb09a19fa0922cfc053c74f8c56e4..a68fc11ec668576d1453459666caeacf5fbc49b8 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
