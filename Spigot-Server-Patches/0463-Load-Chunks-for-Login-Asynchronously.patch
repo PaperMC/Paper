@@ -110,18 +110,10 @@ index 1b9a089eddacbaf1a7d7e19478ee756b4ab601b2..4f37401909f1845d0f18aa497a6561b7
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c385d6758 100644
+index 18272d56bdac0ff76092d8d834c53474516732a8..045d85016edff8e1e8c775f8c701ac806fb3d4e1 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -18,6 +18,7 @@ import java.util.Map;
- import java.util.Optional;
- import java.util.Set;
- import java.util.UUID;
-+import java.util.concurrent.CompletableFuture;
- import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
-@@ -54,11 +55,12 @@ public abstract class PlayerList {
+@@ -54,11 +54,12 @@ public abstract class PlayerList {
      private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
      public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
@@ -135,7 +127,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
      // CraftBukkit start
      // private final Map<UUID, ServerStatisticManager> o;
      // private final Map<UUID, AdvancementDataPlayer> p;
-@@ -97,6 +99,11 @@ public abstract class PlayerList {
+@@ -97,6 +98,11 @@ public abstract class PlayerList {
      }
  
      public void a(NetworkManager networkmanager, EntityPlayer entityplayer) {
@@ -147,7 +139,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
          entityplayer.loginTime = System.currentTimeMillis(); // Paper
          GameProfile gameprofile = entityplayer.getProfile();
          UserCache usercache = this.server.getUserCache();
-@@ -110,7 +117,7 @@ public abstract class PlayerList {
+@@ -110,7 +116,7 @@ public abstract class PlayerList {
          if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
              NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
              s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
@@ -156,33 +148,31 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
          // CraftBukkit end
  
          if (nbttagcompound != null) {
-@@ -185,6 +192,53 @@ public abstract class PlayerList {
+@@ -183,6 +189,51 @@ public abstract class PlayerList {
          entityplayer.B().a(entityplayer);
          this.sendScoreboard(worldserver1.getScoreboard(), entityplayer);
          this.server.invalidatePingSample();
 +        // Paper start - async load spawn in chunk
-+        WorldServer finalWorldserver = worldserver;
-+        WorldServer finalWorldserver1 = worldserver1;
++        WorldServer finalWorldserver = worldserver1;
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
-+        PlayerChunkMap playerChunkMap = finalWorldserver.getChunkProvider().playerChunkMap;
++        PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
 +        playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
-+        worldserver.getChunkProvider().tickDistanceManager();
-+        worldserver.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
++        worldserver1.getChunkProvider().tickDistanceManager();
++        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
 +            if (updatingChunk != null) {
 +                return updatingChunk.getEntityTickingFuture();
 +            } else {
-+                return CompletableFuture.completedFuture(chunk);
++                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
 +            }
 +        }).thenAccept(chunk -> {
 +            playerconnection.playerJoinReady = () -> {
 +                postChunkLoadJoin(
-+                    entityplayer, finalWorldserver, finalWorldserver1, networkmanager, playerconnection,
++                    entityplayer, finalWorldserver, networkmanager, playerconnection,
 +                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
 +                );
-+                //playerChunkMap.chunkDistanceManager.removeTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
 +            };
 +        });
 +    }
@@ -200,7 +190,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
 +        });
 +    }
 +
-+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
 +        pendingPlayers.remove(entityplayer.getUniqueID(), entityplayer);
 +        if (!networkmanager.isConnected()) {
 +            return;
@@ -210,36 +200,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
          ChatMessage chatmessage;
  
          if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
-@@ -206,7 +260,7 @@ public abstract class PlayerList {
-         entityplayer.supressTrackerForLogin = true;
-         worldserver.addPlayerJoin(entityplayer);
-         this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
--        mountSavedVehicle(entityplayer, worldserver, nbttagcompound);
-+        mountSavedVehicle(entityplayer, worldserver, worldserver1, nbttagcompound);
-         // Paper end
-         // CraftBukkit start
-         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
-@@ -243,7 +297,6 @@ public abstract class PlayerList {
-         }
-         entityplayer.sentListPacket = true;
-         entityplayer.supressTrackerForLogin = false; // Paper
--        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
-         // CraftBukkit end
- 
-         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
-@@ -270,9 +323,10 @@ public abstract class PlayerList {
-         }
- 
-         // Paper start - move vehicle into method so it can be called above - short circuit around that code
-+        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // track entity now
-         onPlayerJoinFinish(entityplayer, worldserver, s1);
-     }
--    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
-+    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NBTTagCompound nbttagcompound) {
-         // Paper end
-         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
-             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
-@@ -421,6 +475,7 @@ public abstract class PlayerList {
+@@ -419,6 +470,7 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
          if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -247,7 +208,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -445,7 +500,7 @@ public abstract class PlayerList {
+@@ -443,7 +495,7 @@ public abstract class PlayerList {
          entityplayer.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
@@ -256,7 +217,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
          if (server.isMainThread()) entityplayer.playerTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
-@@ -498,6 +553,13 @@ public abstract class PlayerList {
+@@ -496,6 +548,13 @@ public abstract class PlayerList {
              // this.p.remove(uuid);
              // CraftBukkit end
          }
@@ -270,7 +231,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
  
          // CraftBukkit start
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
-@@ -515,7 +577,7 @@ public abstract class PlayerList {
+@@ -513,7 +572,7 @@ public abstract class PlayerList {
          cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -279,7 +240,7 @@ index 0f50aef7ff3c06cad0afa22924da170e04780053..f7c23ec053b261a5e7e069fb61dd803c
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -534,6 +596,13 @@ public abstract class PlayerList {
+@@ -532,6 +591,13 @@ public abstract class PlayerList {
                  list.add(entityplayer);
              }
          }
