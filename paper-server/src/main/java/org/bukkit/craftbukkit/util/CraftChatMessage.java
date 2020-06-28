@@ -48,6 +48,7 @@ public final class CraftChatMessage {
         // Separate pattern with no group 3, new lines are part of previous string
         private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
         // ChatColor.b does not explicitly reset, its more of empty
+        private static final Style EMPTY = Style.EMPTY.withItalic(false); // Paper - Improve Legacy Component serialization size
         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false);
 
         private final List<Component> list = new ArrayList<Component>();
@@ -69,6 +70,7 @@ public final class CraftChatMessage {
             Matcher matcher = (keepNewlines ? StringMessage.INCREMENTAL_PATTERN_KEEP_NEWLINES : StringMessage.INCREMENTAL_PATTERN).matcher(message);
             String match = null;
             boolean needsAdd = false;
+            boolean hasReset = false; // Paper - Improve Legacy Component serialization size
             while (matcher.find()) {
                 int groupId = 0;
                 while ((match = matcher.group(++groupId)) == null) {
@@ -114,7 +116,26 @@ public final class CraftChatMessage {
                             throw new AssertionError("Unexpected message format");
                         }
                     } else { // Color resets formatting
-                        this.modifier = StringMessage.RESET.withColor(format);
+                        // Paper start - Improve Legacy Component serialization size
+                        Style previous = modifier;
+                        modifier = (!hasReset ? RESET : EMPTY).withColor(format);
+                        hasReset = true;
+                        if (previous.isBold()) {
+                            modifier = modifier.withBold(false);
+                        }
+                        if (previous.isItalic()) {
+                            modifier = modifier.withItalic(false);
+                        }
+                        if (previous.isObfuscated()) {
+                            modifier = modifier.withObfuscated(false);
+                        }
+                        if (previous.isStrikethrough()) {
+                            modifier = modifier.withStrikethrough(false);
+                        }
+                        if (previous.isUnderlined()) {
+                            modifier = modifier.withUnderlined(false);
+                        }
+                        // Paper end - Improve Legacy Component serialization size
                     }
                     needsAdd = true;
                     break;
