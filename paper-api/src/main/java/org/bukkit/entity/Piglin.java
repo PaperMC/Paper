@@ -6,6 +6,64 @@ package org.bukkit.entity;
 public interface Piglin extends Monster {
 
     /**
+     * Gets whether the piglin is immune to zombification.
+     *
+     * @return Whether the piglin is immune to zombification
+     */
+    public boolean isImmuneToZombification();
+
+    /**
+     * Sets whether the piglin is immune to zombification.
+     *
+     * @param flag Whether the piglin is immune to zombification
+     */
+    public void setImmuneToZombification(boolean flag);
+
+    /**
+     * Get whether the piglin is able to hunt hoglins.
+     *
+     * @return Whether the piglin is able to hunt hoglins
+     */
+    public boolean isAbleToHunt();
+
+    /**
+     * Sets whether the piglin is able to hunt hoglins.
+     *
+     * @param flag Whether the piglin is able to hunt hoglins.
+     */
+    public void setIsAbleToHunt(boolean flag);
+
+    /**
+     * Gets the amount of ticks until this entity will be converted to a
+     * Zombified Piglin.
+     *
+     * When this reaches 300, the entity will be converted.
+     *
+     * @return conversion time
+     * @throws IllegalStateException if {@link #isConverting()} is false.
+     */
+    public int getConversionTime();
+
+    /**
+     * Sets the amount of ticks until this entity will be converted to a
+     * Zombified Piglin.
+     *
+     * When this reaches 0, the entity will be converted. A value of less than 0
+     * will stop the current conversion process without converting the current
+     * entity.
+     *
+     * @param time new conversion time
+     */
+    public void setConversionTime(int time);
+
+    /**
+     * Get if this entity is in the process of converting to a Zombified Piglin.
+     *
+     * @return conversion status
+     */
+    boolean isConverting();
+
+    /**
      * Gets whether the piglin is a baby
      *
      * @return Whether the piglin is a baby
