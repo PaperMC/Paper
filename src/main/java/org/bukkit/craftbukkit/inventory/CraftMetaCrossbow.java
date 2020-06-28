@@ -121,7 +121,7 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
 
     @Override
     public List<ItemStack> getChargedProjectiles() {
-        return (chargedProjectiles == null) ? null : ImmutableList.copyOf(chargedProjectiles);
+        return (chargedProjectiles == null) ? ImmutableList.of() : ImmutableList.copyOf(chargedProjectiles);
     }
 
     @Override
