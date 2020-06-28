@@ -15,7 +15,7 @@ public class PacketPlayOutChat implements Packet<PacketListenerPlayOut> {
     public PacketPlayOutChat(IChatBaseComponent ichatbasecomponent, ChatMessageType chatmessagetype, UUID uuid) {
         this.a = ichatbasecomponent;
         this.b = chatmessagetype;
-        this.c = uuid;
+        this.c = uuid != null ? uuid : SystemUtils.getNullUUID(); // Paper
     }
 
     @Override
