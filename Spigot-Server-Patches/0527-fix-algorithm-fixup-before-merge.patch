@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 28 Jun 2020 02:13:42 +0200
+Subject: [PATCH] fix algorithm - fixup before merge
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+index 8f2b1c23a8ff444adec90240a3b1aec580db1fc6..9c2fd7a22012926dcd303f7c0f4ee5def7795493 100644
+--- a/src/main/java/net/minecraft/server/BlockPosition.java
++++ b/src/main/java/net/minecraft/server/BlockPosition.java
+@@ -238,9 +238,10 @@ public class BlockPosition extends BaseBlockPosition {
+         };
+     }
+ 
+-    public static Iterable<BlockPosition> iterateOutwards(BlockPosition pos, int i, int j, int k) { return a(pos, i, j, k); } // Paper - OBFHELPER - thanks yarn
+-    public static Iterable<BlockPosition> a(BlockPosition sourcePos, int i, int j, int k) {
+-        final int l = i + j + k;
++    // Iterate outwards algoritm - please recheck & remove this line when merging
++    // Written at 2am w/o full understanding of this shit
++    public static Iterable<BlockPosition> a(BlockPosition sourcePos, int inI, int inJ, int inK) {
++        final int l = inI + inJ + inK;
+         final int origX = sourcePos.getX();
+         final int origY = sourcePos.getY();
+         final int origZ = sourcePos.getZ();
+@@ -258,7 +259,7 @@ public class BlockPosition extends BaseBlockPosition {
+                 protected BlockPosition computeNext() {
+                     if (this.n) {
+                         this.n = false;
+-                        this.currentPos.q(i - (this.currentPos.getZ() - i));
++                        this.currentPos.q(origZ - (this.currentPos.getZ() - origZ));
+                         return this.currentPos;
+                     } else {
+                         BlockPosition.MutableBlockPosition blockposition_mutableblockposition;
+@@ -268,15 +269,15 @@ public class BlockPosition extends BaseBlockPosition {
+                                 ++this.dx;
+                                 if (this.dx > this.limitX) {
+                                     ++this.manhattanDistance;
+-                                    if (this.manhattanDistance > j) {
++                                    if (this.manhattanDistance > dx) {
+                                         return (BlockPosition) this.endOfData();
+                                     }
+ 
+-                                    this.limitX = Math.min(k, this.manhattanDistance);
++                                    this.limitX = Math.min(inI, this.manhattanDistance);
+                                     this.dx = -this.limitX;
+                                 }
+ 
+-                                this.limitY = Math.min(l, this.manhattanDistance - Math.abs(this.dx));
++                                this.limitY = Math.min(inJ, this.manhattanDistance - Math.abs(this.dx));
+                                 this.dy = -this.limitY;
+                             }
+ 
+@@ -286,7 +287,7 @@ public class BlockPosition extends BaseBlockPosition {
+ 
+                             if (kx <= origX) {
+                                 this.n = kx != 0;
+-                                blockposition_mutableblockposition = this.currentPos.d(origY + ix, origZ + jx, i + kx);
++                                blockposition_mutableblockposition = this.currentPos.d(jx + ix, origY + jx, origZ + kx);
+                             }
+                         }
+ 
+diff --git a/src/main/java/net/minecraft/server/SensorHoglinSpecific.java b/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
+index c40585d91eae229983e2116a73ec0d71c4c000e1..8daadd270629184acdd127e337d80406513f86df 100644
+--- a/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
++++ b/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
+@@ -19,7 +19,7 @@ public class SensorHoglinSpecific extends Sensor<EntityHoglin> {
+     protected void a(WorldServer worldserver, EntityHoglin entityhoglin) {
+         BehaviorController<?> behaviorcontroller = entityhoglin.getBehaviorController();
+ 
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, this.b(worldserver, entityhoglin));
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, this.bb(worldserver, entityhoglin));
+         Optional<EntityPiglin> optional = Optional.empty();
+         int i = 0;
+         List<EntityHoglin> list = Lists.newArrayList();

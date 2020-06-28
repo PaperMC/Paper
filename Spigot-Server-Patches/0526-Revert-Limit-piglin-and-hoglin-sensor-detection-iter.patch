@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 28 Jun 2020 01:59:13 +0200
+Subject: [PATCH] Revert "Limit piglin and hoglin sensor detection iterations"
+
+This reverts commit f6f8723f792593844d887f99a5f0164505bac796.
+
+diff --git a/src/main/java/net/minecraft/server/SensorHoglinSpecific.java b/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
+index e5d8c227e65f8cec7a2e39fbd7ae07784bb4b581..c40585d91eae229983e2116a73ec0d71c4c000e1 100644
+--- a/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
++++ b/src/main/java/net/minecraft/server/SensorHoglinSpecific.java
+@@ -19,7 +19,7 @@ public class SensorHoglinSpecific extends Sensor<EntityHoglin> {
+     protected void a(WorldServer worldserver, EntityHoglin entityhoglin) {
+         BehaviorController<?> behaviorcontroller = entityhoglin.getBehaviorController();
+ 
+-        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, this.bb(worldserver, entityhoglin)); // Paper - rename
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, this.b(worldserver, entityhoglin));
+         Optional<EntityPiglin> optional = Optional.empty();
+         int i = 0;
+         List<EntityHoglin> list = Lists.newArrayList();
+@@ -48,20 +48,8 @@ public class SensorHoglinSpecific extends Sensor<EntityHoglin> {
+     }
+ 
+     private Optional<BlockPosition> bb(WorldServer worldserver, EntityHoglin entityhoglin) { // Paper - rename
+-        // Paper start - exit after ~32k iterations
+-        Iterable<BlockPosition> iter = BlockPosition.a(entityhoglin.getChunkCoordinates(), 8, 4, 8);
+-        IBlockData data;
+-        short iterations = 0;
+-        for (BlockPosition pos : iter) {
+-            data = worldserver.getTypeIfLoaded(entityhoglin.getChunkCoordinates()); // No chunk loads pls
+-            if (++iterations < 0) return Optional.empty();
+-            if (data != null && data.a(TagsBlock.HOGLIN_REPELLENTS)) return Optional.of(pos);
+-        }
+-        return Optional.empty();
+-//        return BlockPosition.a(entityhoglin.getChunkCoordinates(), 8, 4, (blockposition) -> {
+-//            IBlockData iblockdata = worldserver.getTypeIfLoaded(blockposition); // Paper
+-//            return iblockdata != null && iblockdata.a(TagsBlock.HOGLIN_REPELLENTS); // Paper
+-//        });
+-        // Paper end
++        return BlockPosition.a(entityhoglin.getChunkCoordinates(), 8, 4, (blockposition) -> {
++            return worldserver.getType(blockposition).a((Tag) TagsBlock.HOGLIN_REPELLENTS);
++        });
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/SensorPiglinSpecific.java b/src/main/java/net/minecraft/server/SensorPiglinSpecific.java
+index dc69c9c56a1d877f292c7f191f31d767968f6fb0..351fe8ca3a79871437e916e0411d276b2592d1bc 100644
+--- a/src/main/java/net/minecraft/server/SensorPiglinSpecific.java
++++ b/src/main/java/net/minecraft/server/SensorPiglinSpecific.java
+@@ -21,7 +21,7 @@ public class SensorPiglinSpecific extends Sensor<EntityLiving> {
+     protected void a(WorldServer worldserver, EntityLiving entityliving) {
+         BehaviorController<?> behaviorcontroller = entityliving.getBehaviorController();
+ 
+-//        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, c(worldserver, entityliving)); // Paper - fix dis shit (for now)
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_REPELLENT, c(worldserver, entityliving));
+         Optional<EntityInsentient> optional = Optional.empty();
+         Optional<EntityHoglin> optional1 = Optional.empty();
+         Optional<EntityHoglin> optional2 = Optional.empty();
+@@ -99,23 +99,13 @@ public class SensorPiglinSpecific extends Sensor<EntityLiving> {
+     }
+ 
+     private static Optional<BlockPosition> c(WorldServer worldserver, EntityLiving entityliving) {
+-        // Paper start - exit after ~32k iterations
+-        Iterable<BlockPosition> iter = BlockPosition.a(entityliving.getChunkCoordinates(), 8, 4, 8);
+-        short iterations = 0;
+-        for (BlockPosition pos : iter) {
+-            if (++iterations < 0) return Optional.empty();
+-            if (a(worldserver, pos)) return Optional.of(pos);
+-        }
+-        return Optional.empty();
+-//        return BlockPosition.a(entityliving.getChunkCoordinates(), 8, 4, (blockposition) -> {
+-//            return a(worldserver, blockposition);
+-//        });
+-        // Paper end
++        return BlockPosition.a(entityliving.getChunkCoordinates(), 8, 4, (blockposition) -> {
++            return a(worldserver, blockposition);
++        });
+     }
+ 
+     private static boolean a(WorldServer worldserver, BlockPosition blockposition) {
+-        IBlockData iblockdata = worldserver.getTypeIfLoaded(blockposition); // Paper - no chunk loads
+-        if (iblockdata == null) return false; // Paper
++        IBlockData iblockdata = worldserver.getType(blockposition);
+         boolean flag = iblockdata.a((Tag) TagsBlock.PIGLIN_REPELLENTS);
+ 
+         return flag && iblockdata.a(Blocks.SOUL_CAMPFIRE) ? BlockCampfire.g(iblockdata) : flag;
