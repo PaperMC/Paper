@@ -113,14 +113,6 @@ diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -0,0 +0,0 @@ import java.util.Map;
- import java.util.Optional;
- import java.util.Set;
- import java.util.UUID;
-+import java.util.concurrent.CompletableFuture;
- import javax.annotation.Nullable;
- import org.apache.logging.log4j.LogManager;
- import org.apache.logging.log4j.Logger;
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
@@ -161,28 +153,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.sendScoreboard(worldserver1.getScoreboard(), entityplayer);
          this.server.invalidatePingSample();
 +        // Paper start - async load spawn in chunk
-+        WorldServer finalWorldserver = worldserver;
-+        WorldServer finalWorldserver1 = worldserver1;
++        WorldServer finalWorldserver = worldserver1;
 +        int chunkX = loc.getBlockX() >> 4;
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
-+        PlayerChunkMap playerChunkMap = finalWorldserver.getChunkProvider().playerChunkMap;
++        PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
 +        playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
-+        worldserver.getChunkProvider().tickDistanceManager();
-+        worldserver.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
++        worldserver1.getChunkProvider().tickDistanceManager();
++        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
 +            if (updatingChunk != null) {
 +                return updatingChunk.getEntityTickingFuture();
 +            } else {
-+                return CompletableFuture.completedFuture(chunk);
++                return java.util.concurrent.CompletableFuture.completedFuture(chunk);
 +            }
 +        }).thenAccept(chunk -> {
 +            playerconnection.playerJoinReady = () -> {
 +                postChunkLoadJoin(
-+                    entityplayer, finalWorldserver, finalWorldserver1, networkmanager, playerconnection,
++                    entityplayer, finalWorldserver, networkmanager, playerconnection,
 +                    nbttagcompound, networkmanager.getSocketAddress().toString(), lastKnownName
 +                );
-+                //playerChunkMap.chunkDistanceManager.removeTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
 +            };
 +        });
 +    }
@@ -200,7 +190,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +
-+    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
++    private void postChunkLoadJoin(EntityPlayer entityplayer, WorldServer worldserver1, NetworkManager networkmanager, PlayerConnection playerconnection, NBTTagCompound nbttagcompound, String s1, String s) {
 +        pendingPlayers.remove(entityplayer.getUniqueID(), entityplayer);
 +        if (!networkmanager.isConnected()) {
 +            return;
@@ -210,35 +200,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ChatMessage chatmessage;
  
          if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         entityplayer.supressTrackerForLogin = true;
-         worldserver.addPlayerJoin(entityplayer);
-         this.server.getBossBattleCustomData().a(entityplayer); // see commented out section below worldserver.addPlayerJoin(entityplayer);
--        mountSavedVehicle(entityplayer, worldserver, nbttagcompound);
-+        mountSavedVehicle(entityplayer, worldserver, worldserver1, nbttagcompound);
-         // Paper end
-         // CraftBukkit start
-         PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
-         entityplayer.sentListPacket = true;
-         entityplayer.supressTrackerForLogin = false; // Paper
--        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
-         // CraftBukkit end
- 
-         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         }
- 
-         // Paper start - move vehicle into method so it can be called above - short circuit around that code
-+        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // track entity now
-         onPlayerJoinFinish(entityplayer, worldserver, s1);
-     }
--    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, NBTTagCompound nbttagcompound) {
-+    private void mountSavedVehicle(EntityPlayer entityplayer, WorldServer worldserver, WorldServer worldserver1, NBTTagCompound nbttagcompound) {
-         // Paper end
-         if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
-             NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
