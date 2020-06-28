@@ -629,8 +629,8 @@
 +                                if (i > Math.max(this.allowedPlayerTicks, 5)) {
                                      ServerGamePacketListenerImpl.LOGGER.debug("{} is sending move packets too frequently ({} packets since last tick)", this.player.getName().getString(), i);
                                      i = 1;
-+                                }
-+
+                                 }
+ 
 +                                if (packet.hasRot || d10 > 0) {
 +                                    this.allowedPlayerTicks -= 1;
 +                                } else {
@@ -646,9 +646,9 @@
 +                                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
 +                                    this.internalTeleport(PositionMoveRotation.of(this.player), Collections.emptySet());
 +                                    return;
-                                 }
++                                }
 +                                // Paper end - Prevent moving into unloaded chunks
- 
++
                                  if (this.shouldCheckPlayerMovement(flag)) {
                                      float f2 = flag ? 300.0F : 100.0F;
  
@@ -1002,12 +1002,10 @@
          if (this.player.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel worldserver = this.player.serverLevel();
-@@ -1294,8 +1861,49 @@
- 
-                 if (f1 != this.player.getXRot() || f != this.player.getYRot()) {
+@@ -1296,6 +1863,47 @@
                      this.player.absRotateTo(f, f1);
-+                }
-+
+                 }
+ 
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
 +                double d0 = this.player.getX();
@@ -1038,8 +1036,8 @@
 +                        cancelled = event.useItemInHand() == Event.Result.DENY;
 +                    }
 +                    this.player.gameMode.firedInteract = false;
-                 }
- 
++                }
++
 +                if (cancelled) {
 +                    this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
 +                    return;
@@ -1587,12 +1585,12 @@
 +                                    entity.getBukkitEntity().update(ServerGamePacketListenerImpl.this.player);
 +                                    ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                }
- 
++
 +                                if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
 +                                    // Refresh the current leash state
 +                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEntityLinkPacket(entity, ((Mob) entity).getLeashHolder()));
 +                                }
-+
+ 
 +                                if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem) {
 +                                    // Refresh the current entity metadata
 +                                    entity.refreshEntityData(ServerGamePacketListenerImpl.this.player);
@@ -2182,6 +2180,15 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
+@@ -2012,7 +3366,7 @@
+     public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
+-            this.server.setDifficulty(packet.getDifficulty(), false);
++            // this.server.setDifficulty(packet.getDifficulty(), false); // Paper - per level difficulty; don't allow clients to change this
+         }
+     }
+ 
 @@ -2058,7 +3412,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
