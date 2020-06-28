@@ -473,48 +473,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public MinecraftSessionService getMinecraftSessionService() {
          return this.minecraftSessionService;
      }
-diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TileEntitySkull.java
-+++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-     private void f() {
-         // Spigot start
-         GameProfile profile = this.gameProfile;
-+        if (profile != null && profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
-         b(profile, new Predicate<GameProfile>() {
- 
-             @Override
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-             } else if (MinecraftServer.getServer() == null) {
-                 callback.apply(gameprofile);
-             } else {
--                GameProfile profile = skinCache.getIfPresent(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
-+                // Paper start
-+                com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(gameprofile);
-+                if (sync) {
-+                    // might complete by cache, but if not, go ahead and do it now, avoid the code below
-+                    paperProfile.complete(true, true);
-+                } else {
-+                    paperProfile.completeFromCache(false, true);
-+                }
-+                GameProfile profile = paperProfile.getGameProfile();
-+                // Paper end
-                 if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
-                     callback.apply(profile);
- 
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-                     Callable<GameProfile> callable = new Callable<GameProfile>() {
-                         @Override
-                         public GameProfile call() {
--                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
-+                            // Paper start
-+                            paperProfile.complete(true, true);
-+                            final GameProfile profile = paperProfile.getGameProfile();
-+                            // Paper end
-                             MinecraftServer.getServer().processQueue.add(new Runnable() {
-                                 @Override
-                                 public void run() {
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
