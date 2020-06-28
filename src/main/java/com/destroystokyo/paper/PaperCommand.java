@@ -21,7 +21,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,14 +39,14 @@ public class PaperCommand extends Command {
     public PaperCommand(String name) {
         super(name);
         this.description = "Paper related commands";
-        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight]";
+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight | dumpitem]";
         this.setPermission("bukkit.command.paper");
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
         if (args.length <= 1)
-            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight");
+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight", "dumpitem");
 
         switch (args[0].toLowerCase(Locale.ENGLISH))
         {
@@ -133,6 +135,9 @@ public class PaperCommand extends Command {
             case "reload":
                 doReload(sender);
                 break;
+            case "dumpitem":
+                doDumpItem(sender);
+                break;
             case "debug":
                 doDebug(sender, args);
                 break;
@@ -162,6 +167,19 @@ public class PaperCommand extends Command {
         }
 
         return true;
+    }
+
+    private void doDumpItem(CommandSender sender) {
+        ItemStack itemInHand = ((CraftPlayer) sender).getItemInHand();
+        net.minecraft.server.ItemStack itemStack = CraftItemStack.asNMSCopy(itemInHand);
+        NBTTagCompound tag = itemStack.getTag();
+        if (tag != null) {
+            String nbt = tag.toString();
+            Bukkit.getConsoleSender().sendMessage(nbt);
+            sender.sendMessage(nbt);
+        } else {
+            sender.sendMessage("Item does not have NBT");
+        }
     }
 
     private void doFixLight(CommandSender sender, String[] args) {
