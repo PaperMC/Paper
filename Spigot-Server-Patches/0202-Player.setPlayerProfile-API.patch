@@ -48,7 +48,7 @@ index 80a21dbc05ed3007f2e827f7a320131244c3044b..e0f0a1e91a037f93b239e779aa8fd92b
                              uniqueId = i.getId();
                              // Paper end
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f27fb59e752d25807859396560b213162870998e..53c52e4922538f1dd50764d8cbaa178d1f0692f9 100644
+index f27fb59e752d25807859396560b213162870998e..9718dd56217dd64f51ea399b4ecf57528eb89e89 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,6 +1,8 @@
@@ -68,7 +68,15 @@ index f27fb59e752d25807859396560b213162870998e..53c52e4922538f1dd50764d8cbaa178d
  import net.minecraft.server.MapIcon;
  import net.minecraft.server.MinecraftKey;
  import net.minecraft.server.NBTTagCompound;
-@@ -1216,8 +1219,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -54,6 +57,7 @@ import net.minecraft.server.PacketPlayOutMap;
+ import net.minecraft.server.PacketPlayOutNamedSoundEffect;
+ import net.minecraft.server.PacketPlayOutPlayerInfo;
+ import net.minecraft.server.PacketPlayOutPlayerListHeaderFooter;
++import net.minecraft.server.PacketPlayOutRespawn;
+ import net.minecraft.server.PacketPlayOutSpawnPosition;
+ import net.minecraft.server.PacketPlayOutStopSound;
+ import net.minecraft.server.PacketPlayOutTitle;
+@@ -1216,8 +1220,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          hiddenPlayers.put(player.getUniqueId(), hidingPlugins);
  
          // Remove this player from the hidden player's EntityTrackerEntry
@@ -83,7 +91,7 @@ index f27fb59e752d25807859396560b213162870998e..53c52e4922538f1dd50764d8cbaa178d
          PlayerChunkMap.EntityTracker entry = tracker.trackedEntities.get(other.getId());
          if (entry != null) {
              entry.clear(getHandle());
-@@ -1258,8 +1266,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1258,8 +1267,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
          hiddenPlayers.remove(player.getUniqueId());
  
@@ -98,7 +106,7 @@ index f27fb59e752d25807859396560b213162870998e..53c52e4922538f1dd50764d8cbaa178d
  
          getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
  
-@@ -1268,6 +1281,49 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1268,6 +1282,50 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              entry.updatePlayer(getHandle());
          }
      }
@@ -134,7 +142,8 @@ index f27fb59e752d25807859396560b213162870998e..53c52e4922538f1dd50764d8cbaa178d
 +        reregisterPlayer(handle);
 +
 +        //Respawn the player then update their position and selected slot
-+        //connection.sendPacket(new net.minecraft.server.PacketPlayOutRespawn(handle.dimension, net.minecraft.server.WorldData.c(handle.world.getWorldData().getSeed()), handle.world.getWorldData().getType(), handle.playerInteractManager.getGameMode())); // TODO: Fix this if you care to make it work
++        WorldServer worldserver = handle.getWorldServer();
++        connection.sendPacket(new net.minecraft.server.PacketPlayOutRespawn(worldserver.getTypeKey(), worldserver.getDimensionKey(), net.minecraft.server.BiomeManager.a(worldserver.getSeed()), handle.playerInteractManager.getGameMode(), handle.playerInteractManager.c(), worldserver.isDebugWorld(), worldserver.isFlatWorld(), true));
 +        handle.updateAbilities();
 +        connection.sendPacket(new net.minecraft.server.PacketPlayOutPosition(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), new HashSet<>(), 0));
 +        net.minecraft.server.MinecraftServer.getServer().getPlayerList().updateClient(handle);
