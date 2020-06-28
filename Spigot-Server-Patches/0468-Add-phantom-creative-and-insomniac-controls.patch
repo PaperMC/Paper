@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Apr 2020 15:13:41 -0500
+Subject: [PATCH] Add phantom creative and insomniac controls
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 08949526752e4d66e4c0df11f76f6500846e1fe4..13b89276feb76fcecaeefc166a1bc161d5931d9d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -622,4 +622,11 @@ public class PaperWorldConfig {
+     private void lightQueueSize() {
+         lightQueueSize = getInt("light-queue-size", lightQueueSize);
+     }
++
++    public boolean phantomIgnoreCreative = true;
++    public boolean phantomOnlyAttackInsomniacs = true;
++    private void phantomSettings() {
++        phantomIgnoreCreative = getBoolean("phantoms-do-not-spawn-on-creative-players", phantomIgnoreCreative);
++        phantomOnlyAttackInsomniacs = getBoolean("phantoms-only-attack-insomniacs", phantomOnlyAttackInsomniacs);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityPhantom.java b/src/main/java/net/minecraft/server/EntityPhantom.java
+index 47d82722e15c5b91a86af1a09807ccc37a1b37be..3cb78924daa48c3a0a3e5c9c64ef6e726d79a798 100644
+--- a/src/main/java/net/minecraft/server/EntityPhantom.java
++++ b/src/main/java/net/minecraft/server/EntityPhantom.java
+@@ -225,6 +225,7 @@ public class EntityPhantom extends EntityFlying implements IMonster {
+                         EntityHuman entityhuman = (EntityHuman) iterator.next();
+ 
+                         if (EntityPhantom.this.a((EntityLiving) entityhuman, PathfinderTargetCondition.a)) {
++                            if (!world.paperConfig.phantomOnlyAttackInsomniacs || IEntitySelector.isInsomniac.test(entityhuman)) // Paper
+                             EntityPhantom.this.setGoalTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
+index 57bc56cffff87d9b1774cec455af8d1651fb882c..a52dd0c021e264a57a62bde27ea9d2a6a97e2335 100644
+--- a/src/main/java/net/minecraft/server/IEntitySelector.java
++++ b/src/main/java/net/minecraft/server/IEntitySelector.java
+@@ -26,6 +26,7 @@ public final class IEntitySelector {
+     public static final Predicate<Entity> g = (entity) -> {
+         return !entity.isSpectator();
+     };
++    public static Predicate<EntityHuman> isInsomniac = (player) -> MathHelper.clamp(((EntityPlayer) player).getStatisticManager().getStatisticValue(StatisticList.CUSTOM.get(StatisticList.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper
+ 
+     // Paper start
+     public static final Predicate<Entity> affectsSpawning = (entity) -> {
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+index 39c5350373f6a5ad30f41e8886573d6b315924c6..bf4fa17101cb8710d8b8ba8ad43f98b6fe154ae1 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerPhantom.java
+@@ -32,7 +32,7 @@ public class MobSpawnerPhantom implements MobSpawner {
+                     while (iterator.hasNext()) {
+                         EntityHuman entityhuman = (EntityHuman) iterator.next();
+ 
+-                        if (!entityhuman.isSpectator()) {
++                        if (!entityhuman.isSpectator() && (!worldserver.paperConfig.phantomIgnoreCreative || !entityhuman.isCreative())) { // Paper
+                             BlockPosition blockposition = entityhuman.getChunkCoordinates();
+ 
+                             if (!worldserver.getDimensionManager().hasSkyLight() || blockposition.getY() >= worldserver.getSeaLevel() && worldserver.f(blockposition)) {
