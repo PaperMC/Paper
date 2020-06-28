@@ -1518,11 +1518,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         this.H = keypair;
     }
 
-    public void a(EnumDifficulty enumdifficulty, boolean flag) {
-        if (flag || !this.saveData.isDifficultyLocked()) {
-            this.saveData.setDifficulty(this.saveData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
-            this.bb();
-            this.getPlayerList().getPlayers().forEach(this::a);
+    // Paper start - fix per world difficulty
+    public void a(WorldServer world, EnumDifficulty enumdifficulty, boolean flag) {
+        WorldDataServer worldData = world.worldDataServer;
+        if (flag || !worldData.isDifficultyLocked()) {
+            worldData.setDifficulty(worldData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
+            world.setSpawnFlags(worldData.getDifficulty() != EnumDifficulty.PEACEFUL && ((DedicatedServer)this).propertyManager.getProperties().spawnMonsters, this.getSpawnAnimals());
+            //world.players.forEach(this::a);
+            // Paper end
         }
     }
 

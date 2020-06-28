@@ -36,10 +36,11 @@ public class CommandDifficulty {
     public static int a(CommandListenerWrapper commandlistenerwrapper, EnumDifficulty enumdifficulty) throws CommandSyntaxException {
         MinecraftServer minecraftserver = commandlistenerwrapper.getServer();
 
-        if (minecraftserver.getSaveData().getDifficulty() == enumdifficulty) {
+        WorldServer world = commandlistenerwrapper.getWorld(); // Paper
+        if (world.worldDataServer.getDifficulty() == enumdifficulty) { // Paper
             throw CommandDifficulty.a.create(enumdifficulty.c());
         } else {
-            minecraftserver.a(enumdifficulty, true);
+            minecraftserver.a(world, enumdifficulty, true); // Paper
             commandlistenerwrapper.sendMessage(new ChatMessage("commands.difficulty.success", new Object[]{enumdifficulty.b()}), true);
             return 0;
         }

@@ -2779,7 +2779,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     public void a(PacketPlayInDifficultyChange packetplayindifficultychange) {
         PlayerConnectionUtils.ensureMainThread(packetplayindifficultychange, this, this.player.getWorldServer());
         if (this.player.k(2) || this.isExemptPlayer()) {
-            this.minecraftServer.a(packetplayindifficultychange.b(), false);
+            //this.minecraftServer.a(packetplayindifficultychange.b(), false); // Paper - don't allow clients to change this
         }
     }
 

@@ -321,7 +321,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
 
     @Override
     public void updateWorldSettings() {
-        this.a(this.getDedicatedServerProperties().difficulty, true);
+        //this.a(this.getDedicatedServerProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
     }
 
     @Override
