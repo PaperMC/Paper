@@ -4471,7 +4471,7 @@ index 6a797a0ac8ca3f120eea5bd9c54de21a4f38b257..f1c4ae9997d5d11d903360dbccf45f3c
      /**
       * Mirror
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 9ad17c560c8d99a396543ab9f97c34de648f6544..533c0bc55fc7ac4cc1f493f898a85a6617371031 100644
+index 9ad17c560c8d99a396543ab9f97c34de648f6544..4bf48f77f3f7cd62a91590543f5af441c8268029 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -43,6 +43,7 @@ import org.bukkit.scheduler.BukkitWorker;
@@ -4494,6 +4494,32 @@ index 9ad17c560c8d99a396543ab9f97c34de648f6544..533c0bc55fc7ac4cc1f493f898a85a66
      public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
          validate(plugin, runnable);
          if (delay < 0L) {
+@@ -400,13 +406,20 @@ public class CraftScheduler implements BukkitScheduler {
+                     task.run();
+                     task.timings.stopTiming(); // Spigot
+                 } catch (final Throwable throwable) {
+-                    task.getOwner().getLogger().log(
++                    // Paper start
++                    String msg = String.format(
++                        "Task #%s for %s generated an exception",
++                        task.getTaskId(),
++                        task.getOwner().getDescription().getFullName());
++                    if (task.getOwner() == MINECRAFT) {
++                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                    } else {
++                        task.getOwner().getLogger().log(
+                             Level.WARNING,
+-                            String.format(
+-                                "Task #%s for %s generated an exception",
+-                                task.getTaskId(),
+-                                task.getOwner().getDescription().getFullName()),
++                            msg,
+                             throwable);
++                    }
++                    // Paper end
+                 } finally {
+                     currentTask = null;
+                 }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 index 3f55381c152b9841b524f623c9b32360e97cb8ed..d85e21b75054067b926ecfee89d62c6dd0744189 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java

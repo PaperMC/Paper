@@ -253,7 +253,7 @@ index 19e68a78310de787bca701bc2597c64e34a77d7c..a2a25cf6a43a1f59a80c997e2980f2bb
          } finally {
              if (pushbackinputstream != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index de332758e03a563a9b72c134332db9e6a1c5ed2b..e68533176a0c07560118531600304fa76a1c3fc6 100644
+index ffe9cc1011226d604dc5499e7692e9a9a5132b72..343cdb06881fa8b0155b56d29c110bba489f9667 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -16,6 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
@@ -266,30 +266,16 @@ index de332758e03a563a9b72c134332db9e6a1c5ed2b..e68533176a0c07560118531600304fa7
  import org.apache.commons.lang.Validate;
  import org.bukkit.plugin.IllegalPluginAccessException;
  import org.bukkit.plugin.Plugin;
-@@ -406,20 +409,26 @@ public class CraftScheduler implements BukkitScheduler {
-                 try {
-                     task.run();
-                 } catch (final Throwable throwable) {
-+                    // Paper start
-+                    String msg = String.format(
-+                            "Task #%s for %s generated an exception",
-+                            task.getTaskId(),
-+                            task.getOwner().getDescription().getFullName());
-                     task.getOwner().getLogger().log(
-                             Level.WARNING,
--                            String.format(
--                                "Task #%s for %s generated an exception",
--                                task.getTaskId(),
--                                task.getOwner().getDescription().getFullName()),
-+                            msg,
+@@ -419,6 +422,8 @@ public class CraftScheduler implements BukkitScheduler {
+                             msg,
                              throwable);
+                     }
 +                    task.getOwner().getServer().getPluginManager().callEvent(
-+                            new ServerExceptionEvent(new ServerSchedulerException(msg, throwable, task))
-+                    );
-+                    // Paper end
++                        new ServerExceptionEvent(new ServerSchedulerException(msg, throwable, task)));
+                     // Paper end
                  } finally {
                      currentTask = null;
-                 }
+@@ -426,7 +431,7 @@ public class CraftScheduler implements BukkitScheduler {
                  parsePending();
              } else {
                  debugTail = debugTail.setNext(new CraftAsyncDebugger(currentTick + RECENT_TICKS, task.getOwner(), task.getTaskClass()));
