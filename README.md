@@ -40,7 +40,7 @@ How To (Plugin Developers)
     <scope>provided</scope>
  </dependency>
  ```
-#####Or alternatively, with Gradle:
+##### Or alternatively, with Gradle:
 
  * Repository:
 ```groovy
