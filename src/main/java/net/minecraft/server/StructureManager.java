@@ -1,12 +1,13 @@
 package net.minecraft.server;
 
 import com.mojang.datafixers.DataFixUtils;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList; // Paper
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 public class StructureManager {
 
-    private final GeneratorAccess a;
+    private final GeneratorAccess a; public GeneratorAccess getLevel() { return a; } // Paper - OBFHELPER
     private final GeneratorSettings b;
 
     public StructureManager(GeneratorAccess generatoraccess, GeneratorSettings generatorsettings) {
@@ -32,6 +33,20 @@ public class StructureManager {
         });
     }
 
+    // Paper start - remove structure streams
+    public java.util.List<StructureStart<?>> getFeatureStarts(SectionPosition sectionPosition, StructureGenerator<?> structureGenerator) {
+        java.util.List<StructureStart<?>> list = new ObjectArrayList<>();
+        for (Long curLong: getLevel().getChunkAt(sectionPosition.a(), sectionPosition.c(), ChunkStatus.STRUCTURE_REFERENCES).b(structureGenerator)) {
+            SectionPosition sectionPosition1 = SectionPosition.a(new ChunkCoordIntPair(curLong), 0);
+            StructureStart<?> structurestart = a(sectionPosition1, structureGenerator, getLevel().getChunkAt(sectionPosition1.a(), sectionPosition1.c(), ChunkStatus.STRUCTURE_STARTS));
+            if (structurestart != null && structurestart.e()) {
+                list.add(structurestart);
+            }
+        }
+        return list;
+    }
+    // Paper end
+
     @Nullable
     public StructureStart<?> a(SectionPosition sectionposition, StructureGenerator<?> structuregenerator, IStructureAccess istructureaccess) {
         return istructureaccess.a(structuregenerator);
@@ -50,13 +65,21 @@ public class StructureManager {
     }
 
     public StructureStart<?> a(BlockPosition blockposition, boolean flag, StructureGenerator<?> structuregenerator) {
-        return (StructureStart) DataFixUtils.orElse(this.a(SectionPosition.a(blockposition), structuregenerator).filter((structurestart) -> {
-            return structurestart.c().b((BaseBlockPosition) blockposition);
-        }).filter((structurestart) -> {
-            return !flag || structurestart.d().stream().anyMatch((structurepiece) -> {
-                return structurepiece.g().b((BaseBlockPosition) blockposition);
-            });
-        }).findFirst(), StructureStart.a);
+        // Paper start - remove structure streams
+        for (StructureStart<?> structurestart : getFeatureStarts(SectionPosition.a(blockposition), structuregenerator)) {
+            if (structurestart.c().b(blockposition)) {
+                if (!flag) {
+                    return structurestart;
+                }
+                for (StructurePiece structurepiece : structurestart.d()) {
+                    if (structurepiece.g().b(blockposition)) {
+                        return structurestart;
+                    }
+                }
+            }
+        }
+        return StructureStart.a;
+        // Paper end
     }
 
     // Spigot start

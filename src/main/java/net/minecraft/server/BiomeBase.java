@@ -209,9 +209,11 @@ public final class BiomeBase {
                     int l1 = j1 << 4;
 
                     try {
-                        structuremanager.a(SectionPosition.a(blockposition), structuregenerator).forEach((structurestart) -> {
-                            structurestart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
-                        });
+                        // Paper start - remove structure streams
+                        for (StructureStart<?> structureStart : structuremanager.getFeatureStarts(SectionPosition.a(blockposition), structuregenerator)) {
+                            structureStart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
+                        }
+                        // Paper end
                     } catch (Exception exception) {
                         CrashReport crashreport = CrashReport.a(exception, "Feature placement");
 
