@@ -6,7 +6,7 @@ Subject: [PATCH] Don't fire unleash/dismount events from worldgen threads
 Mojang can trigger this during worldgen and tries to fire bukkit events.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 38887c1b7849926fab0a3b2db0e7b81388364172..0e0bc2afe8bce6305062555a599c043613f4abef 100644
+index 38887c1b7849926fab0a3b2db0e7b81388364172..2aa38528d78f2619317b96b1c944982b17f7160b 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2117,7 +2117,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -18,6 +18,15 @@ index 38887c1b7849926fab0a3b2db0e7b81388364172..0e0bc2afe8bce6305062555a599c0436
                  VehicleExitEvent event = new VehicleExitEvent(
                          (Vehicle) getBukkitEntity(),
                          (LivingEntity) entity.getBukkitEntity(), !suppressCancellation // Paper
+@@ -2132,7 +2132,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             // CraftBukkit end
+             // Spigot start
+             org.spigotmc.event.entity.EntityDismountEvent event = new org.spigotmc.event.entity.EntityDismountEvent(entity.getBukkitEntity(), this.getBukkitEntity(), !suppressCancellation); // Paper
+-            Bukkit.getPluginManager().callEvent(event);
++            if (MCUtil.isMainThread()) Bukkit.getPluginManager().callEvent(event); // Paper
+             if (event.isCancelled()) {
+                 return false;
+             }
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
 index 605bbf0174e60f795e445193a0284739ea452946..301f1ae8820df24d7c8453335abc1934aa7fae43 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
