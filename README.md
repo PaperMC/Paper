@@ -41,6 +41,23 @@ How To (Plugin Developers)
  </dependency>
  ```
 
+**Or alternatively, with Gradle:**
+
+ * Repository:
+```groovy
+repositories {
+    maven {
+        url 'https://papermc.io/repo/repository/maven-public/'
+    }
+}
+```
+ * Artifact:
+```groovy
+dependencies {
+    compileOnly 'com.destroystokyo.paper:paper-api:1.16.1-R0.1-SNAPSHOT'
+}
+```
+
 How To (Compiling Jar From Source)
 ------
 To compile Paper, you need JDK 8, maven, and an internet connection.
