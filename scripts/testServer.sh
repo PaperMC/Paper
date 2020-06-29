@@ -87,7 +87,9 @@ fi
 # JVM FLAGS
 #
 
-cp "$jar" paper.jar
+if [ -f "$jar" ]; then
+    cp "$jar" paper.jar
+fi
 baseargs="-server -Xms${PAPER_MIN_TEST_MEMORY:-512M} -Xmx${PAPER_TEST_MEMORY:-2G} -Dfile.encoding=UTF-8 -XX:MaxGCPauseMillis=150 -XX:+UseG1GC "
 baseargs="$baseargs -DIReallyKnowWhatIAmDoingISwear=1 "
 baseargs="$baseargs -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=40 -XX:G1MaxNewSizePercent=60 "
