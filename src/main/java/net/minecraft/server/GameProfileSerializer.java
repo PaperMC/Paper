@@ -28,6 +28,11 @@ public final class GameProfileSerializer {
             s = nbttagcompound.getString("Name");
         }
 
+        // Paper start - support string UUID's
+        if (nbttagcompound.hasKeyOfType("Id", 8)) {
+            uuid = UUID.fromString(nbttagcompound.getString("Id"));
+        }
+        // Paper end
         if (nbttagcompound.b("Id")) {
             uuid = nbttagcompound.a("Id");
         }

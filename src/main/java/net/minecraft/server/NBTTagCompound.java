@@ -136,6 +136,12 @@ public class NBTTagCompound implements NBTBase {
 
     public void setUUID(String prefix, UUID uuid) { a(prefix, uuid); } // Paper - OBFHELPER
     public void a(String s, UUID uuid) {
+        // Paper start - support old format
+        if (this.hasKeyOfType(s + "Most", 99) && this.hasKeyOfType(s + "Least", 99)) {
+            this.map.remove(s + "Most");
+            this.map.remove(s + "Least");
+        }
+        // Paper end
         this.map.put(s, GameProfileSerializer.a(uuid));
     }
 
@@ -143,11 +149,21 @@ public class NBTTagCompound implements NBTBase {
     @Nullable public UUID getUUID(String prefix) { return a(prefix); } // Paper - OBFHELPER
     @Nullable
     public UUID a(String s) {
+        // Paper start - support old format
+        if (!hasKeyOfType(s, 11) && this.hasKeyOfType(s + "Most", 99) && this.hasKeyOfType(s + "Least", 99)) {
+            return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
+        }
+        // Paper end
         return GameProfileSerializer.a(this.get(s));
     }
 
     public final boolean hasUUID(String s) { return this.b(s); } // Paper - OBFHELPER
     public boolean b(String s) {
+        // Paper start - support old format
+        if (this.hasKeyOfType(s + "Most", 99) && this.hasKeyOfType(s + "Least", 99)) {
+            return true;
+        }
+        // Paper end
         NBTBase nbtbase = this.get(s);
 
         return nbtbase != null && nbtbase.b() == NBTTagIntArray.a && ((NBTTagIntArray) nbtbase).getInts().length == 4;
