@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Jun 2020 03:26:17 -0400
+Subject: [PATCH] Support old UUID format for NBT
+
+We have stored UUID in plenty of places that did not get DFU'd
+
+So just look for old format and load it if it exists.
+
+diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/NBTTagCompound.java
++++ b/src/main/java/net/minecraft/server/NBTTagCompound.java
+@@ -0,0 +0,0 @@ public class NBTTagCompound implements NBTBase {
+     @Nullable public UUID getUUID(String prefix) { return a(prefix); } // Paper - OBFHELPER
+     @Nullable
+     public UUID a(String s) {
++        // Paper start - support old format
++        if (hasKey(s + "Least") && hasKey(s + "Most")) {
++            return new UUID(this.getLong(s + "Most"), this.getLong(s + "Least"));
++        }
++        // Paper end
+         return GameProfileSerializer.a(this.get(s));
+     }
+ 
