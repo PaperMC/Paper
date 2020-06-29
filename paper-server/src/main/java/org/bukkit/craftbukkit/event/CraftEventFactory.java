@@ -39,6 +39,7 @@ import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPotion;
 import net.minecraft.server.EntityRaider;
 import net.minecraft.server.EntitySlime;
+import net.minecraft.server.EntityStrider;
 import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityVillager;
 import net.minecraft.server.EntityWaterAnimal;
@@ -113,6 +114,7 @@ import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Raider;
+import org.bukkit.entity.Strider;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
@@ -180,6 +182,7 @@ import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.StriderTemperatureChangeEvent;
 import org.bukkit.event.entity.VillagerCareerChangeEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -1575,5 +1578,10 @@ public class CraftEventFactory {
         LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
         Bukkit.getPluginManager().callEvent(event);
         return event;
+    }
+
+    public static void callStriderTemperatureChangeEvent(EntityStrider strider, boolean shivering) {
+        StriderTemperatureChangeEvent event = new StriderTemperatureChangeEvent((Strider) strider.getBukkitEntity(), shivering);
+        Bukkit.getPluginManager().callEvent(event);
     }
 }
