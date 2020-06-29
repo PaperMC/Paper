@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Jun 2020 04:00:07 -0400
+Subject: [PATCH] Don't fire unleash/dismount events from worldgen threads
+
+Mojang can trigger this during worldgen and tries to fire bukkit events.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 38887c1b7849926fab0a3b2db0e7b81388364172..0e0bc2afe8bce6305062555a599c043613f4abef 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -2117,7 +2117,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             // CraftBukkit start
+             CraftEntity craft = (CraftEntity) entity.getBukkitEntity().getVehicle();
+             Entity orig = craft == null ? null : craft.getHandle();
+-            if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
++            if (getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity && MCUtil.isMainThread()) { // Paper
+                 VehicleExitEvent event = new VehicleExitEvent(
+                         (Vehicle) getBukkitEntity(),
+                         (LivingEntity) entity.getBukkitEntity(), !suppressCancellation // Paper
+diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
+index 605bbf0174e60f795e445193a0284739ea452946..301f1ae8820df24d7c8453335abc1934aa7fae43 100644
+--- a/src/main/java/net/minecraft/server/EntityInsentient.java
++++ b/src/main/java/net/minecraft/server/EntityInsentient.java
+@@ -1339,7 +1339,7 @@ public abstract class EntityInsentient extends EntityLiving {
+         boolean flag1 = super.a(entity, flag);
+ 
+         if (flag1 && this.isLeashed()) {
+-            this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
++            if (MCUtil.isMainThread()) this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit // Paper
+             this.unleash(true, true);
+         }
+ 
