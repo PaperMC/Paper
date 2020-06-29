@@ -1,12 +1,13 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * 'attachment' denotes how the bell is attached to its block.
  */
-public interface Bell extends Directional {
+public interface Bell extends Directional, Powerable {
 
     /**
      * Gets the value of the 'attachment' property.
