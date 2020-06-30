@@ -19,7 +19,7 @@
          for (int i = 0; i < 8; ++i) {
              avoxelshape[i] = VoxelShapes.a(BlockComposter.c, Block.a(2.0D, (double) Math.max(2, 1 + i * 2), 2.0D, 14.0D, 16.0D, 14.0D), OperatorBoolean.ONLY_FIRST);
          }
-@@ -163,11 +167,17 @@
+@@ -163,11 +167,18 @@
          }
      }
  
@@ -30,16 +30,35 @@
          if (i < 7 && BlockComposter.b.containsKey(itemstack.getItem())) {
 -            IBlockData iblockdata1 = b(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack);
 +            // CraftBukkit start
-+            IBlockData iblockdata1 = b(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition, itemstack);
++            double rand = worldserver.getRandom().nextDouble();
++            IBlockData iblockdata1 = b(iblockdata, DummyGeneratorAccess.INSTANCE, blockposition, itemstack, rand);
 +            if (iblockdata == iblockdata1 || org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata1).isCancelled()) {
 +                return iblockdata;
 +            }
-+            iblockdata1 = b(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack);
++            iblockdata1 = b(iblockdata, (GeneratorAccess) worldserver, blockposition, itemstack, rand);
 +            // CraftBukkit end
  
              itemstack.subtract(1);
              worldserver.triggerEffect(1500, blockposition, iblockdata != iblockdata1 ? 1 : 0);
-@@ -254,7 +264,8 @@
+@@ -203,10 +214,16 @@
+     }
+ 
+     private static IBlockData b(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack) {
++        // CraftBukkit start
++        return b(iblockdata, generatoraccess, blockposition, itemstack, generatoraccess.getRandom().nextDouble());
++    }
++
++    private static IBlockData b(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition, ItemStack itemstack, double rand) {
++        // CraftBukkit end
+         int i = (Integer) iblockdata.get(BlockComposter.a);
+         float f = BlockComposter.b.getFloat(itemstack.getItem());
+ 
+-        if ((i != 0 || f <= 0.0F) && generatoraccess.getRandom().nextDouble() >= (double) f) {
++        if ((i != 0 || f <= 0.0F) && rand >= (double) f) {
+             return iblockdata;
+         } else {
+             int j = i + 1;
+@@ -254,7 +271,8 @@
      public IWorldInventory a(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
          int i = (Integer) iblockdata.get(BlockComposter.a);
  
@@ -49,7 +68,7 @@
      }
  
      static class ContainerInput extends InventorySubcontainer implements IWorldInventory {
-@@ -266,6 +277,7 @@
+@@ -266,6 +284,7 @@
  
          public ContainerInput(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
              super(1);
@@ -57,7 +76,7 @@
              this.a = iblockdata;
              this.b = generatoraccess;
              this.c = blockposition;
-@@ -318,6 +330,7 @@
+@@ -318,6 +337,7 @@
              this.blockData = iblockdata;
              this.generatorAccess = generatoraccess;
              this.blockPosition = blockposition;
@@ -65,7 +84,7 @@
          }
  
          @Override
-@@ -342,15 +355,23 @@
+@@ -342,15 +362,23 @@
  
          @Override
          public void update() {
