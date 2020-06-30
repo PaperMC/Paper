@@ -15,9 +15,20 @@ public final class CraftCobbleWall extends org.bukkit.craftbukkit.block.data.Cra
 
     // org.bukkit.craftbukkit.block.data.type.CraftWall
 
+    private static final net.minecraft.server.BlockStateBoolean UP = getBoolean(net.minecraft.server.BlockCobbleWall.class, "up");
     private static final net.minecraft.server.BlockStateEnum<?>[] HEIGHTS = new net.minecraft.server.BlockStateEnum[]{
         getEnum(net.minecraft.server.BlockCobbleWall.class, "north"), getEnum(net.minecraft.server.BlockCobbleWall.class, "east"), getEnum(net.minecraft.server.BlockCobbleWall.class, "south"), getEnum(net.minecraft.server.BlockCobbleWall.class, "west")
     };
+
+    @Override
+    public boolean isUp() {
+        return get(UP);
+    }
+
+    @Override
+    public void setUp(boolean up) {
+        set(UP, up);
+    }
 
     @Override
     public Height getHeight(org.bukkit.block.BlockFace face) {

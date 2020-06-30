@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftBell extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Bell, org.bukkit.block.data.Directional {
+public final class CraftBell extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Bell, org.bukkit.block.data.Directional, org.bukkit.block.data.Powerable {
 
     public CraftBell() {
         super();
@@ -44,5 +44,19 @@ public final class CraftBell extends org.bukkit.craftbukkit.block.data.CraftBloc
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
         return getValues(FACING, org.bukkit.block.BlockFace.class);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftPowerable
+
+    private static final net.minecraft.server.BlockStateBoolean POWERED = getBoolean(net.minecraft.server.BlockBell.class, "powered");
+
+    @Override
+    public boolean isPowered() {
+        return get(POWERED);
+    }
+
+    @Override
+    public void setPowered(boolean powered) {
+        set(POWERED, powered);
     }
 }
