@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
@@ -25,6 +26,7 @@ import net.minecraft.server.ParticleParam;
 import net.minecraft.server.SoundCategory;
 import net.minecraft.server.SoundEffect;
 import net.minecraft.server.TickList;
+import net.minecraft.server.TickListEmpty;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldBorder;
@@ -39,12 +41,12 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public TickList<Block> getBlockTickList() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return TickListEmpty.b();
     }
 
     @Override
     public TickList<FluidType> getFluidTickList() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return TickListEmpty.b();
     }
 
     @Override
@@ -69,7 +71,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public Random getRandom() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return ThreadLocalRandom.current();
     }
 
     @Override
