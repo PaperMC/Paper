@@ -4,6 +4,8 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import java.io.File;
@@ -25,6 +27,7 @@ import net.minecraft.server.DynamicOpsNBT;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
+import net.minecraft.server.LootDeserializationContext;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.MojangsonParser;
@@ -230,10 +233,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
         if (Bukkit.getAdvancement(key) != null) {
             throw new IllegalArgumentException("Advancement " + key + " already exists.");
         }
+        MinecraftKey minecraftkey = CraftNamespacedKey.toMinecraft(key);
 
-        net.minecraft.server.Advancement.SerializedAdvancement nms = (net.minecraft.server.Advancement.SerializedAdvancement) ChatDeserializer.a(AdvancementDataWorld.DESERIALIZER, advancement, net.minecraft.server.Advancement.SerializedAdvancement.class);
+        JsonElement jsonelement = AdvancementDataWorld.DESERIALIZER.fromJson(advancement, JsonElement.class);
+        JsonObject jsonobject = ChatDeserializer.m(jsonelement, "advancement");
+        net.minecraft.server.Advancement.SerializedAdvancement nms = net.minecraft.server.Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, MinecraftServer.getServer().aI()));
         if (nms != null) {
-            MinecraftServer.getServer().getAdvancementData().REGISTRY.a(Maps.newHashMap(Collections.singletonMap(CraftNamespacedKey.toMinecraft(key), nms)));
+            MinecraftServer.getServer().getAdvancementData().REGISTRY.a(Maps.newHashMap(Collections.singletonMap(minecraftkey, nms)));
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
