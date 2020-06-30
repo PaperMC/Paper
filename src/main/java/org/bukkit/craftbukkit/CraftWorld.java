@@ -88,6 +88,7 @@ import net.minecraft.server.Ticket;
 import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
+import net.minecraft.server.WorldGenFeatureHugeFungiConfiguration;
 import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
@@ -729,6 +730,14 @@ public class CraftWorld implements World {
         case CHORUS_PLANT:
             ((BlockChorusFlower) Blocks.CHORUS_FLOWER).a(world, pos, rand, 8);
             return true;
+        case CRIMSON_FUNGUS:
+            gen = WorldGenerator.HUGE_FUNGUS;
+            conf = WorldGenFeatureHugeFungiConfiguration.b;
+            break;
+        case WARPED_FUNGUS:
+            gen = WorldGenerator.HUGE_FUNGUS;
+            conf = WorldGenFeatureHugeFungiConfiguration.d;
+            break;
         case TREE:
         default:
             gen = WorldGenerator.TREE;
