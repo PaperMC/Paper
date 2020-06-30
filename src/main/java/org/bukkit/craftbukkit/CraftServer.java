@@ -429,7 +429,7 @@ public final class CraftServer implements Server {
         }
     }
 
-    private void syncCommands() {
+    public void syncCommands() {
         // Clear existing commands
         CommandDispatcher dispatcher = console.dataPackResources.commandDispatcher = new CommandDispatcher();
 
