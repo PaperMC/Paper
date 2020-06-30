@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.util;
 
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 import net.minecraft.server.AxisAlignedBB;
 import net.minecraft.server.BiomeBase;
@@ -71,7 +70,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public Random getRandom() {
-        return ThreadLocalRandom.current();
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
