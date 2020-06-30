@@ -73,4 +73,12 @@ public enum TreeType {
      * Large plant native to The End
      */
     CHORUS_PLANT,
+    /**
+     * Large crimson fungus native to the nether
+     */
+    CRIMSON_FUNGUS,
+    /**
+     * Large warped fungus native to the nether
+     */
+    WARPED_FUNGUS
 }
