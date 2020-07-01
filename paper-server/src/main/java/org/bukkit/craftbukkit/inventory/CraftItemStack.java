@@ -530,6 +530,8 @@ public final class CraftItemStack extends ItemStack {
                 return new CraftMetaSuspiciousStew(item.getTag());
             case ITEM_FRAME:
                 return new CraftMetaEntityTag(item.getTag());
+            case COMPASS:
+                return new CraftMetaCompass(item.getTag());
             default:
                 return new CraftMetaItem(item.getTag());
         }
