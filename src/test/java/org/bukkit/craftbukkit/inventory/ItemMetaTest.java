@@ -324,6 +324,15 @@ public class ItemMetaTest extends AbstractTestingBase {
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
+            },
+            new StackProvider(Material.ITEM_FRAME) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
+                    meta.entityTag = new NBTTagCompound();
+                    meta.entityTag.setBoolean("Invisible", true);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
             }
         );
 
