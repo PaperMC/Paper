@@ -333,6 +333,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
+            },
+            new StackProvider(Material.COMPASS) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
+                    meta.setLodestoneTracked(true);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
             }
         );
 
