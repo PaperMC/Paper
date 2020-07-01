@@ -11,7 +11,7 @@ public enum ReputationType {
     MAJOR_NEGATIVE("major_negative", -5, 100, 10, 10), MINOR_NEGATIVE("minor_negative", -1, 200, 20, 20), MINOR_POSITIVE("minor_positive", 1, 200, 1, 5), MAJOR_POSITIVE("major_positive", 5, 100, 0, 100), TRADING("trading", 1, 25, 2, 20);
 
     public final String f;
-    public final int g;
+    public final int g; public int getWeight() { return g; } // Paper - OBFHELPER
     public final int h;
     public final int i;
     public final int j;
