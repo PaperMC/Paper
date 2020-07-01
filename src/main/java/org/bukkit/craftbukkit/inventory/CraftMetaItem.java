@@ -492,7 +492,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             AttributeModifier attribMod = CraftAttributeInstance.convert(nmsModifier);
 
-            String attributeName = entry.getString(ATTRIBUTES_IDENTIFIER.NBT);
+            String attributeName = CraftAttributeMap.convertIfNeeded(entry.getString(ATTRIBUTES_IDENTIFIER.NBT)); // Paper
             if (attributeName == null || attributeName.isEmpty()) {
                 continue;
             }
