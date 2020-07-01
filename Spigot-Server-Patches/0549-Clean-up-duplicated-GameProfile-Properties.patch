@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 1 Jul 2020 03:18:37 -0400
+Subject: [PATCH] Clean up duplicated GameProfile Properties
+
+We had a bug where we accidently cloned properties resulting in skulls
+growing to large sizes and preventing login.
+
+This now automatically cleans up the extra properties.
+
+diff --git a/src/main/java/net/minecraft/server/GameProfileSerializer.java b/src/main/java/net/minecraft/server/GameProfileSerializer.java
+index c7d548dad5838410e55948e2a8acc93e5088aac8..b0571c4971666a9651f8c8d36f88bcac9777728f 100644
+--- a/src/main/java/net/minecraft/server/GameProfileSerializer.java
++++ b/src/main/java/net/minecraft/server/GameProfileSerializer.java
+@@ -51,7 +51,8 @@ public final class GameProfileSerializer {
+                     String s2 = (String) iterator.next();
+                     NBTTagList nbttaglist = nbttagcompound1.getList(s2, 10);
+ 
+-                    for (int i = 0; i < nbttaglist.size(); ++i) {
++                    if (nbttaglist.size() == 0) continue; // Paper - remove duplicate properties
++                    for (int i = nbttaglist.size() -1; i < nbttaglist.size(); ++i) { // Paper - remove duplicate properties
+                         NBTTagCompound nbttagcompound2 = nbttaglist.getCompound(i);
+                         String s3 = nbttagcompound2.getString("Value");
+ 
+@@ -231,7 +232,7 @@ public final class GameProfileSerializer {
+         Optional<T> optional = iblockstate.b(nbttagcompound.getString(s));
+ 
+         if (optional.isPresent()) {
+-            return (IBlockDataHolder) s0.set(iblockstate, (Comparable) optional.get());
++            return s0.set(iblockstate, optional.get()); // Paper - decompile error
+         } else {
+             GameProfileSerializer.LOGGER.warn("Unable to read property: {} with value: {} for blockstate: {}", s, nbttagcompound.getString(s), nbttagcompound1.toString());
+             return s0;
+@@ -261,8 +262,8 @@ public final class GameProfileSerializer {
+         return nbttagcompound;
+     }
+ 
+-    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<?> comparable) {
+-        return iblockstate.a(comparable);
++    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<T> comparable) { // Paper - decompile error
++        return iblockstate.a((T) comparable); // Paper - decompile error
+     }
+ 
+     public static NBTTagCompound a(DataFixer datafixer, DataFixTypes datafixtypes, NBTTagCompound nbttagcompound, int i) {
+diff --git a/src/main/java/net/minecraft/server/ItemSkullPlayer.java b/src/main/java/net/minecraft/server/ItemSkullPlayer.java
+index 4e4162dc492731408026a86e5766270d8a3db48a..59b57df2847b5d4bbf214db1eace2bf65d408d2f 100644
+--- a/src/main/java/net/minecraft/server/ItemSkullPlayer.java
++++ b/src/main/java/net/minecraft/server/ItemSkullPlayer.java
+@@ -53,6 +53,18 @@ public class ItemSkullPlayer extends ItemBlockWallable {
+             return true;
+         } else {
+             // CraftBukkit start
++            // Paper start - clean up old duplicated properties
++            NBTTagCompound properties = nbttagcompound.getCompound("SkullOwner").getCompound("Properties");
++            for (String key : properties.getKeys()) {
++                NBTTagList values = properties.getList(key, 10);
++                if (values.size() > 1) {
++                    NBTBase texture = values.get(values.size() - 1);
++                    values = new NBTTagList();
++                    values.add(texture);
++                    properties.set(key, values);
++                }
++            }
++            // Paper end
+             NBTTagList textures = nbttagcompound.getCompound("SkullOwner").getCompound("Properties").getList("textures", 10); // Safe due to method contracts
+             for (int i = 0; i < textures.size(); i++) {
+                 if (textures.get(i) instanceof NBTTagCompound && !((NBTTagCompound) textures.get(i)).hasKeyOfType("Signature", 8) && ((NBTTagCompound) textures.get(i)).getString("Value").trim().isEmpty()) {
