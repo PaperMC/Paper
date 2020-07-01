@@ -1530,7 +1530,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 break;
             }
         }
-        AttributeModifiable dummy = new AttributeModifiable(GenericAttributes.MAX_HEALTH, (attribute) -> {});
+        AttributeModifiable dummy = new AttributeModifiable(GenericAttributes.MAX_HEALTH, (attribute) -> { });
         dummy.setValue(scaledHealth ? healthScale : getMaxHealth());
         collection.add(dummy);
     }
