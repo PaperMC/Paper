@@ -47,8 +47,8 @@ public final class GameProfileSerializer {
                 while (iterator.hasNext()) {
                     String s1 = (String) iterator.next();
                     NBTTagList nbttaglist = nbttagcompound1.getList(s1, 10);
-
-                    for (int i = 0; i < nbttaglist.size(); ++i) {
+                    if (nbttaglist.size() == 0) continue; // Paper - remove duplicate properties
+                    for (int i = nbttaglist.size() - 1; i < nbttaglist.size(); ++i) { // Paper - remove duplicate properties
                         NBTTagCompound nbttagcompound2 = nbttaglist.getCompound(i);
                         String s2 = nbttagcompound2.getString("Value");
 
@@ -234,7 +234,7 @@ public final class GameProfileSerializer {
         Optional<T> optional = iblockstate.b(nbttagcompound.getString(s));
 
         if (optional.isPresent()) {
-            return (IBlockDataHolder) s0.set(iblockstate, (Comparable) optional.get());
+            return s0.set(iblockstate, optional.get()); // Paper - decompile error
         } else {
             GameProfileSerializer.LOGGER.warn("Unable to read property: {} with value: {} for blockstate: {}", s, nbttagcompound.getString(s), nbttagcompound1.toString());
             return s0;
@@ -264,8 +264,8 @@ public final class GameProfileSerializer {
         return nbttagcompound;
     }
 
-    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<?> comparable) {
-        return iblockstate.a(comparable);
+    private static <T extends Comparable<T>> String a(IBlockState<T> iblockstate, Comparable<T> comparable) {// Paper - decompile error
+        return iblockstate.a((T) comparable);// Paper - decompile error
     }
 
     public static NBTTagCompound a(DataFixer datafixer, DataFixTypes datafixtypes, NBTTagCompound nbttagcompound, int i) {

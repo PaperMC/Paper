@@ -53,6 +53,18 @@ public class ItemSkullPlayer extends ItemBlockWallable {
             return true;
         } else {
             // CraftBukkit start
+            // Paper start - clean up old duplicated properties
+            NBTTagCompound properties = nbttagcompound.getCompound("SkullOwner").getCompound("Properties");
+            for (String key : properties.getKeys()) {
+                NBTTagList values = properties.getList(key, 10);
+                if (values.size() > 1) {
+                    NBTBase texture = values.get(values.size() - 1);
+                    values = new NBTTagList();
+                    values.add(texture);
+                    properties.set(key, values);
+                }
+            }
+            // Paper end
             NBTTagList textures = nbttagcompound.getCompound("SkullOwner").getCompound("Properties").getList("textures", 10); // Safe due to method contracts
             for (int i = 0; i < textures.size(); i++) {
                 if (textures.get(i) instanceof NBTTagCompound && !((NBTTagCompound) textures.get(i)).hasKeyOfType("Signature", 8) && ((NBTTagCompound) textures.get(i)).getString("Value").trim().isEmpty()) {
