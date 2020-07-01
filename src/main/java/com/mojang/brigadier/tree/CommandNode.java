@@ -1,5 +1,6 @@
 package com.mojang.brigadier.tree;
 
+// CHECKSTYLE:OFF
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
