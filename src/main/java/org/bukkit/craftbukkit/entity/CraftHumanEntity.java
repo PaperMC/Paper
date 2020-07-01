@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -504,6 +505,16 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public int undiscoverRecipes(Collection<NamespacedKey> recipes) {
         return getHandle().undiscoverRecipes(bukkitKeysToMinecraftRecipes(recipes));
+    }
+
+    @Override
+    public boolean hasDiscoveredRecipe(NamespacedKey recipe) {
+        return false;
+    }
+
+    @Override
+    public Set<NamespacedKey> getDiscoveredRecipes() {
+        return ImmutableSet.of();
     }
 
     private Collection<IRecipe<?>> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {
