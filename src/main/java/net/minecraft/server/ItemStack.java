@@ -83,6 +83,44 @@ public final class ItemStack {
             list.sort((Comparator<? super NBTBase>) enchantSorter); // Paper
         } catch (Exception ignored) {}
     }
+
+    private void processText() {
+        NBTTagCompound display = getSubTag("display");
+        if (display != null) {
+            if (display.hasKeyOfType("Name", 8)) {
+                String json = display.getString("Name");
+                if (json != null && json.contains("\u00A7")) {
+                    try {
+                        display.set("Name", convert(json));
+                    } catch (JsonParseException jsonparseexception) {
+                        display.remove("Name");
+                    }
+                }
+            }
+            if (display.hasKeyOfType("Lore", 9)) {
+                NBTTagList list = display.getList("Lore", 8);
+                for (int index = 0; index < list.size(); index++) {
+                    String json = list.getString(index);
+                    if (json != null && json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
+                        try {
+                            list.set(index, convert(json));
+                        } catch (JsonParseException e) {
+                            list.set(index, NBTTagString.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(new ChatComponentText(""))));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private NBTTagString convert(String json) {
+        IChatBaseComponent component = IChatBaseComponent.ChatSerializer.jsonToComponent(json);
+        if (component instanceof ChatComponentText && component.getText().contains("\u00A7") && component.getSiblings().isEmpty()) {
+            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
+            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(component.getText())[0];
+        }
+        return NBTTagString.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
+    }
     // Paper end
 
     public ItemStack(IMaterial imaterial) {
@@ -128,6 +166,7 @@ public final class ItemStack {
             // CraftBukkit start - make defensive copy as this data may be coming from the save thread
             this.tag = (NBTTagCompound) nbttagcompound.getCompound("tag").clone();
             processEnchantOrder(this.tag); // Paper
+            processText(); // Paper
             this.getItem().b(this.tag);
             // CraftBukkit end
         }
@@ -611,6 +650,7 @@ public final class ItemStack {
         }
     }
 
+    @Nullable public NBTTagCompound getSubTag(String s) { return b(s); } // Paper - OBFHELPER
     @Nullable
     public NBTTagCompound b(String s) {
         return this.tag != null && this.tag.hasKeyOfType(s, 10) ? this.tag.getCompound(s) : null;

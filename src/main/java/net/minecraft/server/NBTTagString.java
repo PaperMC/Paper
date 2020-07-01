@@ -40,6 +40,7 @@ public class NBTTagString implements NBTBase {
         this.data = s;
     }
 
+    public static NBTTagString create(String s) { return a(s); } // Paper - OBFHELPER
     public static NBTTagString a(String s) {
         return s.isEmpty() ? NBTTagString.b : new NBTTagString(s);
     }
