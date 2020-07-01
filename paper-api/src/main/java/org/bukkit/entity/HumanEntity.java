@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import java.util.Collection;
+import java.util.Set;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -359,6 +360,23 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * that all were undiscovered
      */
     public int undiscoverRecipes(@NotNull Collection<NamespacedKey> recipes);
+
+    /**
+     * Check whether or not this entity has discovered the specified recipe.
+     *
+     * @param recipe the key of the recipe to check
+     *
+     * @return true if discovered, false otherwise
+     */
+    public boolean hasDiscoveredRecipe(@NotNull NamespacedKey recipe);
+
+    /**
+     * Get an immutable set of recipes this entity has discovered.
+     *
+     * @return all discovered recipes
+     */
+    @NotNull
+    public Set<NamespacedKey> getDiscoveredRecipes();
 
     /**
      * Gets the entity currently perched on the left shoulder or null if no
