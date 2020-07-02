@@ -1400,6 +1400,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void setNoDamageTicks(int ticks) {
+        super.setNoDamageTicks(ticks);
+        getHandle().invulnerableTicks = ticks; // SPIGOT-5921: Update both for players, like the getter above
+    }
+
+    @Override
     public void setFlySpeed(float value) {
         validateSpeed(value);
         EntityPlayer player = getHandle();
