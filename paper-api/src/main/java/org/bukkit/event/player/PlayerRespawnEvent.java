@@ -13,11 +13,18 @@ public class PlayerRespawnEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private Location respawnLocation;
     private final boolean isBedSpawn;
+    private final boolean isAnchorSpawn;
 
+    @Deprecated
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
+        this(respawnPlayer, respawnLocation, isBedSpawn, false);
+    }
+
+    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
         super(respawnPlayer);
         this.respawnLocation = respawnLocation;
         this.isBedSpawn = isBedSpawn;
+        this.isAnchorSpawn = isAnchorSpawn;
     }
 
     /**
@@ -49,6 +56,15 @@ public class PlayerRespawnEvent extends PlayerEvent {
      */
     public boolean isBedSpawn() {
         return this.isBedSpawn;
+    }
+
+    /**
+     * Gets whether the respawn location is the player's respawn anchor.
+     *
+     * @return true if the respawn location is the player's respawn anchor.
+     */
+    public boolean isAnchorSpawn() {
+        return isAnchorSpawn;
     }
 
     @NotNull
