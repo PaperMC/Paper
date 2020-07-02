@@ -154,6 +154,7 @@ import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
 import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+import org.bukkit.craftbukkit.inventory.CraftSmithingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftStonecuttingRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
@@ -197,6 +198,7 @@ import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.SmithingRecipe;
 import org.bukkit.inventory.SmokingRecipe;
 import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.loot.LootTable;
@@ -1175,6 +1177,8 @@ public final class CraftServer implements Server {
                 toAdd = CraftSmokingRecipe.fromBukkitRecipe((SmokingRecipe) recipe);
             } else if (recipe instanceof StonecuttingRecipe) {
                 toAdd = CraftStonecuttingRecipe.fromBukkitRecipe((StonecuttingRecipe) recipe);
+            } else if (recipe instanceof SmithingRecipe) {
+                toAdd = CraftSmithingRecipe.fromBukkitRecipe((SmithingRecipe) recipe);
             } else if (recipe instanceof ComplexRecipe) {
                 throw new UnsupportedOperationException("Cannot add custom complex recipe");
             } else {
