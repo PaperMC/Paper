@@ -15,6 +15,13 @@ public class CraftMetaEntityTag extends CraftMetaItem {
 
     CraftMetaEntityTag(CraftMetaItem meta) {
         super(meta);
+
+        if (!(meta instanceof CraftMetaEntityTag)) {
+            return;
+        }
+
+        CraftMetaEntityTag entity = (CraftMetaEntityTag) meta;
+        this.entityTag = entity.entityTag;
     }
 
     CraftMetaEntityTag(NBTTagCompound tag) {
@@ -57,7 +64,11 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     @Override
     boolean applicableTo(Material type) {
         switch (type) {
+            case COD_BUCKET:
+            case PUFFERFISH_BUCKET:
+            case SALMON_BUCKET:
             case ITEM_FRAME:
+            case PAINTING:
                 return true;
             default:
                 return false;

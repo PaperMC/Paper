@@ -259,7 +259,11 @@ public final class CraftItemFactory implements ItemFactory {
             return meta instanceof CraftMetaCrossbow ? meta : new CraftMetaCrossbow(meta);
         case SUSPICIOUS_STEW:
             return meta instanceof CraftMetaSuspiciousStew ? meta : new CraftMetaSuspiciousStew(meta);
+        case COD_BUCKET:
+        case PUFFERFISH_BUCKET:
+        case SALMON_BUCKET:
         case ITEM_FRAME:
+        case PAINTING:
             return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta);
         case COMPASS:
             return meta instanceof CraftMetaCompass ? meta : new CraftMetaCompass(meta);
