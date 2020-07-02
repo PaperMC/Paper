@@ -38,7 +38,7 @@ How To (Plugin Developers)
     <artifactId>paper-api</artifactId>
     <version>1.16.1-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
- </dependency>
+</dependency>
  ```
 
 **Or alternatively, with Gradle:**
