@@ -45,7 +45,35 @@
      @Override
      public MerchantOffers getOffers() {
          if (this.level().isClientSide) {
-@@ -179,7 +199,7 @@
+@@ -121,11 +141,24 @@
+     @Override
+     public void overrideXp(int experience) {}
+ 
++    // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
+     @Override
+-    public void notifyTrade(MerchantOffer offer) {
+-        offer.increaseUses();
++    public void processTrade(MerchantOffer recipe, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
++        if (event == null || event.willIncreaseTradeUses()) {
++            recipe.increaseUses();
++        }
++        if (event == null || event.isRewardingExp()) {
++            this.rewardTradeXp(recipe);
++        }
++        this.notifyTrade(recipe);
++    }
++    // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
++
++    @Override
++    public void notifyTrade(MerchantOffer offer) {
++        // offer.increaseUses(); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+         this.ambientSoundTime = -this.getAmbientSoundInterval();
+-        this.rewardTradeXp(offer);
++        // this.rewardTradeXp(offer); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+         if (this.tradingPlayer instanceof ServerPlayer) {
+             CriteriaTriggers.TRADE.trigger((ServerPlayer) this.tradingPlayer, this, offer.getResult());
+         }
+@@ -179,7 +212,7 @@
      public void readAdditionalSaveData(CompoundTag nbt) {
          super.readAdditionalSaveData(nbt);
          if (nbt.contains("Offers")) {
@@ -54,7 +82,7 @@
              Logger logger = AbstractVillager.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -246,7 +266,20 @@
+@@ -246,7 +279,20 @@
              MerchantOffer merchantrecipe = ((VillagerTrades.ItemListing) arraylist.remove(this.random.nextInt(arraylist.size()))).getOffer(this, this.random);
  
              if (merchantrecipe != null) {

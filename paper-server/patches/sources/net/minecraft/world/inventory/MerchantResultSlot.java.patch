@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/inventory/MerchantResultSlot.java
++++ b/net/minecraft/world/inventory/MerchantResultSlot.java
+@@ -47,13 +47,32 @@
+ 
+     @Override
+     public void onTake(Player player, ItemStack stack) {
+-        this.checkTakeAchievements(stack);
++        // this.checkTakeAchievements(stack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; move to after event is called and not cancelled
+         MerchantOffer merchantOffer = this.slots.getActiveOffer();
++        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
++        io.papermc.paper.event.player.PlayerPurchaseEvent event = null;
++        if (merchantOffer != null && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++            if (this.merchant instanceof net.minecraft.world.entity.npc.AbstractVillager abstractVillager) {
++                event = new io.papermc.paper.event.player.PlayerTradeEvent(serverPlayer.getBukkitEntity(), (org.bukkit.entity.AbstractVillager) abstractVillager.getBukkitEntity(), merchantOffer.asBukkit(), true, true);
++            } else if (this.merchant instanceof org.bukkit.craftbukkit.inventory.CraftMerchantCustom.MinecraftMerchant) {
++                event = new io.papermc.paper.event.player.PlayerPurchaseEvent(serverPlayer.getBukkitEntity(), merchantOffer.asBukkit(), false, true);
++            }
++            if (event != null) {
++                if (!event.callEvent()) {
++                    stack.setCount(0);
++                    event.getPlayer().updateInventory();
++                    return;
++                }
++                merchantOffer = org.bukkit.craftbukkit.inventory.CraftMerchantRecipe.fromBukkit(event.getTrade()).toMinecraft();
++            }
++        }
++        this.checkTakeAchievements(stack);
++        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
+         if (merchantOffer != null) {
+             ItemStack itemStack = this.slots.getItem(0);
+             ItemStack itemStack2 = this.slots.getItem(1);
+             if (merchantOffer.take(itemStack, itemStack2) || merchantOffer.take(itemStack2, itemStack)) {
+-                this.merchant.notifyTrade(merchantOffer);
++                this.merchant.processTrade(merchantOffer, event); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+                 player.awardStat(Stats.TRADED_WITH_VILLAGER);
+                 this.slots.setItem(0, itemStack);
+                 this.slots.setItem(1, itemStack2);
