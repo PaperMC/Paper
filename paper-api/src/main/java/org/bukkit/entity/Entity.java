@@ -863,5 +863,40 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
+
+    /**
+     * Check if entity is underwater
+     */
+    boolean isUnderWater();
+
+    /**
+     * Check if entity is in rain
+     */
+    boolean isInRain();
+
+    /**
+     * Check if entity is in bubble column
+     */
+    boolean isInBubbleColumn();
+
+    /**
+     * Check if entity is in water or rain
+     */
+    boolean isInWaterOrRain();
+
+    /**
+     * Check if entity is in water or bubble column
+     */
+    boolean isInWaterOrBubbleColumn();
+
+    /**
+     * Check if entity is in water or rain or bubble column
+     */
+    boolean isInWaterOrRainOrBubbleColumn();
+
+    /**
+     * Check if entity is in lava
+     */
+    boolean isInLava();
     // Paper end
 }
