@@ -39,7 +39,7 @@
      private static final int PATTERN_NOT_SET = -1;
      private static final int INV_SLOT_START = 4;
      private static final int INV_SLOT_END = 31;
-@@ -60,6 +80,13 @@
+@@ -60,28 +80,42 @@
                  LoomMenu.this.slotsChanged(this);
                  LoomMenu.this.slotUpdateListener.run();
              }
@@ -53,16 +53,16 @@
          };
          this.outputContainer = new SimpleContainer(1) {
              @Override
-@@ -67,21 +94,28 @@
+             public void setChanged() {
                  super.setChanged();
                  LoomMenu.this.slotUpdateListener.run();
-             }
++            }
 +
 +            // CraftBukkit start
 +            @Override
 +            public Location getLocation() {
 +                return context.getLocation();
-+            }
+             }
 +            // CraftBukkit end
          };
          this.access = context;
@@ -123,7 +123,17 @@
          if (id >= 0 && id < this.selectablePatterns.size()) {
              this.selectedBannerPatternIndex.set(id);
              this.setupResultSlot((Holder) this.selectablePatterns.get(id));
-@@ -222,7 +258,7 @@
+@@ -201,7 +237,8 @@
+                 this.resultSlot.set(ItemStack.EMPTY);
+             }
+ 
+-            this.broadcastChanges();
++            // this.broadcastChanges(); // Paper - Add PrepareResultEvent; done below
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 3); // Paper - Add PrepareResultEvent
+         } else {
+             this.resultSlot.set(ItemStack.EMPTY);
+             this.selectablePatterns = List.of();
+@@ -222,7 +259,7 @@
      }
  
      @Override
@@ -132,7 +142,7 @@
          ItemStack itemstack = ItemStack.EMPTY;
          Slot slot1 = (Slot) this.slots.get(slot);
  
-@@ -277,7 +313,7 @@
+@@ -277,7 +314,7 @@
      }
  
      @Override
@@ -141,7 +151,7 @@
          super.removed(player);
          this.access.execute((world, blockposition) -> {
              this.clearContainer(player, this.inputContainer);
-@@ -294,6 +330,11 @@
+@@ -294,6 +331,11 @@
              DyeColor enumcolor = ((DyeItem) itemstack1.getItem()).getDyeColor();
  
              itemstack2.update(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY, (bannerpatternlayers) -> {
