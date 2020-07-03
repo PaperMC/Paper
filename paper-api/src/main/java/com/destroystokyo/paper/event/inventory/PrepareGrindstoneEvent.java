@@ -1,19 +1,23 @@
-package org.bukkit.event.inventory;
+package com.destroystokyo.paper.event.inventory;
 
-import org.bukkit.event.HandlerList;
+import org.bukkit.Warning;
 import org.bukkit.inventory.GrindstoneInventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Called when an item is put in a slot for repair or unenchanting in a grindstone.
+ * Called when an item is put in a slot for grinding in a Grindstone
+ *
+ * @deprecated use {@link org.bukkit.event.inventory.PrepareGrindstoneEvent}
  */
-public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent { // Paper
+@Deprecated(since = "1.16.1")
+@Warning
+public class PrepareGrindstoneEvent extends PrepareResultEvent {
 
-    // Paper - move HandlerList to PrepareInventoryResultEvent
-
+    @ApiStatus.Internal
     public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
         super(inventory, result);
     }
@@ -24,5 +28,4 @@ public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.invent
         return (GrindstoneInventory) super.getInventory();
     }
 
-    // Paper - move HandlerList to PrepareInventoryResultEvent
 }
