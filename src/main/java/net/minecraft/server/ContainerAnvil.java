@@ -294,6 +294,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
         }
 
         this.e();
+        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
     }
 
     // CraftBukkit start

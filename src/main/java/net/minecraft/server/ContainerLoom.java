@@ -174,7 +174,8 @@ public class ContainerLoom extends Container {
         }
 
         this.j();
-        this.c();
+        //this.c(); // Paper - done below
+        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 3); // Paper
     }
 
     @Override

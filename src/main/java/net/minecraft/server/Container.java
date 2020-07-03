@@ -126,6 +126,7 @@ public abstract class Container {
         return nonnulllist;
     }
 
+    public final void notifyListeners() { this.c(); } // Paper - OBFHELPER
     public void c() {
         int i;
 

@@ -65,6 +65,7 @@ public abstract class ContainerAnvilAbstract extends Container {
         super.a(iinventory);
         if (iinventory == this.repairInventory) {
             this.e();
+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
         }
 
     }

@@ -142,6 +142,7 @@ public class ContainerStonecutter extends Container {
             this.a(iinventory, itemstack);
         }
 
+        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 1); // Paper
     }
 
     private void a(IInventory iinventory, ItemStack itemstack) {

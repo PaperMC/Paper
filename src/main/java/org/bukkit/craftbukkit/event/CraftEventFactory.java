@@ -1548,19 +1548,44 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
-        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+    // Paper start - disable this method, handled below
+    public static void callPrepareAnvilEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
+        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
+        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // disable event
         event.getInventory().setItem(2, event.getResult());
-        return event;
+        //return event; // Paper
     }
+    // Paper end
 
-    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
-        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
+    // Paper start - disable this method, handled in callPrepareResultEvent
+    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
+        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
+        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
         event.getInventory().setItem(2, event.getResult());
-        return event;
+        //return event; // Paper
     }
+    // Paper end
+
+    // Paper start - support specific overrides for prepare result
+    public static void callPrepareResultEvent(net.minecraft.server.Container container, int resultSlot) {
+        com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
+        InventoryView view = container.getBukkitView();
+        org.bukkit.inventory.ItemStack origItem = view.getTopInventory().getItem(resultSlot);
+        CraftItemStack result = origItem != null ? CraftItemStack.asCraftCopy(origItem) : null;
+        if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
+            event = new PrepareAnvilEvent(view, result);
+        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
+            event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
+        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
+            event = new PrepareSmithingEvent(view, result);
+        } else {
+            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
+        }
+        event.callEvent();
+        event.getInventory().setItem(resultSlot, event.getResult());
+        container.notifyListeners();
+    }
+    // Paper end
 
     /**
      * Mob spawner event.

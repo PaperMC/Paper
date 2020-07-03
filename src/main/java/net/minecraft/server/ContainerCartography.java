@@ -135,6 +135,7 @@ public class ContainerCartography extends Container {
             this.a(itemstack, itemstack1, itemstack2);
         }
 
+        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
     }
 
     private void a(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2) {
