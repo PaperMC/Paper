@@ -26,15 +26,15 @@ public class BehaviorAttackTargetForget<E extends EntityInsentient> extends Beha
 
     protected void a(WorldServer worldserver, E e0, long i) {
         if (a((EntityLiving) e0)) {
-            this.d(e0);
+            this.d(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
         } else if (this.c(e0)) {
-            this.d(e0);
+            this.d(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED); // Paper
         } else if (this.a(e0)) {
-            this.d(e0);
+            this.d(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL); // Paper
         } else if (!IEntitySelector.f.test(this.b(e0))) {
-            this.d(e0);
+            this.d(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
         } else if (this.b.test(this.b(e0))) {
-            this.d(e0);
+            this.d(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
         }
     }
 
@@ -58,17 +58,20 @@ public class BehaviorAttackTargetForget<E extends EntityInsentient> extends Beha
         return optional.isPresent() && !((EntityLiving) optional.get()).isAlive();
     }
 
-    private void d(E e0) {
+    private void d(E e0, EntityTargetEvent.TargetReason reason) {
         // CraftBukkit start
-        EntityLiving old = e0.getBehaviorController().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
-        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
+        // Paper start - fix this event
+        //EntityLiving old = e0.getBehaviorController().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
+        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, null, reason);
         if (event.isCancelled()) {
             return;
         }
-        if (event.getTarget() != null) {
+        // comment out, bad logic - bad
+        /*if (event.getTarget() != null) {
             e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
             return;
-        }
+        }*/
+        // Paper end
         // CraftBukkit end
         e0.getBehaviorController().removeMemory(MemoryModuleType.ATTACK_TARGET);
     }
