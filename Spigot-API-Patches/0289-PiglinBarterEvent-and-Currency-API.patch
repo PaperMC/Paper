@@ -1,0 +1,177 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 2 Jul 2020 20:14:16 -0700
+Subject: [PATCH] PiglinBarterEvent and Currency API
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/PiglinBarterEvent.java b/src/main/java/io/papermc/paper/event/entity/PiglinBarterEvent.java
+new file mode 100755
+index 0000000000000000000000000000000000000000..29a7f45da3b9f3e2c28a140c991a100cc31fb0dc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/PiglinBarterEvent.java
+@@ -0,0 +1,127 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.Material;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Piglin;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++
++/**
++ * Fired when a piglin throws items back at a player
++ */
++public class PiglinBarterEvent extends EntityEvent implements Cancellable {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    private final Piglin piglin;
++    private final Player player;
++    private final Material currency;
++    private Collection<ItemStack> results;
++    private boolean cancelled;
++
++    public PiglinBarterEvent(@NotNull Piglin piglin, @Nullable Player player, @NotNull Material currency, @NotNull Collection<ItemStack> results) {
++        super(piglin);
++        this.piglin = piglin;
++        this.player = player;
++        this.currency = currency;
++        this.results = results;
++    }
++
++    /**
++     * Returns the Entity involved in this event
++     *
++     * @return Entity who is involved in this event
++     */
++    @Override
++    public @NotNull Piglin getEntity() {
++        return this.piglin;
++    }
++
++    /**
++     * Gets the EntityType of the Entity involved in this event.
++     *
++     * @return EntityType of the Entity involved in this event
++     */
++    @Override
++    public @NotNull EntityType getEntityType() {
++        return EntityType.PIGLIN;
++    }
++
++    /**
++     * Gets the player (if applicable) that is involved in this event.
++     *
++     * @return Player involved in this event
++     */
++    @Nullable
++    public Player getPlayer() {
++        return player;
++    }
++
++    /**
++     * Gets the currency used in this transaction.
++     * Modifications to this Collection will NOT be reflected in game.
++     *
++     * @return The currency Material used
++     */
++    @NotNull
++    public Material getCurrency() {
++        return currency;
++    }
++
++    /**
++     * Gets the list of items to be thrown back to the player
++     *
++     * @return the list of items
++     */
++    @NotNull
++    public Collection<ItemStack> getResults() {
++        return results;
++    }
++
++    /**
++     * Sets the items to be thrown back to the player
++     *
++     * @param results the list of items
++     */
++    public void setResults(@NotNull Collection<ItemStack> results) {
++        this.results = results;
++    }
++
++    /**
++     * Gets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins
++     *
++     * @return true if this event is cancelled
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Sets the cancellation state of this event. A cancelled event will not
++     * be executed in the server, but will still pass to other plugins.
++     *
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/Piglin.java b/src/main/java/org/bukkit/entity/Piglin.java
+index 6e106e1291370416f53a597b48822d3e839ee73d..900caa19df248f4544f1904647a96243464297b1 100644
+--- a/src/main/java/org/bukkit/entity/Piglin.java
++++ b/src/main/java/org/bukkit/entity/Piglin.java
+@@ -1,6 +1,11 @@
+ package org.bukkit.entity;
+ 
+ import com.destroystokyo.paper.entity.RangedEntity; // Paper
++// Paper start
++import org.bukkit.Material;
++import org.jetbrains.annotations.NotNull;
++import java.util.Collection;
++// Paper end
+ 
+ /**
+  * Represents a Piglin.
+@@ -20,4 +25,21 @@ public interface Piglin extends PiglinAbstract, RangedEntity { // Paper
+      * @param flag Whether the piglin is able to hunt hoglins.
+      */
+     public void setIsAbleToHunt(boolean flag);
++
++    // Paper start
++    /**
++     * Sets the currency materials for this piglin.
++     *
++     * @param currencyMaterials The currency materials
++     */
++    public void setCurrency(@NotNull Collection<Material> currencyMaterials);
++
++    /**
++     * Gets the currency materials for this piglin.
++     *
++     * @return The currency materials
++     */
++    @NotNull
++    public Collection<Material> getCurrency();
++    // Paper end
+ }

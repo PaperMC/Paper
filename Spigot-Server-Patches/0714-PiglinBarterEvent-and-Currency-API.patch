@@ -1,0 +1,343 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 2 Jul 2020 20:13:36 -0700
+Subject: [PATCH] PiglinBarterEvent and Currency API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/BehaviorStartAdmiringItem.java b/src/main/java/net/minecraft/world/entity/monster/piglin/BehaviorStartAdmiringItem.java
+index 9f715495d0248752e6b001d90cca869fb5331fa1..04f2e3f94d9d1af3bd5d11680cd385bcccf6adef 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/BehaviorStartAdmiringItem.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/BehaviorStartAdmiringItem.java
+@@ -19,7 +19,7 @@ public class BehaviorStartAdmiringItem<E extends EntityPiglin> extends Behavior<
+     protected boolean a(WorldServer worldserver, E e0) {
+         EntityItem entityitem = (EntityItem) e0.getBehaviorController().getMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM).get();
+ 
+-        return PiglinAI.a(entityitem.getItemStack().getItem());
++        return PiglinAI.isLovedItem(entityitem.getItemStack().getItem(), e0); // Paper
+     }
+ 
+     protected void a(WorldServer worldserver, E e0, long i) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/EntityPiglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
+index f2f65dc0612cc232009ea7ff12f5c1ba4e6b15ea..c214b23dbf15ced9e9a08f0b09f5bd3f59d584dd 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.entity.monster.piglin;
+ 
+ import com.google.common.collect.ImmutableList;
++import com.google.common.collect.Sets;
+ import com.mojang.serialization.Dynamic;
+ import java.util.Collection;
+ import java.util.List;
+@@ -8,10 +9,14 @@ import java.util.Random;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPosition;
++import net.minecraft.core.IRegistry;
+ import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.nbt.NBTTagList;
++import net.minecraft.nbt.NBTTagString;
+ import net.minecraft.network.syncher.DataWatcher;
+ import net.minecraft.network.syncher.DataWatcherObject;
+ import net.minecraft.network.syncher.DataWatcherRegistry;
++import net.minecraft.resources.MinecraftKey;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.sounds.SoundEffect;
+ import net.minecraft.sounds.SoundEffects;
+@@ -42,6 +47,7 @@ import net.minecraft.world.entity.monster.EntityMonster;
+ import net.minecraft.world.entity.monster.ICrossbow;
+ import net.minecraft.world.entity.player.EntityHuman;
+ import net.minecraft.world.entity.projectile.IProjectile;
++import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemProjectileWeapon;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+@@ -64,6 +70,8 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+     public boolean cannotHunt = false;
+     protected static final ImmutableList<SensorType<? extends Sensor<? super EntityPiglin>>> d = ImmutableList.of(SensorType.c, SensorType.d, SensorType.b, SensorType.f, SensorType.k);
+     protected static final ImmutableList<MemoryModuleType<?>> bo = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.MOBS, MemoryModuleType.VISIBLE_MOBS, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ADULT_PIGLINS, MemoryModuleType.NEARBY_ADULT_PIGLINS, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, MemoryModuleType.WALK_TARGET, new MemoryModuleType[]{MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.PATH, MemoryModuleType.ANGRY_AT, MemoryModuleType.UNIVERSAL_ANGER, MemoryModuleType.AVOID_TARGET, MemoryModuleType.ADMIRING_ITEM, MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM, MemoryModuleType.ADMIRING_DISABLED, MemoryModuleType.DISABLE_WALK_TO_ADMIRE_ITEM, MemoryModuleType.CELEBRATE_LOCATION, MemoryModuleType.DANCING, MemoryModuleType.HUNTED_RECENTLY, MemoryModuleType.NEAREST_VISIBLE_BABY_HOGLIN, MemoryModuleType.NEAREST_VISIBLE_NEMSIS, MemoryModuleType.NEAREST_VISIBLE_ZOMBIFIED, MemoryModuleType.RIDE_TARGET, MemoryModuleType.VISIBLE_ADULT_PIGLIN_COUNT, MemoryModuleType.VISIBLE_ADULT_HOGLIN_COUNT, MemoryModuleType.NEAREST_VISIBLE_HUNTABLE_HOGLIN, MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD, MemoryModuleType.NEAREST_PLAYER_HOLDING_WANTED_ITEM, MemoryModuleType.ATE_RECENTLY, MemoryModuleType.NEAREST_REPELLENT});
++    public UUID itemThrower = null; // Paper
++    private Collection<Item> barterCurrency = Sets.newHashSet(PiglinAI.getDefaultCurrency()); // Paper
+ 
+     public EntityPiglin(EntityTypes<? extends EntityPiglinAbstract> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -82,6 +90,14 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+         }
+ 
+         nbttagcompound.set("Inventory", this.bu.g());
++        // Paper start
++        if (this.itemThrower != null) {
++            nbttagcompound.setUUID("Paper.ItemThrower", this.itemThrower);
++        }
++        NBTTagList currency = new NBTTagList();
++        this.barterCurrency.forEach(item -> currency.add(NBTTagString.create(IRegistry.ITEM.getKey(item).toString())));
++        nbttagcompound.set("Paper.Currency", currency);
++        // Paper end
+     }
+ 
+     @Override
+@@ -90,6 +106,19 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+         this.setBaby(nbttagcompound.getBoolean("IsBaby"));
+         this.v(nbttagcompound.getBoolean("CannotHunt"));
+         this.bu.a(nbttagcompound.getList("Inventory", 10));
++        // Paper start
++        if (nbttagcompound.hasUUID("Paper.ItemThrower")) {
++            this.itemThrower = nbttagcompound.getUUID("Paper.ItemThrower");
++        }
++        if (nbttagcompound.hasKeyOfType("Paper.Currency", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_LIST)) {
++            NBTTagList currencyNBTList = nbttagcompound.getList("Paper.Currency", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_STRING);
++            this.barterCurrency.clear();
++            currencyNBTList.forEach(currencyKey -> {
++                Item item = IRegistry.ITEM.get(MinecraftKey.a(currencyKey.asString()));
++                if (item != Items.AIR) this.barterCurrency.add(item);
++            });
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -188,7 +217,7 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+ 
+     @Override
+     public BehaviorController<EntityPiglin> getBehaviorController() {
+-        return super.getBehaviorController();
++        return (BehaviorController<EntityPiglin>) super.getBehaviorController(); // Paper - decompile fix
+     }
+ 
+     @Override
+@@ -247,7 +276,7 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+     @Override
+     protected void mobTick() {
+         this.world.getMethodProfiler().enter("piglinBrain");
+-        this.getBehaviorController().a((WorldServer) this.world, (EntityLiving) this);
++        this.getBehaviorController().a((WorldServer) this.world, this); // Paper - decompile fix
+         this.world.getMethodProfiler().exit();
+         PiglinAI.b(this);
+         super.mobTick();
+@@ -284,7 +313,7 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+     }
+ 
+     public EntityPiglinArmPose eN() {
+-        return this.eU() ? EntityPiglinArmPose.DANCING : (PiglinAI.a(this.getItemInOffHand().getItem()) ? EntityPiglinArmPose.ADMIRING_ITEM : (this.isAggressive() && this.eO() ? EntityPiglinArmPose.ATTACKING_WITH_MELEE_WEAPON : (this.eW() ? EntityPiglinArmPose.CROSSBOW_CHARGE : (this.isAggressive() && this.a(Items.CROSSBOW) ? EntityPiglinArmPose.CROSSBOW_HOLD : EntityPiglinArmPose.DEFAULT))));
++        return this.eU() ? EntityPiglinArmPose.DANCING : (PiglinAI.isLovedItem(this.getItemInOffHand().getItem(), this) ? EntityPiglinArmPose.ADMIRING_ITEM : (this.isAggressive() && this.eO() ? EntityPiglinArmPose.ATTACKING_WITH_MELEE_WEAPON : (this.eW() ? EntityPiglinArmPose.CROSSBOW_CHARGE : (this.isAggressive() && this.a(Items.CROSSBOW) ? EntityPiglinArmPose.CROSSBOW_HOLD : EntityPiglinArmPose.DEFAULT)))); // Paper
+     }
+ 
+     public boolean eU() {
+@@ -356,8 +385,8 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+         if (EnchantmentManager.d(itemstack1)) {
+             return false;
+         } else {
+-            boolean flag = PiglinAI.a(itemstack.getItem()) || itemstack.getItem() == Items.CROSSBOW;
+-            boolean flag1 = PiglinAI.a(itemstack1.getItem()) || itemstack1.getItem() == Items.CROSSBOW;
++            boolean flag = PiglinAI.isLovedItem(itemstack.getItem(), this) || itemstack.getItem() == Items.CROSSBOW; // Paper
++            boolean flag1 = PiglinAI.isLovedItem(itemstack1.getItem(), this) || itemstack1.getItem() == Items.CROSSBOW; // Paper
+ 
+             return flag && !flag1 ? true : (!flag && flag1 ? false : (this.eM() && itemstack.getItem() != Items.CROSSBOW && itemstack1.getItem() == Items.CROSSBOW ? false : super.a(itemstack, itemstack1)));
+         }
+@@ -386,7 +415,7 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+ 
+     @Override
+     protected SoundEffect getSoundAmbient() {
+-        return this.world.isClientSide ? null : (SoundEffect) PiglinAI.d(this).orElse((Object) null);
++        return this.world.isClientSide ? null : (SoundEffect) PiglinAI.d(this).orElse(null); // Paper - decompile fix
+     }
+ 
+     @Override
+@@ -412,4 +441,14 @@ public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow {
+     protected void eP() {
+         this.a(SoundEffects.ENTITY_PIGLIN_CONVERTED_TO_ZOMBIFIED);
+     }
++
++    // Paper start
++    public void setBarterCurrency(Collection<Item> barterCurrency) {
++        this.barterCurrency = barterCurrency;
++    }
++
++    public Collection<Item> getBarterCurrency() {
++        return this.barterCurrency;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAI.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAI.java
+index 490e749db3fc60a06fbb51347491b1ed29f3eaa0..01fac02ed73c87766dad251e7876d9c94eb7c6f0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAI.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAI.java
+@@ -3,6 +3,7 @@ package net.minecraft.world.entity.monster.piglin;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableSet;
+ import com.mojang.datafixers.util.Pair;
++import io.papermc.paper.event.entity.PiglinBarterEvent; // Paper
+ import java.util.Collections;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -74,6 +75,7 @@ import net.minecraft.world.phys.Vec3D;
+ 
+ public class PiglinAI {
+ 
++    public static Item getDefaultCurrency() { return PiglinAI.a; } // Paper - OBFHELPER
+     public static final Item a = Items.GOLD_INGOT;
+     private static final IntRange b = TimeRange.a(30, 120);
+     private static final IntRange c = TimeRange.a(10, 40);
+@@ -210,8 +212,8 @@ public class PiglinAI {
+ 
+         Item item = itemstack.getItem();
+ 
+-        if (a(item)) {
+-            entitypiglin.getBehaviorController().removeMemory(MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM);
++        if (isLovedItem(item, entitypiglin)) { // Paper
++            if (isBarterCurrency(item, entitypiglin)) entitypiglin.itemThrower = entityitem.getThrower(); // Paper - store item thrower for event
+             c(entitypiglin, itemstack);
+             d((EntityLiving) entitypiglin);
+         } else if (c(item) && !u(entitypiglin)) {
+@@ -253,9 +255,19 @@ public class PiglinAI {
+         boolean flag1;
+ 
+         if (entitypiglin.eM()) {
+-            flag1 = b(itemstack.getItem());
++            flag1 = isBarterCurrency(itemstack.getItem(), entitypiglin); // Paper
+             if (flag && flag1) {
+-                a(entitypiglin, i(entitypiglin));
++                // Paper start - piglin barter
++                List<ItemStack> results = getBarterResultItems(entitypiglin);
++                List<org.bukkit.inventory.ItemStack> bukkitResults = com.google.common.collect.Lists.newArrayList();
++                results.forEach(r -> bukkitResults.add(r.asBukkitMirror()));
++                PiglinBarterEvent event = new PiglinBarterEvent((org.bukkit.entity.Piglin) entitypiglin.getBukkitLivingEntity(), entitypiglin.itemThrower != null ? org.bukkit.Bukkit.getPlayer(entitypiglin.itemThrower) : null, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(itemstack.getItem()), bukkitResults);
++                if (event.callEvent()) {
++                    results.clear();
++                    event.getResults().forEach(bResult -> results.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bResult)));
++                    a(entitypiglin, results);
++                }
++                // Paper end
+             } else if (!flag1) {
+                 boolean flag2 = entitypiglin.g(itemstack);
+ 
+@@ -294,6 +306,7 @@ public class PiglinAI {
+         b(entitypiglin, Collections.singletonList(itemstack1));
+     }
+ 
++    private static void throwItems(EntityPiglin entitypiglin, List<ItemStack> items) { a(entitypiglin, items); } // Paper - OBFHELPER
+     private static void a(EntityPiglin entitypiglin, List<ItemStack> list) {
+         Optional<EntityHuman> optional = entitypiglin.getBehaviorController().getMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER);
+ 
+@@ -327,6 +340,7 @@ public class PiglinAI {
+ 
+     }
+ 
++    private static List<ItemStack> getBarterResultItems(EntityPiglin entityPiglin) { return i(entityPiglin); } // Paper - OBFHELPER
+     private static List<ItemStack> i(EntityPiglin entitypiglin) {
+         LootTable loottable = entitypiglin.world.getMinecraftServer().getLootTableRegistry().getLootTable(LootTables.ay);
+         List<ItemStack> list = loottable.populateLoot((new LootTableInfo.Builder((WorldServer) entitypiglin.world)).set(LootContextParameters.THIS_ENTITY, entitypiglin).a(entitypiglin.world.random).build(LootContextParameterSets.BARTER));
+@@ -345,15 +359,21 @@ public class PiglinAI {
+             return false;
+         } else if (x(entitypiglin) && entitypiglin.getBehaviorController().hasMemory(MemoryModuleType.ATTACK_TARGET)) {
+             return false;
+-        } else if (b(item)) {
++        } else if (isBarterCurrency(item, entitypiglin)) { // Paper
+             return z(entitypiglin);
+         } else {
+             boolean flag = entitypiglin.l(itemstack);
+ 
+-            return item == Items.GOLD_NUGGET ? flag : (c(item) ? !u(entitypiglin) && flag : (!a(item) ? entitypiglin.o(itemstack) : z(entitypiglin) && flag));
++            return item == Items.GOLD_NUGGET ? flag : (c(item) ? !u(entitypiglin) && flag : (!isLovedItem(item, entitypiglin) ? entitypiglin.o(itemstack) : z(entitypiglin) && flag)); // Paper
+         }
+     }
+ 
++    // Paper start
++    protected static boolean isLovedItem(Item item, EntityPiglin entityPiglin) {
++        return isOriginalLovedItem(item) || entityPiglin.getBarterCurrency().contains(item);
++    }
++    // Paper end
++    protected static boolean isOriginalLovedItem(Item item) { return a(item); } // Paper - OBFHELPER
+     protected static boolean a(Item item) {
+         return item.a((Tag) TagsItem.PIGLIN_LOVED);
+     }
+@@ -437,6 +457,7 @@ public class PiglinAI {
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+         if (b(entitypiglin, itemstack)) {
++            entitypiglin.itemThrower = entityhuman.getUniqueID(); // Paper
+             ItemStack itemstack1 = itemstack.cloneAndSubtract(1);
+ 
+             c(entitypiglin, itemstack1);
+@@ -449,7 +470,7 @@ public class PiglinAI {
+     }
+ 
+     protected static boolean b(EntityPiglin entitypiglin, ItemStack itemstack) {
+-        return !x(entitypiglin) && !v(entitypiglin) && entitypiglin.eM() && b(itemstack.getItem());
++        return !x(entitypiglin) && !v(entitypiglin) && entitypiglin.eM() && isBarterCurrency(itemstack.getItem(), entitypiglin); // Paper
+     }
+ 
+     protected static void a(EntityPiglin entitypiglin, EntityLiving entityliving) {
+@@ -712,6 +733,11 @@ public class PiglinAI {
+         return entitypiglin.getBehaviorController().hasMemory(MemoryModuleType.ADMIRING_ITEM);
+     }
+ 
++    // Paper start
++    private static boolean isBarterCurrency(Item item, EntityPiglin entityPiglin) {
++        return entityPiglin.getBarterCurrency().contains(item);
++    }
++    // Paper end
+     private static boolean b(Item item) {
+         return item == PiglinAI.a;
+     }
+@@ -753,7 +779,7 @@ public class PiglinAI {
+     }
+ 
+     private static boolean z(EntityPiglin entitypiglin) {
+-        return entitypiglin.getItemInOffHand().isEmpty() || !a(entitypiglin.getItemInOffHand().getItem());
++        return entitypiglin.getItemInOffHand().isEmpty() || !isLovedItem(entitypiglin.getItemInOffHand().getItem(), entitypiglin); // Paper
+     }
+ 
+     public static boolean a(EntityTypes entitytypes) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+index b3b5d3a7f8ed522680f764cfd20d1e5c69627804..e65e2423f674a4fca9591f5ac394d01dc4b54c80 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+@@ -1,10 +1,16 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.google.common.collect.Sets;
+ import net.minecraft.world.entity.monster.piglin.EntityPiglin;
++import net.minecraft.world.item.Item;
++import org.bukkit.Material;
+ import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Piglin;
+ 
++import java.util.Collection;
++
+ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.destroystokyo.paper.entity.CraftRangedEntity<EntityPiglin> { // Paper
+ 
+     public CraftPiglin(CraftServer server, EntityPiglin entity) {
+@@ -35,4 +41,30 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
+     public String toString() {
+         return "CraftPiglin";
+     }
++
++    // Paper start
++    @Override
++    public void setCurrency(Collection<Material> currencyMaterials) {
++        Collection<Item> nmsItems = Sets.newHashSet();
++        currencyMaterials.forEach(material -> {
++            if (material == null) {
++                return;
++            }
++            nmsItems.add(CraftMagicNumbers.getItem(material));
++            });
++            getHandle().setBarterCurrency(nmsItems);
++        }
++
++    @Override
++    public Collection<Material> getCurrency() {
++        Collection<Material> materials = Sets.newHashSet();
++        getHandle().getBarterCurrency().forEach(item -> {
++            if (item == null) {
++                return;
++            }
++            materials.add(CraftMagicNumbers.getMaterial(item));
++        });
++        return materials;
++    }
++    // Paper end
+ }
