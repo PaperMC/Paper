@@ -6,6 +6,8 @@ Subject: [PATCH] InventoryCloseEvent Reason API
 Allows you to determine why an inventory was closed, enabling plugin developers
 to "confirm" things based on if it was player triggered close or not.
 
+Reverts SPIGOT-5799 as the Reason API negates the need for it.
+
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
 index 6e9dd4d3717567f54ac706715d75bf53d48c5f7d..684978be7ccc401b71b0594828a7783b209a5210 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
@@ -168,10 +170,10 @@ index f5c722644a1955c9bc68c89fdbb84526f9bbb7a0..368f786300573ff24a8dc46d96a6fb6b
  
          // Check if the fromWorld and toWorld are the same.
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index b9e011256f0c8f67808ebebb5e9dc63d3358849f..4a76402c01dfe6525bae8728da2dde6e5d673765 100644
+index b9e011256f0c8f67808ebebb5e9dc63d3358849f..406f584c488366f5ca0dae9e9d9e06ef0b688ee3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1301,12 +1301,22 @@ public class CraftEventFactory {
+@@ -1301,12 +1301,18 @@ public class CraftEventFactory {
          return event;
      }
  
@@ -182,15 +184,15 @@ index b9e011256f0c8f67808ebebb5e9dc63d3358849f..4a76402c01dfe6525bae8728da2dde6e
 +     */
 +    @Deprecated
      public static void handleInventoryCloseEvent(EntityHuman human) {
+-        // SPIGOT-5799 - no need to fire for when no inventory open
+-        if (human.activeContainer == human.defaultContainer) {
+-            return;
+-        }
+-        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
 +        handleInventoryCloseEvent(human, org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNKNOWN);
 +    }
 +    public static void handleInventoryCloseEvent(EntityHuman human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
 +        // Paper end
-         // SPIGOT-5799 - no need to fire for when no inventory open
-         if (human.activeContainer == human.defaultContainer) {
-             return;
-         }
--        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
 +        InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView(), reason); // Paper
          human.world.getServer().getPluginManager().callEvent(event);
          human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
