@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wyatt Childers <wchilders@nearce.com>
+Date: Fri, 3 Jul 2020 14:57:05 -0400
+Subject: [PATCH] Patch to fix incorrect worlds on spawn
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index f17399a73e0de49d2e7325747a2637f447df78f2..eea4fc9875ffb6c94bce0ec2a3328df7f2995183 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -140,7 +140,19 @@ public abstract class PlayerList {
+             worldserver1 = worldserver;
+         }
+ 
+-        if (nbttagcompound == null) entityplayer.moveToSpawn(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
++        if (nbttagcompound == null) {
++            entityplayer.moveToSpawn(worldserver1); // Paper - only move to spawn on first login, otherwise, stay where you are....
++        } else if (nbttagcompound.hasKey("WorldUUIDMost") && nbttagcompound.hasKey("WorldUUIDLeast")) {
++            // Paper - overwrite the world to be the world stored by UUID to handle conversion from pre-1.16
++            // all plugin created overworlds previously had player data stored as "Dimension" 0. This results
++            // in the above call to get the world by resource key, always giving world 0, rather than
++            // the world the player was previously in.
++            UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
++            org.bukkit.World bWorld = Bukkit.getServer().getWorld(uid);
++            if (bWorld != null) {
++                worldserver1 = ((CraftWorld) bWorld).getHandle();
++            }
++        }
+ 
+         entityplayer.spawnIn(worldserver1);
+         entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
