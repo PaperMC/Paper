@@ -31,43 +31,30 @@ index 2e869004c8c6b8bfbb002fb4eda04519d50390c8..8a6856e0fd7b9b515d98f45aaabefbc3
          this.b.setJumping(this.a);
          this.a = false;
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 19d68aa4585ccfc156e9db6024b7a99bbeca4de4..2a449ec40a725b01a7bf572ae119c2197944ecbc 100644
+index 98eec5efe474011665bd819d0d0b11abd6a068ea..a50b005b9f3fc58674560f42b9c4a20fd8b669fa 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1104,6 +1104,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1024,6 +1024,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          return this.isInWater() || this.isInRain();
      }
  
-+    public boolean isInWaterOrRainOrBubble() { return ay(); } // Paper - OBFHELPER
-     public boolean ay() {
-         return this.isInWater() || this.isInRain() || this.l();
++    public boolean isInWaterOrRainOrBubble() { return aC(); } // Paper - OBFHELPER
+     public boolean aC() {
+         return this.isInWater() || this.isInRain() || this.k();
      }
-diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
-index 1cc66108d0f799eef6ee984e8f65a9a46e337785..538c2169cd53d364b941ad1251df3731f77b3a2c 100644
---- a/src/main/java/net/minecraft/server/EntityEnderman.java
-+++ b/src/main/java/net/minecraft/server/EntityEnderman.java
-@@ -171,7 +171,7 @@ public class EntityEnderman extends EntityMonster {
-     @Override
-     protected void mobTick() {
-         if (this.ay()) {
--            this.damageEntity(DamageSource.DROWN, 1.0F);
-+            this.damageEntity(DamageSource.DROWN, 1.0F); // Paper - copied in patch 13 (allow nerfed mobs to jump, float and take water damage)
-         }
- 
-         if (this.world.isDay() && this.ticksLived >= this.bA + 600) {
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 0b06fa2b664830d40cdb93968bc2f8c98415d1bf..70cd0801dc62dc0b15a75869b375353db8a9ae46 100644
+index e5455d99e3f5607a5754e5760d42853a62dddb82..b9732287ba16d90bed33929348a223f6dbdbfb45 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
-@@ -32,6 +32,7 @@ public abstract class EntityInsentient extends EntityLiving {
+@@ -33,6 +33,7 @@ public abstract class EntityInsentient extends EntityLiving {
      private final EntityAIBodyControl c;
      protected NavigationAbstract navigation;
      public PathfinderGoalSelector goalSelector;
 +    @Nullable public PathfinderGoalFloat goalFloat; // Paper
      public PathfinderGoalSelector targetSelector;
      private EntityLiving goalTarget;
-     private final EntitySenses bw;
-@@ -648,7 +649,17 @@ public abstract class EntityInsentient extends EntityLiving {
+     private final EntitySenses bv;
+@@ -719,7 +720,17 @@ public abstract class EntityInsentient extends EntityLiving {
      @Override
      protected final void doTick() {
          ++this.ticksFarFromPlayer;
@@ -84,13 +71,13 @@ index 0b06fa2b664830d40cdb93968bc2f8c98415d1bf..70cd0801dc62dc0b15a75869b375353d
 +        }
 +        // Paper end
          this.world.getMethodProfiler().enter("sensing");
-         this.bw.a();
+         this.bv.a();
          this.world.getMethodProfiler().exit();
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
-index 0f0dc7277f28a96711ab81e6bbf2dd7d1c212f25..43908b0400933119de9bcfe4240853e4fce7ec6f 100644
+index d0281a98a318376922b5bd8fcad7ba7db2012b54..e2b23978e347fe63e8bc900b72da6cbaf27bf652 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalFloat.java
-@@ -8,10 +8,12 @@ public class PathfinderGoalFloat extends PathfinderGoal {
+@@ -8,15 +8,18 @@ public class PathfinderGoalFloat extends PathfinderGoal {
  
      public PathfinderGoalFloat(EntityInsentient entityinsentient) {
          this.a = entityinsentient;
@@ -102,9 +89,7 @@ index 0f0dc7277f28a96711ab81e6bbf2dd7d1c212f25..43908b0400933119de9bcfe4240853e4
 +    public final boolean validConditions() { return this.a(); } // Paper - OBFHELPER
      @Override
      public boolean a() {
-         double d0 = (double) this.a.getHeadHeight() < 0.4D ? 0.2D : 0.4D;
-@@ -19,6 +21,7 @@ public class PathfinderGoalFloat extends PathfinderGoal {
-         return this.a.isInWater() && this.a.co() > d0 || this.a.aH();
+         return this.a.isInWater() && this.a.b((Tag) TagsFluid.WATER) > this.a.cw() || this.a.aN();
      }
  
 +    public void update() { this.e(); } // Paper - OBFHELPER

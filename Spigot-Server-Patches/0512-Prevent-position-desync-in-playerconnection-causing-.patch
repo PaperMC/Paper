@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 12 Jun 2020 16:51:39 -0700
+Subject: [PATCH] Prevent position desync in playerconnection causing tp
+ exploit
+
+Caused the server to revert to the player's overworld coordinates
+after teleporting into the end.
+
+Sidenote: The underlying issue is that the move call can teleport
+entities and do other things like kill the entity. In the future,
+to fix all exploits derieved from this usually unexpected
+behaviour, we need to move all of this dangerous logic outside
+of the move call and into an appropriate place in the tick method.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 6bb2b3520362d056d4d75c65764e4c8dbc1417f9..0ada31b7e5d509409d5d0fb9ac2949f79416ef73 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1098,6 +1098,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+                             this.player.move(EnumMoveType.PLAYER, new Vec3D(d7, d8, d9));
+                             this.player.c(packetplayinflying.b()); // CraftBukkit - SPIGOT-5810, SPIGOT-5835: reset by this.player.move
++                            // Paper start - prevent position desync
++                            if (this.teleportPos != null) {
++                                return; // ... thanks Mojang for letting move calls teleport across dimensions.
++                            }
++                            // Paper end - prevent position desync
+                             double d12 = d8;
+ 
+                             d7 = d4 - this.player.locX();

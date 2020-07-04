@@ -39,6 +39,7 @@ function applyPatch {
 
     statusfile=".git/patch-apply-failed"
     rm -f "$statusfile"
+    git config commit.gpgsign false
     $gitcmd am --abort >/dev/null 2>&1
 
     # Special case Windows handling because of ARG_MAX constraint

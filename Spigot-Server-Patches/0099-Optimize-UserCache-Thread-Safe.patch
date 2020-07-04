@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 20:47:41 -0400
+Subject: [PATCH] Optimize UserCache / Thread Safe
+
+Because Techable keeps complaining about how this isn't thread safe,
+easier to do this than replace the entire thing.
+
+Additionally, move Saving of the User cache to be done async, incase
+the user never changed the default setting for Spigot's save on stop only.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f449a9aa819fca1fa1db72b8a76a2f2a2739ff96..793d4d928bac4febf090291eb773871b492cdc6d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -788,7 +788,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         } catch (java.lang.InterruptedException ignored) {} // Paper
+         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
+             LOGGER.info("Saving usercache.json");
+-            this.getUserCache().c();
++            this.getUserCache().c(false); // Paper
+         }
+         // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
+index b211609995b95c26317995f4d776d21ab58d6c0e..4d3cbe3e517a75269d5c9cdd7f3751b81daee1c2 100644
+--- a/src/main/java/net/minecraft/server/UserCache.java
++++ b/src/main/java/net/minecraft/server/UserCache.java
+@@ -43,8 +43,8 @@ public class UserCache {
+ 
+     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+     private static boolean c;
+-    private final Map<String, UserCache.UserCacheEntry> d = Maps.newHashMap();
+-    private final Map<UUID, UserCache.UserCacheEntry> e = Maps.newHashMap();
++    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
++    private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
+     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
+     private final GameProfileRepository g;
+     protected final Gson b;
+@@ -97,7 +97,7 @@ public class UserCache {
+         this.a(gameprofile, (Date) null);
+     }
+ 
+-    private void a(GameProfile gameprofile, Date date) {
++    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
+         UUID uuid = gameprofile.getId();
+ 
+         if (date == null) {
+@@ -110,8 +110,9 @@ public class UserCache {
+ 
+         UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date);
+ 
+-        if (this.e.containsKey(uuid)) {
++        //if (this.e.containsKey(uuid)) { // Paper
+             UserCache.UserCacheEntry usercache_usercacheentry1 = (UserCache.UserCacheEntry) this.e.get(uuid);
++        if (usercache_usercacheentry1 != null) { // Paper
+ 
+             this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
+             this.f.remove(gameprofile);
+@@ -124,7 +125,7 @@ public class UserCache {
+     }
+ 
+     @Nullable
+-    public GameProfile getProfile(String s) {
++    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
+         String s1 = s.toLowerCase(Locale.ROOT);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
+ 
+@@ -209,8 +210,15 @@ public class UserCache {
+ 
+     }
+ 
++    // Paper start
+     public void c() {
++        c(true);
++    }
++    public void c(boolean asyncSave) {
++        // Paper end
+         String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
++        Runnable save = () -> {
++
+         BufferedWriter bufferedwriter = null;
+ 
+         try {
+@@ -224,6 +232,14 @@ public class UserCache {
+         } finally {
+             IOUtils.closeQuietly(bufferedwriter);
+         }
++        // Paper start
++        };
++        if (asyncSave) {
++            MCUtil.scheduleAsyncTask(save);
++        } else {
++            save.run();
++        }
++        // Paper end
+ 
+     }
+ 

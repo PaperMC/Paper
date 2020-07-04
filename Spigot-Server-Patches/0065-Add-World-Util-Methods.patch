@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 20:16:03 -0400
+Subject: [PATCH] Add World Util Methods
+
+Methods that can be used for other patches to help improve logic.
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index c01f0e897ab8741c7fd68245458acdb8559e843e..ee1f5c1e1bc9440a743a361bf3aaa991dddbc9cd 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -285,6 +285,22 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         return chunk == null ? null : chunk.getFluid(blockposition);
+     }
++
++    public boolean isLoadedAndInBounds(BlockPosition blockposition) {
++        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++    }
++
++    public Chunk getChunkIfLoaded(int x, int z) {
++        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
++    }
++    public final Chunk getChunkIfLoaded(BlockPosition blockposition) {
++        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++    }
++
++    //  reduces need to do isLoaded before getType
++    public IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
++        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
++    }
+     // Paper end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index d039e715624d33fc3ec9e87d5ad992415e7dc6b9..d5c0d394feaf8bb991245dbdcc6252cf45eac13d 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -21,6 +21,7 @@ public class WorldBorder {
+ 
+     public WorldBorder() {}
+ 
++    public final boolean isInBounds(BlockPosition blockposition) { return this.a(blockposition); } // Paper - OBFHELPER
+     public boolean a(BlockPosition blockposition) {
+         return (double) (blockposition.getX() + 1) > this.e() && (double) blockposition.getX() < this.g() && (double) (blockposition.getZ() + 1) > this.f() && (double) blockposition.getZ() < this.h();
+     }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 223482e468862407d53299219e2f4debecd0cd87..f38c88df648aa715aefb18018779efd8075d781e 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -83,7 +83,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     public final Convertable.ConversionSession convertable;
+     public final UUID uuid;
+ 
+-    public Chunk getChunkIfLoaded(int x, int z) {
++    @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+         return this.chunkProvider.getChunkAt(x, z, false);
+     }
+ 

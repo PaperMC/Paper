@@ -12,10 +12,10 @@ Previous implementation did not calculate TPS correctly.
 Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b6912f97c2240b0524735e0f8d1937f2e76dba5b..c61037c837e29544e3afeb0b23f422073d3f5166 100644
+index 9eacc1ba58986c21c5d8dc8d8d14c6f3b48fd171..7b58499c24d5a4296cc539087ca86d2ec4148b1c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -160,7 +160,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -144,7 +144,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public org.bukkit.command.ConsoleCommandSender console;
      public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
      public ConsoleReader reader;
@@ -23,8 +23,8 @@ index b6912f97c2240b0524735e0f8d1937f2e76dba5b..c61037c837e29544e3afeb0b23f42207
 +    public static int currentTick = 0; // Paper - Further improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-     public File bukkitDataPackFolder;
-@@ -170,7 +170,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public CommandDispatcher vanillaCommandDispatcher;
+@@ -153,7 +153,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      // Spigot start
      public static final int TPS = 20;
      public static final int TICK_TIME = 1000000000 / TPS;
@@ -33,7 +33,7 @@ index b6912f97c2240b0524735e0f8d1937f2e76dba5b..c61037c837e29544e3afeb0b23f42207
      public final double[] recentTps = new double[ 3 ];
      public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
      // Spigot end
-@@ -781,6 +781,57 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -807,6 +807,57 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      {
          return ( avg * exp ) + ( tps * ( 1 - exp ) );
      }
@@ -90,8 +90,8 @@ index b6912f97c2240b0524735e0f8d1937f2e76dba5b..c61037c837e29544e3afeb0b23f42207
 +    // Paper End
      // Spigot End
  
-     public void run() {
-@@ -793,30 +844,38 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     protected void v() {
+@@ -819,30 +870,38 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
                  // Spigot start
                  Arrays.fill( recentTps, 20 );
@@ -137,13 +137,13 @@ index b6912f97c2240b0524735e0f8d1937f2e76dba5b..c61037c837e29544e3afeb0b23f42207
 +                    //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
 +                    lastTick = curTime;
                      this.nextTick += 50L;
-                     if (this.T) {
-                         this.T = false;
+                     GameProfilerTick gameprofilertick = GameProfilerTick.a("Server");
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ee749863730cb2228712ceddd4e405a798f73c5e..99083a1f36f95a4fb3d67f903d02b84d6ebae3d2 100644
+index a07014ecb5789b4df4a770407f96c8c6edc6c579..4edc9d892a18f7ea2b22f597ee075b09cf843eaf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1970,6 +1970,17 @@ public final class CraftServer implements Server {
+@@ -2049,6 +2049,17 @@ public final class CraftServer implements Server {
          return CraftMagicNumbers.INSTANCE;
      }
  
@@ -162,19 +162,10 @@ index ee749863730cb2228712ceddd4e405a798f73c5e..99083a1f36f95a4fb3d67f903d02b84d
      {
  
 diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-index be2e31deae605fbf5a3d8bfc235161804f7bdb43..387af9d5c01701eafdb416204e5e2f94116d366f 100644
+index 9cd57c9d5fe59ceb2cd307e4e1a2052c9ac428fe..7218f23df4d06ff1ca612286e4a404246389ab18 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-@@ -1,8 +1,5 @@
- package org.spigotmc;
- 
--import com.google.common.base.Joiner;
--import net.minecraft.server.MinecraftServer;
--import com.google.common.collect.Iterables;
- import org.bukkit.ChatColor;
- import org.bukkit.command.Command;
- import org.bukkit.command.CommandSender;
-@@ -26,20 +23,22 @@ public class TicksPerSecondCommand extends Command
+@@ -26,22 +26,30 @@ public class TicksPerSecondCommand extends Command
              return true;
          }
  
@@ -189,15 +180,25 @@ index be2e31deae605fbf5a3d8bfc235161804f7bdb43..387af9d5c01701eafdb416204e5e2f94
 +
 +        for ( int i = 0; i < tps.length; i++) {
 +            tpsAvg[i] = format( tps[i] );
++        }
++        sender.sendMessage(ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
++        if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {
++            sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
++            if (!hasShownMemoryWarning) {
++                sender.sendMessage(ChatColor.RED + "Warning: " + ChatColor.GOLD + " Memory usage on modern garbage collectors is not a stable value and it is perfectly normal to see it reach max. Please do not pay it much attention.");
++                hasShownMemoryWarning = true;
++            }
          }
 -        sender.sendMessage( sb.substring( 0, sb.length() - 2 ) );
-+        sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
+-        sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: "
+-                + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
 +        // Paper end
  
          return true;
      }
  
 -    private String format(double tps)
++    private boolean hasShownMemoryWarning; // Paper
 +    private static String format(double tps) // Paper - Made static
      {
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()

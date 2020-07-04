@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 22 Jan 2017 18:07:56 -0500
+Subject: [PATCH] Cap Entity Collisions
+
+Limit a single entity to colliding a max of configurable times per tick.
+This will alleviate issues where living entities are hoarded in 1x1 pens
+
+This is not tied to the maxEntityCramming rule. Cramming will still apply
+just as it does in Vanilla, but entity pushing logic will be capped.
+
+You can set this to 0 to disable collisions.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 255b4081314162cbe344b008158c6f4584795fb8..04ee0856a8c62e1afb438d4fddf40e605e82a074 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -317,4 +317,10 @@ public class PaperWorldConfig {
+             log("Treasure Maps will return already discovered locations");
+         }
+     }
++
++    public int maxCollisionsPerEntity;
++    private void maxEntityCollision() {
++        maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
++        log( "Max Entity Collisions: " + maxCollisionsPerEntity );
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index bd270ea92404c2055c09324988e1ec28109a8815..912f5be0264b604df175f5825765b03b319a841c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -188,6 +188,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
+     public final boolean defaultActivationState;
+     public long activatedTick = Integer.MIN_VALUE;
++    protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 7e4b79fcee2b5e9a2c24e0372cda7d71f38b22e3..0799f3b025c25204fddfd818b314ec1452a1ba1a 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2778,8 +2778,11 @@ public abstract class EntityLiving extends Entity {
+                 }
+             }
+ 
+-            for (j = 0; j < list.size(); ++j) {
++            numCollisions = Math.max(0, numCollisions - world.paperConfig.maxCollisionsPerEntity); // Paper
++            for (j = 0; j < list.size() && numCollisions < world.paperConfig.maxCollisionsPerEntity; ++j) { // Paper
+                 Entity entity = (Entity) list.get(j);
++                entity.numCollisions++; // Paper
++                numCollisions++; // Paper
+ 
+                 this.C(entity);
+             }

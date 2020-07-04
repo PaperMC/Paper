@@ -6,40 +6,30 @@ Subject: [PATCH] Optimize CraftBlockData Creation
 Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
 and cloning it when one is needed.
 
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index c5fddef030489bff0de9e0efb4f11c83bcfee628..cca2bf1045c1305a9defa5241909b50711b85d4c 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
- import com.mojang.datafixers.Dynamic;
- import com.mojang.datafixers.types.DynamicOps;
- import com.mojang.datafixers.util.Pair;
-+import org.bukkit.craftbukkit.block.data.CraftBlockData;
+diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
+index 88a1db211286fc8a6164312d7eb0839c00969e0e..aa4bfc9fe8e917c1c19838b0a7b045a11fc9300b 100644
+--- a/src/main/java/net/minecraft/server/BlockBase.java
++++ b/src/main/java/net/minecraft/server/BlockBase.java
+@@ -323,6 +323,14 @@ public abstract class BlockBase {
+             this.o = blockbase_info.t;
+             this.p = blockbase_info.u;
+         }
++        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
 +
- import java.util.Arrays;
- import java.util.Iterator;
- import java.util.List;
-@@ -38,6 +40,15 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return (Block) this.a;
-     }
++        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(getBlockData());
++            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
++        }
++        // Paper end
  
-+    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
-+    private CraftBlockData cachedCraftBlockData;
-+
-+    public CraftBlockData createCraftBlockData() {
-+        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
-+        return (CraftBlockData) cachedCraftBlockData.clone();
-+    }
-+    // Paper end
-+
-     public Material getMaterial() {
-         return this.getBlock().k(this);
-     }
+         public void a() {
+             if (!this.getBlock().o()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index 683b17a0c9f09d90c2fc30aad6516b4d01d2f34f..a0746a1694a01996eab44a91b078ba14996f3d13 100644
+index c7eed6b572cef2c735b1eb2f587c24876047cf94..bbded5671e986be34ebe3100e4c10ee0d5741764 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-@@ -549,7 +549,17 @@ public class CraftBlockData implements BlockData {
+@@ -553,7 +553,17 @@ public class CraftBlockData implements BlockData {
          return craft;
      }
  

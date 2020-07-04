@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 5 Oct 2016 16:27:36 -0500
+Subject: [PATCH] Option to remove corrupt tile entities
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index ac76bdd7e1d91b0d242539c4495948cdfbb622e0..6cb717a63f52d757b0b323408d2fc0c3d7db77da 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -293,4 +293,9 @@ public class PaperWorldConfig {
+         preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
+         log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
+     }
++
++    public boolean removeCorruptTEs = false;
++    private void removeCorruptTEs() {
++        removeCorruptTEs = getBoolean("remove-corrupt-tile-entities", false);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index c0b5d25f63741947c0d8ee32f317eb7fd3db4b65..fdc02b512f2d4bc968977564d520bc7ec7189c69 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -637,6 +637,12 @@ public class Chunk implements IChunkAccess {
+                             "Chunk coordinates: " + (this.loc.x * 16) + "," + (this.loc.z * 16));
+             e.printStackTrace();
+             ServerInternalException.reportInternalException(e);
++
++            if (this.world.paperConfig.removeCorruptTEs) {
++                this.removeTileEntity(tileentity.getPosition());
++                this.markDirty();
++                org.bukkit.Bukkit.getLogger().info("Removing corrupt tile entity");
++            }
+             // Paper end
+             // CraftBukkit end
+         }

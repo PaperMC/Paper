@@ -4,8 +4,45 @@ Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index d4ebcf8f66197299256bd6b65710a1488c90ea41..c9164dfdb27ddf3709129c8aec54903a1df121ff 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -109,7 +109,7 @@ public class TimingsExport extends Thread {
+             pair("end", System.currentTimeMillis() / 1000),
+             pair("online-mode", Bukkit.getServer().getOnlineMode()),
+             pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
+-            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().d(), pack -> {
++            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().e(), pack -> {
+                 // Don't feel like obf helper'ing these, non fatal if its temp missed.
+                 return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
+             }))
+@@ -148,8 +148,8 @@ public class TimingsExport extends Thread {
+         );
+ 
+         parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getWorlds(), world -> {
+-            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
+-            return pair(world.getWorldData().getName(), createObject(
++            if (world.getWorld().getName().equals("worldeditregentempworld")) return null;
++            return pair(world.getWorld().getName(), createObject(
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 1441d096d44ea653539ba20ccda94eb62ffc32df..b9d0d2d42850c3a5d093429cd0d02ac47848f04b 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -11,7 +11,7 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
+ 
+     public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
+     public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
+-    public static final BlockStateBoolean d = BlockProperties.C;
++    public static final BlockStateBoolean d = BlockProperties.C; public static final BlockStateBoolean waterlogged() { return d; } // Paper OBFHELPER
+     protected static final VoxelShape e = Block.a(1.0D, 0.0D, 0.0D, 15.0D, 14.0D, 15.0D);
+     protected static final VoxelShape f = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 16.0D);
+     protected static final VoxelShape g = Block.a(0.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
-index 35f4dc75fbc7cccc80453f279a08b286ab32a25a..eb2b6ff8fd86233c434882c69a8890adc9861d4b 100644
+index 58b1fd7415fdc67be7dc33e7f55c59df83bc996a..a016d97be93c4218136f803cc9a7f986d70309d2 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityChest.java
 @@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
@@ -70,7 +107,7 @@ index 35f4dc75fbc7cccc80453f279a08b286ab32a25a..eb2b6ff8fd86233c434882c69a8890ad
      }
  
      private void a(SoundEffect soundeffect) {
-+        if (!this.getBlock().hasProperty(BlockChest.c)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
++        if (!this.getBlock().b(BlockChest.c)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
          BlockPropertyChestType blockpropertychesttype = (BlockPropertyChestType) this.getBlock().get(BlockChest.c);
  
          if (blockpropertychesttype != BlockPropertyChestType.LEFT) {
@@ -91,7 +128,7 @@ index 35f4dc75fbc7cccc80453f279a08b286ab32a25a..eb2b6ff8fd86233c434882c69a8890ad
                  int newPower = Math.max(0, Math.min(15, this.viewingCount));
  
 diff --git a/src/main/java/net/minecraft/server/TileEntityEnderChest.java b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
-index 68737be5e67b52cb1f9f526b58b589ecba14dd6b..ea2d5cdd38b305563e9f979887eb455095928ec9 100644
+index b37a705e49f64b46c2256a1b6b077c67fa240b0f..9d03a9ae7fe85fdd0550f737246eef2688a51c8e 100644
 --- a/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 +++ b/src/main/java/net/minecraft/server/TileEntityEnderChest.java
 @@ -1,6 +1,6 @@

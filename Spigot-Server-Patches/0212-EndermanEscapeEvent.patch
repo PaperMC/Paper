@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 30 Apr 2018 13:15:55 -0400
+Subject: [PATCH] EndermanEscapeEvent
+
+Fires an event anytime an enderman intends to teleport away from the player
+
+You may cancel this, enabling ranged attacks to damage the enderman for example.
+
+diff --git a/src/main/java/net/minecraft/server/EntityEnderman.java b/src/main/java/net/minecraft/server/EntityEnderman.java
+index 37a4bce1cd24e04b70367484c1ad3beae047ab08..888e66520548a47dbfa1c452b0d3fa5dcbe2002c 100644
+--- a/src/main/java/net/minecraft/server/EntityEnderman.java
++++ b/src/main/java/net/minecraft/server/EntityEnderman.java
+@@ -2,6 +2,7 @@ package net.minecraft.server;
+ 
+ import java.util.EnumSet;
+ import java.util.Optional;
++import com.destroystokyo.paper.event.entity.EndermanEscapeEvent; // Paper
+ import java.util.Random;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+@@ -56,6 +57,12 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+         setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN, true);
+     }
+ 
++    // Paper start
++    private boolean tryEscape(EndermanEscapeEvent.Reason reason) {
++        return new EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
++    }
++    // Paper end
++
+     @Override
+     public boolean setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
+         if (!super.setGoalTarget(entityliving, reason, fireEvent)) {
+@@ -209,7 +216,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+         if (this.world.isDay() && this.ticksLived >= this.bz + 600) {
+             float f = this.aO();
+ 
+-            if (f > 0.5F && this.world.f(this.getChunkCoordinates()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
++            if (f > 0.5F && this.world.f(this.getChunkCoordinates()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper
+                 this.setGoalTarget((EntityLiving) null);
+                 this.eM();
+             }
+@@ -307,17 +314,19 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (damagesource instanceof EntityDamageSourceIndirect) {
++            if (this.tryEscape(EndermanEscapeEvent.Reason.INDIRECT)) { // Paper start
+             for (int i = 0; i < 64; ++i) {
+                 if (this.eM()) {
+                     return true;
+                 }
+             }
++            } // Paper end
+ 
+             return false;
+         } else {
+             boolean flag = super.damageEntity(damagesource, f);
+ 
+-            if (!this.world.s_() && this.random.nextInt(10) != 0) {
++            if (!this.world.s_() && this.random.nextInt(10) != 0 && this.tryEscape(damagesource == DamageSource.DROWN ? EndermanEscapeEvent.Reason.DROWN : EndermanEscapeEvent.Reason.CRITICAL_HIT)) { // Paper
+                 this.eM();
+             }
+ 
+@@ -459,7 +468,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+ 
+     static class PathfinderGoalPlayerWhoLookedAtTarget extends PathfinderGoalNearestAttackableTarget<EntityHuman> {
+ 
+-        private final EntityEnderman i;
++        private final EntityEnderman i; public final EntityEnderman getEnderman() { return this.i; } // Paper - OBFHELPER
+         private EntityHuman j;
+         private int k;
+         private int l;
+@@ -522,7 +531,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+             } else {
+                 if (this.c != null && !this.i.isPassenger()) {
+                     if (this.i.g((EntityHuman) this.c)) {
+-                        if (this.c.h((Entity) this.i) < 16.0D) {
++                        if (this.c.h((Entity) this.i) < 16.0D && this.getEnderman().tryEscape(EndermanEscapeEvent.Reason.STARE)) {
+                             this.i.eM();
+                         }
+ 

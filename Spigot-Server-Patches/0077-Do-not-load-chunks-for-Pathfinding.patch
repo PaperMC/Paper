@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 31 Mar 2016 19:17:58 -0400
+Subject: [PATCH] Do not load chunks for Pathfinding
+
+
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index 0ed4b1d9c636a9051718f800ba5717e3ae46cdc9..9330e65cbdf2f826528e3c891197fac7860306ec 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -27,7 +27,7 @@ public abstract class NavigationAbstract {
+     private BlockPosition p;
+     private int q;
+     private float r;
+-    private final Pathfinder s;
++    private final Pathfinder s; public Pathfinder getPathfinder() { return this.s; } // Paper - OBFHELPER
+ 
+     public NavigationAbstract(EntityInsentient entityinsentient, World world) {
+         this.g = Vec3D.a;
+diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
+index 8ba6dd459a863717c91dd59f3f2ee5e3a5ed8170..b31d1f73ce0f067e352868b53eab7557c34b17eb 100644
+--- a/src/main/java/net/minecraft/server/Pathfinder.java
++++ b/src/main/java/net/minecraft/server/Pathfinder.java
+@@ -17,7 +17,7 @@ public class Pathfinder {
+ 
+     private final PathPoint[] a = new PathPoint[32];
+     private final int b;
+-    private final PathfinderAbstract c;
++    private final PathfinderAbstract c; public PathfinderAbstract getPathfinder() { return this.c; }  // Paper - OBFHELPER
+     private final Path d = new Path();
+ 
+     public Pathfinder(PathfinderAbstract pathfinderabstract, int i) {
+diff --git a/src/main/java/net/minecraft/server/PathfinderNormal.java b/src/main/java/net/minecraft/server/PathfinderNormal.java
+index 7249dd2e6d66b20398103301050ac96ca0c44386..d7f0df123ba716ca8587cbfab2c8e94961164909 100644
+--- a/src/main/java/net/minecraft/server/PathfinderNormal.java
++++ b/src/main/java/net/minecraft/server/PathfinderNormal.java
+@@ -468,7 +468,12 @@ public class PathfinderNormal extends PathfinderAbstract {
+                 for (int j1 = -1; j1 <= 1; ++j1) {
+                     if (l != 0 || j1 != 0) {
+                         blockposition_mutableblockposition.d(i + l, j + i1, k + j1);
+-                        IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition);
++                        // Paper start
++                        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition_mutableblockposition);
++                        if (iblockdata == null) {
++                            pathtype = PathType.BLOCKED;
++                        } else {
++                        // Paper end
+ 
+                         if (iblockdata.a(Blocks.CACTUS)) {
+                             return PathType.DANGER_CACTUS;
+@@ -491,6 +496,7 @@ public class PathfinderNormal extends PathfinderAbstract {
+                         if (fluid.a((Tag) TagsFluid.LAVA)) {
+                             return PathType.LAVA;
+                         }
++                        } // Paper
+                     }
+                 }
+             }
+@@ -500,7 +506,8 @@ public class PathfinderNormal extends PathfinderAbstract {
+     }
+ 
+     protected static PathType b(IBlockAccess iblockaccess, BlockPosition blockposition) {
+-        IBlockData iblockdata = iblockaccess.getType(blockposition);
++        IBlockData iblockdata = iblockaccess.getTypeIfLoaded(blockposition); // Paper
++        if (iblockdata == null) return PathType.BLOCKED; // Paper
+         Block block = iblockdata.getBlock();
+         Material material = iblockdata.getMaterial();
+ 

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 11 Jan 2020 21:50:56 -0800
+Subject: [PATCH] Optimise IEntityAccess#getPlayerByUUID
+
+Use the world entity map instead of iterating over all players
+
+diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
+index 48e8b005bd9589135eff03a110ecce8776ab208a..74d4c28246e7db850e6d993e07a84b2a6ca24ce2 100644
+--- a/src/main/java/net/minecraft/server/IEntityAccess.java
++++ b/src/main/java/net/minecraft/server/IEntityAccess.java
+@@ -235,6 +235,12 @@ public interface IEntityAccess {
+ 
+     @Nullable
+     default EntityHuman b(UUID uuid) {
++        // Paper start - allow WorldServer to override
++        return this.getPlayerByUUID(uuid);
++    }
++    @Nullable
++    default EntityHuman getPlayerByUUID(UUID uuid) {
++        // Paper end
+         for (int i = 0; i < this.getPlayers().size(); ++i) {
+             EntityHuman entityhuman = (EntityHuman) this.getPlayers().get(i);
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 8c0b1f28c3a914ce467345104e024650b9ebe2fe..8458ac3cf864774520afcb9ddc7cd60fc8f9d4e6 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -172,6 +172,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     }
+     // Paper end
+ 
++    // Paper start - optimise getPlayerByUUID
++    @Nullable
++    @Override
++    public EntityHuman getPlayerByUUID(UUID uuid) {
++        Entity player = this.entitiesByUUID.get(uuid);
++        return (player instanceof EntityHuman) ? (EntityHuman)player : null;
++    }
++    // Paper end
++
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+         super(iworlddataserver, resourcekey, resourcekey1, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
