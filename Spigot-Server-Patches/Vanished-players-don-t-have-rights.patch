@@ -4,6 +4,18 @@ Date: Mon, 23 Jul 2018 14:22:26 +0200
 Subject: [PATCH] Vanished players don't have rights
 
 
+diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockBase.java
++++ b/src/main/java/net/minecraft/server/BlockBase.java
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
+             return this.a != null ? this.a.b : this.b(iblockaccess, blockposition, VoxelShapeCollision.a());
+         }
+ 
++        public final VoxelShape getCollisionShape(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) { return this.b(iblockaccess, blockposition, voxelshapecollision); } // Paper - OBFHELPER
+         public VoxelShape b(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
+             return this.getBlock().c(this.p(), iblockaccess, blockposition, voxelshapecollision);
+         }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
@@ -21,35 +33,34 @@ diff --git a/src/main/java/net/minecraft/server/EntityFireworks.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityFireworks.java
 +++ b/src/main/java/net/minecraft/server/EntityFireworks.java
-@@ -0,0 +0,0 @@ public class EntityFireworks extends Entity implements IProjectile {
+@@ -0,0 +0,0 @@ public class EntityFireworks extends IProjectile {
+             this.move(EnumMoveType.SELF, vec3d);
+             this.setMot(vec3d);
+         }
+-
+         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this::a, RayTrace.BlockCollisionOption.COLLIDER);
  
-         vec3d = this.getMot();
-         MovingObjectPosition movingobjectposition = ProjectileHelper.a(this, this.getBoundingBox().a(vec3d).g(1.0D), (entity) -> {
-+            // Paper start - Cancel hit for vanished players
-+            if (this.spawningEntity != null && entity instanceof EntityPlayer && this.world instanceof WorldServer) {
-+                Entity spawningEntity = ((WorldServer) this.world).getEntity(this.spawningEntity);
-+                if (spawningEntity instanceof EntityPlayer) {
-+                    org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
-+                    org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) spawningEntity.getBukkitEntity();
-+                    if (!shooter.canSee(collided)) return false;
-+                }
-+            }
-+            // Paper end
-             return !entity.isSpectator() && entity.isAlive() && entity.isInteractable();
-         }, RayTrace.BlockCollisionOption.COLLIDER, true);
- 
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+         if (!this.noclip) {
+diff --git a/src/main/java/net/minecraft/server/IProjectile.java b/src/main/java/net/minecraft/server/IProjectile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return this.c != null ? this.c.g : this.b(iblockaccess, blockposition, VoxelShapeCollision.a());
-     }
- 
-+    public final VoxelShape getCollisionShape(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) { return this.b(iblockaccess, blockposition, voxelshapecollision); } // Paper - OBFHELPER
-     public VoxelShape b(IBlockAccess iblockaccess, BlockPosition blockposition, VoxelShapeCollision voxelshapecollision) {
-         return this.getBlock().b(this, iblockaccess, blockposition, voxelshapecollision);
-     }
+--- a/src/main/java/net/minecraft/server/IProjectile.java
++++ b/src/main/java/net/minecraft/server/IProjectile.java
+@@ -0,0 +0,0 @@ public abstract class IProjectile extends Entity {
+     protected boolean a(Entity entity) {
+         if (!entity.isSpectator() && entity.isAlive() && entity.isInteractable()) {
+             Entity entity1 = this.getShooter();
+-
++            // Paper start - Cancel hit for vanished players
++            if (entity1 instanceof EntityPlayer && entity instanceof EntityPlayer) {
++                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
++                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) entity1.getBukkitEntity();
++                if (!shooter.canSee(collided)) return false;
++            }
+             return entity1 == null || this.d || !entity1.isSameVehicle(entity);
++            // Paper end
+         } else {
+             return false;
+         }
 diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ItemBlock.java
@@ -58,9 +69,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          EntityHuman entityhuman = blockactioncontext.getEntity();
          VoxelShapeCollision voxelshapecollision = entityhuman == null ? VoxelShapeCollision.a() : VoxelShapeCollision.a((Entity) entityhuman);
          // CraftBukkit start - store default return
--        boolean defaultReturn = (!this.T_() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
+-        boolean defaultReturn = (!this.isCheckCollisions() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && blockactioncontext.getWorld().a(iblockdata, blockactioncontext.getClickPosition(), voxelshapecollision);
 +        World world = blockactioncontext.getWorld(); // Paper
-+        boolean defaultReturn = (!this.T_() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && world.checkEntityCollision(iblockdata, entityhuman, voxelshapecollision, blockactioncontext.getClickPosition(), true); // Paper
++        boolean defaultReturn = (!this.isCheckCollisions() || iblockdata.canPlace(blockactioncontext.getWorld(), blockactioncontext.getClickPosition())) && world.checkEntityCollision(iblockdata, entityhuman, voxelshapecollision, blockactioncontext.getClickPosition(), true); // Paper
          org.bukkit.entity.Player player = (blockactioncontext.getEntity() instanceof EntityPlayer) ? (org.bukkit.entity.Player) blockactioncontext.getEntity().getBukkitEntity() : null;
  
          BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(blockactioncontext.getWorld(), blockactioncontext.getClickPosition()), player, CraftBlockData.fromData(iblockdata), defaultReturn);
@@ -145,7 +156,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      @Override
-     public boolean p_() {
+     public boolean s_() {
          return this.isClientSide;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644

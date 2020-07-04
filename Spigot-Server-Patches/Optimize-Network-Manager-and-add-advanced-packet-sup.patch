@@ -51,7 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.channel.config().setAutoRead(true);
          NetworkManager.LOGGER.debug("Enabled auto read");
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-         NetworkManager.LOGGER.debug("Set listener of {} to {}", this, packetlistener);
+         Validate.notNull(packetlistener, "packetListener", new Object[0]);
          this.packetListener = packetlistener;
      }
 +    // Paper start
@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper start
 +        private static boolean canSendImmediate(NetworkManager networkManager, Packet<?> packet) {
-+            return networkManager.isPending || networkManager.protocol != EnumProtocol.PLAY || networkManager.queueImmunity ||
++            return networkManager.isPending || networkManager.protocol != EnumProtocol.PLAY ||
 +                packet instanceof PacketPlayOutKeepAlive ||
 +                packet instanceof PacketPlayOutChat ||
 +                packet instanceof PacketPlayOutTabComplete;
@@ -298,7 +298,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (this.j() != null) {
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.i() != null) {
-                     this.i().a(new ChatMessage("multiplayer.disconnect.generic", new Object[0]));
+                     this.i().a(new ChatMessage("multiplayer.disconnect.generic"));
                  }
 -                this.packetQueue.clear(); // Free up packet queue.
 +                clearPacketQueue(); // Paper
@@ -309,6 +309,13 @@ diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Packet.java
 +++ b/src/main/java/net/minecraft/server/Packet.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import io.netty.channel.ChannelFuture; // Paper
+ import java.io.IOException;
+ 
+ public interface Packet<T extends PacketListener> {
 @@ -0,0 +0,0 @@ public interface Packet<T extends PacketListener> {
      void a(T t0);
  
@@ -323,37 +330,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param player Null if not at PLAY stage yet
 +     * @param future Can be null if packet was cancelled
 +     */
-+    default void onPacketDispatchFinish(@javax.annotation.Nullable EntityPlayer player, @javax.annotation.Nullable io.netty.channel.ChannelFuture future) {}
++    default void onPacketDispatchFinish(@javax.annotation.Nullable EntityPlayer player, @javax.annotation.Nullable ChannelFuture future) {}
 +    default boolean hasFinishListener() { return false; }
 +    default boolean isReady() { return true; }
 +    default java.util.List<Packet> getExtraPackets() { return null; }
      default boolean packetTooLarge(NetworkManager manager) {
          return false;
      }
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
- 
-         // CraftBukkit - getType()
-         // Spigot - view distance
-+        networkmanager.queueImmunity = true; // Paper
-         playerconnection.sendPacket(new PacketPlayOutLogin(entityplayer.getId(), entityplayer.playerInteractManager.getGameMode(), WorldData.c(worlddata.getSeed()), worlddata.isHardcore(), worldserver.worldProvider.getDimensionManager().getType(), this.getMaxPlayers(), worlddata.getType(), worldserver.spigotConfig.viewDistance, flag1, !flag));
-         entityplayer.getBukkitEntity().sendSupportedChannels(); // CraftBukkit
-         playerconnection.sendPacket(new PacketPlayOutCustomPayload(PacketPlayOutCustomPayload.a, (new PacketDataSerializer(Unpooled.buffer())).a(this.getServer().getServerModName())));
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-         playerconnection.sendPacket(new PacketPlayOutRecipeUpdate(this.server.getCraftingManager().b()));
-         playerconnection.sendPacket(new PacketPlayOutTags(this.server.getTagRegistry()));
-         playerconnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, (byte) (worldserver.getGameRules().getBoolean(GameRules.REDUCED_DEBUG_INFO) ? 22 : 23))); // Paper - fix this rule not being initialized on the client
-+        networkmanager.queueImmunity = false; // Paper
-         this.d(entityplayer);
-         entityplayer.getStatisticManager().c();
-         entityplayer.B().a(entityplayer);
 diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ServerConnection.java
 +++ b/src/main/java/net/minecraft/server/ServerConnection.java
+@@ -0,0 +0,0 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
+ import io.netty.channel.nio.NioEventLoopGroup;
+ import io.netty.channel.socket.ServerSocketChannel;
+ import io.netty.channel.socket.nio.NioServerSocketChannel;
++import io.netty.handler.flush.FlushConsolidationHandler; // Paper
+ import io.netty.handler.timeout.ReadTimeoutHandler;
+ import java.io.IOException;
+ import java.net.InetAddress;
 @@ -0,0 +0,0 @@ public class ServerConnection {
      private final List<NetworkManager> connectedChannels = Collections.synchronizedList(Lists.newArrayList());
      // Paper start - prevent blocking on adding a new network manager while the server is ticking
@@ -371,7 +366,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          ;
                      }
  
-+                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new io.netty.handler.flush.FlushConsolidationHandler()); // Paper
++                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new FlushConsolidationHandler()); // Paper
                      channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(ServerConnection.this)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(EnumProtocolDirection.SERVERBOUND)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(EnumProtocolDirection.CLIENTBOUND));
                      NetworkManager networkmanager = new NetworkManager(EnumProtocolDirection.SERVERBOUND);
  

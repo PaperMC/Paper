@@ -36,13 +36,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 +++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
 @@ -0,0 +0,0 @@ public class EntityTrackerEntry {
-         this.r = entity.onGround;
+         this.r = entity.isOnGround();
      }
  
 +    public final void tick() { this.a(); } // Paper - OBFHELPER
      public void a() {
          List<Entity> list = this.tracker.getPassengers();
  
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         }
+     }
+ 
++    public final int applyTrackingRangeScale(int value) { return this.b(value); } // Paper - OBFHELPER
+     public int b(int i) {
+         return i;
+     }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
@@ -60,6 +72,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    static final org.spigotmc.TrackingRange.TrackingRangeType[] TRACKING_RANGE_TYPES = org.spigotmc.TrackingRange.TrackingRangeType.values();
 +    final com.destroystokyo.paper.util.misc.PlayerAreaMap[] playerEntityTrackerTrackMaps;
 +    final int[] entityTrackerTrackRanges;
++
++    private int convertSpigotRangeToVanilla(final int vanilla) {
++        return MinecraftServer.getServer().applyTrackingRangeScale(vanilla);
++    }
 +    // Paper end - use distance map to optimise tracker
  
      void addPlayerToDistanceMaps(EntityPlayer player) {
@@ -98,10 +114,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - use distance map to optimise entity tracker
      }
- 
+     // Paper end
  
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-         this.m = new VillagePlace(new File(this.w, "poi"), datafixer, this.world); // Paper
+         this.m = new VillagePlace(new File(this.w, "poi"), datafixer, flag, this.world); // Paper
          this.setViewDistance(i);
          this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
 +        // Paper start - use distance map to optimise entity tracker
@@ -135,6 +151,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                default:
 +                    throw new IllegalStateException("Missing case for enum " + trackingRangeType);
 +            }
++            configuredSpigotValue = convertSpigotRangeToVanilla(configuredSpigotValue);
 +
 +            int trackRange = (configuredSpigotValue >>> 4) + ((configuredSpigotValue & 15) != 0 ? 1 : 0);
 +            this.entityTrackerTrackRanges[ordinal] = trackRange;
@@ -166,12 +183,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int j = MathHelper.floor(entityplayer.locZ()) >> 4;
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
-                     entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
-                     this.trackedEntities.put(entity.getId(), playerchunkmap_entitytracker);
--                    playerchunkmap_entitytracker.track(this.world.getPlayers());
-+                    playerchunkmap_entitytracker.updatePlayers(entity.getPlayersInTrackRange()); // Paper - don't search all players
-                     if (entity instanceof EntityPlayer) {
-                         EntityPlayer entityplayer = (EntityPlayer) entity;
+                 entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
+                 this.trackedEntities.put(entity.getId(), playerchunkmap_entitytracker);
+-                playerchunkmap_entitytracker.track(this.world.getPlayers());
++                playerchunkmap_entitytracker.updatePlayers(entity.getPlayersInTrackRange()); // Paper - don't search all players
+                 if (entity instanceof EntityPlayer) {
+                     EntityPlayer entityplayer = (EntityPlayer) entity;
  
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          entity.tracker = null; // Paper - We're no longer tracked
@@ -321,6 +338,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/spigotmc/TrackingRange.java
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
 @@ -0,0 +0,0 @@ public class TrackingRange
+             return config.miscTrackingRange;
+         } else
+         {
+-            if (entity instanceof EntityEnderDragon) return ((WorldServer)(entity.getWorld())).getChunkProvider().playerChunkMap.getLoadViewDistance(); // Paper - enderdragon is exempt
++            if (entity instanceof EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
              return config.otherTrackingRange;
          }
      }
@@ -337,8 +359,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        switch (entity.activationType) {
 +            case RAIDER:
 +            case MONSTER:
++            case FLYING_MONSTER:
 +                return TrackingRangeType.MONSTER;
 +            case WATER:
++            case VILLAGER:
 +            case ANIMAL:
 +                return TrackingRangeType.ANIMAL;
 +            case MISC:

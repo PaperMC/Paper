@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 28 Jun 2020 03:59:10 -0400
+Subject: [PATCH] Fix Per World Difficulty / Remembering Difficulty
+
+Fixes per world difficulty with /difficulty command and also
+makes it so that the server keeps the last difficulty used instead
+of restoring the server.properties every single load.
+
+diff --git a/src/main/java/net/minecraft/server/CommandDifficulty.java b/src/main/java/net/minecraft/server/CommandDifficulty.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/CommandDifficulty.java
++++ b/src/main/java/net/minecraft/server/CommandDifficulty.java
+@@ -0,0 +0,0 @@ public class CommandDifficulty {
+     public static int a(CommandListenerWrapper commandlistenerwrapper, EnumDifficulty enumdifficulty) throws CommandSyntaxException {
+         MinecraftServer minecraftserver = commandlistenerwrapper.getServer();
+ 
+-        if (minecraftserver.getSaveData().getDifficulty() == enumdifficulty) {
++        WorldServer world = commandlistenerwrapper.getWorld(); // Paper
++        if (world.worldDataServer.getDifficulty() == enumdifficulty) { // Paper
+             throw CommandDifficulty.a.create(enumdifficulty.c());
+         } else {
+-            minecraftserver.a(enumdifficulty, true);
++            minecraftserver.a(world, enumdifficulty, true); // Paper
+             commandlistenerwrapper.sendMessage(new ChatMessage("commands.difficulty.success", new Object[]{enumdifficulty.b()}), true);
+             return 0;
+         }
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     @Override
+     public void updateWorldSettings() {
+-        this.a(this.getDedicatedServerProperties().difficulty, true);
++        //this.a(this.getDedicatedServerProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.H = keypair;
+     }
+ 
+-    public void a(EnumDifficulty enumdifficulty, boolean flag) {
+-        if (flag || !this.saveData.isDifficultyLocked()) {
+-            this.saveData.setDifficulty(this.saveData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
+-            this.ba();
+-            this.getPlayerList().getPlayers().forEach(this::a);
++    // Paper start - fix per world difficulty
++    public void a(WorldServer world, EnumDifficulty enumdifficulty, boolean flag) {
++        WorldDataServer worldData = world.worldDataServer;
++        if (flag || !worldData.isDifficultyLocked()) {
++            worldData.setDifficulty(worldData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
++            world.setSpawnFlags(worldData.getDifficulty() != EnumDifficulty.PEACEFUL && ((DedicatedServer)this).propertyManager.getProperties().spawnMonsters, this.getSpawnAnimals());
++            //world.players.forEach(this::a);
++            // Paper end
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     public void a(PacketPlayInDifficultyChange packetplayindifficultychange) {
+         PlayerConnectionUtils.ensureMainThread(packetplayindifficultychange, this, this.player.getWorldServer());
+         if (this.player.k(2) || this.isExemptPlayer()) {
+-            this.minecraftServer.a(packetplayindifficultychange.b(), false);
++            //this.minecraftServer.a(packetplayindifficultychange.b(), false); // Paper - don't allow clients to change this
+         }
+     }
+ 

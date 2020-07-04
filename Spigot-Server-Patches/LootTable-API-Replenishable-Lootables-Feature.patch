@@ -550,8 +550,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      @Override
-     protected void b(NBTTagCompound nbttagcompound) {
-         super.b(nbttagcompound);
+     protected void saveData(NBTTagCompound nbttagcompound) {
+         super.saveData(nbttagcompound);
 +        this.lootableData.saveNbt(nbttagcompound); // Paper
          if (this.lootTable != null) {
              nbttagcompound.setString("LootTable", this.lootTable.toString());
@@ -565,10 +565,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      @Override
-     protected void a(NBTTagCompound nbttagcompound) {
-         super.a(nbttagcompound);
+     protected void loadData(NBTTagCompound nbttagcompound) {
+         super.loadData(nbttagcompound);
 +        this.lootableData.loadNbt(nbttagcompound); // Paper
-         this.items = NonNullList.a(this.getSize(), ItemStack.a);
+         this.items = NonNullList.a(this.getSize(), ItemStack.b);
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.lootTable = new MinecraftKey(nbttagcompound.getString("LootTable"));
              this.lootTableSeed = nbttagcompound.getLong("LootTableSeed");
@@ -585,9 +585,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
              LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.lootTable);
  
--            this.lootTable = null;
+             if (entityhuman instanceof EntityPlayer) {
+@@ -0,0 +0,0 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+             }
+ 
+             this.lootTable = null;
 +            this.lootableData.processRefill(entityhuman); // Paper
-             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.POSITION, new BlockPosition(this)).a(this.lootTableSeed);
+             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.POSITION, this.getChunkCoordinates()).a(this.lootTableSeed);
  
              if (entityhuman != null) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
@@ -609,7 +613,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer {
      }
  
-     protected boolean d(NBTTagCompound nbttagcompound) {
+     protected boolean b(NBTTagCompound nbttagcompound) {
 +        this.lootableData.loadNbt(nbttagcompound); // Paper
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.lootTable = new MinecraftKey(nbttagcompound.getString("LootTable"));
@@ -621,7 +625,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-     protected boolean e(NBTTagCompound nbttagcompound) {
+     protected boolean c(NBTTagCompound nbttagcompound) {
 +        this.lootableData.saveNbt(nbttagcompound); // Paper
          if (this.lootTable == null) {
              return false;
@@ -640,7 +644,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.lootableData.shouldReplenish(entityhuman) && this.world.getMinecraftServer() != null) { // Paper
              LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.lootTable);
  
--            this.lootTable = null;
+             if (entityhuman instanceof EntityPlayer) {
+@@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+             }
+ 
+             this.lootTable = null;
 +            this.lootableData.processRefill(entityhuman); // Paper
              LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.POSITION, new BlockPosition(this.position)).a(this.lootTableSeed);
  

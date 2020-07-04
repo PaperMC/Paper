@@ -9,9 +9,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -0,0 +0,0 @@ public class PaperWorldConfig {
+             delayChunkUnloadsBy *= 20;
          }
      }
- 
++
 +    public double sqrMaxThunderDistance;
 +    public double sqrMaxLightningImpactSoundDistance;
 +    public double maxLightningFlashDistance;
@@ -33,10 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            maxLightningFlashDistance = 512; // Vanilla value
 +        }
 +    }
-+
-     public int fixedInhabitedTime;
-     private void fixedInhabitedTime() {
-         if (PaperConfig.version < 16) {
+ }
 diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityLightning.java
@@ -48,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - Limit lightning strike effect distance
 +                if (distanceSquared <= this.world.paperConfig.sqrMaxLightningImpactSoundDistance) {
 +                    player.playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT,
-+                            SoundCategory.WEATHER, this.locX(), this.locY(), this.locZ(), 2.0f, 0.5F + this.random.nextFloat() * 0.2F));
++                        SoundCategory.WEATHER, this.locX(), this.locY(), this.locZ(), 2.0f, 0.5F + this.random.nextFloat() * 0.2F));
 +                }
 +
 +                if (world.paperConfig.sqrMaxThunderDistance != -1 && distanceSquared >= world.paperConfig.sqrMaxThunderDistance) {
@@ -64,20 +62,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
              // CraftBukkit end
 -            this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT, SoundCategory.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F);
-+            //this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT, SoundCategory.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F); // Paper - Limit lightning strike effect distance (the packet is now sent from inside the loop)
++//            this.world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_LIGHTNING_BOLT_IMPACT, SoundCategory.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F); // Paper - Limit lightning strike effect distance (the packet is now sent from inside the loop)
          }
  
          --this.lifeTicks;
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         }
-         // CraftBukkit end
-         this.globalEntityList.add(entitylightning);
--        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX(), entitylightning.locY(), entitylightning.locZ(), 512.0D, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension
-+        this.server.getPlayerList().sendPacketNearby((EntityHuman) null, entitylightning.locX(), entitylightning.locY(), entitylightning.locZ(), paperConfig.maxLightningFlashDistance, this, new PacketPlayOutSpawnEntityWeather(entitylightning)); // Paper - use world instead of dimension, limit lightning strike effect distance
-     }
- 
-     @Override

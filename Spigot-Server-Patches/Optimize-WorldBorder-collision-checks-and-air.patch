@@ -11,51 +11,53 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          AxisAlignedBB axisalignedbb = this.getBoundingBox();
          VoxelShapeCollision voxelshapecollision = VoxelShapeCollision.a(this);
-         VoxelShape voxelshape = this.world.getWorldBorder().a();
+         VoxelShape voxelshape = this.world.getWorldBorder().c();
 -        Stream<VoxelShape> stream = VoxelShapes.c(voxelshape, VoxelShapes.a(axisalignedbb.shrink(1.0E-7D)), OperatorBoolean.AND) ? Stream.empty() : Stream.of(voxelshape);
-+        Stream<VoxelShape> stream = !this.world.getWorldBorder().isInBounds(axisalignedbb) ? Stream.empty() : Stream.of(this.world.getWorldBorder().a()); // Paper
-         Stream<VoxelShape> stream1 = this.world.b(this, axisalignedbb.a(vec3d), (Set) ImmutableSet.of());
-         StreamAccumulator<VoxelShape> streamaccumulator = new StreamAccumulator<>(Stream.concat(stream1, stream));
-         Vec3D vec3d1 = vec3d.g() == 0.0D ? vec3d : a(this, vec3d, axisalignedbb, this.world, voxelshapecollision, streamaccumulator);
-diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
++        Stream<VoxelShape> stream = !this.world.getWorldBorder().isInBounds(axisalignedbb) ? Stream.empty() : Stream.of(voxelshape); // Paper
+         Stream<VoxelShape> stream1 = this.world.c(this, axisalignedbb.b(vec3d), (entity) -> {
+             return true;
+         });
+diff --git a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ICollisionAccess.java
-+++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
-             if (true) { //public boolean tryAdvance(Consumer<? super VoxelShape> consumer) {*/ // Paper
-                 if (entity != null) {
-                     // Paper end
--                    VoxelShape voxelshape1 = ICollisionAccess.this.getWorldBorder().a();
--                    boolean flag = VoxelShapes.c(voxelshape1, VoxelShapes.a(entity.getBoundingBox().shrink(1.0E-7D)), OperatorBoolean.AND);
--                    boolean flag1 = VoxelShapes.c(voxelshape1, VoxelShapes.a(entity.getBoundingBox().g(1.0E-7D)), OperatorBoolean.AND);
-+                    //VoxelShape voxelshape1 = ICollisionAccess.this.getWorldBorder().a(); // Paper - only make if collides
-+                    boolean flag = !ICollisionAccess.this.getWorldBorder().isInBounds(entity.getBoundingBox().shrink(1.0E-7D)); // Paper
-+                    boolean flag1 = !ICollisionAccess.this.getWorldBorder().isInBounds(entity.getBoundingBox().g(1.0E-7D)); // Paper
+--- a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
++++ b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
+@@ -0,0 +0,0 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+         AxisAlignedBB axisalignedbb = this.a.getBoundingBox();
  
-                     if (!flag && flag1) {
--                        collisions.add(voxelshape1);// Paper
-+                        collisions.add(ICollisionAccess.this.getWorldBorder().a());// Paper
-                         if (returnFast) return collisions;
-                     }
-                 }
-@@ -0,0 +0,0 @@ public interface ICollisionAccess extends IBlockAccess {
-                             //IBlockData iblockdata = iblockaccess.getType(blockposition_mutableblockposition); // moved up
-                             // Paper end
+         if (!a(worldborder, axisalignedbb)) {
+-            VoxelShape voxelshape = worldborder.c();
+-
+-            if (!b(voxelshape, axisalignedbb) && a(voxelshape, axisalignedbb)) {
+-                consumer.accept(voxelshape);
++            // Paper start
++            if (worldborder.isInBounds(axisalignedbb.shrink(1.0E-7D)) && !worldborder.isInBounds(axisalignedbb.grow(1.0E-7D))) {
++                consumer.accept(worldborder.asVoxelShape());
++            // Paper end
+                 return true;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/VoxelShapes.java
++++ b/src/main/java/net/minecraft/server/VoxelShapes.java
+@@ -0,0 +0,0 @@ public final class VoxelShapes {
+                                 IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
+                                 if (iblockdata == null) return 0.0D; // Paper
  
--                            if ((j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
-+                            if (!iblockdata.isAir() && (j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) { // Paper - fast track air
-                                 VoxelShape voxelshape2 = iblockdata.b((IBlockAccess) ICollisionAccess.this, blockposition_mutableblockposition, voxelshapecollision);
- 
-                                 // Paper start - Lithium Collision Optimizations
+-                                if ((k2 != 1 || iblockdata.d()) && (k2 != 2 || iblockdata.a(Blocks.MOVING_PISTON))) {
++                                if (!iblockdata.isAir() && (k2 != 1 || iblockdata.d()) && (k2 != 2 || iblockdata.a(Blocks.MOVING_PISTON))) { // Paper
+                                     d0 = iblockdata.b((IBlockAccess) iworldreader, blockposition_mutableblockposition, voxelshapecollision).a(enumdirection_enumaxis2, axisalignedbb.d((double) (-blockposition_mutableblockposition.getX()), (double) (-blockposition_mutableblockposition.getY()), (double) (-blockposition_mutableblockposition.getZ())), d0);
+                                     if (Math.abs(d0) < 1.0E-7D) {
+                                         return 0.0D;
 diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldBorder.java
 +++ b/src/main/java/net/minecraft/server/WorldBorder.java
 @@ -0,0 +0,0 @@ public class WorldBorder {
-         return (double) chunkcoordintpair.f() > this.c() && (double) chunkcoordintpair.d() < this.e() && (double) chunkcoordintpair.g() > this.d() && (double) chunkcoordintpair.e() < this.f();
+         return (double) chunkcoordintpair.f() > this.e() && (double) chunkcoordintpair.d() < this.g() && (double) chunkcoordintpair.g() > this.f() && (double) chunkcoordintpair.e() < this.h();
      }
  
 +    public final boolean isInBounds(AxisAlignedBB aabb) { return this.a(aabb); } // Paper - OBFHELPER
      public boolean a(AxisAlignedBB axisalignedbb) {
-         return axisalignedbb.maxX > this.c() && axisalignedbb.minX < this.e() && axisalignedbb.maxZ > this.d() && axisalignedbb.minZ < this.f();
+         return axisalignedbb.maxX > this.e() && axisalignedbb.minX < this.g() && axisalignedbb.maxZ > this.f() && axisalignedbb.minZ < this.h();
      }

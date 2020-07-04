@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        if (tileentity instanceof TileEntityCommand && entityhuman.isCreativeAndOp()) {
 +        if (tileentity instanceof TileEntityCommand && (entityhuman.isCreativeAndOp() || (entityhuman.isCreative() && entityhuman.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
              entityhuman.a((TileEntityCommand) tileentity);
-             return EnumInteractionResult.SUCCESS;
+             return EnumInteractionResult.a(world.isClientSide);
          } else {
 diff --git a/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java b/src/main/java/net/minecraft/server/CommandBlockListenerAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -24,10 +24,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class CommandBlockListenerAbstract implements ICommandListener {
      }
  
-     public boolean a(EntityHuman entityhuman) {
+     public EnumInteractionResult a(EntityHuman entityhuman) {
 -        if (!entityhuman.isCreativeAndOp()) {
 +        if (!entityhuman.isCreativeAndOp() && !entityhuman.isCreative() && !entityhuman.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
-             return false;
+             return EnumInteractionResult.PASS;
          } else {
              if (entityhuman.getWorld().isClientSide) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -37,19 +37,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
          PlayerConnectionUtils.ensureMainThread(packetplayinsetcommandblock, this, this.player.getWorldServer());
          if (!this.minecraftServer.getEnableCommandBlock()) {
-             this.player.sendMessage(new ChatMessage("advMode.notEnabled", new Object[0]));
+             this.player.sendMessage(new ChatMessage("advMode.notEnabled"), SystemUtils.b);
 -        } else if (!this.player.isCreativeAndOp()) {
 +        } else if (!this.player.isCreativeAndOp() && !this.player.isCreative() && !this.player.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
-             this.player.sendMessage(new ChatMessage("advMode.notAllowed", new Object[0]));
+             this.player.sendMessage(new ChatMessage("advMode.notAllowed"), SystemUtils.b);
          } else {
              CommandBlockListenerAbstract commandblocklistenerabstract = null;
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
          PlayerConnectionUtils.ensureMainThread(packetplayinsetcommandminecart, this, this.player.getWorldServer());
          if (!this.minecraftServer.getEnableCommandBlock()) {
-             this.player.sendMessage(new ChatMessage("advMode.notEnabled", new Object[0]));
+             this.player.sendMessage(new ChatMessage("advMode.notEnabled"), SystemUtils.b);
 -        } else if (!this.player.isCreativeAndOp()) {
 +        } else if (!this.player.isCreativeAndOp() && !this.player.isCreative() && !this.player.getBukkitEntity().hasPermission("minecraft.commandblock")) { // Paper - command block permission
-             this.player.sendMessage(new ChatMessage("advMode.notAllowed", new Object[0]));
+             this.player.sendMessage(new ChatMessage("advMode.notAllowed"), SystemUtils.b);
          } else {
              CommandBlockListenerAbstract commandblocklistenerabstract = packetplayinsetcommandminecart.a(this.player.world);
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java

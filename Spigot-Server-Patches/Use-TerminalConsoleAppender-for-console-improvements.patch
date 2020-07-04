@@ -189,15 +189,15 @@ diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ import org.apache.commons.lang3.Validate;
- import org.apache.logging.log4j.LogManager;
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  // CraftBukkit start
+ import com.google.common.collect.ImmutableSet;
 -import jline.console.ConsoleReader;
-+import joptsimple.OptionSet;
++// import jline.console.ConsoleReader; // Paper
+ import joptsimple.OptionSet;
  import org.bukkit.Bukkit;
  import org.bukkit.craftbukkit.CraftServer;
- import org.bukkit.craftbukkit.Main;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
@@ -208,9 +208,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         this.K = s;
-         // CraftBukkit start
          this.options = options;
+         this.datapackconfiguration = datapackconfiguration;
+         this.vanillaCommandDispatcher = datapackresources.commandDispatcher; // CraftBukkit
 +        // Paper start - Handled by TerminalConsoleAppender
          // Try to see if we're actually running in a terminal, disable jline if not
 +        /*
@@ -238,7 +238,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
-     public void sendMessage(IChatBaseComponent ichatbasecomponent) {
+     public void sendMessage(IChatBaseComponent ichatbasecomponent, UUID uuid) {
 -        MinecraftServer.LOGGER.info(ichatbasecomponent.getString());
 +        MinecraftServer.LOGGER.info(org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(ichatbasecomponent));// Paper - Log message with colors
      }
@@ -250,7 +250,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
-     public PlayerList(MinecraftServer minecraftserver, int i) {
+     public PlayerList(MinecraftServer minecraftserver, IRegistryCustom.Dimension iregistrycustom_dimension, WorldNBTStorage worldnbtstorage, int i) {
          this.cserver = minecraftserver.server = new CraftServer((DedicatedServer) minecraftserver, this);
 -        minecraftserver.console = org.bukkit.craftbukkit.command.ColouredConsoleSender.getInstance();
 -        minecraftserver.reader.addCompleter(new org.bukkit.craftbukkit.command.ConsoleCommandCompleter(minecraftserver.server));
@@ -270,7 +270,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +//import jline.console.ConsoleReader; // Paper
  import net.minecraft.server.Advancement;
  import net.minecraft.server.ArgumentEntity;
- import net.minecraft.server.Block;
+ import net.minecraft.server.BiomeManager;
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return logger;
      }
@@ -289,10 +289,10 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -0,0 +0,0 @@ import java.util.logging.Logger;
+@@ -0,0 +0,0 @@ import java.util.logging.Level;
+ import java.util.logging.Logger;
  import joptsimple.OptionParser;
  import joptsimple.OptionSet;
- import net.minecraft.server.MinecraftServer;
 -import org.fusesource.jansi.AnsiConsole;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender; // Paper
  
@@ -325,7 +325,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    System.setProperty(TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                  }
  
-                 if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
 @@ -0,0 +0,0 @@ public class Main {
                      System.out.println("Unable to read system info");
                  }
@@ -333,7 +333,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 +                System.setProperty( "library.jansi.version", "Paper" ); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
                  System.out.println("Loading libraries, please wait...");
-                 MinecraftServer.main(options);
+                 net.minecraft.server.Main.main(options);
              } catch (Throwable t) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java b/src/main/java/org/bukkit/craftbukkit/command/ColouredConsoleSender.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644

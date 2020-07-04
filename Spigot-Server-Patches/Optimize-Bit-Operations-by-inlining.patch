@@ -10,8 +10,8 @@ diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
-         return dynamicops.createIntList(IntStream.of(new int[]{this.getX(), this.getY(), this.getZ()}));
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
+         this(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
  
 +    public static long getAdjacent(int baseX, int baseY, int baseZ, EnumDirection enumdirection) { return asLong(baseX + enumdirection.getAdjacentX(), baseY + enumdirection.getAdjacentY(), baseZ + enumdirection.getAdjacentZ()); } // Paper
@@ -25,17 +25,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int b(long i) {
--        return (int) (i << 64 - BlockPosition.k - BlockPosition.c >> 64 - BlockPosition.c);
+-        return (int) (i << 64 - BlockPosition.m - BlockPosition.f >> 64 - BlockPosition.f);
 +        return (int) (i >> 38); // Paper - simplify/inline
      }
  
      public static int c(long i) {
--        return (int) (i << 64 - BlockPosition.f >> 64 - BlockPosition.f);
-+        return (int) ((i << 52) >> 52); // Paper - simplify/inline
+-        return (int) (i << 64 - BlockPosition.h >> 64 - BlockPosition.h);
++        return (int) ((i << 26) >> 38);  // Paper - simplify/inline
      }
  
      public static int d(long i) {
--        return (int) (i << 64 - BlockPosition.j - BlockPosition.d >> 64 - BlockPosition.d);
+-        return (int) (i << 64 - BlockPosition.l - BlockPosition.g >> 64 - BlockPosition.g);
 +        return (int) ((i << 26) >> 38);  // Paper - simplify/inline
      }
  
@@ -44,13 +44,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new BlockPosition((int) (i >> 38), (int) ((i << 52) >> 52), (int) ((i << 26) >> 38)); // Paper - simplify/inline
      }
  
+     public long asLong() {
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
+ 
      public static long asLong(int x, int y, int z) { return a(x, y, z); } // Paper - OBFHELPER
      public static long a(int i, int j, int k) {
 -        long l = 0L;
 -
--        l |= ((long) i & BlockPosition.g) << BlockPosition.k;
--        l |= ((long) j & BlockPosition.h) << 0;
--        l |= ((long) k & BlockPosition.i) << BlockPosition.j;
+-        l |= ((long) i & BlockPosition.i) << BlockPosition.m;
+-        l |= ((long) j & BlockPosition.j) << 0;
+-        l |= ((long) k & BlockPosition.k) << BlockPosition.l;
 -        return l;
 +        return (((long) i & (long) 67108863) << 38) | (((long) j & (long) 4095)) | (((long) k & (long) 67108863) << 12); // Paper - inline constants and simplify
      }
@@ -104,75 +107,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int k = b(blockposition.getZ());
 -
 -        return (short) (i << 8 | k << 4 | j);
-+        return (short) ((blockposition.x & 15) << 8 | (blockposition.z & 15) << 4 | blockposition.y & 15); // Paper - simplify/inline
++        return (short) ((blockposition.getX() & 15) << 8 | (blockposition.getZ() & 15) << 4 | blockposition.getY() & 15); // Paper - simplify/inline
      }
  
      public static int c(int i) {
 @@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
-     }
- 
-     public static int b(long i) {
--        return (int) (i << 0 >> 42);
-+        return (int) (i >> 42); // Paper
-     }
- 
-     public static int c(long i) {
-@@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
-         return (int) (i << 22 >> 42);
-     }
- 
--    public int a() {
--        return this.getX();
-+    public final int a() { // Paper
-+        return x; // Paper
-     }
- 
--    public int b() {
--        return this.getY();
-+    public final int b() { // Paper
-+        return y; // Paper
-     }
- 
--    public int c() {
--        return this.getZ();
-+    public final int c() { // Paper
-+        return z; // Paper
+         return this.getZ();
      }
  
 -    public int d() {
 -        return this.a() << 4;
 +    public final int d() { // Paper
-+        return x << 4; // Paper
++        return this.getX() << 4; // Paper
      }
  
 -    public int e() {
 -        return this.b() << 4;
 +    public final int e() { // Paper
-+        return y << 4; // Paper
++        return this.getY() << 4; // Paper
      }
  
 -    public int f() {
 -        return this.c() << 4;
 +    public final int f() { // Paper
-+        return z << 4; // Paper
++        return this.getZ() << 4; // Paper
      }
  
--    public int g() {
--        return (this.a() << 4) + 15;
-+    public final int g() { // Paper
-+        return (x << 4) + 15; // Paper
-     }
- 
--    public int h() {
--        return (this.b() << 4) + 15;
-+    public final int h() { // Paper
-+        return (y << 4) + 15; // Paper
-     }
- 
--    public int r() {
--        return (this.c() << 4) + 15;
-+    public final int r() { // Paper
-+        return (z << 4) + 15; // Paper
+     public int g() {
+@@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
+         return (this.c() << 4) + 15;
      }
  
 +    public static long blockToSection(long i) { return e(i); } // Paper - OBFHELPER
@@ -183,15 +146,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static long f(long i) {
-@@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
-     }
- 
-     public BlockPosition s() {
--        return new BlockPosition(c(this.a()), c(this.b()), c(this.c()));
-+        return new BlockPosition(x << 4, y << 4, z << 4); // Paper
-     }
- 
-     public BlockPosition t() {
 @@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
          return new ChunkCoordIntPair(this.a(), this.c());
      }
@@ -212,14 +166,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (((long) i & 4194303L) << 42) | (((long) j & 1048575L)) | (((long) k & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
-     public long v() {
+     public long s() {
 -        return b(this.a(), this.b(), this.c());
-+        return (((long) x & 4194303L) << 42) | (((long) y & 1048575L)) | (((long) z & 4194303L) << 20); // Paper - Simplify to reduce instruction count
++        return (((long) getX() & 4194303L) << 42) | (((long) getY() & 1048575L)) | (((long) getZ() & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
-     public Stream<BlockPosition> w() {
--        return BlockPosition.a(this.d(), this.e(), this.f(), this.g(), this.h(), this.r());
-+        return BlockPosition.a(x << 4, y << 4, z << 4, (x << 4) + 15, (y << 4) + 15, (z << 4) + 15); // Paper - simplify/inline
+     public Stream<BlockPosition> t() {
+@@ -0,0 +0,0 @@ public class SectionPosition extends BaseBlockPosition {
      }
  
      public static Stream<SectionPosition> a(SectionPosition sectionposition, int i) {
@@ -228,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int l = sectionposition.c();
 -
 -        return a(j - i, k - i, l - i, j + i, k + i, l + i);
-+        return a(sectionposition.x - i, sectionposition.y - i, sectionposition.z - i, sectionposition.x + i, sectionposition.y + i, sectionposition.z + i); // Paper - simplify/inline
++        return a(sectionposition.getX() - i, sectionposition.getY() - i, sectionposition.getZ() - i, sectionposition.getX() + i, sectionposition.getY() + i, sectionposition.getZ() + i); // Paper - simplify/inline
      }
  
      public static Stream<SectionPosition> b(ChunkCoordIntPair chunkcoordintpair, int i) {

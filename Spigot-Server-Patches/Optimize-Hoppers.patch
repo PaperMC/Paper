@@ -43,14 +43,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      World getWorld();
 +    default BlockPosition getBlockPosition() { return new BlockPosition(getX(), getY(), getZ()); } // Paper
  
+-    double x();
++    double x(); default double getX() { return this.x(); } // Paper - OBFHELPER
+ 
 -    double z();
-+    double z();default double getX() { return z(); } // Paper - OBFHELPER
++    double z(); default double getY() { return this.z(); } // Paper - OBFHELPER
  
 -    double A();
-+    double A();default double getY() { return A(); } // Paper - OBFHELPER
- 
--    double B();
-+    double B();default double getZ() { return B(); } // Paper - OBFHELPER
++    double A(); default double getZ() { return this.A(); } // Paper - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -65,25 +65,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public ItemStack cloneItemStack() { return cloneItemStack(false); } // Paper
 +    public ItemStack cloneItemStack(boolean origItem) { // Paper
 +        if (!origItem && this.isEmpty()) { // Paper
-             return ItemStack.a;
+             return ItemStack.b;
          } else {
 -            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
 +            ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
  
-             itemstack.d(this.C());
+             itemstack.d(this.D());
              if (this.tag != null) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         while (iterator.hasNext()) {
              WorldServer worldserver = (WorldServer) iterator.next();
- 
              worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
 +            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
-             if (true || worldserver.worldProvider.getDimensionManager() == DimensionManager.OVERWORLD || this.getAllowNether()) { // CraftBukkit
-                 this.methodProfiler.a(() -> {
-                     return worldserver.getWorldData().getName() + " " + IRegistry.DIMENSION_TYPE.getKey(worldserver.worldProvider.getDimensionManager());
+ 
+             this.methodProfiler.a(() -> {
+                 return worldserver + " " + worldserver.getDimensionKey().a();
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
@@ -266,8 +266,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     private boolean j() {
-         IInventory iinventory = this.k();
+     private boolean k() {
+         IInventory iinventory = this.l();
  
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
              if (this.b(iinventory, enumdirection)) {
@@ -370,7 +370,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Iterator iterator = c(ihopper).iterator();
  
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
-     private static boolean a(IHopper ihopper, IInventory iinventory, int i, EnumDirection enumdirection) {
+         }
+     }
+ 
+-    private static boolean a(IHopper ihopper, IInventory iinventory, int i, EnumDirection enumdirection) {
++    private static boolean a(IHopper ihopper, IInventory iinventory, int i, EnumDirection enumdirection) {// Paper - method unused as logic is inlined above
          ItemStack itemstack = iinventory.getItem(i);
  
 -        if (!itemstack.isEmpty() && b(iinventory, itemstack, i, enumdirection)) {
@@ -412,15 +416,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                IGNORE_TILE_UPDATES = true; // Paper
                  iinventory1.setItem(i, itemstack);
 +                IGNORE_TILE_UPDATES = false; // Paper
-                 itemstack = ItemStack.a;
+                 itemstack = ItemStack.b;
                  flag = true;
              } else if (a(itemstack1, itemstack)) {
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
      }
  
      public static List<EntityItem> c(IHopper ihopper) {
--        return (List) ihopper.P_().d().stream().flatMap((axisalignedbb) -> {
--            return ihopper.getWorld().a(EntityItem.class, axisalignedbb.d(ihopper.z() - 0.5D, ihopper.A() - 0.5D, ihopper.B() - 0.5D), IEntitySelector.a).stream();
+-        return (List) ihopper.ac_().d().stream().flatMap((axisalignedbb) -> {
+-            return ihopper.getWorld().a(EntityItem.class, axisalignedbb.d(ihopper.x() - 0.5D, ihopper.z() - 0.5D, ihopper.A() - 0.5D), IEntitySelector.a).stream();
 -        }).collect(Collectors.toList());
 +        // Paper start - Optimize item suck in. remove streams, restore 1.12 checks. Seriously checking the bowl?!
 +        World world = ihopper.getWorld();

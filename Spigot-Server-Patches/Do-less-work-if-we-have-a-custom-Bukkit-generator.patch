@@ -6,41 +6,35 @@ Subject: [PATCH] Do less work if we have a custom Bukkit generator
 If the Bukkit generator already has a spawn, use it immediately instead
 of spending time generating one that we won't use
 
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         } else if (this.worldData.getType() == WorldType.DEBUG_ALL_BLOCK_STATES) {
-             this.worldData.setSpawn(BlockPosition.ZERO.up());
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         } else if (flag1) {
+             iworlddataserver.setSpawn(BlockPosition.ZERO.up());
          } else {
--            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
--            List<BiomeBase> list = worldchunkmanager.a();
--            Random random = new Random(this.getSeed());
--            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
+-            WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
+-            List<BiomeBase> list = worldchunkmanager.b();
+-            Random random = new Random(worldserver.getSeed());
+-            BlockPosition blockposition = worldchunkmanager.a(0, worldserver.getSeaLevel(), 0, 256, list, random);
 -            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
--
-+//            Paper start - moved down
-+//            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
-+//            List<BiomeBase> list = worldchunkmanager.a();
-+//            Random random = new Random(this.getSeed());
-+//            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
-+//            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
-+//            Paper end
++            // Paper start - moved down
              // CraftBukkit start
-             if (this.generator != null) {
-                 Random rand = new Random(this.getSeed());
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+             if (worldserver.generator != null) {
+                 Random rand = new Random(worldserver.getSeed());
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 }
              }
              // CraftBukkit end
- 
-+            // Paper start - this is useless if craftbukkit returns early
-+            WorldChunkManager worldchunkmanager = this.getChunkProvider().getChunkGenerator().getWorldChunkManager();
-+            List<BiomeBase> list = worldchunkmanager.a();
-+            Random random = new Random(this.getSeed());
-+            BlockPosition blockposition = worldchunkmanager.a(0, this.getSeaLevel(), 0, 256, list, random);
++            // Paper start - if the generator created a spawn for us, then there is no need for us to also create a spawn -
++            // only do it if the generator did not
++            WorldChunkManager worldchunkmanager = chunkgenerator.getWorldChunkManager();
++            List<BiomeBase> list = worldchunkmanager.b();
++            Random random = new Random(worldserver.getSeed());
++            BlockPosition blockposition = worldchunkmanager.a(0, worldserver.getSeaLevel(), 0, 256, list, random);
 +            ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
 +            // Paper end
+ 
              if (blockposition == null) {
-                 WorldServer.LOGGER.warn("Unable to find spawn biome");
-             }
+                 MinecraftServer.LOGGER.warn("Unable to find spawn biome");

@@ -17,20 +17,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
-     private final int b;
-     @Deprecated
-     private final int c;
+     private int b;
+     private int e;
+ 
 +    // Paper start
 +    public boolean isValidLocation() {
-+        return a >= -30000000 && c >= -30000000 && a < 30000000 && c < 30000000 && b >= 0 && b < 256;
++        return getX() >= -30000000 && getZ() >= -30000000 && getX() < 30000000 && getZ() < 30000000 && getY() >= 0 && getY() < 256;
 +    }
 +    public boolean isInvalidYLocation() {
 +        return b < 0 || b >= 256;
 +    }
 +    // Paper end
- 
++
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
+         this.b = j;
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -64,7 +65,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    public IBlockData getBlockData_unused(int i, int j, int k) {
 +        // Paper end
-         if (this.world.P() == WorldType.DEBUG_ALL_BLOCK_STATES) {
+         if (this.world.isDebugWorld()) {
              IBlockData iblockdata = null;
  
 diff --git a/src/main/java/net/minecraft/server/ChunkEmpty.java b/src/main/java/net/minecraft/server/ChunkEmpty.java
@@ -110,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ChunkSection(int i) {
          this(i, (short) 0, (short) 0, (short) 0);
 @@ -0,0 +0,0 @@ public class ChunkSection {
-         this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::d, GameProfileSerializer::a, Blocks.AIR.getBlockData());
+         this.blockIds = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, Block.REGISTRY_ID, GameProfileSerializer::c, GameProfileSerializer::a, Blocks.AIR.getBlockData());
      }
  
 -    public IBlockData getType(int i, int j, int k) {
@@ -198,8 +199,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static boolean isValidLocation(BlockPosition blockposition) {
--        return !isOutsideWorld(blockposition) && blockposition.getX() >= -30000000 && blockposition.getZ() >= -30000000 && blockposition.getX() < 30000000 && blockposition.getZ() < 30000000;
+-        return !isOutsideWorld(blockposition) && e(blockposition);
 +        return blockposition.isValidLocation();
+     }
+ 
+     public static boolean k(BlockPosition blockposition) {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      }
  
      public static boolean isOutsideWorld(BlockPosition blockposition) {

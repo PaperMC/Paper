@@ -113,7 +113,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final WorldServer world;
 +    private final Predicate<T> excludeFromScheduling;
 +    private final Function<T, MinecraftKey> getMinecraftKeyFrom;
-+    private final Function<MinecraftKey, T> getObjectFronMinecraftKey;
++    //private final Function<MinecraftKey, T> getObjectFronMinecraftKey;
 +    private final Consumer<NextTickListEntry<T>> tickFunction;
 +
 +    private final co.aikar.timings.Timing timingCleanup; // Paper
@@ -156,12 +156,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public PaperTickList(final WorldServer world, final Predicate<T> excludeFromScheduling, final Function<T, MinecraftKey> getMinecraftKeyFrom,
-+                         final Function<MinecraftKey, T> getObjectFronMinecraftKey, final Consumer<NextTickListEntry<T>> tickFunction, final String timingsType) {
-+        super(world, excludeFromScheduling, getMinecraftKeyFrom, getObjectFronMinecraftKey, tickFunction, timingsType);
++                         final Consumer<NextTickListEntry<T>> tickFunction, final String timingsType) {
++        super(world, excludeFromScheduling, getMinecraftKeyFrom, tickFunction, timingsType);
 +        this.world = world;
 +        this.excludeFromScheduling = excludeFromScheduling;
 +        this.getMinecraftKeyFrom = getMinecraftKeyFrom;
-+        this.getObjectFronMinecraftKey = getObjectFronMinecraftKey;
 +        this.tickFunction = tickFunction;
 +        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Cleanup"); // Paper
 +        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Ticking"); // Paper
@@ -521,10 +520,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.addToSchedule(entry);
 +    }
 +
-+    @Override
-+    public void scheduleAll(final Stream<NextTickListEntry<T>> stream) {
-+        this.scheduleAll(stream.iterator());
-+    }
 +    public void scheduleAll(final Iterator<NextTickListEntry<T>> iterator) {
 +        while (iterator.hasNext()) {
 +            this.schedule(iterator.next());
@@ -886,7 +881,7 @@ diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
          return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
      }
  
@@ -909,9 +904,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite ticklistserver
 +
- 
-     public ChunkProviderServer(WorldServer worldserver, File file, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator<?> chunkgenerator, int i, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
+     public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
+         this.serverThreadQueue = new ChunkProviderServer.a(worldserver);
 diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NextTickListEntry.java
@@ -1030,7 +1025,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.d >= structureboundingbox.a && this.a <= structureboundingbox.d && this.f >= structureboundingbox.c && this.c <= structureboundingbox.f && this.e >= structureboundingbox.b && this.b <= structureboundingbox.e;
      }
 @@ -0,0 +0,0 @@ public class StructureBoundingBox {
-         return new StructureBoundingBox(this.a + i, this.b + j, this.c + k, this.d + i, this.e + j, this.f + k);
+         this.a(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
  
 +    public final boolean hasPoint(BaseBlockPosition baseblockposition) { return this.b(baseblockposition); } // Paper - OBFHELPER
@@ -1062,17 +1057,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    public boolean isPendingTickThisTick(BlockPosition blockposition, T t0) {
 +        // Paper end
-         return this.g.contains(new NextTickListEntry<>(blockposition, t0));
-     }
- 
-     @Override
-     public void a(Stream<NextTickListEntry<T>> stream) {
-+        // Paper start - allow overriding
-+        this.scheduleAll(stream);
-+    }
-+    public void scheduleAll(Stream<NextTickListEntry<T>> stream) {
-+        // Paper end
-         stream.forEach(this::a);
+         return this.f.contains(new NextTickListEntry<>(blockposition, t0));
      }
  
      public List<NextTickListEntry<T>> a(ChunkCoordIntPair chunkcoordintpair, boolean flag, boolean flag1) {
@@ -1119,11 +1104,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          List<NextTickListEntry<T>> list = this.a(chunkcoordintpair, false, true);
  
-         return a(this.b, list, this.f.getTime());
+         return a(this.b, list, this.e.getTime());
      }
  
 +    public static <T> NBTTagList serialize(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) { return TickListServer.a(function, iterable, i); } // Paper - OBFHELPER
-     public static <T> NBTTagList a(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) {
+     private static <T> NBTTagList a(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) {
          NBTTagList nbttaglist = new NBTTagList();
          Iterator iterator = iterable.iterator();
 @@ -0,0 +0,0 @@ public class TickListServer<T> implements TickList<T> {
@@ -1146,7 +1131,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public void schedule(BlockPosition blockposition, T t0, int i, TickListPriority ticklistpriority) {
 +        // Paper end
          if (!this.a.test(t0)) {
-             this.a(new NextTickListEntry<>(blockposition, t0, (long) i + this.f.getTime(), ticklistpriority));
+             this.a(new NextTickListEntry<>(blockposition, t0, (long) i + this.e.getTime(), ticklistpriority));
          }
 @@ -0,0 +0,0 @@ public class TickListServer<T> implements TickList<T> {
      }
@@ -1164,7 +1149,7 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      }
      // Paper end
  
@@ -1177,35 +1162,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - rewrite ticklistserver
 +
-     // Add env and gen to constructor
-     public WorldServer(MinecraftServer minecraftserver, Executor executor, WorldNBTStorage worldnbtstorage, WorldData worlddata, DimensionManager dimensionmanager, GameProfilerFiller gameprofilerfiller, WorldLoadListener worldloadlistener, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-         super(worlddata, dimensionmanager, executor, (world, worldprovider) -> { // Paper - pass executor down
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         this.pvpMode = minecraftserver.getPVP();
-         worlddata.world = this;
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+         super(iworlddataserver, resourcekey, resourcekey1, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         convertable = convertable_conversionsession;
+         uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());
          // CraftBukkit end
 -        this.nextTickListBlock = new TickListServer<>(this, (block) -> {
 -            return block == null || block.getBlockData().isAir();
--        }, IRegistry.BLOCK::getKey, IRegistry.BLOCK::get, this::b, "Blocks"); // Paper - Timings
+-        }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
 -        this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
 -            return fluidtype == null || fluidtype == FluidTypes.EMPTY;
--        }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
+-        }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
 +        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
-+            this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> { // Paper - optimise TickListServer
++            this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> {
 +                return block == null || block.getBlockData().isAir();
-+            }, IRegistry.BLOCK::getKey, IRegistry.BLOCK::get, this::b, "Blocks"); // Paper - Timings
-+            this.nextTickListFluid = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> { // Paper - optimise TickListServer
++            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
++            this.nextTickListFluid = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> {
 +                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-+            }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
++            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
 +        } else {
-+            this.nextTickListBlock = new TickListServer<>(this, (block) -> { // Paper - optimise TickListServer
++            this.nextTickListBlock = new TickListServer<>(this, (block) -> {
 +                return block == null || block.getBlockData().isAir();
-+            }, IRegistry.BLOCK::getKey, IRegistry.BLOCK::get, this::b, "Blocks"); // Paper - Timings
-+            this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> { // Paper - optimise TickListServer
++            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
++            this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
 +                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-+            }, IRegistry.FLUID::getKey, IRegistry.FLUID::get, this::a, "Fluids"); // Paper - Timings
++            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
 +        }
-+
          this.navigators = Sets.newHashSet();
-         this.I = new ObjectLinkedOpenHashSet();
-         this.dataManager = worldnbtstorage;
+         this.L = new ObjectLinkedOpenHashSet();
+         this.Q = flag1;

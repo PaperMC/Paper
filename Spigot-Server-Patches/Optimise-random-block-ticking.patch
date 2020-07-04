@@ -70,39 +70,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return fastRandomBounded(this.next(32) & 0xFFFFFFFFL, bound);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Block.java
-+++ b/src/main/java/net/minecraft/server/Block.java
-@@ -0,0 +0,0 @@ public class Block implements IMaterial {
-         return iblockdata.d(iblockaccess, blockposition, EnumDirection.UP) && this.n < 14;
-     }
- 
--    @Deprecated
--    public boolean d(IBlockData iblockdata) {
-+    public final boolean isAir(IBlockData iblockdata) { return this.d(iblockdata); } // Paper - OBFHELPER
-+    @Deprecated public boolean d(IBlockData iblockdata) { // Paper - OBFHELPER
-         return false;
-     }
- 
-diff --git a/src/main/java/net/minecraft/server/BlockFluids.java b/src/main/java/net/minecraft/server/BlockFluids.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockFluids.java
-+++ b/src/main/java/net/minecraft/server/BlockFluids.java
-@@ -0,0 +0,0 @@ public class BlockFluids extends Block implements IFluidSource {
- 
-     @Override
-     public void b(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
--        worldserver.getFluid(blockposition).b(worldserver, blockposition, random);
-+        iblockdata.getFluid().b(worldserver, blockposition, random); // Paper - avoid getType call
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
              return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
          }
  
@@ -119,9 +91,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    @Override
--    public int a(HeightMap.Type heightmap_type, int i, int j) {
-+    public int getHighestBlockY(HeightMap.Type heightmap_type, int i, int j) { return this.a(heightmap_type, i, j) + 1; } // Paper - sort of an obfhelper, but without -1
-+    @Override public int a(HeightMap.Type heightmap_type, int i, int j) { // Paper
+-    public int getHighestBlock(HeightMap.Type heightmap_type, int i, int j) {
++    public final int getHighestBlockY(HeightMap.Type heightmap_type, int i, int j) { return this.getHighestBlock(heightmap_type, i, j) + 1; } // Paper - sort of an obfhelper, but without -1
++    @Override public int getHighestBlock(HeightMap.Type heightmap_type, int i, int j) { // Paper
          return ((HeightMap) this.heightMap.get(heightmap_type)).a(i & 15, j & 15) - 1;
      }
  
@@ -148,7 +120,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ChunkSection(int i, IChunkAccess chunk, World world, boolean initializeBlocks) {
 @@ -0,0 +0,0 @@ public class ChunkSection {
              --this.nonEmptyBlockCount;
-             if (iblockdata1.q()) {
+             if (iblockdata1.isTicking()) {
                  --this.tickingBlockCount;
 +                // Paper start
 +                this.tickingList.remove(i, j, k);
@@ -158,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class ChunkSection {
              ++this.nonEmptyBlockCount;
-             if (iblockdata.q()) {
+             if (iblockdata.isTicking()) {
                  ++this.tickingBlockCount;
 +                // Paper start
 +                this.tickingList.add(i, j, k, iblockdata);
@@ -182,10 +154,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (!iblockdata.isAir()) {
 -                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
-+                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
-                 if (iblockdata.q()) {
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
+                 if (iblockdata.isTicking()) {
 -                    this.tickingBlockCount = (short) (this.tickingBlockCount + i);
-+                    this.tickingBlockCount = (short) (this.tickingBlockCount + 1); // Paper
++                    this.tickingBlockCount = (short) (this.tickingBlockCount + 1);
 +                    // Paper start
 +                    this.tickingList.add(location, iblockdata);
 +                    // Paper end
@@ -194,10 +166,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (!fluid.isEmpty()) {
 -                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + i);
-+                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1); // Paper
-                 if (fluid.h()) {
++                this.nonEmptyBlockCount = (short) (this.nonEmptyBlockCount + 1);
+                 if (fluid.f()) {
 -                    this.e = (short) (this.e + i);
-+                    this.e = (short) (this.e + 1); // Paper
++                    this.e = (short) (this.e + 1);
                  }
              }
  
@@ -206,41 +178,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/DataBits.java
 +++ b/src/main/java/net/minecraft/server/DataBits.java
 @@ -0,0 +0,0 @@ public class DataBits {
- 
          }
+ 
      }
 +
 +    // Paper start
 +    public final void forEach(DataBitConsumer consumer) {
-+        // Note: copied from above
-+        int i = this.a.length;
++        int i = 0;
++        long[] along = this.b;
++        int j = along.length;
 +
-+        if (i != 0) {
-+            int j = 0;
-+            long k = this.a[0];
-+            long l = i > 1 ? this.a[1] : 0L;
++        for (int k = 0; k < j; ++k) {
++            long l = along[k];
 +
-+            for (int i1 = 0; i1 < this.d; ++i1) {
-+                int j1 = i1 * this.b;
-+                int k1 = j1 >> 6;
-+                int l1 = (i1 + 1) * this.b - 1 >> 6;
-+                int i2 = j1 ^ k1 << 6;
-+
-+                if (k1 != j) {
-+                    k = l;
-+                    l = k1 + 1 < i ? this.a[k1 + 1] : 0L;
-+                    j = k1;
-+                }
-+
-+                if (k1 == l1) {
-+                    consumer.accept(i1, (int) (k >>> i2 & this.c));
-+                } else {
-+                    int j2 = 64 - i2;
-+
-+                    consumer.accept(i1, (int) ((k >>> i2 | l << j2) & this.c));
++            for (int i1 = 0; i1 < this.f; ++i1) {
++                consumer.accept(i, (int) (l & this.d));
++                l >>= this.c;
++                ++i;
++                if (i >= this.e) {
++                    return;
 +                }
 +            }
-+
 +        }
 +    }
 +
@@ -277,72 +235,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/EntityTurtle.java
 @@ -0,0 +0,0 @@ public class EntityTurtle extends EntityAnimal {
  
-     public final void setHome(BlockPosition pos) { g(pos); } // Paper - OBFHELPER
-     public void g(BlockPosition blockposition) {
--        this.datawatcher.set(EntityTurtle.bx, blockposition);
-+        this.datawatcher.set(EntityTurtle.bx, blockposition.immutableCopy()); // Paper - make sure home position can't change
+     public final void setHome(BlockPosition pos) { setHomePos(pos); } // Paper - OBFHELPER
+     public void setHomePos(BlockPosition blockposition) {
+-        this.datawatcher.set(EntityTurtle.bw, blockposition);
++        this.datawatcher.set(EntityTurtle.bw, blockposition.immutableCopy()); // Paper - called with mutablepos...
      }
- 
-     public final BlockPosition getHome() { return this.es(); } // Paper - OBFHELPER
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-     private IBlockData.a c;
-     private final int d;
-     private final boolean e;
-+    private final boolean isAir; // Paper
-+    private final boolean isTicking; // Paper
- 
-     public IBlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
-         super(block, immutablemap);
-         this.d = block.a(this);
-         this.e = block.o(this);
-+        this.isAir = this.getBlock().isAir(this); // Paper
-+        this.isTicking = this.getBlock().isTicking(this); // Paper
-     }
- 
-     public void c() {
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return this.d;
-     }
- 
--    public boolean isAir() {
--        return this.getBlock().d(this);
-+    public final boolean isAir() { // Paper - compile fail if the impl changes
-+        return this.isAir; // Paper - improve inlining of isAir
-     }
- 
-     public MaterialMapColor c(IBlockAccess iblockaccess, BlockPosition blockposition) {
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return this.getBlock().a(tag);
-     }
- 
-+    private Fluid fluidData; // Paper - cache result
-     public Fluid getFluid() {
--        return this.getBlock().a_(this);
-+        // Paper start
-+        // This can't be done during the constructor, order issues
-+        if (this.fluidData != null) {
-+            return this.fluidData;
-+        }
-+        return this.fluidData = this.getBlock().a_(this);
-+        // Paper end
-     }
- 
-     public boolean q() {
--        return this.getBlock().isTicking(this);
-+        return this.isTicking; // Paper
-     }
- 
-     public final SoundEffectType getStepSound() { return this.r(); } // Paper - OBFHELPER
+     // TODO Paper: Obf helpers here can prolly be removed? check that no newer patches use them
+     public final BlockPosition getHome() { return this.getHomePos(); } // Paper - OBFHELPER
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     public abstract TagRegistry t();
+     public abstract TagRegistry p();
  
      public BlockPosition a(int i, int j, int k, int l) {
 +        // Paper start - allow use of mutable pos
@@ -350,11 +255,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.getRandomBlockPosition(i, j, k, l, ret);
 +        return ret.immutableCopy();
 +    }
-+
 +    public final BlockPosition.MutableBlockPosition getRandomBlockPosition(int i, int j, int k, int l, BlockPosition.MutableBlockPosition out) {
 +        // Paper end
-         this.i = this.i * 3 + 1013904223;
-         int i1 = this.i >> 2;
+         this.n = this.n * 3 + 1013904223;
+         int i1 = this.n >> 2;
  
 -        return new BlockPosition(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15));
 +        out.setValues(i + (i1 & 15), j + (i1 >> 16 & l), k + (i1 >> 8 & 15)); // Paper - change to setValues call
@@ -366,7 +270,7 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          });
      }
  
@@ -380,21 +284,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
          boolean flag = this.isRaining();
          int j = chunkcoordintpair.d();
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          GameProfilerFiller gameprofilerfiller = this.getMethodProfiler();
  
          gameprofilerfiller.enter("thunder");
 -        BlockPosition blockposition;
 +        final BlockPosition.MutableBlockPosition blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
  
--        if (!this.paperConfig.disableThunder && flag && this.U() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
+         if (!this.paperConfig.disableThunder && flag && this.T() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
 -            blockposition = this.a(this.a(j, 0, k, 15));
-+        if (!this.paperConfig.disableThunder && flag && this.U() && this.randomTickRandom.nextInt(100000) == 0) { // Paper - Disable thunder // Paper - optimise random ticking
-+            blockposition.setValues(this.a(this.getRandomBlockPosition(j, 0, k, 15, blockposition))); // Paper
++            blockposition.setValues(this.a(this.a(j, 0, k, 15))); // Paper
              if (this.isRainingAt(blockposition)) {
                  DifficultyDamageScaler difficultydamagescaler = this.getDamageScaler(blockposition);
                  boolean flag1 = this.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING) && this.random.nextDouble() < (double) difficultydamagescaler.b() * paperConfig.skeleHorseSpawnChance; // Paper
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          }
  
          gameprofilerfiller.exitEnter("iceandsnow");
@@ -469,10 +372,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        continue;
 +                    }
  
--                        if (iblockdata.q()) {
--                            iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
+-                        if (iblockdata.isTicking()) {
 -                            iblockdata.b(this, blockposition2, this.random);
--                            iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
 -                        }
 +                    long raw = section.tickingList.getRaw(index);
 +                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
@@ -484,12 +385,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
 +                    IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
  
--                        if (fluid.h()) {
+-                        if (fluid.f()) {
 -                            fluid.b(this, blockposition2, this.random);
 -                        }
-+                    iblockdata.getBlock().randomTick = true; // Paper - fix MC-113809
 +                    iblockdata.b(this, blockposition2, this.randomTickRandom);
-+                    iblockdata.getBlock().randomTick = false; // Paper - fix MC-113809
  
 -                        gameprofilerfiller.exit();
 -                    }

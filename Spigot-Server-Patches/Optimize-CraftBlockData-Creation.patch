@@ -6,35 +6,25 @@ Subject: [PATCH] Optimize CraftBlockData Creation
 Avoids a hashmap lookup by cacheing a reference to the CraftBlockData
 and cloning it when one is needed.
 
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
+diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -0,0 +0,0 @@ import com.google.common.collect.ImmutableMap;
- import com.mojang.datafixers.Dynamic;
- import com.mojang.datafixers.types.DynamicOps;
- import com.mojang.datafixers.util.Pair;
-+import org.bukkit.craftbukkit.block.data.CraftBlockData;
+--- a/src/main/java/net/minecraft/server/BlockBase.java
++++ b/src/main/java/net/minecraft/server/BlockBase.java
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
+             this.o = blockbase_info.t;
+             this.p = blockbase_info.u;
+         }
++        // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
++        private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
 +
- import java.util.Arrays;
- import java.util.Iterator;
- import java.util.List;
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return (Block) this.a;
-     }
++        public org.bukkit.craftbukkit.block.data.CraftBlockData createCraftBlockData() {
++            if (cachedCraftBlockData == null) cachedCraftBlockData = org.bukkit.craftbukkit.block.data.CraftBlockData.createData(getBlockData());
++            return (org.bukkit.craftbukkit.block.data.CraftBlockData) cachedCraftBlockData.clone();
++        }
++        // Paper end
  
-+    // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
-+    private CraftBlockData cachedCraftBlockData;
-+
-+    public CraftBlockData createCraftBlockData() {
-+        if(cachedCraftBlockData == null) cachedCraftBlockData = CraftBlockData.createData(this);
-+        return (CraftBlockData) cachedCraftBlockData.clone();
-+    }
-+    // Paper end
-+
-     public Material getMaterial() {
-         return this.getBlock().k(this);
-     }
+         public void a() {
+             if (!this.getBlock().o()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java

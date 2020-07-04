@@ -25,39 +25,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return (CraftServer) Bukkit.getServer();
      }
  
-     public Chunk getChunkIfLoaded(int x, int z) {
--        return ((ChunkProviderServer) this.chunkProvider).getChunkAt(x, z, false);
-+        return ((ChunkProviderServer) this.chunkProvider).getChunkAtIfLoadedImmediately(x, z); // Paper
-     }
 +    // Paper start
 +    @Override
 +    public boolean isChunkLoaded(int x, int z) {
-+        return getChunkIfLoaded(x, z) != null;
++        return ((WorldServer)this).getChunkIfLoaded(x, z) != null;
 +    }
-+
-+
 +    // Paper end
- 
-     protected World(WorldData worlddata, DimensionManager dimensionmanager, java.util.concurrent.Executor executor, BiFunction<World, WorldProvider, IChunkProvider> bifunction, GameProfilerFiller gameprofilerfiller, boolean flag, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) { // Paper - executor
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig( worlddata.getName() ); // Spigot
++
+     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) {
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
+         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      }
  
-     public boolean n(BlockPosition blockposition) {
--        return isOutsideWorld(blockposition) ? false : this.chunkProvider.b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     public boolean p(BlockPosition blockposition) {
+-        return isOutsideWorld(blockposition) ? false : this.getChunkProvider().b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +        return isOutsideWorld(blockposition) ? false : isChunkLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
      }
  
-     public boolean a(BlockPosition blockposition, Entity entity) {
+     public boolean a(BlockPosition blockposition, Entity entity, EnumDirection enumdirection) {
          if (isOutsideWorld(blockposition)) {
              return false;
          } else {
 -            IChunkAccess ichunkaccess = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
 +            IChunkAccess ichunkaccess = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
  
-             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity);
+             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity, enumdirection);
          }
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
@@ -68,6 +64,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (chunk != null) {
                      chunk.a(oclass, axisalignedbb, list, predicate);
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     }
+ 
+     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+-        return this.chunkProvider.getChunkAt(x, z, false);
++        return this.chunkProvider.getChunkAtIfLoadedImmediately(x, z); // Paper
+     }
+ 
+     // Paper start - Asynchronous IO
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java

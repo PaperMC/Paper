@@ -24,19 +24,6 @@ Massive update to light to improve performance and chunk loading/generation.
 7) Buffer non urgent tasks even if queueUpdate is called multiple times to improve efficiency.
 8) Fix NPE risk that crashes server in getting nibble data
 
-diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Block.java
-+++ b/src/main/java/net/minecraft/server/Block.java
-@@ -0,0 +0,0 @@ public class Block implements IMaterial {
-         return false;
-     }
- 
--    @Deprecated
-+    public final boolean canOcclude(IBlockData blockData) { return n(blockData); } @Deprecated // Paper - OBFHELPER
-     public final boolean n(IBlockData iblockdata) {
-         return this.j;
-     }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
@@ -50,46 +37,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return super.executeNext() || execChunkTask; // Paper
              }
          } finally {
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-     private final boolean e;
-     private final boolean isAir; // Paper
-     private final boolean isTicking; // Paper
-+    private final boolean canOcclude; // Paper
- 
-     public IBlockData(Block block, ImmutableMap<IBlockState<?>, Comparable<?>> immutablemap) {
-         super(block, immutablemap);
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         this.e = block.o(this);
-         this.isAir = this.getBlock().isAir(this); // Paper
-         this.isTicking = this.getBlock().isTicking(this); // Paper
-+        this.canOcclude = this.getBlock().canOcclude(this); // Paper
-     }
- 
-     public void c() {
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return this.c == null || this.c.h;
-     }
- 
--    public boolean g() {
-+    public final boolean g() { // Paper
-         return this.e;
-     }
- 
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return this.c != null ? this.c.c : this.getBlock().k(this, iblockaccess, blockposition);
-     }
- 
--    public boolean o() {
--        return this.c != null ? this.c.b : this.getBlock().n(this);
-+    public final boolean o() { // Paper
-+        return canOcclude; // Paper
-     }
- 
-     public VoxelShape getShape(IBlockAccess iblockaccess, BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/LightEngineBlock.java b/src/main/java/net/minecraft/server/LightEngineBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineBlock.java
@@ -277,8 +224,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final IBlockAccess[] h = new IBlockAccess[2];
 +    private final IChunkAccess[] h = new IChunkAccess[2]; // Paper
  
++    // Paper start - see fully commented out method below (look for Bedrock)
++    // optimized method with less branching for when scenarios arent needed.
++    // avoid using mutable version if can
++    protected final IBlockData getBlockOptimized(int x, int y, int z, MutableInt mutableint) {
++        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
++
++        if (iblockaccess == null) {
++            mutableint.setValue(16);
++            return Blocks.BEDROCK.getBlockData();
++        } else {
++            this.pos.setValues(x, y, z);
++            IBlockData iblockdata = iblockaccess.getType(x, y, z);
++            mutableint.setValue(iblockdata.b(this.a.getWorld(), this.pos));
++            return iblockdata.l() && iblockdata.e() ? iblockdata : Blocks.AIR.getBlockData();
++        }
++    }
++    protected final IBlockData getBlockOptimized(int x, int y, int z) {
++        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
++
++        if (iblockaccess == null) {
++            return Blocks.BEDROCK.getBlockData();
++        } else {
++            IBlockData iblockdata = iblockaccess.getType(x, y, z);
++            return iblockdata.l() && iblockdata.e() ? iblockdata : Blocks.AIR.getBlockData();
++        }
++    }
++    // Paper end
      public LightEngineLayer(ILightAccess ilightaccess, EnumSkyBlock enumskyblock, S s0) {
          super(16, 256, 8192);
+         this.a = ilightaccess;
 @@ -0,0 +0,0 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
      }
  
@@ -308,7 +283,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -
 -            return Blocks.AIR.getBlockData();
-+    // Paper start - unused, optimized versions below, comment out to detect changes
+-        } else {
+-            int j = SectionPosition.a(BlockPosition.b(i));
+-            int k = SectionPosition.a(BlockPosition.d(i));
+-            IBlockAccess iblockaccess = this.a(j, k);
+-
+-            if (iblockaccess == null) {
+-                if (mutableint != null) {
+-                    mutableint.setValue(16);
+-                }
+-
+-                return Blocks.BEDROCK.getBlockData();
+-            } else {
+-                this.d.g(i);
+-                IBlockData iblockdata = iblockaccess.getType(this.d);
+-                boolean flag = iblockdata.l() && iblockdata.e();
+-
+-                if (mutableint != null) {
+-                    mutableint.setValue(iblockdata.b(this.a.getWorld(), (BlockPosition) this.d));
+-                }
+-
+-                return flag ? iblockdata : Blocks.AIR.getBlockData();
+-            }
+-        }
+-    }
++    // Paper start - comment out, see getBlockOptimized
 +//    protected IBlockData a(long i, @Nullable MutableInt mutableint) {
 +//        if (i == Long.MAX_VALUE) {
 +//            if (mutableint != null) {
@@ -330,7 +329,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +//            } else {
 +//                this.d.g(i);
 +//                IBlockData iblockdata = iblockaccess.getType(this.d);
-+//                boolean flag = iblockdata.o() && iblockdata.g();
++//                boolean flag = iblockdata.l() && iblockdata.e();
 +//
 +//                if (mutableint != null) {
 +//                    mutableint.setValue(iblockdata.b(this.a.getWorld(), (BlockPosition) this.d));
@@ -340,55 +339,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +//            }
 +//        }
 +//    }
-+    // optimized method with less branching for when scenarios arent needed.
-+    // avoid using mutable version if can
-+    protected final IBlockData getBlockOptimized(int x, int y, int z, MutableInt mutableint) {
-+        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
-+
-+        if (iblockaccess == null) {
-+            mutableint.setValue(16);
-+            return Blocks.BEDROCK.getBlockData();
-         } else {
--            int j = SectionPosition.a(BlockPosition.b(i));
--            int k = SectionPosition.a(BlockPosition.d(i));
--            IBlockAccess iblockaccess = this.a(j, k);
--
--            if (iblockaccess == null) {
--                if (mutableint != null) {
--                    mutableint.setValue(16);
--                }
--
--                return Blocks.BEDROCK.getBlockData();
--            } else {
--                this.d.g(i);
--                IBlockData iblockdata = iblockaccess.getType(this.d);
--                boolean flag = iblockdata.o() && iblockdata.g();
--
--                if (mutableint != null) {
--                    mutableint.setValue(iblockdata.b(this.a.getWorld(), (BlockPosition) this.d));
--                }
-+            this.pos.setValues(x, y, z);
-+            IBlockData iblockdata = iblockaccess.getType(x, y, z);
-+            mutableint.setValue(iblockdata.b(this.a.getWorld(), this.pos));
-+            return iblockdata.o() && iblockdata.g() ? iblockdata : Blocks.AIR.getBlockData();
-+        }
-+    }
-+    protected final IBlockData getBlockOptimized(int x, int y, int z) {
-+        IChunkAccess iblockaccess = this.a(x >> 4, z >> 4);
- 
--                return flag ? iblockdata : Blocks.AIR.getBlockData();
--            }
-+        if (iblockaccess == null) {
-+            return Blocks.BEDROCK.getBlockData();
-+        } else {
-+            IBlockData iblockdata = iblockaccess.getType(x, y, z);
-+            return iblockdata.o() && iblockdata.g() ? iblockdata : Blocks.AIR.getBlockData();
-         }
-     }
 +    // Paper end
  
      protected VoxelShape a(IBlockData iblockdata, long i, EnumDirection enumdirection) {
-         return iblockdata.o() ? iblockdata.a(this.a.getWorld(), this.d.g(i), enumdirection) : VoxelShapes.a();
+         return iblockdata.l() ? iblockdata.a(this.a.getWorld(), this.d.g(i), enumdirection) : VoxelShapes.a();
 @@ -0,0 +0,0 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
          return i == Long.MAX_VALUE ? 0 : 15 - this.c.i(i);
      }
@@ -583,6 +537,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected final Long2ObjectMap<NibbleArray> i = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap());
      private final LongSet n = new LongOpenHashSet();
      private final LongSet o = new LongOpenHashSet();
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
      protected volatile boolean j;
  
      protected LightEngineStorage(EnumSkyBlock enumskyblock, ILightAccess ilightaccess, M m0) {
@@ -696,12 +651,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          if (k >= 2 && j != 2) {
--            if (this.o.contains(i)) {
--                this.o.remove(i);
+-            if (this.p.contains(i)) {
+-                this.p.remove(i);
 -            } else {
-+            if (!this.o.remove(i)) { // Paper - remove useless contains - credit to JellySquid
-+                //this.o.remove(i); // Paper
-+            //} else { // Pape
++            if (!this.p.remove(i)) { // Paper - remove useless contains - credit to JellySquid
++                //this.p.remove(i); // Paper
++            //} else { // Paper
                  this.f.a(i, this.j(i));
                  this.g.add(i);
                  this.k(i);
@@ -746,7 +701,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  NibbleArray nibblearray1 = (NibbleArray) this.i.remove(i);
  
 @@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
-             longiterator = this.o.iterator();
+             longiterator = this.p.iterator();
  
              while (longiterator.hasNext()) {
 -                i = (Long) longiterator.next();
@@ -754,16 +709,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.l(i);
              }
  
-             this.o.clear();
-             this.j = false;
--            ObjectIterator objectiterator = this.i.long2ObjectEntrySet().iterator();
-+            ObjectIterator<Long2ObjectMap.Entry<NibbleArray>> objectiterator = Long2ObjectMaps.fastIterator(this.i); // Paper
- 
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
              Entry entry;
              long j;
  
 +            NibbleArray test = null; // Paper
-+            LongSet propagating = new LongOpenHashSet(); // Paper - credit JellySquid for idea to move this up
              while (objectiterator.hasNext()) {
                  entry = (Entry) objectiterator.next();
                  j = entry.getLongKey();
@@ -775,66 +725,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          this.a(lightenginelayer, j);
                          this.f.a(j, nibblearray);
                          this.g.add(j);
-                     }
-+                    if (!flag1) propagating.add(j); // Paper
-+                    objectiterator.remove(); // Paper
-                 }
-             }
- 
-             this.f.c();
--            if (!flag1) {
--                longiterator = this.i.keySet().iterator();
-+            if (!flag1) {// Paper - diff on change, change propagating add a few lines up
-+                longiterator = propagating.iterator(); // Paper
+@@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+                 longiterator = this.i.keySet().iterator();
  
                  while (longiterator.hasNext()) {
 -                    i = (Long) longiterator.next();
--                    if (this.g(i)) {
--                        int k = SectionPosition.c(SectionPosition.b(i));
--                        int l = SectionPosition.c(SectionPosition.c(i));
--                        int i1 = SectionPosition.c(SectionPosition.d(i));
-+                    // Paper start
-+                    i = longiterator.nextLong();
-+                    if (true) { // don't check hasLight, this iterator is filtered already
-+                        int secX = (int) (i >> 42);
-+                        int secY = (int) (i << 44 >> 44);
-+                        int secZ = (int) (i << 22 >> 42);
-+                        int k = secX << 4; // baseX
-+                        int l = secY << 4; // baseY
-+                        int i1 = secZ << 4; // baseZ
-+                        // Paper end
-                         EnumDirection[] aenumdirection = LightEngineStorage.k;
-                         int j1 = aenumdirection.length;
++                    i = longiterator.nextLong(); // Paper
+                     this.b(lightenginelayer, i);
+                 }
+             } else {
+                 longiterator = this.n.iterator();
  
-                         for (int k1 = 0; k1 < j1; ++k1) {
-                             EnumDirection enumdirection = aenumdirection[k1];
--                            long l1 = SectionPosition.a(i, enumdirection);
--
--                            if (!this.i.containsKey(l1) && this.g(l1)) {
-+                            long l1 = SectionPosition.getAdjacentFromSectionPos(secX, secY, secZ, enumdirection); // Paper - avoid extra unpacking
-+                            if (!propagating.contains(l1) && this.g(l1)) { // Paper - use propagating
-                                 for (int i2 = 0; i2 < 16; ++i2) {
-                                     for (int j2 = 0; j2 < 16; ++j2) {
-                                         long k2;
-@@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+                 while (longiterator.hasNext()) {
+-                    i = (Long) longiterator.next();
++                    i = longiterator.nextLong(); // Paper
+                     this.b(lightenginelayer, i);
                  }
              }
- 
-+            // Paper start - moved above - Credit JellySquid for idea
-+            /*
-             objectiterator = this.i.long2ObjectEntrySet().iterator();
- 
-             while (objectiterator.hasNext()) {
 @@ -0,0 +0,0 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
-                 if (this.g(j)) {
-                     objectiterator.remove();
-                 }
--            }
-+            }*/
-+            // Paper end
  
-         }
-     }
+     private void b(LightEngineLayer<M, ?> lightenginelayer, long i) {
+         if (this.g(i)) {
+-            int j = SectionPosition.c(SectionPosition.b(i));
+-            int k = SectionPosition.c(SectionPosition.c(i));
+-            int l = SectionPosition.c(SectionPosition.d(i));
++            // Paper start
++            int secX = (int) (i >> 42);
++            int secY = (int) (i << 44 >> 44);
++            int secZ = (int) (i << 22 >> 42);
++            int j = secX << 4; // baseX
++            int k = secY << 4; // baseY
++            int l = secZ << 4; // baseZ
++            // Paper end
+             EnumDirection[] aenumdirection = LightEngineStorage.k;
+             int i1 = aenumdirection.length;
+ 
+             for (int j1 = 0; j1 < i1; ++j1) {
+                 EnumDirection enumdirection = aenumdirection[j1];
+-                long k1 = SectionPosition.a(i, enumdirection);
++                long k1 = SectionPosition.getAdjacentFromSectionPos(secX, secY, secZ, enumdirection); // Paper - avoid extra unpacking
+ 
+                 if (!this.i.containsKey(k1) && this.g(k1)) {
+                     for (int l1 = 0; l1 < 16; ++l1) {
 diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
@@ -1211,7 +1143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
-         this.e.a(ChunkTaskQueueSorter.a(() -> { // Paper - decompile error
+         this.e.a(ChunkTaskQueueSorter.a(() -> {
 -            this.c.add(Pair.of(lightenginethreaded_update, runnable));
 -            if (this.c.size() >= this.f) {
 +            // Paper start
@@ -1347,7 +1279,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            chunkMap.world.getChunkProvider().getLightEngine().changePriority(location.pair(), getCurrentPriority(), priority);
          }
          if (getCurrentPriority() != priority) {
-             this.w.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
+             this.v.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
@@ -1378,7 +1310,7 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
              }
              gameprofilerfiller.exit();
              timings.chunkTicksBlocks.stopTiming(); // Paper

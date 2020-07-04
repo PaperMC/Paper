@@ -29,14 +29,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      // Update any tile entity data for this block
                      TileEntity tileentity = this.world.getTileEntity(blockposition);
 @@ -0,0 +0,0 @@ public class PlayerInteractManager {
-                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
+         interactResult = event.useItemInHand() == Event.Result.DENY;
+ 
+         if (event.useInteractedBlock() == Event.Result.DENY) {
++
+             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
+             if (iblockdata.getBlock() instanceof BlockDoor) {
+                 boolean bottom = iblockdata.get(BlockDoor.HALF) == BlockPropertyDoubleBlockHalf.LOWER;
+                 entityplayer.playerConnection.sendPacket(new PacketPlayOutBlockChange(world, bottom ? blockposition.up() : blockposition.down()));
              } else if (iblockdata.getBlock() instanceof BlockCake) {
-                 ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
+                 entityplayer.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
 +            // Paper start  - extend Player Interact cancellation // TODO: consider merging this into the extracted method
 +            } else if (iblockdata.getBlock() instanceof BlockStructure) {
-+                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
++                entityplayer.playerConnection.sendPacket(new PacketPlayOutCloseWindow());
 +            } else if (iblockdata.getBlock() instanceof BlockCommand) {
-+                    ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutCloseWindow());
++                entityplayer.playerConnection.sendPacket(new PacketPlayOutCloseWindow());
 +            } else if (iblockdata.getBlock() instanceof BlockFlowerPot) {
 +                // Send a block change to air and then send back the correct block, just to make the client happy
 +                PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(this.world, blockposition);
@@ -51,6 +58,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
              }
 +            // Paper end - extend Player Interact cancellation
-             ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-2867
+             entityplayer.getBukkitEntity().updateInventory(); // SPIGOT-2867
              enuminteractionresult = (event.useItemInHand() != Event.Result.ALLOW) ? EnumInteractionResult.SUCCESS : EnumInteractionResult.PASS;
          } else if (this.gamemode == EnumGamemode.SPECTATOR) {

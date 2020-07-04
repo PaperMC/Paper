@@ -4,6 +4,43 @@ Date: Sun, 8 Mar 2015 22:55:25 -0600
 Subject: [PATCH] Optimize TileEntity Ticking
 
 
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -0,0 +0,0 @@ public class TimingsExport extends Thread {
+             pair("end", System.currentTimeMillis() / 1000),
+             pair("online-mode", Bukkit.getServer().getOnlineMode()),
+             pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
+-            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().d(), pack -> {
++            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().e(), pack -> {
+                 // Don't feel like obf helper'ing these, non fatal if its temp missed.
+                 return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
+             }))
+@@ -0,0 +0,0 @@ public class TimingsExport extends Thread {
+         );
+ 
+         parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getWorlds(), world -> {
+-            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
+-            return pair(world.getWorldData().getName(), createObject(
++            if (world.getWorld().getName().equals("worldeditregentempworld")) return null;
++            return pair(world.getWorld().getName(), createObject(
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/net/minecraft/server/BlockChest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockChest.java
++++ b/src/main/java/net/minecraft/server/BlockChest.java
+@@ -0,0 +0,0 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
+ 
+     public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
+     public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
+-    public static final BlockStateBoolean d = BlockProperties.C;
++    public static final BlockStateBoolean d = BlockProperties.C; public static final BlockStateBoolean waterlogged() { return d; } // Paper OBFHELPER
+     protected static final VoxelShape e = Block.a(1.0D, 0.0D, 0.0D, 15.0D, 14.0D, 15.0D);
+     protected static final VoxelShape f = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 16.0D);
+     protected static final VoxelShape g = Block.a(0.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
@@ -70,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private void a(SoundEffect soundeffect) {
-+        if (!this.getBlock().hasProperty(BlockChest.c)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
++        if (!this.getBlock().b(BlockChest.c)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
          BlockPropertyChestType blockpropertychesttype = (BlockPropertyChestType) this.getBlock().get(BlockChest.c);
  
          if (blockpropertychesttype != BlockPropertyChestType.LEFT) {

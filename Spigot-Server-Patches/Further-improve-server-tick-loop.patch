@@ -23,7 +23,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static int currentTick = 0; // Paper - Further improve tick loop
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
-     public File bukkitDataPackFolder;
+     public CommandDispatcher vanillaCommandDispatcher;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      // Spigot start
      public static final int TPS = 20;
@@ -90,7 +90,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper End
      // Spigot End
  
-     public void run() {
+     protected void v() {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
                  // Spigot start
@@ -137,8 +137,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
 +                    lastTick = curTime;
                      this.nextTick += 50L;
-                     if (this.T) {
-                         this.T = false;
+                     GameProfilerTick gameprofilertick = GameProfilerTick.a("Server");
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -165,15 +165,6 @@ diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
 +++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
-@@ -0,0 +0,0 @@
- package org.spigotmc;
- 
--import com.google.common.base.Joiner;
--import net.minecraft.server.MinecraftServer;
--import com.google.common.collect.Iterables;
- import org.bukkit.ChatColor;
- import org.bukkit.command.Command;
- import org.bukkit.command.CommandSender;
 @@ -0,0 +0,0 @@ public class TicksPerSecondCommand extends Command
              return true;
          }
@@ -189,15 +180,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        for ( int i = 0; i < tps.length; i++) {
 +            tpsAvg[i] = format( tps[i] );
++        }
++        sender.sendMessage(ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
++        if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {
++            sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
++            if (!hasShownMemoryWarning) {
++                sender.sendMessage(ChatColor.RED + "Warning: " + ChatColor.GOLD + " Memory usage on modern garbage collectors is not a stable value and it is perfectly normal to see it reach max. Please do not pay it much attention.");
++                hasShownMemoryWarning = true;
++            }
          }
 -        sender.sendMessage( sb.substring( 0, sb.length() - 2 ) );
-+        sender.sendMessage( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " + org.apache.commons.lang.StringUtils.join(tpsAvg, ", "));
+-        sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: "
+-                + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
 +        // Paper end
  
          return true;
      }
  
 -    private String format(double tps)
++    private boolean hasShownMemoryWarning; // Paper
 +    private static String format(double tps) // Paper - Made static
      {
          return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()

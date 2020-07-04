@@ -142,14 +142,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
 +    public NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException { // Paper - private -> public
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
- 
--        return nbttagcompound == null ? null : this.getChunkData(this.world.getWorldProvider().getDimensionManager(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
 +        // Paper start - Cache chunk status on disk
 +        if (nbttagcompound == null) {
 +            return null;
 +        }
 +
-+        nbttagcompound = this.getChunkData(this.world.getWorldProvider().getDimensionManager(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
++        nbttagcompound = this.getChunkData(this.world.getTypeKey(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
 +        if (nbttagcompound == null) {
 +            return null;
 +        }
@@ -165,12 +163,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getRegionFileIfLoaded(chunkPos);
 +
 +        return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
-     }
- 
-+    public ChunkStatus getChunkStatusOnDisk(ChunkCoordIntPair chunkPos) throws IOException {
-+        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, false);
++    }
 +
-+        if (!regionFile.chunkExists(chunkPos)) {
++    public ChunkStatus getChunkStatusOnDisk(ChunkCoordIntPair chunkPos) throws IOException {
++        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, true);
++
++        if (regionFile == null || !regionFile.chunkExists(chunkPos)) {
 +            return null;
 +        }
 +
@@ -181,10 +179,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        this.readChunkData(chunkPos);
-+
+ 
+-        return nbttagcompound == null ? null : this.getChunkData(this.world.getTypeKey(), this.l, nbttagcompound, chunkcoordintpair, world); // CraftBukkit
 +        return regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
-+    }
-+
+     }
+ 
 +    public void updateChunkStatusOnDisk(ChunkCoordIntPair chunkPos, @Nullable NBTTagCompound compound) throws IOException {
 +        RegionFile regionFile = this.getIOWorker().getRegionFileCache().getFile(chunkPos, false);
 +
@@ -232,8 +231,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     public RegionFile(File file, File file1) throws IOException {
-         this(file.toPath(), file1.toPath(), RegionFileCompression.b);
+     public RegionFile(File file, File file1, boolean flag) throws IOException {
+         this(file.toPath(), file1.toPath(), RegionFileCompression.b, flag);
      }
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(chunkcoordintpair) != 0;
@@ -247,14 +246,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void close() throws IOException {
 +        this.closed = true; // Paper
          try {
-             this.c();
+             this.d();
          } finally {
 diff --git a/src/main/java/net/minecraft/server/RegionFileCache.java b/src/main/java/net/minecraft/server/RegionFileCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/server/RegionFileCache.java
 @@ -0,0 +0,0 @@ public final class RegionFileCache implements AutoCloseable {
-         this.b = file;
+         this.c = flag;
      }
  
 -    private RegionFile getFile(ChunkCoordIntPair chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit

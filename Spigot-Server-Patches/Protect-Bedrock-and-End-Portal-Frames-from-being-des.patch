@@ -31,9 +31,9 @@ diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
-@@ -0,0 +0,0 @@ public class Block implements IMaterial {
-     protected final SoundEffectType stepSound;
-     protected final Material material;
+@@ -0,0 +0,0 @@ public class Block extends BlockBase implements IMaterial {
+     protected final BlockStateList<Block, IBlockData> blockStateList;
+     private IBlockData blockData;
      // Paper start
 +    public final boolean isDestroyable() {
 +        return com.destroystokyo.paper.PaperConfig.allowBlockPermanentBreakingExploits ||
@@ -46,7 +46,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public co.aikar.timings.Timing timing;
      public co.aikar.timings.Timing getTiming() {
          if (timing == null) {
-@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockBase.java
++++ b/src/main/java/net/minecraft/server/BlockBase.java
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
  
      @Deprecated
      public boolean a(IBlockData iblockdata, BlockActionContext blockactioncontext) {
@@ -55,15 +59,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Deprecated
-@@ -0,0 +0,0 @@ public class Block implements IMaterial {
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
+         public Block getBlock() {
+             return (Block) this.c;
+         }
+-
++        // Paper start
++        public final boolean isDestroyable() {
++            return getBlock().isDestroyable();
++        }
++        // Paper end
+         public Material getMaterial() {
+             return this.g;
+         }
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
+         }
  
-     @Deprecated
-     public EnumPistonReaction getPushReaction(IBlockData iblockdata) {
--        return this.material.getPushReaction();
-+        return !blockData.isDestroyable() ? EnumPistonReaction.BLOCK : this.material.getPushReaction(); // Paper
-     }
+         public EnumPistonReaction getPushReaction() {
+-            return this.getBlock().getPushReaction(this.p());
++            return !isDestroyable() ? EnumPistonReaction.BLOCK : this.getBlock().getPushReaction(this.p()); // Paper
+         }
  
-     public void fallOn(World world, BlockPosition blockposition, Entity entity, float f) {
+         public boolean i(IBlockAccess iblockaccess, BlockPosition blockposition) {
 diff --git a/src/main/java/net/minecraft/server/BlockPiston.java b/src/main/java/net/minecraft/server/BlockPiston.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPiston.java
@@ -82,14 +99,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!world.isClientSide) {
              boolean flag = this.a(world, blockposition, enumdirection);
 @@ -0,0 +0,0 @@ public class BlockPiston extends BlockDirectional {
-             }
+             IBlockData iblockdata1 = (IBlockData) ((IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPistonMoving.a, enumdirection)).set(BlockPistonMoving.b, this.sticky ? BlockPropertyPistonType.STICKY : BlockPropertyPistonType.DEFAULT);
  
-             world.setTypeAndData(blockposition, (IBlockData) ((IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPistonMoving.a, enumdirection)).set(BlockPistonMoving.b, this.sticky ? BlockPropertyPistonType.STICKY : BlockPropertyPistonType.DEFAULT), 3);
+             world.setTypeAndData(blockposition, iblockdata1, 20);
 -            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true));
-+            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction
++            world.setTileEntity(blockposition, BlockPistonMoving.a((IBlockData) this.getBlockData().set(BlockPiston.FACING, EnumDirection.fromType1(j & 7)), enumdirection, false, true)); // Paper - diff on change, j is facing direction - copy this above
+             world.update(blockposition, iblockdata1.getBlock());
+             iblockdata1.a(world, blockposition, 2);
              if (this.sticky) {
-                 BlockPosition blockposition1 = blockposition.b(enumdirection.getAdjacentX() * 2, enumdirection.getAdjacentY() * 2, enumdirection.getAdjacentZ() * 2);
-                 IBlockData iblockdata1 = world.getType(blockposition1);
 @@ -0,0 +0,0 @@ public class BlockPiston extends BlockDirectional {
                      }
                  }
@@ -116,8 +133,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              IBlockData iblockdata = this.world.getType(blockposition);
 +                            if (!iblockdata.isDestroyable()) continue; // Paper
                              Fluid fluid = iblockdata.getFluid(); // Paper
+                             Optional<Float> optional = this.k.a(this, this.world, blockposition, iblockdata, fluid);
  
-                             if (!iblockdata.isAir() || !fluid.isEmpty()) {
 @@ -0,0 +0,0 @@ public class Explosion {
                  IBlockData iblockdata = this.world.getType(blockposition);
                  Block block = iblockdata.getBlock();
@@ -127,28 +144,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      BlockPosition blockposition1 = blockposition.immutableCopy();
  
                      this.world.getMethodProfiler().enter("explosion_blocks");
-diff --git a/src/main/java/net/minecraft/server/IBlockData.java b/src/main/java/net/minecraft/server/IBlockData.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IBlockData.java
-+++ b/src/main/java/net/minecraft/server/IBlockData.java
-@@ -0,0 +0,0 @@ public class IBlockData extends BlockDataAbstract<Block, IBlockData> implements
-         return (CraftBlockData) cachedCraftBlockData.clone();
-     }
-     // Paper end
-+    // Paper start
-+    public final boolean isDestroyable() {
-+        return getBlock().isDestroyable();
-+    }
-+    // Paper end
- 
-     public Material getMaterial() {
-         return this.getBlock().k(this);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
+     public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
          // CraftBukkit start - tree generation
          if (this.captureTreeGeneration) {
 +            // Paper start

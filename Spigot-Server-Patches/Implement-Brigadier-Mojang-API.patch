@@ -40,8 +40,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -public class CommandListenerWrapper implements ICompletionProvider {
 +public class CommandListenerWrapper implements ICompletionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper
  
-     public static final SimpleCommandExceptionType a = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.player", new Object[0]));
-     public static final SimpleCommandExceptionType b = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.entity", new Object[0]));
+     public static final SimpleCommandExceptionType a = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.player"));
+     public static final SimpleCommandExceptionType b = new SimpleCommandExceptionType(new ChatMessage("permissions.requires.entity"));
 @@ -0,0 +0,0 @@ public class CommandListenerWrapper implements ICompletionProvider {
          return this.g;
      }
@@ -73,33 +73,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
-             ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
+                     ParseResults<CommandListenerWrapper> parseresults = this.minecraftServer.getCommandDispatcher().a().parse(stringreader, this.player.getCommandListener());
  
-         this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
--            if (((Suggestions) suggestions).isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
--                this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestions)); // CraftBukkit - decompile error
-+                // Paper start
-+                com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
-+                suggestEvent.setCancelled(suggestions.isEmpty());
-+                if (!suggestEvent.callEvent()) return;
-+                this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (Suggestions) suggestEvent.getSuggestions())); // CraftBukkit - decompile error // Paper
-+            // Paper end
-             });
-         }); // Paper - This needs to be on main
+                     this.minecraftServer.getCommandDispatcher().a().getCompletionSuggestions(parseresults).thenAccept((suggestions) -> {
+-                        if (suggestions.isEmpty()) return; // CraftBukkit - don't send through empty suggestions - prevents [<args>] from showing for plugins with nothing more to offer
+-                        this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestions));
++                        // Paper start
++                        com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
++                        suggestEvent.setCancelled(suggestions.isEmpty());
++                        if (!suggestEvent.callEvent()) return;
++                        this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), (com.mojang.brigadier.suggestion.Suggestions) suggestEvent.getSuggestions())); // CraftBukkit - decompile error // Paper
++                        // Paper end
+                     });
+                 });
              }
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
  
              builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
              completions.forEach(builder::suggest);
 -            player.playerConnection.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), builder.buildFuture().join()));
-+            Suggestions suggestions = builder.buildFuture().join();
++            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
 +            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getPlayer(), suggestions, buffer);
 +            suggestEvent.setCancelled(suggestions.isEmpty());
 +            if (!suggestEvent.callEvent()) return;
 +            this.networkManager.sendPacket(new PacketPlayOutTabComplete(packetplayintabcomplete.b(), suggestEvent.getSuggestions()));
          }
          // Paper end - async tab completion
- 
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java

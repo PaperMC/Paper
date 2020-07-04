@@ -70,9 +70,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
      public int autosavePeriod;
 +    public boolean serverAutoSave = false; // Paper
-     public File bukkitDataPackFolder;
      public CommandDispatcher vanillaCommandDispatcher;
      private boolean forceTicks;
+     // CraftBukkit end
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.serverPing.b().a(agameprofile);
          }
@@ -90,11 +90,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start
 +            for (WorldServer world : getWorlds()) {
 +                if (world.paperConfig.autoSavePeriod > 0) {
-+                    try {
-+                        world.saveIncrementally(serverAutoSave);
-+                    } catch (ExceptionWorldConflict exceptionWorldConflict) {
-+                        MinecraftServer.LOGGER.warn(exceptionWorldConflict.getMessage());
-+                    }
++                    world.saveIncrementally(serverAutoSave);
 +                }
 +            }
 +            // Paper end
@@ -195,7 +191,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected void saveIncrementally() {
 +        int savedThisTick = 0;
 +        // optimized since we search far less chunks to hit ones that need to be saved
-+        List<PlayerChunk> reschedule = new ArrayList<>(this.world.paperConfig.maxAutoSaveChunksPerTick);
++        List<PlayerChunk> reschedule = new java.util.ArrayList<>(this.world.paperConfig.maxAutoSaveChunksPerTick);
 +        long currentTick = this.world.getTime();
 +        long maxSaveTime = currentTick - this.world.paperConfig.autoSavePeriod;
 +
@@ -264,12 +260,12 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
-         return this.worldProvider.c();
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         return !this.server.a(this, blockposition, entityhuman) && this.getWorldBorder().a(blockposition);
      }
  
 +    // Paper start - derived from below
-+    public void saveIncrementally(boolean doFull) throws ExceptionWorldConflict {
++    public void saveIncrementally(boolean doFull) {
 +        ChunkProviderServer chunkproviderserver = this.getChunkProvider();
 +
 +        if (doFull) {
@@ -286,35 +282,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            timings.worldSaveChunks.stopTiming(); // Paper
 +
 +
++            // Copied from save()
 +            // CraftBukkit start - moved from MinecraftServer.saveChunks
-+            // PAIL - rename
-+            if (doFull) {
++            if (doFull) { // Paper
 +                WorldServer worldserver1 = this;
-+                WorldData worlddata = worldserver1.getWorldData();
 +
-+                worldserver1.getWorldBorder().save(worlddata);
-+                worlddata.setCustomBossEvents(this.server.getBossBattleCustomData().save());
-+                worldserver1.getDataManager().saveWorldData(worlddata, this.server.getPlayerList().save());
-+                // CraftBukkit end
++                worldDataServer.a(worldserver1.getWorldBorder().t());
++                worldDataServer.setCustomBossEvents(this.server.getBossBattleCustomData().save());
++                convertable.a(this.server.f, this.worldDataServer, this.server.getPlayerList().save());
 +            }
++            // CraftBukkit end
 +        }
 +    }
 +    // Paper end
 +
-     public void save(@Nullable IProgressUpdate iprogressupdate, boolean flag, boolean flag1) throws ExceptionWorldConflict {
+     public void save(@Nullable IProgressUpdate iprogressupdate, boolean flag, boolean flag1) {
          ChunkProviderServer chunkproviderserver = this.getChunkProvider();
  
          if (!flag1) {
 -            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
-+            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit
++            if (flag) org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(getWorld())); // CraftBukkit // Paper
              try (co.aikar.timings.Timing ignored = timings.worldSave.startTiming()) { // Paper
              if (iprogressupdate != null) {
-                 iprogressupdate.a(new ChatMessage("menu.savingLevel", new Object[0]));
-@@ -0,0 +0,0 @@ public class WorldServer extends World {
+                 iprogressupdate.a(new ChatMessage("menu.savingLevel"));
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          // CraftBukkit end
      }
  
-+    protected void saveData() throws ExceptionWorldConflict { this.m_(); } // Paper - OBFHELPER
-     protected void m_() throws ExceptionWorldConflict {
-         this.checkSession();
-         this.worldProvider.i();
++    private void saveData() { this.ag(); } // Paper - OBFHELPER
+     private void ag() {
+         if (this.dragonBattle != null) {
+             this.server.getSaveData().a(this.dragonBattle.a());

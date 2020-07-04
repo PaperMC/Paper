@@ -316,17 +316,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.profile;
 +
-+import com.mojang.authlib.Agent;
-+import com.mojang.authlib.GameProfileRepository;
-+import com.mojang.authlib.UserAuthentication;
++import com.mojang.authlib.*;
 +import com.mojang.authlib.minecraft.MinecraftSessionService;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
++import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
 +
 +import java.net.Proxy;
 +
 +public class PaperAuthenticationService extends YggdrasilAuthenticationService {
++    private final Environment environment;
 +    public PaperAuthenticationService(Proxy proxy, String clientToken) {
 +        super(proxy, clientToken);
++        this.environment = (Environment)EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD);;
 +    }
 +
 +    @Override
@@ -336,12 +337,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public MinecraftSessionService createMinecraftSessionService() {
-+        return new PaperMinecraftSessionService(this);
++        return new PaperMinecraftSessionService(this, this.environment);
 +    }
 +
 +    @Override
 +    public GameProfileRepository createProfileRepository() {
-+        return new PaperGameProfileRepository(this);
++        return new PaperGameProfileRepository(this, this.environment);
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java b/src/main/java/com/destroystokyo/paper/profile/PaperGameProfileRepository.java
@@ -353,13 +354,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.Agent;
++import com.mojang.authlib.Environment;
 +import com.mojang.authlib.ProfileLookupCallback;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
 +
 +public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
-+    public PaperGameProfileRepository(YggdrasilAuthenticationService authenticationService) {
-+        super(authenticationService);
++    public PaperGameProfileRepository(YggdrasilAuthenticationService authenticationService, Environment environment) {
++        super(authenticationService, environment);
 +    }
 +
 +    @Override
@@ -375,6 +377,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.profile;
 +
++import com.mojang.authlib.Environment;
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
@@ -383,8 +386,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Map;
 +
 +public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionService {
-+    protected PaperMinecraftSessionService(YggdrasilAuthenticationService authenticationService) {
-+        super(authenticationService);
++    protected PaperMinecraftSessionService(YggdrasilAuthenticationService authenticationService, Environment environment) {
++        super(authenticationService, environment);
 +    }
 +
 +    @Override
@@ -446,69 +449,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Calculates distance between 2 entities
       * @param e1
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -0,0 +0,0 @@ public class Main {
+             }
+ 
+             File file = (File) optionset.valueOf("universe"); // CraftBukkit
+-            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
++            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
+             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
+             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
+             UserCache usercache = new UserCache(gameprofilerepository, new File(file, MinecraftServer.b.getName()));
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-             DispenserRegistry.init();
-             DispenserRegistry.c();
-             File s = (File) optionset.valueOf("universe"); // CraftBukkit
--            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
-+            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
-             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
-             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
-             UserCache usercache = new UserCache(gameprofilerepository, new File(s, MinecraftServer.b.getName()));
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         this.H = i;
+         this.G = i;
      }
  
 +    public final MinecraftSessionService getSessionService() { return this.getMinecraftSessionService(); } // Paper - OBFHELPER
      public MinecraftSessionService getMinecraftSessionService() {
          return this.minecraftSessionService;
      }
-diff --git a/src/main/java/net/minecraft/server/TileEntitySkull.java b/src/main/java/net/minecraft/server/TileEntitySkull.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TileEntitySkull.java
-+++ b/src/main/java/net/minecraft/server/TileEntitySkull.java
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-     private void f() {
-         // Spigot start
-         GameProfile profile = this.gameProfile;
-+        if (profile != null && profile.isComplete() && profile.getProperties().containsKey("textures")) return; // Paper
-         b(profile, new Predicate<GameProfile>() {
- 
-             @Override
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-             } else if (MinecraftServer.getServer() == null) {
-                 callback.apply(gameprofile);
-             } else {
--                GameProfile profile = skinCache.getIfPresent(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
-+                // Paper start
-+                com.destroystokyo.paper.profile.CraftPlayerProfile paperProfile = new com.destroystokyo.paper.profile.CraftPlayerProfile(gameprofile);
-+                if (sync) {
-+                    // might complete by cache, but if not, go ahead and do it now, avoid the code below
-+                    paperProfile.complete(true, true);
-+                } else {
-+                    paperProfile.completeFromCache(false, true);
-+                }
-+                GameProfile profile = paperProfile.getGameProfile();
-+                // Paper end
-                 if (profile != null && Iterables.getFirst(profile.getProperties().get("textures"), (Object) null) != null) {
-                     callback.apply(profile);
- 
-@@ -0,0 +0,0 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
-                     Callable<GameProfile> callable = new Callable<GameProfile>() {
-                         @Override
-                         public GameProfile call() {
--                            final GameProfile profile = skinCache.getUnchecked(gameprofile.getName().toLowerCase(java.util.Locale.ROOT));
-+                            // Paper start
-+                            paperProfile.complete(true, true);
-+                            final GameProfile profile = paperProfile.getGameProfile();
-+                            // Paper end
-                             MinecraftServer.getServer().processQueue.add(new Runnable() {
-                                 @Override
-                                 public void run() {
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java

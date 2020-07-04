@@ -8,43 +8,11 @@ object identity checks safely.
 
 Use a simpler optimized hashcode
 
-diff --git a/src/main/java/net/minecraft/server/BlockState.java b/src/main/java/net/minecraft/server/BlockState.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockState.java
-+++ b/src/main/java/net/minecraft/server/BlockState.java
-@@ -0,0 +0,0 @@ public abstract class BlockState<T extends Comparable<T>> implements IBlockState
-     }
- 
-     public boolean equals(Object object) {
--        if (this == object) {
--            return true;
--        } else if (!(object instanceof BlockState)) {
--            return false;
--        } else {
--            BlockState<?> blockstate = (BlockState) object;
--
--            return this.a.equals(blockstate.a) && this.b.equals(blockstate.b);
--        }
-+        return this == object; // Paper - only one instance per configuration
-     }
- 
-+    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
-+    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
-     public final int hashCode() {
--        if (this.c == null) {
--            this.c = this.c();
--        }
--
--        return this.c;
-+        return this.hashCode; // Paper - only one instance per configuration
-     }
- 
-     public int c() {
 diff --git a/src/main/java/net/minecraft/server/BlockStateBoolean.java b/src/main/java/net/minecraft/server/BlockStateBoolean.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockStateBoolean.java
 +++ b/src/main/java/net/minecraft/server/BlockStateBoolean.java
-@@ -0,0 +0,0 @@ public class BlockStateBoolean extends BlockState<Boolean> {
+@@ -0,0 +0,0 @@ public class BlockStateBoolean extends IBlockState<Boolean> {
          return obool.toString();
      }
  
@@ -58,7 +26,7 @@ diff --git a/src/main/java/net/minecraft/server/BlockStateEnum.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockStateEnum.java
 +++ b/src/main/java/net/minecraft/server/BlockStateEnum.java
-@@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends BlockState<T>
+@@ -0,0 +0,0 @@ public class BlockStateEnum<T extends Enum<T> & INamable> extends IBlockState<T>
          return ((INamable) t0).getName();
      }
  
@@ -72,7 +40,7 @@ diff --git a/src/main/java/net/minecraft/server/BlockStateInteger.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockStateInteger.java
 +++ b/src/main/java/net/minecraft/server/BlockStateInteger.java
-@@ -0,0 +0,0 @@ public class BlockStateInteger extends BlockState<Integer> {
+@@ -0,0 +0,0 @@ public class BlockStateInteger extends IBlockState<Integer> {
          return this.a;
      }
  
@@ -82,3 +50,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this == object) {
              return true;
          } else if (object instanceof BlockStateInteger && super.equals(object)) {
+diff --git a/src/main/java/net/minecraft/server/IBlockState.java b/src/main/java/net/minecraft/server/IBlockState.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/IBlockState.java
++++ b/src/main/java/net/minecraft/server/IBlockState.java
+@@ -0,0 +0,0 @@ public abstract class IBlockState<T extends Comparable<T>> {
+     }
+ 
+     public boolean equals(Object object) {
+-        if (this == object) {
+-            return true;
+-        } else if (!(object instanceof IBlockState)) {
+-            return false;
+-        } else {
+-            IBlockState<?> iblockstate = (IBlockState) object;
+-
+-            return this.a.equals(iblockstate.a) && this.b.equals(iblockstate.b);
+-        }
++        return this == object; // Paper - only one instance per configuration
+     }
+ 
++    private static final java.util.concurrent.atomic.AtomicInteger hashId = new java.util.concurrent.atomic.AtomicInteger(1); // Paper - only one instance per configuration
++    private final int hashCode = 92821 * hashId.getAndIncrement(); // Paper - only one instance per configuration
+     public final int hashCode() {
+         if (this.c == null) {
+             this.c = this.b();
+         }
+ 
+-        return this.c;
++        return this.hashCode; // Paper - only one instance per configuration
+     }
+ 
+     public int b() {

@@ -14,45 +14,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int jumpTicks;
      private float bD;
      public ItemStack activeItem; // Paper - public
--    protected int bl;
-+    protected int bl; protected final int getEatTimeTicks() { return this.bl; } protected final void setEatTimeTicks(int value) { this.bl = value; } // Paper - OBFHELPER
-     protected int bm;
+-    protected int bk;
++    protected int bk; protected final int getEatTimeTicks() { return this.bk; } protected final void setEatTimeTicks(int value) { this.bk = value; } // Paper - OBFHELPER
+     protected int bl;
      private BlockPosition bE;
-     private DamageSource bF;
+     private Optional<BlockPosition> bF;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-         return ((Byte) this.datawatcher.get(EntityLiving.ao) & 2) > 0 ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
+         return ((Byte) this.datawatcher.get(EntityLiving.an) & 2) > 0 ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND;
      }
  
 +    // Paper start - lag compensate eating
 +    protected long eatStartTime;
 +    protected int totalEatTimeTicks;
 +    // Paper end
-     private void o() {
++
+     private void u() {
          if (this.isHandRaised()) {
              if (ItemStack.d(this.b(this.getRaisedHand()), this.activeItem)) {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
                      this.b(this.activeItem, 5);
                  }
  
--                if (--this.bl == 0 && !this.world.isClientSide && !this.activeItem.m()) {
-+
+-                if (--this.bk == 0 && !this.world.isClientSide && !this.activeItem.m()) {
 +                // Paper start - lag compensate eating
 +                // we add 1 to the expected time to avoid lag compensating when we should not
 +                boolean shouldLagCompensate
 +                    = this.activeItem.getItem().isFood() && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1 + this.totalEatTimeTicks) * 50 * (1000 * 1000));
-+                if ((--this.bl == 0 || shouldLagCompensate) && !this.world.isClientSide && !this.activeItem.m()) {
++                if ((--this.bk == 0 || shouldLagCompensate) && !this.world.isClientSide && !this.activeItem.m()) {
 +                    this.setEatTimeTicks(0);
 +                    // Paper end
-                     this.q();
+                     this.s();
                  }
              } else {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
  
          if (!itemstack.isEmpty() && !this.isHandRaised() || forceUpdate) { // Paper use override flag
              this.activeItem = itemstack;
--            this.bl = itemstack.k();
+-            this.bk = itemstack.k();
 +            // Paper start - lag compensate eating
-+            this.bl = this.totalEatTimeTicks = itemstack.k();
++            this.bk = this.totalEatTimeTicks = itemstack.k();
 +            this.eatStartTime = System.nanoTime();
 +            // Paper end
              if (!this.world.isClientSide) {
@@ -61,10 +61,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
                  }
              } else if (!this.isHandRaised() && !this.activeItem.isEmpty()) {
-                 this.activeItem = ItemStack.a;
--                this.bl = 0;
+                 this.activeItem = ItemStack.b;
+-                this.bk = 0;
 +                // Paper start - lag compensate eating
-+                this.bl = this.totalEatTimeTicks = 0;
++                this.bk = this.totalEatTimeTicks = 0;
 +                this.eatStartTime = -1L;
 +                // Paper end
              }
@@ -73,10 +73,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          }
  
-         this.activeItem = ItemStack.a;
--        this.bl = 0;
+         this.activeItem = ItemStack.b;
+-        this.bk = 0;
 +        // Paper start - lag compensate eating
-+        this.bl = this.totalEatTimeTicks = 0;
++        this.bk = this.totalEatTimeTicks = 0;
 +        this.eatStartTime = -1L;
 +        // Paper end
      }

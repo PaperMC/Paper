@@ -9,7 +9,7 @@ gitcmd="git -c commit.gpgsign=false -c core.safecrlf=false"
 
 echo "Rebuilding patch files from current fork state..."
 nofilter="0"
-if [ "$2" = "nofilter" ]; then
+if [ "$2" == "nofilter" ] || [ "$2" == "noclean" ]; then
     nofilter="1"
 fi
 function cleanupPatches {
