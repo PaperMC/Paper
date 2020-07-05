@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 3 Jul 2020 15:03:33 -0700
+Subject: [PATCH] added EntityTargetLivingEntityEvent to 1.16 mobs
+
+1.16 added a different behavior system for the new mobs
+
+diff --git a/src/main/java/net/minecraft/server/BehaviorAttackTargetForget.java b/src/main/java/net/minecraft/server/BehaviorAttackTargetForget.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BehaviorAttackTargetForget.java
++++ b/src/main/java/net/minecraft/server/BehaviorAttackTargetForget.java
+@@ -0,0 +0,0 @@ public class BehaviorAttackTargetForget<E extends EntityInsentient> extends Beha
+ 
+     protected void a(WorldServer worldserver, E e0, long i) {
+         if (a((EntityLiving) e0)) {
+-            this.d(e0);
++            handleEvent(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET); // Paper
+         } else if (this.c(e0)) {
+-            this.d(e0);
++            handleEvent(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED); // Paper
+         } else if (this.a(e0)) {
+-            this.d(e0);
++            handleEvent(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL); // Paper
+         } else if (!IEntitySelector.f.test(this.b(e0))) {
+-            this.d(e0);
++            handleEvent(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
+         } else if (this.b.test(this.b(e0))) {
+-            this.d(e0);
++            handleEvent(e0, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID); // Paper
++        }
++    }
++    // Paper start
++    private void handleEvent(E entity, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason) {
++        org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason);
++        if (!event.isCancelled()) {
++            this.d(entity);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/BehaviorAttackTargetSet.java b/src/main/java/net/minecraft/server/BehaviorAttackTargetSet.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BehaviorAttackTargetSet.java
++++ b/src/main/java/net/minecraft/server/BehaviorAttackTargetSet.java
+@@ -0,0 +0,0 @@ public class BehaviorAttackTargetSet<E extends EntityInsentient> extends Behavio
+         if (!this.b.test(e0)) {
+             return false;
+         } else {
+-            Optional<? extends EntityLiving> optional = (Optional) this.c.apply(e0);
++            Optional<? extends EntityLiving> optional = (Optional<? extends EntityLiving>) this.c.apply(e0); // Paper - decompile error
+ 
+             return optional.isPresent() && ((EntityLiving) optional.get()).isAlive();
+         }
+     }
+ 
+     protected void a(WorldServer worldserver, E e0, long i) {
+-        ((Optional) this.c.apply(e0)).ifPresent((entityliving) -> {
++        ((Optional<? extends EntityLiving>) this.c.apply(e0)).ifPresent((entityliving) -> { // Paper - decompile error
+             this.a(e0, entityliving);
+         });
+     }
+ 
+     private void a(E e0, EntityLiving entityliving) {
+-        e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, (Object) entityliving);
+-        e0.getBehaviorController().removeMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
++        // Paper start
++        org.bukkit.event.entity.EntityTargetEvent.TargetReason reason = entityliving instanceof EntityHuman ? org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER : org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY;
++        org.bukkit.event.entity.EntityTargetLivingEntityEvent event =  org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(e0, entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
++        if (!event.isCancelled()) {
++            EntityLiving target = event.getTarget() != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle() : null;
++            e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, target); // Paper - decompile error
++            e0.getBehaviorController().removeMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
++        }
++        // Paper end
+     }
+ }
