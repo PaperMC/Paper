@@ -7,67 +7,6 @@ Adds a new event for all crafting stations that generate a result slot item
 
 Anvil and Grindstone now extend this event
 
-diff --git a/src/main/java/net/minecraft/server/ContainerAnvil.java b/src/main/java/net/minecraft/server/ContainerAnvil.java
-index 24631b2bcb2a1d057c1fb6596ff401133c8b548a..4f1ce8261155daed112930aafb349f98e7a064f3 100644
---- a/src/main/java/net/minecraft/server/ContainerAnvil.java
-+++ b/src/main/java/net/minecraft/server/ContainerAnvil.java
-@@ -102,7 +102,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
-         byte b1 = 0;
- 
-         if (itemstack.isEmpty()) {
--            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.b); // CraftBukkit
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(getBukkitView(), ItemStack.b, 2); // Paper
-             this.levelCost.set(0);
-         } else {
-             ItemStack itemstack1 = itemstack.cloneItemStack();
-@@ -120,7 +120,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
-                 if (itemstack1.e() && itemstack1.getItem().a(itemstack, itemstack2)) {
-                     k = Math.min(itemstack1.getDamage(), itemstack1.h() / 4);
-                     if (k <= 0) {
--                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.b); // CraftBukkit
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(getBukkitView(), ItemStack.b, 2); // Paper
-                         this.levelCost.set(0);
-                         return;
-                     }
-@@ -135,7 +135,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
-                     this.h = i1;
-                 } else {
-                     if (!flag && (itemstack1.getItem() != itemstack2.getItem() || !itemstack1.e())) {
--                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.b); // CraftBukkit
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(getBukkitView(), ItemStack.b, 2); // Paper
-                         this.levelCost.set(0);
-                         return;
-                     }
-@@ -225,7 +225,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
-                     }
- 
-                     if (flag2 && !flag1) {
--                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), ItemStack.b); // CraftBukkit
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(getBukkitView(), ItemStack.b, 2); // CraftBukkit
-                         this.levelCost.set(0);
-                         return;
-                     }
-@@ -272,7 +272,7 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
-                 EnchantmentManager.a(map, itemstack1);
-             }
- 
--            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareAnvilEvent(getBukkitView(), itemstack1); // CraftBukkit
-+            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(getBukkitView(), itemstack1,2); // Paper
-             this.c();
-         }
-     }
-diff --git a/src/main/java/net/minecraft/server/ContainerAnvilAbstract.java b/src/main/java/net/minecraft/server/ContainerAnvilAbstract.java
-index 2029d4dd9a2abe693c34723c379009578ab52503..c9765800fcf5fdf3323b1af54995e834e464a819 100644
---- a/src/main/java/net/minecraft/server/ContainerAnvilAbstract.java
-+++ b/src/main/java/net/minecraft/server/ContainerAnvilAbstract.java
-@@ -66,7 +66,6 @@ public abstract class ContainerAnvilAbstract extends Container {
-         if (iinventory == this.repairInventory) {
-             this.e();
-         }
--
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/server/ContainerCartography.java b/src/main/java/net/minecraft/server/ContainerCartography.java
 index 91e1372952f07087f51b22f1c53f63d2cf2f40fc..1acc7f4eaede582f79f6e17c594d8553582c675d 100644
 --- a/src/main/java/net/minecraft/server/ContainerCartography.java
@@ -143,41 +82,36 @@ index 270bf7f3e6ca15891419f1ce3e88d9aff094bee6..ce63c715e4920ad272e7c3dffb8f3279
  
      private void a(IInventory iinventory, ItemStack itemstack) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 6c5036b23a41769167fd53b8cc5454e5e747598e..daab5500a5da5ae8f58d26d60b42002a1ef108b4 100644
+index 6c5036b23a41769167fd53b8cc5454e5e747598e..17c3ec3ed2848e680e3442360f964cd428c06b6c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1548,12 +1548,31 @@ public class CraftEventFactory {
+@@ -1549,12 +1549,27 @@ public class CraftEventFactory {
+     }
+ 
+     public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
+-        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        event.callEvent(); // Paper
+         event.getInventory().setItem(2, event.getResult());
          return event;
      }
  
--    public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
--        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
--        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
-+    // Paper start - disable this method, handled below
-+    public static void callPrepareAnvilEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
-+        PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
-+        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // disable event
-         event.getInventory().setItem(2, event.getResult());
-+        //return event; // Paper
-+    }
-+    // Paper end
-+
 +    // Paper start - support specific overrides for prepare result
 +    public static com.destroystokyo.paper.event.inventory.PrepareResultEvent callPrepareResultEvent(InventoryView view, ItemStack item, int resultSlot) {
 +        com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
 +        CraftItemStack result = CraftItemStack.asCraftMirror(item);
-+        if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
-+            event = new PrepareAnvilEvent(view, result);
-+        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
++        if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
 +        } else {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
 +        }
 +        event.callEvent();
 +        event.getInventory().setItem(resultSlot, event.getResult());
-         return event;
-     }
++        return event;
++    }
 +    // Paper end
- 
++
      /**
       * Mob spawner event.
+      */
