@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 3 Jul 2020 11:58:56 -0500
+Subject: [PATCH] Add PrepareResultEvent / PrepareGrindstoneEvent
+
+Adds a new event for all crafting stations that generate a result slot item
+
+Anvil and Grindstone now extend this event
+
+Grindstone is a backwards compat from a previous PrepareGrindstoneEvent
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.event.inventory;
++
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.inventory.InventoryEvent;
++import org.bukkit.inventory.GrindstoneInventory;
++import org.bukkit.inventory.InventoryView;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when an item is put in a slot for grinding in a Grindstone
++ * @see com.destroystokyo.paper.event.inventory.PrepareResultEvent
++ */
++@Deprecated
++public class PrepareGrindstoneEvent extends PrepareResultEvent {
++
++    public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
++        super(inventory, result);
++    }
++
++    @NotNull
++    @Override
++    public GrindstoneInventory getInventory() {
++        return (GrindstoneInventory) super.getInventory();
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.event.inventory;
++
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.inventory.InventoryEvent;
++import org.bukkit.event.inventory.InventoryType;
++import org.bukkit.inventory.InventoryView;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when an item is put in an inventory containing a result slot
++ */
++public class PrepareResultEvent extends InventoryEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++    private ItemStack result;
++
++    public PrepareResultEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
++        super(inventory);
++        this.result = result;
++    }
++
++    /**
++     * Get result item, may be null.
++     *
++     * @return result item
++     */
++    @Nullable
++    public ItemStack getResult() {
++        return result;
++    }
++
++    public void setResult(@Nullable ItemStack result) {
++        this.result = result;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+@@ -0,0 +0,0 @@
+ package org.bukkit.event.inventory;
+ 
++import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.inventory.AnvilInventory;
+ import org.bukkit.inventory.InventoryView;
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Called when an item is put in a slot for repair by an anvil.
+  */
+-public class PrepareAnvilEvent extends InventoryEvent {
++// Paper start - extend PrepareResultEvent
++public class PrepareAnvilEvent extends PrepareResultEvent {
+ 
+-    private static final HandlerList handlers = new HandlerList();
+-    private ItemStack result;
++    //private static final HandlerList handlers = new HandlerList();
++    //private ItemStack result;
+ 
+     public PrepareAnvilEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
+-        super(inventory);
+-        this.result = result;
++        super(inventory, result);
++        //this.result = result;
++        // Paper end
+     }
+ 
+     @NotNull
+@@ -0,0 +0,0 @@ public class PrepareAnvilEvent extends InventoryEvent {
+      */
+     @Nullable
+     public ItemStack getResult() {
+-        return result;
++        return super.getResult(); // Paper
+     }
+ 
+     public void setResult(@Nullable ItemStack result) {
+-        this.result = result;
++        super.setResult(result); // Paper
+     }
+ 
++    /* // Paper - comment out
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+@@ -0,0 +0,0 @@ public class PrepareAnvilEvent extends InventoryEvent {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++    */ // Paper
+ }
