@@ -268,10 +268,12 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @Override
     public BlockState getBlockState() {
+        Material stateMaterial = material; // Only actually used for jigsaws
         if (blockEntityTag != null) {
             switch (material) {
                 case SHIELD:
                     blockEntityTag.setString("id", "banner");
+                    stateMaterial = shieldToBannerHack(blockEntityTag);
                     break;
                 case SHULKER_BOX:
                 case WHITE_SHULKER_BOX:
@@ -298,7 +300,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                     break;
             }
         }
-        TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(CraftMagicNumbers.getBlock(material).getBlockData(), blockEntityTag);
+        TileEntity te = (blockEntityTag == null) ? null : TileEntity.create(CraftMagicNumbers.getBlock(stateMaterial).getBlockData(), blockEntityTag);
 
         switch (material) {
         case ACACIA_SIGN:
