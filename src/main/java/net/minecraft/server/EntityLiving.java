@@ -2929,7 +2929,7 @@ public abstract class EntityLiving extends Entity {
         Entity entity = this.getVehicle();
 
         super.stopRiding(suppressCancellation); // Paper - suppress
-        if (entity != null && entity != this.getVehicle() && !this.world.isClientSide) {
+        if (entity != null && entity != this.getVehicle() && !this.world.isClientSide && entity.valid) { // Paper - don't process on world gen
             this.a(entity);
         }
 
