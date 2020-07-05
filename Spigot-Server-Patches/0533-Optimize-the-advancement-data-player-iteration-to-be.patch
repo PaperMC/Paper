@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Wyatt Childers <wchilders@nearce.com>
+Date: Sat, 4 Jul 2020 23:07:43 -0400
+Subject: [PATCH] Optimize the advancement data player iteration to be O(N)
+ rather than O(N^2)
+
+
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index 57b9d13447a4f7804827c1bd41121c3069c696bd..d2ee4660effe75e8cdb4f23f3a853cdb4e4e26e1 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -438,7 +438,17 @@ public class AdvancementDataPlayer {
+         this.data.put(advancement, advancementprogress);
+     }
+ 
++    private enum IterationEntryPoint {
++        ROOT,
++        ITERATOR,
++        PARENT_OF_ITERATOR
++    }
++
+     private void e(Advancement advancement) {
++        e(advancement, IterationEntryPoint.ROOT);
++    }
++
++    private void e(Advancement advancement, IterationEntryPoint entryPoint) {
+         boolean flag = this.f(advancement);
+         boolean flag1 = this.h.contains(advancement);
+ 
+@@ -453,8 +463,19 @@ public class AdvancementDataPlayer {
+             this.i.add(advancement);
+         }
+ 
++
+         if (flag != flag1 && advancement.b() != null) {
+-            this.e(advancement.b());
++            // If we're not coming from an iterator consider this to be a root entry, otherwise
++            // market that we're entering from the parent of an iterator.
++            e(advancement.b(),
++                entryPoint == IterationEntryPoint.ITERATOR ?
++                    IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);
++        }
++
++        // Paper - If this is true, we've went through a child iteration, entered the parent, processed the parent
++        // and are about to reprocess the children. Stop processing here to prevent O(N^2) processing.
++        if (entryPoint == IterationEntryPoint.PARENT_OF_ITERATOR) {
++            return;
+         }
+ 
+         Iterator iterator = advancement.e().iterator();
+@@ -462,7 +483,7 @@ public class AdvancementDataPlayer {
+         while (iterator.hasNext()) {
+             Advancement advancement1 = (Advancement) iterator.next();
+ 
+-            this.e(advancement1);
++            e(advancement1, IterationEntryPoint.ITERATOR);
+         }
+ 
+     }
