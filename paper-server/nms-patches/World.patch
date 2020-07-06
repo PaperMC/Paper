@@ -173,7 +173,7 @@
 +                // CraftBukkit start
 +                if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
 +                    // Modularize client and physic updates
-+                    notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, iblockdata2, i);
++                    notifyAndUpdatePhysics(blockposition, chunk, iblockdata1, iblockdata, iblockdata2, i, j);
 +                }
 +                // CraftBukkit end
  
@@ -183,7 +183,7 @@
      }
  
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, IBlockData oldBlock, IBlockData newBlock, IBlockData actualBlock, int i) {
++    public void notifyAndUpdatePhysics(BlockPosition blockposition, Chunk chunk, IBlockData oldBlock, IBlockData newBlock, IBlockData actualBlock, int i, int j) {
 +        IBlockData iblockdata = newBlock;
 +        IBlockData iblockdata1 = oldBlock;
 +        IBlockData iblockdata2 = actualBlock;
@@ -196,18 +196,18 @@
 +                this.notify(blockposition, iblockdata1, iblockdata, i);
 +            }
 +
-+            if (!this.isClientSide && (i & 1) != 0) {
++            if ((i & 1) != 0) {
 +                this.update(blockposition, iblockdata1.getBlock());
-+                if (iblockdata.isComplexRedstone()) {
++                if (!this.isClientSide && iblockdata.isComplexRedstone()) {
 +                    this.updateAdjacentComparators(blockposition, newBlock.getBlock());
 +                }
 +            }
 +
-+            if ((i & 16) == 0) {
-+                int j = i & -2;
++            if ((i & 16) == 0 && j > 0) {
++                int k = i & -34;
 +
 +                // CraftBukkit start
-+                iblockdata1.b(this, blockposition, j); // Don't call an event for the old block to limit event spam
++                iblockdata1.b(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
 +                CraftWorld world = ((WorldServer) this).getWorld();
 +                if (world != null) {
 +                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
@@ -218,8 +218,8 @@
 +                    }
 +                }
 +                // CraftBukkit end
-+                iblockdata.a(this, blockposition, j);
-+                iblockdata.b(this, blockposition, j);
++                iblockdata.a((GeneratorAccess) this, blockposition, k, j - 1);
++                iblockdata.b(this, blockposition, k, j - 1);
 +            }
 +
 +            this.a(blockposition, iblockdata1, iblockdata2);
