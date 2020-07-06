@@ -251,4 +251,44 @@ public final class CraftItemFactory implements ItemFactory {
         return nms != null ? nms.getItem().getName(nms).getString() : null;
     }
     // Paper end - add getI18NDisplayName
+
+    // Paper start - bungee hover events
+    @Override
+    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(ItemStack itemStack) {
+        throw new UnsupportedOperationException("BungeeCord Chat API does not support data components");
+        /*
+        net.md_5.bungee.api.chat.ItemTag itemTag = net.md_5.bungee.api.chat.ItemTag.ofNbt(CraftItemStack.asNMSCopy(itemStack).getOrCreateTag().toString());
+        return new net.md_5.bungee.api.chat.hover.content.Item(
+            itemStack.getType().getKey().toString(),
+            itemStack.getAmount(),
+            itemTag);
+         */
+    }
+
+    @Override
+    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity) {
+        return hoverContentOf(entity, org.apache.commons.lang3.StringUtils.isBlank(entity.getCustomName()) ? null : new net.md_5.bungee.api.chat.TextComponent(entity.getCustomName()));
+    }
+
+    @Override
+    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, String customName) {
+        return hoverContentOf(entity, org.apache.commons.lang3.StringUtils.isBlank(customName) ? null : new net.md_5.bungee.api.chat.TextComponent(customName));
+    }
+
+    @Override
+    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, net.md_5.bungee.api.chat.BaseComponent customName) {
+        return new net.md_5.bungee.api.chat.hover.content.Entity(
+            entity.getType().getKey().toString(),
+            entity.getUniqueId().toString(),
+            customName);
+    }
+
+    @Override
+    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, net.md_5.bungee.api.chat.BaseComponent[] customName) {
+        return new net.md_5.bungee.api.chat.hover.content.Entity(
+            entity.getType().getKey().toString(),
+            entity.getUniqueId().toString(),
+            new net.md_5.bungee.api.chat.TextComponent(customName));
+    }
+    // Paper end - bungee hover events
 }
