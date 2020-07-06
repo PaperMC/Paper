@@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.OptionalDynamic;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -14,26 +14,32 @@ import java.util.stream.Stream;
 
 public class WeightedList<U> {
 
-    protected final List<WeightedList.a<U>> a;
+    protected final List<WeightedList.a<U>> list; // Paper - decompile conflict
     private final Random b;
+    private final boolean isUnsafe; // Paper
 
-    public WeightedList() {
-        this(Lists.newArrayList());
+    // Paper start - add useClone option
+    public WeightedList() { this(true); }
+    public WeightedList(boolean isUnsafe) {
+        this(Lists.newArrayList(), isUnsafe);
     }
 
-    private WeightedList(List<WeightedList.a<U>> list) {
+    private WeightedList(List<WeightedList.a<U>> list) { this(list, true); }
+    private WeightedList(List<WeightedList.a<U>> list, boolean isUnsafe) {
+        this.isUnsafe = isUnsafe;
+        // Paper end
         this.b = new Random();
-        this.a = Lists.newArrayList(list);
+        this.list = Lists.newArrayList(list); // Paper - decompile conflict
     }
 
     public static <U> Codec<WeightedList<U>> a(Codec<U> codec) {
-        return WeightedList.a.a(codec).listOf().xmap(WeightedList::new, (weightedlist) -> {
-            return weightedlist.a;
+        return WeightedList.a.a(codec).listOf().xmap(WeightedList::new, (weightedlist) -> { // Paper - decompile conflict
+            return weightedlist.list; // Paper - decompile conflict
         });
     }
 
     public WeightedList<U> a(U u0, int i) {
-        this.a.add(new WeightedList.a<>(u0, i));
+        this.list.add(new WeightedList.a<>(u0, i)); // Paper - decompile conflict
         return this;
     }
 
@@ -42,21 +48,20 @@ public class WeightedList<U> {
     }
 
     public WeightedList<U> a(Random random) {
-        this.a.forEach((weightedlist_a) -> {
-            weightedlist_a.a(random.nextFloat());
-        });
-        this.a.sort(Comparator.comparingDouble((object) -> {
-            return ((WeightedList.a) object).c();
-        }));
-        return this;
+        // Paper start - make concurrent safe, work off a clone of the list
+        List<WeightedList.a<U>> list = isUnsafe ? new java.util.ArrayList<WeightedList.a<U>>(this.list) : this.list;
+        list.forEach((weightedlist_a) -> weightedlist_a.a(random.nextFloat()));
+        list.sort(Comparator.comparingDouble(a::c));
+        return isUnsafe ? new WeightedList<>(list, isUnsafe) : this;
+        // Paper end
     }
 
     public boolean b() {
-        return this.a.isEmpty();
+        return this.list.isEmpty(); // Paper - decompile conflict
     }
 
     public Stream<U> c() {
-        return this.a.stream().map(WeightedList.a::a);
+        return this.list.stream().map(WeightedList.a::a); // Paper - decompile conflict
     }
 
     public U b(Random random) {
@@ -64,7 +69,7 @@ public class WeightedList<U> {
     }
 
     public String toString() {
-        return "WeightedList[" + this.a + "]";
+        return "WeightedList[" + this.list + "]"; // Paper - decompile conflict
     }
 
     public static class a<T> {
@@ -98,11 +103,7 @@ public class WeightedList<U> {
             return new Codec<WeightedList.a<E>>() {
                 public <T> DataResult<Pair<WeightedList.a<E>, T>> decode(DynamicOps<T> dynamicops, T t0) {
                     Dynamic<T> dynamic = new Dynamic(dynamicops, t0);
-                    OptionalDynamic optionaldynamic = dynamic.get("data");
-                    Codec codec1 = codec;
-
-                    codec.getClass();
-                    return optionaldynamic.flatMap(codec1::parse).map((object) -> {
+                    return dynamic.get("data").flatMap(codec::parse).map((object) -> { // Paper - decompile error
                         return new WeightedList.a<>(object, dynamic.get("weight").asInt(1));
                     }).map((weightedlist_a) -> {
                         return Pair.of(weightedlist_a, dynamicops.empty());

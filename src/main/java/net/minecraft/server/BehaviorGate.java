@@ -12,7 +12,7 @@ public class BehaviorGate<E extends EntityLiving> extends Behavior<E> {
     private final Set<MemoryModuleType<?>> b;
     private final BehaviorGate.Order c;
     private final BehaviorGate.Execution d;
-    private final WeightedList<Behavior<? super E>> e = new WeightedList<>();
+    private final WeightedList<Behavior<? super E>> e = new WeightedList<>(false); // Paper - don't use a clone
 
     public BehaviorGate(Map<MemoryModuleType<?>, MemoryStatus> map, Set<MemoryModuleType<?>> set, BehaviorGate.Order behaviorgate_order, BehaviorGate.Execution behaviorgate_execution, List<Pair<Behavior<? super E>, Integer>> list) {
         super(map);
@@ -60,10 +60,9 @@ public class BehaviorGate<E extends EntityLiving> extends Behavior<E> {
         }).forEach((behavior) -> {
             behavior.g(worldserver, e0, i);
         });
-        Set set = this.b;
         BehaviorController behaviorcontroller = e0.getBehaviorController();
 
-        set.forEach(behaviorcontroller::removeMemory);
+        this.b.forEach(behaviorcontroller::removeMemory); // Paper - decomp fix
     }
 
     @Override
@@ -110,7 +109,7 @@ public class BehaviorGate<E extends EntityLiving> extends Behavior<E> {
 
         private final Consumer<WeightedList<?>> c;
 
-        private Order(Consumer consumer) {
+        private Order(Consumer<WeightedList<?>> consumer) { // Paper - decomp fix
             this.c = consumer;
         }
 
