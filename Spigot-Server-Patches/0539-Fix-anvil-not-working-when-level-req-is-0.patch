@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jan Tuck <jan@tuck.dk>
+Date: Mon, 6 Jul 2020 02:56:45 +0200
+Subject: [PATCH] Fix anvil not working when level req is 0
+
+
+diff --git a/src/main/java/net/minecraft/server/ContainerAnvil.java b/src/main/java/net/minecraft/server/ContainerAnvil.java
+index fc2038df89f25c07f6f853f6df41fe9b203c3585..9c32c9db9d70d7d033445c76319477ca509ffe58 100644
+--- a/src/main/java/net/minecraft/server/ContainerAnvil.java
++++ b/src/main/java/net/minecraft/server/ContainerAnvil.java
+@@ -38,7 +38,8 @@ public class ContainerAnvil extends ContainerAnvilAbstract {
+ 
+     @Override
+     protected boolean b(EntityHuman entityhuman, boolean flag) {
+-        return (entityhuman.abilities.canInstantlyBuild || entityhuman.expLevel >= this.levelCost.get()) && this.levelCost.get() > 0;
++        // return (entityhuman.abilities.canInstantlyBuild || entityhuman.expLevel >= this.levelCost.get()) && this.levelCost.get() > 0; //Paper - Changed
++        return (entityhuman.abilities.canInstantlyBuild || entityhuman.expLevel >= this.levelCost.get()) && this.levelCost.get() >= 0; //Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index dbc46fcda3f3e006d9e7b7a89ab942b46a05cd9f..4e3360d38b24f2ba0efacd9881418f1e6bff25f5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1573,6 +1573,22 @@ public class CraftEventFactory {
+         event.callEvent();
+         event.getInventory().setItem(resultSlot, event.getResult());
+         container.notifyListeners();
++
++        /*
++           I only know of this happening frequently with anvils and the level req set to 0, so i will limit it to that.
++         */
++        if (event instanceof PrepareAnvilEvent) {
++            event.getViewers().forEach(viewer -> {
++                if (viewer instanceof Player) {
++                    net.minecraft.server.EntityPlayer player = ((CraftPlayer) viewer).getHandle();
++                    boolean before = player.e; // The use i found of it did this same thing by setting to false, broadcasting and setting to true.
++                    if (!player.e)
++                        player.e = false;
++                    player.broadcastCarriedItem();
++                    player.e = before;
++                }
++            });
++        }
+     }
+     // Paper end
+ 
