@@ -232,6 +232,19 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     }
     // Paper end
 
+    // Paper start - add isValidTool
+    /**
+     * Checks if the itemstack is a valid tool to
+     * break the block with
+     *
+     * @param itemStack The (tool) itemstack
+     * @return whether the block will drop items
+     * @deprecated partially replaced by {@link Block#isPreferredTool(ItemStack)}
+     */
+    @Deprecated(since = "1.21", forRemoval = true) // Paper
+    boolean isValidTool(@NotNull ItemStack itemStack);
+    // Paper end - add isValidTool
+
     /**
      * Gets the Location of the block
      *
