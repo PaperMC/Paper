@@ -9,11 +9,21 @@ import java.util.List;
 
 public class PacketSplitter extends ByteToMessageDecoder {
 
+    private final byte[] lenBuf = new byte[3]; // Paper
     public PacketSplitter() {}
 
     protected void decode(ChannelHandlerContext channelhandlercontext, ByteBuf bytebuf, List<Object> list) throws Exception {
+        // Paper start - if channel is not active just discard the packet
+        if (!channelhandlercontext.channel().isActive()) {
+            bytebuf.skipBytes(bytebuf.readableBytes());
+            return;
+        }
+        // Paper end
         bytebuf.markReaderIndex();
-        byte[] abyte = new byte[3];
+        // Paper start - reuse temporary length buffer
+        byte[] abyte = lenBuf;
+        java.util.Arrays.fill(abyte, (byte) 0);
+        // Paper end
 
         for (int i = 0; i < abyte.length; ++i) {
             if (!bytebuf.isReadable()) {

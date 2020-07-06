@@ -129,6 +129,7 @@ public enum EnumProtocol {
 
         @Nullable
         public Packet<?> a(int i) {
+            if (i < 0 || i >= this.b.size()) return null; // Paper
             Supplier<? extends Packet<T>> supplier = (Supplier) this.b.get(i);
 
             return supplier != null ? (Packet) supplier.get() : null;

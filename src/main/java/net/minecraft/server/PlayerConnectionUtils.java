@@ -22,6 +22,21 @@ public class PlayerConnectionUtils {
                     try (Timing ignored = timing.startTiming()) { // Paper - timings
                     packet.a(t0);
                     } // Paper - timings
+                    // Paper start
+                    catch (Exception e) {
+                        NetworkManager networkmanager = t0.a();
+                        if (networkmanager.getPlayer() != null) {
+                            LOGGER.error("Error whilst processing packet {} for {}[{}]", packet, networkmanager.getPlayer().getName(), networkmanager.getSocketAddress(), e);
+                        } else {
+                            LOGGER.error("Error whilst processing packet {} for connection from {}", packet, networkmanager.getSocketAddress(), e);
+                        }
+                        ChatComponentText error = new ChatComponentText("Packet processing error");
+                        networkmanager.sendPacket(new PacketPlayOutKickDisconnect(error), (future) -> {
+                            networkmanager.close(error);
+                        });
+                        networkmanager.stopReading();
+                    }
+                    // Paper end
                 } else {
                     PlayerConnectionUtils.LOGGER.debug("Ignoring packet due to disconnection: " + packet);
                 }
