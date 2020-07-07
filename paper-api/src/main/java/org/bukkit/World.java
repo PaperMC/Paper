@@ -3848,6 +3848,72 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
 
+    // Paper start
+    /**
+     * Locates the nearest biome based on an origin, biome type, and radius to search.
+     * Step defaults to {@code 8}.
+     *
+     * @param origin Origin location
+     * @param biome Biome to find
+     * @param radius radius to search
+     * @return Location of biome or null if not found in specified radius
+     * @deprecated use {@link #locateNearestBiome(Location, int, Biome...)}
+     */
+    @Deprecated
+    @Nullable
+    default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius) {
+        return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, 8, 8, biome)).map(BiomeSearchResult::getLocation).orElse(null);
+    }
+
+    /**
+     * Locates the nearest biome based on an origin, biome type, and radius to search
+     * and step
+     *
+     * @param origin Origin location
+     * @param biome Biome to find
+     * @param radius radius to search
+     * @param step Search step 1 would mean checking every block, 8 would be every 8th block
+     * @return Location of biome or null if not found in specified radius
+     * @deprecated use {@link #locateNearestBiome(Location, int, int, int, Biome...)}
+     */
+    @Deprecated
+    @Nullable
+    default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius, int step) {
+        return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
+    }
+
+    /**
+     * Gets the coordinate scaling of this world.
+     *
+     * @return the coordinate scale
+     */
+    double getCoordinateScale();
+
+    /**
+     * Checks if this world has a fixed time
+     *
+     * @return whether this world has fixed time
+     */
+    boolean isFixedTime();
+
+    /**
+     * Gets the collection of materials that burn infinitely in this world.
+     *
+     * @return the materials that will forever stay lit by fire
+     */
+    @NotNull
+    Collection<Material> getInfiniburn();
+
+    /**
+     * Posts a specified game event at a location
+     *
+     * @param sourceEntity optional source entity
+     * @param gameEvent the game event to post
+     * @param position the position in the world where to post the event to listeners
+     */
+    void sendGameEvent(@Nullable Entity sourceEntity, @NotNull GameEvent gameEvent, @NotNull Vector position);
+    // Paper end
+
     // Spigot start
     @Deprecated(forRemoval = true) // Paper
     public class Spigot {
