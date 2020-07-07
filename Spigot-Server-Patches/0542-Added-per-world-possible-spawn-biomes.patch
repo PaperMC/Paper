@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 7 Jul 2020 11:35:04 -0700
+Subject: [PATCH] Added per-world possible spawn biomes
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e471e764935e2a89560de56959a782b02e5e8fe1..ad7ce27d964d00d968224516f6c0bd09ce92765c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -7,6 +7,12 @@ import java.util.List;
+ import java.util.Map;
+ 
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
++import com.google.common.base.Preconditions;
++import com.google.common.collect.Lists;
++import net.minecraft.server.BiomeBase;
++import net.minecraft.server.IRegistry;
++import net.minecraft.server.MinecraftKey;
++import net.minecraft.server.WorldChunkManager;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.ConfigurationSection;
+@@ -665,4 +671,19 @@ public class PaperWorldConfig {
+             maxLightningFlashDistance = 512; // Vanilla value
+         }
+     }
++
++    public List<BiomeBase> spawnBiomes;
++    private void spawnBiomes() {
++        List<String> def = Lists.newArrayList();
++        WorldChunkManager.getDefaultSpawnBiomes().forEach(biomeBase -> {
++            def.add(IRegistry.BIOME.getKey(biomeBase).toString());
++        });
++        List<String> biomeStrings = getList("valid-spawn-biomes", def);
++        spawnBiomes = Lists.newArrayList();
++        biomeStrings.forEach(s -> {
++            spawnBiomes.add(IRegistry.BIOME.get(new MinecraftKey(s)));
++        });
++        Preconditions.checkArgument(spawnBiomes.size() > 0, "You must have at least 1 spawn biome configured!");
++        log("Possible spawn biomes are: " + String.join(", ", biomeStrings));
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldChunkManager.java b/src/main/java/net/minecraft/server/WorldChunkManager.java
+index b957f1cc5f4ee90852782c9c2c38279d3711c418..fa5a155d545c1f6777bba45d977348cdee3b5b34 100644
+--- a/src/main/java/net/minecraft/server/WorldChunkManager.java
++++ b/src/main/java/net/minecraft/server/WorldChunkManager.java
+@@ -26,6 +26,7 @@ public abstract class WorldChunkManager implements BiomeManager.Provider {
+ 
+     protected abstract Codec<? extends WorldChunkManager> a();
+ 
++    public List<BiomeBase> getPossibleSpawnBiomes(com.destroystokyo.paper.PaperWorldConfig config) { return config.spawnBiomes; } // Paper - OBFHELPER & custom spawn biomes
+     public List<BiomeBase> b() {
+         return WorldChunkManager.e;
+     }
+@@ -132,12 +133,13 @@ public abstract class WorldChunkManager implements BiomeManager.Provider {
+     }
+ 
+     static {
+-        IRegistry.a(IRegistry.BIOME_SOURCE, "fixed", (Object) WorldChunkManagerHell.e);
+-        IRegistry.a(IRegistry.BIOME_SOURCE, "multi_noise", (Object) WorldChunkManagerMultiNoise.f);
+-        IRegistry.a(IRegistry.BIOME_SOURCE, "checkerboard", (Object) WorldChunkManagerCheckerBoard.e);
+-        IRegistry.a(IRegistry.BIOME_SOURCE, "vanilla_layered", (Object) WorldChunkManagerOverworld.e);
+-        IRegistry.a(IRegistry.BIOME_SOURCE, "the_end", (Object) WorldChunkManagerTheEnd.e);
++        IRegistry.a(IRegistry.BIOME_SOURCE, "fixed", WorldChunkManagerHell.e); // Paper - decompile error
++        IRegistry.a(IRegistry.BIOME_SOURCE, "multi_noise", WorldChunkManagerMultiNoise.f); // Paper - decompile error
++        IRegistry.a(IRegistry.BIOME_SOURCE, "checkerboard", WorldChunkManagerCheckerBoard.e); // Paper - decompile error
++        IRegistry.a(IRegistry.BIOME_SOURCE, "vanilla_layered", WorldChunkManagerOverworld.e); // Paper - decompile error
++        IRegistry.a(IRegistry.BIOME_SOURCE, "the_end", WorldChunkManagerTheEnd.e); // Paper - decompile error
+         a = IRegistry.BIOME_SOURCE.dispatchStable(WorldChunkManager::a, Function.identity());
+         e = Lists.newArrayList(new BiomeBase[]{Biomes.FOREST, Biomes.PLAINS, Biomes.TAIGA, Biomes.TAIGA_HILLS, Biomes.WOODED_HILLS, Biomes.JUNGLE, Biomes.JUNGLE_HILLS});
+     }
++    public static List<BiomeBase> getDefaultSpawnBiomes() { return WorldChunkManager.e; } // Paper
+ }
