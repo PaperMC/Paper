@@ -2130,6 +2130,28 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return new CraftStructureSearchResult(CraftStructure.minecraftToBukkit(found.getSecond().value()), CraftLocation.toBukkit(found.getFirst(), this));
     }
 
+    // Paper start
+    @Override
+    public double getCoordinateScale() {
+        return getHandle().dimensionType().coordinateScale();
+    }
+
+    @Override
+    public boolean isFixedTime() {
+        return getHandle().dimensionType().hasFixedTime();
+    }
+
+    @Override
+    public Collection<org.bukkit.Material> getInfiniburn() {
+        return com.google.common.collect.Sets.newHashSet(com.google.common.collect.Iterators.transform(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getTagOrEmpty(this.getHandle().dimensionType().infiniburn()).iterator(), blockHolder -> CraftBlockType.minecraftToBukkit(blockHolder.value())));
+    }
+
+    @Override
+    public void sendGameEvent(Entity sourceEntity, org.bukkit.GameEvent gameEvent, Vector position) {
+        getHandle().gameEvent(sourceEntity != null ? ((CraftEntity) sourceEntity).getHandle(): null, net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT.get(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(gameEvent.getKey())).orElseThrow(), org.bukkit.craftbukkit.util.CraftVector.toBlockPos(position));
+    }
+    // Paper end
+
     @Override
     public BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes) {
         return this.locateNearestBiome(origin, radius, 32, 64, biomes);
