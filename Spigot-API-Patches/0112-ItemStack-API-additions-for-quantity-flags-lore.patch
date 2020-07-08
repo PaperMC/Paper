@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 22 Jun 2018 22:59:18 -0400
+Subject: [PATCH] ItemStack API additions for quantity/flags/lore
+
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 125b74dd8263ab04a5df51764726efda15c1fca7..4940ba6a979cec5bea0edc24b94149298c256bc3 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -2,7 +2,9 @@ package org.bukkit.inventory;
+ 
+ import com.google.common.collect.ImmutableMap;
+ import java.util.LinkedHashMap;
++import java.util.List; // Paper
+ import java.util.Map;
++import java.util.Set; // Paper
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+@@ -629,5 +631,140 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+         // Requires access to NMS
+         return ensureServerConversions().getMaxItemUseDuration();
+     }
++
++    /**
++     * Clones the itemstack and returns it a single quantity.
++     * @return The new itemstack with 1 quantity
++     */
++    @NotNull
++    public ItemStack asOne() {
++        return asQuantity(1);
++    }
++
++    /**
++     * Clones the itemstack and returns it as the specified quantity
++     * @param qty The quantity of the cloned item
++     * @return The new itemstack with specified quantity
++     */
++    @NotNull
++    public ItemStack asQuantity(int qty) {
++        ItemStack clone = clone();
++        clone.setAmount(qty);
++        return clone;
++    }
++
++    /**
++     * Adds 1 to this itemstack. Will not go over the items max stack size.
++     * @return The same item (not a clone)
++     */
++    @NotNull
++    public ItemStack add() {
++        return add(1);
++    }
++
++    /**
++     * Adds quantity to this itemstack. Will not go over the items max stack size.
++     *
++     * @param qty The amount to add
++     * @return The same item (not a clone)
++     */
++    @NotNull
++    public ItemStack add(int qty) {
++        setAmount(Math.min(getMaxStackSize(), getAmount() + qty));
++        return this;
++    }
++
++    /**
++     * Subtracts 1 to this itemstack.  Going to 0 or less will invalidate the item.
++     * @return The same item (not a clone)
++     */
++    @NotNull
++    public ItemStack subtract() {
++        return subtract(1);
++    }
++
++    /**
++     * Subtracts quantity to this itemstack. Going to 0 or less will invalidate the item.
++     *
++     * @param qty The amount to add
++     * @return The same item (not a clone)
++     */
++    @NotNull
++    public ItemStack subtract(int qty) {
++        setAmount(Math.max(0, getAmount() - qty));
++        return this;
++    }
++
++    /**
++     * If the item has lore, returns it, else it will return null
++     * @return The lore, or null
++     */
++    @Nullable
++    public List<String> getLore() {
++        if (!hasItemMeta()) {
++            return null;
++        }
++        ItemMeta itemMeta = getItemMeta();
++        if (!itemMeta.hasLore()) {
++            return null;
++        }
++        return itemMeta.getLore();
++    }
++
++    /**
++     * Sets the lore for this item.
++     * Removes lore when given null.
++     *
++     * @param lore the lore that will be set
++     */
++    public void setLore(@Nullable List<String> lore) {
++        ItemMeta itemMeta = getItemMeta();
++        itemMeta.setLore(lore);
++        setItemMeta(itemMeta);
++    }
++
++    /**
++     * Set itemflags which should be ignored when rendering a ItemStack in the Client. This Method does silently ignore double set itemFlags.
++     *
++     * @param itemFlags The hideflags which shouldn't be rendered
++     */
++    public void addItemFlags(@NotNull ItemFlag... itemFlags) {
++        ItemMeta itemMeta = getItemMeta();
++        itemMeta.addItemFlags(itemFlags);
++        setItemMeta(itemMeta);
++    }
++
++    /**
++     * Remove specific set of itemFlags. This tells the Client it should render it again. This Method does silently ignore double removed itemFlags.
++     *
++     * @param itemFlags Hideflags which should be removed
++     */
++    public void removeItemFlags(@NotNull ItemFlag... itemFlags) {
++        ItemMeta itemMeta = getItemMeta();
++        itemMeta.removeItemFlags(itemFlags);
++        setItemMeta(itemMeta);
++    }
++
++    /**
++     * Get current set itemFlags. The collection returned is unmodifiable.
++     *
++     * @return A set of all itemFlags set
++     */
++    @NotNull
++    public Set<ItemFlag> getItemFlags() {
++        ItemMeta itemMeta = getItemMeta();
++        return itemMeta.getItemFlags();
++    }
++
++    /**
++     * Check if the specified flag is present on this item.
++     *
++     * @param flag the flag to check
++     * @return if it is present
++     */
++    public boolean hasItemFlag(@NotNull ItemFlag flag) {
++        ItemMeta itemMeta = getItemMeta();
++        return itemMeta.hasItemFlag(flag);
++    }
+     // Paper end
+ }

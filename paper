@@ -36,6 +36,13 @@ case "$1" in
         scripts/rebuildPatches.sh "$basedir" $2 || exit 1
     ) || failed=1
     ;;
+    "rbf" | "rbfull")
+    (
+        set -e
+        cd "$basedir"
+        scripts/rebuildPatches.sh "$basedir" "nofilter" || exit 1
+    ) || failed=1
+    ;;
     "p" | "patch")
     (
         set -e
@@ -48,6 +55,24 @@ case "$1" in
         set -e
         cd "$basedir"
         scripts/build.sh "$basedir" "--jar" || exit 1
+    ) || failed=1
+    ;;
+    "b" | "build")
+    (
+        set -e
+        cd "$basedir"
+        scripts/build.sh "$basedir" || exit 1
+        (cd Paper-API ; mvn clean install) || exit 1
+        (cd Paper-Server ; mvn clean package) || exit 1
+        echo "Paper jar successfully built"
+        ls -la Paper-Server/target/paper*.jar
+    ) || failed=1
+    ;;
+    "pc" | "paperclip")
+    (
+        set -e
+        cd "$basedir"
+        scripts/paperclip.sh "$basedir" || exit 1
     ) || failed=1
     ;;
     "make")
@@ -104,10 +129,18 @@ case "$1" in
         rm -rf work
         echo "Cleaned build files"
     ;;
+    "con" | "continue")
+        if [ -d ".git/rebase-apply" ]; then
+            git -c commit.gpgsign=false am --continue
+        elif [ -d ".git/rebase-merge" ]; then
+            git -c commit.gpgsign=false rebase --continue
+        fi
+    ;;
     "e" | "edit")
         case "$2" in
             "s" | "server")
-            export PAPER_LAST_EDIT="$basedir/Paper-Server"
+            mkdir -p "$basedir/work/Temp"
+            echo "$basedir/Paper-Server" > "$basedir/work/Temp/PAPER_LAST_EDIT"
             cd "$basedir/Paper-Server"
             (
                 set -e
@@ -118,7 +151,8 @@ case "$1" in
             )
             ;;
             "a" | "api")
-            export PAPER_LAST_EDIT="$basedir/Paper-API"
+            mkdir -p "$basedir/work/Temp"
+            echo "$basedir/Paper-API" > "$basedir/work/Temp/PAPER_LAST_EDIT"
             cd "$basedir/Paper-API"
             (
                 set -e
@@ -129,8 +163,8 @@ case "$1" in
             )
             ;;
             "c" | "continue")
-            cd "$PAPER_LAST_EDIT"
-            unset PAPER_LAST_EDIT
+            cd "$( < "$basedir/work/Temp/PAPER_LAST_EDIT")"
+            rm -f "$basedir/work/Temp/PAPER_LAST_EDIT"
             (
                 set -e
 

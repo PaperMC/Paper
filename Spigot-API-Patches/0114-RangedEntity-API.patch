@@ -1,0 +1,159 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 26 Jun 2018 21:34:40 -0400
+Subject: [PATCH] RangedEntity API
+
+Allows you to determine if an entity is capable of ranged attacks,
+and to perform an attack.
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/RangedEntity.java b/src/main/java/com/destroystokyo/paper/entity/RangedEntity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f2e3233a3d1744e32fb76d3731b9858ef0067e30
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/RangedEntity.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.entity;
++
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Mob;
++import org.jetbrains.annotations.NotNull;
++
++public interface RangedEntity extends Mob {
++    /**
++     * Attack the specified entity using a ranged attack.
++     *
++     * @param target the entity to target
++     * @param charge How "charged" the attack is (how far back the bow was pulled for Bow attacks).
++     *               This should be a value between 0 and 1, represented as targetDistance/maxDistance.
++     */
++    void rangedAttack(@NotNull LivingEntity target, float charge);
++
++    /**
++     * Sets that the Entity is "charging" up an attack, by raising its hands
++     *
++     * @param raiseHands Whether the entities hands are raised to charge attack
++     */
++    void setChargingAttack(boolean raiseHands);
++
++    /**
++     * Alias to {@link LivingEntity#isHandRaised()}, if the entity is charging an attack
++     * @return If entities hands are raised
++     */
++    default boolean isChargingAttack() {
++        return isHandRaised();
++    }
++}
+diff --git a/src/main/java/org/bukkit/entity/Drowned.java b/src/main/java/org/bukkit/entity/Drowned.java
+index 1dee177ae6e21da000607dc8dd8fd76857f323b9..8d1ad9ef757cb1e8d72b145262df73612a76c746 100644
+--- a/src/main/java/org/bukkit/entity/Drowned.java
++++ b/src/main/java/org/bukkit/entity/Drowned.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
++
+ /**
+  * Drowned zombie.
+  */
+-public interface Drowned extends Zombie { }
++public interface Drowned extends Zombie, RangedEntity { } // Paper
+diff --git a/src/main/java/org/bukkit/entity/Illusioner.java b/src/main/java/org/bukkit/entity/Illusioner.java
+index 7c92c431b32754dca12b4d584bd6fa93ff73badf..14e6c5ee06ece3d1bbc1239afa67c847a479948f 100644
+--- a/src/main/java/org/bukkit/entity/Illusioner.java
++++ b/src/main/java/org/bukkit/entity/Illusioner.java
+@@ -1,6 +1,10 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
++
+ /**
+  * Represents an Illusioner "Illager".
+  */
+-public interface Illusioner extends Spellcaster { }
++public interface Illusioner extends Spellcaster, RangedEntity { // Paper
++
++}
+diff --git a/src/main/java/org/bukkit/entity/Llama.java b/src/main/java/org/bukkit/entity/Llama.java
+index c43854298548391679c1d280bd42edbeed7759b9..d23226ccb0f6c25028f000ce31346cd0a8898e6a 100644
+--- a/src/main/java/org/bukkit/entity/Llama.java
++++ b/src/main/java/org/bukkit/entity/Llama.java
+@@ -1,12 +1,13 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
+ import org.bukkit.inventory.LlamaInventory;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Represents a Llama.
+  */
+-public interface Llama extends ChestedHorse {
++public interface Llama extends ChestedHorse, RangedEntity { // Paper
+ 
+     /**
+      * Represents the base color that the llama has.
+diff --git a/src/main/java/org/bukkit/entity/Skeleton.java b/src/main/java/org/bukkit/entity/Skeleton.java
+index 16b1293887cee2bc5267f3da771fb5a6ece1b4e9..1c367f78eadf24850061a84ce63b950b79d3c435 100644
+--- a/src/main/java/org/bukkit/entity/Skeleton.java
++++ b/src/main/java/org/bukkit/entity/Skeleton.java
+@@ -2,11 +2,12 @@ package org.bukkit.entity;
+ 
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
++import com.destroystokyo.paper.entity.RangedEntity;
+ 
+ /**
+  * Represents a Skeleton.
+  */
+-public interface Skeleton extends Monster {
++public interface Skeleton extends Monster, RangedEntity { // Paper
+ 
+     /**
+      * Gets the current type of this skeleton.
+diff --git a/src/main/java/org/bukkit/entity/Snowman.java b/src/main/java/org/bukkit/entity/Snowman.java
+index 818efe2a4d1ac0c4d8dca6c757850d99cdc2cb4b..10f8f6d45ae9280651c3ebddd1f90acbd7d6ff29 100644
+--- a/src/main/java/org/bukkit/entity/Snowman.java
++++ b/src/main/java/org/bukkit/entity/Snowman.java
+@@ -1,9 +1,11 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
++
+ /**
+  * Represents a snowman entity
+  */
+-public interface Snowman extends Golem {
++public interface Snowman extends Golem, RangedEntity { // Paper
+ 
+     /**
+      * Gets whether this snowman is in "derp mode", meaning it is not wearing a
+diff --git a/src/main/java/org/bukkit/entity/Witch.java b/src/main/java/org/bukkit/entity/Witch.java
+index b4343903b66a7fb5250c1da2e09c9e5863c20daf..aa88aede6c4e66a608a63d07bc66d60357b0bee9 100644
+--- a/src/main/java/org/bukkit/entity/Witch.java
++++ b/src/main/java/org/bukkit/entity/Witch.java
+@@ -1,7 +1,9 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
++
+ /**
+  * Represents a Witch
+  */
+-public interface Witch extends Raider {
++public interface Witch extends Raider, RangedEntity { // Paper
+ }
+diff --git a/src/main/java/org/bukkit/entity/Wither.java b/src/main/java/org/bukkit/entity/Wither.java
+index 3bc332ee7f7d428bef6e2566ddded8b941858e2e..426d3693317cd303d35d8203026b528d87e401d5 100644
+--- a/src/main/java/org/bukkit/entity/Wither.java
++++ b/src/main/java/org/bukkit/entity/Wither.java
+@@ -1,7 +1,9 @@
+ package org.bukkit.entity;
+ 
++import com.destroystokyo.paper.entity.RangedEntity;
++
+ /**
+  * Represents a Wither boss
+  */
+-public interface Wither extends Monster, Boss {
++public interface Wither extends Monster, Boss, RangedEntity { // Paper
+ }

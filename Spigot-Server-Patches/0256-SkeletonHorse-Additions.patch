@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 27 Jul 2018 22:36:31 -0500
+Subject: [PATCH] SkeletonHorse Additions
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityHorseSkeleton.java b/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
+index 2aee4c592cbf7e083c522a35846735bdb7a2e448..43e605f682709708f5b79c70398691dc195ef925 100644
+--- a/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
++++ b/src/main/java/net/minecraft/server/EntityHorseSkeleton.java
+@@ -6,7 +6,7 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+ 
+     private final PathfinderGoalHorseTrap bD = new PathfinderGoalHorseTrap(this);
+     private boolean bE;
+-    private int bF;
++    private int bF; public int getTrapTime() { return this.bF; } // Paper - OBFHELPER
+ 
+     public EntityHorseSkeleton(EntityTypes<? extends EntityHorseSkeleton> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -125,10 +125,12 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+         return 0.96F;
+     }
+ 
++    public boolean isTrap() { return this.eN(); } // Paper - OBFHELPER
+     public boolean eN() {
+         return this.bE;
+     }
+ 
++    public void setTrap(boolean trap) { this.t(trap); } // Paper - OBFHELPER
+     public void t(boolean flag) {
+         if (flag != this.bE) {
+             this.bE = flag;
+diff --git a/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java b/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
+index d6b02adf9fe8287d600d76fb1c3be86fdee1fa77..b37e4aa37b35863d74cb6ef95562fba65486bdf9 100644
+--- a/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
++++ b/src/main/java/net/minecraft/server/PathfinderGoalHorseTrap.java
+@@ -15,6 +15,7 @@ public class PathfinderGoalHorseTrap extends PathfinderGoal {
+ 
+     @Override
+     public void e() {
++        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.a.getBukkitEntity()).callEvent()) return; // Paper
+         DifficultyDamageScaler difficultydamagescaler = this.a.world.getDamageScaler(this.a.getChunkCoordinates());
+ 
+         this.a.t(false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+index e822c2200d6270ca538eadd9637b748fc3602cb6..2a7d1d4ec2c1ff16840614165c6f0c37dc534d87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+@@ -26,4 +26,26 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
+     public Variant getVariant() {
+         return Variant.SKELETON_HORSE;
+     }
++
++    // Paper start
++    @Override
++    public EntityHorseSkeleton getHandle() {
++        return (EntityHorseSkeleton) super.getHandle();
++    }
++
++    @Override
++    public int getTrapTime() {
++        return getHandle().getTrapTime();
++    }
++
++    @Override
++    public boolean isTrap() {
++        return getHandle().isTrap();
++    }
++
++    @Override
++    public void setTrap(boolean trap) {
++        getHandle().setTrap(trap);
++    }
++    // Paper end
+ }

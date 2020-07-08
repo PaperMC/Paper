@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 11 May 2020 04:18:54 -0400
+Subject: [PATCH] Optimize Pathfinder - Remove Streams / Optimized collections
+
+I utilized the IDE to convert streams to non streams code, so shouldn't
+be any risk of behavior change. Only did minor optimization of the
+generated code set to remove unnecessary things.
+
+I expect us to just drop this patch on next major update and re-apply
+it with the IDE again and re-apply the collections optimization.
+
+Optimize collection by creating a list instead of a set of the key and value.
+
+This lets us get faster foreach iteration, as well as avoids map lookups on
+the values when needed.
+
+diff --git a/src/main/java/net/minecraft/server/Pathfinder.java b/src/main/java/net/minecraft/server/Pathfinder.java
+index 67c63cfe333e328cbd00ada970bd81efebfe30b6..71b96943d865105f279dda613b7ac6b3ffed793b 100644
+--- a/src/main/java/net/minecraft/server/Pathfinder.java
++++ b/src/main/java/net/minecraft/server/Pathfinder.java
+@@ -31,9 +31,15 @@ public class Pathfinder {
+         this.a.a();
+         this.e.a(chunkcache, entityinsentient);
+         PathPoint pathpoint = this.e.b();
+-        Map<PathDestination, BlockPosition> map = (Map) set.stream().collect(Collectors.toMap((blockposition) -> {
+-            return this.e.a((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
+-        }, Function.identity()));
++        // Paper start - remove streams - and optimize collection
++        List<Map.Entry<PathDestination, BlockPosition>> map = new java.util.ArrayList<>();
++        for (BlockPosition blockposition : set) {
++            // cast is important
++            //noinspection RedundantCast
++            PathDestination path = this.e.a((double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ());
++            map.add(new java.util.AbstractMap.SimpleEntry<>(path, blockposition));
++        }
++        // Paper end
+         PathEntity pathentity = this.a(pathpoint, map, f, i, f1);
+ 
+         this.e.a();
+@@ -41,11 +47,11 @@ public class Pathfinder {
+     }
+ 
+     @Nullable
+-    private PathEntity a(PathPoint pathpoint, Map<PathDestination, BlockPosition> map, float f, int i, float f1) {
+-        Set<PathDestination> set = map.keySet();
++    private PathEntity a(PathPoint pathpoint, java.util.List<java.util.Map.Entry<PathDestination, BlockPosition>> list, float f, int i, float f1) { // Paper - list instead of set
++        //Set<PathDestination> set = map.keySet(); // Paper
+ 
+         pathpoint.e = 0.0F;
+-        pathpoint.f = this.a(pathpoint, set);
++        pathpoint.f = this.a(pathpoint, list); // Paper - list instead of map
+         pathpoint.g = pathpoint.f;
+         this.a.a();
+         this.b.clear();
+@@ -62,10 +68,23 @@ public class Pathfinder {
+             PathPoint pathpoint1 = this.a.c();
+ 
+             pathpoint1.i = true;
+-            set.stream().filter((pathdestination) -> {
+-                return pathpoint1.c((PathPoint) pathdestination) <= (float) i;
+-            }).forEach(PathDestination::e);
+-            if (set.stream().anyMatch(PathDestination::f)) {
++            // Paper start - remove streams
++            for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
++                PathDestination pathdestination = list.get(i1).getKey();
++                if (pathpoint1.c(pathdestination) <= (float) i) {
++                    pathdestination.e();
++                }
++            }
++            boolean result = false;
++            for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
++                PathDestination pathdestination = list.get(i1).getKey();
++                if (pathdestination.f()) {
++                    result = true;
++                    break;
++                }
++            }
++            if (result) {
++                // Paper end
+                 break;
+             }
+ 
+@@ -82,7 +101,7 @@ public class Pathfinder {
+                     if (pathpoint2.j < f && (!pathpoint2.c() || f3 < pathpoint2.e)) {
+                         pathpoint2.h = pathpoint1;
+                         pathpoint2.e = f3;
+-                        pathpoint2.f = this.a(pathpoint2, set) * 1.5F;
++                        pathpoint2.f = this.a(pathpoint2, list) * 1.5F; // Paper - use list instead of map
+                         if (pathpoint2.c()) {
+                             this.a.a(pathpoint2, pathpoint2.e + pathpoint2.f);
+                         } else {
+@@ -94,36 +113,49 @@ public class Pathfinder {
+             }
+         }
+ 
+-        Stream stream;
+ 
+-        if (set.stream().anyMatch(PathDestination::f)) {
+-            stream = set.stream().filter(PathDestination::f).map((pathdestination) -> {
+-                return this.a(pathdestination.d(), (BlockPosition) map.get(pathdestination), true);
+-            }).sorted(Comparator.comparingInt(PathEntity::e));
+-        } else {
+-            stream = set.stream().map((pathdestination) -> {
+-                return this.a(pathdestination.d(), (BlockPosition) map.get(pathdestination), false);
+-            }).sorted(Comparator.comparingDouble(PathEntity::l).thenComparingInt(PathEntity::e));
++        // Paper start - remove streams
++        boolean result = false;
++        for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
++            PathDestination pathDestination = list.get(i1).getKey(); // Paper
++            if (pathDestination.f()) {
++                result = true;
++                break;
++            }
+         }
+-
+-        Optional<PathEntity> optional = stream.findFirst();
+-
+-        if (!optional.isPresent()) {
+-            return null;
++        List<PathEntity> candidates = new java.util.ArrayList<>();
++        if (result) {
++            for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
++                Map.Entry<PathDestination, BlockPosition> entry = list.get(i1);
++                PathDestination pathdestination = entry.getKey();
++                if (pathdestination.f()) {
++                    PathEntity pathEntity = this.a(pathdestination.d(), entry.getValue(), true);
++                    candidates.add(pathEntity);
++                }
++            }
++            if (candidates.isEmpty()) return null;
++            candidates.sort(Comparator.comparingInt(PathEntity::e));
+         } else {
+-            PathEntity pathentity = (PathEntity) optional.get();
+-
+-            return pathentity;
++            for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
++                Map.Entry<PathDestination, BlockPosition> entry = list.get(i1);
++                PathDestination pathdestination = entry.getKey();
++                PathEntity pathEntity = this.a(pathdestination.d(), entry.getValue(), false);
++                candidates.add(pathEntity);
++            }
++            if (candidates.isEmpty()) return null;
++            candidates.sort(Comparator.comparingDouble(PathEntity::l).thenComparingInt(PathEntity::e));
+         }
++        return candidates.get(0);
++        // Paper end
+     }
+ 
+-    private float a(PathPoint pathpoint, Set<PathDestination> set) {
++    private float a(PathPoint pathpoint, java.util.List<java.util.Map.Entry<PathDestination, BlockPosition>> list) {
+         float f = Float.MAX_VALUE;
+ 
+         float f1;
+ 
+-        for (Iterator iterator = set.iterator(); iterator.hasNext(); f = Math.min(f1, f)) {
+-            PathDestination pathdestination = (PathDestination) iterator.next();
++        for (int i = 0, listSize = list.size(); i < listSize; f = Math.min(f1, f), i++) { // Paper
++            PathDestination pathdestination = list.get(i).getKey(); // Paper
+ 
+             f1 = pathpoint.a(pathdestination);
+             pathdestination.a(f1, pathpoint);

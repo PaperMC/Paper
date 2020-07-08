@@ -1,0 +1,266 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Nov 2017 13:17:09 -0500
+Subject: [PATCH] AsyncTabCompleteEvent
+
+Let plugins be able to control tab completion of commands and chat async.
+
+This will be useful for frameworks like ACF so we can define async safe completion handlers,
+and avoid going to main for tab completions.
+
+Especially useful if you need to query a database in order to obtain the results for tab
+completion, such as offline players.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..619ed37169c126a8c75d02699a04728bac49d10d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
+@@ -0,0 +1,177 @@
++/*
++ * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
++ *
++ *  Permission is hereby granted, free of charge, to any person obtaining
++ *  a copy of this software and associated documentation files (the
++ *  "Software"), to deal in the Software without restriction, including
++ *  without limitation the rights to use, copy, modify, merge, publish,
++ *  distribute, sublicense, and/or sell copies of the Software, and to
++ *  permit persons to whom the Software is furnished to do so, subject to
++ *  the following conditions:
++ *
++ *  The above copyright notice and this permission notice shall be
++ *  included in all copies or substantial portions of the Software.
++ *
++ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++ *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++ *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++ *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++package com.destroystokyo.paper.event.server;
++
++import com.google.common.collect.ImmutableList;
++import org.apache.commons.lang.Validate;
++import org.bukkit.Location;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import java.util.ArrayList;
++import java.util.List;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Allows plugins to compute tab completion results asynchronously. If this event provides completions, then the standard synchronous process will not be fired to populate the results. However, the synchronous TabCompleteEvent will fire with the Async results.
++ *
++ * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
++ */
++public class AsyncTabCompleteEvent extends Event implements Cancellable {
++    @NotNull private final CommandSender sender;
++    @NotNull private final String buffer;
++    private final boolean isCommand;
++    @Nullable
++    private final Location loc;
++    @NotNull private List<String> completions;
++    private boolean cancelled;
++    private boolean handled = false;
++    private boolean fireSyncHandler = true;
++
++    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull List<String> completions, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
++        super(true);
++        this.sender = sender;
++        this.completions = completions;
++        this.buffer = buffer;
++        this.isCommand = isCommand;
++        this.loc = loc;
++    }
++
++    /**
++     * Get the sender completing this command.
++     *
++     * @return the {@link CommandSender} instance
++     */
++    @NotNull
++    public CommandSender getSender() {
++        return sender;
++    }
++
++    /**
++     * The list of completions which will be offered to the sender, in order.
++     * This list is mutable and reflects what will be offered.
++     *
++     * If this collection is not empty after the event is fired, then
++     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * or current player names will not be called.
++     *
++     * @return a list of offered completions
++     */
++    @NotNull
++    public List<String> getCompletions() {
++        return completions;
++    }
++
++    /**
++     * Set the completions offered, overriding any already set.
++     * If this collection is not empty after the event is fired, then
++     * the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * or current player names will not be called.
++     *
++     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
++     *
++     * @param completions the new completions
++     */
++    public void setCompletions(@NotNull List<String> completions) {
++        Validate.notNull(completions);
++        this.completions = new ArrayList<>(completions);
++    }
++
++    /**
++     * Return the entire buffer which formed the basis of this completion.
++     *
++     * @return command buffer, as entered
++     */
++    @NotNull
++    public String getBuffer() {
++        return buffer;
++    }
++
++    /**
++     * @return True if it is a command being tab completed, false if it is a chat message.
++     */
++    public boolean isCommand() {
++        return isCommand;
++    }
++
++    /**
++     * @return The position looked at by the sender, or null if none
++     */
++    @Nullable
++    public Location getLocation() {
++        return loc;
++    }
++
++    /**
++     * If true, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * or current player names will not be called.
++     *
++     * @return Is completions considered handled. Always true if completions is not empty.
++     */
++    public boolean isHandled() {
++        return !completions.isEmpty() || handled;
++    }
++
++    /**
++     * Sets whether or not to consider the completion request handled.
++     * If true, the standard process of calling {@link Command#tabComplete(CommandSender, String, String[])}
++     * or current player names will not be called.
++     *
++     * @param handled if this completion should be marked as being handled
++     */
++    public void setHandled(boolean handled) {
++        this.handled = handled;
++    }
++
++    private static final HandlerList handlers = new HandlerList();
++
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    /**
++     * Will provide no completions, and will not fire the synchronous process
++     * @param cancelled true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
+index d1a9956a1573dab54c5ff2e5d67ca86cfe1dc01a..f96c4ba53ab41ea66d4f9a4d54eeabb63f992b58 100644
+--- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
++++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.event.server;
+ 
++import java.util.ArrayList;
+ import java.util.List;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.command.CommandSender;
+@@ -8,6 +9,7 @@ import org.bukkit.event.Event;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.event.player.PlayerCommandSendEvent;
+ import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Called when a {@link CommandSender} of any description (ie: player or
+@@ -29,6 +31,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
+     private boolean cancelled;
+ 
+     public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
++        // Paper start
++        this(sender, buffer, completions, sender instanceof org.bukkit.command.ConsoleCommandSender || buffer.startsWith("/"), null);
++    }
++    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @Nullable org.bukkit.Location location) {
++        this.isCommand = isCommand;
++        this.loc = location;
++        // Paper end
+         Validate.notNull(sender, "sender");
+         Validate.notNull(buffer, "buffer");
+         Validate.notNull(completions, "completions");
+@@ -69,14 +78,35 @@ public class TabCompleteEvent extends Event implements Cancellable {
+         return completions;
+     }
+ 
++    // Paper start
++    private final boolean isCommand;
++    private final org.bukkit.Location loc;
++    /**
++     * @return True if it is a command being tab completed, false if it is a chat message.
++     */
++    public boolean isCommand() {
++        return isCommand;
++    }
++
++    /**
++     * @return The position looked at by the sender, or null if none
++     */
++    @Nullable
++    public org.bukkit.Location getLocation() {
++        return loc;
++    }
++    // Paper end
++
+     /**
+      * Set the completions offered, overriding any already set.
+      *
++     * The passed collection will be cloned to a new List. You must call {{@link #getCompletions()}} to mutate from here
++     *
+      * @param completions the new completions
+      */
+     public void setCompletions(@NotNull List<String> completions) {
+         Validate.notNull(completions);
+-        this.completions = completions;
++        this.completions = new ArrayList<>(completions); // Paper
+     }
+ 
+     @Override

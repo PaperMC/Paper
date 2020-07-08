@@ -1,4 +1,4 @@
-From 1765e5585c2c52e2ea84b77aeaeccef7c5e4192e Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Mon, 29 Feb 2016 18:48:17 -0600
 Subject: [PATCH] Timings v2
@@ -6,14 +6,15 @@ Subject: [PATCH] Timings v2
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 000000000..64531fcce
+index 0000000000000000000000000000000000000000..dfaa266ff53e43ad48dc5a5a5657fe70600f539a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,85 @@
 +package co.aikar.timings;
 +
 +import static co.aikar.timings.TimingsManager.*;
 +
++import org.bukkit.Bukkit;
 +import org.jetbrains.annotations.NotNull;
 +
 +public class FullServerTickHandler extends TimingHandler {
@@ -42,7 +43,7 @@ index 000000000..64531fcce
 +    @Override
 +    public void stopTiming() {
 +        super.stopTiming();
-+        if (!isEnabled()) {
++        if (!isEnabled() || Bukkit.isStopping()) {
 +            return;
 +        }
 +        if (TimingHistory.timedTicks % 20 == 0) {
@@ -87,7 +88,7 @@ index 000000000..64531fcce
 +            TimingsManager.HISTORY.add(new TimingHistory());
 +            TimingsManager.resetTimings();
 +        }
-+        TimingsExport.reportTimings();
++        Bukkit.getUnsafe().reportTimings();
 +    }
 +
 +    boolean isViolated() {
@@ -96,7 +97,7 @@ index 000000000..64531fcce
 +}
 diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
 new file mode 100644
-index 000000000..9b45ce887
+index 0000000000000000000000000000000000000000..9b45ce887b9172f30302b83fe24b99b76b16dac3
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
 @@ -0,0 +1,68 @@
@@ -170,7 +171,7 @@ index 000000000..9b45ce887
 +}
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 new file mode 100644
-index 000000000..933ecf9bd
+index 0000000000000000000000000000000000000000..4e6e1b8e8aeb07e34536941d2cbfc25e5cfa6c27
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 @@ -0,0 +1,83 @@
@@ -242,8 +243,8 @@ index 000000000..933ecf9bd
 +
 +        final String eventName = eventClass.getSimpleName();
 +        boolean verbose = "BlockPhysicsEvent".equals(eventName);
-+        this.timings = Timings.ofSafe(plugin.getName(), (verbose ? "## " : "") +
-+            "Event: " + id + " (" + eventName + ")", null);
++        this.timings = Timings.ofSafe(plugin, (verbose ? "## " : "") +
++            "Event: " + id + " (" + eventName + ")");
 +    }
 +
 +    @Override
@@ -259,7 +260,7 @@ index 000000000..933ecf9bd
 +}
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
 new file mode 100644
-index 000000000..a21e5ead5
+index 0000000000000000000000000000000000000000..a21e5ead5024fd0058c5e3302d8201dd249d32bc
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timing.java
 @@ -0,0 +1,83 @@
@@ -348,7 +349,7 @@ index 000000000..a21e5ead5
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingData.java b/src/main/java/co/aikar/timings/TimingData.java
 new file mode 100644
-index 000000000..a5d13a1e4
+index 0000000000000000000000000000000000000000..a5d13a1e44edb861f45c83a9b4309fbf799d407d
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingData.java
 @@ -0,0 +1,122 @@
@@ -476,10 +477,10 @@ index 000000000..a5d13a1e4
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
 new file mode 100644
-index 000000000..cc0390c06
+index 0000000000000000000000000000000000000000..199789d56d22fcb1b77ebd56805cc28aa5a5ab0a
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHandler.java
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,226 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -608,13 +609,12 @@ index 000000000..cc0390c06
 +        TimingHandler last;
 +        while ((last = TIMING_STACK.removeLast()) != this) {
 +            last.timingDepth = 0;
-+            String reportTo;
 +            if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
-+                reportTo = "Paper! This is a potential bug in Paper";
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
 +            } else {
-+                reportTo = "the plugin " + last.identifier.group + "(Look for errors above this in the logs)";
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
 +            }
-+            Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to " + reportTo + " (" + last.identifier + " did not stopTiming)", new Throwable());
++
 +            boolean found = TIMING_STACK.contains(this);
 +            if (!found) {
 +                // We aren't even in the stack... Don't pop everything
@@ -709,7 +709,7 @@ index 000000000..cc0390c06
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 000000000..ddaed8127
+index 0000000000000000000000000000000000000000..ddaed81275fcc12d1671b668697acf318e96888b
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
 @@ -0,0 +1,354 @@
@@ -1069,7 +1069,7 @@ index 000000000..ddaed8127
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 new file mode 100644
-index 000000000..86d5ac6bd
+index 0000000000000000000000000000000000000000..86d5ac6bd0d7d0003688761aceb3f3343575319f
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
 @@ -0,0 +1,58 @@
@@ -1133,7 +1133,7 @@ index 000000000..86d5ac6bd
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
 new file mode 100644
-index 000000000..df142a89b
+index 0000000000000000000000000000000000000000..df142a89b8c43acb81eb383eac0ef048a1f49a6e
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
 @@ -0,0 +1,116 @@
@@ -1255,10 +1255,10 @@ index 000000000..df142a89b
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 000000000..0b34e0d01
+index 0000000000000000000000000000000000000000..da76e1aaee1dee794e38ddd4e0a28e0071e90bbf
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,296 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1286,11 +1286,13 @@ index 000000000..0b34e0d01
 +
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.EvictingQueue;
++import com.google.common.collect.Lists;
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.plugin.Plugin;
 +
++import java.util.List;
 +import java.util.Queue;
 +import java.util.logging.Level;
 +import org.jetbrains.annotations.NotNull;
@@ -1299,6 +1301,7 @@ index 000000000..0b34e0d01
 +@SuppressWarnings({"UnusedDeclaration", "WeakerAccess", "SameParameterValue"})
 +public final class Timings {
 +
++    final static List<CommandSender> requestingReport = Lists.newArrayList();
 +    private static final int MAX_HISTORY_FRAMES = 12;
 +    public static final Timing NULL_HANDLER = new NullTimingHandler();
 +    static boolean timingsEnabled = false;
@@ -1509,7 +1512,7 @@ index 000000000..0b34e0d01
 +        if (sender == null) {
 +            sender = Bukkit.getConsoleSender();
 +        }
-+        TimingsExport.requestingReport.add(sender);
++        requestingReport.add(sender);
 +    }
 +
 +    /**
@@ -1519,7 +1522,7 @@ index 000000000..0b34e0d01
 +     */
 +    public static void generateReport(@NotNull TimingsReportListener sender) {
 +        Validate.notNull(sender);
-+        TimingsExport.requestingReport.add(sender);
++        requestingReport.add(sender);
 +    }
 +
 +    /*
@@ -1554,10 +1557,10 @@ index 000000000..0b34e0d01
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 000000000..c0d8f2016
+index 0000000000000000000000000000000000000000..f7c2245a310a084367ff25db539b3c967d5cb141
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,119 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1649,9 +1652,6 @@ index 000000000..c0d8f2016
 +                lastResetAttempt = now;
 +                sender.sendMessage(ChatColor.RED + "WARNING: Timings v2 should not be reset. If you are encountering lag, please wait 3 minutes and then issue a report. The best timings will include 10+ minutes, with data before and after your lag period. If you really want to reset, run this command again within 30 seconds.");
 +            }
-+
-+        } else if ("cost".equals(arg)) {
-+            sender.sendMessage("Timings cost: " + TimingsExport.getCost());
 +        } else  if (
 +            "paste".equalsIgnoreCase(arg) ||
 +                "report".equalsIgnoreCase(arg) ||
@@ -1680,370 +1680,9 @@ index 000000000..c0d8f2016
 +        return ImmutableList.of();
 +    }
 +}
-diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
-new file mode 100644
-index 000000000..93d5a3f97
---- /dev/null
-+++ b/src/main/java/co/aikar/timings/TimingsExport.java
-@@ -0,0 +1,355 @@
-+/*
-+ * This file is licensed under the MIT License (MIT).
-+ *
-+ * Copyright (c) 2014 Daniel Ennis <http://aikar.co>
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ */
-+package co.aikar.timings;
-+
-+import com.google.common.collect.Lists;
-+import com.google.common.collect.Sets;
-+import org.apache.commons.lang.StringUtils;
-+import org.bukkit.Bukkit;
-+import org.bukkit.ChatColor;
-+import org.bukkit.Material;
-+import org.bukkit.command.CommandSender;
-+import org.bukkit.configuration.ConfigurationSection;
-+import org.bukkit.configuration.MemorySection;
-+import org.bukkit.entity.EntityType;
-+import org.json.simple.JSONObject;
-+import org.json.simple.JSONValue;
-+
-+import java.io.ByteArrayOutputStream;
-+import java.io.IOException;
-+import java.io.InputStream;
-+import java.io.OutputStream;
-+import java.lang.management.ManagementFactory;
-+import java.lang.management.RuntimeMXBean;
-+import java.net.HttpURLConnection;
-+import java.net.InetAddress;
-+import java.net.URL;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Set;
-+import java.util.logging.Level;
-+import java.util.zip.GZIPOutputStream;
-+
-+import static co.aikar.timings.TimingsManager.HISTORY;
-+import static co.aikar.util.JSONUtil.appendObjectData;
-+import static co.aikar.util.JSONUtil.createObject;
-+import static co.aikar.util.JSONUtil.pair;
-+import static co.aikar.util.JSONUtil.toArray;
-+import static co.aikar.util.JSONUtil.toArrayMapper;
-+import static co.aikar.util.JSONUtil.toObjectMapper;
-+
-+@SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
-+class TimingsExport extends Thread {
-+
-+    private final TimingsReportListener listeners;
-+    private final Map out;
-+    private final TimingHistory[] history;
-+    private static long lastReport = 0;
-+    final static List<CommandSender> requestingReport = Lists.newArrayList();
-+
-+    private TimingsExport(TimingsReportListener listeners, Map out, TimingHistory[] history) {
-+        super("Timings paste thread");
-+        this.listeners = listeners;
-+        this.out = out;
-+        this.history = history;
-+    }
-+
-+    /**
-+     * Checks if any pending reports are being requested, and builds one if needed.
-+     */
-+    static void reportTimings() {
-+        if (requestingReport.isEmpty()) {
-+            return;
-+        }
-+        TimingsReportListener listeners = new TimingsReportListener(requestingReport);
-+        listeners.addConsoleIfNeeded();
-+
-+        requestingReport.clear();
-+        long now = System.currentTimeMillis();
-+        final long lastReportDiff = now - lastReport;
-+        if (lastReportDiff < 60000) {
-+            listeners.sendMessage(ChatColor.RED + "Please wait at least 1 minute in between Timings reports. (" + (int)((60000 - lastReportDiff) / 1000) + " seconds)");
-+            listeners.done();
-+            return;
-+        }
-+        final long lastStartDiff = now - TimingsManager.timingStart;
-+        if (lastStartDiff < 180000) {
-+            listeners.sendMessage(ChatColor.RED + "Please wait at least 3 minutes before generating a Timings report. Unlike Timings v1, v2 benefits from longer timings and is not as useful with short timings. (" + (int)((180000 - lastStartDiff) / 1000) + " seconds)");
-+            listeners.done();
-+            return;
-+        }
-+        listeners.sendMessage(ChatColor.GREEN + "Preparing Timings Report...");
-+        lastReport = now;
-+        Map parent = createObject(
-+            // Get some basic system details about the server
-+            pair("version", Bukkit.getVersion()),
-+            pair("maxplayers", Bukkit.getMaxPlayers()),
-+            pair("start", TimingsManager.timingStart / 1000),
-+            pair("end", System.currentTimeMillis() / 1000),
-+            pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000)
-+        );
-+        if (!TimingsManager.privacy) {
-+            appendObjectData(parent,
-+                pair("server", Bukkit.getUnsafe().getTimingsServerName()),
-+                pair("motd", Bukkit.getServer().getMotd()),
-+                pair("online-mode", Bukkit.getServer().getOnlineMode()),
-+                pair("icon", Bukkit.getServer().getServerIcon().getData())
-+            );
-+        }
-+
-+        final Runtime runtime = Runtime.getRuntime();
-+        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-+
-+        parent.put("system", createObject(
-+                pair("timingcost", getCost()),
-+                pair("name", System.getProperty("os.name")),
-+                pair("version", System.getProperty("os.version")),
-+                pair("jvmversion", System.getProperty("java.version")),
-+                pair("arch", System.getProperty("os.arch")),
-+                pair("maxmem", runtime.maxMemory()),
-+                pair("cpu", runtime.availableProcessors()),
-+                pair("runtime", ManagementFactory.getRuntimeMXBean().getUptime()),
-+                pair("flags", StringUtils.join(runtimeBean.getInputArguments(), " ")),
-+                pair("gc", toObjectMapper(ManagementFactory.getGarbageCollectorMXBeans(), input -> pair(input.getName(), toArray(input.getCollectionCount(), input.getCollectionTime()))))
-+            )
-+        );
-+
-+        Set<Material> tileEntityTypeSet = Sets.newHashSet();
-+        Set<EntityType> entityTypeSet = Sets.newHashSet();
-+
-+        int size = HISTORY.size();
-+        TimingHistory[] history = new TimingHistory[size + 1];
-+        int i = 0;
-+        for (TimingHistory timingHistory : HISTORY) {
-+            tileEntityTypeSet.addAll(timingHistory.tileEntityTypeSet);
-+            entityTypeSet.addAll(timingHistory.entityTypeSet);
-+            history[i++] = timingHistory;
-+        }
-+
-+        history[i] = new TimingHistory(); // Current snapshot
-+        tileEntityTypeSet.addAll(history[i].tileEntityTypeSet);
-+        entityTypeSet.addAll(history[i].entityTypeSet);
-+
-+
-+        Map handlers = createObject();
-+        Map groupData;
-+        synchronized (TimingIdentifier.GROUP_MAP) {
-+            for (TimingIdentifier.TimingGroup group : TimingIdentifier.GROUP_MAP.values()) {
-+                synchronized (group.handlers) {
-+                    for (TimingHandler id : group.handlers) {
-+
-+                        if (!id.isTimed() && !id.isSpecial()) {
-+                            continue;
-+                        }
-+
-+                        String name = id.identifier.name;
-+                        if (name.startsWith("##")) {
-+                            name = name.substring(3);
-+                        }
-+                        handlers.put(id.id, toArray(
-+                            group.id,
-+                            name
-+                        ));
-+                    }
-+                }
-+            }
-+
-+            groupData = toObjectMapper(
-+                TimingIdentifier.GROUP_MAP.values(), group -> pair(group.id, group.name));
-+        }
-+
-+        parent.put("idmap", createObject(
-+            pair("groups", groupData),
-+            pair("handlers", handlers),
-+            pair("worlds", toObjectMapper(TimingHistory.worldMap.entrySet(), input -> pair(input.getValue(), input.getKey()))),
-+            pair("tileentity",
-+                toObjectMapper(tileEntityTypeSet, input -> pair(input.ordinal(), input.name()))),
-+            pair("entity",
-+                toObjectMapper(entityTypeSet, input -> pair(input.ordinal(), input.name())))
-+        ));
-+
-+        // Information about loaded plugins
-+
-+        parent.put("plugins", toObjectMapper(Bukkit.getPluginManager().getPlugins(),
-+                plugin -> pair(plugin.getName(), createObject(
-+                    pair("version", plugin.getDescription().getVersion()),
-+                    pair("description", String.valueOf(plugin.getDescription().getDescription()).trim()),
-+                    pair("website", plugin.getDescription().getWebsite()),
-+                    pair("authors", StringUtils.join(plugin.getDescription().getAuthors(), ", "))
-+                ))));
-+
-+
-+
-+        // Information on the users Config
-+
-+        parent.put("config", createObject(
-+            pair("spigot", mapAsJSON(Bukkit.spigot().getSpigotConfig(), null)),
-+            pair("bukkit", mapAsJSON(Bukkit.spigot().getBukkitConfig(), null)),
-+            pair("paper", mapAsJSON(Bukkit.spigot().getPaperConfig(), null))
-+        ));
-+
-+        new TimingsExport(listeners, parent, history).start();
-+    }
-+
-+    static long getCost() {
-+        // Benchmark the users System.nanotime() for cost basis
-+        int passes = 100;
-+        TimingHandler SAMPLER1 = Timings.ofSafe("Timings Sampler 1");
-+        TimingHandler SAMPLER2 = Timings.ofSafe("Timings Sampler 2");
-+        TimingHandler SAMPLER3 = Timings.ofSafe("Timings Sampler 3");
-+        TimingHandler SAMPLER4 = Timings.ofSafe("Timings Sampler 4");
-+        TimingHandler SAMPLER5 = Timings.ofSafe("Timings Sampler 5");
-+        TimingHandler SAMPLER6 = Timings.ofSafe("Timings Sampler 6");
-+
-+        long start = System.nanoTime();
-+        for (int i = 0; i < passes; i++) {
-+            SAMPLER1.startTiming();
-+            SAMPLER2.startTiming();
-+            SAMPLER3.startTiming();
-+            SAMPLER3.stopTiming();
-+            SAMPLER4.startTiming();
-+            SAMPLER5.startTiming();
-+            SAMPLER6.startTiming();
-+            SAMPLER6.stopTiming();
-+            SAMPLER5.stopTiming();
-+            SAMPLER4.stopTiming();
-+            SAMPLER2.stopTiming();
-+            SAMPLER1.stopTiming();
-+        }
-+        long timingsCost = (System.nanoTime() - start) / passes / 6;
-+        SAMPLER1.reset(true);
-+        SAMPLER2.reset(true);
-+        SAMPLER3.reset(true);
-+        SAMPLER4.reset(true);
-+        SAMPLER5.reset(true);
-+        SAMPLER6.reset(true);
-+        return timingsCost;
-+    }
-+
-+    private static JSONObject mapAsJSON(ConfigurationSection config, String parentKey) {
-+
-+        JSONObject object = new JSONObject();
-+        for (String key : config.getKeys(false)) {
-+            String fullKey = (parentKey != null ? parentKey + "." + key : key);
-+            if (fullKey.equals("database") || fullKey.equals("settings.bungeecord-addresses") || TimingsManager.hiddenConfigs.contains(fullKey)) {
-+                continue;
-+            }
-+            final Object val = config.get(key);
-+
-+            object.put(key, valAsJSON(val, fullKey));
-+        }
-+        return object;
-+    }
-+
-+    private static Object valAsJSON(Object val, final String parentKey) {
-+        if (!(val instanceof MemorySection)) {
-+            if (val instanceof List) {
-+                Iterable<Object> v = (Iterable<Object>) val;
-+                return toArrayMapper(v, input -> valAsJSON(input, parentKey));
-+            } else {
-+                return String.valueOf(val);
-+            }
-+        } else {
-+            return mapAsJSON((ConfigurationSection) val, parentKey);
-+        }
-+    }
-+
-+    @Override
-+    public void run() {
-+        out.put("data", toArrayMapper(history, TimingHistory::export));
-+
-+
-+        String response = null;
-+        String timingsURL = null;
-+        try {
-+            HttpURLConnection con = (HttpURLConnection) new URL("http://timings.aikar.co/post").openConnection();
-+            con.setDoOutput(true);
-+            String hostName = "BrokenHost";
-+            try {
-+                hostName = InetAddress.getLocalHost().getHostName();
-+            } catch (Exception ignored) {}
-+            con.setRequestProperty("User-Agent", "Paper/" + Bukkit.getUnsafe().getTimingsServerName() + "/" + hostName);
-+            con.setRequestMethod("POST");
-+            con.setInstanceFollowRedirects(false);
-+
-+            OutputStream request = new GZIPOutputStream(con.getOutputStream()) {{
-+                this.def.setLevel(7);
-+            }};
-+
-+            request.write(JSONValue.toJSONString(out).getBytes("UTF-8"));
-+            request.close();
-+
-+            response = getResponse(con);
-+
-+            if (con.getResponseCode() != 302) {
-+                listeners.sendMessage(
-+                    ChatColor.RED + "Upload Error: " + con.getResponseCode() + ": " + con.getResponseMessage());
-+                listeners.sendMessage(ChatColor.RED + "Check your logs for more information");
-+                if (response != null) {
-+                    Bukkit.getLogger().log(Level.SEVERE, response);
-+                }
-+                return;
-+            }
-+
-+            timingsURL = con.getHeaderField("Location");
-+            listeners.sendMessage(ChatColor.GREEN + "View Timings Report: " + timingsURL);
-+
-+            if (response != null && !response.isEmpty()) {
-+                Bukkit.getLogger().log(Level.INFO, "Timing Response: " + response);
-+            }
-+        } catch (IOException ex) {
-+            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
-+            if (response != null) {
-+                Bukkit.getLogger().log(Level.SEVERE, response);
-+            }
-+            Bukkit.getLogger().log(Level.SEVERE, "Could not paste timings", ex);
-+        } finally {
-+            this.listeners.done(timingsURL);
-+        }
-+    }
-+
-+    private String getResponse(HttpURLConnection con) throws IOException {
-+        InputStream is = null;
-+        try {
-+            is = con.getInputStream();
-+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-+
-+            byte[] b = new byte[1024];
-+            int bytesRead;
-+            while ((bytesRead = is.read(b)) != -1) {
-+                bos.write(b, 0, bytesRead);
-+            }
-+            return bos.toString();
-+
-+        } catch (IOException ex) {
-+            listeners.sendMessage(ChatColor.RED + "Error uploading timings, check your logs for more information");
-+            Bukkit.getLogger().log(Level.WARNING, con.getResponseMessage(), ex);
-+            return null;
-+        } finally {
-+            if (is != null) {
-+                is.close();
-+            }
-+        }
-+    }
-+}
 diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
 new file mode 100644
-index 000000000..ef824d701
+index 0000000000000000000000000000000000000000..ef824d701c97cad8b31e76ad98c94fc4367a7eda
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsManager.java
 @@ -0,0 +1,188 @@
@@ -2237,7 +1876,7 @@ index 000000000..ef824d701
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
 new file mode 100644
-index 000000000..bf3e059fe
+index 0000000000000000000000000000000000000000..bf3e059fe06aae361b2ded451914ed19b5e970c5
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
 @@ -0,0 +1,75 @@
@@ -2318,7 +1957,7 @@ index 000000000..bf3e059fe
 +}
 diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 new file mode 100644
-index 000000000..632c49615
+index 0000000000000000000000000000000000000000..632c4961515f5052551f841cfa840e60bba7a257
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
 @@ -0,0 +1,53 @@
@@ -2377,7 +2016,7 @@ index 000000000..632c49615
 +}
 diff --git a/src/main/java/co/aikar/util/Counter.java b/src/main/java/co/aikar/util/Counter.java
 new file mode 100644
-index 000000000..80155072d
+index 0000000000000000000000000000000000000000..80155072d1004e34e04342d434cf7d75f0b7e29d
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/Counter.java
 @@ -0,0 +1,38 @@
@@ -2421,7 +2060,7 @@ index 000000000..80155072d
 +}
 diff --git a/src/main/java/co/aikar/util/JSONUtil.java b/src/main/java/co/aikar/util/JSONUtil.java
 new file mode 100644
-index 000000000..190bf0598
+index 0000000000000000000000000000000000000000..190bf0598442c89c2a1c93ad7c8c1a29797304ae
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/JSONUtil.java
 @@ -0,0 +1,140 @@
@@ -2567,7 +2206,7 @@ index 000000000..190bf0598
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingIntMap.java b/src/main/java/co/aikar/util/LoadingIntMap.java
 new file mode 100644
-index 000000000..63a899c7d
+index 0000000000000000000000000000000000000000..63a899c7dbdb69daa4876a2ce2a7dfb734b5af9d
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingIntMap.java
 @@ -0,0 +1,76 @@
@@ -2649,7 +2288,7 @@ index 000000000..63a899c7d
 +}
 diff --git a/src/main/java/co/aikar/util/LoadingMap.java b/src/main/java/co/aikar/util/LoadingMap.java
 new file mode 100644
-index 000000000..aedbb0332
+index 0000000000000000000000000000000000000000..aedbb03321886cb267879d7994653e447b485f6a
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/LoadingMap.java
 @@ -0,0 +1,368 @@
@@ -3023,7 +2662,7 @@ index 000000000..aedbb0332
 +}
 diff --git a/src/main/java/co/aikar/util/MRUMapCache.java b/src/main/java/co/aikar/util/MRUMapCache.java
 new file mode 100644
-index 000000000..5989ee212
+index 0000000000000000000000000000000000000000..5989ee21297935651b0edd44b8239e655eaef1d9
 --- /dev/null
 +++ b/src/main/java/co/aikar/util/MRUMapCache.java
 @@ -0,0 +1,111 @@
@@ -3139,10 +2778,10 @@ index 000000000..5989ee212
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index ae21e0f97..755869366 100644
+index c1ecd19dd062276f5680b903309efce194559ae9..0b6ff0fe323397bb257f55bd2db21eba4ccc50f7 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -618,7 +618,6 @@ public final class Bukkit {
+@@ -640,7 +640,6 @@ public final class Bukkit {
       */
      public static void reload() {
          server.reload();
@@ -3151,10 +2790,10 @@ index ae21e0f97..755869366 100644
  
      /**
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index f6fb72fab..fad4e9292 100644
+index 5a99e36393f885003569977461923a9f6fa23402..113536d4c86a5aa863c4db2416caa41ca6bc55c0 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1300,6 +1300,26 @@ public interface Server extends PluginMessageRecipient {
+@@ -1328,6 +1328,26 @@ public interface Server extends PluginMessageRecipient {
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -3182,10 +2821,18 @@ index f6fb72fab..fad4e9292 100644
           * Sends the component to the player
           *
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 247d194f8..72c5501e8 100644
+index 247d194f86c00db11acbc58e7d163b2606db4f07..945b8b030d1b2a13afc0c4efad76997eb7bf00ba 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -69,4 +69,12 @@ public interface UnsafeValues {
+@@ -18,6 +18,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
+ @Deprecated
+ public interface UnsafeValues {
+ 
++    void reportTimings(); // Paper
+     Material toLegacy(Material material);
+ 
+     Material fromLegacy(Material material);
+@@ -69,4 +70,12 @@ public interface UnsafeValues {
       * @return true if a file matching this key was found and deleted
       */
      boolean removeAdvancement(NamespacedKey key);
@@ -3200,7 +2847,7 @@ index 247d194f8..72c5501e8 100644
  }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
-index 000000000..f9a00aecc
+index 0000000000000000000000000000000000000000..f9a00aecca5ec41b460bf41dfe1c69694768cf98
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 @@ -0,0 +1,21 @@
@@ -3226,7 +2873,7 @@ index 000000000..f9a00aecc
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
-index 4bfc21468..03bdc1622 100644
+index 4bfc214685164a38ba4261b2bae7faa8a3bd297e..03bdc1622791e1206406c87065978688d602e39e 100644
 --- a/src/main/java/org/bukkit/command/Command.java
 +++ b/src/main/java/org/bukkit/command/Command.java
 @@ -33,7 +33,8 @@ public abstract class Command {
@@ -3256,7 +2903,7 @@ index 4bfc21468..03bdc1622 100644
              return true;
          }
 diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
-index d6c8938b1..a6ad94ef9 100644
+index d6c8938b1e13b63116b7b0e074ea8ef5997f8dc3..a6ad94ef98a1df1d2842635d850bc990b0137849 100644
 --- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 +++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
 @@ -9,6 +9,7 @@ public class FormattedCommandAlias extends Command {
@@ -3280,7 +2927,7 @@ index d6c8938b1..a6ad94ef9 100644
      }
 diff --git a/src/main/java/org/bukkit/command/MessageCommandSender.java b/src/main/java/org/bukkit/command/MessageCommandSender.java
 new file mode 100644
-index 000000000..ca1893e9f
+index 0000000000000000000000000000000000000000..ca1893e9fb41baae0d103f1a925e33f3dfa273be
 --- /dev/null
 +++ b/src/main/java/org/bukkit/command/MessageCommandSender.java
 @@ -0,0 +1,114 @@
@@ -3399,7 +3046,7 @@ index 000000000..ca1893e9f
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 81e4fa573..f020cb04e 100644
+index 81e4fa57337f5a40c4b673136dd5eb595cce4629..f020cb04eba27a2e70fc7cf799ebbfb434b9d974 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
 @@ -15,7 +15,6 @@ import org.bukkit.command.defaults.BukkitCommand;
@@ -3456,7 +3103,7 @@ index 81e4fa573..f020cb04e 100644
  
 diff --git a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java b/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 deleted file mode 100644
-index 2a145d851..000000000
+index 2a145d851ce30360aa39549745bd87590c034584..0000000000000000000000000000000000000000
 --- a/src/main/java/org/bukkit/command/defaults/TimingsCommand.java
 +++ /dev/null
 @@ -1,250 +0,0 @@
@@ -3711,10 +3358,10 @@ index 2a145d851..000000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 92bafd636..bfbe775fc 100644
+index 0859d2bc226c4abf21ac1dc28f35ebe805046d89..39d196992bbcc263fa4bcd46c6187ba7b8adb935 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -1329,6 +1329,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1369,6 +1369,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
@@ -3727,7 +3374,7 @@ index 92bafd636..bfbe775fc 100644
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index ec77d7be6..c548911c4 100644
+index 62d0017362204070465c8ff72e5c2ca07501f558..745eaa8f2f2ff83536301db8ca47a8af30df7a73 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -358,7 +358,6 @@ public final class SimplePluginManager implements PluginManager {
@@ -3787,7 +3434,7 @@ index ec77d7be6..c548911c4 100644
      }
  }
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index df8a5dcbe..50a51394f 100644
+index 7b9ad3834c9c81220c74a16f1e66fb4da512e9f6..b6d739ca8ad8ebd4b1be7ebd129f9a7ae16b2a2a 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 @@ -53,7 +53,6 @@ public final class JavaPluginLoader implements PluginLoader {
@@ -3830,7 +3477,7 @@ index df8a5dcbe..50a51394f 100644
                  eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
              } else {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 5830e8b9b..36f542a85 100644
+index 5830e8b9b74d6107e54b6e19e03ab0e8c0da2f19..36f542a85e0f16e97c65c0ca64ec660ddf75d63e 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -28,7 +28,8 @@ import org.jetbrains.annotations.Nullable;
@@ -3844,7 +3491,7 @@ index 5830e8b9b..36f542a85 100644
      private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final PluginDescriptionFile description;
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
-index 5ca863b36..612958a33 100644
+index 5ca863b3692b2e1b58e7fb4d82f554a92cc4f01e..612958a331575d1da2715531ebdf6b1168f2e860 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
 +++ b/src/main/java/org/bukkit/util/CachedServerIcon.java
 @@ -2,6 +2,7 @@ package org.bukkit.util;
@@ -3867,7 +3514,7 @@ index 5ca863b36..612958a33 100644
 +
 +}
 diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
-index 44badfedc..3cbe5c2bb 100644
+index 44badfedcc3fdc26bdc293b85d8c781d6f659faa..3cbe5c2bb55dead7968a6f165ef267e3e2931061 100644
 --- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
 +++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
 @@ -1,3 +1,26 @@
@@ -4090,6 +3737,3 @@ index 44badfedc..3cbe5c2bb 100644
 +    public void stopTiming() { handler.stopTiming(); }
 +
  }
--- 
-2.25.1
-

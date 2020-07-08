@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 31 Jul 2017 02:08:55 -0500
+Subject: [PATCH] Make /plugins list alphabetical
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
+index e8a7f435fb30da3506b2b4fa8c5675c829edc105..ba399ee5ab33b4fd8741bce53509a17b1aabc84d 100644
+--- a/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/PluginsCommand.java
+@@ -3,6 +3,9 @@ package org.bukkit.command.defaults;
+ import java.util.Arrays;
+ import java.util.Collections;
+ import java.util.List;
++import java.util.Map;
++import java.util.TreeMap;
++
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.CommandSender;
+@@ -49,34 +52,51 @@ public class PluginsCommand extends BukkitCommand {
+ 
+     @NotNull
+     private String getPluginList() {
+-        StringBuilder pluginList = new StringBuilder();
+-        Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
++        // Paper start
++        TreeMap<String, Plugin> plugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
++
++        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
++            plugins.put(plugin.getDescription().getName(), plugin);
++        }
+ 
+-        for (Plugin plugin : plugins) {
++        StringBuilder pluginList = new StringBuilder();
++        for (Map.Entry<String, Plugin> entry : plugins.entrySet()) {
+             if (pluginList.length() > 0) {
+                 pluginList.append(ChatColor.WHITE);
+                 pluginList.append(", ");
+             }
+ 
+-            pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
+-            pluginList.append(plugin.getDescription().getName());
++            Plugin plugin = entry.getValue();
+ 
+             if (plugin.getDescription().getProvides().size() > 0) {
+                 pluginList.append(" (").append(String.join(", ", plugin.getDescription().getProvides())).append(")");
+             }
++
++
++            pluginList.append(plugin.isEnabled() ? ChatColor.GREEN : ChatColor.RED);
++            pluginList.append(plugin.getDescription().getName());
+         }
+ 
+-        return "(" + plugins.length + "): " + pluginList.toString();
++        return "(" + plugins.size() + "): " + pluginList.toString();
++        // Paper end
+     }
+ 
+     // Spigot start
+     @NotNull
+     private BaseComponent[] getPluginListSpigot() {
+-        Plugin[] plugins = Bukkit.getPluginManager().getPlugins();
+-        ComponentBuilder pluginList = new ComponentBuilder("Plugins (" + plugins.length + "): ");
++        // Paper start
++        TreeMap<String, Plugin> plugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
++        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
++            plugins.put(plugin.getDescription().getName(), plugin);
++        }
++        ComponentBuilder pluginList = new ComponentBuilder("Plugins (" + plugins.size() + "): ");
++        // Paper end
+ 
+         int index = 0;
+-        for (Plugin plugin : plugins) {
++        // Paper start
++        for (Map.Entry<String, Plugin> entry : plugins.entrySet()) {
++            Plugin plugin = entry.getValue();
++            // Paper end
+             if (index++ > 0) {
+                 pluginList.append(", ", FormatRetention.NONE).color(net.md_5.bungee.api.ChatColor.WHITE);
+             }

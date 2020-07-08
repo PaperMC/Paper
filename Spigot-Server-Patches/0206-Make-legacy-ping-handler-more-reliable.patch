@@ -1,0 +1,168 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Wed, 11 Oct 2017 18:22:50 +0200
+Subject: [PATCH] Make legacy ping handler more reliable
+
+The Minecraft server often fails to respond to old ("legacy") pings
+from old Minecraft versions using the protocol used before the switch
+to Netty in Minecraft 1.7.
+
+Due to packet fragmentation[1], we might not have all needed bytes
+available when the LegacyPingHandler is called. In this case, it will
+run into an error, remove the handler and continue using the modern
+protocol.
+
+This is unlikely to happen for the first two revisions of the legacy
+ping protocol (used in Minecraft 1.5.x and older) since the request
+consists of only one or two bytes, but happens frequently for the
+last/third revision introduced in Minecraft 1.6.
+
+It has much larger, variable packet sizes due to the inclusion of
+the virtual host (the hostname/port used to connect to the server).
+
+The solution[2] is simple: If we find more than two matching bytes,
+we buffer the remaining bytes until we have enough to fully read and
+respond to the request.
+
+[1]: https://netty.io/wiki/user-guide-for-4.x.html#wiki-h3-11
+[2]: https://netty.io/wiki/user-guide-for-4.x.html#wiki-h4-13
+
+diff --git a/src/main/java/net/minecraft/server/LegacyPingHandler.java b/src/main/java/net/minecraft/server/LegacyPingHandler.java
+index 9ee5a1ff026d413c21da86643732f859b6123916..063efe9bbe3a95da91ef1e504033e29ccf3300af 100644
+--- a/src/main/java/net/minecraft/server/LegacyPingHandler.java
++++ b/src/main/java/net/minecraft/server/LegacyPingHandler.java
+@@ -14,6 +14,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     private final ServerConnection b;
++    private ByteBuf buf; // Paper
+ 
+     public LegacyPingHandler(ServerConnection serverconnection) {
+         this.b = serverconnection;
+@@ -22,6 +23,16 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+     public void channelRead(ChannelHandlerContext channelhandlercontext, Object object) throws Exception {
+         ByteBuf bytebuf = (ByteBuf) object;
+ 
++        // Paper start - Make legacy ping handler more reliable
++        if (this.buf != null) {
++            try {
++                readLegacy1_6(channelhandlercontext, bytebuf);
++            } finally {
++                bytebuf.release();
++            }
++            return;
++        }
++        // Paper end
+         bytebuf.markReaderIndex();
+         boolean flag = true;
+ 
+@@ -52,6 +63,10 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+                     this.a(channelhandlercontext, this.a(s));
+                     break;
+                 default:
++                // Paper start - Replace with improved version below
++                if (bytebuf.readUnsignedByte() != 0x01 || bytebuf.readUnsignedByte() != 0xFA) return;
++                readLegacy1_6(channelhandlercontext, bytebuf);
++                /*
+                     boolean flag1 = bytebuf.readUnsignedByte() == 1;
+ 
+                     flag1 &= bytebuf.readUnsignedByte() == 250;
+@@ -75,6 +90,7 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+                     } finally {
+                         bytebuf1.release();
+                     }
++                */ // Paper end - Replace with improved version below
+             }
+ 
+             bytebuf.release();
+@@ -92,6 +108,90 @@ public class LegacyPingHandler extends ChannelInboundHandlerAdapter {
+ 
+     }
+ 
++    // Paper start
++    private static String readLegacyString(ByteBuf buf) {
++        int size = buf.readShort() * Character.BYTES;
++        if (!buf.isReadable(size)) {
++            return null;
++        }
++
++        String result = buf.toString(buf.readerIndex(), size, StandardCharsets.UTF_16BE);
++        buf.skipBytes(size); // toString doesn't increase readerIndex automatically
++        return result;
++    }
++
++    private void readLegacy1_6(ChannelHandlerContext ctx, ByteBuf part) {
++        ByteBuf buf = this.buf;
++
++        if (buf == null) {
++            this.buf = buf = ctx.alloc().buffer();
++            buf.markReaderIndex();
++        } else {
++            buf.resetReaderIndex();
++        }
++
++        buf.writeBytes(part);
++
++        if (!buf.isReadable(Short.BYTES + Short.BYTES + Byte.BYTES + Short.BYTES + Integer.BYTES)) {
++            return;
++        }
++
++        String s = readLegacyString(buf);
++        if (s == null) {
++            return;
++        }
++
++        if (!s.equals("MC|PingHost")) {
++            removeHandler(ctx);
++            return;
++        }
++
++        if (!buf.isReadable(Short.BYTES) || !buf.isReadable(buf.readShort())) {
++            return;
++        }
++
++        MinecraftServer server = this.b.d();
++        int protocolVersion = buf.readByte();
++        String host = readLegacyString(buf);
++        if (host == null) {
++            removeHandler(ctx);
++            return;
++        }
++        int port = buf.readInt();
++
++        if (buf.isReadable()) {
++            removeHandler(ctx);
++            return;
++        }
++
++        buf.release();
++        this.buf = null;
++
++        LOGGER.debug("Ping: (1.6) from {}", ctx.channel().remoteAddress());
++
++        String response = String.format("\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
++                Byte.MAX_VALUE, server.getVersion(), server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
++        this.a(ctx, this.a(response));
++    }
++
++    private void removeHandler(ChannelHandlerContext ctx) {
++        ByteBuf buf = this.buf;
++        this.buf = null;
++
++        buf.resetReaderIndex();
++        ctx.pipeline().remove(this);
++        ctx.fireChannelRead(buf);
++    }
++
++    @Override
++    public void handlerRemoved(ChannelHandlerContext ctx) {
++        if (this.buf != null) {
++            this.buf.release();
++            this.buf = null;
++        }
++    }
++    // Paper end
++
+     private void a(ChannelHandlerContext channelhandlercontext, ByteBuf bytebuf) {
+         channelhandlercontext.pipeline().firstContext().writeAndFlush(bytebuf).addListener(ChannelFutureListener.CLOSE);
+     }

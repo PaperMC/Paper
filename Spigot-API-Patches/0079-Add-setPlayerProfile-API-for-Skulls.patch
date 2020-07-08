@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 19 Jan 2018 00:29:28 -0500
+Subject: [PATCH] Add setPlayerProfile API for Skulls
+
+This allows you to create already filled textures on Skulls to avoid texture lookups
+which commonly cause rate limit issues with Mojang API
+
+diff --git a/src/main/java/org/bukkit/block/Skull.java b/src/main/java/org/bukkit/block/Skull.java
+index 943d751fb3e48212fbe258845beba03c25fa22d9..a6914f01e01e9103702185f92b0209b3c84c152a 100644
+--- a/src/main/java/org/bukkit/block/Skull.java
++++ b/src/main/java/org/bukkit/block/Skull.java
+@@ -7,6 +7,7 @@ import org.bukkit.block.data.BlockData;
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import com.destroystokyo.paper.profile.PlayerProfile; // Paper
+ 
+ /**
+  * Represents a captured state of a skull block.
+@@ -61,6 +62,20 @@ public interface Skull extends TileState {
+      */
+     public void setOwningPlayer(@NotNull OfflinePlayer player);
+ 
++    // Paper start
++    /**
++     * Sets this skull to use the supplied Player Profile, which can include textures already prefilled.
++     * @param profile The profile to set this Skull to use, may not be null
++     */
++    void setPlayerProfile(@NotNull PlayerProfile profile);
++
++    /**
++     * If the skull has an owner, per {@link #hasOwner()}, return the owners {@link PlayerProfile}
++     * @return The profile of the owner, if set
++     */
++    @Nullable PlayerProfile getPlayerProfile();
++    // Paper end
++
+     /**
+      * Gets the rotation of the skull in the world (or facing direction if this
+      * is a wall mounted skull).
+diff --git a/src/main/java/org/bukkit/inventory/meta/SkullMeta.java b/src/main/java/org/bukkit/inventory/meta/SkullMeta.java
+index 35a392033eb13ec6788f87dff3e74b434498e2a1..8b2465ea23dd6b0e25f5b6bb5d526e21c7908f09 100644
+--- a/src/main/java/org/bukkit/inventory/meta/SkullMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/SkullMeta.java
+@@ -1,9 +1,11 @@
+ package org.bukkit.inventory.meta;
+ 
++import com.destroystokyo.paper.profile.PlayerProfile;
+ import org.bukkit.OfflinePlayer;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
++
+ /**
+  * Represents a skull that can have an owner.
+  */
+@@ -36,6 +38,20 @@ public interface SkullMeta extends ItemMeta {
+     @Deprecated
+     boolean setOwner(@Nullable String owner);
+ 
++    // Paper start
++    /**
++     * Sets this skull to use the supplied Player Profile, which can include textures already prefilled.
++     * @param profile The profile to set this Skull to use, or null to clear owner
++     */
++    void setPlayerProfile(@Nullable PlayerProfile profile);
++
++    /**
++     * If the skull has an owner, per {@link #hasOwner()}, return the owners {@link PlayerProfile}
++     * @return The profile of the owner, if set
++     */
++    @Nullable PlayerProfile getPlayerProfile();
++    // Paper end
++
+     /**
+      * Gets the owner of the skull.
+      *

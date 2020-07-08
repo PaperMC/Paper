@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sat, 13 May 2017 20:11:21 -0500
+Subject: [PATCH] Add system property to disable book size limits
+
+If anyone comes in with a watchdog crash related to books after this patch
+you will not only be publicly shamed but also made an example of.
+
+Disables the security limits on books entirely, allowing plugins AND players
+to make books with as much data as they want. Do not use this without
+limiting incoming data from packets in some other way.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+index 38247fe6ca8ef1cad40883eb71d413c507a84f3e..8f59608ed9494e2ec2587c4385b4d6c72e4db53b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+@@ -35,6 +35,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+     static final int MAX_PAGES = 100;
+     static final int MAX_PAGE_LENGTH = 320; // 256 limit + 64 characters to allow for psuedo colour codes
+     static final int MAX_TITLE_LENGTH = 32;
++    private static final boolean OVERRIDE_CHECKS = Boolean.getBoolean("disable.book-limits"); // Paper - Add override
+ 
+     protected String title;
+     protected String author;
+@@ -197,7 +198,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+         if (title == null) {
+             this.title = null;
+             return true;
+-        } else if (title.length() > MAX_TITLE_LENGTH) {
++        } else if (title.length() > MAX_TITLE_LENGTH && !OVERRIDE_CHECKS) { // Paper - Add override
+             return false;
+         }
+ 
+@@ -237,7 +238,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+             throw new IllegalArgumentException("Invalid page number " + page + "/" + pages.size());
+         }
+ 
+-        String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH ? text.substring(0, MAX_PAGE_LENGTH) : text;
++        String newText = text == null ? "" : text.length() > MAX_PAGE_LENGTH && !OVERRIDE_CHECKS ? text.substring(0, MAX_PAGE_LENGTH) : text;
+         pages.set(page - 1, CraftChatMessage.fromString(newText, true)[0]);
+     }
+ 
+@@ -251,13 +252,13 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+     @Override
+     public void addPage(final String... pages) {
+         for (String page : pages) {
+-            if (this.pages.size() >= MAX_PAGES) {
++            if (this.pages.size() >= MAX_PAGES && !OVERRIDE_CHECKS) {
+                 return;
+             }
+ 
+             if (page == null) {
+                 page = "";
+-            } else if (page.length() > MAX_PAGE_LENGTH) {
++            } else if (page.length() > MAX_PAGE_LENGTH && !OVERRIDE_CHECKS) { // Paper - Add override
+                 page = page.substring(0, MAX_PAGE_LENGTH);
+             }
+ 

@@ -1,4 +1,4 @@
-From fa60dfa8abbded975fd2e8345c362951447801b9 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Byteflux <byte@byteflux.net>
 Date: Wed, 2 Mar 2016 11:59:48 -0600
 Subject: [PATCH] Optimize explosions
@@ -10,7 +10,7 @@ This patch adds a per-tick cache that is used for storing and retrieving
 an entity's exposure during an explosion.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 50dec5cb5e..f038d3f7dc 100644
+index 50dec5cb5e924301842300e8fc80cb671b6b9173..f038d3f7dc7d1034a3ee9f2384a85642f224836e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -150,4 +150,10 @@ public class PaperWorldConfig {
@@ -25,10 +25,10 @@ index 50dec5cb5e..f038d3f7dc 100644
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index a063d1bfaa..5583860f15 100644
+index bf156897acfe25c16a1b09a83a00ba3ab647a2dd..842563f2030382659a62a3a63d9af9d5a58e3d85 100644
 --- a/src/main/java/net/minecraft/server/Explosion.java
 +++ b/src/main/java/net/minecraft/server/Explosion.java
-@@ -177,7 +177,7 @@ public class Explosion {
+@@ -172,7 +172,7 @@ public class Explosion {
                          d8 /= d11;
                          d9 /= d11;
                          d10 /= d11;
@@ -37,7 +37,7 @@ index a063d1bfaa..5583860f15 100644
                          double d13 = (1.0D - d7) * d12;
  
                          // CraftBukkit start
-@@ -384,4 +384,84 @@ public class Explosion {
+@@ -391,4 +391,84 @@ public class Explosion {
  
          private Effect() {}
      }
@@ -123,22 +123,22 @@ index a063d1bfaa..5583860f15 100644
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7b8c523e6d..3d580a666b 100644
+index 7b58499c24d5a4296cc539087ca86d2ec4148b1c..991baec71cfeb79ee2108870645a19582f151def 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1176,6 +1176,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1208,6 +1208,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
-                 this.methodProfiler.exit();
-                 this.methodProfiler.exit();
-+                worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
-             }
+             this.methodProfiler.exit();
+             this.methodProfiler.exit();
++            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
  
+         this.methodProfiler.exitEnter("connection");
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 84d7770223..7c95fd6645 100644
+index 8a1f8a8bc2e70b6675011f571b9a6cb58dc79877..7fe3cfebb051944f3c619ae04bc966efdbff31da 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -80,6 +80,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -84,6 +84,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      private org.spigotmc.TickLimiter entityLimiter;
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
@@ -146,6 +146,3 @@ index 84d7770223..7c95fd6645 100644
  
      public CraftWorld getWorld() {
          return this.world;
--- 
-2.25.1
-

@@ -1,0 +1,235 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 13 Apr 2016 20:20:18 -0700
+Subject: [PATCH] Add handshake event to allow plugins to handle client
+ handshaking logic themselves
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb4e31cc25eab2359fa9873bbf960346721701
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
+@@ -0,0 +1,222 @@
++package com.destroystokyo.paper.event.player;
++
++import org.apache.commons.lang.Validate;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++
++import java.util.UUID;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * This event is fired during a player handshake.
++ *
++ * <p>If there are no listeners listening to this event, the logic default
++ * to your server platform will be ran.</p>
++ *
++ * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
++ */
++public class PlayerHandshakeEvent extends Event implements Cancellable {
++
++    private static final HandlerList HANDLERS = new HandlerList();
++    @NotNull private final String originalHandshake;
++    private boolean cancelled;
++    @Nullable private String serverHostname;
++    @Nullable private String socketAddressHostname;
++    @Nullable private UUID uniqueId;
++    @Nullable private String propertiesJson;
++    private boolean failed;
++    private String failMessage = "If you wish to use IP forwarding, please enable it in your BungeeCord config as well!";
++
++    /**
++     * Creates a new {@link PlayerHandshakeEvent}.
++     *
++     * @param originalHandshake the original handshake string
++     * @param cancelled if this event is enabled
++     */
++    public PlayerHandshakeEvent(@NotNull String originalHandshake, boolean cancelled) {
++        super(true);
++        this.originalHandshake = originalHandshake;
++        this.cancelled = cancelled;
++    }
++
++    /**
++     * Determines if this event is cancelled.
++     *
++     * <p>When this event is cancelled, custom handshake logic will not
++     * be processed.</p>
++     *
++     * @return {@code true} if this event is cancelled, {@code false} otherwise
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Sets if this event is cancelled.
++     *
++     * <p>When this event is cancelled, custom handshake logic will not
++     * be processed.</p>
++     *
++     * @param cancelled {@code true} if this event is cancelled, {@code false} otherwise
++     */
++    @Override
++    public void setCancelled(boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++
++    /**
++     * Gets the original handshake string.
++     *
++     * @return the original handshake string
++     */
++    @NotNull
++    public String getOriginalHandshake() {
++        return this.originalHandshake;
++    }
++
++    /**
++     * Gets the server hostname string.
++     *
++     * <p>This should not include the port.</p>
++     *
++     * @return the server hostname string
++     */
++    @Nullable
++    public String getServerHostname() {
++        return this.serverHostname;
++    }
++
++    /**
++     * Sets the server hostname string.
++     *
++     * <p>This should not include the port.</p>
++     *
++     * @param serverHostname the server hostname string
++     */
++    public void setServerHostname(@NotNull String serverHostname) {
++        this.serverHostname = serverHostname;
++    }
++
++    /**
++     * Gets the socket address hostname string.
++     *
++     * <p>This should not include the port.</p>
++     *
++     * @return the socket address hostname string
++     */
++    @Nullable
++    public String getSocketAddressHostname() {
++        return this.socketAddressHostname;
++    }
++
++    /**
++     * Sets the socket address hostname string.
++     *
++     * <p>This should not include the port.</p>
++     *
++     * @param socketAddressHostname the socket address hostname string
++     */
++    public void setSocketAddressHostname(@NotNull String socketAddressHostname) {
++        this.socketAddressHostname = socketAddressHostname;
++    }
++
++    /**
++     * Gets the unique id.
++     *
++     * @return the unique id
++     */
++    @Nullable
++    public UUID getUniqueId() {
++        return this.uniqueId;
++    }
++
++    /**
++     * Sets the unique id.
++     *
++     * @param uniqueId the unique id
++     */
++    public void setUniqueId(@NotNull UUID uniqueId) {
++        this.uniqueId = uniqueId;
++    }
++
++    /**
++     * Gets the profile properties.
++     *
++     * <p>This should be a valid JSON string.</p>
++     *
++     * @return the profile properties, as JSON
++     */
++    @Nullable
++    public String getPropertiesJson() {
++        return this.propertiesJson;
++    }
++
++    /**
++     * Determines if authentication failed.
++     *
++     * <p>When {@code true}, the client connecting will be disconnected
++     * with the {@link #getFailMessage() fail message}.</p>
++     *
++     * @return {@code true} if authentication failed, {@code false} otherwise
++     */
++    public boolean isFailed() {
++        return this.failed;
++    }
++
++    /**
++     * Sets if authentication failed and the client should be disconnected.
++     *
++     * <p>When {@code true}, the client connecting will be disconnected
++     * with the {@link #getFailMessage() fail message}.</p>
++     *
++     * @param failed {@code true} if authentication failed, {@code false} otherwise
++     */
++    public void setFailed(boolean failed) {
++        this.failed = failed;
++    }
++
++    /**
++     * Sets the profile properties.
++     *
++     * <p>This should be a valid JSON string.</p>
++     *
++     * @param propertiesJson the profile properties, as JSON
++     */
++    public void setPropertiesJson(@NotNull String propertiesJson) {
++        this.propertiesJson = propertiesJson;
++    }
++
++    /**
++     * Gets the message to display to the client when authentication fails.
++     *
++     * @return the message to display to the client
++     */
++    @NotNull
++    public String getFailMessage() {
++        return this.failMessage;
++    }
++
++    /**
++     * Sets the message to display to the client when authentication fails.
++     *
++     * @param failMessage the message to display to the client
++     */
++    public void setFailMessage(@NotNull String failMessage) {
++        Validate.notEmpty(failMessage, "fail message cannot be null or empty");
++        this.failMessage = failMessage;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}

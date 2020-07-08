@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 2 Apr 2020 01:42:39 -0400
+Subject: [PATCH] Prevent Double PlayerChunkMap adds crashing server
+
+Suspected case would be around the technique used in .stopRiding
+Stack will identify any causer of this and warn instead of crashing.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index b530316b582390c4c464bb1f3df48597c8bf7569..6ac39fc6cafdcbf7883e868ecb58a2ebfad41601 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1443,6 +1443,14 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     protected void addEntity(Entity entity) {
+         org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
++        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
++        if (!entity.valid || entity.world != this.world || this.trackedEntities.containsKey(entity.getId())) {
++            new Throwable("[ERROR] Illegal PlayerChunkMap::addEntity for world " + this.world.getWorld().getName()
++                + ": " + entity  + (this.trackedEntities.containsKey(entity.getId()) ? " ALREADY CONTAINED (This would have crashed your server)" : ""))
++                .printStackTrace();
++            return;
++        }
++        // Paper end
+         if (!(entity instanceof EntityComplexPart)) {
+             EntityTypes<?> entitytypes = entity.getEntityType();
+             int i = entitytypes.getChunkRange() * 16;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index f21011761ddf3082bc9bb59f1ec6d97e5d98c705..d28985adf70b7a06688ac3113477a681f4b19693 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1352,7 +1352,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                 }
+             }
+ 
+-            this.getChunkProvider().addEntity(entity);
++            // this.getChunkProvider().addEntity(entity); // Paper - moved down below valid=true
+             // CraftBukkit start - SPIGOT-5278
+             if (entity instanceof EntityDrowned) {
+                 this.navigators.add(((EntityDrowned) entity).navigationWater);
+@@ -1363,6 +1363,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                 this.navigators.add(((EntityInsentient) entity).getNavigation());
+             }
+             entity.valid = true; // CraftBukkit
++            this.getChunkProvider().addEntity(entity); // Paper - from above to be below valid=true
+             // Paper start - Set origin location when the entity is being added to the world
+             if (entity.origin == null) {
+                 entity.origin = entity.getBukkitEntity().getLocation();

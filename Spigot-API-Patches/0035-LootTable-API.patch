@@ -1,0 +1,402 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 1 May 2016 15:19:49 -0400
+Subject: [PATCH] LootTable API
+
+Provides API to control what Loot Table an object uses.
+
+Also provides an Event to control if a lootable inventory should
+auto replenish for a player.
+
+Provides methods to determine players looted state for an object
+
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..92d7b853a2ccaae5afa8ac141bead840942944ef
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.loottable;
++
++import org.bukkit.block.Block;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an Inventory that can generate loot, such as Chests inside of Fortresses and Mineshafts
++ */
++public interface LootableBlockInventory extends LootableInventory {
++
++    /**
++     * Gets the block that is lootable
++     * @return The Block
++     */
++    @NotNull
++    Block getBlock();
++}
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b387894fe8001edb41ad2ad2b70ebabe065b682e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
+@@ -0,0 +1,17 @@
++package com.destroystokyo.paper.loottable;
++
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an Inventory that can generate loot, such as Minecarts inside of Mineshafts
++ */
++public interface LootableEntityInventory extends LootableInventory {
++
++    /**
++     * Gets the entity that is lootable
++     * @return The Entity
++     */
++    @NotNull
++    Entity getEntity();
++}
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..97815eeb231cf0706b34fa47a4f7d1bb786305b4
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
+@@ -0,0 +1,116 @@
++package com.destroystokyo.paper.loottable;
++
++import org.bukkit.entity.Player;
++import org.bukkit.loot.Lootable;
++
++import java.util.UUID;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents an Inventory that contains a Loot Table associated to it that will
++ * automatically fill on first open.
++ *
++ * A new feature and API is provided to support automatically refreshing the contents
++ * of the inventory based on that Loot Table after a configurable amount of time has passed.
++ *
++ * The behavior of how the Inventory is filled based on the loot table may vary based
++ * on Minecraft versions and the Loot Table feature.
++ */
++public interface LootableInventory extends Lootable {
++
++    /**
++     * Server owners have to enable whether or not an object in a world should refill
++     *
++     * @return If the world this inventory is currently in has Replenishable Lootables enabled
++     */
++    boolean isRefillEnabled();
++
++    /**
++     * Whether or not this object has ever been filled
++     * @return Has ever been filled
++     */
++    boolean hasBeenFilled();
++
++    /**
++     * Has this player ever looted this block
++     * @param player The player to check
++     * @return Whether or not this player has looted this block
++     */
++    default boolean hasPlayerLooted(@NotNull Player player) {
++        return hasPlayerLooted(player.getUniqueId());
++    }
++
++    /**
++     * Has this player ever looted this block
++     * @param player The player to check
++     * @return Whether or not this player has looted this block
++     */
++    boolean hasPlayerLooted(@NotNull UUID player);
++
++    /**
++     * Gets the timestamp, in milliseconds, of when the player last looted this object
++     *
++     * @param player The player to check
++     * @return Timestamp last looted, or null if player has not looted this object
++     */
++    @Nullable
++    default Long getLastLooted(@NotNull Player player) {
++        return getLastLooted(player.getUniqueId());
++    }
++
++    /**
++     * Gets the timestamp, in milliseconds, of when the player last looted this object
++     *
++     * @param player The player to check
++     * @return Timestamp last looted, or null if player has not looted this object
++     */
++    @Nullable
++    Long getLastLooted(@NotNull UUID player);
++
++    /**
++     * Change the state of whether or not a player has looted this block
++     * @param player The player to change state for
++     * @param looted true to add player to looted list, false to remove
++     * @return The previous state of whether the player had looted this or not
++     */
++    default boolean setHasPlayerLooted(@NotNull Player player, boolean looted) {
++        return setHasPlayerLooted(player.getUniqueId(), looted);
++    }
++
++    /**
++     * Change the state of whether or not a player has looted this block
++     * @param player The player to change state for
++     * @param looted true to add player to looted list, false to remove
++     * @return The previous state of whether the player had looted this or not
++     */
++    boolean setHasPlayerLooted(@NotNull UUID player, boolean looted);
++
++    /**
++     * Returns Whether or not this object has been filled and now has a pending refill
++     * @return Has pending refill
++     */
++    boolean hasPendingRefill();
++
++    /**
++     * Gets the timestamp in milliseconds that the Lootable object was last refilled
++     *
++     * @return -1 if it was never refilled, or timestamp in milliseconds
++     */
++    long getLastFilled();
++
++    /**
++     * Gets the timestamp in milliseconds that the Lootable object will refill
++     *
++     * @return -1 if it is not scheduled for refill, or timestamp in milliseconds
++     */
++    long getNextRefill();
++
++    /**
++     * Sets the timestamp in milliseconds of the next refill for this object
++     *
++     * @param refillAt timestamp in milliseconds. -1 to clear next refill
++     * @return The previous scheduled time to refill, or -1 if was not scheduled
++     */
++    long setNextRefill(long refillAt);
++}
+diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fd184f13f5e8ee5cf829fff4f44696e1f760430b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
+@@ -0,0 +1,45 @@
++package com.destroystokyo.paper.loottable;
++
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++public class LootableInventoryReplenishEvent extends PlayerEvent implements Cancellable {
++    @NotNull private final LootableInventory inventory;
++
++    public LootableInventoryReplenishEvent(@NotNull Player player, @NotNull LootableInventory inventory) {
++        super(player);
++        this.inventory = inventory;
++    }
++
++    @NotNull
++    public LootableInventory getInventory() {
++        return inventory;
++    }
++
++    private static final HandlerList handlers = new HandlerList();
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    private boolean cancelled = false;
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        cancelled = cancel;
++    }
++}
+diff --git a/src/main/java/org/bukkit/block/Chest.java b/src/main/java/org/bukkit/block/Chest.java
+index c67d711010304d7d2da60a22b845273aa911b5e9..a569c7b630bb0a09303d4e398a9d2a1aa2937dc8 100644
+--- a/src/main/java/org/bukkit/block/Chest.java
++++ b/src/main/java/org/bukkit/block/Chest.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory; // Paper
++import org.bukkit.Nameable; // Paper
+ import org.bukkit.inventory.Inventory;
+ import org.bukkit.loot.Lootable;
+ import org.jetbrains.annotations.NotNull;
+@@ -7,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a chest.
+  */
+-public interface Chest extends Container, Lootable {
++public interface Chest extends Container, LootableBlockInventory { // Paper
+ 
+     /**
+      * Gets the inventory of the chest block represented by this block state.
+diff --git a/src/main/java/org/bukkit/block/Dispenser.java b/src/main/java/org/bukkit/block/Dispenser.java
+index 74cd194c9a98245dc52e7e352d7d6c046e1e5cf3..07af1a3f011d4b96275f919d302ac367198e923e 100644
+--- a/src/main/java/org/bukkit/block/Dispenser.java
++++ b/src/main/java/org/bukkit/block/Dispenser.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
+ import org.bukkit.Nameable;
+ import org.bukkit.loot.Lootable;
+ import org.bukkit.projectiles.BlockProjectileSource;
+@@ -8,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a captured state of a dispenser.
+  */
+-public interface Dispenser extends Container, Nameable, Lootable {
++public interface Dispenser extends Container, Nameable, LootableBlockInventory { // Paper
+ 
+     /**
+      * Gets the BlockProjectileSource object for the dispenser.
+diff --git a/src/main/java/org/bukkit/block/Dropper.java b/src/main/java/org/bukkit/block/Dropper.java
+index 424392fb5ed4628199b0e73689522aa3c90740cb..c76202321e29ad67597ca3017eb8d9baf6787383 100644
+--- a/src/main/java/org/bukkit/block/Dropper.java
++++ b/src/main/java/org/bukkit/block/Dropper.java
+@@ -1,11 +1,12 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
+ import org.bukkit.loot.Lootable;
+ 
+ /**
+  * Represents a captured state of a dropper.
+  */
+-public interface Dropper extends Container, Lootable {
++public interface Dropper extends Container, LootableBlockInventory { // Paper
+ 
+     /**
+      * Tries to drop a randomly selected item from the dropper's inventory,
+diff --git a/src/main/java/org/bukkit/block/Hopper.java b/src/main/java/org/bukkit/block/Hopper.java
+index 58e493099810fb8d4705ecd49b4a5e1e1949b87b..7ade312f180b7e30871d3a3240c76325cc369c26 100644
+--- a/src/main/java/org/bukkit/block/Hopper.java
++++ b/src/main/java/org/bukkit/block/Hopper.java
+@@ -1,8 +1,9 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
+ import org.bukkit.loot.Lootable;
+ 
+ /**
+  * Represents a captured state of a hopper.
+  */
+-public interface Hopper extends Container, Lootable { }
++public interface Hopper extends Container, LootableBlockInventory { } // Paper
+diff --git a/src/main/java/org/bukkit/block/ShulkerBox.java b/src/main/java/org/bukkit/block/ShulkerBox.java
+index 938f9aead43124ed607db7b423aa3b3a0c59d56d..42f5b4ea38cac418a18c2c8215986f2617a52f3e 100644
+--- a/src/main/java/org/bukkit/block/ShulkerBox.java
++++ b/src/main/java/org/bukkit/block/ShulkerBox.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.block;
+ 
++import com.destroystokyo.paper.loottable.LootableBlockInventory;
+ import org.bukkit.DyeColor;
+ import org.bukkit.loot.Lootable;
+ import org.jetbrains.annotations.NotNull;
+@@ -7,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a ShulkerBox.
+  */
+-public interface ShulkerBox extends Container, Lootable {
++public interface ShulkerBox extends Container, LootableBlockInventory { // Paper
+ 
+     /**
+      * Get the {@link DyeColor} corresponding to this ShulkerBox
+diff --git a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+index 937b99f8734d71b2ad33af142afbc251b81d9745..db69687a7ad4b18d17ab1677cae5d8dd4dcd3678 100644
+--- a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.entity.minecart;
+ 
++import com.destroystokyo.paper.loottable.LootableEntityInventory;
+ import org.bukkit.entity.Minecart;
+ import org.bukkit.inventory.InventoryHolder;
+ import org.bukkit.loot.Lootable;
+@@ -7,7 +8,7 @@ import org.bukkit.loot.Lootable;
+ /**
+  * Represents a Minecart with a Hopper inside it
+  */
+-public interface HopperMinecart extends Minecart, InventoryHolder, Lootable {
++public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
+ 
+     /**
+      * Checks whether or not this Minecart will pick up
+diff --git a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
+index 9ea403e6fd8e960d017660e0aec118abeda2c42b..238d118f7788b13cd86b7e9ea3a0fc38e2e09715 100644
+--- a/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/StorageMinecart.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.entity.minecart;
+ 
++import com.destroystokyo.paper.loottable.LootableEntityInventory;
+ import org.bukkit.entity.Minecart;
+ import org.bukkit.inventory.InventoryHolder;
+ import org.bukkit.loot.Lootable;
+@@ -9,5 +10,5 @@ import org.bukkit.loot.Lootable;
+  * minecarts} have their own inventory that can be accessed using methods
+  * from the {@link InventoryHolder} interface.
+  */
+-public interface StorageMinecart extends Minecart, InventoryHolder, Lootable {
++public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
+ }
+diff --git a/src/main/java/org/bukkit/loot/Lootable.java b/src/main/java/org/bukkit/loot/Lootable.java
+index 24a3d989db3bc67e7afe8459a3d4bb132f448ea7..901db852498e0658c79a57582508dab29bf0a798 100644
+--- a/src/main/java/org/bukkit/loot/Lootable.java
++++ b/src/main/java/org/bukkit/loot/Lootable.java
+@@ -36,6 +36,34 @@ public interface Lootable {
+     @Nullable
+     LootTable getLootTable();
+ 
++    // Paper start
++    /**
++     * Set the loot table and seed for a container or entity at the same time.
++     *
++     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
++     * @param seed the seed to used to generate loot. Default is 0.
++     */
++    default void setLootTable(@Nullable LootTable table, long seed) {
++        setLootTable(table);
++        setSeed(seed);
++    }
++
++    /**
++     * Returns whether or not this object has a Loot Table
++     * @return Has a loot table
++     */
++    default boolean hasLootTable() {
++        return getLootTable() != null;
++    }
++
++    /**
++     * Clears the associated Loot Table to this object
++     */
++    default void clearLootTable() {
++        setLootTable(null);
++    }
++    // Paper end
++
+     /**
+      * Set the seed used when this Loot Table generates loot.
+      *

@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 4 May 2016 23:55:48 -0400
+Subject: [PATCH] ensureServerConversions API
+
+This will take a Bukkit ItemStack and run it through any conversions a server process would perform on it,
+to ensure it meets latest minecraft expectations.
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 4ff149fd98895dd8ba45939a37c223b1f8d7281f..bb3f7cdc13dc015f88d3eaf5997f391528599d2a 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -141,4 +141,17 @@ public interface ItemFactory {
+     @Deprecated
+     @NotNull
+     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
++    // Paper start
++    /**
++     * Minecart updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @param item The item to process conversions on
++     * @return A potentially Data Converted ItemStack
++     */
++    @NotNull
++    ItemStack ensureServerConversions(@NotNull ItemStack item);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..07aa65d1a2056422b7b5ec98be970d5b064f3b81 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -536,7 +536,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+             }
+         }
+ 
+-        return result;
++        return result.ensureServerConversions(); // Paper
+     }
+ 
+     /**
+@@ -595,4 +595,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+ 
+         return true;
+     }
++
++    // Paper start
++    /**
++     * Minecart updates are converting simple item stacks into more complex NBT oriented Item Stacks.
++     *
++     * Use this method to to ensure any desired data conversions are processed.
++     * The input itemstack will not be the same as the returned itemstack.
++     *
++     * @return A potentially Data Converted ItemStack
++     */
++    @NotNull
++    public ItemStack ensureServerConversions() {
++        return Bukkit.getServer().getItemFactory().ensureServerConversions(this);
++    }
++    // Paper end
+ }

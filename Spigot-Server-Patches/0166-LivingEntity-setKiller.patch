@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 31 Jul 2017 01:49:48 -0500
+Subject: [PATCH] LivingEntity#setKiller
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 34f2821a64c7893ff0a8c33ae4b77ce883227f0c..7ec1a572efd99928e8aae9b75c0eed73430aa337 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -86,7 +86,7 @@ public abstract class EntityLiving extends Entity {
+     public float aL;
+     @Nullable
+     public EntityHuman killer;
+-    protected int lastDamageByPlayerTime;
++    public int lastDamageByPlayerTime; // Paper - protected -> public
+     protected boolean killed;
+     protected int ticksFarFromPlayer;
+     protected float aQ;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index d5b165e8275c012d775b77b8440489716a6c3c08..5e2642b33d36e0695d6adc879f9595030adaaf31 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -321,6 +321,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return getHandle().killer == null ? null : (Player) getHandle().killer.getBukkitEntity();
+     }
+ 
++    // Paper start
++    @Override
++    public void setKiller(Player killer) {
++        net.minecraft.server.EntityPlayer entityPlayer = killer == null ? null : ((CraftPlayer) killer).getHandle();
++        getHandle().killer = entityPlayer;
++        getHandle().lastDamager = entityPlayer;
++        getHandle().lastDamageByPlayerTime = entityPlayer == null ? 0 : 100; // 100 value taken from EntityLiving#damageEntity
++    }
++    // Paper end
++
+     @Override
+     public boolean addPotionEffect(PotionEffect effect) {
+         return addPotionEffect(effect, false);

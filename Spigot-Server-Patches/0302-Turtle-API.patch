@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 29 Sep 2018 16:08:23 -0500
+Subject: [PATCH] Turtle API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTurtle.java b/src/main/java/net/minecraft/server/EntityTurtle.java
+index dd745894614982fad6277e77b98bed75fc2a2f55..00827c335e9413e986d7f07d0adbcef0d106a553 100644
+--- a/src/main/java/net/minecraft/server/EntityTurtle.java
++++ b/src/main/java/net/minecraft/server/EntityTurtle.java
+@@ -27,10 +27,12 @@ public class EntityTurtle extends EntityAnimal {
+         this.G = 1.0F;
+     }
+ 
++    public final void setHome(BlockPosition pos) { setHomePos(pos); } // Paper - OBFHELPER
+     public void setHomePos(BlockPosition blockposition) {
+         this.datawatcher.set(EntityTurtle.bw, blockposition);
+     }
+-
++    // TODO Paper: Obf helpers here can prolly be removed? check that no newer patches use them
++    public final BlockPosition getHome() { return this.getHomePos(); } // Paper - OBFHELPER
+     private BlockPosition getHomePos() {
+         return (BlockPosition) this.datawatcher.get(EntityTurtle.bw);
+     }
+@@ -47,31 +49,37 @@ public class EntityTurtle extends EntityAnimal {
+         return (Boolean) this.datawatcher.get(EntityTurtle.bx);
+     }
+ 
+-    private void setHasEgg(boolean flag) {
++    public void setHasEgg(boolean flag) { // Paper
+         this.datawatcher.set(EntityTurtle.bx, flag);
+     }
+ 
++    public final boolean isDigging() { return this.eM(); } // Paper - OBFHELPER
+     public boolean eM() {
+         return (Boolean) this.datawatcher.get(EntityTurtle.by);
+     }
+ 
++    public final void setDigging(boolean digging) { this.u(digging); } // Paper - OBFHELPER
+     private void u(boolean flag) {
+         this.bC = flag ? 1 : 0;
+         this.datawatcher.set(EntityTurtle.by, flag);
+     }
+ 
++    public final boolean isGoingHome() { return this.eV(); } // Paper - OBFHELPER
+     private boolean eV() {
+         return (Boolean) this.datawatcher.get(EntityTurtle.bA);
+     }
+ 
++    public final void setGoingHome(boolean goingHome) { this.v(goingHome); } // Paper - OBFHELPER
+     private void v(boolean flag) {
+         this.datawatcher.set(EntityTurtle.bA, flag);
+     }
+ 
++    public final boolean isTravelling() { return this.eW(); } // Paper - OBFHELPER
+     private boolean eW() {
+         return (Boolean) this.datawatcher.get(EntityTurtle.bB);
+     }
+ 
++    public final void setTravelling(boolean travelling) { this.w(travelling); } // Paper - OBFHELPER
+     private void w(boolean flag) {
+         this.datawatcher.set(EntityTurtle.bB, flag);
+     }
+@@ -438,14 +446,17 @@ public class EntityTurtle extends EntityAnimal {
+ 
+             if (!this.g.isInWater() && this.k()) {
+                 if (this.g.bC < 1) {
+-                    this.g.u(true);
++                    this.g.setDigging(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.g.getBukkitEntity(), MCUtil.toLocation(this.g.world, this.e)).callEvent()); // Paper
+                 } else if (this.g.bC > 200) {
+                     World world = this.g.world;
+ 
+                     // CraftBukkit start
+-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.g, this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1)).isCancelled()) {
++                    // Paper start
++                    int eggCount = this.g.random.nextInt(4) + 1;
++                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.g.getBukkitEntity(), MCUtil.toLocation(this.g.world, this.e.up()), eggCount);
++                    if (layEggEvent.callEvent() && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.g, this.e.up(), Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, layEggEvent.getEggCount())).isCancelled()) {
+                     world.playSound((EntityHuman) null, blockposition, SoundEffects.ENTITY_TURTLE_LAY_EGG, SoundCategory.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
+-                    world.setTypeAndData(this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, this.g.random.nextInt(4) + 1), 3);
++                    world.setTypeAndData(this.e.up(), (IBlockData) Blocks.TURTLE_EGG.getBlockData().set(BlockTurtleEgg.b, layEggEvent.getEggCount()), 3);
+                     }
+                     // CraftBukkit end
+                     this.g.setHasEgg(false);
+@@ -574,7 +585,7 @@ public class EntityTurtle extends EntityAnimal {
+ 
+         @Override
+         public boolean a() {
+-            return this.a.isBaby() ? false : (this.a.hasEgg() ? true : (this.a.getRandom().nextInt(700) != 0 ? false : !this.a.getHomePos().a((IPosition) this.a.getPositionVector(), 64.0D)));
++            return this.a.isBaby() ? false : (this.a.hasEgg() ? true : (this.a.getRandom().nextInt(700) != 0 ? false : !this.a.getHomePos().a((IPosition) this.a.getPositionVector(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.a.getBukkitEntity()).callEvent(); // Paper
+         }
+ 
+         @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+index 123a2c75cad410d079cfb23223ab509e4b4c63f7..8edcf7af65ec8790fe946020a8f74932b4436d16 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+@@ -1,6 +1,8 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import net.minecraft.server.EntityTurtle;
++import net.minecraft.server.MCUtil;
++import org.bukkit.Location;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.Turtle;
+@@ -25,4 +27,36 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
+     public EntityType getType() {
+         return EntityType.TURTLE;
+     }
++
++    // Paper start
++    @Override
++    public Location getHome() {
++        return MCUtil.toLocation(getHandle().world, getHandle().getHome());
++    }
++
++    @Override
++    public void setHome(Location location) {
++        getHandle().setHome(MCUtil.toBlockPosition(location));
++    }
++
++    @Override
++    public boolean isGoingHome() {
++        return getHandle().isGoingHome();
++    }
++
++    @Override
++    public boolean isDigging() {
++        return getHandle().isDigging();
++    }
++
++    @Override
++    public boolean hasEgg() {
++        return getHandle().hasEgg();
++    }
++
++    @Override
++    public void setHasEgg(boolean hasEgg) {
++        getHandle().setHasEgg(hasEgg);
++    }
++    // Paper end
+ }

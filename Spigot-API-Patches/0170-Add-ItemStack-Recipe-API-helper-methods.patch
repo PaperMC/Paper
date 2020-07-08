@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 28 Jan 2014 19:13:57 -0500
+Subject: [PATCH] Add ItemStack Recipe API helper methods
+
+Allows using ExactChoice Recipes with easier methodss
+
+diff --git a/src/main/java/org/bukkit/inventory/ShapedRecipe.java b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+index d742c4058ba9aed4fbe1591fd755a06608b06e98..222a12baa8e93ad686ab59426653f066d5876e38 100644
+--- a/src/main/java/org/bukkit/inventory/ShapedRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapedRecipe.java
+@@ -145,6 +145,13 @@ public class ShapedRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
++        return setIngredient(key, new RecipeChoice.ExactChoice(item));
++    }
++    // Paper end
++
+     /**
+      * Get a copy of the ingredients map.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+index 84062dd719cb8a6142dc8c806777cb208c6b42b2..ddcf84e6609abe8379cca2ff99983ce3efbab805 100644
+--- a/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
++++ b/src/main/java/org/bukkit/inventory/ShapelessRecipe.java
+@@ -143,6 +143,40 @@ public class ShapelessRecipe implements Recipe, Keyed {
+         return this;
+     }
+ 
++    // Paper start
++    @NotNull
++    public ShapelessRecipe addIngredient(@NotNull ItemStack item) {
++        return addIngredient(1, item);
++    }
++
++    @NotNull
++    public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
++        Validate.isTrue(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
++        while (count-- > 0) {
++            ingredients.add(new RecipeChoice.ExactChoice(item));
++        }
++        return this;
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(@NotNull ItemStack item) {
++        return removeIngredient(1, item);
++    }
++
++    @NotNull
++    public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
++        Iterator<RecipeChoice> iterator = ingredients.iterator();
++        while (count > 0 && iterator.hasNext()) {
++            ItemStack stack = iterator.next().getItemStack();
++            if (stack.equals(item)) {
++                iterator.remove();
++                count--;
++            }
++        }
++        return this;
++    }
++    // Paper end
++
+     /**
+      * Removes an ingredient from the list.
+      *

@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 26 Jan 2020 16:30:19 -0600
+Subject: [PATCH] Bees get gravity in void. Fixes MC-167279
+
+
+diff --git a/src/main/java/net/minecraft/server/ControllerMove.java b/src/main/java/net/minecraft/server/ControllerMove.java
+index f2d2d04fe16bc091a971c8c90db56e6cd2799555..ac6f9d9e5252b819f91703ad6aeaae3d580eeca0 100644
+--- a/src/main/java/net/minecraft/server/ControllerMove.java
++++ b/src/main/java/net/minecraft/server/ControllerMove.java
+@@ -2,7 +2,7 @@ package net.minecraft.server;
+ 
+ public class ControllerMove {
+ 
+-    protected final EntityInsentient a;
++    protected final EntityInsentient a; public EntityInsentient getEntity() { return a; } // Paper - OBFHELPER
+     protected double b;
+     protected double c;
+     protected double d;
+diff --git a/src/main/java/net/minecraft/server/ControllerMoveFlying.java b/src/main/java/net/minecraft/server/ControllerMoveFlying.java
+index d3507b3852f02bf35bda35a13db66d5375325000..bafcb780f520db562e4a834400b789f60b563597 100644
+--- a/src/main/java/net/minecraft/server/ControllerMoveFlying.java
++++ b/src/main/java/net/minecraft/server/ControllerMoveFlying.java
+@@ -12,7 +12,7 @@ public class ControllerMoveFlying extends ControllerMove {
+     }
+ 
+     @Override
+-    public void a() {
++    public void a() { tick(); } public void tick() { // Paper - OBFHELPER
+         if (this.h == ControllerMove.Operation.MOVE_TO) {
+             this.h = ControllerMove.Operation.WAIT;
+             this.a.setNoGravity(true);
+diff --git a/src/main/java/net/minecraft/server/EntityBee.java b/src/main/java/net/minecraft/server/EntityBee.java
+index dcfd2ea5024be6d4a001fa7437092a7831b36fa7..b9e01e4d9e64fdec4c4f04f1808eb8832bd00c8e 100644
+--- a/src/main/java/net/minecraft/server/EntityBee.java
++++ b/src/main/java/net/minecraft/server/EntityBee.java
+@@ -37,7 +37,17 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
+ 
+     public EntityBee(EntityTypes<? extends EntityBee> entitytypes, World world) {
+         super(entitytypes, world);
+-        this.moveController = new ControllerMoveFlying(this, 20, true);
++        // Paper start - apply gravity to bees when they get stuck in the void, fixes MC-167279
++        this.moveController = new ControllerMoveFlying(this, 20, true) {
++            @Override
++            public void tick() {
++                if (getEntity().locY() <= 0) {
++                    getEntity().setNoGravity(false);
++                }
++                super.tick();
++            }
++        };
++        // Paper end
+         this.lookController = new EntityBee.j(this);
+         this.a(PathType.DANGER_FIRE, -1.0F);
+         this.a(PathType.WATER, -1.0F);
