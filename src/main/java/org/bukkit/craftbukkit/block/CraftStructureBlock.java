@@ -19,7 +19,7 @@ import org.bukkit.util.BlockVector;
 
 public class CraftStructureBlock extends CraftBlockEntityState<TileEntityStructure> implements Structure {
 
-    private static final int MAX_SIZE = 32;
+    private static final int MAX_SIZE = 48;
 
     public CraftStructureBlock(Block block) {
         super(block, TileEntityStructure.class);
