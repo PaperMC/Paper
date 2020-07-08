@@ -5,7 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Smoker;
 
-public class CraftSmoker extends CraftFurnace implements Smoker {
+public class CraftSmoker extends CraftFurnace<TileEntitySmoker> implements Smoker {
 
     public CraftSmoker(Block block) {
         super(block, TileEntitySmoker.class);
