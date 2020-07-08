@@ -56,7 +56,7 @@ public interface Structure extends TileState {
 
     /**
      * The relative position of the structure outline based on the position of
-     * the structure block. Maximum allowed distance is 32 blocks in any
+     * the structure block. Maximum allowed distance is 48 blocks in any
      * direction.
      *
      * @return a Location which contains the relative distance this structure is
@@ -67,7 +67,7 @@ public interface Structure extends TileState {
 
     /**
      * Set the relative position from the structure block. Maximum allowed
-     * distance is 32 blocks in any direction.
+     * distance is 48 blocks in any direction.
      *
      * @param vector the {@link BlockVector} containing the relative origin
      * coordinates of this structure.
@@ -76,7 +76,7 @@ public interface Structure extends TileState {
 
     /**
      * The distance to the opposite corner of this structure. The maximum
-     * structure size is 32x32x32. When a structure has successfully been
+     * structure size is 48x48x48. When a structure has successfully been
      * calculated (i.e. it is within the maximum allowed distance) a white
      * border surrounds the structure.
      *
@@ -88,7 +88,7 @@ public interface Structure extends TileState {
 
     /**
      * Set the maximum size of this structure from the origin point. Maximum
-     * allowed size is 32x32x32.
+     * allowed size is 48x48x48.
      *
      * @param vector the {@link BlockVector} containing the size of this
      * structure, based off of the origin coordinates.
