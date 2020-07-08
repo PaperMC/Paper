@@ -23,7 +23,6 @@ import net.minecraft.server.TileEntityDropper;
 import net.minecraft.server.TileEntityEnchantTable;
 import net.minecraft.server.TileEntityEndGateway;
 import net.minecraft.server.TileEntityEnderChest;
-import net.minecraft.server.TileEntityFurnace;
 import net.minecraft.server.TileEntityFurnaceFurnace;
 import net.minecraft.server.TileEntityHopper;
 import net.minecraft.server.TileEntityJigsaw;
@@ -59,7 +58,7 @@ import org.bukkit.craftbukkit.block.CraftDropper;
 import org.bukkit.craftbukkit.block.CraftEnchantingTable;
 import org.bukkit.craftbukkit.block.CraftEndGateway;
 import org.bukkit.craftbukkit.block.CraftEnderChest;
-import org.bukkit.craftbukkit.block.CraftFurnace;
+import org.bukkit.craftbukkit.block.CraftFurnaceFurnace;
 import org.bukkit.craftbukkit.block.CraftHopper;
 import org.bukkit.craftbukkit.block.CraftJigsaw;
 import org.bukkit.craftbukkit.block.CraftJukebox;
@@ -333,7 +332,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             if (te == null) {
                 te = new TileEntityFurnaceFurnace();
             }
-            return new CraftFurnace(material, (TileEntityFurnace) te);
+            return new CraftFurnaceFurnace(material, (TileEntityFurnaceFurnace) te);
         case DISPENSER:
             if (te == null) {
                 te = new TileEntityDispenser();
@@ -560,7 +559,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             valid = blockState instanceof CraftChest;
             break;
         case FURNACE:
-            valid = blockState instanceof CraftFurnace;
+            valid = blockState instanceof CraftFurnaceFurnace;
             break;
         case DISPENSER:
             valid = blockState instanceof CraftDispenser;
