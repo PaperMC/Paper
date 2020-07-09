@@ -78,6 +78,11 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
     }
 
     @Override
+    public void stopPlaying() {
+        getWorld().playEffect(getLocation(), Effect.RECORD_PLAY, Material.AIR);
+    }
+
+    @Override
     public boolean eject() {
         requirePlaced();
         TileEntity tileEntity = this.getTileEntityFromWorld();
