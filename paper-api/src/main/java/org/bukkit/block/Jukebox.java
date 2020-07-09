@@ -48,6 +48,11 @@ public interface Jukebox extends TileState {
     public boolean isPlaying();
 
     /**
+     * Stops the jukebox playing without ejecting the record.
+     */
+    public void stopPlaying();
+
+    /**
      * Stops the jukebox playing and ejects the current record.
      * <p>
      * If the block represented by this state is no longer a jukebox, this will
