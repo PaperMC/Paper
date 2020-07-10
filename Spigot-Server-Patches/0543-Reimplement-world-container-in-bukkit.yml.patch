@@ -1,0 +1,287 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMolkaPL <themolkapl@gmail.com>
+Date: Fri, 10 Jul 2020 19:56:14 +0200
+Subject: [PATCH] Reimplement world-container in bukkit.yml
+
+
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 8b2755a3b95e472e884976195d1d3551fc260e39..9fa828c8b554522d2c35a3aaf834c33858ecc4cc 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -47,8 +47,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+     private ServerGUI q;
+ 
+     // CraftBukkit start - Signature changed
+-    public DedicatedServer(joptsimple.OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository<ResourcePackLoader> resourcepackrepository, DataPackResources datapackresources, SaveData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
+-        super(options, datapackconfiguration, thread, iregistrycustom_dimension, convertable_conversionsession, savedata, resourcepackrepository, Proxy.NO_PROXY, datafixer, datapackresources, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
++    public DedicatedServer(joptsimple.OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository<ResourcePackLoader> resourcepackrepository, DataPackResources datapackresources, SaveData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration) {
++        super(options, datapackconfiguration, thread, iregistrycustom_dimension, convertable_conversionsession, savedata, resourcepackrepository, Proxy.NO_PROXY, datafixer, datapackresources, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory, bukkitConfiguration);
+         // CraftBukkit end
+         this.propertyManager = dedicatedserversettings;
+         this.remoteControlCommandListener = new RemoteControlCommandListener(this);
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 2f29d7040d37e8be2ba5f8f634011e069a07db2f..f61188496ef83cf13bdf1f76fedb8aee099a77e9 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -86,7 +86,33 @@ public class Main {
+                 return;
+             }
+ 
+-            File file = (File) optionset.valueOf("universe"); // CraftBukkit
++            // Paper start - read bukkit.yml file
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = new org.bukkit.configuration.file.YamlConfiguration();
++            File bukkitConfigurationFile = (File) optionset.valueOf("bukkit-settings");
++            if (bukkitConfigurationFile.exists()) {
++                try {
++                    bukkitConfiguration.load(bukkitConfigurationFile);
++                } catch (java.io.IOException | org.bukkit.configuration.InvalidConfigurationException e) {
++                    Main.LOGGER.fatal("Cannot load {}", bukkitConfigurationFile, e);
++                    return;
++                }
++            }
++
++            org.bukkit.configuration.file.YamlConfiguration defaultBukkitConfiguration = new org.bukkit.configuration.file.YamlConfiguration();
++            java.io.InputStream inputStream = Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml");
++            if (inputStream == null) {
++                throw new java.io.IOException("Missing default bukkit.yml file");
++            }
++
++            try (java.io.InputStreamReader inputStreamReader = new java.io.InputStreamReader(inputStream, com.google.common.base.Charsets.UTF_8)) {
++                defaultBukkitConfiguration.load(inputStreamReader);
++            }
++
++            bukkitConfiguration.setDefaults(defaultBukkitConfiguration);
++            bukkitConfiguration.options().copyDefaults(true);
++            // Paper end
++
++            File file = Optional.ofNullable((File) optionset.valueOf("universe")).orElseGet(() -> new File(bukkitConfiguration.getString("settings.world-container", "."))); // Paper - read settings.world-container
+             YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
+             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
+             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
+@@ -168,7 +194,7 @@ public class Main {
+             */
+             Class.forName("net.minecraft.server.VillagerTrades");// Paper - load this sync so it won't fail later async
+             final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.a((thread) -> {
+-                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.a(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new);
++                DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, datapackconfiguration1, thread, iregistrycustom_dimension, convertable_conversionsession, resourcepackrepository, datapackresources, null, dedicatedserversettings, DataConverterRegistry.a(), minecraftsessionservice, gameprofilerepository, usercache, WorldLoadListenerLogger::new, bukkitConfiguration); // Paper - pass bukkitConfiguration
+ 
+                 /*
+                 dedicatedserver1.d((String) optionset.valueOf(optionspec8));
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 26f230a801bd8efa5f8b61dee53fe7b1435f906b..59a2d673db555b31eeaf78197733c602d64e5383 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -168,6 +168,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     public final double[] recentTps = new double[ 3 ];
+     public final SlackActivityAccountant slackActivityAccountant = new SlackActivityAccountant();
+     // Spigot end
++    public org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration; // Paper
+ 
+     public volatile Thread shutdownThread; // Paper
+ 
+@@ -188,7 +189,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         return s0;
+     }
+ 
+-    public MinecraftServer(OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, SaveData savedata, ResourcePackRepository<ResourcePackLoader> resourcepackrepository, Proxy proxy, DataFixer datafixer, DataPackResources datapackresources, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
++    public MinecraftServer(OptionSet options, DataPackConfiguration datapackconfiguration, Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, SaveData savedata, ResourcePackRepository<ResourcePackLoader> resourcepackrepository, Proxy proxy, DataFixer datafixer, DataPackResources datapackresources, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory, org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration) {
+         super("Server");
+         SERVER = this; // Paper - better singleton
+         this.m = new GameProfilerSwitcher(SystemUtils.a, this::ag);
+@@ -226,6 +227,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         this.options = options;
+         this.datapackconfiguration = datapackconfiguration;
+         this.vanillaCommandDispatcher = datapackresources.commandDispatcher; // CraftBukkit
++        this.bukkitConfiguration = bukkitConfiguration; // Paper
+         // Paper start - Handled by TerminalConsoleAppender
+         // Try to see if we're actually running in a terminal, disable jline if not
+         /*
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d8103ab0d542ced4f30b88ceb4fc4c3eedd5d9a0..7066608b1d64c924ab62c3f66470bb34e77581fe 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -244,7 +244,6 @@ public final class CraftServer implements Server {
+     protected final DedicatedServer console;
+     protected final DedicatedPlayerList playerList;
+     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+-    private YamlConfiguration configuration;
+     private YamlConfiguration commandsConfiguration;
+     private final Yaml yaml = new Yaml(new SafeConstructor());
+     private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().weakValues().makeMap();
+@@ -300,9 +299,7 @@ public final class CraftServer implements Server {
+             getLogger().info("Console input is disabled due to --noconsole command argument");
+         }
+ 
+-        configuration = YamlConfiguration.loadConfiguration(getConfigFile());
+-        configuration.options().copyDefaults(true);
+-        configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
++        YamlConfiguration configuration = console.bukkitConfiguration; // Paper - move configuration to MinecraftServer
+         ConfigurationSection legacyAlias = null;
+         if (!configuration.isString("aliases")) {
+             legacyAlias = configuration.getConfigurationSection("aliases");
+@@ -365,7 +362,7 @@ public final class CraftServer implements Server {
+ 
+     private void saveConfig() {
+         try {
+-            configuration.save(getConfigFile());
++            console.bukkitConfiguration.save(getConfigFile()); // Paper
+         } catch (IOException ex) {
+             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getConfigFile(), ex);
+         }
+@@ -644,7 +641,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean getAllowEnd() {
+-        return this.configuration.getBoolean("settings.allow-end");
++        return this.console.bukkitConfiguration.getBoolean("settings.allow-end"); // Paper
+     }
+ 
+     @Override
+@@ -653,11 +650,11 @@ public final class CraftServer implements Server {
+     }
+ 
+     public boolean getWarnOnOverload() {
+-        return this.configuration.getBoolean("settings.warn-on-overload");
++        return this.console.bukkitConfiguration.getBoolean("settings.warn-on-overload"); // Paper
+     }
+ 
+     public boolean getQueryPlugins() {
+-        return this.configuration.getBoolean("settings.query-plugins");
++        return this.console.bukkitConfiguration.getBoolean("settings.query-plugins"); // Paper
+     }
+ 
+     @Override
+@@ -673,12 +670,12 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public String getUpdateFolder() {
+-        return this.configuration.getString("settings.update-folder", "update");
++        return this.console.bukkitConfiguration.getString("settings.update-folder", "update"); // Paper
+     }
+ 
+     @Override
+     public File getUpdateFolderFile() {
+-        return new File((File) console.options.valueOf("plugins"), this.configuration.getString("settings.update-folder", "update"));
++        return new File((File) console.options.valueOf("plugins"), this.console.bukkitConfiguration.getString("settings.update-folder", "update")); // Paper
+     }
+ 
+     @Override
+@@ -687,34 +684,34 @@ public final class CraftServer implements Server {
+         if (org.spigotmc.SpigotConfig.bungee || com.destroystokyo.paper.PaperConfig.velocitySupport) { // Paper - Velocity support
+             return -1;
+         } else {
+-            return this.configuration.getInt("settings.connection-throttle");
++            return this.console.bukkitConfiguration.getInt("settings.connection-throttle"); // Paper
+         }
+         // Spigot End
+     }
+ 
+     @Override
+     public int getTicksPerAnimalSpawns() {
+-        return this.configuration.getInt("ticks-per.animal-spawns");
++        return this.console.bukkitConfiguration.getInt("ticks-per.animal-spawns"); // Paper
+     }
+ 
+     @Override
+     public int getTicksPerMonsterSpawns() {
+-        return this.configuration.getInt("ticks-per.monster-spawns");
++        return this.console.bukkitConfiguration.getInt("ticks-per.monster-spawns"); // Paper
+     }
+ 
+     @Override
+     public int getTicksPerWaterSpawns() {
+-        return this.configuration.getInt("ticks-per.water-spawns");
++        return this.console.bukkitConfiguration.getInt("ticks-per.water-spawns"); // Paper
+     }
+ 
+     @Override
+     public int getTicksPerWaterAmbientSpawns() {
+-        return this.configuration.getInt("ticks-per.water-ambient-spawns");
++        return this.console.bukkitConfiguration.getInt("ticks-per.water-ambient-spawns"); // Paper
+     }
+ 
+     @Override
+     public int getTicksPerAmbientSpawns() {
+-        return this.configuration.getInt("ticks-per.ambient-spawns");
++        return this.console.bukkitConfiguration.getInt("ticks-per.ambient-spawns"); // Paper
+     }
+ 
+     @Override
+@@ -814,7 +811,7 @@ public final class CraftServer implements Server {
+     public void reload() {
+         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
+         reloadCount++;
+-        configuration = YamlConfiguration.loadConfiguration(getConfigFile());
++        YamlConfiguration configuration = this.console.bukkitConfiguration = YamlConfiguration.loadConfiguration(getConfigFile()); // Paper
+         commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
+ 
+         console.propertyManager = new DedicatedServerSettings(console.options);
+@@ -982,7 +979,7 @@ public final class CraftServer implements Server {
+ 
+     @SuppressWarnings({ "unchecked", "finally" })
+     private void loadCustomPermissions() {
+-        File file = new File(configuration.getString("settings.permissions-file"));
++        File file = new File(console.bukkitConfiguration.getString("settings.permissions-file")); // Paper
+         FileInputStream stream;
+ 
+         try {
+@@ -1375,17 +1372,17 @@ public final class CraftServer implements Server {
+     }
+ 
+     public void removeBukkitSpawnRadius() {
+-        configuration.set("settings.spawn-radius", null);
++        console.bukkitConfiguration.set("settings.spawn-radius", null); // Paper
+         saveConfig();
+     }
+ 
+     public int getBukkitSpawnRadius() {
+-        return configuration.getInt("settings.spawn-radius", -1);
++        return console.bukkitConfiguration.getInt("settings.spawn-radius", -1); // Paper
+     }
+ 
+     @Override
+     public String getShutdownMessage() {
+-        return configuration.getString("settings.shutdown-message");
++        return console.bukkitConfiguration.getString("settings.shutdown-message"); // Paper
+     }
+ 
+     @Override
+@@ -1395,7 +1392,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public void setSpawnRadius(int value) {
+-        configuration.set("settings.spawn-radius", value);
++        console.bukkitConfiguration.set("settings.spawn-radius", value); // Paper
+         saveConfig();
+     }
+ 
+@@ -1415,7 +1412,7 @@ public final class CraftServer implements Server {
+     }
+ 
+     public ChunkGenerator getGenerator(String world) {
+-        ConfigurationSection section = configuration.getConfigurationSection("worlds");
++        ConfigurationSection section = console.bukkitConfiguration.getConfigurationSection("worlds"); // Paper
+         ChunkGenerator result = null;
+ 
+         if (section != null) {
+@@ -2216,7 +2213,7 @@ public final class CraftServer implements Server {
+         @Override
+         public YamlConfiguration getBukkitConfig()
+         {
+-            return configuration;
++            return console.bukkitConfiguration; // Paper
+         }
+ 
+         @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index bac292e6d8e6cdb239d8accd21eaa25022f5640f..ebb7ffc4cd4213eebb849d61fd71966789954b2a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -45,7 +45,6 @@ public class Main {
+                 acceptsAll(asList("W", "world-dir", "universe", "world-container"), "World container")
+                         .withRequiredArg()
+                         .ofType(File.class)
+-                        .defaultsTo(new File("."))
+                         .describedAs("Directory containing worlds");
+ 
+                 acceptsAll(asList("w", "world", "level-name"), "World name")
