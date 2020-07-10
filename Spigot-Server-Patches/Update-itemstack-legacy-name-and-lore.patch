@@ -28,24 +28,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            if (display.hasKeyOfType("Lore", 9)) {
 +                NBTTagList list = display.getList("Lore", 8);
-+                boolean legacy = false;
 +                for (int index = 0; index < list.size(); index++) {
 +                    String json = list.getString(index);
-+                    if (json != null && json.contains("\u00A7")) {
-+                        legacy = true;
-+                        break;
-+                    }
-+                }
-+                if (legacy) {
-+                    NBTTagList lore = new NBTTagList();
-+                    for (int index = 0; index < list.size(); index++) {
-+                        String json = list.getString(index);
++                    if (json != null && json.contains("\u00A7")) { // Only try if it has legacy in the unparsed json
 +                        try {
-+                            lore.add(convert(json));
-+                        } catch (JsonParseException ignore) {
++                            list.set(index, convert(json));
++                        } catch (JsonParseException e) {
++                            list.set(index, NBTTagString.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(new ChatComponentText(""))));
 +                        }
 +                    }
-+                    display.set("Lore", lore);
 +                }
 +            }
 +        }
@@ -53,7 +44,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private NBTTagString convert(String json) {
 +        IChatBaseComponent component = IChatBaseComponent.ChatSerializer.jsonToComponent(json);
-+        if (component != null) {
++        if (component instanceof ChatComponentText && component.getText().contains("\u00A7") && component.getSiblings().isEmpty()) {
++            // Only convert if the root component is a single comp with legacy in it, don't convert already normal components
 +            component = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(component.getText())[0];
 +        }
 +        return NBTTagString.create(org.bukkit.craftbukkit.util.CraftChatMessage.toJSON(component));
