@@ -93,11 +93,20 @@ public class Main {
                 return;
             }
 
-            File file = (File) optionset.valueOf("universe"); // CraftBukkit
+            // Paper start - fix SPIGOT-5824
+            File file;
+            File userCacheFile = new File("usercache.json");
+            if (optionset.has("universe")) {
+                file = (File) optionset.valueOf("universe"); // CraftBukkit
+                userCacheFile = new File(file, "usercache.json");
+            } else {
+                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
+            }
+            // Paper end - fix SPIGOT-5824
             YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
             MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
             GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
-            UserCache usercache = new UserCache(gameprofilerepository, new File(file, MinecraftServer.b.getName()));
+            UserCache usercache = new UserCache(gameprofilerepository, userCacheFile); // Paper - only move usercache.json into folder if --universe is used, not world-container
             // CraftBukkit start
             String s = (String) Optional.ofNullable(optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
             Convertable convertable = Convertable.a(file.toPath());
