@@ -93,6 +93,7 @@ public class Main {
                 return;
             }
 
+            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
             // Paper start - fix SPIGOT-5824
             File file;
             File userCacheFile = new File("usercache.json");
