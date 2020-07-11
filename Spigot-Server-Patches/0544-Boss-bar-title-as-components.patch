@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMolkaPL <themolkapl@gmail.com>
+Date: Sat, 11 Jul 2020 17:55:01 +0200
+Subject: [PATCH] Boss bar title as components
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/boss/CraftBossBar.java b/src/main/java/org/bukkit/craftbukkit/boss/CraftBossBar.java
+index 7771cd6d04f08c4756cbb157d6c04bbb2fc960f9..6d9d2c528e2b0ff5be9ff26fdeffe1affa258921 100644
+--- a/src/main/java/org/bukkit/craftbukkit/boss/CraftBossBar.java
++++ b/src/main/java/org/bukkit/craftbukkit/boss/CraftBossBar.java
+@@ -106,6 +106,35 @@ public class CraftBossBar implements BossBar {
+         handle.sendUpdate(PacketPlayOutBoss.Action.UPDATE_NAME);
+     }
+ 
++    // Paper start - implement title components
++    @Override
++    public net.md_5.bungee.api.chat.BaseComponent[] getTitleComponents() {
++        net.minecraft.server.IChatBaseComponent title = handle.title;
++        if (title == null) {
++            return new net.md_5.bungee.api.chat.BaseComponent[0];
++        }
++
++        String json = net.minecraft.server.IChatBaseComponent.ChatSerializer.componentToJson(title);
++        return net.md_5.bungee.chat.ComponentSerializer.parse(json);
++    }
++
++    @Override
++    public void setTitleComponent(net.md_5.bungee.api.chat.BaseComponent titleComponent) {
++        Preconditions.checkNotNull(titleComponent, "titleComponent");
++
++        this.setTitleComponents(titleComponent);
++    }
++
++    @Override
++    public void setTitleComponents(net.md_5.bungee.api.chat.BaseComponent... titleComponents) {
++        Preconditions.checkNotNull(titleComponents, "titleComponents");
++
++        String json = net.md_5.bungee.chat.ComponentSerializer.toString(titleComponents);
++        handle.title = net.minecraft.server.IChatBaseComponent.ChatSerializer.jsonToComponent(json);
++        handle.sendUpdate(PacketPlayOutBoss.Action.UPDATE_NAME);
++    }
++    // Paper end
++
+     @Override
+     public BarColor getColor() {
+         return convertColor(handle.color);
