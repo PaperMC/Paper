@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PepperCode1 <44146161+PepperCode1@users.noreply.github.com>
+Date: Sun, 12 Jul 2020 15:12:37 -0700
+Subject: [PATCH] Fix-cartography-table
+
+
+diff --git a/src/main/java/net/minecraft/server/ContainerCartography.java b/src/main/java/net/minecraft/server/ContainerCartography.java
+index 79d328786f2e9ba386cb297bb8e7ec0ec3228a65..67d41ee48ecd60d5d907e700a218addee9571a3e 100644
+--- a/src/main/java/net/minecraft/server/ContainerCartography.java
++++ b/src/main/java/net/minecraft/server/ContainerCartography.java
+@@ -25,7 +25,6 @@ public class ContainerCartography extends Container {
+     }
+     // CraftBukkit end
+     private final ContainerAccess containerAccess;
+-    private boolean e;
+     private long f;
+     public final IInventory inventory;
+     private final InventoryCraftResult resultInventory;
+@@ -79,34 +78,20 @@ public class ContainerCartography extends Container {
+             }
+ 
+             @Override
+-            public ItemStack a(int j) {
+-                ItemStack itemstack = super.a(j);
+-                ItemStack itemstack1 = (ItemStack) containeraccess.a((world, blockposition) -> {
+-                    if (!ContainerCartography.this.e && ContainerCartography.this.inventory.getItem(1).getItem() == Items.dP) {
+-                        ItemStack itemstack2 = ItemWorldMap.a(world, ContainerCartography.this.inventory.getItem(0));
+-
+-                        if (itemstack2 != null) {
+-                            itemstack2.setCount(1);
+-                            return itemstack2;
+-                        }
+-                    }
+-
+-                    return itemstack;
+-                }).orElse(itemstack);
++            public ItemStack a(EntityHuman entityhuman, ItemStack itemstack) {
++                // Paper start - Fix cartography table
++                // method name: onTake
++                // moved from decrStackSize and modified to use in-place lock method
++                if (ContainerCartography.this.inventory.getItem(1).getItem() == Items.dP) {
++                    containeraccess.a((world, blockposition) -> {
++                        ItemWorldMap.lockMap(world, itemstack);
++                    });
++                }
+ 
+                 ContainerCartography.this.inventory.splitStack(0, 1);
+                 ContainerCartography.this.inventory.splitStack(1, 1);
+-                return itemstack1;
+-            }
+-
+-            @Override
+-            protected void a(ItemStack itemstack, int j) {
+-                this.a(j);
+-                super.a(itemstack, j);
+-            }
++                // Paper end
+ 
+-            @Override
+-            public ItemStack a(EntityHuman entityhuman, ItemStack itemstack) {
+                 itemstack.getItem().b(itemstack, entityhuman.world, entityhuman);
+                 containeraccess.a((world, blockposition) -> {
+                     long j = world.getTime();
+@@ -211,26 +196,32 @@ public class ContainerCartography extends Container {
+             Item item = itemstack1.getItem();
+ 
+             itemstack = itemstack1.cloneItemStack();
++            boolean mergeLater = false; // Paper - Fix cartography table
+             if (i == 2) {
+-                if (this.inventory.getItem(1).getItem() == Items.dP) {
+-                    itemstack2 = (ItemStack) this.containerAccess.a((world, blockposition) -> {
+-                        ItemStack itemstack3 = ItemWorldMap.a(world, this.inventory.getItem(0));
+-
+-                        if (itemstack3 != null) {
+-                            itemstack3.setCount(1);
+-                            return itemstack3;
+-                        } else {
+-                            return itemstack1;
++                // Paper start - Fix cartography table
++                // all final map processing moved to onTake
++                // check if there is an empty slot in the player's inventory, then merge later
++                if (this.inventory.getItem(1).getItem() != Items.MAP) {
++                    boolean hasSpace = false;
++                    for (ItemStack stack : entityhuman.inventory.getContents().subList(0, 36)) {
++                        if (stack.isEmpty()) {
++                            hasSpace = true;
++                            break;
+                         }
+-                    }).orElse(itemstack1);
+-                }
+-
+-                item.b(itemstack2, entityhuman.world, entityhuman);
+-                if (!this.a(itemstack2, 3, 39, true)) {
+-                    return ItemStack.b;
++                    }
++                    if (!hasSpace) {
++                        if (entityhuman instanceof EntityPlayer) {
++                            ((EntityPlayer) entityhuman).updateInventory(this); // client thinks items were moved differently
++                        }
++                        return ItemStack.b;
++                    }
++                    mergeLater = true;
++                } else {
++                    if (!this.a(itemstack2, 3, 39, true)) {
++                        return ItemStack.b;
++                    }
+                 }
+-
+-                slot.a(itemstack2, itemstack);
++                // Paper end
+             } else if (i != 1 && i != 0) {
+                 if (item == Items.FILLED_MAP) {
+                     if (!this.a(itemstack1, 0, 1, false)) {
+@@ -251,6 +242,20 @@ public class ContainerCartography extends Container {
+                 return ItemStack.b;
+             }
+ 
++            // Paper start
++            // call onTake to modify itemstack2 in-place
++            slot.a(entityhuman, itemstack2);
++            if (mergeLater) {
++                if (!this.a(itemstack2, 3, 39, true)) {
++                    return ItemStack.b;
++                }
++                if (entityhuman instanceof EntityPlayer) {
++                    ((EntityPlayer) entityhuman).updateInventory(this); // client thinks items were moved differently
++                }
++            }
++            this.c();
++            // Paper end
++
+             if (itemstack2.isEmpty()) {
+                 slot.set(ItemStack.b);
+             }
+@@ -259,11 +264,6 @@ public class ContainerCartography extends Container {
+             if (itemstack2.getCount() == itemstack.getCount()) {
+                 return ItemStack.b;
+             }
+-
+-            this.e = true;
+-            slot.a(entityhuman, itemstack2);
+-            this.e = false;
+-            this.c();
+         }
+ 
+         return itemstack;
+diff --git a/src/main/java/net/minecraft/server/ItemWorldMap.java b/src/main/java/net/minecraft/server/ItemWorldMap.java
+index faa556d4358bc9890ae80c18ee10c38a8d46548e..bcc7d96afb4f780866f5bc5c6361d19b09700ec0 100644
+--- a/src/main/java/net/minecraft/server/ItemWorldMap.java
++++ b/src/main/java/net/minecraft/server/ItemWorldMap.java
+@@ -374,6 +374,18 @@ public class ItemWorldMap extends ItemWorldMapBase {
+         }
+     }
+ 
++    // Paper start - Fix cartography table
++    // above method: create locked copy
++    // this method: make locked in-place
++    public static void lockMap(World world, ItemStack itemstack) {
++        WorldMap worldmap = getSavedMap(itemstack, world);
++        if (worldmap != null) {
++            WorldMap worldmap1 = a(itemstack, world, 0, 0, worldmap.scale, worldmap.track, worldmap.unlimitedTracking, worldmap.map);
++            worldmap1.a(worldmap);
++        }
++    }
++    // Paper end
++
+     @Override
+     public EnumInteractionResult a(ItemActionContext itemactioncontext) {
+         IBlockData iblockdata = itemactioncontext.getWorld().getType(itemactioncontext.getClickPosition());
