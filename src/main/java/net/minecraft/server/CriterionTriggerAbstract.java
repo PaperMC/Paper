@@ -12,25 +12,25 @@ import java.util.function.Predicate;
 
 public abstract class CriterionTriggerAbstract<T extends CriterionInstanceAbstract> implements CriterionTrigger<T> {
 
-    private final Map<AdvancementDataPlayer, Set<CriterionTrigger.a<T>>> a = Maps.newIdentityHashMap();
+    //private final Map<AdvancementDataPlayer, Set<CriterionTrigger.a<T>>> a = Maps.newIdentityHashMap(); // Paper - moved into AdvancementDataPlayer to fix memory leak
 
     public CriterionTriggerAbstract() {}
 
     @Override
     public final void a(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a) {
-        ((Set) this.a.computeIfAbsent(advancementdataplayer, (advancementdataplayer1) -> {
+        (advancementdataplayer.criterionData.computeIfAbsent(this, (advancementdataplayer1) -> { // Paper - fix AdvancementDataPlayer leak
             return Sets.newHashSet();
         })).add(criteriontrigger_a);
     }
 
     @Override
     public final void b(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a) {
-        Set<CriterionTrigger.a<T>> set = (Set) this.a.get(advancementdataplayer);
+        Set<CriterionTrigger.a<T>> set = (Set) advancementdataplayer.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
 
         if (set != null) {
             set.remove(criteriontrigger_a);
             if (set.isEmpty()) {
-                this.a.remove(advancementdataplayer);
+                advancementdataplayer.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
             }
         }
 
@@ -38,7 +38,7 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstanceAbstra
 
     @Override
     public final void a(AdvancementDataPlayer advancementdataplayer) {
-        this.a.remove(advancementdataplayer);
+        advancementdataplayer.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
     }
 
     protected abstract T b(JsonObject jsonobject, CriterionConditionEntity.b criterionconditionentity_b, LootDeserializationContext lootdeserializationcontext);
@@ -52,7 +52,7 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstanceAbstra
 
     protected void a(EntityPlayer entityplayer, Predicate<T> predicate) {
         AdvancementDataPlayer advancementdataplayer = entityplayer.getAdvancementData();
-        Set<CriterionTrigger.a<T>> set = (Set) this.a.get(advancementdataplayer);
+        Set<CriterionTrigger.a<T>> set = (Set) advancementdataplayer.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
 
         if (set != null && !set.isEmpty()) {
             LootTableInfo loottableinfo = CriterionConditionEntity.b(entityplayer, entityplayer);
@@ -63,7 +63,7 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstanceAbstra
 
             while (iterator.hasNext()) {
                 criteriontrigger_a = (CriterionTrigger.a) iterator.next();
-                T t0 = (CriterionInstanceAbstract) criteriontrigger_a.a();
+                T t0 = (T) criteriontrigger_a.a(); // Paper - decompile fix
 
                 if (t0.b().a(loottableinfo) && predicate.test(t0)) {
                     if (list == null) {
