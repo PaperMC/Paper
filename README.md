@@ -8,7 +8,7 @@ High performance Spigot fork that aims to fix gameplay and mechanics inconsisten
  - [IRC](https://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/papermc)
 
 
-How To (Server Admins)
+How to (Server Admins)
 ------
 Paperclip is a jar file that you can download and run just like a normal jar file.
 
@@ -19,19 +19,45 @@ Run the Paperclip jar directly from your server. Just like old times
   * Documentation on using Paper: [paper.readthedocs.io](https://paper.readthedocs.io/)
   * For a sneak peak on upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
 
-How To (Plugin Developers)
+How to (Plugin Developers)
 ------
- * See our API patches [here](Spigot-API-Patches)
- * See upcoming, pending, and recently added API [here](https://github.com/PaperMC/Paper/projects/6)
- * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
- * Maven Repo (for paper-api):
+<details><summary>Gradle</summary>
+<p>
+
+* Repository
+
+```groovy
+repositories {
+    maven {
+        name = "papermc"
+        url = 'https://papermc.io/repo/repository/maven-public/'
+    }
+}
+```
+
+* Artifact Information
+```groovy
+dependencies {
+    compileOnly "com.destroystokyo.paper:paper-api:1.16.1-R0.1-SNAPSHOT"
+}
+ ```
+
+</p>
+</details>
+
+<details><summary>Maven</summary>
+<p>
+
+* Repository
+
 ```xml
 <repository>
     <id>papermc</id>
     <url>https://papermc.io/repo/repository/maven-public/</url>
 </repository>
 ```
- * Artifact Information:
+
+* Artifact Information
 ```xml
 <dependency>
     <groupId>com.destroystokyo.paper</groupId>
@@ -41,30 +67,20 @@ How To (Plugin Developers)
 </dependency>
  ```
 
-**Or alternatively, with Gradle:**
+</p>
+</details>
 
- * Repository:
-```groovy
-repositories {
-    maven {
-        url 'https://papermc.io/repo/repository/maven-public/'
-    }
-}
-```
- * Artifact:
-```groovy
-dependencies {
-    compileOnly 'com.destroystokyo.paper:paper-api:1.16.1-R0.1-SNAPSHOT'
-}
-```
+ * See our API patches [here](Spigot-API-Patches)
+ * See upcoming, pending, and recently added API [here](https://github.com/PaperMC/Paper/projects/6)
+ * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
 
-How To (Compiling Jar From Source)
+Compile From Source
 ------
-To compile Paper, you need JDK 8, maven, and an internet connection.
+To compile Paper, you need **JDK 8, maven, and an internet connection.**
 
 Clone this repo, run `./paper jar` from *bash*, get files.
 
-How To (Pull Request)
+Create a Pull Request
 ------
 See [Contributing](CONTRIBUTING.md)
 
