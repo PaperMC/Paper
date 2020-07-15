@@ -1072,6 +1072,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     org.bukkit.inventory.@NotNull ItemStack getActiveItem();
 
     /**
+     * Interrupts any ongoing active "usage" or consumption or an item.
+     */
+    void clearActiveItem();
+
+    /**
      * Gets the remaining number of ticks for {@link #getActiveItem()}'s usage.
      *
      * @return remaining ticks to use {@link #getActiveItem()}
