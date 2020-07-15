@@ -967,6 +967,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().getUseItem().asBukkitMirror();
     }
 
+    // Paper start
+    @Override
+    public void clearActiveItem() {
+        getHandle().stopUsingItem();
+    }
+    // Paper end
+
     @Override
     public int getActiveItemRemainingTime() {
         return this.getHandle().getUseItemRemainingTicks();
