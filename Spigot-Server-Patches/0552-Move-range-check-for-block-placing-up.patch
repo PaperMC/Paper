@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Jul 2020 19:23:32 -0700
+Subject: [PATCH] Move range check for block placing up
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 10e3bf60f13fbc8e26071bcfe8d19cbb635662a9..03cbe720c430f549eb6c2f594d5a599cf1e73226 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1400,6 +1400,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         MovingObjectPositionBlock movingobjectpositionblock = packetplayinuseitem.c();
+         BlockPosition blockposition = movingobjectpositionblock.getBlockPosition();
+         EnumDirection enumdirection = movingobjectpositionblock.getDirection();
++        // Paper start - move check up
++        Location eyeLoc = this.getPlayer().getEyeLocation();
++        double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
++        if (reachDistance > (this.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
++            return;
++        }
++        // Paper end - move check up
+         IBlockData clickedBlock = worldserver.getType(blockposition); // Spigot
+ 
+         this.player.resetIdleTimer();
+@@ -1409,11 +1416,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             this.player.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, ChatMessageType.GAME_INFO));
+         } else if (this.teleportPos == null && this.player.g((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.a((EntityHuman) this.player, blockposition)) {
+             // CraftBukkit start - Check if we can actually do something over this large a distance
+-            Location eyeLoc = this.getPlayer().getEyeLocation();
+-            double reachDistance = NumberConversions.square(eyeLoc.getX() - blockposition.getX()) + NumberConversions.square(eyeLoc.getY() - blockposition.getY()) + NumberConversions.square(eyeLoc.getZ() - blockposition.getZ());
+-            if (reachDistance > (this.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE ? CREATIVE_PLACE_DISTANCE_SQUARED : SURVIVAL_PLACE_DISTANCE_SQUARED)) {
+-                return;
+-            }
++            // Paper - move up
+             this.player.clearActiveItem(); // SPIGOT-4706
+             // CraftBukkit end
+             EnumInteractionResult enuminteractionresult = this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
