@@ -1,0 +1,296 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Fri, 17 Jul 2020 22:39:44 +0200
+Subject: [PATCH] Apply advancements async
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 741c06a27e664211a7023a6369f8e69cbb41a321..6846be030a90291c195db1edb7247f97d6885b56 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -435,4 +435,9 @@ public class PaperConfig {
+         allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
+         set("settings.unsupported-settings.allow-tnt-duplication", null);
+     }
++
++    public static boolean asyncAdvancements = true;
++    private static void asyncAdvancements() {
++        asyncAdvancements = getBoolean("async-advancements", asyncAdvancements);
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/entity/player/AdvancementDataPlayerDelegate.java b/src/main/java/com/destroystokyo/paper/entity/player/AdvancementDataPlayerDelegate.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d72ca924752ce5514322d58d4931c4ddb4a411f5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/player/AdvancementDataPlayerDelegate.java
+@@ -0,0 +1,103 @@
++package com.destroystokyo.paper.entity.player;
++
++import com.mojang.datafixers.DataFixer;
++import net.minecraft.server.*;
++
++import javax.annotation.Nullable;
++import java.io.File;
++import java.util.concurrent.CompletableFuture;
++
++public final class AdvancementDataPlayerDelegate extends AdvancementDataPlayer {
++    private final CompletableFuture<AdvancementDataPlayer> future;
++
++    public AdvancementDataPlayerDelegate(
++        DataFixer datafixer,
++        PlayerList playerlist,
++        AdvancementDataWorld advancementdataworld, File file,
++        EntityPlayer entityplayer,
++
++        CompletableFuture<AdvancementDataPlayer> future
++    ) {
++        super(datafixer, playerlist, advancementdataworld, file, entityplayer);
++
++        this.future = future;
++    }
++
++    @Override
++    public void setPlayer(EntityPlayer entityPlayer) {
++        future.join().setPlayer(entityPlayer);
++        entityPlayer.setAdvancementDataPlayer(future.join());
++    }
++
++    @Override
++    public void a(EntityPlayer entityplayer) {
++        setPlayer(entityplayer);
++    }
++
++    @Override
++    public void a() {
++        future.join().a();
++    }
++
++    @Override
++    public void a(AdvancementDataWorld advancementdataworld) {
++        future.join().a(advancementdataworld);
++    }
++
++    @Override
++    public void b() {
++        future.join().b();
++    }
++
++    @Override
++    public boolean grantCriteria(Advancement advancement, String s) {
++        return future.join().grantCriteria(advancement, s);
++    }
++
++    @Override
++    public boolean revokeCritera(Advancement advancement, String s) {
++        return future.join().revokeCritera(advancement, s);
++    }
++
++    @Override
++    public void b(EntityPlayer entityplayer) {
++        future.join().b(entityplayer);
++    }
++
++    @Override
++    public void a(@Nullable Advancement advancement) {
++        future.join().a(advancement);
++    }
++
++    @Override
++    public AdvancementProgress getProgress(Advancement advancement) {
++        return future.join().getProgress(advancement);
++    }
++
++    @Override
++    public int hashCode() {
++        return future.join().hashCode();
++    }
++
++    @Override
++    public boolean equals(Object obj) {
++        if (obj == null) {
++            return false;
++        }
++        return future.join().equals(obj);
++    }
++
++    @Override
++    public String toString() {
++        return future.join().toString();
++    }
++
++    @Override
++    protected void d(AdvancementDataWorld advancementdataworld) {
++        // Don't do anything; this shouldn't be called fast enough for it not to apply to the value delegated to first.
++    }
++
++    public CompletableFuture<AdvancementDataPlayer> getFuture() {
++        return future;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index d3387a4e16f81b820d40502d2c46ebb3db88f824..f3ceb66666f626e6844a17da1fef30eb6212c94b 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -59,6 +59,7 @@ public class AdvancementDataPlayer {
+         this.d(advancementdataworld);
+     }
+ 
++    public void setPlayer(EntityPlayer entityPlayer) { a(entityPlayer); } // Paper - OBFHELPER
+     public void a(EntityPlayer entityplayer) {
+         this.player = entityplayer;
+     }
+@@ -133,7 +134,7 @@ public class AdvancementDataPlayer {
+ 
+     }
+ 
+-    private void d(AdvancementDataWorld advancementdataworld) {
++    protected void d(AdvancementDataWorld advancementdataworld) { // Paper - private -> protected
+         if (this.f.isFile()) {
+             try {
+                 JsonReader jsonreader = new JsonReader(new StringReader(Files.toString(this.f, StandardCharsets.UTF_8)));
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 4550e3449b146d5d416ece620d036cb17547b30e..005276244c4c24468a52ed6686264f27f8effb1d 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.entity.player.AdvancementDataPlayerDelegate;
+ import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
+ import com.google.common.collect.Lists;
+ import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent; // Paper
+@@ -47,7 +48,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public final MinecraftServer server;
+     public final PlayerInteractManager playerInteractManager;
+     public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
+-    private final AdvancementDataPlayer advancementDataPlayer;
++    private AdvancementDataPlayer advancementDataPlayer; public void setAdvancementDataPlayer(AdvancementDataPlayer advancementDataPlayer) { this.advancementDataPlayer = advancementDataPlayer; } // Paper - remove final, add setter
+     private final ServerStatisticManager serverStatisticManager;
+     private float lastHealthScored = Float.MIN_VALUE;
+     private int lastFoodScored = Integer.MIN_VALUE;
+@@ -130,7 +131,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.playerInteractManager = playerinteractmanager;
+         this.server = minecraftserver;
+         this.serverStatisticManager = minecraftserver.getPlayerList().getStatisticManager(this);
+-        this.advancementDataPlayer = minecraftserver.getPlayerList().f(this);
++        this.advancementDataPlayer = minecraftserver.getPlayerList().applyAdvancementsAsync(this); // Paper
+         this.G = 1.0F;
+         //this.b(worldserver); // Paper - don't move to spawn on login, only first join
+ 
+@@ -494,6 +495,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             CriterionTriggers.u.a(this, this.cm, this.ticksLived - this.cn);
+         }
+ 
++        if (isAdvancementDataLoaded()) // Paper - don't tick advancements unless they're loaded
+         this.advancementDataPlayer.b(this);
+     }
+ 
+@@ -1890,6 +1892,20 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         return this.advancementDataPlayer;
+     }
+ 
++    // Paper start
++    public boolean isAdvancementDataLoaded() {
++        return this.playerConnection != null
++            && this.advancementDataPlayer != null
++            && (!(this.advancementDataPlayer instanceof AdvancementDataPlayerDelegate)
++                || ((AdvancementDataPlayerDelegate) this.advancementDataPlayer).getFuture().isDone());
++    }
++
++    public AdvancementDataPlayer getAdvancementDataIfLoaded() {
++        if (!isAdvancementDataLoaded()) return null;
++        return getAdvancementData();
++    }
++    // Paper end
++
+     // CraftBukkit start
+     public void a(WorldServer worldserver, double d0, double d1, double d2, float f, float f1) {
+         this.a(worldserver, d0, d1, d2, f, f1, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 95d57c6de95eca580ca4e3183db851e5a15de342..5e5280e7d6c8386ebf330c00db44f07e6b7bfc0e 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -540,7 +540,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             MinecraftKey minecraftkey = packetplayinadvancements.d();
+             Advancement advancement = this.minecraftServer.getAdvancementData().a(minecraftkey);
+ 
+-            if (advancement != null) {
++            if (advancement != null && this.player.isAdvancementDataLoaded()) { // Paper
+                 this.player.getAdvancementData().a(advancement);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 5ee90e2e5ba13bc00dff7ba1ec273977b7b545ba..de00b8ab7f32d23c64b70556ec40c6fcf14a4507 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import co.aikar.timings.MinecraftTimings;
++import com.destroystokyo.paper.entity.player.AdvancementDataPlayerDelegate;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+@@ -18,6 +19,7 @@ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.concurrent.CompletableFuture;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -489,7 +491,7 @@ public abstract class PlayerList {
+             serverstatisticmanager.save();
+         }
+ 
+-        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementData(); // CraftBukkit
++        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementDataIfLoaded(); // CraftBukkit // Paper - don't wait for advancements to just write them
+ 
+         if (advancementdataplayer != null) {
+             advancementdataplayer.b();
+@@ -1310,9 +1312,44 @@ public abstract class PlayerList {
+         return serverstatisticmanager;
+     }
+ 
++    // Paper start - async advancements
++    public AdvancementDataPlayer applyAdvancementsAsync(EntityPlayer entityPlayer) {
++        if (!com.destroystokyo.paper.PaperConfig.asyncAdvancements) {
++            return f(entityPlayer);
++        }
++
++        if (entityPlayer.isAdvancementDataLoaded()) {
++            // Loaded already!
++            AdvancementDataPlayer advancementDataPlayer = entityPlayer.getAdvancementData();
++            advancementDataPlayer.setPlayer(entityPlayer);
++            return advancementDataPlayer;
++        }
++
++        // Not so lucky, IO time.
++        UUID uuid = entityPlayer.getUniqueID();
++        File file = this.server.a(SavedFile.ADVANCEMENTS).toFile();
++        File file1 = new File(file, uuid + ".json");
++        AdvancementDataPlayerDelegate data = new AdvancementDataPlayerDelegate(this.server.getDataFixer(), this,
++            this.server.getAdvancementData(), file1, entityPlayer, new CompletableFuture<>());
++        this.server.executorService.execute(() -> {
++            try {
++                data.getFuture().complete(new AdvancementDataPlayer(
++                    this.server.getDataFixer(), this, server.getAdvancementData(), file1, entityPlayer
++                ));
++                data.setPlayer(entityPlayer); // Will also set the field to the proper one.
++            } catch (Throwable ex) {
++                data.getFuture().completeExceptionally(ex);
++                entityPlayer.playerConnection.disconnect("Your advancement data could not be loaded.");
++            }
++        });
++
++        return data;
++    }
++    // Paper end
++
+     public AdvancementDataPlayer f(EntityPlayer entityplayer) {
+         UUID uuid = entityplayer.getUniqueID();
+-        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementData(); // CraftBukkit
++        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementDataIfLoaded(); // CraftBukkit // Paper
+ 
+         if (advancementdataplayer == null) {
+             File file = this.server.a(SavedFile.ADVANCEMENTS).toFile();
