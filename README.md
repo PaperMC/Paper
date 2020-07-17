@@ -76,7 +76,7 @@ dependencies {
 
 Compile From Source
 ------
-To compile Paper, you need **JDK 8, maven, and an internet connection.**
+To compile Paper, you need **JDK 8 or higher, maven, and an internet connection.**
 
 Clone this repo, run `./paper jar` from *bash*, get files.
 
