@@ -1,0 +1,2085 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 12xx12 <12xx12100@gmail.com>
+Date: Fri, 17 Jul 2020 20:34:20 +0200
+Subject: [PATCH] deobfuscation in Advancement classes
+
+
+diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
+index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..a276d191087818d2bef7a4425179a0f10a1a224e 100644
+--- a/src/main/java/net/minecraft/server/Advancement.java
++++ b/src/main/java/net/minecraft/server/Advancement.java
+@@ -17,34 +17,35 @@ import javax.annotation.Nullable;
+ import org.apache.commons.lang3.ArrayUtils;
+ 
+ public class Advancement {
++    // Paper start - OBFHELPER
+ 
+     private final Advancement parent;
+     private final AdvancementDisplay display;
+     private final AdvancementRewards rewards;
+-    private final MinecraftKey key;
++    private final MinecraftKey name;
+     private final Map<String, Criterion> criteria;
+     private final String[][] requirements;
+     private final Set<Advancement> children = Sets.newLinkedHashSet();
+     private final IChatBaseComponent chatComponent;
+     public final org.bukkit.advancement.Advancement bukkit = new org.bukkit.craftbukkit.advancement.CraftAdvancement(this); // CraftBukkit
+ 
+-    public Advancement(MinecraftKey minecraftkey, @Nullable Advancement advancement, @Nullable AdvancementDisplay advancementdisplay, AdvancementRewards advancementrewards, Map<String, Criterion> map, String[][] astring) {
+-        this.key = minecraftkey;
+-        this.display = advancementdisplay;
+-        this.criteria = ImmutableMap.copyOf(map);
+-        this.parent = advancement;
+-        this.rewards = advancementrewards;
+-        this.requirements = astring;
+-        if (advancement != null) {
+-            advancement.a(this);
++    public Advancement(MinecraftKey name, @Nullable Advancement parent, @Nullable AdvancementDisplay display, AdvancementRewards rewards, Map<String, Criterion> criteria, String[][] requirements) {
++        this.name = name;
++        this.display = display;
++        this.criteria = ImmutableMap.copyOf(criteria);
++        this.parent = parent;
++        this.rewards = rewards;
++        this.requirements = requirements;
++        if (parent != null) {  // set this as parents child
++            parent.a(this);
+         }
+ 
+-        if (advancementdisplay == null) {
+-            this.chatComponent = new ChatComponentText(minecraftkey.toString());
++        if (display == null) {
++            this.chatComponent = new ChatComponentText(name.toString());
+         } else {
+-            IChatBaseComponent ichatbasecomponent = advancementdisplay.a();
+-            EnumChatFormat enumchatformat = advancementdisplay.e().c();
+-            IChatMutableComponent ichatmutablecomponent = ChatComponentUtils.a(ichatbasecomponent.mutableCopy(), ChatModifier.b.setColor(enumchatformat)).c("\n").addSibling(advancementdisplay.b());
++            IChatBaseComponent ichatbasecomponent = display.a();
++            EnumChatFormat enumchatformat = display.e().c();
++            IChatMutableComponent ichatmutablecomponent = ChatComponentUtils.a(ichatbasecomponent.mutableCopy(), ChatModifier.b.setColor(enumchatformat)).c("\n").addSibling(display.b());
+             IChatMutableComponent ichatmutablecomponent1 = ichatbasecomponent.mutableCopy().format((chatmodifier) -> {
+                 return chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, ichatmutablecomponent));
+             });
+@@ -54,43 +55,43 @@ public class Advancement {
+ 
+     }
+ 
+-    public Advancement.SerializedAdvancement a() {
++    public Advancement.SerializedAdvancement getSerializedAdvancement() {
+         return new Advancement.SerializedAdvancement(this.parent == null ? null : this.parent.getName(), this.display, this.rewards, this.criteria, this.requirements);
+     }
+ 
++    public Advancement.SerializedAdvancement a() { return getSerializedAdvancement(); }
++
+     @Nullable
+-    public Advancement b() {
+-        return this.parent;
+-    }
++    public Advancement getParent() { return this.parent; }
+ 
+     @Nullable
+-    public AdvancementDisplay c() {
+-        return this.display;
+-    }
++    public Advancement b() { return this.getParent(); }
+ 
+-    public AdvancementRewards d() {
+-        return this.rewards;
+-    }
++    @Nullable
++    public AdvancementDisplay getDisplay() { return this.display; }
++
++    @Nullable
++    public AdvancementDisplay c() { return this.getDisplay(); }
++
++    public AdvancementRewards getRewards() { return this.rewards; }
++
++    public AdvancementRewards d() { return this.getRewards(); }
+ 
+     public String toString() {
+         return "SimpleAdvancement{id=" + this.getName() + ", parent=" + (this.parent == null ? "null" : this.parent.getName()) + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
+     }
+ 
+-    public Iterable<Advancement> e() {
+-        return this.children;
+-    }
++    public Iterable<Advancement> getChildren() { return this.children; }
+ 
+-    public Map<String, Criterion> getCriteria() {
+-        return this.criteria;
+-    }
++    public Iterable<Advancement> e() { return this.getChildren(); }
+ 
+-    public void a(Advancement advancement) {
+-        this.children.add(advancement);
+-    }
++    public Map<String, Criterion> getCriteria() { return this.criteria; }
+ 
+-    public MinecraftKey getName() {
+-        return this.key;
+-    }
++    public void addChild(Advancement advancement) { this.children.add(advancement); }
++
++    public void a(Advancement advancement) { this.addChild(advancement); }
++
++    public MinecraftKey getName() { return this.name; }
+ 
+     public boolean equals(Object object) {
+         if (this == object) {
+@@ -99,250 +100,312 @@ public class Advancement {
+             return false;
+         } else {
+             Advancement advancement = (Advancement) object;
+-
+-            return this.key.equals(advancement.key);
++            return this.name.equals(advancement.name);
+         }
+     }
+ 
+-    public int hashCode() {
+-        return this.key.hashCode();
+-    }
++    public int hashCode() { return this.name.hashCode(); }
+ 
+-    public String[][] i() {
+-        return this.requirements;
+-    }
++    public String[][] getRequirements() { return this.requirements; }
+ 
+-    public IChatBaseComponent j() {
+-        return this.chatComponent;
+-    }
++    public String[][] i() { return this.getRequirements(); }
++
++    public IChatBaseComponent getChatComponent() { return this.chatComponent; }
++
++    public IChatBaseComponent j() { return this.getChatComponent(); }
+ 
+     public static class SerializedAdvancement {
+ 
+-        private MinecraftKey a;
+-        private Advancement b;
+-        private AdvancementDisplay c;
+-        private AdvancementRewards d;
+-        private Map<String, Criterion> e;
+-        private String[][] f;
+-        private AdvancementRequirements g;
+-
+-        private SerializedAdvancement(@Nullable MinecraftKey minecraftkey, @Nullable AdvancementDisplay advancementdisplay, AdvancementRewards advancementrewards, Map<String, Criterion> map, String[][] astring) {
+-            this.d = AdvancementRewards.a;
+-            this.e = Maps.newLinkedHashMap();
+-            this.g = AdvancementRequirements.AND;
+-            this.a = minecraftkey;
+-            this.c = advancementdisplay;
+-            this.d = advancementrewards;
+-            this.e = map;
+-            this.f = astring;
++        private MinecraftKey parent;
++        private Advancement advancement;
++        private AdvancementDisplay display;
++        private AdvancementRewards rewards;
++        private Map<String, Criterion> criteria;
++        private String[][] requirements;
++        private AdvancementRequirements advancementRequirements;  // TODO: find out what this does
++
++        private SerializedAdvancement(@Nullable MinecraftKey parent, @Nullable AdvancementDisplay display,
++                                      AdvancementRewards rewards, Map<String, Criterion> criteria, String[][] requirements) {
++            this.rewards = AdvancementRewards.EMPTY_REWARD;
++            this.criteria = Maps.newLinkedHashMap();
++            this.advancementRequirements = AdvancementRequirements.AND;  // TODO: find out what this does
++            this.parent = parent;
++            this.display = display;
++            this.rewards = rewards;
++            this.criteria = criteria;
++            this.requirements = requirements;
+         }
+ 
++        /**
++         * creates empty SerializedAdvancement
++         */
+         private SerializedAdvancement() {
+-            this.d = AdvancementRewards.a;
+-            this.e = Maps.newLinkedHashMap();
+-            this.g = AdvancementRequirements.AND;
++            this.rewards = AdvancementRewards.EMPTY_REWARD;
++            this.criteria = Maps.newLinkedHashMap();
++            this.advancementRequirements = AdvancementRequirements.AND;  // TODO: find out what this does
+         }
+ 
+-        public static Advancement.SerializedAdvancement a() {
++        public static Advancement.SerializedAdvancement getInstance() {
+             return new Advancement.SerializedAdvancement();
+         }
+ 
+-        public Advancement.SerializedAdvancement a(Advancement advancement) {
+-            this.b = advancement;
++        public static Advancement.SerializedAdvancement a() { return Advancement.SerializedAdvancement.getInstance(); }
++
++        public Advancement.SerializedAdvancement setAdvancement(Advancement advancement) {
++            this.advancement = advancement;
+             return this;
+         }
+ 
+-        public Advancement.SerializedAdvancement a(MinecraftKey minecraftkey) {
+-            this.a = minecraftkey;
++        public Advancement.SerializedAdvancement a(Advancement advancement) { return this.setAdvancement(advancement); }
++
++        public Advancement.SerializedAdvancement setParent(MinecraftKey parent) {
++            this.parent = parent;
+             return this;
+         }
+ 
+-        public Advancement.SerializedAdvancement a(ItemStack itemstack, IChatBaseComponent ichatbasecomponent, IChatBaseComponent ichatbasecomponent1, @Nullable MinecraftKey minecraftkey, AdvancementFrameType advancementframetype, boolean flag, boolean flag1, boolean flag2) {
+-            return this.a(new AdvancementDisplay(itemstack, ichatbasecomponent, ichatbasecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2));
++        public Advancement.SerializedAdvancement a(MinecraftKey parent) { return this.setParent(parent); }
++
++        public Advancement.SerializedAdvancement setDisplay(AdvancementDisplay displayName) {
++            this.display = displayName;
++            return this;
+         }
+ 
+-        public Advancement.SerializedAdvancement a(IMaterial imaterial, IChatBaseComponent ichatbasecomponent, IChatBaseComponent ichatbasecomponent1, @Nullable MinecraftKey minecraftkey, AdvancementFrameType advancementframetype, boolean flag, boolean flag1, boolean flag2) {
+-            return this.a(new AdvancementDisplay(new ItemStack(imaterial.getItem()), ichatbasecomponent, ichatbasecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2));
++        public Advancement.SerializedAdvancement a(AdvancementDisplay display) { return this.setDisplay(display); }
++
++        public Advancement.SerializedAdvancement setDisplay(ItemStack icon, IChatBaseComponent title,
++                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                            AdvancementFrameType frame, boolean showToast, boolean anncounceToChat, boolean hidden) {
++            return this.setDisplay(new AdvancementDisplay(icon, title, description, background, frame, showToast, anncounceToChat, hidden));
+         }
+ 
+-        public Advancement.SerializedAdvancement a(AdvancementDisplay advancementdisplay) {
+-            this.c = advancementdisplay;
+-            return this;
++        public Advancement.SerializedAdvancement a(ItemStack icon, IChatBaseComponent title,
++                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                            AdvancementFrameType frame, boolean showToast, boolean anncounceToChat, boolean hidden)
++        { return this.setDisplay(icon, title, description, background, frame, showToast, anncounceToChat, hidden); }
++
++        public Advancement.SerializedAdvancement setDisplay(IMaterial icon, IChatBaseComponent title,
++                                                   IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                   AdvancementFrameType frame, boolean showToast, boolean announceToChat, boolean hidden) {
++            return this.setDisplay(new AdvancementDisplay(new ItemStack(icon.getItem()), title, description, background, frame, showToast, announceToChat, hidden));
+         }
+ 
+-        public Advancement.SerializedAdvancement a(AdvancementRewards.a advancementrewards_a) {
+-            return this.a(advancementrewards_a.a());
++        public Advancement.SerializedAdvancement a(IMaterial icon, IChatBaseComponent title,
++                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                            AdvancementFrameType frame, boolean showToast, boolean announceToChat, boolean hidden)
++        { return this.setDisplay(icon,title, description, background, frame, showToast, announceToChat, hidden); }
++
++
++        public Advancement.SerializedAdvancement setRewards(AdvancementRewards.SerializedAdvancementRewards serializedAdvancementRewards) {
++            return this.setRewards(serializedAdvancementRewards.getAdvancementRewards());
+         }
+ 
+-        public Advancement.SerializedAdvancement a(AdvancementRewards advancementrewards) {
+-            this.d = advancementrewards;
++        public Advancement.SerializedAdvancement a(AdvancementRewards.a advancementrewards_a) { return setRewards(advancementrewards_a); }
++
++        public Advancement.SerializedAdvancement setRewards(AdvancementRewards advancementrewards) {
++            this.rewards = advancementrewards;
+             return this;
+         }
+ 
++        public Advancement.SerializedAdvancement a(AdvancementRewards advancementRewards) { return this.setRewards(advancementRewards); }
++
+         public Advancement.SerializedAdvancement a(String s, CriterionInstance criterioninstance) {
+             return this.a(s, new Criterion(criterioninstance));
+         }
+ 
+-        public Advancement.SerializedAdvancement a(String s, Criterion criterion) {
+-            if (this.e.containsKey(s)) {
++        public Map<String, Criterion> getCriteria() { return this.criteria; }
++
++        public Map<String, Criterion> c() {
++            return this.getCriteria();
++        }
++
++        public Advancement.SerializedAdvancement addCriterion(String s, Criterion criterion) {
++            if (this.criteria.containsKey(s)) {
+                 throw new IllegalArgumentException("Duplicate criterion " + s);
+             } else {
+-                this.e.put(s, criterion);
++                this.criteria.put(s, criterion);
+                 return this;
+             }
+         }
+ 
+-        public Advancement.SerializedAdvancement a(AdvancementRequirements advancementrequirements) {
+-            this.g = advancementrequirements;
++        public Advancement.SerializedAdvancement a(String s, Criterion criterion) { return this.addCriterion(s, criterion); }
++
++
++        public Advancement.SerializedAdvancement setRequirements(AdvancementRequirements advancementRequirements) {
++            this.advancementRequirements = advancementRequirements;
+             return this;
+         }
+ 
++        public Advancement.SerializedAdvancement a(AdvancementRequirements advancementrequirements) { return this.setRequirements(advancementRequirements); }
++
++        // TODO: find out what this does
+         public boolean a(Function<MinecraftKey, Advancement> function) {
+-            if (this.a == null) {
++            if (this.parent == null) {
+                 return true;
+             } else {
+-                if (this.b == null) {
+-                    this.b = (Advancement) function.apply(this.a);
++                if (this.advancement == null) {
++                    this.advancement = (Advancement) function.apply(this.parent);
+                 }
+-
+-                return this.b != null;
++                return this.advancement != null;
+             }
+         }
+ 
+-        public Advancement b(MinecraftKey minecraftkey) {
++        /**
++         * returns the same advancement with a new name
++         *
++         * @param name new name of the advancement
++         * @return
++         */
++        public Advancement rename(MinecraftKey name) {
+             if (!this.a((Function<MinecraftKey, Advancement>) (minecraftkey1) -> { // CraftBukkit - decompile error
+                 return null;
+             })) {
+                 throw new IllegalStateException("Tried to build incomplete advancement!");
+             } else {
+-                if (this.f == null) {
+-                    this.f = this.g.createRequirements(this.e.keySet());
++                if (this.requirements == null) {
++                    this.requirements = this.advancementRequirements.createRequirements(this.criteria.keySet());
+                 }
+ 
+-                return new Advancement(minecraftkey, this.b, this.c, this.d, this.e, this.f);
++                return new Advancement(name, this.advancement, this.display, this.rewards, this.criteria, this.requirements);
+             }
+         }
++        public Advancement b(MinecraftKey name) { return this.rename(name); }
+ 
+-        public Advancement a(Consumer<Advancement> consumer, String s) {
+-            Advancement advancement = this.b(new MinecraftKey(s));
++        public Advancement rename(Consumer<Advancement> consumer, String s) {
++            Advancement advancement = this.rename(new MinecraftKey(s));
+ 
+             consumer.accept(advancement);
+             return advancement;
+         }
+ 
+-        public JsonObject b() {
+-            if (this.f == null) {
+-                this.f = this.g.createRequirements(this.e.keySet());
++        public Advancement a (Consumer<Advancement> consumer, String s) { return rename(consumer, s); }
++
++        /**
++         * generates JsonObject from SerializedAdvancement
++         *
++         * @return JsonObject for this
++         */
++        public JsonObject getJson() {
++            if (this.requirements == null) {
++                this.requirements = this.advancementRequirements.createRequirements(this.criteria.keySet());
+             }
+ 
+             JsonObject jsonobject = new JsonObject();
+ 
+-            if (this.b != null) {
+-                jsonobject.addProperty("parent", this.b.getName().toString());
+-            } else if (this.a != null) {
+-                jsonobject.addProperty("parent", this.a.toString());
++            if (this.advancement != null) {
++                jsonobject.addProperty("parent", this.advancement.getName().toString());
++            } else if (this.parent != null) {
++                jsonobject.addProperty("parent", this.parent.toString());
+             }
+ 
+-            if (this.c != null) {
+-                jsonobject.add("display", this.c.k());
++            if (this.display != null) {
++                jsonobject.add("display", this.display.getJson());
+             }
+ 
+-            jsonobject.add("rewards", this.d.b());
+-            JsonObject jsonobject1 = new JsonObject();
+-            Iterator iterator = this.e.entrySet().iterator();
++            jsonobject.add("rewards", this.rewards.getJson());
++            JsonObject criteria = new JsonObject();
+ 
+-            while (iterator.hasNext()) {
+-                Entry<String, Criterion> entry = (Entry) iterator.next();
++            // while (iterator.hasNext()) {
++            for (Entry<String, Criterion> stringCriterionEntry : this.criteria.entrySet()) {  // Paper - IntelliJ said this is better
+ 
+-                jsonobject1.add((String) entry.getKey(), ((Criterion) entry.getValue()).b());
+-            }
++                Entry<String, Criterion> entry = (Entry) stringCriterionEntry;
+ 
+-            jsonobject.add("criteria", jsonobject1);
+-            JsonArray jsonarray = new JsonArray();
+-            String[][] astring = this.f;
+-            int i = astring.length;
++                criteria.add((String) entry.getKey(), ((Criterion) entry.getValue()).b());  // TODO: fix obfuscation
++            }
+ 
+-            for (int j = 0; j < i; ++j) {
+-                String[] astring1 = astring[j];
+-                JsonArray jsonarray1 = new JsonArray();
+-                String[] astring2 = astring1;
+-                int k = astring1.length;
++            jsonobject.add("criteria", criteria);
++            JsonArray bufferArray = new JsonArray();
++            String[][] requirements = this.requirements;
++            // int i = requirements.length; // Paper - removed because this was duplicate
+ 
+-                for (int l = 0; l < k; ++l) {
+-                    String s = astring2[l];
++            // for (int j = 0; j < i; ++j) {
++            for (String[] requirement : requirements) {  // Paper - IntelliJ said this is better
++                JsonArray requirementsArray = new JsonArray();
+ 
+-                    jsonarray1.add(s);
++                // for (int l = 0; l < k; ++l) {
++                for (String s : requirement) {  // Paper - IntelliJ said this is better
++                    requirementsArray.add(s);
+                 }
+-
+-                jsonarray.add(jsonarray1);
++                bufferArray.add(requirementsArray);
+             }
+ 
+-            jsonobject.add("requirements", jsonarray);
++            jsonobject.add("requirements", bufferArray);
+             return jsonobject;
+         }
+ 
+-        public void a(PacketDataSerializer packetdataserializer) {
+-            if (this.a == null) {
++        public JsonObject b() { return this.getJson(); }
++
++        /**
++         * hands the SerializedAdvancement over to the PacketDataSerializer to send it
++         *
++         * @param packetdataserializer
++         */
++        public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {
++            if (this.parent == null) {
+                 packetdataserializer.writeBoolean(false);
+             } else {
+                 packetdataserializer.writeBoolean(true);
+-                packetdataserializer.a(this.a);
++                packetdataserializer.a(this.parent);
+             }
+ 
+-            if (this.c == null) {
++            if (this.display == null) {
+                 packetdataserializer.writeBoolean(false);
+             } else {
+                 packetdataserializer.writeBoolean(true);
+-                this.c.a(packetdataserializer);
++                this.display.readFromPacketDataSerializer(packetdataserializer);
+             }
+ 
+-            Criterion.a(this.e, packetdataserializer);
+-            packetdataserializer.d(this.f.length);
+-            String[][] astring = this.f;
+-            int i = astring.length;
+-
+-            for (int j = 0; j < i; ++j) {
+-                String[] astring1 = astring[j];
+-
+-                packetdataserializer.d(astring1.length);
+-                String[] astring2 = astring1;
+-                int k = astring1.length;
+-
+-                for (int l = 0; l < k; ++l) {
+-                    String s = astring2[l];
+-
+-                    packetdataserializer.a(s);
++            Criterion.a(this.criteria, packetdataserializer); // Todo: deobfuscate
++            packetdataserializer.d(this.requirements.length);  // Todo: deobfuscate
++            String[][] requirements = this.requirements;
++            /* int i = requirements.length;
++            for (int j = 0; j < i; ++j) { */
++            for (String[] requirement : requirements) {  // Paper - IntelliJ said this is better
++                packetdataserializer.d(requirement.length);
++                // String[] astring2 = requirement; // Paper - removed duplication whyever
++                /*int k = requirement.length;
++                for (int l = 0; l < k; ++l) { */ // Paper - IntelliJ said this is better
++                for (String s : requirement) {
++                    packetdataserializer.a(s);  // Todo: deobfuscate
+                 }
+             }
+-
+         }
+ 
++        public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer);}
++
+         public String toString() {
+-            return "Task Advancement{parentId=" + this.a + ", display=" + this.c + ", rewards=" + this.d + ", criteria=" + this.e + ", requirements=" + Arrays.deepToString(this.f) + '}';
++            return "Task Advancement{parentId=" + this.parent + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
+         }
+ 
+-        public static Advancement.SerializedAdvancement a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
++        /**
++         * creates a new SerializedAdvancement Object from a JsonObject
++         *
++         * 2020-07-18 at this point I am still confused of the code - 12xx12
++         *
++         * @param jsonobject
++         * @param lootdeserializationcontext
++         * @return
++         */
++        public static Advancement.SerializedAdvancement readFromJson(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
+             MinecraftKey minecraftkey = jsonobject.has("parent") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "parent")) : null;
+-            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.a(ChatDeserializer.t(jsonobject, "display")) : null;
+-            AdvancementRewards advancementrewards = jsonobject.has("rewards") ? AdvancementRewards.a(ChatDeserializer.t(jsonobject, "rewards")) : AdvancementRewards.a;
+-            Map<String, Criterion> map = Criterion.b(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext);
++            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.readFromJSON(ChatDeserializer.t(jsonobject, "display")) : null;
++            AdvancementRewards advancementrewards = jsonobject.has("rewards") ? AdvancementRewards.readFromJson(ChatDeserializer.t(jsonobject, "rewards")) : AdvancementRewards.EMPTY_REWARD;
++            Map<String, Criterion> map = Criterion.b(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext); // Todo: deobfuscate the criterion call
+ 
+             if (map.isEmpty()) {
+                 throw new JsonSyntaxException("Advancement criteria cannot be empty");
+             } else {
+-                JsonArray jsonarray = ChatDeserializer.a(jsonobject, "requirements", new JsonArray());
+-                String[][] astring = new String[jsonarray.size()][];
++                JsonArray requirements = ChatDeserializer.a(jsonobject, "requirements", new JsonArray());  // Todo: deobfuscate
++                String[][] astring = new String[requirements.size()][];
+ 
+-                int i;
+-                int j;
++                int i, j;
+ 
+-                for (i = 0; i < jsonarray.size(); ++i) {
+-                    JsonArray jsonarray1 = ChatDeserializer.n(jsonarray.get(i), "requirements[" + i + "]");
++                for (i = 0; i < requirements.size(); ++i) {
++                    JsonArray requirement = ChatDeserializer.n(requirements.get(i), "requirements[" + i + "]");
+ 
+-                    astring[i] = new String[jsonarray1.size()];
++                    astring[i] = new String[requirement.size()];
+ 
+-                    for (j = 0; j < jsonarray1.size(); ++j) {
+-                        astring[i][j] = ChatDeserializer.a(jsonarray1.get(j), "requirements[" + i + "][" + j + "]");
++                    for (j = 0; j < requirement.size(); ++j) {
++                        astring[i][j] = ChatDeserializer.a(requirement.get(j), "requirements[" + i + "][" + j + "]");
+                     }
+                 }
+ 
+@@ -357,24 +420,24 @@ public class Advancement {
+                     }
+                 }
+ 
+-                String[][] astring1 = astring;
+-                int k = astring.length;
++                // String[][] astring1 = astring; // Paper - removed for duplication
++                // int k = astring.length;  // Paper - removed for duplication
+ 
+                 int l;
+ 
+-                for (j = 0; j < k; ++j) {
+-                    String[] astring2 = astring1[j];
++                /*for (j = 0; j < k; ++j) {
++                    String[] astring2 = astring1[j]; */ // Paper - replaced with enhanced for
++                for (String[] astring2: astring) { // Paper - result from cleanup
+ 
+                     if (astring2.length == 0 && map.isEmpty()) {
+                         throw new JsonSyntaxException("Requirement entry cannot be empty");
+                     }
+ 
+-                    String[] astring3 = astring2;
+-
+-                    l = astring2.length;
++                    /* String[] astring3 = astring2;
++                     l = astring2.length; */  // Paper - removed for duplication
+ 
+-                    for (int i1 = 0; i1 < l; ++i1) {
+-                        String s1 = astring3[i1];
++                    for (String s1 : astring2) {
++                        // String s1 = astring2[i1]; // Paper - replaced with enhanced for
+ 
+                         if (!map.containsKey(s1)) {
+                             throw new JsonSyntaxException("Unknown required criterion '" + s1 + "'");
+@@ -382,10 +445,10 @@ public class Advancement {
+                     }
+                 }
+ 
+-                Iterator iterator1 = map.keySet().iterator();
++                /*Iterator iterator1 = map.keySet().iterator();
++                while (iterator1.hasNext()) { */  // Paper - removed for duplication
+ 
+-                while (iterator1.hasNext()) {
+-                    String s2 = (String) iterator1.next();
++                for (String s2 : map.keySet()) {  // Paper - IntelliJ said this is better
+                     boolean flag = false;
+                     String[][] astring4 = astring;
+                     int j1 = astring.length;
+@@ -400,10 +463,8 @@ public class Advancement {
+                                 ++l;
+                                 continue;
+                             }
+-
+                             flag = true;
+                         }
+-
+                         if (!flag) {
+                             throw new JsonSyntaxException("Criterion '" + s2 + "' isn't a requirement for completion. This isn't supported behaviour, all criteria must be required.");
+                         }
+@@ -415,25 +476,32 @@ public class Advancement {
+             }
+         }
+ 
+-        public static Advancement.SerializedAdvancement b(PacketDataSerializer packetdataserializer) {
+-            MinecraftKey minecraftkey = packetdataserializer.readBoolean() ? packetdataserializer.o() : null;
+-            AdvancementDisplay advancementdisplay = packetdataserializer.readBoolean() ? AdvancementDisplay.b(packetdataserializer) : null;
+-            Map<String, Criterion> map = Criterion.c(packetdataserializer);
+-            String[][] astring = new String[packetdataserializer.i()][];
++        public static Advancement.SerializedAdvancement a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return readFromJson(jsonobject, lootdeserializationcontext); }
++
++        /**
++         * generates SerializedAdvancement from PacketDataSerializer
++         *
++         * @param packetDataSerializer
++         * @return new SerializedAdvancement object
++         */
++        public static Advancement.SerializedAdvancement getFromPacketDataSerializer(PacketDataSerializer packetDataSerializer) {
++            MinecraftKey minecraftkey = packetDataSerializer.readBoolean() ? packetDataSerializer.o() : null;  // Todo: deobfuscate
++            AdvancementDisplay advancementdisplay = packetDataSerializer.readBoolean() ? AdvancementDisplay.readFromPacketDataSerializer(packetDataSerializer) : null;
++            Map<String, Criterion> map = Criterion.c(packetDataSerializer);  // Todo: deobfuscate
++            String[][] astring = new String[packetDataSerializer.i()][];  // Todo: deobfuscate
+ 
+             for (int i = 0; i < astring.length; ++i) {
+-                astring[i] = new String[packetdataserializer.i()];
++                astring[i] = new String[packetDataSerializer.i()];  // Todo: deobfuscate
+ 
+                 for (int j = 0; j < astring[i].length; ++j) {
+-                    astring[i][j] = packetdataserializer.e(32767);
++                    astring[i][j] = packetDataSerializer.e(32767);  // Todo: deobfuscate
+                 }
+             }
+ 
+-            return new Advancement.SerializedAdvancement(minecraftkey, advancementdisplay, AdvancementRewards.a, map, astring);
++            return new Advancement.SerializedAdvancement(minecraftkey, advancementdisplay, AdvancementRewards.EMPTY_REWARD, map, astring);
+         }
+ 
+-        public Map<String, Criterion> c() {
+-            return this.e;
+-        }
++        public static Advancement.SerializedAdvancement b(PacketDataSerializer packetDataSerializer) { return getFromPacketDataSerializer(packetDataSerializer); }
+     }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index d3387a4e16f81b820d40502d2c46ebb3db88f824..a6db0281817246f5b1c2890cf70769dcc01f75f6 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -33,34 +33,39 @@ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++/**
++ * this object stores the advancements and progress per player
++ *
++ */
+ public class AdvancementDataPlayer {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Gson b = (new GsonBuilder()).registerTypeAdapter(AdvancementProgress.class, new AdvancementProgress.a()).registerTypeAdapter(MinecraftKey.class, new MinecraftKey.a()).setPrettyPrinting().create();
+-    private static final TypeToken<Map<MinecraftKey, AdvancementProgress>> c = new TypeToken<Map<MinecraftKey, AdvancementProgress>>() {
+-    };
+-    private final DataFixer d;
+-    private final PlayerList e;
+-    private final File f;
+-    public final Map<Advancement, AdvancementProgress> data = Maps.newLinkedHashMap();
+-    private final Set<Advancement> h = Sets.newLinkedHashSet();
+-    private final Set<Advancement> i = Sets.newLinkedHashSet();
+-    private final Set<Advancement> j = Sets.newLinkedHashSet();
++    private static final TypeToken<Map<MinecraftKey, AdvancementProgress>> c = new TypeToken<Map<MinecraftKey, AdvancementProgress>>() { };
++    private final DataFixer dataFixer;
++    private final PlayerList playerList;
++    private final File file;
++    public final Map<Advancement, AdvancementProgress> advancementProgress = Maps.newLinkedHashMap();
++    private final Set<Advancement> advancementsAchieved = Sets.newLinkedHashSet();  // Paper - removed obfuscation
++    private final Set<Advancement> advancements = Sets.newLinkedHashSet();  // Paper - removed obfuscation TODO: make sure name is right
++    private final Set<Advancement> advancementsInProgress = Sets.newLinkedHashSet();  // Paper - removed obfuscation
+     private EntityPlayer player;
+     @Nullable
+-    private Advancement l;
++    private Advancement advancement;
+     private boolean m = true;
+ 
+     public AdvancementDataPlayer(DataFixer datafixer, PlayerList playerlist, AdvancementDataWorld advancementdataworld, File file, EntityPlayer entityplayer) {
+-        this.d = datafixer;
+-        this.e = playerlist;
+-        this.f = file;
++        this.dataFixer = datafixer;
++        this.playerList = playerlist;
++        this.file = file;
+         this.player = entityplayer;
+         this.d(advancementdataworld);
+     }
+ 
+-    public void a(EntityPlayer entityplayer) {
+-        this.player = entityplayer;
++    public void a(EntityPlayer player) { this.setPlayer(player); }
++
++    public void setPlayer(EntityPlayer player) {
++        this.player = player;
+     }
+ 
+     public void a() {
+@@ -71,17 +76,16 @@ public class AdvancementDataPlayer {
+ 
+             criteriontrigger.a(this);
+         }
+-
+     }
+ 
+     public void a(AdvancementDataWorld advancementdataworld) {
+         this.a();
+-        this.data.clear();
+-        this.h.clear();
+-        this.i.clear();
+-        this.j.clear();
++        this.advancementProgress.clear();
++        this.advancementsAchieved.clear();
++        this.advancements.clear();
++        this.advancementsInProgress.clear();
+         this.m = true;
+-        this.l = null;
++        this.advancement = null;
+         this.d(advancementdataworld);
+     }
+ 
+@@ -93,19 +97,18 @@ public class AdvancementDataPlayer {
+ 
+             this.c(advancement);
+         }
+-
+     }
+ 
+     private void c() {
+         List<Advancement> list = Lists.newArrayList();
+-        Iterator iterator = this.data.entrySet().iterator();
++        Iterator iterator = this.advancementProgress.entrySet().iterator();
+ 
+         while (iterator.hasNext()) {
+             Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next();
+ 
+             if (((AdvancementProgress) entry.getValue()).isDone()) {
+                 list.add(entry.getKey());
+-                this.j.add(entry.getKey());
++                this.advancementsInProgress.add(entry.getKey());
+             }
+         }
+ 
+@@ -114,7 +117,7 @@ public class AdvancementDataPlayer {
+         while (iterator.hasNext()) {
+             Advancement advancement = (Advancement) iterator.next();
+ 
+-            this.e(advancement);
++            this.processProgress(advancement);
+         }
+ 
+     }
+@@ -134,9 +137,9 @@ public class AdvancementDataPlayer {
+     }
+ 
+     private void d(AdvancementDataWorld advancementdataworld) {
+-        if (this.f.isFile()) {
++        if (this.file.isFile()) {
+             try {
+-                JsonReader jsonreader = new JsonReader(new StringReader(Files.toString(this.f, StandardCharsets.UTF_8)));
++                JsonReader jsonreader = new JsonReader(new StringReader(Files.toString(this.file, StandardCharsets.UTF_8)));
+                 Throwable throwable = null;
+ 
+                 try {
+@@ -147,7 +150,7 @@ public class AdvancementDataPlayer {
+                         dynamic = dynamic.set("DataVersion", dynamic.createInt(1343));
+                     }
+ 
+-                    dynamic = this.d.update(DataFixTypes.ADVANCEMENTS.a(), dynamic, dynamic.get("DataVersion").asInt(0), SharedConstants.getGameVersion().getWorldVersion());
++                    dynamic = this.dataFixer.update(DataFixTypes.ADVANCEMENTS.a(), dynamic, dynamic.get("DataVersion").asInt(0), SharedConstants.getGameVersion().getWorldVersion());
+                     dynamic = dynamic.remove("DataVersion");
+                     Map<MinecraftKey, AdvancementProgress> map = (Map) AdvancementDataPlayer.b.getAdapter(AdvancementDataPlayer.c).fromJsonTree((JsonElement) dynamic.getValue());
+ 
+@@ -165,7 +168,7 @@ public class AdvancementDataPlayer {
+                         if (advancement == null) {
+                             // CraftBukkit start
+                             if (entry.getKey().getNamespace().equals("minecraft")) {
+-                                AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", entry.getKey(), this.f);
++                                AdvancementDataPlayer.LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", entry.getKey(), this.file);
+                             }
+                             // CraftBukkit end
+                         } else {
+@@ -190,9 +193,9 @@ public class AdvancementDataPlayer {
+ 
+                 }
+             } catch (JsonParseException jsonparseexception) {
+-                AdvancementDataPlayer.LOGGER.error("Couldn't parse player advancements in {}", this.f, jsonparseexception);
++                AdvancementDataPlayer.LOGGER.error("Couldn't parse player advancements in {}", this.file, jsonparseexception);
+             } catch (IOException ioexception) {
+-                AdvancementDataPlayer.LOGGER.error("Couldn't access player advancements in {}", this.f, ioexception);
++                AdvancementDataPlayer.LOGGER.error("Couldn't access player advancements in {}", this.file, ioexception);
+             }
+         }
+ 
+@@ -204,7 +207,7 @@ public class AdvancementDataPlayer {
+     public void b() {
+         if (org.spigotmc.SpigotConfig.disableAdvancementSaving) return; // Spigot
+         Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
+-        Iterator iterator = this.data.entrySet().iterator();
++        Iterator iterator = this.advancementProgress.entrySet().iterator();
+ 
+         while (iterator.hasNext()) {
+             Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next();
+@@ -215,8 +218,8 @@ public class AdvancementDataPlayer {
+             }
+         }
+ 
+-        if (this.f.getParentFile() != null) {
+-            this.f.getParentFile().mkdirs();
++        if (this.file.getParentFile() != null) {
++            this.file.getParentFile().mkdirs();
+         }
+ 
+         JsonElement jsonelement = AdvancementDataPlayer.b.toJsonTree(map);
+@@ -224,7 +227,7 @@ public class AdvancementDataPlayer {
+         jsonelement.getAsJsonObject().addProperty("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
+ 
+         try {
+-            FileOutputStream fileoutputstream = new FileOutputStream(this.f);
++            FileOutputStream fileoutputstream = new FileOutputStream(this.file);
+             Throwable throwable = null;
+ 
+             try {
+@@ -268,7 +271,7 @@ public class AdvancementDataPlayer {
+ 
+             }
+         } catch (IOException ioexception) {
+-            AdvancementDataPlayer.LOGGER.error("Couldn't save player advancements to {}", this.f, ioexception);
++            AdvancementDataPlayer.LOGGER.error("Couldn't save player advancements to {}", this.file, ioexception);
+         }
+ 
+     }
+@@ -286,19 +289,19 @@ public class AdvancementDataPlayer {
+             }
+             // Paper end
+             this.d(advancement);
+-            this.j.add(advancement);
++            this.advancementsInProgress.add(advancement);
+             flag = true;
+             if (!flag1 && advancementprogress.isDone()) {
+                 this.player.world.getServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
+                 advancement.d().a(this.player);
+                 if (advancement.c() != null && advancement.c().i() && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
+-                    this.e.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.b);
++                    this.playerList.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.b);
+                 }
+             }
+         }
+ 
+         if (advancementprogress.isDone()) {
+-            this.e(advancement);
++            this.processProgress(advancement);
+         }
+ 
+         return flag;
+@@ -310,12 +313,12 @@ public class AdvancementDataPlayer {
+ 
+         if (advancementprogress.b(s)) {
+             this.c(advancement);
+-            this.j.add(advancement);
++            this.advancementsInProgress.add(advancement);
+             flag = true;
+         }
+ 
+         if (!advancementprogress.b()) {
+-            this.e(advancement);
++            this.processProgress(advancement);
+         }
+ 
+         return flag;
+@@ -371,26 +374,26 @@ public class AdvancementDataPlayer {
+     }
+ 
+     public void b(EntityPlayer entityplayer) {
+-        if (this.m || !this.i.isEmpty() || !this.j.isEmpty()) {
++        if (this.m || !this.advancements.isEmpty() || !this.advancementsInProgress.isEmpty()) {
+             Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
+             Set<Advancement> set = Sets.newLinkedHashSet();
+             Set<MinecraftKey> set1 = Sets.newLinkedHashSet();
+-            Iterator iterator = this.j.iterator();
++            Iterator iterator = this.advancementsInProgress.iterator();
+ 
+             Advancement advancement;
+ 
+             while (iterator.hasNext()) {
+                 advancement = (Advancement) iterator.next();
+-                if (this.h.contains(advancement)) {
+-                    map.put(advancement.getName(), this.data.get(advancement));
++                if (this.advancementsAchieved.contains(advancement)) {
++                    map.put(advancement.getName(), this.advancementProgress.get(advancement));
+                 }
+             }
+ 
+-            iterator = this.i.iterator();
++            iterator = this.advancements.iterator();
+ 
+             while (iterator.hasNext()) {
+                 advancement = (Advancement) iterator.next();
+-                if (this.h.contains(advancement)) {
++                if (this.advancementsAchieved.contains(advancement)) {
+                     set.add(advancement);
+                 } else {
+                     set1.add(advancement.getName());
+@@ -399,8 +402,8 @@ public class AdvancementDataPlayer {
+ 
+             if (this.m || !map.isEmpty() || !set.isEmpty() || !set1.isEmpty()) {
+                 entityplayer.playerConnection.sendPacket(new PacketPlayOutAdvancements(this.m, set, set1, map));
+-                this.i.clear();
+-                this.j.clear();
++                this.advancements.clear();
++                this.advancementsInProgress.clear();
+             }
+         }
+ 
+@@ -408,22 +411,22 @@ public class AdvancementDataPlayer {
+     }
+ 
+     public void a(@Nullable Advancement advancement) {
+-        Advancement advancement1 = this.l;
++        Advancement advancement1 = this.advancement;
+ 
+         if (advancement != null && advancement.b() == null && advancement.c() != null) {
+-            this.l = advancement;
++            this.advancement = advancement;
+         } else {
+-            this.l = null;
++            this.advancement = null;
+         }
+ 
+-        if (advancement1 != this.l) {
+-            this.player.playerConnection.sendPacket(new PacketPlayOutSelectAdvancementTab(this.l == null ? null : this.l.getName()));
++        if (advancement1 != this.advancement) {
++            this.player.playerConnection.sendPacket(new PacketPlayOutSelectAdvancementTab(this.advancement == null ? null : this.advancement.getName()));
+         }
+ 
+     }
+ 
+     public AdvancementProgress getProgress(Advancement advancement) {
+-        AdvancementProgress advancementprogress = (AdvancementProgress) this.data.get(advancement);
++        AdvancementProgress advancementprogress = (AdvancementProgress) this.advancementProgress.get(advancement);
+ 
+         if (advancementprogress == null) {
+             advancementprogress = new AdvancementProgress();
+@@ -434,39 +437,46 @@ public class AdvancementDataPlayer {
+     }
+ 
+     private void a(Advancement advancement, AdvancementProgress advancementprogress) {
+-        advancementprogress.a(advancement.getCriteria(), advancement.i());
+-        this.data.put(advancement, advancementprogress);
++        advancementprogress.a(advancement.getCriteria(), advancement.getRequirements());
++        this.advancementProgress.put(advancement, advancementprogress);
+     }
+ 
+-    private void e(Advancement advancement) {
++    private void processProgress(Advancement advancement) {  // Paper - removed obfuscation
+         // Paper start
+-        e(advancement, IterationEntryPoint.ROOT);
++        processProgress(advancement, IterationEntryPoint.ROOT);
+     }
+     private enum IterationEntryPoint {
+         ROOT,
+         ITERATOR,
+         PARENT_OF_ITERATOR
+     }
+-    private void e(Advancement advancement, IterationEntryPoint entryPoint) {
++
++    /**
++     * checks if the advancement or any of its relatives were achieved or have been revoked the achieved status
++     *
++     * @param advancement advancement to check
++     * @param entryPoint marker to improve process time of the operation
++     */
++    private void processProgress(Advancement advancement, IterationEntryPoint entryPoint) {  // Paper - removed obfuscation
+         // Paper end
+-        boolean flag = this.f(advancement);
+-        boolean flag1 = this.h.contains(advancement);
+-
+-        if (flag && !flag1) {
+-            this.h.add(advancement);
+-            this.i.add(advancement);
+-            if (this.data.containsKey(advancement)) {
+-                this.j.add(advancement);
++        boolean achieved = this.isAchieved(advancement);  // Paper - removed obfuscation
++        boolean markedAchieved = this.advancementsAchieved.contains(advancement);  // Paper - removed obfuscation
++
++        if (achieved && !markedAchieved) {
++            this.advancementsAchieved.add(advancement);
++            this.advancements.add(advancement);
++            if (this.advancementProgress.containsKey(advancement)) {
++                this.advancementsInProgress.add(advancement);
+             }
+-        } else if (!flag && flag1) {
+-            this.h.remove(advancement);
+-            this.i.add(advancement);
++        } else if (!achieved && markedAchieved) {
++            this.advancementsAchieved.remove(advancement);
++            this.advancements.add(advancement);
+         }
+ 
+-        if (flag != flag1 && advancement.b() != null) {
++        if (achieved != markedAchieved && advancement.getParent() != null) {  // Paper - removed obfuscation
+             // Paper start - If we're not coming from an iterator consider this to be a root entry, otherwise
+             // market that we're entering from the parent of an iterator.
+-            this.e(advancement.b(), entryPoint == IterationEntryPoint.ITERATOR ? IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);
++            this.processProgress(advancement.getParent(), entryPoint == IterationEntryPoint.ITERATOR ? IterationEntryPoint.PARENT_OF_ITERATOR : IterationEntryPoint.ROOT);  // Paper - removed obfuscation
+         }
+ 
+         // If this is true, we've went through a child iteration, entered the parent, processed the parent
+@@ -475,61 +485,60 @@ public class AdvancementDataPlayer {
+             return;
+         } // Paper end
+ 
+-        Iterator iterator = advancement.e().iterator();
+-
+-        while (iterator.hasNext()) {
+-            Advancement advancement1 = (Advancement) iterator.next();
+-
+-            this.e(advancement1, IterationEntryPoint.ITERATOR); // Paper - Mark this call as being from iteration
++        for (Advancement advancement1 : advancement.getChildren()) {  // Paper - removed obfuscation and added new for loop
++            this.processProgress(advancement1, IterationEntryPoint.ITERATOR); // Paper - Mark this call as being from iteration
+         }
+ 
+     }
+ 
+-    private boolean f(Advancement advancement) {
++    /**
++     * returns if the given advancement is already achieved
++     * if itself is not achived checks if parent or grandparent is achieved or any of it's direct children
++     *
++     * @param advancement advancement to check
++     * @return if the the advancement is achieved
++     */
++    private boolean isAchieved(Advancement advancement) {
+         for (int i = 0; advancement != null && i <= 2; ++i) {
+-            if (i == 0 && this.g(advancement)) {
+-                return true;
+-            }
++            if (i == 0 && this.childrenAchieved(advancement)) { return true; }
+ 
+-            if (advancement.c() == null) {
+-                return false;
+-            }
++            if (advancement.c() == null) { return false; } // Todo: decide which to call
+ 
+-            AdvancementProgress advancementprogress = this.getProgress(advancement);
++            AdvancementProgress advancementProgress = this.getProgress(advancement);
+ 
+-            if (advancementprogress.isDone()) {
+-                return true;
+-            }
++            if (advancementProgress.isDone()) { return true; }
+ 
+-            if (advancement.c().j()) {
+-                return false;
+-            }
++            if (advancement.getDisplay().isHidden()) { return false; }
+ 
+-            advancement = advancement.b();
++            advancement = advancement.getParent();
+         }
+ 
+         return false;
+     }
+ 
+-    private boolean g(Advancement advancement) {
+-        AdvancementProgress advancementprogress = this.getProgress(advancement);
+-
+-        if (advancementprogress.isDone()) {
++    /**
++     * returns if the given advancement is already achieved
++     * if itself is not achieved checks if any children are achieved
++     *
++     * @param advancement advancement to check
++     * @return if the advancement was achieved or any of its children
++     */
++    private boolean childrenAchieved(Advancement advancement) {
++        AdvancementProgress advancementProgress = this.getProgress(advancement);
++
++        /*if (advancementProgress.isDone()) {
+             return true;
+-        } else {
+-            Iterator iterator = advancement.e().iterator();
++        } else {*/  // Paper - removed due to redundancy
++        if (!advancementProgress.isDone()) {
++            Iterator iterator = advancement.getChildren().iterator();
+ 
+-            Advancement advancement1;
++            Advancement child;
+ 
+             do {
+-                if (!iterator.hasNext()) {
+-                    return false;
+-                }
+-
+-                advancement1 = (Advancement) iterator.next();
+-            } while (!this.g(advancement1));
+-
+-            return true;
++                if (!iterator.hasNext()) { return false; }
++                child = (Advancement) iterator.next();
++            } while (!this.childrenAchieved(child));
+         }
++        return true;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/AdvancementDisplay.java b/src/main/java/net/minecraft/server/AdvancementDisplay.java
+index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cfe4ad7f28 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDisplay.java
++++ b/src/main/java/net/minecraft/server/AdvancementDisplay.java
+@@ -9,26 +9,29 @@ import javax.annotation.Nullable;
+ 
+ public class AdvancementDisplay {
+ 
+-    private final IChatBaseComponent a;
+-    private final IChatBaseComponent b;
+-    private final ItemStack c;
+-    private final MinecraftKey d;
+-    private final AdvancementFrameType e;
+-    private final boolean f;
+-    private final boolean g;
+-    private final boolean h;
++    // Paper start - OBFHELPER
++    private final IChatBaseComponent title;
++    private final IChatBaseComponent description;
++    private final ItemStack icon;
++    private final MinecraftKey background;
++    private final AdvancementFrameType frame;
++    private final boolean showToast;
++    private final boolean announceToChat;
++    private final boolean hidden;
+     private float i;
+     private float j;
+ 
+-    public AdvancementDisplay(ItemStack itemstack, IChatBaseComponent ichatbasecomponent, IChatBaseComponent ichatbasecomponent1, @Nullable MinecraftKey minecraftkey, AdvancementFrameType advancementframetype, boolean flag, boolean flag1, boolean flag2) {
+-        this.a = ichatbasecomponent;
+-        this.b = ichatbasecomponent1;
+-        this.c = itemstack;
+-        this.d = minecraftkey;
+-        this.e = advancementframetype;
+-        this.f = flag;
+-        this.g = flag1;
+-        this.h = flag2;
++    public AdvancementDisplay(ItemStack icon, IChatBaseComponent title, IChatBaseComponent description,
++                              @Nullable MinecraftKey background, AdvancementFrameType frame,
++                              boolean showToast, boolean announceToChat, boolean hidden) {
++        this.icon = icon;
++        this.title = title;
++        this.description = description;
++        this.background = background;
++        this.frame = frame;
++        this.showToast = showToast;
++        this.announceToChat = announceToChat;
++        this.hidden = hidden;
+     }
+ 
+     public void a(float f, float f1) {
+@@ -37,44 +40,65 @@ public class AdvancementDisplay {
+     }
+ 
+     public IChatBaseComponent a() {
+-        return this.a;
++        return this.title;
+     }
+ 
++    public IChatBaseComponent getTitle() { return this.a(); }
++
+     public IChatBaseComponent b() {
+-        return this.b;
++        return this.description;
+     }
+ 
++    public IChatBaseComponent getDescription() { return this.b(); }
++
+     public AdvancementFrameType e() {
+-        return this.e;
++        return this.frame;
+     }
+ 
+     public boolean i() {
+-        return this.g;
++        return this.announceToChat;
+     }
+ 
+-    public boolean j() {
+-        return this.h;
+-    }
++    public boolean announceToChat() { return this.i(); }
++
++    public boolean j() { return this.isHidden(); }
+ 
++    public boolean isHidden() { return this.hidden; }
++
++    /**
++     * reads json file into AdvancementDisplay
++     *
++     * @param jsonobject the json to interpret
++     * @return new AdvancementDisplay
++     */
+     public static AdvancementDisplay a(JsonObject jsonobject) {
+-        IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(jsonobject.get("title"));
+-        IChatMutableComponent ichatmutablecomponent1 = IChatBaseComponent.ChatSerializer.a(jsonobject.get("description"));
+-
+-        if (ichatmutablecomponent != null && ichatmutablecomponent1 != null) {
+-            ItemStack itemstack = b(ChatDeserializer.t(jsonobject, "icon"));
+-            MinecraftKey minecraftkey = jsonobject.has("background") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "background")) : null;
+-            AdvancementFrameType advancementframetype = jsonobject.has("frame") ? AdvancementFrameType.a(ChatDeserializer.h(jsonobject, "frame")) : AdvancementFrameType.TASK;
+-            boolean flag = ChatDeserializer.a(jsonobject, "show_toast", true);
+-            boolean flag1 = ChatDeserializer.a(jsonobject, "announce_to_chat", true);
+-            boolean flag2 = ChatDeserializer.a(jsonobject, "hidden", false);
+-
+-            return new AdvancementDisplay(itemstack, ichatmutablecomponent, ichatmutablecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2);
++        IChatMutableComponent title = IChatBaseComponent.ChatSerializer.a(jsonobject.get("title"));
++        IChatMutableComponent description = IChatBaseComponent.ChatSerializer.a(jsonobject.get("description"));
++
++        if (title != null && description != null) {
++            ItemStack icon = setIcon(ChatDeserializer.t(jsonobject, "icon"));
++            MinecraftKey background = jsonobject.has("background") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "background")) : null;
++            AdvancementFrameType frame = jsonobject.has("frame") ? AdvancementFrameType.a(ChatDeserializer.h(jsonobject, "frame")) : AdvancementFrameType.TASK;
++            boolean showToast = ChatDeserializer.a(jsonobject, "show_toast", true);
++            boolean toChat = ChatDeserializer.a(jsonobject, "announce_to_chat", true);
++            boolean hidden = ChatDeserializer.a(jsonobject, "hidden", false);
++
++            return new AdvancementDisplay(icon, title, description, background, frame, showToast, toChat, hidden);
+         } else {
+             throw new JsonSyntaxException("Both title and description must be set");
+         }
+     }
+ 
+-    private static ItemStack b(JsonObject jsonobject) {
++    public static AdvancementDisplay readFromJSON(JsonObject jsonObject) { return a(jsonObject); }
++
++
++    /**
++     * generates the icon for the icon from JsonObject
++     *
++     * @param jsonobject
++     * @return new icon
++     */
++    private static ItemStack setIcon(JsonObject jsonobject) {
+         if (!jsonobject.has("item")) {
+             throw new JsonSyntaxException("Unsupported icon type, currently only items are supported (add 'item' key)");
+         } else {
+@@ -83,91 +107,119 @@ public class AdvancementDisplay {
+             if (jsonobject.has("data")) {
+                 throw new JsonParseException("Disallowed data tag found");
+             } else {
+-                ItemStack itemstack = new ItemStack(item);
++                ItemStack icon = new ItemStack(item);
+ 
+                 if (jsonobject.has("nbt")) {
+                     try {
+                         NBTTagCompound nbttagcompound = MojangsonParser.parse(ChatDeserializer.a(jsonobject.get("nbt"), "nbt"));
+ 
+-                        itemstack.setTag(nbttagcompound);
++                        icon.setTag(nbttagcompound);
+                     } catch (CommandSyntaxException commandsyntaxexception) {
+                         throw new JsonSyntaxException("Invalid nbt tag: " + commandsyntaxexception.getMessage());
+                     }
+                 }
+-
+-                return itemstack;
++                return icon;
+             }
+         }
+     }
+ 
++
++    /**
++     * sends information in AdvancementDisplay to the PacketDataSerializer
++     *
++     * @param packetdataserializer
++     */
+     public void a(PacketDataSerializer packetdataserializer) {
+-        packetdataserializer.a(this.a);
+-        packetdataserializer.a(this.b);
+-        packetdataserializer.a(this.c);
+-        packetdataserializer.a((Enum) this.e);
++        packetdataserializer.a(this.title);
++        packetdataserializer.a(this.description);
++        packetdataserializer.a(this.icon);
++        packetdataserializer.a((Enum) this.frame);
+         int i = 0;
+ 
+-        if (this.d != null) {
++        if (this.background != null) {
+             i |= 1;
+         }
+ 
+-        if (this.f) {
++        if (this.showToast) {
+             i |= 2;
+         }
+ 
+-        if (this.h) {
++        if (this.hidden) {
+             i |= 4;
+         }
+ 
+         packetdataserializer.writeInt(i);
+-        if (this.d != null) {
+-            packetdataserializer.a(this.d);
++        if (this.background != null) {
++            packetdataserializer.a(this.background);
+         }
+ 
+         packetdataserializer.writeFloat(this.i);
+         packetdataserializer.writeFloat(this.j);
+     }
+ 
+-    public static AdvancementDisplay b(PacketDataSerializer packetdataserializer) {
+-        IChatBaseComponent ichatbasecomponent = packetdataserializer.h();
+-        IChatBaseComponent ichatbasecomponent1 = packetdataserializer.h();
+-        ItemStack itemstack = packetdataserializer.m();
+-        AdvancementFrameType advancementframetype = (AdvancementFrameType) packetdataserializer.a(AdvancementFrameType.class);
++    /**
++     * reads AdvancementDisplay from PacketDataSerializer
++     *
++     *
++     * @param packetdataserializer
++     * @return new AdvancementDisplay
++     */
++    public static AdvancementDisplay readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
++        IChatBaseComponent title = packetdataserializer.h();
++        IChatBaseComponent description = packetdataserializer.h();
++        ItemStack icon = packetdataserializer.m();
++        AdvancementFrameType frame = (AdvancementFrameType) packetdataserializer.a(AdvancementFrameType.class);
+         int i = packetdataserializer.readInt();
+-        MinecraftKey minecraftkey = (i & 1) != 0 ? packetdataserializer.o() : null;
+-        boolean flag = (i & 2) != 0;
+-        boolean flag1 = (i & 4) != 0;
+-        AdvancementDisplay advancementdisplay = new AdvancementDisplay(itemstack, ichatbasecomponent, ichatbasecomponent1, minecraftkey, advancementframetype, flag, false, flag1);
++        MinecraftKey background = (i & 1) != 0 ? packetdataserializer.o() : null;
++        boolean showToast = (i & 2) != 0;
++        boolean hidden = (i & 4) != 0;
++        AdvancementDisplay advancementdisplay = new AdvancementDisplay(icon, title, description, background, frame, showToast, false, hidden);
+ 
+         advancementdisplay.a(packetdataserializer.readFloat(), packetdataserializer.readFloat());
+         return advancementdisplay;
+     }
+ 
+-    public JsonElement k() {
++    public static AdvancementDisplay b(PacketDataSerializer packetDataSerializer) { return readFromPacketDataSerializer(packetDataSerializer); }
++
++    /**
++     * generates JsonObject from this AdvancementDisplay
++     *
++     * @return JsonObject including the AdvancementDisplay
++     */
++    public JsonElement getJson() {
+         JsonObject jsonobject = new JsonObject();
+ 
+-        jsonobject.add("icon", this.l());
+-        jsonobject.add("title", IChatBaseComponent.ChatSerializer.b(this.a));
+-        jsonobject.add("description", IChatBaseComponent.ChatSerializer.b(this.b));
+-        jsonobject.addProperty("frame", this.e.a());
+-        jsonobject.addProperty("show_toast", this.f);
+-        jsonobject.addProperty("announce_to_chat", this.g);
+-        jsonobject.addProperty("hidden", this.h);
+-        if (this.d != null) {
+-            jsonobject.addProperty("background", this.d.toString());
++        jsonobject.add("icon", this.iconToJson());
++        jsonobject.add("title", IChatBaseComponent.ChatSerializer.b(this.title));
++        jsonobject.add("description", IChatBaseComponent.ChatSerializer.b(this.description));
++        jsonobject.addProperty("frame", this.frame.a());
++        jsonobject.addProperty("show_toast", this.showToast);
++        jsonobject.addProperty("announce_to_chat", this.announceToChat);
++        jsonobject.addProperty("hidden", this.hidden);
++        if (this.background != null) {
++            jsonobject.addProperty("background", this.background.toString());
+         }
+ 
+         return jsonobject;
+     }
+ 
+-    private JsonObject l() {
++    public JsonElement k() { return getJson(); }
++
++    /**
++     * generates JsonObject for icon item
++     * Method was instantly renamed because its private
++     *
++     * @return JsonObject containing the icon
++     */
++    private JsonObject iconToJson() {
+         JsonObject jsonobject = new JsonObject();
+ 
+-        jsonobject.addProperty("item", IRegistry.ITEM.getKey(this.c.getItem()).toString());
+-        if (this.c.hasTag()) {
+-            jsonobject.addProperty("nbt", this.c.getTag().toString());
++        jsonobject.addProperty("item", IRegistry.ITEM.getKey(this.icon.getItem()).toString());
++        if (this.icon.hasTag()) {
++            jsonobject.addProperty("nbt", this.icon.getTag().toString());
+         }
+-
+         return jsonobject;
+     }
++
++    // Paper end - OBFHELPER
+ }
+diff --git a/src/main/java/net/minecraft/server/AdvancementProgress.java b/src/main/java/net/minecraft/server/AdvancementProgress.java
+index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d5558800f 100644
+--- a/src/main/java/net/minecraft/server/AdvancementProgress.java
++++ b/src/main/java/net/minecraft/server/AdvancementProgress.java
+@@ -21,15 +21,15 @@ import javax.annotation.Nullable;
+ 
+ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+ 
+-    private final Map<String, CriterionProgress> a = Maps.newHashMap();
++    private final Map<String, CriterionProgress> progress = Maps.newHashMap();  // Paper - removed obfuscation
+     private String[][] b = new String[0][];
+ 
+-    public AdvancementProgress() {}
++    public AdvancementProgress() { }
+ 
+     public void a(Map<String, Criterion> map, String[][] astring) {
+         Set<String> set = map.keySet();
+ 
+-        this.a.entrySet().removeIf((entry) -> {
++        this.progress.entrySet().removeIf((entry) -> {
+             return !set.contains(entry.getKey());
+         });
+         Iterator iterator = set.iterator();
+@@ -37,8 +37,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+         while (iterator.hasNext()) {
+             String s = (String) iterator.next();
+ 
+-            if (!this.a.containsKey(s)) {
+-                this.a.put(s, new CriterionProgress());
++            if (!this.progress.containsKey(s)) {
++                this.progress.put(s, new CriterionProgress());
+             }
+         }
+ 
+@@ -87,7 +87,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+     }
+ 
+     public boolean b() {
+-        Iterator iterator = this.a.values().iterator();
++        Iterator iterator = this.progress.values().iterator();
+ 
+         CriterionProgress criterionprogress;
+ 
+@@ -97,16 +97,16 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+             }
+ 
+             criterionprogress = (CriterionProgress) iterator.next();
+-        } while (!criterionprogress.a());
++        } while (!criterionprogress.a());  // Todo: remove obfuscation of CriterionProgress
+ 
+         return true;
+     }
+ 
+     public boolean a(String s) {
+-        CriterionProgress criterionprogress = (CriterionProgress) this.a.get(s);
++        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
+ 
+         if (criterionprogress != null && !criterionprogress.a()) {
+-            criterionprogress.b();
++            criterionprogress.b();  // Todo: remove obfuscation of CriterionProgress
+             return true;
+         } else {
+             return false;
+@@ -114,52 +114,51 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+     }
+ 
+     public boolean b(String s) {
+-        CriterionProgress criterionprogress = (CriterionProgress) this.a.get(s);
++        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
+ 
+-        if (criterionprogress != null && criterionprogress.a()) {
+-            criterionprogress.c();
++        if (criterionprogress != null && criterionprogress.a()) {  // Todo: remove obfuscation of CriterionProgress
++            criterionprogress.c();  // Todo: remove obfuscation of CriterionProgress
+             return true;
+         } else {
+             return false;
+         }
+     }
+ 
+-    public String toString() {
+-        return "AdvancementProgress{criteria=" + this.a + ", requirements=" + Arrays.deepToString(this.b) + '}';
+-    }
++    public String toString() { return "AdvancementProgress{criteria=" + this.progress + ", requirements=" + Arrays.deepToString(this.b) + '}'; }
+ 
+-    public void a(PacketDataSerializer packetdataserializer) {
+-        packetdataserializer.d(this.a.size());
+-        Iterator iterator = this.a.entrySet().iterator();
++    public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer); }
+ 
+-        while (iterator.hasNext()) {
+-            Entry<String, CriterionProgress> entry = (Entry) iterator.next();
++    public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {
++        packetdataserializer.d(this.progress.size());  // Todo: remove obfuscation the PacketDataSerializer call
++
++        for (Entry<String, CriterionProgress> stringCriterionProgressEntry : this.progress.entrySet()) {  // Paper - replaced with new for loop
++            Entry<String, CriterionProgress> entry = (Entry) stringCriterionProgressEntry;
+ 
+             packetdataserializer.a((String) entry.getKey());
+-            ((CriterionProgress) entry.getValue()).a(packetdataserializer);
++            ((CriterionProgress) entry.getValue()).a(packetdataserializer);  // Todo: remove obfuscation of CriterionProgress
+         }
+-
+     }
+ 
+-    public static AdvancementProgress b(PacketDataSerializer packetdataserializer) {
++    public static AdvancementProgress b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
++
++    public static AdvancementProgress readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
+         AdvancementProgress advancementprogress = new AdvancementProgress();
+-        int i = packetdataserializer.i();
++        int i = packetdataserializer.i();  // Todo: remove obfuscation the PacketDataSerializer call
+ 
+         for (int j = 0; j < i; ++j) {
+-            advancementprogress.a.put(packetdataserializer.e(32767), CriterionProgress.b(packetdataserializer));
++            advancementprogress.progress.put(packetdataserializer.e(32767), CriterionProgress.b(packetdataserializer));  // Todo: remove obfuscation of CriterionProgress
+         }
+-
+         return advancementprogress;
+     }
+ 
+     @Nullable
+     public CriterionProgress getCriterionProgress(String s) {
+-        return (CriterionProgress) this.a.get(s);
++        return (CriterionProgress) this.progress.get(s);
+     }
+ 
+     public Iterable<String> getRemainingCriteria() {
+         List<String> list = Lists.newArrayList();
+-        Iterator iterator = this.a.entrySet().iterator();
++        Iterator iterator = this.progress.entrySet().iterator();
+ 
+         while (iterator.hasNext()) {
+             Entry<String, CriterionProgress> entry = (Entry) iterator.next();
+@@ -174,7 +173,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+ 
+     public Iterable<String> getAwardedCriteria() {
+         List<String> list = Lists.newArrayList();
+-        Iterator iterator = this.a.entrySet().iterator();
++        Iterator iterator = this.progress.entrySet().iterator();
+ 
+         while (iterator.hasNext()) {
+             Entry<String, CriterionProgress> entry = (Entry) iterator.next();
+@@ -188,36 +187,35 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+     }
+ 
+     @Nullable
+-    public Date g() {
+-        Date date = null;
+-        Iterator iterator = this.a.values().iterator();
++    public Date g() { return this.getDate(); }
+ 
+-        while (iterator.hasNext()) {
+-            CriterionProgress criterionprogress = (CriterionProgress) iterator.next();
++    @Nullable
++    public Date getDate() {
++        Date date = null;
+ 
+-            if (criterionprogress.a() && (date == null || criterionprogress.getDate().before(date))) {
++        for (CriterionProgress criterionprogress : this.progress.values()) {  // Paper - changed to improved for loop
++            if (criterionprogress.a() && (date == null || criterionprogress.getDate().before(date))) {  // Todo: remove obfuscation of CriterionProgress
+                 date = criterionprogress.getDate();
+             }
+         }
+-
+         return date;
+     }
+ 
+     public int compareTo(AdvancementProgress advancementprogress) {
+-        Date date = this.g();
+-        Date date1 = advancementprogress.g();
++        Date date = this.getDate();
++        Date date1 = advancementprogress.getDate();
+ 
+         return date == null && date1 != null ? 1 : (date != null && date1 == null ? -1 : (date == null && date1 == null ? 0 : date.compareTo(date1)));
+     }
+ 
+-    public static class a implements JsonDeserializer<AdvancementProgress>, JsonSerializer<AdvancementProgress> {
++    public static class serializedAdvancementProgress implements JsonDeserializer<AdvancementProgress>, JsonSerializer<AdvancementProgress> {
+ 
+-        public a() {}
++        public serializedAdvancementProgress() { }
+ 
+         public JsonElement serialize(AdvancementProgress advancementprogress, Type type, JsonSerializationContext jsonserializationcontext) {
+             JsonObject jsonobject = new JsonObject();
+             JsonObject jsonobject1 = new JsonObject();
+-            Iterator iterator = advancementprogress.a.entrySet().iterator();
++            Iterator iterator = advancementprogress.progress.entrySet().iterator();
+ 
+             while (iterator.hasNext()) {
+                 Entry<String, CriterionProgress> entry = (Entry) iterator.next();
+@@ -236,20 +234,30 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+             return jsonobject;
+         }
+ 
+-        public AdvancementProgress deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsondeserializationcontext) throws JsonParseException {
+-            JsonObject jsonobject = ChatDeserializer.m(jsonelement, "advancement");
+-            JsonObject jsonobject1 = ChatDeserializer.a(jsonobject, "criteria", new JsonObject());
+-            AdvancementProgress advancementprogress = new AdvancementProgress();
+-            Iterator iterator = jsonobject1.entrySet().iterator();
++        // Paper start - removed obfuscation
++        public AdvancementProgress deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
++            JsonObject advancement = ChatDeserializer.m(jsonelement, "advancement");
++            JsonObject criteria = ChatDeserializer.a(advancement, "criteria", new JsonObject());
++            AdvancementProgress advancementProgress = new AdvancementProgress();
+ 
+-            while (iterator.hasNext()) {
+-                Entry<String, JsonElement> entry = (Entry) iterator.next();
+-                String s = (String) entry.getKey();
+-
+-                advancementprogress.a.put(s, CriterionProgress.a(ChatDeserializer.a((JsonElement) entry.getValue(), s)));
++            for (Entry<String, JsonElement> stringJsonElementEntry : criteria.entrySet()) {  // Paper - changed to new for loop
++                Entry<String, JsonElement> entry = (Entry) stringJsonElementEntry;
++                String name = (String) entry.getKey();
++                advancementProgress.progress.put(name, CriterionProgress.a(ChatDeserializer.a((JsonElement) entry.getValue(), name)));  // TODO: remove obfuscation
+             }
+ 
+-            return advancementprogress;
++            return advancementProgress;
++        }
++    }
++
++    public static class a extends serializedAdvancementProgress {
++        public JsonElement serialize(AdvancementProgress advancementprogress, Type type, JsonSerializationContext jsonserializationcontext) {
++            return super.serialize(advancementprogress, type, jsonserializationcontext);
++        }
++
++        public AdvancementProgress deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
++            return super.deserialize(jsonelement, type, jsonDeserializationContext);
+         }
+     }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/AdvancementRewards.java b/src/main/java/net/minecraft/server/AdvancementRewards.java
+index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347adb6b99202 100644
+--- a/src/main/java/net/minecraft/server/AdvancementRewards.java
++++ b/src/main/java/net/minecraft/server/AdvancementRewards.java
+@@ -13,106 +13,119 @@ import javax.annotation.Nullable;
+ 
+ public class AdvancementRewards {
+ 
+-    public static final AdvancementRewards a = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], CustomFunction.a.a);
+-    private final int b;
+-    private final MinecraftKey[] c;
+-    private final MinecraftKey[] d;
+-    private final CustomFunction.a e;
+-
+-    public AdvancementRewards(int i, MinecraftKey[] aminecraftkey, MinecraftKey[] aminecraftkey1, CustomFunction.a customfunction_a) {
+-        this.b = i;
+-        this.c = aminecraftkey;
+-        this.d = aminecraftkey1;
+-        this.e = customfunction_a;
++    // Paper start - OBFHELPER
++
++    // generates an empty reward for comparison
++    public static final AdvancementRewards EMPTY_REWARD = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], CustomFunction.a.a);
++    private final int experience;
++    private final MinecraftKey[] loot;
++    private final MinecraftKey[] recipies;
++    private final CustomFunction.a e;  // Todo: deobfuscate
++
++    public AdvancementRewards(int experience, MinecraftKey[] loot, MinecraftKey[] recipies, CustomFunction.a customfunction_a) {
++        this.experience = experience;
++        this.loot = loot;
++        this.recipies = recipies;
++        this.e = customfunction_a;  // Todo: deobfuscate
+     }
+ 
+-    public void a(EntityPlayer entityplayer) {
+-        entityplayer.giveExp(this.b);
+-        LootTableInfo loottableinfo = (new LootTableInfo.Builder(entityplayer.getWorldServer())).set(LootContextParameters.THIS_ENTITY, entityplayer).set(LootContextParameters.POSITION, entityplayer.getChunkCoordinates()).a(entityplayer.getRandom()).build(LootContextParameterSets.ADVANCEMENT_REWARD);
++    public void a(EntityPlayer player) { reward(player); }
++
++    public void reward(EntityPlayer player) {
++        player.giveExp(this.experience);
++        LootTableInfo loottableinfo = (new LootTableInfo.Builder(player.getWorldServer())).set(LootContextParameters.THIS_ENTITY, player).set(LootContextParameters.POSITION, player.getChunkCoordinates()).a(player.getRandom()).build(LootContextParameterSets.ADVANCEMENT_REWARD);
+         boolean flag = false;
+-        MinecraftKey[] aminecraftkey = this.c;
+-        int i = aminecraftkey.length;
++        MinecraftKey[] loot = this.loot;
++        int i = loot.length;
+ 
+         for (int j = 0; j < i; ++j) {
+-            MinecraftKey minecraftkey = aminecraftkey[j];
+-            Iterator iterator = entityplayer.server.getLootTableRegistry().getLootTable(minecraftkey).populateLoot(loottableinfo).iterator();
++            MinecraftKey minecraftkey = loot[j];
++            Iterator iterator = player.server.getLootTableRegistry().getLootTable(minecraftkey).populateLoot(loottableinfo).iterator();
+ 
+             while (iterator.hasNext()) {
+                 ItemStack itemstack = (ItemStack) iterator.next();
+ 
+-                if (entityplayer.g(itemstack)) {
+-                    entityplayer.world.playSound((EntityHuman) null, entityplayer.locX(), entityplayer.locY(), entityplayer.locZ(), SoundEffects.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((entityplayer.getRandom().nextFloat() - entityplayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
++                if (player.g(itemstack)) {
++                    player.world.playSound((EntityHuman) null, player.locX(), player.locY(), player.locZ(), SoundEffects.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((player.getRandom().nextFloat() - player.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                     flag = true;
+                 } else {
+-                    EntityItem entityitem = entityplayer.drop(itemstack, false);
++                    EntityItem item = player.drop(itemstack, false);
+ 
+-                    if (entityitem != null) {
+-                        entityitem.n();
+-                        entityitem.setOwner(entityplayer.getUniqueID());
++                    if (item != null) {
++                        item.n();
++                        item.setOwner(player.getUniqueID());
+                     }
+                 }
+             }
+         }
+ 
+         if (flag) {
+-            entityplayer.defaultContainer.c();
++            player.defaultContainer.c();
+         }
+ 
+-        if (this.d.length > 0) {
+-            entityplayer.a(this.d);
++        if (this.recipies.length > 0) {
++            player.a(this.recipies);  // Todo: deobfuscate
+         }
+ 
+-        MinecraftServer minecraftserver = entityplayer.server;
++        MinecraftServer server = player.server;
+ 
+-        this.e.a(minecraftserver.getFunctionData()).ifPresent((customfunction) -> {
+-            minecraftserver.getFunctionData().a(customfunction, entityplayer.getCommandListener().a().a(2));
++        this.e.a(server.getFunctionData()).ifPresent((customfunction) -> {  // Todo: deobfuscate
++            server.getFunctionData().a(customfunction, player.getCommandListener().a().a(2));  // Todo: what does this do?
+         });
+     }
+ 
+     public String toString() {
+-        return "AdvancementRewards{experience=" + this.b + ", loot=" + Arrays.toString(this.c) + ", recipes=" + Arrays.toString(this.d) + ", function=" + this.e + '}';
++        return "AdvancementRewards{experience=" + this.experience + ", loot=" + Arrays.toString(this.loot) +
++            ", recipes=" + Arrays.toString(this.recipies) + ", function=" + this.e + '}';
+     }
+ 
+-    public JsonElement b() {
+-        if (this == AdvancementRewards.a) {
++    public JsonElement b() { return this.getJson(); }
++
++    /**
++     * generates Json from AdvancementRewards
++     *
++     * @return Json description
++     */
++    public JsonElement getJson() {
++        if (this == AdvancementRewards.EMPTY_REWARD) {
+             return JsonNull.INSTANCE;
+         } else {
+             JsonObject jsonobject = new JsonObject();
+ 
+-            if (this.b != 0) {
+-                jsonobject.addProperty("experience", this.b);
++            if (this.experience != 0) {
++                jsonobject.addProperty("experience", this.experience);
+             }
+ 
+-            JsonArray jsonarray;
+-            MinecraftKey[] aminecraftkey;
+-            int i;
+-            MinecraftKey minecraftkey;
++            JsonArray lootArray;
++            MinecraftKey[] loot;
++            int lootLenghth;
++            MinecraftKey lootItem;
+             int j;
+ 
+-            if (this.c.length > 0) {
+-                jsonarray = new JsonArray();
+-                aminecraftkey = this.c;
+-                i = aminecraftkey.length;
++            if (this.loot.length > 0) {
++                lootArray = new JsonArray();
++                loot = this.loot;
++                lootLenghth = loot.length;
+ 
+-                for (j = 0; j < i; ++j) {
+-                    minecraftkey = aminecraftkey[j];
+-                    jsonarray.add(minecraftkey.toString());
++                for (j = 0; j < lootLenghth; ++j) {
++                    lootItem = loot[j];
++                    lootArray.add(lootItem.toString());
+                 }
+ 
+-                jsonobject.add("loot", jsonarray);
++                jsonobject.add("loot", lootArray);
+             }
+ 
+-            if (this.d.length > 0) {
+-                jsonarray = new JsonArray();
+-                aminecraftkey = this.d;
+-                i = aminecraftkey.length;
++            if (this.recipies.length > 0) {
++                lootArray = new JsonArray();
++                loot = this.recipies;
++                lootLenghth = loot.length;
+ 
+-                for (j = 0; j < i; ++j) {
+-                    minecraftkey = aminecraftkey[j];
+-                    jsonarray.add(minecraftkey.toString());
++                for (j = 0; j < lootLenghth; ++j) {
++                    lootItem = loot[j];
++                    lootArray.add(lootItem.toString());
+                 }
+ 
+-                jsonobject.add("recipes", jsonarray);
++                jsonobject.add("recipes", lootArray);
+             }
+ 
+             if (this.e.a() != null) {
+@@ -123,63 +136,101 @@ public class AdvancementRewards {
+         }
+     }
+ 
+-    public static AdvancementRewards a(JsonObject jsonobject) throws JsonParseException {
+-        int i = ChatDeserializer.a(jsonobject, "experience", (int) 0);
+-        JsonArray jsonarray = ChatDeserializer.a(jsonobject, "loot", new JsonArray());
+-        MinecraftKey[] aminecraftkey = new MinecraftKey[jsonarray.size()];
+-
+-        for (int j = 0; j < aminecraftkey.length; ++j) {
+-            aminecraftkey[j] = new MinecraftKey(ChatDeserializer.a(jsonarray.get(j), "loot[" + j + "]"));
++    public static AdvancementRewards a(JsonObject jsonobject) throws JsonParseException { return readFromJson(jsonobject); }
++
++    /**
++     * generates AdvancementRewards from Json
++     *
++     * @param jsonObject Json to parse
++     * @return AdvancementRewards resulting
++     * @throws JsonParseException
++     */
++    public static AdvancementRewards readFromJson(JsonObject jsonObject) throws JsonParseException {
++        int experience = ChatDeserializer.a(jsonObject, "experience", (int) 0);
++        JsonArray loot = ChatDeserializer.a(jsonObject, "loot", new JsonArray());
++        MinecraftKey[] lootArray = new MinecraftKey[loot.size()];
++
++        for (int j = 0; j < lootArray.length; ++j) {
++            lootArray[j] = new MinecraftKey(ChatDeserializer.a(loot.get(j), "loot[" + j + "]"));
+         }
+ 
+-        JsonArray jsonarray1 = ChatDeserializer.a(jsonobject, "recipes", new JsonArray());
+-        MinecraftKey[] aminecraftkey1 = new MinecraftKey[jsonarray1.size()];
++        JsonArray recipes = ChatDeserializer.a(jsonObject, "recipes", new JsonArray());
++        MinecraftKey[] recipeArray = new MinecraftKey[recipes.size()];
+ 
+-        for (int k = 0; k < aminecraftkey1.length; ++k) {
+-            aminecraftkey1[k] = new MinecraftKey(ChatDeserializer.a(jsonarray1.get(k), "recipes[" + k + "]"));
++        for (int k = 0; k < recipeArray.length; ++k) {
++            recipeArray[k] = new MinecraftKey(ChatDeserializer.a(recipes.get(k), "recipes[" + k + "]"));
+         }
+ 
+         CustomFunction.a customfunction_a;
+ 
+-        if (jsonobject.has("function")) {
+-            customfunction_a = new CustomFunction.a(new MinecraftKey(ChatDeserializer.h(jsonobject, "function")));
++        if (jsonObject.has("function")) {
++            customfunction_a = new CustomFunction.a(new MinecraftKey(ChatDeserializer.h(jsonObject, "function")));
+         } else {
+-            customfunction_a = CustomFunction.a.a;
++            customfunction_a = CustomFunction.a.a;  // Todo: deobfuscate
+         }
+ 
+-        return new AdvancementRewards(i, aminecraftkey, aminecraftkey1, customfunction_a);
++        return new AdvancementRewards(experience, lootArray, recipeArray, customfunction_a);
+     }
+ 
+-    public static class a {
+-
+-        private int a;
+-        private final List<MinecraftKey> b = Lists.newArrayList();
+-        private final List<MinecraftKey> c = Lists.newArrayList();
++    /**
++     * Represents the SerializedAdvancementRewards for this AdvancementRewards
++     *
++     * I am confused why there is a static and a nonstatic method which more or less do the same
++     * but I cant rename the to the same thing - so the ne name is now function
++     *
++     * The loot List is created but never either called nor edited
++     *
++     */
++    public static class SerializedAdvancementRewards {
++        private int experience;
++        private final List<MinecraftKey> loot = Lists.newArrayList();
++        private final List<MinecraftKey> recipe = Lists.newArrayList();
+         @Nullable
+-        private MinecraftKey d;
++        private MinecraftKey d; //  Todo: What does this do?  // Todo: deobfuscate
+ 
+-        public a() {}
++        public SerializedAdvancementRewards() {}
+ 
+-        public static AdvancementRewards.a a(int i) {
+-            return (new AdvancementRewards.a()).b(i);
++        public static AdvancementRewards.SerializedAdvancementRewards addNewExperience(int i) {
++            return (new SerializedAdvancementRewards()).addExperience(i);
+         }
+ 
+-        public AdvancementRewards.a b(int i) {
+-            this.a += i;
++        public AdvancementRewards.SerializedAdvancementRewards addExperience(int i) {
++            this.experience += i;
+             return this;
+         }
+ 
+-        public static AdvancementRewards.a c(MinecraftKey minecraftkey) {
+-            return (new AdvancementRewards.a()).d(minecraftkey);
++        public static AdvancementRewards.SerializedAdvancementRewards addNewRecipe(MinecraftKey minecraftkey) {
++            return (new AdvancementRewards.SerializedAdvancementRewards()).addRecipe(minecraftkey);
+         }
+ 
+-        public AdvancementRewards.a d(MinecraftKey minecraftkey) {
+-            this.c.add(minecraftkey);
++        public AdvancementRewards.SerializedAdvancementRewards addRecipe(MinecraftKey recipe) {
++            this.recipe.add(recipe);
+             return this;
+         }
+ 
+-        public AdvancementRewards a() {
+-            return new AdvancementRewards(this.a, (MinecraftKey[]) this.b.toArray(new MinecraftKey[0]), (MinecraftKey[]) this.c.toArray(new MinecraftKey[0]), this.d == null ? CustomFunction.a.a : new CustomFunction.a(this.d));
++        public AdvancementRewards getAdvancementRewards() {
++            return new AdvancementRewards(this.experience, (MinecraftKey[]) this.loot.toArray(new MinecraftKey[0]),
++                (MinecraftKey[]) this.recipe.toArray(new MinecraftKey[0]), this.d == null ? CustomFunction.a.a : new CustomFunction.a(this.d));
+         }
+     }
++
++    /**
++     *  obfuscated interface for SerializedAdvancementRewards
++     */
++
++    public static class a extends SerializedAdvancementRewards {
++        public a() {}
++
++        public static a a(int experience) { return (a) addNewExperience(experience); }
++
++        public a b(int experience) { return (AdvancementRewards.a) this.addExperience(experience); }
++
++        public static a c(MinecraftKey minecraftkey) { return (a) addNewRecipe(minecraftkey); }
++
++        public a d(MinecraftKey recipe) { return (AdvancementRewards.a) this.addRecipe(recipe); }
++
++        public AdvancementRewards a() { return this.getAdvancementRewards(); }
++
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/Advancements.java b/src/main/java/net/minecraft/server/Advancements.java
+index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee88c4cc8f 100644
+--- a/src/main/java/net/minecraft/server/Advancements.java
++++ b/src/main/java/net/minecraft/server/Advancements.java
+@@ -14,17 +14,28 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public class Advancements {
++    // Paper start - OBFHELPER
++    /**
++     * Am object for handling the Advancements storage
++     */
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     public final Map<MinecraftKey, Advancement> advancements = Maps.newHashMap();
+-    private final Set<Advancement> c = Sets.newLinkedHashSet();
+-    private final Set<Advancement> d = Sets.newLinkedHashSet();
+-    private Advancements.a e;
++    private final Set<Advancement> childAdvancements = Sets.newLinkedHashSet();
++    private final Set<Advancement> rootAdvancements = Sets.newLinkedHashSet();
++    private Advancements.a e;  // Todo deobfuscate
+ 
+     public Advancements() {}
+ 
+-    public void a(Map<MinecraftKey, Advancement.SerializedAdvancement> map) {
+-        Function function = Functions.forMap(this.advancements, (Object) null);
++    public void a(Map<MinecraftKey, Advancement.SerializedAdvancement> map) { setAdvancements(map); }
++
++    /**
++     * adds new advancements to the stored advancements
++     *
++     * @param map advancements to be added
++     */
++    public void setAdvancements(Map<MinecraftKey, Advancement.SerializedAdvancement> map) {
++        Function function = Functions.forMap(this.advancements, (Object) null);  // Todo: What does this do?
+ 
+         label42:
+         while (!map.isEmpty()) {
+@@ -35,22 +46,22 @@ public class Advancements {
+ 
+             while (iterator.hasNext()) {
+                 entry = (Entry) iterator.next();
+-                MinecraftKey minecraftkey = (MinecraftKey) entry.getKey();
++                MinecraftKey name = (MinecraftKey) entry.getKey();
+                 Advancement.SerializedAdvancement advancement_serializedadvancement = (Advancement.SerializedAdvancement) entry.getValue();
+ 
+                 if (advancement_serializedadvancement.a((java.util.function.Function) function)) {
+-                    Advancement advancement = advancement_serializedadvancement.b(minecraftkey);
++                    Advancement advancement = advancement_serializedadvancement.rename(name);
+ 
+-                    this.advancements.put(minecraftkey, advancement);
++                    this.advancements.put(name, advancement);
+                     flag = true;
+                     iterator.remove();
+-                    if (advancement.b() == null) {
+-                        this.c.add(advancement);
++                    if (advancement.getParent() == null) {
++                        this.childAdvancements.add(advancement);
+                         if (this.e != null) {
+                             this.e.a(advancement);
+                         }
+                     } else {
+-                        this.d.add(advancement);
++                        this.rootAdvancements.add(advancement);
+                         if (this.e != null) {
+                             this.e.c(advancement);
+                         }
+@@ -75,23 +86,30 @@ public class Advancements {
+         // Advancements.LOGGER.info("Loaded {} advancements", this.advancements.size()); // CraftBukkit - moved to AdvancementDataWorld#reload
+     }
+ 
+-    public Iterable<Advancement> b() {
+-        return this.c;
+-    }
++    public Iterable<Advancement> b() { return this.getChildAdvancements(); }
+ 
+-    public Collection<Advancement> c() {
+-        return this.advancements.values();
++    public Iterable<Advancement> getChildAdvancements() {
++        return this.childAdvancements;
+     }
+ 
++    public Collection<Advancement> c() { return this.getAdvancements(); }
++
++    public Collection<Advancement> getAdvancements() { return this.advancements.values(); }
++
+     @Nullable
+-    public Advancement a(MinecraftKey minecraftkey) {
+-        return (Advancement) this.advancements.get(minecraftkey);
++    public Advancement a(MinecraftKey name) { return this.getAdvancement(name); }
++
++    @Nullable
++    public Advancement getAdvancement(MinecraftKey name) {
++        return (Advancement) this.advancements.get(name);
+     }
+ 
+-    public interface a {
++    public interface a {  // Todo: deobfuscate
+ 
+         void a(Advancement advancement);
+ 
+         void c(Advancement advancement);
+     }
++    // Paper end
+ }
++
