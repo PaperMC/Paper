@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 15 Jul 2020 12:40:25 -0500
+Subject: [PATCH] Configurable dungeon seed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 741c06a27e664211a7023a6369f8e69cbb41a321..9b3835ef0f7e796f2a45f3a8afe112f89cb9ab30 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -435,4 +435,9 @@ public class PaperConfig {
+         allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
+         set("settings.unsupported-settings.allow-tnt-duplication", null);
+     }
++
++    public static int dungeonSeed = -1;
++    private static void seedSettings() {
++        dungeonSeed = getInt("settings.seed.dungeon", dungeonSeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java b/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
+index 70d222996016e33bdf4d6d5dacf5a58eb3380d34..21c63ceded5e13e17a5c49dbb2b7ec2a1a89393c 100644
+--- a/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
++++ b/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
+@@ -14,10 +14,12 @@ public class WorldGenDecoratorDungeon extends WorldGenDecorator<WorldGenDecorato
+     public Stream<BlockPosition> a(GeneratorAccess generatoraccess, ChunkGenerator chunkgenerator, Random random, WorldGenDecoratorDungeonConfiguration worldgendecoratordungeonconfiguration, BlockPosition blockposition) {
+         int i = worldgendecoratordungeonconfiguration.b;
+ 
++        int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed; // Paper
++        final Random rand = seed == -1 ? random : new Random(seed); // Paper
+         return IntStream.range(0, i).mapToObj((j) -> {
+-            int k = random.nextInt(16) + blockposition.getX();
+-            int l = random.nextInt(16) + blockposition.getZ();
+-            int i1 = random.nextInt(chunkgenerator.getGenerationDepth());
++            int k = rand.nextInt(16) + blockposition.getX(); // Paper
++            int l = rand.nextInt(16) + blockposition.getZ(); // Paper
++            int i1 = rand.nextInt(chunkgenerator.getGenerationDepth()); // Paper
+ 
+             return new BlockPosition(k, i1, l);
+         });
+diff --git a/src/main/java/net/minecraft/server/WorldGenDungeons.java b/src/main/java/net/minecraft/server/WorldGenDungeons.java
+index 3c7c936453aee4374ac9ebc48a88dea623e8c8b0..896fc715271655dd0dbfbc87833cfe49ffe35f31 100644
+--- a/src/main/java/net/minecraft/server/WorldGenDungeons.java
++++ b/src/main/java/net/minecraft/server/WorldGenDungeons.java
+@@ -16,7 +16,10 @@ public class WorldGenDungeons extends WorldGenerator<WorldGenFeatureEmptyConfigu
+         super(codec);
+     }
+ 
++    public boolean generate(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEmptyConfiguration worldgenfeatureemptyconfiguration) { return a(generatoraccessseed, structuremanager, chunkgenerator, random, blockposition, worldgenfeatureemptyconfiguration); } // Paper - decompile error ???
+     public boolean a(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEmptyConfiguration worldgenfeatureemptyconfiguration) {
++        int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed; // Paper
++        if (seed != -1) random = new Random(seed); // Paper
+         boolean flag = true;
+         int i = random.nextInt(2) + 2;
+         int j = -i - 1;
