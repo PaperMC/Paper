@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 15 Jul 2020 11:49:36 -0500
+Subject: [PATCH] Configurable end spike seed
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 741c06a27e664211a7023a6369f8e69cbb41a321..afbdc7eccb676d469310a4191714682bb383f27b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -435,4 +435,9 @@ public class PaperConfig {
+         allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
+         set("settings.unsupported-settings.allow-tnt-duplication", null);
+     }
++
++    public static int endSpikeSeed = -1;
++    private static void seedSettings() {
++        endSpikeSeed = getInt("settings.seed.end-spike", endSpikeSeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/WorldGenEnder.java b/src/main/java/net/minecraft/server/WorldGenEnder.java
+index 495d98e15438299c6373f8aeda089ba12b4d296e..6dae0dd6177d399aa91f3c6343082404c749c5a7 100644
+--- a/src/main/java/net/minecraft/server/WorldGenEnder.java
++++ b/src/main/java/net/minecraft/server/WorldGenEnder.java
+@@ -23,12 +23,14 @@ public class WorldGenEnder extends WorldGenerator<WorldGenFeatureEndSpikeConfigu
+     }
+ 
+     public static List<WorldGenEnder.Spike> a(GeneratorAccessSeed generatoraccessseed) {
+-        Random random = new Random(generatoraccessseed.getSeed());
++        int seed = com.destroystokyo.paper.PaperConfig.endSpikeSeed; // Paper
++        Random random = new Random(seed == -1 ? generatoraccessseed.getSeed() : seed); // Paper
+         long i = random.nextLong() & 65535L;
+ 
+         return (List) WorldGenEnder.a.getUnchecked(i);
+     }
+ 
++    public boolean generate(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEndSpikeConfiguration worldgenfeatureendspikeconfiguration) { return a(generatoraccessseed, structuremanager, chunkgenerator, random, blockposition, worldgenfeatureendspikeconfiguration); } // Paper - decompile error ???
+     public boolean a(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEndSpikeConfiguration worldgenfeatureendspikeconfiguration) {
+         List<WorldGenEnder.Spike> list = worldgenfeatureendspikeconfiguration.b();
+ 
