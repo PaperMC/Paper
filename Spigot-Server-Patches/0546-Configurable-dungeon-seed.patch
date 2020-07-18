@@ -19,15 +19,27 @@ index 741c06a27e664211a7023a6369f8e69cbb41a321..9b3835ef0f7e796f2a45f3a8afe112f8
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java b/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
-index 70d222996016e33bdf4d6d5dacf5a58eb3380d34..21c63ceded5e13e17a5c49dbb2b7ec2a1a89393c 100644
+index 70d222996016e33bdf4d6d5dacf5a58eb3380d34..0e4ab749de697dbc712dfbf30b6540034d633c53 100644
 --- a/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
 +++ b/src/main/java/net/minecraft/server/WorldGenDecoratorDungeon.java
-@@ -14,10 +14,12 @@ public class WorldGenDecoratorDungeon extends WorldGenDecorator<WorldGenDecorato
+@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
+ import java.util.stream.Stream;
+ 
+ public class WorldGenDecoratorDungeon extends WorldGenDecorator<WorldGenDecoratorDungeonConfiguration> {
++    private Random random; // Paper
+ 
+     public WorldGenDecoratorDungeon(Codec<WorldGenDecoratorDungeonConfiguration> codec) {
+         super(codec);
+@@ -14,10 +15,16 @@ public class WorldGenDecoratorDungeon extends WorldGenDecorator<WorldGenDecorato
      public Stream<BlockPosition> a(GeneratorAccess generatoraccess, ChunkGenerator chunkgenerator, Random random, WorldGenDecoratorDungeonConfiguration worldgendecoratordungeonconfiguration, BlockPosition blockposition) {
          int i = worldgendecoratordungeonconfiguration.b;
  
-+        int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed; // Paper
-+        final Random rand = seed == -1 ? random : new Random(seed); // Paper
++        if (this.random == null) {
++            int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed;
++            this.random = seed == -1 ? random : new Random(seed);
++        }
++        final Random rand = this.random;
++        // Paper end
          return IntStream.range(0, i).mapToObj((j) -> {
 -            int k = random.nextInt(16) + blockposition.getX();
 -            int l = random.nextInt(16) + blockposition.getZ();
@@ -39,17 +51,28 @@ index 70d222996016e33bdf4d6d5dacf5a58eb3380d34..21c63ceded5e13e17a5c49dbb2b7ec2a
              return new BlockPosition(k, i1, l);
          });
 diff --git a/src/main/java/net/minecraft/server/WorldGenDungeons.java b/src/main/java/net/minecraft/server/WorldGenDungeons.java
-index 3c7c936453aee4374ac9ebc48a88dea623e8c8b0..896fc715271655dd0dbfbc87833cfe49ffe35f31 100644
+index 3c7c936453aee4374ac9ebc48a88dea623e8c8b0..989c5b22ed9b5c2ce4448dac394142c0ecd2fe28 100644
 --- a/src/main/java/net/minecraft/server/WorldGenDungeons.java
 +++ b/src/main/java/net/minecraft/server/WorldGenDungeons.java
-@@ -16,7 +16,10 @@ public class WorldGenDungeons extends WorldGenerator<WorldGenFeatureEmptyConfigu
+@@ -11,12 +11,21 @@ public class WorldGenDungeons extends WorldGenerator<WorldGenFeatureEmptyConfigu
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final EntityTypes<?>[] ac = new EntityTypes[]{EntityTypes.SKELETON, EntityTypes.ZOMBIE, EntityTypes.ZOMBIE, EntityTypes.SPIDER};
+     private static final IBlockData ad = Blocks.CAVE_AIR.getBlockData();
++    private Random random; // Paper
+ 
+     public WorldGenDungeons(Codec<WorldGenFeatureEmptyConfiguration> codec) {
          super(codec);
      }
  
 +    public boolean generate(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEmptyConfiguration worldgenfeatureemptyconfiguration) { return a(generatoraccessseed, structuremanager, chunkgenerator, random, blockposition, worldgenfeatureemptyconfiguration); } // Paper - decompile error ???
      public boolean a(GeneratorAccessSeed generatoraccessseed, StructureManager structuremanager, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEmptyConfiguration worldgenfeatureemptyconfiguration) {
-+        int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed; // Paper
-+        if (seed != -1) random = new Random(seed); // Paper
++        // Paper start
++        if (this.random == null) {
++            int seed = com.destroystokyo.paper.PaperConfig.dungeonSeed;
++            this.random = seed == -1 ? random : new Random(seed);
++        }
++        random = this.random;
++        // Paper end
          boolean flag = true;
          int i = random.nextInt(2) + 2;
          int j = -i - 1;
