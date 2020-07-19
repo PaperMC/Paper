@@ -5,15 +5,17 @@ Subject: [PATCH] deobfuscation in Advancement classes
 
 marking all obfuscated methods as deprecated for easy removal
 
+stopped at the triggers because this would introduce like 40 new .java files
+
 diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
-index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2c8690b38 100644
+index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..d9091d7f6006c9a5a9595895825a640224f93d3b 100644
 --- a/src/main/java/net/minecraft/server/Advancement.java
 +++ b/src/main/java/net/minecraft/server/Advancement.java
 @@ -17,34 +17,35 @@ import javax.annotation.Nullable;
  import org.apache.commons.lang3.ArrayUtils;
  
  public class Advancement {
-+    // Paper start - OBFHELPER
++    // Paper start - removed obfuscation
  
      private final Advancement parent;
      private final AdvancementDisplay display;
@@ -43,7 +45,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 +        this.rewards = rewards;
 +        this.requirements = requirements;
 +        if (parent != null) {  // set this as parents child
-+            parent.a(this);
++            parent.addChild(this);
          }
  
 -        if (advancementdisplay == null) {
@@ -54,47 +56,59 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -            IChatBaseComponent ichatbasecomponent = advancementdisplay.a();
 -            EnumChatFormat enumchatformat = advancementdisplay.e().c();
 -            IChatMutableComponent ichatmutablecomponent = ChatComponentUtils.a(ichatbasecomponent.mutableCopy(), ChatModifier.b.setColor(enumchatformat)).c("\n").addSibling(advancementdisplay.b());
-+            IChatBaseComponent ichatbasecomponent = display.a();
-+            EnumChatFormat enumchatformat = display.e().c();
-+            IChatMutableComponent ichatmutablecomponent = ChatComponentUtils.a(ichatbasecomponent.mutableCopy(), ChatModifier.b.setColor(enumchatformat)).c("\n").addSibling(display.b());
++            IChatBaseComponent ichatbasecomponent = display.getTitle();
++            EnumChatFormat enumchatformat = display.getFrame().getChatFormat();  // Todo: remove obfuscation in AdvancementFrameType
++            IChatMutableComponent ichatmutablecomponent = ChatComponentUtils.a(ichatbasecomponent.mutableCopy(), ChatModifier.b.setColor(enumchatformat)).c("\n").addSibling(display.getDescription());
              IChatMutableComponent ichatmutablecomponent1 = ichatbasecomponent.mutableCopy().format((chatmodifier) -> {
                  return chatmodifier.setChatHoverable(new ChatHoverable(ChatHoverable.EnumHoverAction.SHOW_TEXT, ichatmutablecomponent));
              });
-@@ -54,43 +55,43 @@ public class Advancement {
+@@ -54,43 +55,61 @@ public class Advancement {
  
      }
  
 -    public Advancement.SerializedAdvancement a() {
++    /**
++     * @deprecated (use getSerializedAdvancement instead)
++     */
++    public Advancement.SerializedAdvancement a() { return getSerializedAdvancement(); }
++
 +    public Advancement.SerializedAdvancement getSerializedAdvancement() {
          return new Advancement.SerializedAdvancement(this.parent == null ? null : this.parent.getName(), this.display, this.rewards, this.criteria, this.requirements);
      }
  
-+    public Advancement.SerializedAdvancement a() { return getSerializedAdvancement(); }
-+
++    /**
++     * @deprecated (use getParent instead)
++     */
      @Nullable
 -    public Advancement b() {
 -        return this.parent;
 -    }
-+    public Advancement getParent() { return this.parent; }
++    public Advancement b() { return this.getParent(); }
  
      @Nullable
 -    public AdvancementDisplay c() {
 -        return this.display;
 -    }
-+    public Advancement b() { return this.getParent(); }
++    public Advancement getParent() { return this.parent; }
  
 -    public AdvancementRewards d() {
 -        return this.rewards;
 -    }
-+    @Nullable
-+    public AdvancementDisplay getDisplay() { return this.display; }
-+
++    /**
++     * @deprecated (use getDisplay instead)
++     */
 +    @Nullable
 +    public AdvancementDisplay c() { return this.getDisplay(); }
 +
-+    public AdvancementRewards getRewards() { return this.rewards; }
++    @Nullable
++    public AdvancementDisplay getDisplay() { return this.display; }
 +
++    /**
++     * @deprecated (use getRewards instead)
++     */
 +    public AdvancementRewards d() { return this.getRewards(); }
++
++    public AdvancementRewards getRewards() { return this.rewards; }
  
      public String toString() {
          return "SimpleAdvancement{id=" + this.getName() + ", parent=" + (this.parent == null ? "null" : this.parent.getName()) + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
@@ -103,12 +117,15 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -    public Iterable<Advancement> e() {
 -        return this.children;
 -    }
-+    public Iterable<Advancement> getChildren() { return this.children; }
++    /**
++     * @deprecated (use getChildren instead)
++     */
++    public Iterable<Advancement> e() { return this.getChildren(); }
  
 -    public Map<String, Criterion> getCriteria() {
 -        return this.criteria;
 -    }
-+    public Iterable<Advancement> e() { return this.getChildren(); }
++    public Iterable<Advancement> getChildren() { return this.children; }
  
 -    public void a(Advancement advancement) {
 -        this.children.add(advancement);
@@ -118,15 +135,18 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -    public MinecraftKey getName() {
 -        return this.key;
 -    }
-+    public void addChild(Advancement advancement) { this.children.add(advancement); }
-+
++    /**
++     * @deprecated (use addChild instead)
++     */
 +    public void a(Advancement advancement) { this.addChild(advancement); }
++
++    public void addChild(Advancement advancement) { this.children.add(advancement); }
 +
 +    public MinecraftKey getName() { return this.name; }
  
      public boolean equals(Object object) {
          if (this == object) {
-@@ -99,250 +100,312 @@ public class Advancement {
+@@ -99,250 +118,341 @@ public class Advancement {
              return false;
          } else {
              Advancement advancement = (Advancement) object;
@@ -144,16 +164,22 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -    public String[][] i() {
 -        return this.requirements;
 -    }
-+    public String[][] getRequirements() { return this.requirements; }
++    /**
++     * @deprecated (use getRequirements instead)
++     */
++    public String[][] i() { return this.getRequirements(); }
  
 -    public IChatBaseComponent j() {
 -        return this.chatComponent;
 -    }
-+    public String[][] i() { return this.getRequirements(); }
++    public String[][] getRequirements() { return this.requirements; }
++
++    /**
++     * @deprecated (use getChatComponent instead)
++     */
++    public IChatBaseComponent j() { return this.getChatComponent(); }
 +
 +    public IChatBaseComponent getChatComponent() { return this.chatComponent; }
-+
-+    public IChatBaseComponent j() { return this.getChatComponent(); }
  
      public static class SerializedAdvancement {
  
@@ -174,29 +200,26 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -            this.d = advancementrewards;
 -            this.e = map;
 -            this.f = astring;
-+        private MinecraftKey parent;
-+        private Advancement advancement;
++        private MinecraftKey name;
++        private Advancement parent;
 +        private AdvancementDisplay display;
 +        private AdvancementRewards rewards;
 +        private Map<String, Criterion> criteria;
 +        private String[][] requirements;
 +        private AdvancementRequirements advancementRequirements;  // TODO: find out what this does
 +
-+        private SerializedAdvancement(@Nullable MinecraftKey parent, @Nullable AdvancementDisplay display,
++        private SerializedAdvancement(@Nullable MinecraftKey name, @Nullable AdvancementDisplay display,
 +                                      AdvancementRewards rewards, Map<String, Criterion> criteria, String[][] requirements) {
 +            this.rewards = AdvancementRewards.EMPTY_REWARD;
 +            this.criteria = Maps.newLinkedHashMap();
 +            this.advancementRequirements = AdvancementRequirements.AND;  // TODO: find out what this does
-+            this.parent = parent;
++            this.name = name;
 +            this.display = display;
 +            this.rewards = rewards;
 +            this.criteria = criteria;
 +            this.requirements = requirements;
          }
  
-+        /**
-+         * creates empty SerializedAdvancement
-+         */
          private SerializedAdvancement() {
 -            this.d = AdvancementRewards.a;
 -            this.e = Maps.newLinkedHashMap();
@@ -207,31 +230,45 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
          }
  
 -        public static Advancement.SerializedAdvancement a() {
++        /**
++         * @deprecated (use getInstance instead)
++         */
++        public static Advancement.SerializedAdvancement a() { return Advancement.SerializedAdvancement.getInstance(); }
++
 +        public static Advancement.SerializedAdvancement getInstance() {
              return new Advancement.SerializedAdvancement();
          }
  
 -        public Advancement.SerializedAdvancement a(Advancement advancement) {
 -            this.b = advancement;
-+        public static Advancement.SerializedAdvancement a() { return Advancement.SerializedAdvancement.getInstance(); }
++        /**
++         * @deprecated (use setAdvancement instead)
++         */
++        public Advancement.SerializedAdvancement a(Advancement advancement) { return this.setParent(advancement); }
 +
-+        public Advancement.SerializedAdvancement setAdvancement(Advancement advancement) {
-+            this.advancement = advancement;
++        public Advancement.SerializedAdvancement setParent(Advancement parent) {
++            this.parent = parent;
              return this;
          }
  
 -        public Advancement.SerializedAdvancement a(MinecraftKey minecraftkey) {
 -            this.a = minecraftkey;
-+        public Advancement.SerializedAdvancement a(Advancement advancement) { return this.setAdvancement(advancement); }
++        /**
++         * @deprecated (use setParent instead)
++         */
++        public Advancement.SerializedAdvancement a(MinecraftKey parent) { return this.setName(parent); }
 +
-+        public Advancement.SerializedAdvancement setParent(MinecraftKey parent) {
-+            this.parent = parent;
++        public Advancement.SerializedAdvancement setName(MinecraftKey name) {
++            this.name = name;
              return this;
          }
  
 -        public Advancement.SerializedAdvancement a(ItemStack itemstack, IChatBaseComponent ichatbasecomponent, IChatBaseComponent ichatbasecomponent1, @Nullable MinecraftKey minecraftkey, AdvancementFrameType advancementframetype, boolean flag, boolean flag1, boolean flag2) {
 -            return this.a(new AdvancementDisplay(itemstack, ichatbasecomponent, ichatbasecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2));
-+        public Advancement.SerializedAdvancement a(MinecraftKey parent) { return this.setParent(parent); }
++        /**
++         * @deprecated (use setDisplay instead)
++         */
++        public Advancement.SerializedAdvancement a(AdvancementDisplay display) { return this.setDisplay(display); }
 +
 +        public Advancement.SerializedAdvancement setDisplay(AdvancementDisplay displayName) {
 +            this.display = displayName;
@@ -240,7 +277,13 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
 -        public Advancement.SerializedAdvancement a(IMaterial imaterial, IChatBaseComponent ichatbasecomponent, IChatBaseComponent ichatbasecomponent1, @Nullable MinecraftKey minecraftkey, AdvancementFrameType advancementframetype, boolean flag, boolean flag1, boolean flag2) {
 -            return this.a(new AdvancementDisplay(new ItemStack(imaterial.getItem()), ichatbasecomponent, ichatbasecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2));
-+        public Advancement.SerializedAdvancement a(AdvancementDisplay display) { return this.setDisplay(display); }
++        /**
++         * @deprecated (use setDisplay instead)
++         */
++        public Advancement.SerializedAdvancement a(ItemStack icon, IChatBaseComponent title,
++                                                   IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                   AdvancementFrameType frame, boolean showToast, boolean anncounceToChat, boolean hidden)
++        { return this.setDisplay(icon, title, description, background, frame, showToast, anncounceToChat, hidden); }
 +
 +        public Advancement.SerializedAdvancement setDisplay(ItemStack icon, IChatBaseComponent title,
 +                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
@@ -251,10 +294,13 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -        public Advancement.SerializedAdvancement a(AdvancementDisplay advancementdisplay) {
 -            this.c = advancementdisplay;
 -            return this;
-+        public Advancement.SerializedAdvancement a(ItemStack icon, IChatBaseComponent title,
-+                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
-+                                                            AdvancementFrameType frame, boolean showToast, boolean anncounceToChat, boolean hidden)
-+        { return this.setDisplay(icon, title, description, background, frame, showToast, anncounceToChat, hidden); }
++        /**
++         * @deprecated (use setDisplay instead)
++         */
++        public Advancement.SerializedAdvancement a(IMaterial icon, IChatBaseComponent title,
++                                                   IChatBaseComponent description, @Nullable MinecraftKey background,
++                                                   AdvancementFrameType frame, boolean showToast, boolean announceToChat, boolean hidden)
++        { return this.setDisplay(icon,title, description, background, frame, showToast, announceToChat, hidden); }
 +
 +        public Advancement.SerializedAdvancement setDisplay(IMaterial icon, IChatBaseComponent title,
 +                                                   IChatBaseComponent description, @Nullable MinecraftKey background,
@@ -264,11 +310,10 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
 -        public Advancement.SerializedAdvancement a(AdvancementRewards.a advancementrewards_a) {
 -            return this.a(advancementrewards_a.a());
-+        public Advancement.SerializedAdvancement a(IMaterial icon, IChatBaseComponent title,
-+                                                            IChatBaseComponent description, @Nullable MinecraftKey background,
-+                                                            AdvancementFrameType frame, boolean showToast, boolean announceToChat, boolean hidden)
-+        { return this.setDisplay(icon,title, description, background, frame, showToast, announceToChat, hidden); }
-+
++        /**
++         * @deprecated (use setRewards instead)
++         */
++        public Advancement.SerializedAdvancement a(AdvancementRewards.a advancementrewards_a) { return setRewards(advancementrewards_a); }
 +
 +        public Advancement.SerializedAdvancement setRewards(AdvancementRewards.SerializedAdvancementRewards serializedAdvancementRewards) {
 +            return this.setRewards(serializedAdvancementRewards.getAdvancementRewards());
@@ -276,26 +321,40 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
 -        public Advancement.SerializedAdvancement a(AdvancementRewards advancementrewards) {
 -            this.d = advancementrewards;
-+        public Advancement.SerializedAdvancement a(AdvancementRewards.a advancementrewards_a) { return setRewards(advancementrewards_a); }
++        /**
++         * @deprecated (use setRewards instead)
++         */
++        public Advancement.SerializedAdvancement a(AdvancementRewards advancementRewards) { return this.setRewards(advancementRewards); }
 +
 +        public Advancement.SerializedAdvancement setRewards(AdvancementRewards advancementrewards) {
 +            this.rewards = advancementrewards;
              return this;
          }
  
-+        public Advancement.SerializedAdvancement a(AdvancementRewards advancementRewards) { return this.setRewards(advancementRewards); }
+-        public Advancement.SerializedAdvancement a(String s, CriterionInstance criterioninstance) {
+-            return this.a(s, new Criterion(criterioninstance));
++        /**
++         * @deprecated (use addCriterion instead)
++         */
++        public Advancement.SerializedAdvancement a(String s, CriterionInstance criterioninstance) { return  this.addCriterion(s, criterioninstance); }
 +
-         public Advancement.SerializedAdvancement a(String s, CriterionInstance criterioninstance) {
-             return this.a(s, new Criterion(criterioninstance));
++        public Advancement.SerializedAdvancement addCriterion(String s, CriterionInstance criterioninstance) {
++            return this.addCriterion(s, new Criterion(criterioninstance));
          }
  
 -        public Advancement.SerializedAdvancement a(String s, Criterion criterion) {
 -            if (this.e.containsKey(s)) {
++        /**
++         * @deprecated (use getCriteria instead)
++         */
++        public Map<String, Criterion> c() { return this.getCriteria(); }
++
 +        public Map<String, Criterion> getCriteria() { return this.criteria; }
 +
-+        public Map<String, Criterion> c() {
-+            return this.getCriteria();
-+        }
++        /**
++         * @deprecated (use addCriterion instead)
++         */
++        public Advancement.SerializedAdvancement a(String s, Criterion criterion) { return this.addCriterion(s, criterion); }
 +
 +        public Advancement.SerializedAdvancement addCriterion(String s, Criterion criterion) {
 +            if (this.criteria.containsKey(s)) {
@@ -309,40 +368,39 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
 -        public Advancement.SerializedAdvancement a(AdvancementRequirements advancementrequirements) {
 -            this.g = advancementrequirements;
-+        public Advancement.SerializedAdvancement a(String s, Criterion criterion) { return this.addCriterion(s, criterion); }
-+
++        /**
++         * @deprecated (use setRequirements instead)
++         */
++        public Advancement.SerializedAdvancement a(AdvancementRequirements advancementrequirements) { return this.setRequirements(advancementrequirements); }
 +
 +        public Advancement.SerializedAdvancement setRequirements(AdvancementRequirements advancementRequirements) {
 +            this.advancementRequirements = advancementRequirements;
              return this;
          }
  
-+        public Advancement.SerializedAdvancement a(AdvancementRequirements advancementrequirements) { return this.setRequirements(advancementRequirements); }
-+
 +        // TODO: find out what this does
          public boolean a(Function<MinecraftKey, Advancement> function) {
 -            if (this.a == null) {
-+            if (this.parent == null) {
++            if (this.name == null) {
                  return true;
              } else {
 -                if (this.b == null) {
 -                    this.b = (Advancement) function.apply(this.a);
-+                if (this.advancement == null) {
-+                    this.advancement = (Advancement) function.apply(this.parent);
++                if (this.parent == null) {
++                    this.parent = (Advancement) function.apply(this.name);
                  }
 -
 -                return this.b != null;
-+                return this.advancement != null;
++                return this.parent != null;
              }
          }
  
 -        public Advancement b(MinecraftKey minecraftkey) {
 +        /**
-+         * returns the same advancement with a new name
-+         *
-+         * @param name new name of the advancement
-+         * @return
++         * @deprecated (use rename instead)
 +         */
++        public Advancement b(MinecraftKey name) { return this.rename(name); }
++
 +        public Advancement rename(MinecraftKey name) {
              if (!this.a((Function<MinecraftKey, Advancement>) (minecraftkey1) -> { // CraftBukkit - decompile error
                  return null;
@@ -356,10 +414,13 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
                  }
  
 -                return new Advancement(minecraftkey, this.b, this.c, this.d, this.e, this.f);
-+                return new Advancement(name, this.advancement, this.display, this.rewards, this.criteria, this.requirements);
++                return new Advancement(name, this.parent, this.display, this.rewards, this.criteria, this.requirements);
              }
          }
-+        public Advancement b(MinecraftKey name) { return this.rename(name); }
++        /**
++         * @deprecated (use rename instead)
++         */
++        public Advancement a (Consumer<Advancement> consumer, String s) { return rename(consumer, s); }
  
 -        public Advancement a(Consumer<Advancement> consumer, String s) {
 -            Advancement advancement = this.b(new MinecraftKey(s));
@@ -373,13 +434,11 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -        public JsonObject b() {
 -            if (this.f == null) {
 -                this.f = this.g.createRequirements(this.e.keySet());
-+        public Advancement a (Consumer<Advancement> consumer, String s) { return rename(consumer, s); }
-+
 +        /**
-+         * generates JsonObject from SerializedAdvancement
-+         *
-+         * @return JsonObject for this
++         * @deprecated (use getJson instead)
 +         */
++        public JsonObject b() { return this.getJson(); }
++
 +        public JsonObject getJson() {
 +            if (this.requirements == null) {
 +                this.requirements = this.advancementRequirements.createRequirements(this.criteria.keySet());
@@ -391,10 +450,10 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -                jsonobject.addProperty("parent", this.b.getName().toString());
 -            } else if (this.a != null) {
 -                jsonobject.addProperty("parent", this.a.toString());
-+            if (this.advancement != null) {
-+                jsonobject.addProperty("parent", this.advancement.getName().toString());
-+            } else if (this.parent != null) {
-+                jsonobject.addProperty("parent", this.parent.toString());
++            if (this.parent != null) {
++                jsonobject.addProperty("parent", this.parent.getName().toString());
++            } else if (this.name != null) {
++                jsonobject.addProperty("parent", this.name.toString());
              }
  
 -            if (this.c != null) {
@@ -458,20 +517,18 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
 -        public void a(PacketDataSerializer packetdataserializer) {
 -            if (this.a == null) {
-+        public JsonObject b() { return this.getJson(); }
-+
 +        /**
-+         * hands the SerializedAdvancement over to the PacketDataSerializer to send it
-+         *
-+         * @param packetdataserializer
++         * @deprecated (use sendToPacketDataSerializer instead)
 +         */
++        public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer);}
++
 +        public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {
-+            if (this.parent == null) {
++            if (this.name == null) {
                  packetdataserializer.writeBoolean(false);
              } else {
                  packetdataserializer.writeBoolean(true);
 -                packetdataserializer.a(this.a);
-+                packetdataserializer.a(this.parent);
++                packetdataserializer.a(this.name);
              }
  
 -            if (this.c == null) {
@@ -499,8 +556,8 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -                    String s = astring2[l];
 -
 -                    packetdataserializer.a(s);
-+            Criterion.a(this.criteria, packetdataserializer); // Todo: deobfuscate
-+            packetdataserializer.d(this.requirements.length);  // Todo: deobfuscate
++            Criterion.sendMultipleToPacketDataSerializer(this.criteria, packetdataserializer);
++            packetdataserializer.d(this.requirements.length);  // Todo: remove obfuscation the PacketDataSerializer call
 +            String[][] requirements = this.requirements;
 +            /* int i = requirements.length;
 +            for (int j = 0; j < i; ++j) { */
@@ -516,29 +573,23 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -
          }
  
-+        public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer);}
-+
          public String toString() {
 -            return "Task Advancement{parentId=" + this.a + ", display=" + this.c + ", rewards=" + this.d + ", criteria=" + this.e + ", requirements=" + Arrays.deepToString(this.f) + '}';
-+            return "Task Advancement{parentId=" + this.parent + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
++            return "Task Advancement{parentId=" + this.name + ", display=" + this.display + ", rewards=" + this.rewards + ", criteria=" + this.criteria + ", requirements=" + Arrays.deepToString(this.requirements) + '}';
          }
  
 -        public static Advancement.SerializedAdvancement a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
 +        /**
-+         * creates a new SerializedAdvancement Object from a JsonObject
-+         *
-+         * 2020-07-18 at this point I am still confused of the code - 12xx12
-+         *
-+         * @param jsonobject
-+         * @param lootdeserializationcontext
-+         * @return
++         * @deprecated (use readFromJson instead)
 +         */
++        public static Advancement.SerializedAdvancement a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return readFromJson(jsonobject, lootdeserializationcontext); }
++
 +        public static Advancement.SerializedAdvancement readFromJson(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
              MinecraftKey minecraftkey = jsonobject.has("parent") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "parent")) : null;
 -            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.a(ChatDeserializer.t(jsonobject, "display")) : null;
 -            AdvancementRewards advancementrewards = jsonobject.has("rewards") ? AdvancementRewards.a(ChatDeserializer.t(jsonobject, "rewards")) : AdvancementRewards.a;
 -            Map<String, Criterion> map = Criterion.b(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext);
-+            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.readFromJSON(ChatDeserializer.t(jsonobject, "display")) : null;
++            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.readFromJson(ChatDeserializer.t(jsonobject, "display")) : null;
 +            AdvancementRewards advancementrewards = jsonobject.has("rewards") ? AdvancementRewards.readFromJson(ChatDeserializer.t(jsonobject, "rewards")) : AdvancementRewards.EMPTY_REWARD;
 +            Map<String, Criterion> map = Criterion.readMultipleFromJson(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext); // Todo: deobfuscate the criterion call
  
@@ -569,7 +620,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
                      }
                  }
  
-@@ -357,24 +420,24 @@ public class Advancement {
+@@ -357,24 +467,24 @@ public class Advancement {
                      }
                  }
  
@@ -591,11 +642,11 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
                      }
  
 -                    String[] astring3 = astring2;
--
--                    l = astring2.length;
 +                    /* String[] astring3 = astring2;
 +                     l = astring2.length; */  // Paper - removed for duplication
  
+-                    l = astring2.length;
+-
 -                    for (int i1 = 0; i1 < l; ++i1) {
 -                        String s1 = astring3[i1];
 +                    for (String s1 : astring2) {
@@ -603,7 +654,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
  
                          if (!map.containsKey(s1)) {
                              throw new JsonSyntaxException("Unknown required criterion '" + s1 + "'");
-@@ -382,10 +445,10 @@ public class Advancement {
+@@ -382,10 +492,10 @@ public class Advancement {
                      }
                  }
  
@@ -617,7 +668,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
                      boolean flag = false;
                      String[][] astring4 = astring;
                      int j1 = astring.length;
-@@ -400,10 +463,8 @@ public class Advancement {
+@@ -400,10 +510,8 @@ public class Advancement {
                                  ++l;
                                  continue;
                              }
@@ -628,7 +679,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
                          if (!flag) {
                              throw new JsonSyntaxException("Criterion '" + s2 + "' isn't a requirement for completion. This isn't supported behaviour, all criteria must be required.");
                          }
-@@ -415,25 +476,32 @@ public class Advancement {
+@@ -415,25 +523,27 @@ public class Advancement {
              }
          }
  
@@ -637,18 +688,15 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
 -            AdvancementDisplay advancementdisplay = packetdataserializer.readBoolean() ? AdvancementDisplay.b(packetdataserializer) : null;
 -            Map<String, Criterion> map = Criterion.c(packetdataserializer);
 -            String[][] astring = new String[packetdataserializer.i()][];
-+        public static Advancement.SerializedAdvancement a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return readFromJson(jsonobject, lootdeserializationcontext); }
-+
 +        /**
-+         * generates SerializedAdvancement from PacketDataSerializer
-+         *
-+         * @param packetDataSerializer
-+         * @return new SerializedAdvancement object
++         * @deprecated (use getFromPacketDataSerializer instead)
 +         */
++        public static Advancement.SerializedAdvancement b(PacketDataSerializer packetDataSerializer) { return getFromPacketDataSerializer(packetDataSerializer); }
++
 +        public static Advancement.SerializedAdvancement getFromPacketDataSerializer(PacketDataSerializer packetDataSerializer) {
 +            MinecraftKey minecraftkey = packetDataSerializer.readBoolean() ? packetDataSerializer.o() : null;  // Todo: deobfuscate
 +            AdvancementDisplay advancementdisplay = packetDataSerializer.readBoolean() ? AdvancementDisplay.readFromPacketDataSerializer(packetDataSerializer) : null;
-+            Map<String, Criterion> map = Criterion.c(packetDataSerializer);  // Todo: deobfuscate
++            Map<String, Criterion> map = Criterion.readMultipleFromPacketDataSerializer(packetDataSerializer);
 +            String[][] astring = new String[packetDataSerializer.i()][];  // Todo: deobfuscate
  
              for (int i = 0; i < astring.length; ++i) {
@@ -662,21 +710,20 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2
              }
  
 -            return new Advancement.SerializedAdvancement(minecraftkey, advancementdisplay, AdvancementRewards.a, map, astring);
-+            return new Advancement.SerializedAdvancement(minecraftkey, advancementdisplay, AdvancementRewards.EMPTY_REWARD, map, astring);
-         }
- 
+-        }
+-
 -        public Map<String, Criterion> c() {
 -            return this.e;
--        }
-+        public static Advancement.SerializedAdvancement b(PacketDataSerializer packetDataSerializer) { return getFromPacketDataSerializer(packetDataSerializer); }
++            return new Advancement.SerializedAdvancement(minecraftkey, advancementdisplay, AdvancementRewards.EMPTY_REWARD, map, astring);
+         }
      }
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
-index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7b92d08b9 100644
+index d3387a4e16f81b820d40502d2c46ebb3db88f824..0559bf032abdc71ebde64ad4e8ff3396c314a620 100644
 --- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
-@@ -33,34 +33,39 @@ import javax.annotation.Nullable;
+@@ -33,110 +33,99 @@ import javax.annotation.Nullable;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -708,8 +755,9 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
      private EntityPlayer player;
      @Nullable
 -    private Advancement l;
+-    private boolean m = true;
 +    private Advancement advancement;
-     private boolean m = true;
++    private boolean newProgress = true;
  
      public AdvancementDataPlayer(DataFixer datafixer, PlayerList playerlist, AdvancementDataWorld advancementdataworld, File file, EntityPlayer entityplayer) {
 -        this.d = datafixer;
@@ -719,19 +767,30 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
 +        this.playerList = playerlist;
 +        this.file = file;
          this.player = entityplayer;
-         this.d(advancementdataworld);
+-        this.d(advancementdataworld);
++        this.save(advancementdataworld);
      }
  
 -    public void a(EntityPlayer entityplayer) {
 -        this.player = entityplayer;
+-    }
++    /**
++     * @deprecated (use setPlayer)
++     */
 +    public void a(EntityPlayer player) { this.setPlayer(player); }
 +
-+    public void setPlayer(EntityPlayer player) {
-+        this.player = player;
-     }
++    public void setPlayer(EntityPlayer player) { this.player = player; }
  
++    /**
++     * @deprecated
++     */
      public void a() {
-@@ -71,17 +76,16 @@ public class AdvancementDataPlayer {
+-        Iterator iterator = CriterionTriggers.a().iterator();
+ 
+-        while (iterator.hasNext()) {
+-            CriterionTrigger<?> criteriontrigger = (CriterionTrigger) iterator.next();
++        for (CriterionTrigger<?> criterionTrigger : CriterionTriggers.a()) {  // Paper - replaced with enhaned for  // Todo: remove obfuscation
++            CriterionTrigger<?> criteriontrigger = (CriterionTrigger) criterionTrigger;
  
              criteriontrigger.a(this);
          }
@@ -744,31 +803,39 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
 -        this.h.clear();
 -        this.i.clear();
 -        this.j.clear();
+-        this.m = true;
+-        this.l = null;
+-        this.d(advancementdataworld);
 +        this.advancementProgress.clear();
 +        this.advancementsAchieved.clear();
 +        this.advancements.clear();
 +        this.advancementsInProgress.clear();
-         this.m = true;
--        this.l = null;
++        this.newProgress = true;
 +        this.advancement = null;
-         this.d(advancementdataworld);
++        this.save(advancementdataworld);
      }
  
-@@ -93,19 +97,18 @@ public class AdvancementDataPlayer {
- 
+     private void b(AdvancementDataWorld advancementdataworld) {
+-        Iterator iterator = advancementdataworld.getAdvancements().iterator();
+-
+-        while (iterator.hasNext()) {
+-            Advancement advancement = (Advancement) iterator.next();
+-
++        for (Advancement advancement : advancementdataworld.getAdvancements()) {
              this.c(advancement);
          }
 -
      }
  
-     private void c() {
+-    private void c() {
++    private void processProgresses() {
          List<Advancement> list = Lists.newArrayList();
 -        Iterator iterator = this.data.entrySet().iterator();
-+        Iterator iterator = this.advancementProgress.entrySet().iterator();
- 
-         while (iterator.hasNext()) {
-             Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next();
- 
+-
+-        while (iterator.hasNext()) {
+-            Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next();
+-
++        for (Entry<Advancement, AdvancementProgress> entry : this.advancementProgress.entrySet()) {  // Paper - replaced with enhanced for
              if (((AdvancementProgress) entry.getValue()).isDone()) {
                  list.add(entry.getKey());
 -                this.j.add(entry.getKey());
@@ -776,20 +843,38 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
              }
          }
  
-@@ -114,7 +117,7 @@ public class AdvancementDataPlayer {
-         while (iterator.hasNext()) {
-             Advancement advancement = (Advancement) iterator.next();
- 
+-        iterator = list.iterator();
+-
+-        while (iterator.hasNext()) {
+-            Advancement advancement = (Advancement) iterator.next();
+-
 -            this.e(advancement);
++        for(Advancement advancement : list) {  // Paper - replaced with enhanced for
 +            this.processProgress(advancement);
+         }
+-
+     }
+ 
+-    private void c(AdvancementDataWorld advancementdataworld) {
+-        Iterator iterator = advancementdataworld.getAdvancements().iterator();
+-
+-        while (iterator.hasNext()) {
+-            Advancement advancement = (Advancement) iterator.next();
+-
++    private void reward(AdvancementDataWorld advancementdataworld) {
++        for (Advancement advancement : advancementdataworld.getAdvancements()) {  // Paper - replaced with enhanced for
+             if (advancement.getCriteria().isEmpty()) {
+                 this.grantCriteria(advancement, "");
+-                advancement.d().a(this.player);
++                advancement.getRewards().reward(this.player);
+             }
          }
  
      }
-@@ -134,9 +137,9 @@ public class AdvancementDataPlayer {
-     }
  
-     private void d(AdvancementDataWorld advancementdataworld) {
+-    private void d(AdvancementDataWorld advancementdataworld) {
 -        if (this.f.isFile()) {
++    private void save(AdvancementDataWorld advancementdataworld) {
 +        if (this.file.isFile()) {
              try {
 -                JsonReader jsonreader = new JsonReader(new StringReader(Files.toString(this.f, StandardCharsets.UTF_8)));
@@ -797,7 +882,7 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
                  Throwable throwable = null;
  
                  try {
-@@ -147,7 +150,7 @@ public class AdvancementDataPlayer {
+@@ -147,7 +136,7 @@ public class AdvancementDataPlayer {
                          dynamic = dynamic.set("DataVersion", dynamic.createInt(1343));
                      }
  
@@ -806,7 +891,19 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
                      dynamic = dynamic.remove("DataVersion");
                      Map<MinecraftKey, AdvancementProgress> map = (Map) AdvancementDataPlayer.b.getAdapter(AdvancementDataPlayer.c).fromJsonTree((JsonElement) dynamic.getValue());
  
-@@ -165,7 +168,7 @@ public class AdvancementDataPlayer {
+@@ -156,20 +145,19 @@ public class AdvancementDataPlayer {
+                     }
+ 
+                     Stream<Entry<MinecraftKey, AdvancementProgress>> stream = map.entrySet().stream().sorted(Comparator.comparing(Entry::getValue));
+-                    Iterator iterator = ((List) stream.collect(Collectors.toList())).iterator();
+ 
+-                    while (iterator.hasNext()) {
+-                        Entry<MinecraftKey, AdvancementProgress> entry = (Entry) iterator.next();
+-                        Advancement advancement = advancementdataworld.a((MinecraftKey) entry.getKey());
++                    for (Object o : (List) stream.collect(Collectors.toList())) {  // Paper - replaced with enhanced for
++                        Entry<MinecraftKey, AdvancementProgress> entry = (Entry) o;
++                        Advancement advancement = advancementdataworld.getAdvancement((MinecraftKey) entry.getKey());
+ 
                          if (advancement == null) {
                              // CraftBukkit start
                              if (entry.getKey().getNamespace().equals("minecraft")) {
@@ -815,7 +912,12 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
                              }
                              // CraftBukkit end
                          } else {
-@@ -190,9 +193,9 @@ public class AdvancementDataPlayer {
+-                            this.a(advancement, (AdvancementProgress) entry.getValue());
++                            this.addAdvancement(advancement, (AdvancementProgress) entry.getValue());
+                         }
+                     }
+                 } catch (Throwable throwable1) {
+@@ -190,33 +178,38 @@ public class AdvancementDataPlayer {
  
                  }
              } catch (JsonParseException jsonparseexception) {
@@ -827,8 +929,20 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
              }
          }
  
-@@ -204,7 +207,7 @@ public class AdvancementDataPlayer {
-     public void b() {
+-        this.c(advancementdataworld);
+-        this.c();
++        this.reward(advancementdataworld);
++        this.processProgresses();
+         this.b(advancementdataworld);
+     }
+ 
+-    public void b() {
++    /**
++     * @deprecated (use save instead)
++     */
++    public void b() { save(); }
++
++    public void save() {
          if (org.spigotmc.SpigotConfig.disableAdvancementSaving) return; // Spigot
          Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
 -        Iterator iterator = this.data.entrySet().iterator();
@@ -836,7 +950,11 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
  
          while (iterator.hasNext()) {
              Entry<Advancement, AdvancementProgress> entry = (Entry) iterator.next();
-@@ -215,8 +218,8 @@ public class AdvancementDataPlayer {
+             AdvancementProgress advancementprogress = (AdvancementProgress) entry.getValue();
+ 
+-            if (advancementprogress.b()) {
++            if (advancementprogress.hasProgress()) {
+                 map.put(((Advancement) entry.getKey()).getName(), advancementprogress);
              }
          }
  
@@ -847,7 +965,7 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
          }
  
          JsonElement jsonelement = AdvancementDataPlayer.b.toJsonTree(map);
-@@ -224,7 +227,7 @@ public class AdvancementDataPlayer {
+@@ -224,7 +217,7 @@ public class AdvancementDataPlayer {
          jsonelement.getAsJsonObject().addProperty("DataVersion", SharedConstants.getGameVersion().getWorldVersion());
  
          try {
@@ -856,7 +974,7 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
              Throwable throwable = null;
  
              try {
-@@ -268,7 +271,7 @@ public class AdvancementDataPlayer {
+@@ -268,7 +261,7 @@ public class AdvancementDataPlayer {
  
              }
          } catch (IOException ioexception) {
@@ -865,7 +983,17 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
          }
  
      }
-@@ -286,19 +289,19 @@ public class AdvancementDataPlayer {
+@@ -278,64 +271,64 @@ public class AdvancementDataPlayer {
+         AdvancementProgress advancementprogress = this.getProgress(advancement);
+         boolean flag1 = advancementprogress.isDone();
+ 
+-        if (advancementprogress.a(s)) {
++        if (advancementprogress.fulfillProgress(s)) {
+             // Paper start
+             if (!new com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent(this.player.getBukkitEntity(), advancement.bukkit, s).callEvent()) {
+-                advancementprogress.b(s);
++                advancementprogress.resetProgress(s);
+                 return false;
              }
              // Paper end
              this.d(advancement);
@@ -874,10 +1002,12 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
              flag = true;
              if (!flag1 && advancementprogress.isDone()) {
                  this.player.world.getServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
-                 advancement.d().a(this.player);
-                 if (advancement.c() != null && advancement.c().i() && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
+-                advancement.d().a(this.player);
+-                if (advancement.c() != null && advancement.c().i() && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
 -                    this.e.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.b);
-+                    this.playerList.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.b);
++                advancement.getRewards().reward(this.player);
++                if (advancement.getDisplay() != null && advancement.getDisplay().announceToChat() && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
++                    this.playerList.sendMessage(new ChatMessage("chat.type.advancement." + advancement.getDisplay().getFrame().getTypeName(), new Object[]{this.player.getScoreboardDisplayName(), advancement.getChatComponent()}), ChatMessageType.SYSTEM, SystemUtils.b);
                  }
              }
          }
@@ -888,92 +1018,162 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
          }
  
          return flag;
-@@ -310,12 +313,12 @@ public class AdvancementDataPlayer {
+     }
  
-         if (advancementprogress.b(s)) {
+-    public boolean revokeCritera(Advancement advancement, String s) {
+-        boolean flag = false;
++    public boolean revokeCriteria(Advancement advancement, String s) {
++        boolean success = false;
+         AdvancementProgress advancementprogress = this.getProgress(advancement);
+ 
+-        if (advancementprogress.b(s)) {
++        if (advancementprogress.resetProgress(s)) {
              this.c(advancement);
 -            this.j.add(advancement);
+-            flag = true;
 +            this.advancementsInProgress.add(advancement);
-             flag = true;
++            success = true;
          }
  
-         if (!advancementprogress.b()) {
+-        if (!advancementprogress.b()) {
 -            this.e(advancement);
++        if (!advancementprogress.hasProgress()) {
 +            this.processProgress(advancement);
          }
  
-         return flag;
-@@ -331,7 +334,7 @@ public class AdvancementDataPlayer {
-                 Entry<String, Criterion> entry = (Entry) iterator.next();
+-        return flag;
++        return success;
+     }
+ 
++    // this checks if the advancement is achieved and then triggers something
+     private void c(Advancement advancement) {
+         AdvancementProgress advancementprogress = this.getProgress(advancement);
+ 
+         if (!advancementprogress.isDone()) {
+-            Iterator iterator = advancement.getCriteria().entrySet().iterator();
+ 
+-            while (iterator.hasNext()) {
+-                Entry<String, Criterion> entry = (Entry) iterator.next();
++            for (Entry<String, Criterion> stringCriterionEntry : advancement.getCriteria().entrySet()) {  // Paper - replaced with enhanced for
++                Entry<String, Criterion> entry = (Entry) stringCriterionEntry;
                  CriterionProgress criterionprogress = advancementprogress.getCriterionProgress((String) entry.getKey());
  
 -                if (criterionprogress != null && !criterionprogress.a()) {
+-                    CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
 +                if (criterionprogress != null && !criterionprogress.isFulfilled()) {
-                     CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
++                    CriterionInstance criterioninstance = ((Criterion) entry.getValue()).getCriterionInstance();
  
                      if (criterioninstance != null) {
-@@ -355,7 +358,7 @@ public class AdvancementDataPlayer {
-             Entry<String, Criterion> entry = (Entry) iterator.next();
+-                        CriterionTrigger<CriterionInstance> criteriontrigger = CriterionTriggers.a(criterioninstance.a());
++                        CriterionTrigger<CriterionInstance> criteriontrigger = CriterionTriggers.getTrigger(criterioninstance.a());
+ 
+                         if (criteriontrigger != null) {
+                             criteriontrigger.a(this, new CriterionTrigger.a<>(criterioninstance, advancement, (String) entry.getKey()));
+@@ -347,22 +340,22 @@ public class AdvancementDataPlayer {
+         }
+     }
+ 
++    // this checks if the advancement is achieved and then triggers something
+     private void d(Advancement advancement) {
+         AdvancementProgress advancementprogress = this.getProgress(advancement);
+-        Iterator iterator = advancement.getCriteria().entrySet().iterator();
+ 
+-        while (iterator.hasNext()) {
+-            Entry<String, Criterion> entry = (Entry) iterator.next();
++        for (Entry<String, Criterion> stringCriterionEntry : advancement.getCriteria().entrySet()) {  // Paper - replaces with enhanced for
++            Entry<String, Criterion> entry = (Entry) stringCriterionEntry;
              CriterionProgress criterionprogress = advancementprogress.getCriterionProgress((String) entry.getKey());
  
 -            if (criterionprogress != null && (criterionprogress.a() || advancementprogress.isDone())) {
+-                CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
 +            if (criterionprogress != null && (criterionprogress.isFulfilled() || advancementprogress.isDone())) {
-                 CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
++                CriterionInstance criterioninstance = ((Criterion) entry.getValue()).getCriterionInstance();
  
                  if (criterioninstance != null) {
-@@ -371,26 +374,26 @@ public class AdvancementDataPlayer {
+-                    CriterionTrigger<CriterionInstance> criteriontrigger = CriterionTriggers.a(criterioninstance.a());
++                    CriterionTrigger<CriterionInstance> criteriontrigger = CriterionTriggers.getTrigger(criterioninstance.a());  // Todo: remove obfuscation
+ 
+                     if (criteriontrigger != null) {
+-                        criteriontrigger.b(this, new CriterionTrigger.a<>(criterioninstance, advancement, (String) entry.getKey()));
++                        criteriontrigger.b(this, new CriterionTrigger.a<>(criterioninstance, advancement, (String) entry.getKey()));  // Todo: remove obfuscation
+                     }
+                 }
+             }
+@@ -370,103 +363,108 @@ public class AdvancementDataPlayer {
+ 
      }
  
-     public void b(EntityPlayer entityplayer) {
+-    public void b(EntityPlayer entityplayer) {
 -        if (this.m || !this.i.isEmpty() || !this.j.isEmpty()) {
-+        if (this.m || !this.advancements.isEmpty() || !this.advancementsInProgress.isEmpty()) {
-             Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
-             Set<Advancement> set = Sets.newLinkedHashSet();
-             Set<MinecraftKey> set1 = Sets.newLinkedHashSet();
+-            Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
+-            Set<Advancement> set = Sets.newLinkedHashSet();
+-            Set<MinecraftKey> set1 = Sets.newLinkedHashSet();
 -            Iterator iterator = this.j.iterator();
-+            Iterator iterator = this.advancementsInProgress.iterator();
++    /**
++     * @deprecated (use sendAdvancements instead)
++     */
++    public void b(EntityPlayer player) { sendAdvancements(player); }
  
-             Advancement advancement;
+-            Advancement advancement;
++    public void sendAdvancements(EntityPlayer player) {
++        if (this.newProgress || !this.advancements.isEmpty() || !this.advancementsInProgress.isEmpty()) {
++            Map<MinecraftKey, AdvancementProgress> map = Maps.newHashMap();
++            Set<Advancement> advancements = Sets.newLinkedHashSet();
++            Set<MinecraftKey> advancementNames = Sets.newLinkedHashSet();
  
-             while (iterator.hasNext()) {
-                 advancement = (Advancement) iterator.next();
+-            while (iterator.hasNext()) {
+-                advancement = (Advancement) iterator.next();
 -                if (this.h.contains(advancement)) {
 -                    map.put(advancement.getName(), this.data.get(advancement));
++            for (Advancement advancement : this.advancementsInProgress) {  // Paper - replaced with improved for
 +                if (this.advancementsAchieved.contains(advancement)) {
 +                    map.put(advancement.getName(), this.advancementProgress.get(advancement));
                  }
              }
  
 -            iterator = this.i.iterator();
-+            iterator = this.advancements.iterator();
- 
-             while (iterator.hasNext()) {
-                 advancement = (Advancement) iterator.next();
+-
+-            while (iterator.hasNext()) {
+-                advancement = (Advancement) iterator.next();
 -                if (this.h.contains(advancement)) {
+-                    set.add(advancement);
++            for(Advancement advancement: this.advancements) {  // Paper - replaced with improved for
 +                if (this.advancementsAchieved.contains(advancement)) {
-                     set.add(advancement);
++                    advancements.add(advancement);
                  } else {
-                     set1.add(advancement.getName());
-@@ -399,8 +402,8 @@ public class AdvancementDataPlayer {
+-                    set1.add(advancement.getName());
++                    advancementNames.add(advancement.getName());
+                 }
+             }
  
-             if (this.m || !map.isEmpty() || !set.isEmpty() || !set1.isEmpty()) {
-                 entityplayer.playerConnection.sendPacket(new PacketPlayOutAdvancements(this.m, set, set1, map));
+-            if (this.m || !map.isEmpty() || !set.isEmpty() || !set1.isEmpty()) {
+-                entityplayer.playerConnection.sendPacket(new PacketPlayOutAdvancements(this.m, set, set1, map));
 -                this.i.clear();
 -                this.j.clear();
++            if (this.newProgress || !map.isEmpty() || !advancements.isEmpty() || !advancementNames.isEmpty()) {
++                player.playerConnection.sendPacket(new PacketPlayOutAdvancements(this.newProgress, advancements, advancementNames, map));
 +                this.advancements.clear();
 +                this.advancementsInProgress.clear();
              }
          }
  
-@@ -408,22 +411,22 @@ public class AdvancementDataPlayer {
+-        this.m = false;
++        this.newProgress = false;
      }
  
-     public void a(@Nullable Advancement advancement) {
+-    public void a(@Nullable Advancement advancement) {
 -        Advancement advancement1 = this.l;
++    /**
++     * @deprecated (use setRootAdvancement instead)
++     */
++    public void a(@Nullable Advancement advancement) { setRootAdvancement(advancement); }
++
++    public void setRootAdvancement(@Nullable Advancement advancement) {
 +        Advancement advancement1 = this.advancement;
  
-         if (advancement != null && advancement.b() == null && advancement.c() != null) {
+-        if (advancement != null && advancement.b() == null && advancement.c() != null) {
 -            this.l = advancement;
++        if (advancement != null && advancement.getParent() == null && advancement.getDisplay() != null) {
 +            this.advancement = advancement;
          } else {
 -            this.l = null;
@@ -994,18 +1194,24 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
  
          if (advancementprogress == null) {
              advancementprogress = new AdvancementProgress();
-@@ -434,39 +437,46 @@ public class AdvancementDataPlayer {
+-            this.a(advancement, advancementprogress);
++            this.addAdvancement(advancement, advancementprogress);
+         }
+ 
+         return advancementprogress;
      }
  
-     private void a(Advancement advancement, AdvancementProgress advancementprogress) {
+-    private void a(Advancement advancement, AdvancementProgress advancementprogress) {
 -        advancementprogress.a(advancement.getCriteria(), advancement.i());
 -        this.data.put(advancement, advancementprogress);
-+        advancementprogress.a(advancement.getCriteria(), advancement.getRequirements());
++    private void addAdvancement(Advancement advancement, AdvancementProgress advancementprogress) {  // Paper - removed obfuscation
++        advancementprogress.setCriteria(advancement.getCriteria(), advancement.getRequirements());
 +        this.advancementProgress.put(advancement, advancementprogress);
      }
  
 -    private void e(Advancement advancement) {
-+    private void processProgress(Advancement advancement) {  // Paper - removed obfuscation
++    private void processProgress(Advancement advancement) {
++        // Paper - removed obfuscation
          // Paper start
 -        e(advancement, IterationEntryPoint.ROOT);
 +        processProgress(advancement, IterationEntryPoint.ROOT);
@@ -1016,14 +1222,8 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
          PARENT_OF_ITERATOR
      }
 -    private void e(Advancement advancement, IterationEntryPoint entryPoint) {
-+
-+    /**
-+     * checks if the advancement or any of its relatives were achieved or have been revoked the achieved status
-+     *
-+     * @param advancement advancement to check
-+     * @param entryPoint marker to improve process time of the operation
-+     */
-+    private void processProgress(Advancement advancement, IterationEntryPoint entryPoint) {  // Paper - removed obfuscation
++    private void processProgress(Advancement advancement, IterationEntryPoint entryPoint) {
++        // Paper - removed obfuscation
          // Paper end
 -        boolean flag = this.f(advancement);
 -        boolean flag1 = this.h.contains(advancement);
@@ -1059,7 +1259,7 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
          }
  
          // If this is true, we've went through a child iteration, entered the parent, processed the parent
-@@ -475,61 +485,60 @@ public class AdvancementDataPlayer {
+@@ -475,61 +473,60 @@ public class AdvancementDataPlayer {
              return;
          } // Paper end
  
@@ -1093,7 +1293,7 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
 -            if (advancement.c() == null) {
 -                return false;
 -            }
-+            if (advancement.c() == null) { return false; } // Todo: decide which to call
++            if (advancement.getDisplay() == null) { return false; }
  
 -            AdvancementProgress advancementprogress = this.getProgress(advancement);
 +            AdvancementProgress advancementProgress = this.getProgress(advancement);
@@ -1156,14 +1356,96 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7
 +        return true;
      }
  }
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataWorld.java b/src/main/java/net/minecraft/server/AdvancementDataWorld.java
+index e546de5e5f80ef35b6911ca411d8d898083949ef..59ef820cfb46e04564807647eda82bfc813b2dbb 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataWorld.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataWorld.java
+@@ -14,18 +14,21 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ public class AdvancementDataWorld extends ResourceDataJson {
+-
++    // Paper start - remove obfuscation
+     private static final Logger LOGGER = LogManager.getLogger();
+     public static final Gson DESERIALIZER = (new GsonBuilder()).create();
+     public Advancements REGISTRY = new Advancements();
+-    private final LootPredicateManager d;
++    private final LootPredicateManager lootManager;
+ 
+-    public AdvancementDataWorld(LootPredicateManager lootpredicatemanager) {
++    public AdvancementDataWorld(LootPredicateManager lootManager) {
+         super(AdvancementDataWorld.DESERIALIZER, "advancements");
+-        this.d = lootpredicatemanager;
++        this.lootManager = lootManager;
+     }
+ 
+-    protected void a(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {
++    /**
++     * loads multiple advancements from multiple json files
++     */
++    protected void a(Map<MinecraftKey, JsonElement> map, IResourceManager iresourcemanager, GameProfilerFiller gameprofilerfiller) {  // TODO: rename interface method
+         Map<MinecraftKey, Advancement.SerializedAdvancement> map1 = Maps.newHashMap();
+ 
+         map.forEach((minecraftkey, jsonelement) -> {
+@@ -37,9 +40,9 @@ public class AdvancementDataWorld extends ResourceDataJson {
+ 
+             try {
+                 JsonObject jsonobject = ChatDeserializer.m(jsonelement, "advancement");
+-                Advancement.SerializedAdvancement advancement_serializedadvancement = Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, this.d));
++                Advancement.SerializedAdvancement serializedAdvancement = Advancement.SerializedAdvancement.readFromJson(jsonobject, new LootDeserializationContext(minecraftkey, this.lootManager));
+ 
+-                map1.put(minecraftkey, advancement_serializedadvancement);
++                map1.put(minecraftkey, serializedAdvancement);
+             } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
+                 AdvancementDataWorld.LOGGER.error("Parsing error loading custom advancement {}: {}", minecraftkey, jsonparseexception.getMessage());
+             }
+@@ -47,26 +50,24 @@ public class AdvancementDataWorld extends ResourceDataJson {
+         });
+         Advancements advancements = new Advancements();
+ 
+-        advancements.a((Map) map1);
+-        Iterator iterator = advancements.b().iterator();
+-
+-        while (iterator.hasNext()) {
+-            Advancement advancement = (Advancement) iterator.next();
++        advancements.addAdvancements((Map) map1);
+ 
+-            if (advancement.c() != null) {
++        for (Advancement advancement : advancements.getChildAdvancements()) {  // Paper - replaced with enhanced for
++            if (advancement.getDisplay() != null) {
+                 AdvancementTree.a(advancement);
+             }
+         }
+-
+         this.REGISTRY = advancements;
+     }
+ 
++    /**
++     * @deprecated (use getAdvancement instead)
++     */
++    public Advancement a(MinecraftKey key) { return this.getAdvancement(key); }
++
+     @Nullable
+-    public Advancement a(MinecraftKey minecraftkey) {
+-        return this.REGISTRY.a(minecraftkey);
+-    }
++    public Advancement getAdvancement(MinecraftKey key) { return this.REGISTRY.getAdvancement(key); }
+ 
+-    public Collection<Advancement> getAdvancements() {
+-        return this.REGISTRY.c();
+-    }
++    public Collection<Advancement> getAdvancements() { return this.REGISTRY.getAdvancements(); }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/AdvancementDisplay.java b/src/main/java/net/minecraft/server/AdvancementDisplay.java
-index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cfe4ad7f28 100644
+index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..7b04b8e8cbbf595d5dfa0ad5e4939860db683415 100644
 --- a/src/main/java/net/minecraft/server/AdvancementDisplay.java
 +++ b/src/main/java/net/minecraft/server/AdvancementDisplay.java
-@@ -9,26 +9,29 @@ import javax.annotation.Nullable;
+@@ -8,27 +8,30 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import javax.annotation.Nullable;
  
  public class AdvancementDisplay {
- 
+-
 -    private final IChatBaseComponent a;
 -    private final IChatBaseComponent b;
 -    private final ItemStack c;
@@ -1172,7 +1454,8 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 -    private final boolean f;
 -    private final boolean g;
 -    private final boolean h;
-+    // Paper start - OBFHELPER
++    // Paper start - removed obfuscation
++
 +    private final IChatBaseComponent title;
 +    private final IChatBaseComponent description;
 +    private final ItemStack icon;
@@ -1207,52 +1490,61 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
      }
  
      public void a(float f, float f1) {
-@@ -37,44 +40,65 @@ public class AdvancementDisplay {
+@@ -36,45 +39,65 @@ public class AdvancementDisplay {
+         this.j = f1;
      }
  
-     public IChatBaseComponent a() {
+-    public IChatBaseComponent a() {
 -        return this.a;
-+        return this.title;
-     }
+-    }
++    /**
++     * @deprecated (use getTitle instead)
++     */
++    public IChatBaseComponent a() { return this.getTitle(); }
  
-+    public IChatBaseComponent getTitle() { return this.a(); }
-+
-     public IChatBaseComponent b() {
+-    public IChatBaseComponent b() {
 -        return this.b;
-+        return this.description;
-     }
+-    }
++    public IChatBaseComponent getTitle() { return this.title; }
  
-+    public IChatBaseComponent getDescription() { return this.b(); }
-+
-     public AdvancementFrameType e() {
+-    public AdvancementFrameType e() {
 -        return this.e;
-+        return this.frame;
-     }
+-    }
++    /**
++     * @deprecated (use getDescription instead)
++     */
++    public IChatBaseComponent b() { return this.getDescription(); }
  
-     public boolean i() {
+-    public boolean i() {
 -        return this.g;
-+        return this.announceToChat;
-     }
+-    }
++    public IChatBaseComponent getDescription() {  return this.description; }
  
 -    public boolean j() {
 -        return this.h;
 -    }
-+    public boolean announceToChat() { return this.i(); }
++    /**
++     * @deprecated (use getFrame instead)
++     */
++    public AdvancementFrameType e() { return this.getFrame(); }
 +
-+    public boolean j() { return this.isHidden(); }
- 
-+    public boolean isHidden() { return this.hidden; }
++    public AdvancementFrameType getFrame() { return this.frame; }
 +
 +    /**
-+     * reads json file into AdvancementDisplay
-+     *
-+     * @param jsonobject the json to interpret
-+     * @return new AdvancementDisplay
++     * @deprecated (use announceToChat instead)
 +     */
-     public static AdvancementDisplay a(JsonObject jsonobject) {
++    public boolean i() { return this.announceToChat(); };
++
++    public boolean announceToChat() { return this.announceToChat; }
+ 
+-    public static AdvancementDisplay a(JsonObject jsonobject) {
 -        IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(jsonobject.get("title"));
 -        IChatMutableComponent ichatmutablecomponent1 = IChatBaseComponent.ChatSerializer.a(jsonobject.get("description"));
--
++    /**
++     * @deprecated (use isHidden instead)
++     */
++    public boolean j() { return this.isHidden(); }
+ 
 -        if (ichatmutablecomponent != null && ichatmutablecomponent1 != null) {
 -            ItemStack itemstack = b(ChatDeserializer.t(jsonobject, "icon"));
 -            MinecraftKey minecraftkey = jsonobject.has("background") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "background")) : null;
@@ -1260,15 +1552,22 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 -            boolean flag = ChatDeserializer.a(jsonobject, "show_toast", true);
 -            boolean flag1 = ChatDeserializer.a(jsonobject, "announce_to_chat", true);
 -            boolean flag2 = ChatDeserializer.a(jsonobject, "hidden", false);
--
++    public boolean isHidden() { return this.hidden; }
+ 
 -            return new AdvancementDisplay(itemstack, ichatmutablecomponent, ichatmutablecomponent1, minecraftkey, advancementframetype, flag, flag1, flag2);
++    /**
++     * @deprecated (use readFromJson instead)
++     */
++    public static AdvancementDisplay a(JsonObject jsonobject) { return readFromJson(jsonobject); }
++
++    public static AdvancementDisplay readFromJson(JsonObject jsonobject) {
 +        IChatMutableComponent title = IChatBaseComponent.ChatSerializer.a(jsonobject.get("title"));
 +        IChatMutableComponent description = IChatBaseComponent.ChatSerializer.a(jsonobject.get("description"));
 +
 +        if (title != null && description != null) {
 +            ItemStack icon = setIcon(ChatDeserializer.t(jsonobject, "icon"));
 +            MinecraftKey background = jsonobject.has("background") ? new MinecraftKey(ChatDeserializer.h(jsonobject, "background")) : null;
-+            AdvancementFrameType frame = jsonobject.has("frame") ? AdvancementFrameType.a(ChatDeserializer.h(jsonobject, "frame")) : AdvancementFrameType.TASK;
++            AdvancementFrameType frame = jsonobject.has("frame") ? AdvancementFrameType.getFrameType(ChatDeserializer.h(jsonobject, "frame")) : AdvancementFrameType.TASK;
 +            boolean showToast = ChatDeserializer.a(jsonobject, "show_toast", true);
 +            boolean toChat = ChatDeserializer.a(jsonobject, "announce_to_chat", true);
 +            boolean hidden = ChatDeserializer.a(jsonobject, "hidden", false);
@@ -1280,20 +1579,11 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
      }
  
 -    private static ItemStack b(JsonObject jsonobject) {
-+    public static AdvancementDisplay readFromJSON(JsonObject jsonObject) { return a(jsonObject); }
-+
-+
-+    /**
-+     * generates the icon for the icon from JsonObject
-+     *
-+     * @param jsonobject
-+     * @return new icon
-+     */
 +    private static ItemStack setIcon(JsonObject jsonobject) {
          if (!jsonobject.has("item")) {
              throw new JsonSyntaxException("Unsupported icon type, currently only items are supported (add 'item' key)");
          } else {
-@@ -83,91 +107,119 @@ public class AdvancementDisplay {
+@@ -83,91 +106,106 @@ public class AdvancementDisplay {
              if (jsonobject.has("data")) {
                  throw new JsonParseException("Disallowed data tag found");
              } else {
@@ -1317,17 +1607,17 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
          }
      }
  
-+
-+    /**
-+     * sends information in AdvancementDisplay to the PacketDataSerializer
-+     *
-+     * @param packetdataserializer
-+     */
-     public void a(PacketDataSerializer packetdataserializer) {
+-    public void a(PacketDataSerializer packetdataserializer) {
 -        packetdataserializer.a(this.a);
 -        packetdataserializer.a(this.b);
 -        packetdataserializer.a(this.c);
 -        packetdataserializer.a((Enum) this.e);
++    /**
++     * @deprecated (use sendToPacketDataSerializer instead)
++     */
++    public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer); }
++
++    public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {
 +        packetdataserializer.a(this.title);
 +        packetdataserializer.a(this.description);
 +        packetdataserializer.a(this.icon);
@@ -1366,12 +1656,10 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 -        ItemStack itemstack = packetdataserializer.m();
 -        AdvancementFrameType advancementframetype = (AdvancementFrameType) packetdataserializer.a(AdvancementFrameType.class);
 +    /**
-+     * reads AdvancementDisplay from PacketDataSerializer
-+     *
-+     *
-+     * @param packetdataserializer
-+     * @return new AdvancementDisplay
++     * @deprecated (use readFromPacketDataSerializer instead)
 +     */
++    public static AdvancementDisplay b(PacketDataSerializer packetDataSerializer) { return readFromPacketDataSerializer(packetDataSerializer); }
++
 +    public static AdvancementDisplay readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
 +        IChatBaseComponent title = packetdataserializer.h();
 +        IChatBaseComponent description = packetdataserializer.h();
@@ -1392,13 +1680,11 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
      }
  
 -    public JsonElement k() {
-+    public static AdvancementDisplay b(PacketDataSerializer packetDataSerializer) { return readFromPacketDataSerializer(packetDataSerializer); }
-+
 +    /**
-+     * generates JsonObject from this AdvancementDisplay
-+     *
-+     * @return JsonObject including the AdvancementDisplay
++     * @deprecated (use getJson instead)
 +     */
++    public JsonElement k() { return getJson(); }
++
 +    public JsonElement getJson() {
          JsonObject jsonobject = new JsonObject();
  
@@ -1414,7 +1700,7 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 +        jsonobject.add("icon", this.iconToJson());
 +        jsonobject.add("title", IChatBaseComponent.ChatSerializer.b(this.title));
 +        jsonobject.add("description", IChatBaseComponent.ChatSerializer.b(this.description));
-+        jsonobject.addProperty("frame", this.frame.a());
++        jsonobject.addProperty("frame", this.frame.getTypeName());  // Todo - remove obfuscation on advancementFrame
 +        jsonobject.addProperty("show_toast", this.showToast);
 +        jsonobject.addProperty("announce_to_chat", this.announceToChat);
 +        jsonobject.addProperty("hidden", this.hidden);
@@ -1426,14 +1712,6 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
      }
  
 -    private JsonObject l() {
-+    public JsonElement k() { return getJson(); }
-+
-+    /**
-+     * generates JsonObject for icon item
-+     * Method was instantly renamed because its private
-+     *
-+     * @return JsonObject containing the icon
-+     */
 +    private JsonObject iconToJson() {
          JsonObject jsonobject = new JsonObject();
  
@@ -1450,41 +1728,139 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 +
 +    // Paper end - OBFHELPER
  }
+diff --git a/src/main/java/net/minecraft/server/AdvancementFrameType.java b/src/main/java/net/minecraft/server/AdvancementFrameType.java
+index a9c49a434870a2e3b549298e874e137ea235070a..ba211c3e77bef3f227b1ac53adb6568e2c298669 100644
+--- a/src/main/java/net/minecraft/server/AdvancementFrameType.java
++++ b/src/main/java/net/minecraft/server/AdvancementFrameType.java
+@@ -1,31 +1,37 @@
+ package net.minecraft.server;
+ 
+ public enum AdvancementFrameType {
+-
++    // Paper start - removed obfuscation
+     TASK("task", 0, EnumChatFormat.GREEN), CHALLENGE("challenge", 26, EnumChatFormat.DARK_PURPLE), GOAL("goal", 52, EnumChatFormat.GREEN);
+ 
+-    private final String d;
+-    private final int e;
+-    private final EnumChatFormat f;
++    private final String typeName;
++    private final int typeID;
++    private final EnumChatFormat chatFormat;
+ 
+-    private AdvancementFrameType(String s, int i, EnumChatFormat enumchatformat) {
+-        this.d = s;
+-        this.e = i;
+-        this.f = enumchatformat;
++    private AdvancementFrameType(String typeName, int ID, EnumChatFormat chatFormat) {
++        this.typeName = typeName;
++        this.typeID = ID;
++        this.chatFormat = chatFormat;
+     }
+ 
+-    public String a() {
+-        return this.d;
+-    }
++    /**
++     * @deprecated (use getTypeName instead)
++     */
++    public String a() { return this.getTypeName(); }
++
++    public String getTypeName() { return this.typeName; }
+ 
+-    public static AdvancementFrameType a(String s) {
+-        AdvancementFrameType[] aadvancementframetype = values();
+-        int i = aadvancementframetype.length;
++    /**
++     * @deprecated (use getFrameType instead)
++     */
++    public static AdvancementFrameType a(String s) { return getFrameType(s); }
+ 
+-        for (int j = 0; j < i; ++j) {
+-            AdvancementFrameType advancementframetype = aadvancementframetype[j];
++    public static AdvancementFrameType getFrameType(String s) {
++        AdvancementFrameType[] advancementFrameTypes = values();
++        int i = advancementFrameTypes.length;
+ 
+-            if (advancementframetype.d.equals(s)) {
++        for (AdvancementFrameType advancementframetype : advancementFrameTypes) {  // Paper - replaced with enhanced for
++            if (advancementframetype.typeName.equals(s)) {
+                 return advancementframetype;
+             }
+         }
+@@ -33,7 +39,11 @@ public enum AdvancementFrameType {
+         throw new IllegalArgumentException("Unknown frame type '" + s + "'");
+     }
+ 
+-    public EnumChatFormat c() {
+-        return this.f;
+-    }
++    /**
++     * @deprecated (use getChatFormat instead)
++     */
++    public EnumChatFormat c() { return this.getChatFormat(); }
++
++    public EnumChatFormat getChatFormat() { return this.chatFormat; }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/AdvancementProgress.java b/src/main/java/net/minecraft/server/AdvancementProgress.java
-index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5dead8b5bf 100644
+index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..6f3f18cfdb9e0f8e480bcf7066e7f0ba1d36bb59 100644
 --- a/src/main/java/net/minecraft/server/AdvancementProgress.java
 +++ b/src/main/java/net/minecraft/server/AdvancementProgress.java
-@@ -21,15 +21,15 @@ import javax.annotation.Nullable;
+@@ -20,36 +20,37 @@ import java.util.Set;
+ import javax.annotation.Nullable;
  
  public class AdvancementProgress implements Comparable<AdvancementProgress> {
++    // Paper start - removed obfuscation
  
 -    private final Map<String, CriterionProgress> a = Maps.newHashMap();
+-    private String[][] b = new String[0][];
 +    private final Map<String, CriterionProgress> progress = Maps.newHashMap();  // Paper - removed obfuscation
-     private String[][] b = new String[0][];
++    private String[][] advancementNames = new String[0][];
  
 -    public AdvancementProgress() {}
 +    public AdvancementProgress() { }
  
-     public void a(Map<String, Criterion> map, String[][] astring) {
-         Set<String> set = map.keySet();
+-    public void a(Map<String, Criterion> map, String[][] astring) {
+-        Set<String> set = map.keySet();
++    /**
++     * @deprecated (use setCriteria instead)
++     */
++    public void a(Map<String, Criterion> map, String[][] astring) { setCriteria(map, astring); }
  
 -        this.a.entrySet().removeIf((entry) -> {
-+        this.progress.entrySet().removeIf((entry) -> {
-             return !set.contains(entry.getKey());
-         });
-         Iterator iterator = set.iterator();
-@@ -37,8 +37,8 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
-         while (iterator.hasNext()) {
-             String s = (String) iterator.next();
+-            return !set.contains(entry.getKey());
+-        });
+-        Iterator iterator = set.iterator();
++    public void setCriteria(Map<String, Criterion> map, String[][] advancementNames) {
++        Set<String> criteria = map.keySet();
+ 
+-        while (iterator.hasNext()) {
+-            String s = (String) iterator.next();
++        this.progress.entrySet().removeIf((entry) -> !criteria.contains(entry.getKey()));  // Paper - Replaced with expresion lambda
  
 -            if (!this.a.containsKey(s)) {
 -                this.a.put(s, new CriterionProgress());
++        for (String s : criteria) {  // Paper - replaced with enhanced for
 +            if (!this.progress.containsKey(s)) {
 +                this.progress.put(s, new CriterionProgress());
              }
          }
  
-@@ -65,7 +65,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+-        this.b = astring;
++        this.advancementNames = advancementNames;
+     }
+ 
+     public boolean isDone() {
+-        if (this.b.length == 0) {
++        if (this.advancementNames.length == 0) {
+             return false;
+         } else {
+-            String[][] astring = this.b;
++            String[][] astring = this.advancementNames;
+             int i = astring.length;
+             int j = 0;
+ 
+@@ -65,7 +66,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
                          String s = astring2[l];
                          CriterionProgress criterionprogress = this.getCriterionProgress(s);
  
@@ -1493,47 +1869,66 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
                              ++l;
                              continue;
                          }
-@@ -87,7 +87,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -86,8 +87,13 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+         }
      }
  
-     public boolean b() {
+-    public boolean b() {
 -        Iterator iterator = this.a.values().iterator();
++    /**
++     * @deprecated (use hasProgress instead)
++     */
++    public boolean b() { return this.hasProgress(); }
++
++    public boolean hasProgress() {
 +        Iterator iterator = this.progress.values().iterator();
  
          CriterionProgress criterionprogress;
  
-@@ -97,16 +97,16 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -97,74 +103,89 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
              }
  
              criterionprogress = (CriterionProgress) iterator.next();
 -        } while (!criterionprogress.a());
-+        } while (!criterionprogress.isFulfilled());  // Todo: remove obfuscation of CriterionProgress
++        } while (!criterionprogress.isFulfilled());
  
          return true;
      }
  
-     public boolean a(String s) {
+-    public boolean a(String s) {
 -        CriterionProgress criterionprogress = (CriterionProgress) this.a.get(s);
++    /**
++     * @deprecated (use fulfillProgress instead)
++     */
++    public boolean a(String s) { return this.fulfillProgress(s); }
++
++    public boolean fulfillProgress(String s) {
 +        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
  
 -        if (criterionprogress != null && !criterionprogress.a()) {
 -            criterionprogress.b();
 +        if (criterionprogress != null && !criterionprogress.isFulfilled()) {
-+            criterionprogress.fulfill();  // Todo: remove obfuscation of CriterionProgress
++            criterionprogress.fulfill();
              return true;
          } else {
              return false;
-@@ -114,57 +114,56 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+         }
      }
  
-     public boolean b(String s) {
+-    public boolean b(String s) {
 -        CriterionProgress criterionprogress = (CriterionProgress) this.a.get(s);
-+        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
++    /**
++     * @deprecated (use resetProgress instread)
++     */
++    public boolean b(String s) { return this.resetProgress(s); }
  
 -        if (criterionprogress != null && criterionprogress.a()) {
 -            criterionprogress.c();
-+        if (criterionprogress != null && criterionprogress.isFulfilled()) {  // Todo: remove obfuscation of CriterionProgress
-+            criterionprogress.reset();  // Todo: remove obfuscation of CriterionProgress
++    public boolean resetProgress(String s) {
++        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
++
++        if (criterionprogress != null && criterionprogress.isFulfilled()) {
++            criterionprogress.reset();
              return true;
          } else {
              return false;
@@ -1543,11 +1938,14 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
 -    public String toString() {
 -        return "AdvancementProgress{criteria=" + this.a + ", requirements=" + Arrays.deepToString(this.b) + '}';
 -    }
-+    public String toString() { return "AdvancementProgress{criteria=" + this.progress + ", requirements=" + Arrays.deepToString(this.b) + '}'; }
++    public String toString() { return "AdvancementProgress{criteria=" + this.progress + ", requirements=" + Arrays.deepToString(this.advancementNames) + '}'; }
  
 -    public void a(PacketDataSerializer packetdataserializer) {
 -        packetdataserializer.d(this.a.size());
 -        Iterator iterator = this.a.entrySet().iterator();
++    /**
++     * @deprecated (use sendToPacketDataSerializer instead)
++     */
 +    public void a(PacketDataSerializer packetdataserializer) { sendToPacketDataSerializer(packetdataserializer); }
  
 -        while (iterator.hasNext()) {
@@ -1560,12 +1958,15 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
  
              packetdataserializer.a((String) entry.getKey());
 -            ((CriterionProgress) entry.getValue()).a(packetdataserializer);
-+            ((CriterionProgress) entry.getValue()).sendToPacketDataSerializer(packetdataserializer);  // Todo: remove obfuscation of CriterionProgress
++            ((CriterionProgress) entry.getValue()).sendToPacketDataSerializer(packetdataserializer);
          }
 -
      }
  
 -    public static AdvancementProgress b(PacketDataSerializer packetdataserializer) {
++    /**
++     * @deprecated (use readFromPacketDataSerializer instead)
++     */
 +    public static AdvancementProgress b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
 +
 +    public static AdvancementProgress readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
@@ -1600,7 +2001,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
                  list.add(entry.getKey());
              }
          }
-@@ -174,12 +173,12 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -174,12 +195,12 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
  
      public Iterable<String> getAwardedCriteria() {
          List<String> list = Lists.newArrayList();
@@ -1615,24 +2016,29 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
                  list.add(entry.getKey());
              }
          }
-@@ -188,43 +187,42 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -187,44 +208,46 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+         return list;
      }
  
++
++    /**
++     * @deprecated (use getLatestProgressDate instead)
++     */
      @Nullable
 -    public Date g() {
 -        Date date = null;
 -        Iterator iterator = this.a.values().iterator();
-+    public Date g() { return this.getDate(); }
++    public Date g() { return this.getLatestProgressDate(); }
  
 -        while (iterator.hasNext()) {
 -            CriterionProgress criterionprogress = (CriterionProgress) iterator.next();
 +    @Nullable
-+    public Date getDate() {
++    public Date getLatestProgressDate() {
 +        Date date = null;
  
 -            if (criterionprogress.a() && (date == null || criterionprogress.getDate().before(date))) {
 +        for (CriterionProgress criterionprogress : this.progress.values()) {  // Paper - changed to improved for loop
-+            if (criterionprogress.isFulfilled() && (date == null || criterionprogress.getDate().before(date))) {  // Todo: remove obfuscation of CriterionProgress
++            if (criterionprogress.isFulfilled() && (date == null || criterionprogress.getDate().before(date))) {
                  date = criterionprogress.getDate();
              }
          }
@@ -1643,8 +2049,8 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
      public int compareTo(AdvancementProgress advancementprogress) {
 -        Date date = this.g();
 -        Date date1 = advancementprogress.g();
-+        Date date = this.getDate();
-+        Date date1 = advancementprogress.getDate();
++        Date date = this.getLatestProgressDate();
++        Date date1 = advancementprogress.getLatestProgressDate();
  
          return date == null && date1 != null ? 1 : (date != null && date1 == null ? -1 : (date == null && date1 == null ? 0 : date.compareTo(date1)));
      }
@@ -1659,10 +2065,11 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
              JsonObject jsonobject = new JsonObject();
              JsonObject jsonobject1 = new JsonObject();
 -            Iterator iterator = advancementprogress.a.entrySet().iterator();
-+            Iterator iterator = advancementprogress.progress.entrySet().iterator();
  
-             while (iterator.hasNext()) {
-                 Entry<String, CriterionProgress> entry = (Entry) iterator.next();
+-            while (iterator.hasNext()) {
+-                Entry<String, CriterionProgress> entry = (Entry) iterator.next();
++            for (Entry<String, CriterionProgress> stringCriterionProgressEntry : advancementprogress.progress.entrySet()) {  // replaced with improved for loop
++                Entry<String, CriterionProgress> entry = (Entry) stringCriterionProgressEntry;
                  CriterionProgress criterionprogress = (CriterionProgress) entry.getValue();
  
 -                if (criterionprogress.a()) {
@@ -1672,7 +2079,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
                  }
              }
  
-@@ -236,20 +234,30 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -236,20 +259,32 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
              return jsonobject;
          }
  
@@ -1681,16 +2088,15 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
 -            JsonObject jsonobject1 = ChatDeserializer.a(jsonobject, "criteria", new JsonObject());
 -            AdvancementProgress advancementprogress = new AdvancementProgress();
 -            Iterator iterator = jsonobject1.entrySet().iterator();
-+        // Paper start - removed obfuscation
+-
+-            while (iterator.hasNext()) {
+-                Entry<String, JsonElement> entry = (Entry) iterator.next();
+-                String s = (String) entry.getKey();
 +        public AdvancementProgress deserialize(JsonElement jsonelement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
 +            JsonObject advancement = ChatDeserializer.m(jsonelement, "advancement");
 +            JsonObject criteria = ChatDeserializer.a(advancement, "criteria", new JsonObject());
 +            AdvancementProgress advancementProgress = new AdvancementProgress();
  
--            while (iterator.hasNext()) {
--                Entry<String, JsonElement> entry = (Entry) iterator.next();
--                String s = (String) entry.getKey();
--
 -                advancementprogress.a.put(s, CriterionProgress.a(ChatDeserializer.a((JsonElement) entry.getValue(), s)));
 +            for (Entry<String, JsonElement> stringJsonElementEntry : criteria.entrySet()) {  // Paper - changed to new for loop
 +                Entry<String, JsonElement> entry = (Entry) stringJsonElementEntry;
@@ -1703,6 +2109,9 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
 +        }
 +    }
 +
++    /**
++     * @deprecated (use serializedAdvancementProgress instead)
++     */
 +    public static class a extends serializedAdvancementProgress {
 +        public JsonElement serialize(AdvancementProgress advancementprogress, Type type, JsonSerializationContext jsonserializationcontext) {
 +            return super.serialize(advancementprogress, type, jsonserializationcontext);
@@ -1715,13 +2124,14 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5d
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/AdvancementRewards.java b/src/main/java/net/minecraft/server/AdvancementRewards.java
-index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347adb6b99202 100644
+index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..c0a7775fa108cb14cc556570262e956620364b7f 100644
 --- a/src/main/java/net/minecraft/server/AdvancementRewards.java
 +++ b/src/main/java/net/minecraft/server/AdvancementRewards.java
-@@ -13,106 +13,119 @@ import javax.annotation.Nullable;
+@@ -12,107 +12,120 @@ import java.util.List;
+ import javax.annotation.Nullable;
  
  public class AdvancementRewards {
- 
+-
 -    public static final AdvancementRewards a = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], CustomFunction.a.a);
 -    private final int b;
 -    private final MinecraftKey[] c;
@@ -1733,25 +2143,28 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 -        this.c = aminecraftkey;
 -        this.d = aminecraftkey1;
 -        this.e = customfunction_a;
-+    // Paper start - OBFHELPER
++    // Paper start - remove obfuscation
 +
 +    // generates an empty reward for comparison
 +    public static final AdvancementRewards EMPTY_REWARD = new AdvancementRewards(0, new MinecraftKey[0], new MinecraftKey[0], CustomFunction.a.a);
 +    private final int experience;
 +    private final MinecraftKey[] loot;
-+    private final MinecraftKey[] recipies;
-+    private final CustomFunction.a e;  // Todo: deobfuscate
++    private final MinecraftKey[] recipes;
++    private final CustomFunction.a e;  // Todo: remove obfuscation
 +
 +    public AdvancementRewards(int experience, MinecraftKey[] loot, MinecraftKey[] recipies, CustomFunction.a customfunction_a) {
 +        this.experience = experience;
 +        this.loot = loot;
-+        this.recipies = recipies;
-+        this.e = customfunction_a;  // Todo: deobfuscate
++        this.recipes = recipies;
++        this.e = customfunction_a;  // Todo: remove obfuscation
      }
  
 -    public void a(EntityPlayer entityplayer) {
 -        entityplayer.giveExp(this.b);
 -        LootTableInfo loottableinfo = (new LootTableInfo.Builder(entityplayer.getWorldServer())).set(LootContextParameters.THIS_ENTITY, entityplayer).set(LootContextParameters.POSITION, entityplayer.getChunkCoordinates()).a(entityplayer.getRandom()).build(LootContextParameterSets.ADVANCEMENT_REWARD);
++    /**
++     * @deprecated (use reward instead)
++     */
 +    public void a(EntityPlayer player) { reward(player); }
 +
 +    public void reward(EntityPlayer player) {
@@ -1799,8 +2212,8 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
  
 -        if (this.d.length > 0) {
 -            entityplayer.a(this.d);
-+        if (this.recipies.length > 0) {
-+            player.a(this.recipies);  // Todo: deobfuscate
++        if (this.recipes.length > 0) {
++            player.a(this.recipes);  // Todo: deobfuscate
          }
  
 -        MinecraftServer minecraftserver = entityplayer.server;
@@ -1816,18 +2229,16 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
      public String toString() {
 -        return "AdvancementRewards{experience=" + this.b + ", loot=" + Arrays.toString(this.c) + ", recipes=" + Arrays.toString(this.d) + ", function=" + this.e + '}';
 +        return "AdvancementRewards{experience=" + this.experience + ", loot=" + Arrays.toString(this.loot) +
-+            ", recipes=" + Arrays.toString(this.recipies) + ", function=" + this.e + '}';
++            ", recipes=" + Arrays.toString(this.recipes) + ", function=" + this.e + '}';
      }
  
 -    public JsonElement b() {
 -        if (this == AdvancementRewards.a) {
++    /**
++     * @deprecated (use getJson instead)
++     */
 +    public JsonElement b() { return this.getJson(); }
 +
-+    /**
-+     * generates Json from AdvancementRewards
-+     *
-+     * @return Json description
-+     */
 +    public JsonElement getJson() {
 +        if (this == AdvancementRewards.EMPTY_REWARD) {
              return JsonNull.INSTANCE;
@@ -1875,9 +2286,9 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 -                jsonarray = new JsonArray();
 -                aminecraftkey = this.d;
 -                i = aminecraftkey.length;
-+            if (this.recipies.length > 0) {
++            if (this.recipes.length > 0) {
 +                lootArray = new JsonArray();
-+                loot = this.recipies;
++                loot = this.recipes;
 +                lootLenghth = loot.length;
  
 -                for (j = 0; j < i; ++j) {
@@ -1893,7 +2304,7 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
              }
  
              if (this.e.a() != null) {
-@@ -123,63 +136,101 @@ public class AdvancementRewards {
+@@ -123,63 +136,90 @@ public class AdvancementRewards {
          }
      }
  
@@ -1901,23 +2312,18 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 -        int i = ChatDeserializer.a(jsonobject, "experience", (int) 0);
 -        JsonArray jsonarray = ChatDeserializer.a(jsonobject, "loot", new JsonArray());
 -        MinecraftKey[] aminecraftkey = new MinecraftKey[jsonarray.size()];
--
--        for (int j = 0; j < aminecraftkey.length; ++j) {
--            aminecraftkey[j] = new MinecraftKey(ChatDeserializer.a(jsonarray.get(j), "loot[" + j + "]"));
++    /**
++     * @deprecated (use readFromJson instead)
++     */
 +    public static AdvancementRewards a(JsonObject jsonobject) throws JsonParseException { return readFromJson(jsonobject); }
 +
-+    /**
-+     * generates AdvancementRewards from Json
-+     *
-+     * @param jsonObject Json to parse
-+     * @return AdvancementRewards resulting
-+     * @throws JsonParseException
-+     */
 +    public static AdvancementRewards readFromJson(JsonObject jsonObject) throws JsonParseException {
 +        int experience = ChatDeserializer.a(jsonObject, "experience", (int) 0);
 +        JsonArray loot = ChatDeserializer.a(jsonObject, "loot", new JsonArray());
 +        MinecraftKey[] lootArray = new MinecraftKey[loot.size()];
-+
+ 
+-        for (int j = 0; j < aminecraftkey.length; ++j) {
+-            aminecraftkey[j] = new MinecraftKey(ChatDeserializer.a(jsonarray.get(j), "loot[" + j + "]"));
 +        for (int j = 0; j < lootArray.length; ++j) {
 +            lootArray[j] = new MinecraftKey(ChatDeserializer.a(loot.get(j), "loot[" + j + "]"));
          }
@@ -1953,15 +2359,6 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 -        private int a;
 -        private final List<MinecraftKey> b = Lists.newArrayList();
 -        private final List<MinecraftKey> c = Lists.newArrayList();
-+    /**
-+     * Represents the SerializedAdvancementRewards for this AdvancementRewards
-+     *
-+     * I am confused why there is a static and a nonstatic method which more or less do the same
-+     * but I cant rename the to the same thing - so the ne name is now function
-+     *
-+     * The loot List is created but never either called nor edited
-+     *
-+     */
 +    public static class SerializedAdvancementRewards {
 +        private int experience;
 +        private final List<MinecraftKey> loot = Lists.newArrayList();
@@ -2010,7 +2407,9 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 +    /**
 +     *  obfuscated interface for SerializedAdvancementRewards
 +     */
-+
++    /**
++     * @deprecated (use SerializedAdvancementRewards instead)
++     */
 +    public static class a extends SerializedAdvancementRewards {
 +        public a() {}
 +
@@ -2028,17 +2427,14 @@ index 87b9edf2b243ffef5c148aa6f74f306a0f27eaff..a9a1420a5af81ed6a9699890190347ad
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/Advancements.java b/src/main/java/net/minecraft/server/Advancements.java
-index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee88c4cc8f 100644
+index 2fed42a5aec165a67a1480e822376e66244c31c8..02b6bac148a127f9fd54c5272b64a4a1c128bf96 100644
 --- a/src/main/java/net/minecraft/server/Advancements.java
 +++ b/src/main/java/net/minecraft/server/Advancements.java
-@@ -14,17 +14,28 @@ import org.apache.logging.log4j.LogManager;
+@@ -14,17 +14,23 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
  public class Advancements {
-+    // Paper start - OBFHELPER
-+    /**
-+     * Am object for handling the Advancements storage
-+     */
++    // Paper start - remove obfuscation
  
      private static final Logger LOGGER = LogManager.getLogger();
      public final Map<MinecraftKey, Advancement> advancements = Maps.newHashMap();
@@ -2053,19 +2449,17 @@ index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee
  
 -    public void a(Map<MinecraftKey, Advancement.SerializedAdvancement> map) {
 -        Function function = Functions.forMap(this.advancements, (Object) null);
-+    public void a(Map<MinecraftKey, Advancement.SerializedAdvancement> map) { setAdvancements(map); }
-+
 +    /**
-+     * adds new advancements to the stored advancements
-+     *
-+     * @param map advancements to be added
++     * @deprecated (use addAdvancements instead)
 +     */
-+    public void setAdvancements(Map<MinecraftKey, Advancement.SerializedAdvancement> map) {
++    public void a(Map<MinecraftKey, Advancement.SerializedAdvancement> map) { addAdvancements(map); }
++
++    public void addAdvancements(Map<MinecraftKey, Advancement.SerializedAdvancement> map) {
 +        Function function = Functions.forMap(this.advancements, (Object) null);  // Todo: What does this do?
  
          label42:
          while (!map.isEmpty()) {
-@@ -35,22 +46,22 @@ public class Advancements {
+@@ -35,22 +41,22 @@ public class Advancements {
  
              while (iterator.hasNext()) {
                  entry = (Entry) iterator.next();
@@ -2094,13 +2488,16 @@ index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee
                          if (this.e != null) {
                              this.e.c(advancement);
                          }
-@@ -75,23 +86,30 @@ public class Advancements {
+@@ -75,23 +81,39 @@ public class Advancements {
          // Advancements.LOGGER.info("Loaded {} advancements", this.advancements.size()); // CraftBukkit - moved to AdvancementDataWorld#reload
      }
  
 -    public Iterable<Advancement> b() {
 -        return this.c;
 -    }
++    /**
++     * @deprecated (use getChildAdvancements instead)
++     */
 +    public Iterable<Advancement> b() { return this.getChildAdvancements(); }
  
 -    public Collection<Advancement> c() {
@@ -2109,10 +2506,16 @@ index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee
 +        return this.childAdvancements;
      }
  
++    /**
++     * @deprecated (use getAdvancements instead)
++     */
 +    public Collection<Advancement> c() { return this.getAdvancements(); }
 +
 +    public Collection<Advancement> getAdvancements() { return this.advancements.values(); }
 +
++    /**
++     * @deprecated (use getAdvancement instead)
++     */
      @Nullable
 -    public Advancement a(MinecraftKey minecraftkey) {
 -        return (Advancement) this.advancements.get(minecraftkey);
@@ -2133,11 +2536,101 @@ index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee
 +    // Paper end
  }
 +
+diff --git a/src/main/java/net/minecraft/server/BlockBeehive.java b/src/main/java/net/minecraft/server/BlockBeehive.java
+index 7e2c63e4731ac2d234d5f90eb80d314cdede07ca..a4b9dd62c1dd8b311b3ad470e1b8d228fdec2b78 100644
+--- a/src/main/java/net/minecraft/server/BlockBeehive.java
++++ b/src/main/java/net/minecraft/server/BlockBeehive.java
+@@ -38,7 +38,7 @@ public class BlockBeehive extends BlockTileEntity {
+                 this.b(world, blockposition);
+             }
+ 
+-            CriterionTriggers.K.a((EntityPlayer) entityhuman, iblockdata.getBlock(), itemstack, tileentitybeehive.getBeeCount());
++            CriterionTriggers.BEE_NEST_DESTROYED.a((EntityPlayer) entityhuman, iblockdata.getBlock(), itemstack, tileentitybeehive.getBeeCount());
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/BlockPumpkinCarved.java b/src/main/java/net/minecraft/server/BlockPumpkinCarved.java
+index c8ef631e1e77ea534e782b35027c2ca5ea57aaa3..65ba162ea038fb3f76d1b28458bb675539ba0bea 100644
+--- a/src/main/java/net/minecraft/server/BlockPumpkinCarved.java
++++ b/src/main/java/net/minecraft/server/BlockPumpkinCarved.java
+@@ -6,7 +6,6 @@ import javax.annotation.Nullable;
+ 
+ // CraftBukkit start
+ import org.bukkit.craftbukkit.util.BlockStateListPopulator;
+-import org.bukkit.event.block.BlockRedstoneEvent;
+ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+ // CraftBukkit end
+ 
+@@ -74,7 +73,7 @@ public class BlockPumpkinCarved extends BlockFacingHorizontal implements ItemWea
+ 
+             while (iterator.hasNext()) {
+                 entityplayer = (EntityPlayer) iterator.next();
+-                CriterionTriggers.n.a(entityplayer, (Entity) entitysnowman);
++                CriterionTriggers.SUMMONED_ENTITY.a(entityplayer, (Entity) entitysnowman);
+             }
+ 
+             for (j = 0; j < this.getSnowmanShape().b(); ++j) {
+@@ -112,7 +111,7 @@ public class BlockPumpkinCarved extends BlockFacingHorizontal implements ItemWea
+ 
+                 while (iterator.hasNext()) {
+                     entityplayer = (EntityPlayer) iterator.next();
+-                    CriterionTriggers.n.a(entityplayer, (Entity) entityirongolem);
++                    CriterionTriggers.SUMMONED_ENTITY.a(entityplayer, (Entity) entityirongolem);
+                 }
+ 
+                 for (j = 0; j < this.getIronGolemShape().c(); ++j) {
+diff --git a/src/main/java/net/minecraft/server/BlockWitherSkull.java b/src/main/java/net/minecraft/server/BlockWitherSkull.java
+index 5551da3bebeb87bc4037f0d4d59aaf4f05351760..2a41baf39f589649b91f3ee68f401313a0a1e2a1 100644
+--- a/src/main/java/net/minecraft/server/BlockWitherSkull.java
++++ b/src/main/java/net/minecraft/server/BlockWitherSkull.java
+@@ -72,7 +72,7 @@ public class BlockWitherSkull extends BlockSkull {
+                     while (iterator.hasNext()) {
+                         EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+ 
+-                        CriterionTriggers.n.a(entityplayer, (Entity) entitywither);
++                        CriterionTriggers.SUMMONED_ENTITY.a(entityplayer, (Entity) entitywither);
+                     }
+ 
+                     // world.addEntity(entitywither); // CraftBukkit - moved up
+diff --git a/src/main/java/net/minecraft/server/ContainerBrewingStand.java b/src/main/java/net/minecraft/server/ContainerBrewingStand.java
+index f1bad658540b619ac6c77f5a08812e2bce5791e1..60a2ba38233808b0fbca4f0b23ef6d3d02487e06 100644
+--- a/src/main/java/net/minecraft/server/ContainerBrewingStand.java
++++ b/src/main/java/net/minecraft/server/ContainerBrewingStand.java
+@@ -170,7 +170,7 @@ public class ContainerBrewingStand extends Container {
+             PotionRegistry potionregistry = PotionUtil.d(itemstack);
+ 
+             if (entityhuman instanceof EntityPlayer) {
+-                CriterionTriggers.k.a((EntityPlayer) entityhuman, potionregistry);
++                CriterionTriggers.BREWED_POTION.a((EntityPlayer) entityhuman, potionregistry);
+             }
+ 
+             super.a(entityhuman, itemstack);
+diff --git a/src/main/java/net/minecraft/server/ContainerEnchantTable.java b/src/main/java/net/minecraft/server/ContainerEnchantTable.java
+index 6b0e2c7fe0386b97b513be84d22bbcae7bb57ae8..9c30c35284b2fbf474d36ba74d18afed8b813e44 100644
+--- a/src/main/java/net/minecraft/server/ContainerEnchantTable.java
++++ b/src/main/java/net/minecraft/server/ContainerEnchantTable.java
+@@ -4,7 +4,6 @@ import java.util.List;
+ import java.util.Random;
+ 
+ // CraftBukkit start
+-import java.util.Collections;
+ import java.util.Map;
+ import org.bukkit.Location;
+ import org.bukkit.NamespacedKey;
+@@ -293,7 +292,7 @@ public class ContainerEnchantTable extends Container {
+ 
+                     entityhuman.a(StatisticList.ENCHANT_ITEM);
+                     if (entityhuman instanceof EntityPlayer) {
+-                        CriterionTriggers.i.a((EntityPlayer) entityhuman, itemstack2, j);
++                        CriterionTriggers.ENCHANTED_ITEM.a((EntityPlayer) entityhuman, itemstack2, j);
+                     }
+ 
+                     this.enchantSlots.update();
 diff --git a/src/main/java/net/minecraft/server/Criterion.java b/src/main/java/net/minecraft/server/Criterion.java
-index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea588d617b 100644
+index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..a5eae4430d9b7f69b9c0ce7b5c519ebe26496f6c 100644
 --- a/src/main/java/net/minecraft/server/Criterion.java
 +++ b/src/main/java/net/minecraft/server/Criterion.java
-@@ -4,89 +4,135 @@ import com.google.common.collect.Maps;
+@@ -4,89 +4,124 @@ import com.google.common.collect.Maps;
  import com.google.gson.JsonElement;
  import com.google.gson.JsonObject;
  import com.google.gson.JsonSyntaxException;
@@ -2147,10 +2640,8 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  import java.util.Map.Entry;
  import javax.annotation.Nullable;
  
-+/**
-+ * class to wrap a criterionInstance
-+ */
  public class Criterion {
++    // Paper start - removed obfuscation
  
 -    private final CriterionInstance a;
 +    private final CriterionInstance criterionInstance;
@@ -2166,7 +2657,7 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
      }
  
 +    /**
-+     * @deprecated
++     * @deprecated (use sendToPacketDataSerializer instead)
 +     */
      public void a(PacketDataSerializer packetdataserializer) {}
  
@@ -2176,13 +2667,13 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
 +    public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {}
 +
 +    /**
-+     * @deprecated
++     * @deprecated (use readFromJson instead)
 +     */
 +    public static Criterion a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return  readFromJson(jsonobject, lootdeserializationcontext); }
 +
 +    public static Criterion readFromJson(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
 +        MinecraftKey trigger = new MinecraftKey(ChatDeserializer.h(jsonobject, "trigger"));
-+        CriterionTrigger<?> criteriontrigger = CriterionTriggers.a(trigger);  // Todo: remove obfuscation in CriterionTriggers
++        CriterionTrigger<?> criteriontrigger = CriterionTriggers.getTrigger(trigger);  // Todo: remove obfuscation in CriterionTriggers
  
          if (criteriontrigger == null) {
 -            throw new JsonSyntaxException("Invalid criterion trigger: " + minecraftkey);
@@ -2198,7 +2689,7 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  
 -    public static Criterion b(PacketDataSerializer packetdataserializer) {
 +    /**
-+     * @deprecated
++     * @deprecated (use readFromPacketDataSerializer instead)
 +     */
 +    public static Criterion b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
 +
@@ -2208,7 +2699,7 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  
 -    public static Map<String, Criterion> b(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
 +    /**
-+     * @deprecated
++     * @deprecated (use readMultipleFromJson instead)
 +     */
 +    public static Map<String, Criterion> b(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return readMultipleFromJson(jsonobject, lootdeserializationcontext); }
 +
@@ -2230,14 +2721,10 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  
 -    public static Map<String, Criterion> c(PacketDataSerializer packetdataserializer) {
 +    /**
-+     * @deprecated
++     * @deprecated (use readMultipleFromPacketDataSerializer instead)
 +     */
 +    public static Map<String, Criterion> c(PacketDataSerializer packetdataserializer) { return readMultipleFromPacketDataSerializer(packetdataserializer); }
 +
-+    /**
-+     * reads multiple criteria from the PacketDataSerializer
-+     * @param packetdataserializer where to read from
-+     */
 +    public static Map<String, Criterion> readMultipleFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
          Map<String, Criterion> map = Maps.newHashMap();
 -        int i = packetdataserializer.i();
@@ -2255,17 +2742,12 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
 -        packetdataserializer.d(map.size());
 -        Iterator iterator = map.entrySet().iterator();
 +    /**
-+     * @deprecated
++     * @deprecated (use sendMultipleToPacketDataSerializer instead)
 +     */
 +    public static void a(Map<String, Criterion> map, PacketDataSerializer packetdataserializer) { sendMultipleToPacketDataSerializer(map, packetdataserializer);}
  
 -        while (iterator.hasNext()) {
 -            Entry<String, Criterion> entry = (Entry) iterator.next();
-+    /**
-+     * writes multiple criteria to the PacketDataSerializer
-+     * @param map which criteria to send
-+     * @param packetdataserializer where to read to
-+     */
 +    public static void sendMultipleToPacketDataSerializer(Map<String, Criterion> map, PacketDataSerializer packetdataserializer) {
 +        packetdataserializer.d(map.size());  // Todo: remove obfuscation the PacketDataSerializer call
  
@@ -2281,7 +2763,7 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
      }
  
 +    /**
-+     * @deprecated
++     * @deprecated (use getCriterionInstance instead)
 +     */
 +    public CriterionInstance a() { return this.getCriterionInstance(); }
 +
@@ -2294,7 +2776,7 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  
 -    public JsonElement b() {
 +    /**
-+     * @deprecated
++     * @deprecated (use getJson instead)
 +     */
 +    public JsonElement b() { return this.getJson(); }
 +
@@ -2308,47 +2790,55 @@ index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea
  
          if (jsonobject1.size() != 0) {
              jsonobject.add("conditions", jsonobject1);
+@@ -94,4 +129,5 @@ public class Criterion {
+ 
+         return jsonobject;
+     }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/CriterionProgress.java b/src/main/java/net/minecraft/server/CriterionProgress.java
-index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe05091c7dc77 100644
+index cbc4e7ff1af8e95c2139c71ff124242095eab90d..5f1c8fed901e71828eb5dbbded5afa2d4aeb21ea 100644
 --- a/src/main/java/net/minecraft/server/CriterionProgress.java
 +++ b/src/main/java/net/minecraft/server/CriterionProgress.java
-@@ -10,58 +10,96 @@ import java.util.Date;
+@@ -9,62 +9,101 @@ import java.text.SimpleDateFormat;
+ import java.util.Date;
  
  public class CriterionProgress {
- 
+-
 -    private static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 -    private Date b;
++    // Papaer start - removed obfuscation
 +    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 +    private Date date;
  
      public CriterionProgress() {}
  
 +    /**
-+     * @deprecated
++     * @deprecated (use isFulfilled instead)
 +     */
      public boolean a() {
 -        return this.b != null;
 +        return this.isFulfilled();
-     }
- 
-+    public boolean isFulfilled() {
-+        return this.date != null;
 +    }
 +
++    public boolean isFulfilled() {
++        return this.date != null;
+     }
+ 
 +    /**
-+     * @deprecated
++     * @deprecated (use fulfill instead)
 +     */
      public void b() {
 -        this.b = new Date();
 +        this.fulfill();
-     }
- 
-+    public void fulfill() {
-+        this.date = new Date();
 +    }
 +
++    public void fulfill() {
++        this.date = new Date();
+     }
+ 
 +    /**
-+     * @deprecated
++     * @deprecated (use reset instead)
 +     */
      public void c() {
 -        this.b = null;
@@ -2375,7 +2865,7 @@ index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe050
 -            packetdataserializer.a(this.b);
 -        }
 +    /**
-+     * @deprecated
++     * @deprecated (use sendToPacketDataSerializer instead)
 +     */
 +    public void a(PacketDataSerializer packetDataSerializer) { sendToPacketDataSerializer(packetDataSerializer); }
  
@@ -2386,7 +2876,7 @@ index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe050
 +        }
      }
 +    /**
-+     * @deprecated
++     * @deprecated (use getJson instead)
 +     */
 +    public JsonElement e() { return this.getJson(); }
  
@@ -2398,7 +2888,7 @@ index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe050
  
 -    public static CriterionProgress b(PacketDataSerializer packetdataserializer) {
 +    /**
-+     * @deprecated
++     * @deprecated (use readFromPacketDataSerializer instead)
 +     */
 +    public static CriterionProgress b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
 +
@@ -2413,7 +2903,7 @@ index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe050
          return criterionprogress;
      }
 +    /**
-+     * @deprecated
++     * @deprecated (use readFromJson instead)
 +     */
 +    public static CriterionProgress a(String s) { return readFromJson(s); }
  
@@ -2427,3 +2917,958 @@ index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe050
              return criterionprogress;
          } catch (ParseException parseexception) {
              throw new JsonSyntaxException("Invalid datetime: " + s, parseexception);
+         }
+     }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/CriterionTrigger.java b/src/main/java/net/minecraft/server/CriterionTrigger.java
+index cfb420a9c7e64ec240fff81d2e3fd32f607847b3..cadb013d1e678803f5b9639ef2426f3c174f531d 100644
+--- a/src/main/java/net/minecraft/server/CriterionTrigger.java
++++ b/src/main/java/net/minecraft/server/CriterionTrigger.java
+@@ -3,9 +3,14 @@ package net.minecraft.server;
+ import com.google.gson.JsonObject;
+ 
+ public interface CriterionTrigger<T extends CriterionInstance> {
+-
++    /**
++     * returns the type as MinecraftKey
++     */
+     MinecraftKey a();
+ 
++    /**
++     *
++     */
+     void a(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a);
+ 
+     void b(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a);
+@@ -16,22 +21,30 @@ public interface CriterionTrigger<T extends CriterionInstance> {
+ 
+     public static class a<T extends CriterionInstance> {
+ 
+-        private final T a;
+-        private final Advancement b;
+-        private final String c;
++        private final T criterion;
++        private final Advancement advancement;
++        private final String type;
+ 
+-        public a(T t0, Advancement advancement, String s) {
+-            this.a = t0;
+-            this.b = advancement;
+-            this.c = s;
++        public a(T criterion, Advancement advancement, String type) {
++            this.criterion = criterion;
++            this.advancement = advancement;
++            this.type = type;
+         }
+ 
+-        public T a() {
+-            return this.a;
+-        }
++        /**
++         * @deprecated (use getCriterion instead)
++         */
++        public T a() { return this.getCriterion(); }
++
++        public T getCriterion() { return this.criterion; }
++
++        /**
++         * @deprecated (use grant instead)
++         */
++        public void a(AdvancementDataPlayer advancementdataplayer) { grant(advancementdataplayer); }
+ 
+-        public void a(AdvancementDataPlayer advancementdataplayer) {
+-            advancementdataplayer.grantCriteria(this.b, this.c);
++        public void grant(AdvancementDataPlayer advancementdataplayer) {
++            advancementdataplayer.grantCriteria(this.advancement, this.type);
+         }
+ 
+         public boolean equals(Object object) {
+@@ -40,17 +53,17 @@ public interface CriterionTrigger<T extends CriterionInstance> {
+             } else if (object != null && this.getClass() == object.getClass()) {
+                 CriterionTrigger.a<?> criteriontrigger_a = (CriterionTrigger.a) object;
+ 
+-                return !this.a.equals(criteriontrigger_a.a) ? false : (!this.b.equals(criteriontrigger_a.b) ? false : this.c.equals(criteriontrigger_a.c));
++                return !this.criterion.equals(criteriontrigger_a.criterion) ? false : (!this.advancement.equals(criteriontrigger_a.advancement) ? false : this.type.equals(criteriontrigger_a.type));
+             } else {
+                 return false;
+             }
+         }
+ 
+         public int hashCode() {
+-            int i = this.a.hashCode();
++            int i = this.criterion.hashCode();
+ 
+-            i = 31 * i + this.b.hashCode();
+-            i = 31 * i + this.c.hashCode();
++            i = 31 * i + this.advancement.hashCode();
++            i = 31 * i + this.type.hashCode();
+             return i;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/CriterionTriggers.java b/src/main/java/net/minecraft/server/CriterionTriggers.java
+index 8ab68d0b39c8cb15506fb88643da35085eb75eeb..4c35c03e17f23829e8d6c5607d5924001bea141d 100644
+--- a/src/main/java/net/minecraft/server/CriterionTriggers.java
++++ b/src/main/java/net/minecraft/server/CriterionTriggers.java
+@@ -5,66 +5,77 @@ import java.util.Map;
+ import javax.annotation.Nullable;
+ 
+ public class CriterionTriggers {
++    // Paper start - removed obfuscation
++    private static final Map<MinecraftKey, CriterionTrigger<?>> criteria = Maps.newHashMap();
++    public static final CriterionTriggerImpossible IMPOSSIBLE = (CriterionTriggerImpossible) addCriterion((CriterionTrigger) (new CriterionTriggerImpossible()));
++    public static final CriterionTriggerKilled PLAYER_KILLED_ENTITY = (CriterionTriggerKilled) addCriterion((CriterionTrigger) (new CriterionTriggerKilled(new MinecraftKey("player_killed_entity"))));
++    public static final CriterionTriggerKilled ENTITY_KILLED_PLAYER = (CriterionTriggerKilled) addCriterion((CriterionTrigger) (new CriterionTriggerKilled(new MinecraftKey("entity_killed_player"))));
++    public static final CriterionTriggerEnterBlock ENTER_BLOCK = (CriterionTriggerEnterBlock) addCriterion((CriterionTrigger) (new CriterionTriggerEnterBlock()));
++    public static final CriterionTriggerInventoryChanged INVENTORY_CHANGED = (CriterionTriggerInventoryChanged) addCriterion((CriterionTrigger) (new CriterionTriggerInventoryChanged()));
++    public static final CriterionTriggerRecipeUnlocked RECIPE_UNLOCKED = (CriterionTriggerRecipeUnlocked) addCriterion((CriterionTrigger) (new CriterionTriggerRecipeUnlocked()));
++    public static final CriterionTriggerPlayerHurtEntity PLAYER_HURT_ENTITY = (CriterionTriggerPlayerHurtEntity) addCriterion((CriterionTrigger) (new CriterionTriggerPlayerHurtEntity()));
++    public static final CriterionTriggerEntityHurtPlayer ENTITY_HURT_PLAYER = (CriterionTriggerEntityHurtPlayer) addCriterion((CriterionTrigger) (new CriterionTriggerEntityHurtPlayer()));
++    public static final CriterionTriggerEnchantedItem ENCHANTED_ITEM = (CriterionTriggerEnchantedItem) addCriterion((CriterionTrigger) (new CriterionTriggerEnchantedItem()));
++    public static final CriterionTriggerFilledBucket FILLED_BUCKET = (CriterionTriggerFilledBucket) addCriterion((CriterionTrigger) (new CriterionTriggerFilledBucket()));
++    public static final CriterionTriggerBrewedPotion BREWED_POTION = (CriterionTriggerBrewedPotion) addCriterion((CriterionTrigger) (new CriterionTriggerBrewedPotion()));
++    public static final CriterionTriggerConstructBeacon CONSTRUCT_BEACON = (CriterionTriggerConstructBeacon) addCriterion((CriterionTrigger) (new CriterionTriggerConstructBeacon()));
++    public static final CriterionTriggerUsedEnderEye USED_ENDER_EYE = (CriterionTriggerUsedEnderEye) addCriterion((CriterionTrigger) (new CriterionTriggerUsedEnderEye()));
++    public static final CriterionTriggerSummonedEntity SUMMONED_ENTITY = (CriterionTriggerSummonedEntity) addCriterion((CriterionTrigger) (new CriterionTriggerSummonedEntity()));
++    public static final CriterionTriggerBredAnimals BRED_ANIMALS = (CriterionTriggerBredAnimals) addCriterion((CriterionTrigger) (new CriterionTriggerBredAnimals()));
++    public static final CriterionTriggerLocation LOCATION = (CriterionTriggerLocation) addCriterion((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("location"))));
++    public static final CriterionTriggerLocation SLEPT_IN_BED = (CriterionTriggerLocation) addCriterion((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("slept_in_bed"))));
++    public static final CriterionTriggerCuredZombieVillager CURED_ZOMBIE_VILLAGER = (CriterionTriggerCuredZombieVillager) addCriterion((CriterionTrigger) (new CriterionTriggerCuredZombieVillager()));
++    public static final CriterionTriggerVillagerTrade VILLAGER_TRADE = (CriterionTriggerVillagerTrade) addCriterion((CriterionTrigger) (new CriterionTriggerVillagerTrade()));
++    public static final CriterionTriggerItemDurabilityChanged ITEM_DURABILITY_CHANGED = (CriterionTriggerItemDurabilityChanged) addCriterion((CriterionTrigger) (new CriterionTriggerItemDurabilityChanged()));
++    public static final CriterionTriggerLevitation LEVITATION = (CriterionTriggerLevitation) addCriterion((CriterionTrigger) (new CriterionTriggerLevitation()));
++    public static final CriterionTriggerChangedDimension CHANGED_DIMENSION = (CriterionTriggerChangedDimension) addCriterion((CriterionTrigger) (new CriterionTriggerChangedDimension()));
++    public static final CriterionTriggerTick TICK = (CriterionTriggerTick) addCriterion((CriterionTrigger) (new CriterionTriggerTick()));
++    public static final CriterionTriggerTamedAnimal TAMED_ANIMAL = (CriterionTriggerTamedAnimal) addCriterion((CriterionTrigger) (new CriterionTriggerTamedAnimal()));
++    public static final CriterionTriggerPlacedBlock PLACED_BLOCK = (CriterionTriggerPlacedBlock) addCriterion((CriterionTrigger) (new CriterionTriggerPlacedBlock()));
++    public static final CriterionTriggerConsumeItem CONSUME_ITEM = (CriterionTriggerConsumeItem) addCriterion((CriterionTrigger) (new CriterionTriggerConsumeItem()));
++    public static final CriterionTriggerEffectsChanged EFFECTS_CHANGED = (CriterionTriggerEffectsChanged) addCriterion((CriterionTrigger) (new CriterionTriggerEffectsChanged()));
++    public static final CriterionTriggerUsedTotem USED_TOTEM = (CriterionTriggerUsedTotem) addCriterion((CriterionTrigger) (new CriterionTriggerUsedTotem()));
++    public static final CriterionTriggerNetherTravel NETHER_TRAVEL = (CriterionTriggerNetherTravel) addCriterion((CriterionTrigger) (new CriterionTriggerNetherTravel()));
++    public static final CriterionTriggerFishingRodHooked FISHING_ROD_HOOKED = (CriterionTriggerFishingRodHooked) addCriterion((CriterionTrigger) (new CriterionTriggerFishingRodHooked()));
++    public static final CriterionTriggerChanneledLightning CHANNELED_LIGHTNING = (CriterionTriggerChanneledLightning) addCriterion((CriterionTrigger) (new CriterionTriggerChanneledLightning()));
++    public static final CriterionTriggerShotCrossbow SHOT_CROSSBOW = (CriterionTriggerShotCrossbow) addCriterion((CriterionTrigger) (new CriterionTriggerShotCrossbow()));
++    public static final CriterionTriggerKilledByCrossbow KILLED_BY_CROSSBOW = (CriterionTriggerKilledByCrossbow) addCriterion((CriterionTrigger) (new CriterionTriggerKilledByCrossbow()));
++    public static final CriterionTriggerLocation HERO_OF_THE_VILLAGE = (CriterionTriggerLocation) addCriterion((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("hero_of_the_village"))));
++    public static final CriterionTriggerLocation VOLUNTARY_EXILE = (CriterionTriggerLocation) addCriterion((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("voluntary_exile"))));
++    public static final CriterionSlideDownBlock SLIDE_DOWN_BLOCK = (CriterionSlideDownBlock) addCriterion((CriterionTrigger) (new CriterionSlideDownBlock()));
++    public static final CriterionTriggerBeeNestDestroyed BEE_NEST_DESTROYED = (CriterionTriggerBeeNestDestroyed) addCriterion((CriterionTrigger) (new CriterionTriggerBeeNestDestroyed()));
++    public static final CriterionTriggerTargetHit TARGET_HIT = (CriterionTriggerTargetHit) addCriterion((CriterionTrigger) (new CriterionTriggerTargetHit()));
++    public static final CriterionTriggerInteractBlock INTERACT_BLOCK = (CriterionTriggerInteractBlock) addCriterion((CriterionTrigger) (new CriterionTriggerInteractBlock()));
++    public static final CriterionTriggerPlayerGeneratesContainerLoot PLAYER_GENERATES_CONTAINER_LOOT = (CriterionTriggerPlayerGeneratesContainerLoot) addCriterion((CriterionTrigger) (new CriterionTriggerPlayerGeneratesContainerLoot()));
++    public static final CriterionTriggerThrownItemPickedUpByEntity THROWN_ITEM_PICKED_UP_BY_ENTITY = (CriterionTriggerThrownItemPickedUpByEntity) addCriterion((CriterionTrigger) (new CriterionTriggerThrownItemPickedUpByEntity()));
++    public static final CriterionTriggerPlayerInteractedWithEntity PLAYER_INTERACTED_WITH_ENTITY = (CriterionTriggerPlayerInteractedWithEntity) addCriterion((CriterionTrigger) (new CriterionTriggerPlayerInteractedWithEntity()));
+ 
+-    private static final Map<MinecraftKey, CriterionTrigger<?>> Q = Maps.newHashMap();
+-    public static final CriterionTriggerImpossible a = (CriterionTriggerImpossible) a((CriterionTrigger) (new CriterionTriggerImpossible()));
+-    public static final CriterionTriggerKilled b = (CriterionTriggerKilled) a((CriterionTrigger) (new CriterionTriggerKilled(new MinecraftKey("player_killed_entity"))));
+-    public static final CriterionTriggerKilled c = (CriterionTriggerKilled) a((CriterionTrigger) (new CriterionTriggerKilled(new MinecraftKey("entity_killed_player"))));
+-    public static final CriterionTriggerEnterBlock d = (CriterionTriggerEnterBlock) a((CriterionTrigger) (new CriterionTriggerEnterBlock()));
+-    public static final CriterionTriggerInventoryChanged e = (CriterionTriggerInventoryChanged) a((CriterionTrigger) (new CriterionTriggerInventoryChanged()));
+-    public static final CriterionTriggerRecipeUnlocked f = (CriterionTriggerRecipeUnlocked) a((CriterionTrigger) (new CriterionTriggerRecipeUnlocked()));
+-    public static final CriterionTriggerPlayerHurtEntity g = (CriterionTriggerPlayerHurtEntity) a((CriterionTrigger) (new CriterionTriggerPlayerHurtEntity()));
+-    public static final CriterionTriggerEntityHurtPlayer h = (CriterionTriggerEntityHurtPlayer) a((CriterionTrigger) (new CriterionTriggerEntityHurtPlayer()));
+-    public static final CriterionTriggerEnchantedItem i = (CriterionTriggerEnchantedItem) a((CriterionTrigger) (new CriterionTriggerEnchantedItem()));
+-    public static final CriterionTriggerFilledBucket j = (CriterionTriggerFilledBucket) a((CriterionTrigger) (new CriterionTriggerFilledBucket()));
+-    public static final CriterionTriggerBrewedPotion k = (CriterionTriggerBrewedPotion) a((CriterionTrigger) (new CriterionTriggerBrewedPotion()));
+-    public static final CriterionTriggerConstructBeacon l = (CriterionTriggerConstructBeacon) a((CriterionTrigger) (new CriterionTriggerConstructBeacon()));
+-    public static final CriterionTriggerUsedEnderEye m = (CriterionTriggerUsedEnderEye) a((CriterionTrigger) (new CriterionTriggerUsedEnderEye()));
+-    public static final CriterionTriggerSummonedEntity n = (CriterionTriggerSummonedEntity) a((CriterionTrigger) (new CriterionTriggerSummonedEntity()));
+-    public static final CriterionTriggerBredAnimals o = (CriterionTriggerBredAnimals) a((CriterionTrigger) (new CriterionTriggerBredAnimals()));
+-    public static final CriterionTriggerLocation p = (CriterionTriggerLocation) a((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("location"))));
+-    public static final CriterionTriggerLocation q = (CriterionTriggerLocation) a((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("slept_in_bed"))));
+-    public static final CriterionTriggerCuredZombieVillager r = (CriterionTriggerCuredZombieVillager) a((CriterionTrigger) (new CriterionTriggerCuredZombieVillager()));
+-    public static final CriterionTriggerVillagerTrade s = (CriterionTriggerVillagerTrade) a((CriterionTrigger) (new CriterionTriggerVillagerTrade()));
+-    public static final CriterionTriggerItemDurabilityChanged t = (CriterionTriggerItemDurabilityChanged) a((CriterionTrigger) (new CriterionTriggerItemDurabilityChanged()));
+-    public static final CriterionTriggerLevitation u = (CriterionTriggerLevitation) a((CriterionTrigger) (new CriterionTriggerLevitation()));
+-    public static final CriterionTriggerChangedDimension v = (CriterionTriggerChangedDimension) a((CriterionTrigger) (new CriterionTriggerChangedDimension()));
+-    public static final CriterionTriggerTick w = (CriterionTriggerTick) a((CriterionTrigger) (new CriterionTriggerTick()));
+-    public static final CriterionTriggerTamedAnimal x = (CriterionTriggerTamedAnimal) a((CriterionTrigger) (new CriterionTriggerTamedAnimal()));
+-    public static final CriterionTriggerPlacedBlock y = (CriterionTriggerPlacedBlock) a((CriterionTrigger) (new CriterionTriggerPlacedBlock()));
+-    public static final CriterionTriggerConsumeItem z = (CriterionTriggerConsumeItem) a((CriterionTrigger) (new CriterionTriggerConsumeItem()));
+-    public static final CriterionTriggerEffectsChanged A = (CriterionTriggerEffectsChanged) a((CriterionTrigger) (new CriterionTriggerEffectsChanged()));
+-    public static final CriterionTriggerUsedTotem B = (CriterionTriggerUsedTotem) a((CriterionTrigger) (new CriterionTriggerUsedTotem()));
+-    public static final CriterionTriggerNetherTravel C = (CriterionTriggerNetherTravel) a((CriterionTrigger) (new CriterionTriggerNetherTravel()));
+-    public static final CriterionTriggerFishingRodHooked D = (CriterionTriggerFishingRodHooked) a((CriterionTrigger) (new CriterionTriggerFishingRodHooked()));
+-    public static final CriterionTriggerChanneledLightning E = (CriterionTriggerChanneledLightning) a((CriterionTrigger) (new CriterionTriggerChanneledLightning()));
+-    public static final CriterionTriggerShotCrossbow F = (CriterionTriggerShotCrossbow) a((CriterionTrigger) (new CriterionTriggerShotCrossbow()));
+-    public static final CriterionTriggerKilledByCrossbow G = (CriterionTriggerKilledByCrossbow) a((CriterionTrigger) (new CriterionTriggerKilledByCrossbow()));
+-    public static final CriterionTriggerLocation H = (CriterionTriggerLocation) a((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("hero_of_the_village"))));
+-    public static final CriterionTriggerLocation I = (CriterionTriggerLocation) a((CriterionTrigger) (new CriterionTriggerLocation(new MinecraftKey("voluntary_exile"))));
+-    public static final CriterionSlideDownBlock J = (CriterionSlideDownBlock) a((CriterionTrigger) (new CriterionSlideDownBlock()));
+-    public static final CriterionTriggerBeeNestDestroyed K = (CriterionTriggerBeeNestDestroyed) a((CriterionTrigger) (new CriterionTriggerBeeNestDestroyed()));
+-    public static final CriterionTriggerTargetHit L = (CriterionTriggerTargetHit) a((CriterionTrigger) (new CriterionTriggerTargetHit()));
+-    public static final CriterionTriggerInteractBlock M = (CriterionTriggerInteractBlock) a((CriterionTrigger) (new CriterionTriggerInteractBlock()));
+-    public static final CriterionTriggerPlayerGeneratesContainerLoot N = (CriterionTriggerPlayerGeneratesContainerLoot) a((CriterionTrigger) (new CriterionTriggerPlayerGeneratesContainerLoot()));
+-    public static final CriterionTriggerThrownItemPickedUpByEntity O = (CriterionTriggerThrownItemPickedUpByEntity) a((CriterionTrigger) (new CriterionTriggerThrownItemPickedUpByEntity()));
+-    public static final CriterionTriggerPlayerInteractedWithEntity P = (CriterionTriggerPlayerInteractedWithEntity) a((CriterionTrigger) (new CriterionTriggerPlayerInteractedWithEntity()));
+-
+-    private static <T extends CriterionTrigger<?>> T a(T t0) {
+-        if (CriterionTriggers.Q.containsKey(t0.a())) {
+-            throw new IllegalArgumentException("Duplicate criterion id " + t0.a());
++    private static <T extends CriterionTrigger<?>> T addCriterion(T newCriterion) {
++        if (CriterionTriggers.criteria.containsKey(newCriterion.a())) {
++            throw new IllegalArgumentException("Duplicate criterion id " + newCriterion.a());
+         } else {
+-            CriterionTriggers.Q.put(t0.a(), t0);
+-            return t0;
++            CriterionTriggers.criteria.put(newCriterion.a(), newCriterion);
++            return newCriterion;
+         }
+     }
+ 
++    /**
++     * @deprecated (use getTrigger instead)
++     */
++    public static <T extends CriterionInstance> CriterionTrigger<T> a(MinecraftKey key) { return getTrigger(key); }
++
+     @Nullable
+-    public static <T extends CriterionInstance> CriterionTrigger<T> a(MinecraftKey minecraftkey) {
+-        return (CriterionTrigger) CriterionTriggers.Q.get(minecraftkey);
++    public static <T extends CriterionInstance> CriterionTrigger<T> getTrigger(MinecraftKey minecraftkey) {
++        return (CriterionTrigger) CriterionTriggers.criteria.get(minecraftkey);
+     }
+ 
+-    public static Iterable<? extends CriterionTrigger<?>> a() {
+-        return CriterionTriggers.Q.values();
++    /**
++     * @deprecated (use getTriggers instead)
++     */
++    public static Iterable<? extends CriterionTrigger<?>> a() { return getTriggers(); }
++
++    public static Iterable<? extends CriterionTrigger<?>> getTriggers() {
++        return CriterionTriggers.criteria.values();
+     }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 69faefbdbf338b38311cd2a5d3183a104ec36f86..05c5ad8a8ea3adfab59e7630ffaa9a6d26734e58 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -212,7 +212,7 @@ public class EnderDragonBattle {
+                 while (iterator.hasNext()) {
+                     EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+ 
+-                    CriterionTriggers.n.a(entityplayer, (Entity) entityenderdragon);
++                    CriterionTriggers.SUMMONED_ENTITY.a(entityplayer, (Entity) entityenderdragon);
+                 }
+             } else {
+                 this.respawnPhase = enumdragonrespawn;
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 9c4b02d776f8b99c6703c8dfc5d9fac0702bbe80..46a776c04f930b4fba2903e89c6c54b826bc01d5 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1532,7 +1532,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public void runKillTrigger(Entity entity, int kills, DamageSource damageSource) { this.a(entity, kills, damageSource); } // Paper - OBFHELPER
+     public void a(Entity entity, int i, DamageSource damagesource) {
+         if (entity instanceof EntityPlayer) {
+-            CriterionTriggers.c.a((EntityPlayer) entity, this, damagesource);
++            CriterionTriggers.ENTITY_KILLED_PLAYER.a((EntityPlayer) entity, this, damagesource);
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityAnimal.java b/src/main/java/net/minecraft/server/EntityAnimal.java
+index b1a41ca53462e50dc0d5cabfcd91579908c07b62..ef3a139d570e3a939183e4c202a0e1b93be06f61 100644
+--- a/src/main/java/net/minecraft/server/EntityAnimal.java
++++ b/src/main/java/net/minecraft/server/EntityAnimal.java
+@@ -223,7 +223,7 @@ public abstract class EntityAnimal extends EntityAgeable {
+ 
+             if (entityplayer != null) {
+                 entityplayer.a(StatisticList.ANIMALS_BRED);
+-                CriterionTriggers.o.a(entityplayer, this, entityanimal, entityageable);
++                CriterionTriggers.BRED_ANIMALS.a(entityplayer, this, entityanimal, entityageable);
+             }
+ 
+             this.setAgeRaw(6000);
+diff --git a/src/main/java/net/minecraft/server/EntityArrow.java b/src/main/java/net/minecraft/server/EntityArrow.java
+index 1865f7a62307eb89d702f4824b090e050aa7afe7..20dec7549edb81a18ffe3525765ca053f7a8d2ee 100644
+--- a/src/main/java/net/minecraft/server/EntityArrow.java
++++ b/src/main/java/net/minecraft/server/EntityArrow.java
+@@ -368,9 +368,9 @@ public abstract class EntityArrow extends IProjectile {
+                     EntityPlayer entityplayer = (EntityPlayer) entity1;
+ 
+                     if (this.at != null && this.isShotFromCrossbow()) {
+-                        CriterionTriggers.G.a(entityplayer, (Collection) this.at);
++                        CriterionTriggers.KILLED_BY_CROSSBOW.a(entityplayer, (Collection) this.at);
+                     } else if (!entity.isAlive() && this.isShotFromCrossbow()) {
+-                        CriterionTriggers.G.a(entityplayer, (Collection) Arrays.asList(entity));
++                        CriterionTriggers.KILLED_BY_CROSSBOW.a(entityplayer, (Collection) Arrays.asList(entity));
+                     }
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/server/EntityFish.java b/src/main/java/net/minecraft/server/EntityFish.java
+index db1ede61c5b06fbb20c53230faddbe704b7edd50..25805e90a4b768259dc26bdda8b52670660d256e 100644
+--- a/src/main/java/net/minecraft/server/EntityFish.java
++++ b/src/main/java/net/minecraft/server/EntityFish.java
+@@ -122,7 +122,7 @@ public abstract class EntityFish extends EntityWaterAnimal {
+ 
+             this.k(itemstack1);
+             if (!this.world.isClientSide) {
+-                CriterionTriggers.j.a((EntityPlayer) entityhuman, itemstack1);
++                CriterionTriggers.FILLED_BUCKET.a((EntityPlayer) entityhuman, itemstack1);
+             }
+ 
+             if (itemstack.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
+index 03c6a81346857392aacb22a0947bdc6391a260f2..d4f186e765fd87afa4541c16e2f1cd000dd61c2c 100644
+--- a/src/main/java/net/minecraft/server/EntityFishingHook.java
++++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
+@@ -422,7 +422,7 @@ public class EntityFishingHook extends IProjectile {
+                 }
+                 // CraftBukkit end
+                 this.reel();
+-                CriterionTriggers.D.a((EntityPlayer) entityhuman, itemstack, this, (Collection) Collections.emptyList());
++                CriterionTriggers.FISHING_ROD_HOOKED.a((EntityPlayer) entityhuman, itemstack, this, (Collection) Collections.emptyList());
+                 this.world.broadcastEntityEffect(this, (byte) 31);
+                 i = this.hooked instanceof EntityItem ? 3 : 5;
+             } else if (this.an > 0) {
+@@ -430,7 +430,7 @@ public class EntityFishingHook extends IProjectile {
+                 LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(LootTables.ag);
+                 List<ItemStack> list = loottable.populateLoot(loottableinfo_builder.build(LootContextParameterSets.FISHING));
+ 
+-                CriterionTriggers.D.a((EntityPlayer) entityhuman, itemstack, this, (Collection) list);
++                CriterionTriggers.FISHING_ROD_HOOKED.a((EntityPlayer) entityhuman, itemstack, this, (Collection) list);
+                 Iterator iterator = list.iterator();
+ 
+                 while (iterator.hasNext()) {
+diff --git a/src/main/java/net/minecraft/server/EntityFox.java b/src/main/java/net/minecraft/server/EntityFox.java
+index e6275a9fe6cd988fe4661966fd48149c3e73408c..ece746a859bd7f1ee917af4376d65ce4ca383ad9 100644
+--- a/src/main/java/net/minecraft/server/EntityFox.java
++++ b/src/main/java/net/minecraft/server/EntityFox.java
+@@ -1230,7 +1230,7 @@ public class EntityFox extends EntityAnimal {
+ 
+                 if (entityplayer2 != null) {
+                     entityplayer2.a(StatisticList.ANIMALS_BRED);
+-                    CriterionTriggers.o.a(entityplayer2, this.animal, this.partner, (EntityAgeable) entityfox);
++                    CriterionTriggers.BRED_ANIMALS.a(entityplayer2, this.animal, this.partner, (EntityAgeable) entityfox);
+                 }
+ 
+                 this.animal.setAgeRaw(6000);
+diff --git a/src/main/java/net/minecraft/server/EntityHorseAbstract.java b/src/main/java/net/minecraft/server/EntityHorseAbstract.java
+index 364697e0155012c300219ad94a3995809e6c2f8f..758e92eb1dea14c1f8f005679a2dfebbba170651 100644
+--- a/src/main/java/net/minecraft/server/EntityHorseAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityHorseAbstract.java
+@@ -628,7 +628,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
+         this.setOwnerUUID(entityhuman.getUniqueID());
+         this.setTamed(true);
+         if (entityhuman instanceof EntityPlayer) {
+-            CriterionTriggers.x.a((EntityPlayer) entityhuman, (EntityAnimal) this);
++            CriterionTriggers.TAMED_ANIMAL.a((EntityPlayer) entityhuman, (EntityAnimal) this);
+         }
+ 
+         this.world.broadcastEntityEffect(this, (byte) 7);
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index 2cada09ced1660526e9c112c2c8d92bbf9d6ea98..0765d821252bc378d202e6a6a83e1f08779ab61a 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -26,7 +26,6 @@ import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ import org.bukkit.event.player.PlayerBedLeaveEvent;
+ import org.bukkit.event.player.PlayerDropItemEvent;
+ import org.bukkit.event.player.PlayerVelocityEvent;
+-import org.bukkit.util.Vector;
+ // CraftBukkit end
+ 
+ public abstract class EntityHuman extends EntityLiving {
+@@ -2100,7 +2099,7 @@ public abstract class EntityHuman extends EntityLiving {
+         this.b(StatisticList.ITEM_USED.b(itemstack.getItem()));
+         world.playSound((EntityHuman) null, this.locX(), this.locY(), this.locZ(), SoundEffects.ENTITY_PLAYER_BURP, SoundCategory.PLAYERS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
+         if (this instanceof EntityPlayer) {
+-            CriterionTriggers.z.a((EntityPlayer) this, itemstack);
++            CriterionTriggers.CONSUME_ITEM.a((EntityPlayer) this, itemstack);
+         }
+ 
+         return super.a(world, itemstack);
+diff --git a/src/main/java/net/minecraft/server/EntityLightning.java b/src/main/java/net/minecraft/server/EntityLightning.java
+index b1b8748fa95aab25562c2f5397cb6454737fa508..103f3027046795763ca608ffd53409458e05827b 100644
+--- a/src/main/java/net/minecraft/server/EntityLightning.java
++++ b/src/main/java/net/minecraft/server/EntityLightning.java
+@@ -107,7 +107,7 @@ public class EntityLightning extends Entity {
+                 }
+ 
+                 if (this.f != null) {
+-                    CriterionTriggers.E.a(this.f, (Collection) list);
++                    CriterionTriggers.CHANNELED_LIGHTNING.a(this.f, (Collection) list);
+                 }
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index c388999d104682b84b5f0936efce9d270247d08c..4e2d80b77859420bf12935f785782f549b628eff 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -42,7 +42,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
+ import org.bukkit.event.player.PlayerItemConsumeEvent;
+ // CraftBukkit end
+ 
+-import co.aikar.timings.MinecraftTimings; // Paper
+ 
+ public abstract class EntityLiving extends Entity {
+ 
+@@ -1273,14 +1272,14 @@ public abstract class EntityLiving extends Entity {
+             }
+ 
+             if (this instanceof EntityPlayer) {
+-                CriterionTriggers.h.a((EntityPlayer) this, damagesource, f1, f, flag);
++                CriterionTriggers.ENTITY_HURT_PLAYER.a((EntityPlayer) this, damagesource, f1, f, flag);
+                 if (f2 > 0.0F && f2 < 3.4028235E37F) {
+                     ((EntityPlayer) this).a(StatisticList.DAMAGE_BLOCKED_BY_SHIELD, Math.round(f2 * 10.0F));
+                 }
+             }
+ 
+             if (entity1 instanceof EntityPlayer) {
+-                CriterionTriggers.g.a((EntityPlayer) entity1, this, damagesource, f1, f, flag);
++                CriterionTriggers.PLAYER_HURT_ENTITY.a((EntityPlayer) entity1, this, damagesource, f1, f, flag);
+             }
+ 
+             return flag2;
+@@ -1329,7 +1328,7 @@ public abstract class EntityLiving extends Entity {
+                     EntityPlayer entityplayer = (EntityPlayer) this;
+ 
+                     entityplayer.b(StatisticList.ITEM_USED.b(Items.TOTEM_OF_UNDYING));
+-                    CriterionTriggers.B.a(entityplayer, itemstack);
++                    CriterionTriggers.USED_TOTEM.a(entityplayer, itemstack);
+                 }
+ 
+                 this.setHealth(1.0F);
+@@ -1912,7 +1911,7 @@ public abstract class EntityLiving extends Entity {
+                 // Duplicate triggers if blocking
+                 if (event.getDamage(DamageModifier.BLOCKING) < 0) {
+                     if (this instanceof EntityPlayer) {
+-                        CriterionTriggers.h.a((EntityPlayer) this, damagesource, f, originalDamage, true);
++                        CriterionTriggers.ENTITY_HURT_PLAYER.a((EntityPlayer) this, damagesource, f, originalDamage, true);
+                         f2 = (float) -event.getDamage(DamageModifier.BLOCKING);
+                         if (f2 > 0.0F && f2 < 3.4028235E37F) {
+                             ((EntityPlayer) this).a(StatisticList.DAMAGE_BLOCKED_BY_SHIELD, Math.round(originalDamage * 10.0F));
+@@ -1920,7 +1919,7 @@ public abstract class EntityLiving extends Entity {
+                     }
+ 
+                     if (damagesource.getEntity() instanceof EntityPlayer) {
+-                        CriterionTriggers.g.a((EntityPlayer) damagesource.getEntity(), this, damagesource, f, originalDamage, true);
++                        CriterionTriggers.PLAYER_HURT_ENTITY.a((EntityPlayer) damagesource.getEntity(), this, damagesource, f, originalDamage, true);
+                     }
+ 
+                     return false;
+@@ -2939,7 +2938,7 @@ public abstract class EntityLiving extends Entity {
+         EntityHuman entityhuman = entityitem.getThrower() != null ? this.world.b(entityitem.getThrower()) : null;
+ 
+         if (entityhuman instanceof EntityPlayer) {
+-            CriterionTriggers.O.a((EntityPlayer) entityhuman, entityitem.getItemStack(), this);
++            CriterionTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.a((EntityPlayer) entityhuman, entityitem.getItemStack(), this);
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
+index 397fc1a9857cf91043ebd7982e16ea92d95b5cde..53f7b820cb462dbac8e5121d1b93c6e204523859 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
+@@ -220,7 +220,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+             LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.lootTable);
+ 
+             if (entityhuman instanceof EntityPlayer) {
+-                CriterionTriggers.N.a((EntityPlayer) entityhuman, this.lootTable);
++                CriterionTriggers.PLAYER_GENERATES_CONTAINER_LOOT.a((EntityPlayer) entityhuman, this.lootTable);
+             }
+ 
+             //this.lootTable = null; // Paper
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 4550e3449b146d5d416ece620d036cb17547b30e..61ccefefa19b95618bcae7714baddff392dfb0d4 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ // CraftBukkit start
+-import com.google.common.base.Preconditions;
+ import org.bukkit.Bukkit;
+ import org.bukkit.GameMode;
+ import org.bukkit.Location;
+@@ -422,7 +421,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     @Override
+     protected void a(IBlockData iblockdata) {
+-        CriterionTriggers.d.a(this, iblockdata);
++        CriterionTriggers.ENTER_BLOCK.a(this, iblockdata);
+     }
+ 
+     @Override
+@@ -489,12 +488,12 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             }
+         }
+ 
+-        CriterionTriggers.w.a(this);
++        CriterionTriggers.TICK.a(this);
+         if (this.cm != null) {
+-            CriterionTriggers.u.a(this, this.cm, this.ticksLived - this.cn);
++            CriterionTriggers.LEVITATION.a(this, this.cm, this.ticksLived - this.cn);
+         }
+ 
+-        this.advancementDataPlayer.b(this);
++        this.advancementDataPlayer.sendAdvancements(this);
+     }
+ 
+     public void playerTick() {
+@@ -565,7 +564,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             }
+ 
+             if (this.ticksLived % 20 == 0) {
+-                CriterionTriggers.p.a(this);
++                CriterionTriggers.LOCATION.a(this);
+             }
+ 
+             // CraftBukkit start - initialize oldLevel and fire PlayerLevelChangeEvent
+@@ -783,7 +782,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+             this.a(s, s1, IScoreboardCriteria.m);
+             this.a(s1, s, IScoreboardCriteria.n);
+-            CriterionTriggers.b.a(this, entity, damagesource);
++            CriterionTriggers.PLAYER_KILLED_ENTITY.a(this, entity, damagesource);
+         }
+     }
+ 
+@@ -1062,9 +1061,9 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         ResourceKey<World> resourcekey = worldserver.getDimensionKey();
+         ResourceKey<World> resourcekey1 = this.world.getDimensionKey();
+ 
+-        CriterionTriggers.v.a(this, resourcekey, resourcekey1);
++        CriterionTriggers.CHANGED_DIMENSION.a(this, resourcekey, resourcekey1);
+         if (resourcekey == World.THE_NETHER && resourcekey1 == World.OVERWORLD && this.cp != null) {
+-            CriterionTriggers.C.a(this, this.cp);
++            CriterionTriggers.NETHER_TRAVEL.a(this, this.cp);
+         }
+ 
+         if (resourcekey1 != World.THE_NETHER) {
+@@ -1153,7 +1152,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 {
+                     Either<EntityHuman.EnumBedResult, Unit> either = super.sleep(blockposition, force).ifRight((unit) -> {
+                         this.a(StatisticList.SLEEP_IN_BED);
+-                        CriterionTriggers.q.a(this);
++                        CriterionTriggers.SLEPT_IN_BED.a(this);
+                     });
+ 
+                     ((WorldServer) this.world).everyoneSleeping();
+@@ -1366,7 +1365,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public void a(Container container, int i, ItemStack itemstack) {
+         if (!(container.getSlot(i) instanceof SlotResult)) {
+             if (container == this.defaultContainer) {
+-                CriterionTriggers.e.a(this, this.inventory, itemstack);
++                CriterionTriggers.INVENTORY_CHANGED.a(this, this.inventory, itemstack);
+             }
+ 
+             if (!this.e) {
+@@ -1591,14 +1590,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.cm = this.getPositionVector();
+         }
+ 
+-        CriterionTriggers.A.a(this);
++        CriterionTriggers.EFFECTS_CHANGED.a(this);
+     }
+ 
+     @Override
+     protected void a(MobEffect mobeffect, boolean flag) {
+         super.a(mobeffect, flag);
+         this.playerConnection.sendPacket(new PacketPlayOutEntityEffect(this.getId(), mobeffect));
+-        CriterionTriggers.A.a(this);
++        CriterionTriggers.EFFECTS_CHANGED.a(this);
+     }
+ 
+     @Override
+@@ -1609,7 +1608,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             this.cm = null;
+         }
+ 
+-        CriterionTriggers.A.a(this);
++        CriterionTriggers.EFFECTS_CHANGED.a(this);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/EntityTurtle.java b/src/main/java/net/minecraft/server/EntityTurtle.java
+index c66a8011dde4932e03ea91194ea92a7263e48428..9b04ebdf80e8b43bdc2dd964f87f695748399474 100644
+--- a/src/main/java/net/minecraft/server/EntityTurtle.java
++++ b/src/main/java/net/minecraft/server/EntityTurtle.java
+@@ -501,7 +501,7 @@ public class EntityTurtle extends EntityAnimal {
+ 
+             if (entityplayer != null) {
+                 entityplayer.a(StatisticList.ANIMALS_BRED);
+-                CriterionTriggers.o.a(entityplayer, this.animal, this.partner, (EntityAgeable) null);
++                CriterionTriggers.BRED_ANIMALS.a(entityplayer, this.animal, this.partner, (EntityAgeable) null);
+             }
+ 
+             this.d.setHasEgg(true);
+diff --git a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+index 81823b5d5ef17479583fda0121c95091175fdf1e..abbbb3ecb2b70d177e513d4964b62797dd13192b 100644
+--- a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
+@@ -105,7 +105,7 @@ public abstract class EntityVillagerAbstract extends EntityAgeable implements NP
+         this.e = -this.D();
+         this.b(merchantrecipe);
+         if (this.tradingPlayer instanceof EntityPlayer) {
+-            CriterionTriggers.s.a((EntityPlayer) this.tradingPlayer, this, merchantrecipe.getSellingItem());
++            CriterionTriggers.VILLAGER_TRADE.a((EntityPlayer) this.tradingPlayer, this, merchantrecipe.getSellingItem());
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityZombieVillager.java b/src/main/java/net/minecraft/server/EntityZombieVillager.java
+index 9b920332bd397f9711f0c99702245d54b9d3841b..4d9844e644507e59bf17dec91a97681cbf0e0580 100644
+--- a/src/main/java/net/minecraft/server/EntityZombieVillager.java
++++ b/src/main/java/net/minecraft/server/EntityZombieVillager.java
+@@ -220,7 +220,7 @@ public class EntityZombieVillager extends EntityZombie implements VillagerDataHo
+             EntityHuman entityhuman = worldserver.b(this.conversionPlayer);
+ 
+             if (entityhuman instanceof EntityPlayer) {
+-                CriterionTriggers.r.a((EntityPlayer) entityhuman, (EntityZombie) this, entityvillager);
++                CriterionTriggers.CURED_ZOMBIE_VILLAGER.a((EntityPlayer) entityhuman, (EntityZombie) this, entityvillager);
+                 worldserver.a(ReputationEvent.a, (Entity) entityhuman, (ReputationHandler) entityvillager);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/ItemBlock.java b/src/main/java/net/minecraft/server/ItemBlock.java
+index 63d2294da4f0da628e62b782b71e34cb3eb959b5..6697c8bca05e551dcf73e44263ba41b6dfd858a9 100644
+--- a/src/main/java/net/minecraft/server/ItemBlock.java
++++ b/src/main/java/net/minecraft/server/ItemBlock.java
+@@ -69,7 +69,7 @@ public class ItemBlock extends Item {
+                         }
+                         // CraftBukkit end
+                         if (entityhuman instanceof EntityPlayer) {
+-                            CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition, itemstack);
++                            CriterionTriggers.PLACED_BLOCK.a((EntityPlayer) entityhuman, blockposition, itemstack);
+                         }
+                     }
+ 
+diff --git a/src/main/java/net/minecraft/server/ItemBucket.java b/src/main/java/net/minecraft/server/ItemBucket.java
+index 120bf8436fd82294c339add2e7bff1cda8311aea..56d29ac28f698978c9ea425de71cf2fc6c10fcba 100644
+--- a/src/main/java/net/minecraft/server/ItemBucket.java
++++ b/src/main/java/net/minecraft/server/ItemBucket.java
+@@ -57,7 +57,7 @@ public class ItemBucket extends Item {
+                             ItemStack itemstack1 = ItemLiquidUtil.a(itemstack, entityhuman, CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
+ 
+                             if (!world.isClientSide) {
+-                                CriterionTriggers.j.a((EntityPlayer) entityhuman, new ItemStack(fluidtype.a()));
++                                CriterionTriggers.FILLED_BUCKET.a((EntityPlayer) entityhuman, new ItemStack(fluidtype.a()));
+                             }
+ 
+                             return InteractionResultWrapper.a(itemstack1, world.s_());
+@@ -72,7 +72,7 @@ public class ItemBucket extends Item {
+                     if (this.a(entityhuman, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack, enumhand)) { // CraftBukkit // Paper - add enumhand
+                         this.a(world, itemstack, blockposition2);
+                         if (entityhuman instanceof EntityPlayer) {
+-                            CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition2, itemstack);
++                            CriterionTriggers.PLACED_BLOCK.a((EntityPlayer) entityhuman, blockposition2, itemstack);
+                         }
+ 
+                         entityhuman.b(StatisticList.ITEM_USED.b(this));
+diff --git a/src/main/java/net/minecraft/server/ItemCrossbow.java b/src/main/java/net/minecraft/server/ItemCrossbow.java
+index 31c80bb0a2e403c34fb9cd4b3ee4e903d90dc356..ead098a58091dfdeb1bcd3f9173bca8eeb568df5 100644
+--- a/src/main/java/net/minecraft/server/ItemCrossbow.java
++++ b/src/main/java/net/minecraft/server/ItemCrossbow.java
+@@ -287,7 +287,7 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
+             EntityPlayer entityplayer = (EntityPlayer) entityliving;
+ 
+             if (!world.isClientSide) {
+-                CriterionTriggers.F.a(entityplayer, itemstack);
++                CriterionTriggers.SHOT_CROSSBOW.a(entityplayer, itemstack);
+             }
+ 
+             entityplayer.b(StatisticList.ITEM_USED.b(itemstack.getItem()));
+diff --git a/src/main/java/net/minecraft/server/ItemEnderEye.java b/src/main/java/net/minecraft/server/ItemEnderEye.java
+index 0685030128645a3c01a2b99b97368c951c2753fa..dfae74ae418f2b2ffcd0f6907923787695a0d060 100644
+--- a/src/main/java/net/minecraft/server/ItemEnderEye.java
++++ b/src/main/java/net/minecraft/server/ItemEnderEye.java
+@@ -85,7 +85,7 @@ public class ItemEnderEye extends Item {
+                     }
+                     // CraftBukkit end
+                     if (entityhuman instanceof EntityPlayer) {
+-                        CriterionTriggers.m.a((EntityPlayer) entityhuman, blockposition);
++                        CriterionTriggers.USED_ENDER_EYE.a((EntityPlayer) entityhuman, blockposition);
+                     }
+ 
+                     world.playSound((EntityHuman) null, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.ENTITY_ENDER_EYE_LAUNCH, SoundCategory.NEUTRAL, 0.5F, 0.4F / (ItemEnderEye.RANDOM.nextFloat() * 0.4F + 0.8F));
+diff --git a/src/main/java/net/minecraft/server/ItemFlintAndSteel.java b/src/main/java/net/minecraft/server/ItemFlintAndSteel.java
+index edfe7e681ccbc335cb4738e11dc9f4e0432da48a..2564246cb1e22de4a1fbac39f0c5e1272a54ff06 100644
+--- a/src/main/java/net/minecraft/server/ItemFlintAndSteel.java
++++ b/src/main/java/net/minecraft/server/ItemFlintAndSteel.java
+@@ -42,7 +42,7 @@ public class ItemFlintAndSteel extends Item {
+                 ItemStack itemstack = itemactioncontext.getItemStack();
+ 
+                 if (entityhuman instanceof EntityPlayer) {
+-                    CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition1, itemstack);
++                    CriterionTriggers.PLACED_BLOCK.a((EntityPlayer) entityhuman, blockposition1, itemstack);
+                     itemstack.damage(1, entityhuman, (entityhuman1) -> {
+                         entityhuman1.broadcastItemBreak(itemactioncontext.getHand());
+                     });
+diff --git a/src/main/java/net/minecraft/server/ItemMilkBucket.java b/src/main/java/net/minecraft/server/ItemMilkBucket.java
+index fcf254bbaeb3c0ffdb6834a8d5ad2c3cf4235e5b..8499cdc3d82fc0cd5837b84091c4c60067635c41 100644
+--- a/src/main/java/net/minecraft/server/ItemMilkBucket.java
++++ b/src/main/java/net/minecraft/server/ItemMilkBucket.java
+@@ -11,7 +11,7 @@ public class ItemMilkBucket extends Item {
+         if (entityliving instanceof EntityPlayer) {
+             EntityPlayer entityplayer = (EntityPlayer) entityliving;
+ 
+-            CriterionTriggers.z.a(entityplayer, itemstack);
++            CriterionTriggers.CONSUME_ITEM.a(entityplayer, itemstack);
+             entityplayer.b(StatisticList.ITEM_USED.b(this));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/ItemPotion.java b/src/main/java/net/minecraft/server/ItemPotion.java
+index 0d204a46b8b23b6fb58acffc5de085e15f77767d..0b333ffe42267176f25b1d92fcf25519ee1928eb 100644
+--- a/src/main/java/net/minecraft/server/ItemPotion.java
++++ b/src/main/java/net/minecraft/server/ItemPotion.java
+@@ -19,7 +19,7 @@ public class ItemPotion extends Item {
+         EntityHuman entityhuman = entityliving instanceof EntityHuman ? (EntityHuman) entityliving : null;
+ 
+         if (entityhuman instanceof EntityPlayer) {
+-            CriterionTriggers.z.a((EntityPlayer) entityhuman, itemstack);
++            CriterionTriggers.CONSUME_ITEM.a((EntityPlayer) entityhuman, itemstack);
+         }
+ 
+         if (!world.isClientSide) {
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 3c56053e3075173edd22eccb277f51a12287ab56..efe1d8b8bc68373fd2d5866789635f040174c6a7 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -9,7 +9,6 @@ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import java.text.DecimalFormat;
+ import java.text.DecimalFormatSymbols;
+-import java.util.Collections;
+ import java.util.Comparator;
+ import java.util.Locale;
+ import java.util.Objects;
+@@ -467,7 +466,7 @@ public final class ItemStack {
+             }
+ 
+             if (entityplayer != null && i != 0) {
+-                CriterionTriggers.t.a(entityplayer, this, this.getDamage() + i);
++                CriterionTriggers.ITEM_DURABILITY_CHANGED.a(entityplayer, this, this.getDamage() + i);
+             }
+ 
+             j = this.getDamage() + i;
+diff --git a/src/main/java/net/minecraft/server/PersistentRaid.java b/src/main/java/net/minecraft/server/PersistentRaid.java
+index 64e5c6d1e4273dd5dc9fffe70f4f57d73d72f659..6884a971e79c311436001a3c886a40ad4a088670 100644
+--- a/src/main/java/net/minecraft/server/PersistentRaid.java
++++ b/src/main/java/net/minecraft/server/PersistentRaid.java
+@@ -123,7 +123,7 @@ public class PersistentRaid extends PersistentBase {
+                     entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, (byte) 43));
+                     if (!raid.c()) {
+                         entityplayer.a(StatisticList.RAID_TRIGGER);
+-                        CriterionTriggers.I.a(entityplayer);
++                        CriterionTriggers.VOLUNTARY_EXILE.a(entityplayer);
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 95d57c6de95eca580ca4e3183db851e5a15de342..911f8f09dcef7f4fb15ee3e3e374e636f018d446 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -14,7 +14,7 @@ import java.util.Optional;
+ import java.util.Set;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+-import org.apache.commons.lang3.StringEscapeUtils;
++
+ import org.apache.commons.lang3.StringUtils;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -59,7 +59,6 @@ import org.bukkit.inventory.CraftingInventory;
+ import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.util.NumberConversions;
+-import com.destroystokyo.paper.event.player.IllegalPacketEvent; // Paper
+ import com.destroystokyo.paper.event.player.PlayerJumpEvent; // Paper
+ import co.aikar.timings.MinecraftTimings; // Paper
+ // CraftBukkit end
+@@ -538,10 +537,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         PlayerConnectionUtils.ensureMainThread(packetplayinadvancements, this, this.player.getWorldServer());
+         if (packetplayinadvancements.c() == PacketPlayInAdvancements.Status.OPENED_TAB) {
+             MinecraftKey minecraftkey = packetplayinadvancements.d();
+-            Advancement advancement = this.minecraftServer.getAdvancementData().a(minecraftkey);
++            Advancement advancement = this.minecraftServer.getAdvancementData().getAdvancement(minecraftkey);
+ 
+             if (advancement != null) {
+-                this.player.getAdvancementData().a(advancement);
++                this.player.getAdvancementData().setRootAdvancement(advancement);
+             }
+         }
+ 
+@@ -2146,7 +2145,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 }
+ 
+                 if (optional.isPresent() && ((EnumInteractionResult) optional.get()).a()) {
+-                    CriterionTriggers.P.a(this.player, this.player.b(enumhand), entity);
++                    CriterionTriggers.PLAYER_INTERACTED_WITH_ENTITY.a(this.player, this.player.b(enumhand), entity);
+                     if (((EnumInteractionResult) optional.get()).b()) {
+                         this.player.swingHand(enumhand, true);
+                     }
+@@ -2177,7 +2176,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 if (this.player.viewingCredits) {
+                     this.player.viewingCredits = false;
+                     this.player = this.minecraftServer.getPlayerList().moveToWorld(this.player, true);
+-                    CriterionTriggers.v.a(this.player, World.THE_END, World.OVERWORLD);
++                    CriterionTriggers.CHANGED_DIMENSION.a(this.player, World.THE_END, World.OVERWORLD);
+                 } else {
+                     if (this.player.getHealth() > 0.0F) {
+                         return;
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 6d192b27440ddfd34555005dafefbce6bbb67236..8a6f6a96563a71f434df4e2b2ba732503dc66699 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -507,7 +507,7 @@ public class PlayerInteractManager {
+                 enuminteractionresult = iblockdata.interact(world, entityplayer, enumhand, movingobjectpositionblock);
+ 
+                 if (enuminteractionresult.a()) {
+-                    CriterionTriggers.M.a(entityplayer, blockposition, itemstack1);
++                    CriterionTriggers.INTERACT_BLOCK.a(entityplayer, blockposition, itemstack1);
+                     return enuminteractionresult;
+                 }
+             }
+@@ -526,7 +526,7 @@ public class PlayerInteractManager {
+                 }
+ 
+                 if (enuminteractionresult1.a()) {
+-                    CriterionTriggers.M.a(entityplayer, blockposition, itemstack1);
++                    CriterionTriggers.INTERACT_BLOCK.a(entityplayer, blockposition, itemstack1);
+                 }
+ 
+                 return enuminteractionresult1;
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 813787435d44e0054a052e24e1ef53ea8d713637..ab14d933bd46779cc7d94f15ec366b8848960b8c 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -34,13 +34,10 @@ import org.bukkit.Location;
+ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ import org.bukkit.entity.Player;
+ import org.bukkit.event.player.PlayerChangedWorldEvent;
+-import org.bukkit.event.player.PlayerPortalEvent;
+ import org.bukkit.event.player.PlayerJoinEvent;
+ import org.bukkit.event.player.PlayerLoginEvent;
+ import org.bukkit.event.player.PlayerQuitEvent;
+ import org.bukkit.event.player.PlayerRespawnEvent;
+-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+-import org.bukkit.util.Vector;
+ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+ // CraftBukkit end
+ 
+@@ -492,7 +489,7 @@ public abstract class PlayerList {
+         AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementData(); // CraftBukkit
+ 
+         if (advancementdataplayer != null) {
+-            advancementdataplayer.b();
++            advancementdataplayer.save();
+         }
+ 
+     }
+@@ -1356,7 +1353,7 @@ public abstract class PlayerList {
+ 
+         for (EntityPlayer player : players) {
+             player.getAdvancementData().a(this.server.getAdvancementData());
+-            player.getAdvancementData().b(player); // CraftBukkit - trigger immediate flush of advancements
++            player.getAdvancementData().sendAdvancements(player); // CraftBukkit - trigger immediate flush of advancements
+         }
+         // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/Raid.java b/src/main/java/net/minecraft/server/Raid.java
+index dea799de35ee137c5ff4a24f39c9c04e649cf3da..01998fc641c9547fbd52213bc5e338a2bd430a46 100644
+--- a/src/main/java/net/minecraft/server/Raid.java
++++ b/src/main/java/net/minecraft/server/Raid.java
+@@ -321,7 +321,7 @@ public class Raid {
+                                     EntityPlayer entityplayer = (EntityPlayer) entityliving;
+ 
+                                     entityplayer.a(StatisticList.RAID_WIN);
+-                                    CriterionTriggers.H.a(entityplayer);
++                                    CriterionTriggers.HERO_OF_THE_VILLAGE.a(entityplayer);
+                                     winners.add(entityplayer.getBukkitEntity()); // CraftBukkit
+                                 }
+                             }
+diff --git a/src/main/java/net/minecraft/server/RecipeBookServer.java b/src/main/java/net/minecraft/server/RecipeBookServer.java
+index 3235b26648d99a71e734e0d6ba2351ca9d9f4f30..d85479c9aa78649cc4c934ca6105a1f19f107120 100644
+--- a/src/main/java/net/minecraft/server/RecipeBookServer.java
++++ b/src/main/java/net/minecraft/server/RecipeBookServer.java
+@@ -30,7 +30,7 @@ public class RecipeBookServer extends RecipeBook {
+                 this.a(minecraftkey);
+                 this.d(minecraftkey);
+                 list.add(minecraftkey);
+-                CriterionTriggers.f.a(entityplayer, irecipe);
++                CriterionTriggers.RECIPE_UNLOCKED.a(entityplayer, irecipe);
+                 ++i;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/TileEntityBeacon.java b/src/main/java/net/minecraft/server/TileEntityBeacon.java
+index 2858ea1f3eb44ea2cc6b11454b8e94bca4ab0568..fdc8500b1bab89dbfe77ae0a34ece74c3fca96d6 100644
+--- a/src/main/java/net/minecraft/server/TileEntityBeacon.java
++++ b/src/main/java/net/minecraft/server/TileEntityBeacon.java
+@@ -9,9 +9,7 @@ import java.util.stream.Collectors;
+ import javax.annotation.Nullable;
+ 
+ // CraftBukkit start
+-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+ import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+-import org.bukkit.entity.HumanEntity;
+ import org.bukkit.potion.PotionEffect;
+ // CraftBukkit end
+ // Paper start
+@@ -169,7 +167,7 @@ public class TileEntityBeacon extends TileEntity implements ITileInventory, ITic
+                     while (iterator.hasNext()) {
+                         EntityPlayer entityplayer = (EntityPlayer) iterator.next();
+ 
+-                        CriterionTriggers.l.a(entityplayer, this);
++                        CriterionTriggers.CONSTRUCT_BEACON.a(entityplayer, this);
+                     }
+                 } else if (flag && !flag1) {
+                     this.a(SoundEffects.BLOCK_BEACON_DEACTIVATE);
+diff --git a/src/main/java/net/minecraft/server/TileEntityEndGateway.java b/src/main/java/net/minecraft/server/TileEntityEndGateway.java
+index ce239d2b2fe942915aa093b86343c3740d10e273..113171b2468d5b441f54cb8c5e70de1b726199c2 100644
+--- a/src/main/java/net/minecraft/server/TileEntityEndGateway.java
++++ b/src/main/java/net/minecraft/server/TileEntityEndGateway.java
+@@ -135,7 +135,7 @@ public class TileEntityEndGateway extends TileEntityEnderPortal implements ITick
+                     Entity entity2 = ((EntityEnderPearl) entity).getShooter();
+ 
+                     if (entity2 instanceof EntityPlayer) {
+-                        CriterionTriggers.d.a((EntityPlayer) entity2, this.world.getType(this.getPosition()));
++                        CriterionTriggers.ENTER_BLOCK.a((EntityPlayer) entity2, this.world.getType(this.getPosition()));
+                     }
+ 
+                     if (entity2 != null) {
+diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
+index 55b1e5da2b5128e479dbdf14eb1da692af1880fe..fbe1d410dc443c5ebf5302b4fff9e426db22fed1 100644
+--- a/src/main/java/net/minecraft/server/TileEntityLootable.java
++++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
+@@ -53,7 +53,7 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+             LootTable loottable = this.world.getMinecraftServer().getLootTableRegistry().getLootTable(this.lootTable);
+ 
+             if (entityhuman instanceof EntityPlayer) {
+-                CriterionTriggers.N.a((EntityPlayer) entityhuman, this.lootTable);
++                CriterionTriggers.PLAYER_GENERATES_CONTAINER_LOOT.a((EntityPlayer) entityhuman, this.lootTable);
+             }
+ 
+             //this.lootTable = null; // Paper
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d8103ab0d542ced4f30b88ceb4fc4c3eedd5d9a0..6f82fe2439c8406ea5a17c6bc3855c18325a894d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -92,7 +92,6 @@ import net.minecraft.server.PlayerList;
+ import net.minecraft.server.RegistryMaterials;
+ import net.minecraft.server.RegistryReadOps;
+ import net.minecraft.server.ResourceKey;
+-import net.minecraft.server.SaveData;
+ import net.minecraft.server.ServerCommand;
+ import net.minecraft.server.TagsServer;
+ import net.minecraft.server.TicketType;
+@@ -2065,7 +2064,7 @@ public final class CraftServer implements Server {
+     public org.bukkit.advancement.Advancement getAdvancement(NamespacedKey key) {
+         Preconditions.checkArgument(key != null, "key");
+ 
+-        Advancement advancement = console.getAdvancementData().a(CraftNamespacedKey.toMinecraft(key));
++        Advancement advancement = console.getAdvancementData().getAdvancement(CraftNamespacedKey.toMinecraft(key));
+         return (advancement == null) ? null : advancement.bukkit;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementProgress.java b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementProgress.java
+index 60fc5aff80697cb4c85080350542c0f46056f74a..eb1851040890da7ced5bbfecb746ba6b580e4491 100644
+--- a/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementProgress.java
++++ b/src/main/java/org/bukkit/craftbukkit/advancement/CraftAdvancementProgress.java
+@@ -38,7 +38,7 @@ public class CraftAdvancementProgress implements AdvancementProgress {
+ 
+     @Override
+     public boolean revokeCriteria(String criteria) {
+-        return playerData.revokeCritera(advancement.getHandle(), criteria);
++        return playerData.revokeCriteria(advancement.getHandle(), criteria);
+     }
+ 
+     @Override
