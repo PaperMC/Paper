@@ -3,9 +3,10 @@ From: 12xx12 <12xx12100@gmail.com>
 Date: Fri, 17 Jul 2020 20:34:20 +0200
 Subject: [PATCH] deobfuscation in Advancement classes
 
+marking all obfuscated methods as deprecated for easy removal
 
 diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
-index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..a276d191087818d2bef7a4425179a0f10a1a224e 100644
+index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..3d2daa804868d757aee622a1fac99dd2c8690b38 100644
 --- a/src/main/java/net/minecraft/server/Advancement.java
 +++ b/src/main/java/net/minecraft/server/Advancement.java
 @@ -17,34 +17,35 @@ import javax.annotation.Nullable;
@@ -421,7 +422,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..a276d191087818d2bef7a4425179a0f1
 -            JsonArray jsonarray = new JsonArray();
 -            String[][] astring = this.f;
 -            int i = astring.length;
-+                criteria.add((String) entry.getKey(), ((Criterion) entry.getValue()).b());  // TODO: fix obfuscation
++                criteria.add((String) entry.getKey(), ((Criterion) entry.getValue()).getJson());  // TODO: fix obfuscation
 +            }
  
 -            for (int j = 0; j < i; ++j) {
@@ -539,7 +540,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..a276d191087818d2bef7a4425179a0f1
 -            Map<String, Criterion> map = Criterion.b(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext);
 +            AdvancementDisplay advancementdisplay = jsonobject.has("display") ? AdvancementDisplay.readFromJSON(ChatDeserializer.t(jsonobject, "display")) : null;
 +            AdvancementRewards advancementrewards = jsonobject.has("rewards") ? AdvancementRewards.readFromJson(ChatDeserializer.t(jsonobject, "rewards")) : AdvancementRewards.EMPTY_REWARD;
-+            Map<String, Criterion> map = Criterion.b(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext); // Todo: deobfuscate the criterion call
++            Map<String, Criterion> map = Criterion.readMultipleFromJson(ChatDeserializer.t(jsonobject, "criteria"), lootdeserializationcontext); // Todo: deobfuscate the criterion call
  
              if (map.isEmpty()) {
                  throw new JsonSyntaxException("Advancement criteria cannot be empty");
@@ -672,7 +673,7 @@ index 315a03cf5e64264523ce95ce7b9ffe7c450e1e5b..a276d191087818d2bef7a4425179a0f1
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
-index d3387a4e16f81b820d40502d2c46ebb3db88f824..a6db0281817246f5b1c2890cf70769dcc01f75f6 100644
+index d3387a4e16f81b820d40502d2c46ebb3db88f824..ff677a85f116705e0c9603c83331e5b7b92d08b9 100644
 --- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
 @@ -33,34 +33,39 @@ import javax.annotation.Nullable;
@@ -902,6 +903,24 @@ index d3387a4e16f81b820d40502d2c46ebb3db88f824..a6db0281817246f5b1c2890cf70769dc
          }
  
          return flag;
+@@ -331,7 +334,7 @@ public class AdvancementDataPlayer {
+                 Entry<String, Criterion> entry = (Entry) iterator.next();
+                 CriterionProgress criterionprogress = advancementprogress.getCriterionProgress((String) entry.getKey());
+ 
+-                if (criterionprogress != null && !criterionprogress.a()) {
++                if (criterionprogress != null && !criterionprogress.isFulfilled()) {
+                     CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
+ 
+                     if (criterioninstance != null) {
+@@ -355,7 +358,7 @@ public class AdvancementDataPlayer {
+             Entry<String, Criterion> entry = (Entry) iterator.next();
+             CriterionProgress criterionprogress = advancementprogress.getCriterionProgress((String) entry.getKey());
+ 
+-            if (criterionprogress != null && (criterionprogress.a() || advancementprogress.isDone())) {
++            if (criterionprogress != null && (criterionprogress.isFulfilled() || advancementprogress.isDone())) {
+                 CriterionInstance criterioninstance = ((Criterion) entry.getValue()).a();
+ 
+                 if (criterioninstance != null) {
 @@ -371,26 +374,26 @@ public class AdvancementDataPlayer {
      }
  
@@ -1432,7 +1451,7 @@ index 12c63a53b0f6a36d9e26eb4d0cd872cd0a3cba3e..66aa63040f4e01437b710fa49c6000cf
 +    // Paper end - OBFHELPER
  }
 diff --git a/src/main/java/net/minecraft/server/AdvancementProgress.java b/src/main/java/net/minecraft/server/AdvancementProgress.java
-index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d5558800f 100644
+index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..d95433f6f04ebb6ab3f9c1f29784bc5dead8b5bf 100644
 --- a/src/main/java/net/minecraft/server/AdvancementProgress.java
 +++ b/src/main/java/net/minecraft/server/AdvancementProgress.java
 @@ -21,15 +21,15 @@ import javax.annotation.Nullable;
@@ -1465,6 +1484,15 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
              }
          }
  
+@@ -65,7 +65,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+                         String s = astring2[l];
+                         CriterionProgress criterionprogress = this.getCriterionProgress(s);
+ 
+-                        if (criterionprogress == null || !criterionprogress.a()) {
++                        if (criterionprogress == null || !criterionprogress.isFulfilled()) {
+                             ++l;
+                             continue;
+                         }
 @@ -87,7 +87,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
      }
  
@@ -1479,7 +1507,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
              criterionprogress = (CriterionProgress) iterator.next();
 -        } while (!criterionprogress.a());
-+        } while (!criterionprogress.a());  // Todo: remove obfuscation of CriterionProgress
++        } while (!criterionprogress.isFulfilled());  // Todo: remove obfuscation of CriterionProgress
  
          return true;
      }
@@ -1488,13 +1516,14 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
 -        CriterionProgress criterionprogress = (CriterionProgress) this.a.get(s);
 +        CriterionProgress criterionprogress = (CriterionProgress) this.progress.get(s);
  
-         if (criterionprogress != null && !criterionprogress.a()) {
+-        if (criterionprogress != null && !criterionprogress.a()) {
 -            criterionprogress.b();
-+            criterionprogress.b();  // Todo: remove obfuscation of CriterionProgress
++        if (criterionprogress != null && !criterionprogress.isFulfilled()) {
++            criterionprogress.fulfill();  // Todo: remove obfuscation of CriterionProgress
              return true;
          } else {
              return false;
-@@ -114,52 +114,51 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+@@ -114,57 +114,56 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
      }
  
      public boolean b(String s) {
@@ -1503,8 +1532,8 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
 -        if (criterionprogress != null && criterionprogress.a()) {
 -            criterionprogress.c();
-+        if (criterionprogress != null && criterionprogress.a()) {  // Todo: remove obfuscation of CriterionProgress
-+            criterionprogress.c();  // Todo: remove obfuscation of CriterionProgress
++        if (criterionprogress != null && criterionprogress.isFulfilled()) {  // Todo: remove obfuscation of CriterionProgress
++            criterionprogress.reset();  // Todo: remove obfuscation of CriterionProgress
              return true;
          } else {
              return false;
@@ -1531,7 +1560,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
              packetdataserializer.a((String) entry.getKey());
 -            ((CriterionProgress) entry.getValue()).a(packetdataserializer);
-+            ((CriterionProgress) entry.getValue()).a(packetdataserializer);  // Todo: remove obfuscation of CriterionProgress
++            ((CriterionProgress) entry.getValue()).sendToPacketDataSerializer(packetdataserializer);  // Todo: remove obfuscation of CriterionProgress
          }
 -
      }
@@ -1546,7 +1575,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
          for (int j = 0; j < i; ++j) {
 -            advancementprogress.a.put(packetdataserializer.e(32767), CriterionProgress.b(packetdataserializer));
-+            advancementprogress.progress.put(packetdataserializer.e(32767), CriterionProgress.b(packetdataserializer));  // Todo: remove obfuscation of CriterionProgress
++            advancementprogress.progress.put(packetdataserializer.e(32767), CriterionProgress.readFromPacketDataSerializer(packetdataserializer));  // Todo: remove obfuscation of CriterionProgress
          }
 -
          return advancementprogress;
@@ -1565,7 +1594,13 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
          while (iterator.hasNext()) {
              Entry<String, CriterionProgress> entry = (Entry) iterator.next();
-@@ -174,7 +173,7 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+ 
+-            if (!((CriterionProgress) entry.getValue()).a()) {
++            if (!((CriterionProgress) entry.getValue()).isFulfilled()) {
+                 list.add(entry.getKey());
+             }
+         }
+@@ -174,12 +173,12 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
  
      public Iterable<String> getAwardedCriteria() {
          List<String> list = Lists.newArrayList();
@@ -1574,7 +1609,13 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
          while (iterator.hasNext()) {
              Entry<String, CriterionProgress> entry = (Entry) iterator.next();
-@@ -188,36 +187,35 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+ 
+-            if (((CriterionProgress) entry.getValue()).a()) {
++            if (((CriterionProgress) entry.getValue()).isFulfilled()) {
+                 list.add(entry.getKey());
+             }
+         }
+@@ -188,43 +187,42 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
      }
  
      @Nullable
@@ -1591,7 +1632,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
 -            if (criterionprogress.a() && (date == null || criterionprogress.getDate().before(date))) {
 +        for (CriterionProgress criterionprogress : this.progress.values()) {  // Paper - changed to improved for loop
-+            if (criterionprogress.a() && (date == null || criterionprogress.getDate().before(date))) {  // Todo: remove obfuscation of CriterionProgress
++            if (criterionprogress.isFulfilled() && (date == null || criterionprogress.getDate().before(date))) {  // Todo: remove obfuscation of CriterionProgress
                  date = criterionprogress.getDate();
              }
          }
@@ -1622,6 +1663,15 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
  
              while (iterator.hasNext()) {
                  Entry<String, CriterionProgress> entry = (Entry) iterator.next();
+                 CriterionProgress criterionprogress = (CriterionProgress) entry.getValue();
+ 
+-                if (criterionprogress.a()) {
+-                    jsonobject1.add((String) entry.getKey(), criterionprogress.e());
++                if (criterionprogress.isFulfilled()) {
++                    jsonobject1.add((String) entry.getKey(), criterionprogress.getJson());
+                 }
+             }
+ 
 @@ -236,20 +234,30 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
              return jsonobject;
          }
@@ -1645,7 +1695,7 @@ index 8e3dfc614db3d1ad879ef40af3c7bb717cda1b86..bbbae53b7914527592068f4d9cb3070d
 +            for (Entry<String, JsonElement> stringJsonElementEntry : criteria.entrySet()) {  // Paper - changed to new for loop
 +                Entry<String, JsonElement> entry = (Entry) stringJsonElementEntry;
 +                String name = (String) entry.getKey();
-+                advancementProgress.progress.put(name, CriterionProgress.a(ChatDeserializer.a((JsonElement) entry.getValue(), name)));  // TODO: remove obfuscation
++                advancementProgress.progress.put(name, CriterionProgress.readFromJson(ChatDeserializer.a((JsonElement) entry.getValue(), name)));  // TODO: remove obfuscation
              }
  
 -            return advancementprogress;
@@ -2083,3 +2133,297 @@ index 2fed42a5aec165a67a1480e822376e66244c31c8..784c07a9d9f7688edef460c344dbecee
 +    // Paper end
  }
 +
+diff --git a/src/main/java/net/minecraft/server/Criterion.java b/src/main/java/net/minecraft/server/Criterion.java
+index 209b557ade4a2f6ddeeda22e4164d3713bde06fb..7ca4770280dde6509949815c2e9570ea588d617b 100644
+--- a/src/main/java/net/minecraft/server/Criterion.java
++++ b/src/main/java/net/minecraft/server/Criterion.java
+@@ -4,89 +4,135 @@ import com.google.common.collect.Maps;
+ import com.google.gson.JsonElement;
+ import com.google.gson.JsonObject;
+ import com.google.gson.JsonSyntaxException;
+-import java.util.Iterator;
++
+ import java.util.Map;
+ import java.util.Map.Entry;
+ import javax.annotation.Nullable;
+ 
++/**
++ * class to wrap a criterionInstance
++ */
+ public class Criterion {
+ 
+-    private final CriterionInstance a;
++    private final CriterionInstance criterionInstance;
+ 
+     public Criterion(CriterionInstance criterioninstance) {
+-        this.a = criterioninstance;
++        this.criterionInstance = criterioninstance;
+     }
+ 
+     public Criterion() {
+-        this.a = null;
++        this.criterionInstance = null;
+     }
+ 
++    /**
++     * @deprecated
++     */
+     public void a(PacketDataSerializer packetdataserializer) {}
+ 
+-    public static Criterion a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
+-        MinecraftKey minecraftkey = new MinecraftKey(ChatDeserializer.h(jsonobject, "trigger"));
+-        CriterionTrigger<?> criteriontrigger = CriterionTriggers.a(minecraftkey);
++    public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {}
++
++    /**
++     * @deprecated
++     */
++    public static Criterion a(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return  readFromJson(jsonobject, lootdeserializationcontext); }
++
++    public static Criterion readFromJson(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
++        MinecraftKey trigger = new MinecraftKey(ChatDeserializer.h(jsonobject, "trigger"));
++        CriterionTrigger<?> criteriontrigger = CriterionTriggers.a(trigger);  // Todo: remove obfuscation in CriterionTriggers
+ 
+         if (criteriontrigger == null) {
+-            throw new JsonSyntaxException("Invalid criterion trigger: " + minecraftkey);
++            throw new JsonSyntaxException("Invalid criterion trigger: " + trigger);
+         } else {
+-            CriterionInstance criterioninstance = criteriontrigger.a(ChatDeserializer.a(jsonobject, "conditions", new JsonObject()), lootdeserializationcontext);
+-
+-            return new Criterion(criterioninstance);
++            CriterionInstance conditions = criteriontrigger.a(ChatDeserializer.a(jsonobject, "conditions", new JsonObject()), lootdeserializationcontext);  // Todo: remove obfuscation in CriterionTriggers
++            return new Criterion(conditions);
+         }
+     }
+ 
+-    public static Criterion b(PacketDataSerializer packetdataserializer) {
++    /**
++     * @deprecated
++     */
++    public static Criterion b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
++
++    public static Criterion readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
+         return new Criterion();
+     }
+ 
+-    public static Map<String, Criterion> b(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
++    /**
++     * @deprecated
++     */
++    public static Map<String, Criterion> b(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) { return readMultipleFromJson(jsonobject, lootdeserializationcontext); }
++
++    public static Map<String, Criterion> readMultipleFromJson(JsonObject jsonobject, LootDeserializationContext lootdeserializationcontext) {
+         Map<String, Criterion> map = Maps.newHashMap();
+-        Iterator iterator = jsonobject.entrySet().iterator();
+ 
+-        while (iterator.hasNext()) {
+-            Entry<String, JsonElement> entry = (Entry) iterator.next();
++        for (Entry<String, JsonElement> stringJsonElementEntry : jsonobject.entrySet()) {  // Paper - replaced with enhanced for
++            Entry<String, JsonElement> entry = (Entry) stringJsonElementEntry;
+ 
+-            map.put(entry.getKey(), a(ChatDeserializer.m((JsonElement) entry.getValue(), "criterion"), lootdeserializationcontext));
++            map.put(entry.getKey(), readFromJson(ChatDeserializer.m((JsonElement) entry.getValue(), "criterion"), lootdeserializationcontext));
+         }
+-
+         return map;
+     }
+ 
+-    public static Map<String, Criterion> c(PacketDataSerializer packetdataserializer) {
++    /**
++     * @deprecated
++     */
++    public static Map<String, Criterion> c(PacketDataSerializer packetdataserializer) { return readMultipleFromPacketDataSerializer(packetdataserializer); }
++
++    /**
++     * reads multiple criteria from the PacketDataSerializer
++     * @param packetdataserializer where to read from
++     */
++    public static Map<String, Criterion> readMultipleFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
+         Map<String, Criterion> map = Maps.newHashMap();
+-        int i = packetdataserializer.i();
++        int i = packetdataserializer.i();  // Todo: remove obfuscation the PacketDataSerializer call
+ 
+         for (int j = 0; j < i; ++j) {
+-            map.put(packetdataserializer.e(32767), b(packetdataserializer));
++            map.put(packetdataserializer.e(32767), readFromPacketDataSerializer(packetdataserializer));  // Todo: remove obfuscation the PacketDataSerializer call
+         }
+-
+         return map;
+     }
+ 
+-    public static void a(Map<String, Criterion> map, PacketDataSerializer packetdataserializer) {
+-        packetdataserializer.d(map.size());
+-        Iterator iterator = map.entrySet().iterator();
++    /**
++     * @deprecated
++     */
++    public static void a(Map<String, Criterion> map, PacketDataSerializer packetdataserializer) { sendMultipleToPacketDataSerializer(map, packetdataserializer);}
+ 
+-        while (iterator.hasNext()) {
+-            Entry<String, Criterion> entry = (Entry) iterator.next();
++    /**
++     * writes multiple criteria to the PacketDataSerializer
++     * @param map which criteria to send
++     * @param packetdataserializer where to read to
++     */
++    public static void sendMultipleToPacketDataSerializer(Map<String, Criterion> map, PacketDataSerializer packetdataserializer) {
++        packetdataserializer.d(map.size());  // Todo: remove obfuscation the PacketDataSerializer call
+ 
+-            packetdataserializer.a((String) entry.getKey());
+-            ((Criterion) entry.getValue()).a(packetdataserializer);
+-        }
++        for (Entry<String, Criterion> stringCriterionEntry : map.entrySet()) {  // Paper - replaced with enhanced for
++            Entry<String, Criterion> entry = (Entry) stringCriterionEntry;
+ 
++            packetdataserializer.a((String) entry.getKey());  // Todo: remove obfuscation the PacketDataSerializer call
++            ((Criterion) entry.getValue()).sendToPacketDataSerializer(packetdataserializer);
++        }
+     }
+ 
++    /**
++     * @deprecated
++     */
++    public CriterionInstance a() { return this.getCriterionInstance(); }
++
+     @Nullable
+-    public CriterionInstance a() {
+-        return this.a;
++    public CriterionInstance getCriterionInstance() {
++        return this.criterionInstance;
+     }
+ 
+-    public JsonElement b() {
++    /**
++     * @deprecated
++     */
++    public JsonElement b() { return this.getJson(); }
++
++    public JsonElement getJson() {
+         JsonObject jsonobject = new JsonObject();
+ 
+-        jsonobject.addProperty("trigger", this.a.a().toString());
+-        JsonObject jsonobject1 = this.a.a(LootSerializationContext.a);
++        jsonobject.addProperty("trigger", this.criterionInstance.a().toString());
++        JsonObject jsonobject1 = this.criterionInstance.a(LootSerializationContext.a);
+ 
+         if (jsonobject1.size() != 0) {
+             jsonobject.add("conditions", jsonobject1);
+diff --git a/src/main/java/net/minecraft/server/CriterionProgress.java b/src/main/java/net/minecraft/server/CriterionProgress.java
+index cbc4e7ff1af8e95c2139c71ff124242095eab90d..e9aa97101ad332c17a1b119e693fe05091c7dc77 100644
+--- a/src/main/java/net/minecraft/server/CriterionProgress.java
++++ b/src/main/java/net/minecraft/server/CriterionProgress.java
+@@ -10,58 +10,96 @@ import java.util.Date;
+ 
+ public class CriterionProgress {
+ 
+-    private static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
+-    private Date b;
++    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
++    private Date date;
+ 
+     public CriterionProgress() {}
+ 
++    /**
++     * @deprecated
++     */
+     public boolean a() {
+-        return this.b != null;
++        return this.isFulfilled();
+     }
+ 
++    public boolean isFulfilled() {
++        return this.date != null;
++    }
++
++    /**
++     * @deprecated
++     */
+     public void b() {
+-        this.b = new Date();
++        this.fulfill();
+     }
+ 
++    public void fulfill() {
++        this.date = new Date();
++    }
++
++    /**
++     * @deprecated
++     */
+     public void c() {
+-        this.b = null;
++        this.reset();
++    }
++
++    public void reset() {
++        this.date = null;
+     }
+ 
+     public Date getDate() {
+-        return this.b;
++        return this.date;
+     }
+ 
+     public String toString() {
+-        return "CriterionProgress{obtained=" + (this.b == null ? "false" : this.b) + '}';
++        return "CriterionProgress{obtained=" + (this.date == null ? "false" : this.date) + '}';
+     }
+ 
+-    public void a(PacketDataSerializer packetdataserializer) {
+-        packetdataserializer.writeBoolean(this.b != null);
+-        if (this.b != null) {
+-            packetdataserializer.a(this.b);
+-        }
++    /**
++     * @deprecated
++     */
++    public void a(PacketDataSerializer packetDataSerializer) { sendToPacketDataSerializer(packetDataSerializer); }
+ 
++    public void sendToPacketDataSerializer(PacketDataSerializer packetdataserializer) {
++        packetdataserializer.writeBoolean(this.date != null);
++        if (this.date != null) {
++            packetdataserializer.a(this.date);
++        }
+     }
++    /**
++     * @deprecated
++     */
++    public JsonElement e() { return this.getJson(); }
+ 
+-    public JsonElement e() {
+-        return (JsonElement) (this.b != null ? new JsonPrimitive(CriterionProgress.a.format(this.b)) : JsonNull.INSTANCE);
++    public JsonElement getJson() {
++        return (JsonElement) (this.date != null ? new JsonPrimitive(CriterionProgress.DATE_FORMAT.format(this.date)) : JsonNull.INSTANCE);
+     }
+ 
+-    public static CriterionProgress b(PacketDataSerializer packetdataserializer) {
++    /**
++     * @deprecated
++     */
++    public static CriterionProgress b(PacketDataSerializer packetdataserializer) { return readFromPacketDataSerializer(packetdataserializer); }
++
++    public static CriterionProgress readFromPacketDataSerializer(PacketDataSerializer packetdataserializer) {
+         CriterionProgress criterionprogress = new CriterionProgress();
+ 
+         if (packetdataserializer.readBoolean()) {
+-            criterionprogress.b = packetdataserializer.p();
++            criterionprogress.date = packetdataserializer.p();
+         }
+ 
+         return criterionprogress;
+     }
++    /**
++     * @deprecated
++     */
++    public static CriterionProgress a(String s) { return readFromJson(s); }
+ 
+-    public static CriterionProgress a(String s) {
++    public static CriterionProgress readFromJson(String s) {
+         CriterionProgress criterionprogress = new CriterionProgress();
+ 
+         try {
+-            criterionprogress.b = CriterionProgress.a.parse(s);
++            criterionprogress.date = CriterionProgress.DATE_FORMAT.parse(s);
+             return criterionprogress;
+         } catch (ParseException parseexception) {
+             throw new JsonSyntaxException("Invalid datetime: " + s, parseexception);
