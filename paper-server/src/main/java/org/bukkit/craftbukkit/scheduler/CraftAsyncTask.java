@@ -25,7 +25,10 @@ class CraftAsyncTask extends CraftTask {
     @Override
     public void run() {
         final Thread thread = Thread.currentThread();
-        synchronized (this.workers) {
+        // Paper start - name threads according to running plugin
+        final String nameBefore = thread.getName();
+        thread.setName(nameBefore + " - " + this.getOwner().getName());
+        try { synchronized (this.workers) {  // Paper end - name threads according to running plugin
             if (this.getPeriod() == CraftTask.CANCEL) {
                 // Never continue running after cancelled.
                 // Checking this with the lock is important!
@@ -92,6 +95,7 @@ class CraftAsyncTask extends CraftTask {
                 }
             }
         }
+        } finally { thread.setName(nameBefore); } // Paper - name threads according to running plugin
     }
 
     LinkedList<BukkitWorker> getWorkers() {
