@@ -5,6 +5,8 @@ Subject: [PATCH] Fix anvil not working when level req is 0
 
 Remove noise
 
+Fix check.
+
 diff --git a/src/main/java/net/minecraft/server/ContainerAnvil.java b/src/main/java/net/minecraft/server/ContainerAnvil.java
 index fc2038df89f25c07f6f853f6df41fe9b203c3585..c742a5a5f3ca51840d608b05b7724fef3a642719 100644
 --- a/src/main/java/net/minecraft/server/ContainerAnvil.java
@@ -19,10 +21,10 @@ index fc2038df89f25c07f6f853f6df41fe9b203c3585..c742a5a5f3ca51840d608b05b7724fef
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index dbc46fcda3f3e006d9e7b7a89ab942b46a05cd9f..4e3360d38b24f2ba0efacd9881418f1e6bff25f5 100644
+index dbc46fcda3f3e006d9e7b7a89ab942b46a05cd9f..593e622814ab4d36962ea8e0bff305e3e146fab8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1573,6 +1573,22 @@ public class CraftEventFactory {
+@@ -1573,6 +1573,24 @@ public class CraftEventFactory {
          event.callEvent();
          event.getInventory().setItem(resultSlot, event.getResult());
          container.notifyListeners();
@@ -31,16 +33,18 @@ index dbc46fcda3f3e006d9e7b7a89ab942b46a05cd9f..4e3360d38b24f2ba0efacd9881418f1e
 +           I only know of this happening frequently with anvils and the level req set to 0, so i will limit it to that.
 +         */
 +        if (event instanceof PrepareAnvilEvent) {
-+            event.getViewers().forEach(viewer -> {
-+                if (viewer instanceof Player) {
-+                    net.minecraft.server.EntityPlayer player = ((CraftPlayer) viewer).getHandle();
-+                    boolean before = player.e; // The use i found of it did this same thing by setting to false, broadcasting and setting to true.
-+                    if (!player.e)
-+                        player.e = false;
-+                    player.broadcastCarriedItem();
-+                    player.e = before;
-+                }
-+            });
++             if (((org.bukkit.inventory.AnvilInventory)view.getTopInventory()).getRepairCost() == 0) {
++                event.getViewers().forEach(viewer -> {
++                    if (viewer instanceof Player) {
++                        net.minecraft.server.EntityPlayer player = ((CraftPlayer) viewer).getHandle();
++                        boolean before = player.e; // It gotta be false for this method to work :shrug:
++                        if (player.e)
++                            player.e = false;
++                        player.broadcastCarriedItem();
++                        player.e = before;
++                    }
++                });
++            }
 +        }
      }
      // Paper end
