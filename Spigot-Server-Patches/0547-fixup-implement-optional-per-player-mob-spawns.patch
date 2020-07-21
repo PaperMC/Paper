@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 21 Jul 2020 11:26:34 -0700
+Subject: [PATCH] fixup! implement optional per player mob spawns
+
+
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index c5845013a79036704d084cfb903589cb9e8767cd..b255ccb4501d85f1507b105d2793c7fb6a919f62 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -143,25 +143,28 @@ public final class SpawnerCreature {
+             if (worldserver.paperConfig.perPlayerMobSpawns) {
+                 int minDiff = Integer.MAX_VALUE;
+                 for (EntityPlayer entityplayer : worldserver.getChunkProvider().playerChunkMap.playerMobDistanceMap.getPlayersInRange(chunk.getPos())) {
+-                    minDiff = Math.min(limit - worldserver.getChunkProvider().playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
++                    int chunkRange = entityplayer.playerNaturallySpawnedEvent.getSpawnRadius();
++                    double rangeScale = (double)((chunkRange * 2 + 1) * (chunkRange * 2 + 1)) / SpawnerCreature.b;
++                    int scaledLimit = (int)Math.round(rangeScale * limit);
++                    minDiff = Math.min(scaledLimit - worldserver.getChunkProvider().playerChunkMap.getMobCountNear(entityplayer, enumcreaturetype), minDiff);
+                 }
+                 difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
+             }
+             // Paper end
+ 
+-            if (difference > 0) { // Paper
+-            if ((flag || !enumcreaturetype.d()) && (flag1 || enumcreaturetype.d()) && (flag2 || !enumcreaturetype.e()) && spawnercreature_d.a(enumcreaturetype, limit)) {
++            // Paper start - per player mob spawning
++            if ((flag || !enumcreaturetype.d()) && (flag1 || enumcreaturetype.d()) && (flag2 || !enumcreaturetype.e()) && difference > 0) {
+                 // CraftBukkit end
+                 int spawnCount = spawnMobs(enumcreaturetype, worldserver, chunk, (entitytypes, blockposition, ichunkaccess) -> {
+                     return spawnercreature_d.a(entitytypes, blockposition, ichunkaccess);
+                 }, (entityinsentient, ichunkaccess) -> {
+                     spawnercreature_d.a(entityinsentient, ichunkaccess);
+                 },
+-                limit, worldserver.paperConfig.perPlayerMobSpawns ? worldserver.getChunkProvider().playerChunkMap::updatePlayerMobTypeMap : null);
+-                spawnercreature_d.getEntityCountsByType().mergeInt(enumcreaturetype, 0, (keyInMap, valueInMap) -> {
++                difference, worldserver.paperConfig.perPlayerMobSpawns ? worldserver.getChunkProvider().playerChunkMap::updatePlayerMobTypeMap : null);
++                spawnercreature_d.getEntityCountsByType().mergeInt(enumcreaturetype, spawnCount, (keyInMap, valueInMap) -> {
+                     return Integer.valueOf(spawnCount + valueInMap.intValue());
+                 });
+-                } // Paper
++                // Paper end - per player mob spawning
+             }
+         }
+ 
