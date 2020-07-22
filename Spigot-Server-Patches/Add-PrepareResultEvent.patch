@@ -5,7 +5,7 @@ Subject: [PATCH] Add PrepareResultEvent
 
 Adds a new event for all crafting stations that generate a result slot item
 
-Anvil and Grindstone now extend this event
+Anvil, Grindstone and Smithing now extend this event
 
 diff --git a/src/main/java/net/minecraft/server/Container.java b/src/main/java/net/minecraft/server/Container.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -86,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/ContainerSmithing.java
 +++ b/src/main/java/net/minecraft/server/ContainerSmithing.java
 @@ -0,0 +0,0 @@ public class ContainerSmithing extends ContainerAnvilAbstract {
-             this.resultInventory.setItem(0, itemstack);
+             org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareSmithingEvent(getBukkitView(), itemstack); // CraftBukkit
          }
  
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, 2); // Paper
@@ -125,6 +125,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        //return event; // Paper
      }
 +    // Paper end
+ 
+-    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
+-        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++    // Paper start - disable this method, handled in callPrepareResultEvent
++    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
++        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
+         event.getInventory().setItem(2, event.getResult());
+-        return event;
++        //return event; // Paper
+     }
++    // Paper end
 +
 +    // Paper start - support specific overrides for prepare result
 +    public static void callPrepareResultEvent(net.minecraft.server.Container container, int resultSlot) {
@@ -136,6 +149,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            event = new PrepareAnvilEvent(view, result);
 +        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
++        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
++            event = new PrepareSmithingEvent(view, result);
 +        } else {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
 +        }
