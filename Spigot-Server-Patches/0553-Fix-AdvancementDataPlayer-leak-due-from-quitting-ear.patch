@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Mon, 13 Jul 2020 06:22:54 -0700
+Subject: [PATCH] Fix AdvancementDataPlayer leak due from quitting early in
+ login
+
+Move the criterion storage to the AdvancementDataPlayer object
+itself, so the criterion object stores no references - and thus
+needs no cleanup.
+
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index ac7b6734728f912ab9f02dc417f5924b3725adde..4d12edf4f3eca1e7d7ba22760baea6f7458c8e98 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -49,6 +49,10 @@ public class AdvancementDataPlayer {
+     private Advancement k;
+     private boolean l = true;
+ 
++    // Paper start - fix advancement data player leakage
++    final Map<CriterionTriggerAbstract, Set<CriterionTrigger.a>> criterionData = Maps.newIdentityHashMap();
++    // Paper end - fix advancement data player leakage
++
+     public AdvancementDataPlayer(MinecraftServer minecraftserver, File file, EntityPlayer entityplayer) {
+         this.d = minecraftserver;
+         this.e = file;
+diff --git a/src/main/java/net/minecraft/server/CriterionTriggerAbstract.java b/src/main/java/net/minecraft/server/CriterionTriggerAbstract.java
+index b6370436f87f187f36da56dcfc1c847a656c1b1f..514fe53e50104509b3be9c47fd181305c57bf03d 100644
+--- a/src/main/java/net/minecraft/server/CriterionTriggerAbstract.java
++++ b/src/main/java/net/minecraft/server/CriterionTriggerAbstract.java
+@@ -14,25 +14,25 @@ import java.util.function.Predicate;
+ 
+ public abstract class CriterionTriggerAbstract<T extends CriterionInstance> implements CriterionTrigger<T> {
+ 
+-    private final Map<AdvancementDataPlayer, Set<CriterionTrigger.a<T>>> a = Maps.newIdentityHashMap();
++    //private final Map<AdvancementDataPlayer, Set<CriterionTrigger.a<T>>> a = Maps.newIdentityHashMap(); // Paper - moved into AdvancementDataPlayer to fix memory leak
+ 
+     public CriterionTriggerAbstract() {}
+ 
+     @Override
+     public final void a(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a) {
+-        ((Set) this.a.computeIfAbsent(advancementdataplayer, (advancementdataplayer1) -> {
++        (advancementdataplayer.criterionData.computeIfAbsent(this, (advancementdataplayer1) -> { // Paper - fix AdvancementDataPlayer leak
+             return Sets.newHashSet();
+         })).add(criteriontrigger_a);
+     }
+ 
+     @Override
+     public final void b(AdvancementDataPlayer advancementdataplayer, CriterionTrigger.a<T> criteriontrigger_a) {
+-        Set<CriterionTrigger.a<T>> set = (Set) this.a.get(advancementdataplayer);
++        Set<CriterionTrigger.a<T>> set = (Set) advancementdataplayer.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
+ 
+         if (set != null) {
+             set.remove(criteriontrigger_a);
+             if (set.isEmpty()) {
+-                this.a.remove(advancementdataplayer);
++                advancementdataplayer.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
+             }
+         }
+ 
+@@ -40,11 +40,11 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstance> impl
+ 
+     @Override
+     public final void a(AdvancementDataPlayer advancementdataplayer) {
+-        this.a.remove(advancementdataplayer);
++        advancementdataplayer.criterionData.remove(this); // Paper - fix AdvancementDataPlayer leak
+     }
+ 
+     protected void a(AdvancementDataPlayer advancementdataplayer, Predicate<T> predicate) {
+-        Set<CriterionTrigger.a<T>> set = (Set) this.a.get(advancementdataplayer);
++        Set<CriterionTrigger.a<T>> set = (Set) advancementdataplayer.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
+ 
+         if (set != null) {
+             List<CriterionTrigger.a<T>> list = null;
+@@ -54,7 +54,7 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstance> impl
+ 
+             while (iterator.hasNext()) {
+                 criteriontrigger_a = (CriterionTrigger.a) iterator.next();
+-                if (predicate.test(criteriontrigger_a.a())) {
++                if (predicate.test((T) criteriontrigger_a.a())) { // Paper - decompile fix
+                     if (list == null) {
+                         list = Lists.newArrayList();
+                     }
+@@ -76,7 +76,7 @@ public abstract class CriterionTriggerAbstract<T extends CriterionInstance> impl
+     }
+ 
+     protected void b(AdvancementDataPlayer advancementdataplayer) {
+-        Set<CriterionTrigger.a<T>> set = (Set) this.a.get(advancementdataplayer);
++        Set<CriterionTrigger.a<T>> set = (Set) advancementdataplayer.criterionData.get(this); // Paper - fix AdvancementDataPlayer leak
+ 
+         if (set != null && !set.isEmpty()) {
+             UnmodifiableIterator unmodifiableiterator = ImmutableSet.copyOf(set).iterator();
