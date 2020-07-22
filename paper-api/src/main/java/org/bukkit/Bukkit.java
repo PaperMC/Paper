@@ -717,6 +717,17 @@ public final class Bukkit {
     }
 
     /**
+     * Get the {@link Recipe} for the given key.
+     *
+     * @param recipeKey the key of the recipe to return
+     * @return the recipe for the given key or null.
+     */
+    @Nullable
+    public static Recipe getRecipe(@NotNull NamespacedKey recipeKey) {
+        return server.getRecipe(recipeKey);
+    }
+
+    /**
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
