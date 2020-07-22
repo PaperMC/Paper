@@ -1209,6 +1209,13 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public Recipe getRecipe(NamespacedKey recipeKey) {
+        Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
+
+        return getServer().getCraftingManager().a(CraftNamespacedKey.toMinecraft(recipeKey)).map(IRecipe::toBukkitRecipe).orElse(null);
+    }
+
+    @Override
     public Iterator<Recipe> recipeIterator() {
         return new RecipeIterator();
     }
