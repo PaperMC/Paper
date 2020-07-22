@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Professor Bloodstone <prof.bloodstone+git@gmail.com>
+Date: Wed, 22 Jul 2020 22:35:19 +0200
+Subject: [PATCH] Make PrepareSmithingEvent use PrepareResultEvent
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 1df06c5504084ed6059b9bb6c0a0c7dcf87b190b..8f6ca359ece73301150b84b66506bffcb4b254ba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1568,6 +1568,8 @@ public class CraftEventFactory {
+             event = new PrepareAnvilEvent(view, result);
+         } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
+             event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
++        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
++            event = new PrepareSmithingEvent(view, result);
+         } else {
+             event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
+         }
+@@ -1577,11 +1579,12 @@ public class CraftEventFactory {
+     }
+     // Paper end
+ 
+-    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
+-        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++    // Paper start - disable this method, handled in callPrepareResultEvent
++    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled above in PrepareResult
++        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
+         event.getInventory().setItem(2, event.getResult());
+-        return event;
++        //return event; // PAper
+     }
+ 
+     /**
