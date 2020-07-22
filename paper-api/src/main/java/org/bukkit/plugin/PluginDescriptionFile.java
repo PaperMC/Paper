@@ -78,6 +78,10 @@ import org.yaml.snakeyaml.nodes.Tag;
  * </tr><tr>
  *     <td><code>author</code><br><code>authors</code></td>
  *     <td>{@link #getAuthors()}</td>
+ *     <td>The plugin authors</td>
+ * </tr><tr>
+ *     <td><code>contributors</code></td>
+ *     <td>{@link #getContributors()}</td>
  *     <td>The plugin contributors</td>
  * </tr><tr>
  *     <td><code>description</code></td>
@@ -142,6 +146,7 @@ import org.yaml.snakeyaml.nodes.Tag;
  *# name is displayed first
  *author: CaptainInflamo
  *authors: [Cogito, verrier, EvilSeph]
+ *contributors: [Choco, md_5]
  *website: http://www.curse.com/server-mods/minecraft/myplugin
  *
  *main: com.captaininflamo.bukkit.inferno.Inferno
@@ -233,6 +238,7 @@ public final class PluginDescriptionFile {
     private Map<String, Map<String, Object>> commands = ImmutableMap.of();
     private String description = null;
     private List<String> authors = null;
+    private List<String> contributors = null;
     private String website = null;
     private String prefix = null;
     private PluginLoadOrder order = PluginLoadOrder.POSTWORLD;
@@ -434,7 +440,7 @@ public final class PluginDescriptionFile {
      * <li>Gives credit to the developer.
      * <li>Used in some server error messages to provide helpful feedback on
      *     who to contact when an error occurs.
-     * <li>A bukkit.org forum handle or email address is recommended.
+     * <li>A SpigotMC forum handle or email address is recommended.
      * <li>Is displayed when a user types <code>/version PluginName</code>
      * <li><code>authors</code> must be in <a
      *     href="http://en.wikipedia.org/wiki/YAML#Lists">YAML list
@@ -462,6 +468,30 @@ public final class PluginDescriptionFile {
     @NotNull
     public List<String> getAuthors() {
         return authors;
+    }
+
+    /**
+     * Gives the list of contributors for the plugin.
+     * <ul>
+     * <li>Gives credit to those that have contributed to the plugin, though
+     *     not enough so to warrant authorship.
+     * <li>Unlike {@link #getAuthors()}, contributors will not be mentioned in
+     * server error messages as a means of contact.
+     * <li>A SpigotMC forum handle or email address is recommended.
+     * <li>Is displayed when a user types <code>/version PluginName</code>
+     * <li><code>contributors</code> must be in <a
+     *     href="http://en.wikipedia.org/wiki/YAML#Lists">YAML list
+     *     format</a>.
+     * </ul>
+     * <p>
+     * Example:
+     * <blockquote><pre>authors: [Choco, md_5]</pre></blockquote>
+     *
+     * @return an immutable list of the plugin's contributors
+     */
+    @NotNull
+    public List<String> getContributors() {
+        return contributors;
     }
 
     /**
@@ -1057,6 +1087,20 @@ public final class PluginDescriptionFile {
             authors = ImmutableList.<String>of();
         }
 
+        if (map.get("contributors") != null) {
+            ImmutableList.Builder<String> contributorsBuilder = ImmutableList.<String>builder();
+            try {
+                for (Object o : (Iterable<?>) map.get("contributors")) {
+                    contributorsBuilder.add(o.toString());
+                }
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "contributors are of wrong type");
+            }
+            contributors = contributorsBuilder.build();
+        } else {
+            contributors = ImmutableList.<String>of();
+        }
+
         if (map.get("default-permission") != null) {
             try {
                 defaultPerm = PermissionDefault.getByName(map.get("default-permission").toString());
@@ -1147,6 +1191,10 @@ public final class PluginDescriptionFile {
             map.put("author", authors.get(0));
         } else if (authors.size() > 1) {
             map.put("authors", authors);
+        }
+
+        if (contributors != null) {
+            map.put("contributors", contributors);
         }
 
         if (apiVersion != null) {
