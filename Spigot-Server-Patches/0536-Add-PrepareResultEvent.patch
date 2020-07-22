@@ -5,7 +5,7 @@ Subject: [PATCH] Add PrepareResultEvent
 
 Adds a new event for all crafting stations that generate a result slot item
 
-Anvil and Grindstone now extend this event
+Anvil, Grindstone and Smithing now extend this event
 
 diff --git a/src/main/java/net/minecraft/server/Container.java b/src/main/java/net/minecraft/server/Container.java
 index 4effcc860f9b1cf9f13f4c6ae02a6b16df459259..268bedd042b651514aa94b735876de9c40bae56f 100644
@@ -106,10 +106,10 @@ index 270bf7f3e6ca15891419f1ce3e88d9aff094bee6..a235f6406dc06ceafea6fbe429bf595d
  
      private void a(IInventory iinventory, ItemStack itemstack) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index f84d045fe951e482c10a6ad16c41076bf8808168..1df06c5504084ed6059b9bb6c0a0c7dcf87b190b 100644
+index f84d045fe951e482c10a6ad16c41076bf8808168..ddb58c1d502b6eaaee146eaa61d97cf5740d3990 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1549,12 +1549,33 @@ public class CraftEventFactory {
+@@ -1549,19 +1549,44 @@ public class CraftEventFactory {
          return event;
      }
  
@@ -123,7 +123,20 @@ index f84d045fe951e482c10a6ad16c41076bf8808168..1df06c5504084ed6059b9bb6c0a0c7dc
          event.getInventory().setItem(2, event.getResult());
 -        return event;
 +        //return event; // Paper
-+    }
+     }
++    // Paper end
+ 
+-    public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
+-        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+-        event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
++    // Paper start - disable this method, handled in callPrepareResultEvent
++    public static void callPrepareSmithingEvent(InventoryView view, ItemStack item) { // Paper - verify nothing uses return - handled below in PrepareResult
++        PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item)); // Paper - remove clone
++        //event.getView().getPlayer().getServer().getPluginManager().callEvent(event); // Paper - disable event
+         event.getInventory().setItem(2, event.getResult());
+-        return event;
++        //return event; // Paper
+     }
 +    // Paper end
 +
 +    // Paper start - support specific overrides for prepare result
@@ -136,14 +149,16 @@ index f84d045fe951e482c10a6ad16c41076bf8808168..1df06c5504084ed6059b9bb6c0a0c7dc
 +            event = new PrepareAnvilEvent(view, result);
 +        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent(view, result);
++        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
++            event = new PrepareSmithingEvent(view, result);
 +        } else {
 +            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
 +        }
 +        event.callEvent();
 +        event.getInventory().setItem(resultSlot, event.getResult());
 +        container.notifyListeners();
-     }
++    }
 +    // Paper end
  
-     public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
-         PrepareSmithingEvent event = new PrepareSmithingEvent(view, CraftItemStack.asCraftMirror(item).clone());
+     /**
+      * Mob spawner event.
