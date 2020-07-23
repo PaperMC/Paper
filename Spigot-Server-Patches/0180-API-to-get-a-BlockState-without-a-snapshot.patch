@@ -13,10 +13,27 @@ also Avoid NPE during CraftBlockEntityState load if could not get TE
 If Tile Entity was null, correct Sign to return empty lines instead of null
 
 diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 6c4c804797fbbe73d179c6ed089427e64d0ebff4..6ccca984daa803ddf446a8f69aca0d86ee27fabc 100644
+index 6c4c804797fbbe73d179c6ed089427e64d0ebff4..338cf8c896a6fc869eb9c54d39ad5713f6fcc377 100644
 --- a/src/main/java/net/minecraft/server/TileEntity.java
 +++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -231,7 +231,12 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -33,6 +33,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
+     public TileEntity(TileEntityTypes<?> tileentitytypes) {
+         this.position = BlockPosition.ZERO;
+         this.tileType = tileentitytypes;
++        persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
+     }
+ 
+     // Paper start
+@@ -81,7 +82,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
+     public void load(IBlockData iblockdata, NBTTagCompound nbttagcompound) {
+         this.position = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
+         // CraftBukkit start - read container
+-        this.persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++        this.persistentDataContainer.clear(); // Paper - clear instead of reinit
+ 
+         NBTTagCompound persistentDataTag = nbttagcompound.getCompound("PublicBukkitValues");
+         if (persistentDataTag != null) {
+@@ -231,7 +232,12 @@ public abstract class TileEntity implements KeyedObject { // Paper
      }
  
      // CraftBukkit start - add method
@@ -29,7 +46,7 @@ index 6c4c804797fbbe73d179c6ed089427e64d0ebff4..6ccca984daa803ddf446a8f69aca0d86
          if (world == null) return null;
          // Spigot start
          org.bukkit.block.Block block = world.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
-@@ -240,7 +245,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -240,7 +246,7 @@ public abstract class TileEntity implements KeyedObject { // Paper
              return null;
          }
          // Spigot end
@@ -130,3 +147,18 @@ index 15022ada0c2fd0f4302b45c55f46d0fdd3bfd57f..af15656cc4b4c1e9da4fc8a5bfffa95e
      }
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 58e2db5da178af6a8c30f563353fefe720ff9781..b704f550de290e0bc1235bf7e68c7eb347162c69 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -155,4 +155,10 @@ public final class CraftPersistentDataContainer implements PersistentDataContain
+     public Map<String, Object> serialize() {
+         return (Map<String, Object>) CraftNBTTagConfigSerializer.serialize(toTagCompound());
+     }
++
++    // Paper start
++    public void clear() {
++        this.customDataTags.clear();
++    }
++    // Paper end
+ }
