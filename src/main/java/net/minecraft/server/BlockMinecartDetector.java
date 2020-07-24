@@ -51,6 +51,7 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
 
     private void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
         if (this.canPlace(iblockdata, world, blockposition)) {
+            if (iblockdata.getBlock() != this) { return; } // Paper - not our block, don't do anything
             boolean flag = (Boolean) iblockdata.get(BlockMinecartDetector.POWERED);
             boolean flag1 = false;
             List<EntityMinecartAbstract> list = this.a(world, blockposition, EntityMinecartAbstract.class, (Predicate) null);

@@ -46,6 +46,7 @@ public abstract class BlockMinecartTrackAbstract extends Block {
         iblockdata = this.a(world, blockposition, iblockdata, true);
         if (this.c) {
             iblockdata.doPhysics(world, blockposition, this, blockposition, flag);
+            iblockdata = world.getType(blockposition); // Paper - don't desync, update again
         }
 
         return iblockdata;
