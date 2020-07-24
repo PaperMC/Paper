@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PepperCode1 <44146161+PepperCode1@users.noreply.github.com>
+Date: Thu, 23 Jul 2020 17:06:19 -0700
+Subject: [PATCH] Fix cartography table
+
+This patch fixes three main issues with the cartography table:
+  Using a swap button (hotbar or offhand) on the result item does not use up the input items.
+  If the map is being locked, the player's inventory is full, and the player shift clicks on the result,
+    it creates a map ID that will never be used.
+  Since the display item in the result slot is not the same as the actual item when locking,
+    shift clicking on the result made the locked map merge with not locked maps in the player's inventory.
+
+Changes:
+  The result slot has been changed so that input slot item removal happens in onTake(EntityHuman, ItemStack) instead of a(int), solving the first issue.
+  Map locking now happens in-place (ItemWorldMap#lockMap(ItemStack)), meaning that the method does not return a new ItemStack.
+    This allows onTake(EntityHuman, ItemStack) to modify the output item in-place, which helps solve the second issue.
+    Locking in-place is also more consistent since scaling also happens in-place.
+  When the output slot is shift clicked and the map is being locked or scaled, the new map will only be merged in the player's inventory if they have an empty slot.
+    Merging in this case happens after onTake(EntityHuman, ItemStack) is called to allow the in-place locking to happen first.
+    Updating the player's inventory is sometimes necessary because the client thinks that something else happened.
+    This solves the second and third issues.
+  Obfhelpers have been added to makes these changes easier to understand.
+
+diff --git a/src/main/java/net/minecraft/server/Container.java b/src/main/java/net/minecraft/server/Container.java
+index 268bedd042b651514aa94b735876de9c40bae56f..b6d749941631e3f55ad7e06579419cc112d969e9 100644
+--- a/src/main/java/net/minecraft/server/Container.java
++++ b/src/main/java/net/minecraft/server/Container.java
+@@ -565,6 +565,7 @@ public abstract class Container {
+ 
+     public abstract boolean canUse(EntityHuman entityhuman);
+ 
++    protected boolean mergeItemStack(ItemStack itemstack, int i, int j, boolean flag) { return a(itemstack, i, j, flag); } // Paper - OBFHELPER
+     protected boolean a(ItemStack itemstack, int i, int j, boolean flag) {
+         boolean flag1 = false;
+         int k = i;
+diff --git a/src/main/java/net/minecraft/server/ContainerAccess.java b/src/main/java/net/minecraft/server/ContainerAccess.java
+index 6ba10d61a1825ff6a5b083d19176ce922fa36d56..3020a15b6e75db40b13ebb7919fcac5f47247d4b 100644
+--- a/src/main/java/net/minecraft/server/ContainerAccess.java
++++ b/src/main/java/net/minecraft/server/ContainerAccess.java
+@@ -54,6 +54,7 @@ public interface ContainerAccess {
+         return this.a(bifunction).orElse(t0);
+     }
+ 
++    default void consume(BiConsumer<World, BlockPosition> biconsumer) { this.a(biconsumer); } // Paper - OBFHELPER
+     default void a(BiConsumer<World, BlockPosition> biconsumer) {
+         this.a((world, blockposition) -> {
+             biconsumer.accept(world, blockposition);
+diff --git a/src/main/java/net/minecraft/server/ContainerCartography.java b/src/main/java/net/minecraft/server/ContainerCartography.java
+index 79d328786f2e9ba386cb297bb8e7ec0ec3228a65..b7a6d5b8d8f417d4ff7f128db52ceced71681625 100644
+--- a/src/main/java/net/minecraft/server/ContainerCartography.java
++++ b/src/main/java/net/minecraft/server/ContainerCartography.java
+@@ -80,33 +80,29 @@ public class ContainerCartography extends Container {
+ 
+             @Override
+             public ItemStack a(int j) {
+-                ItemStack itemstack = super.a(j);
+-                ItemStack itemstack1 = (ItemStack) containeraccess.a((world, blockposition) -> {
+-                    if (!ContainerCartography.this.e && ContainerCartography.this.inventory.getItem(1).getItem() == Items.dP) {
+-                        ItemStack itemstack2 = ItemWorldMap.a(world, ContainerCartography.this.inventory.getItem(0));
+-
+-                        if (itemstack2 != null) {
+-                            itemstack2.setCount(1);
+-                            return itemstack2;
+-                        }
+-                    }
+-
+-                    return itemstack;
+-                }).orElse(itemstack);
+-
+-                ContainerCartography.this.inventory.splitStack(0, 1);
+-                ContainerCartography.this.inventory.splitStack(1, 1);
+-                return itemstack1;
++                return super.a(j); // Paper - Fix cartography table
+             }
+ 
+             @Override
+             protected void a(ItemStack itemstack, int j) {
+-                this.a(j);
++                //this.a(j); // Paper - Fix cartography table
+                 super.a(itemstack, j);
+             }
+ 
++            public ItemStack onTake(EntityHuman entityhuman, ItemStack itemstack) { return a(entityhuman, itemstack); } // Paper - OBFHELPER
+             @Override
+             public ItemStack a(EntityHuman entityhuman, ItemStack itemstack) {
++                // Paper start - Fix cartography table
++                if (ContainerCartography.this.inventory.getItem(1).getItem() == Items.dP) {
++                    containeraccess.consume((world, blockposition) -> {
++                        ItemWorldMap.lockMap(world, itemstack);
++                    });
++                }
++
++                ContainerCartography.this.inventory.splitStack(0, 1);
++                ContainerCartography.this.inventory.splitStack(1, 1);
++                // Paper end
++
+                 itemstack.getItem().b(itemstack, entityhuman.world, entityhuman);
+                 containeraccess.a((world, blockposition) -> {
+                     long j = world.getTime();
+@@ -211,26 +207,23 @@ public class ContainerCartography extends Container {
+             Item item = itemstack1.getItem();
+ 
+             itemstack = itemstack1.cloneItemStack();
++            boolean mergeLater = false; // Paper - Fix cartography table
+             if (i == 2) {
+-                if (this.inventory.getItem(1).getItem() == Items.dP) {
+-                    itemstack2 = (ItemStack) this.containerAccess.a((world, blockposition) -> {
+-                        ItemStack itemstack3 = ItemWorldMap.a(world, this.inventory.getItem(0));
+-
+-                        if (itemstack3 != null) {
+-                            itemstack3.setCount(1);
+-                            return itemstack3;
+-                        } else {
+-                            return itemstack1;
++                // Paper start - Fix cartography table
++                if (this.inventory.getItem(1).getItem() != Items.MAP) {
++                    if (entityhuman.inventory.getFirstEmptySlotIndex() == -1) {
++                        if (entityhuman instanceof EntityPlayer) {
++                            ((EntityPlayer) entityhuman).updateInventory(this);
+                         }
+-                    }).orElse(itemstack1);
+-                }
+-
+-                item.b(itemstack2, entityhuman.world, entityhuman);
+-                if (!this.a(itemstack2, 3, 39, true)) {
+-                    return ItemStack.b;
++                        return ItemStack.NULL_ITEM;
++                    }
++                    mergeLater = true;
++                } else {
++                    if (!this.mergeItemStack(itemstack2, 3, 39, true)) {
++                        return ItemStack.NULL_ITEM;
++                    }
+                 }
+-
+-                slot.a(itemstack2, itemstack);
++                // Paper end
+             } else if (i != 1 && i != 0) {
+                 if (item == Items.FILLED_MAP) {
+                     if (!this.a(itemstack1, 0, 1, false)) {
+@@ -251,19 +244,34 @@ public class ContainerCartography extends Container {
+                 return ItemStack.b;
+             }
+ 
++            // Paper start - Fix cartography table
++            slot.a(entityhuman, itemstack2);
++            if (mergeLater) {
++                if (!this.mergeItemStack(itemstack2, 3, 39, true)) {
++                    return ItemStack.NULL_ITEM;
++                }
++                if (entityhuman instanceof EntityPlayer) {
++                    ((EntityPlayer) entityhuman).updateInventory(this);
++                }
++            }
++            // Paper end
++
+             if (itemstack2.isEmpty()) {
+                 slot.set(ItemStack.b);
+             }
+ 
+             slot.d();
++            this.notifyListeners(); // Paper - Fix cartography table
+             if (itemstack2.getCount() == itemstack.getCount()) {
+                 return ItemStack.b;
+             }
+ 
+-            this.e = true;
+-            slot.a(entityhuman, itemstack2);
+-            this.e = false;
+-            this.c();
++            // Paper start - Fix cartography table
++            //this.e = true;
++            //slot.a(entityhuman, itemstack2);
++            //this.e = false;
++            //this.c();
++            // Paper end
+         }
+ 
+         return itemstack;
+diff --git a/src/main/java/net/minecraft/server/ItemWorldMap.java b/src/main/java/net/minecraft/server/ItemWorldMap.java
+index faa556d4358bc9890ae80c18ee10c38a8d46548e..fee2f25cace9e67ca4a081a5850772e0a87752e6 100644
+--- a/src/main/java/net/minecraft/server/ItemWorldMap.java
++++ b/src/main/java/net/minecraft/server/ItemWorldMap.java
+@@ -374,6 +374,16 @@ public class ItemWorldMap extends ItemWorldMapBase {
+         }
+     }
+ 
++    // Paper start - Fix cartography table
++    public static void lockMap(World world, ItemStack itemstack) {
++        WorldMap worldmap = getSavedMap(itemstack, world);
++        if (worldmap != null) {
++            WorldMap worldmap1 = a(itemstack, world, 0, 0, worldmap.scale, worldmap.track, worldmap.unlimitedTracking, worldmap.map);
++            worldmap1.a(worldmap);
++        }
++    }
++    // Paper end
++
+     @Override
+     public EnumInteractionResult a(ItemActionContext itemactioncontext) {
+         IBlockData iblockdata = itemactioncontext.getWorld().getType(itemactioncontext.getClickPosition());
