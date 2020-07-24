@@ -366,6 +366,19 @@ public class Vector implements Cloneable, ConfigurationSerializable {
     }
 
     /**
+     * Converts each component of value <code>-0.0</code> to <code>0.0</code>.
+     *
+     * @return This vector.
+     */
+    @NotNull
+    Vector normalizeZeros() {
+        if (x == -0.0D) x = 0.0D;
+        if (y == -0.0D) y = 0.0D;
+        if (z == -0.0D) z = 0.0D;
+        return this;
+    }
+
+    /**
      * Returns whether this vector is in an axis-aligned bounding box.
      * <p>
      * The minimum and maximum vectors given must be truly the minimum and

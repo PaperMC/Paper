@@ -844,12 +844,14 @@ public class BoundingBox implements Cloneable, ConfigurationSerializable {
         double startZ = start.getZ();
 
         // ray direction:
-        Vector dir = direction.clone().normalize();
+        Vector dir = direction.clone().normalizeZeros().normalize();
         double dirX = dir.getX();
         double dirY = dir.getY();
         double dirZ = dir.getZ();
 
         // saving a few divisions below:
+        // Note: If one of the direction vector components is 0.0, these
+        // divisions result in infinity. But this is not a problem.
         double divX = 1.0D / dirX;
         double divY = 1.0D / dirY;
         double divZ = 1.0D / dirZ;
