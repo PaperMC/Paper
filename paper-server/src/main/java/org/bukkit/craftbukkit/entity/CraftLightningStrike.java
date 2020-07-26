@@ -66,4 +66,23 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
         return this.spigot;
     }
     // Spigot end
+
+    // Paper start
+    @Override
+    public int getFlashCount() {
+        return getHandle().flashes;
+    }
+
+    @Override
+    public void setFlashCount(int flashes) {
+        com.google.common.base.Preconditions.checkArgument(flashes >= 0, "Flashes has to be a positive number!");
+        getHandle().flashes = flashes;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Entity getCausingEntity() {
+        final var cause = this.getHandle().getCause();
+        return cause == null ? null : cause.getBukkitEntity();
+    }
+    // Paper end
 }
