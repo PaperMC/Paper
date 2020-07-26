@@ -2592,6 +2592,7 @@ public class CraftWorld implements World {
             lightning.teleportAndSync( loc.getX(), loc.getY(), loc.getZ() );
             lightning.isEffect = true;
             lightning.isSilent = isSilent;
+            world.strikeLightning( lightning );
             return (LightningStrike) lightning.getBukkitEntity();
         }
     };
