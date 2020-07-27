@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 27 Jul 2020 14:02:20 -0700
+Subject: [PATCH] fixup! Optimise TickListServer by rewriting it
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
+index 0692fe33bb7c4a7bb666920b10f5dd3a0e7a7689..f26940e19c348a201de0840f0f602afb6624a642 100644
+--- a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
++++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
+@@ -5,7 +5,6 @@ import net.minecraft.server.MinecraftServer;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
+-import net.minecraft.server.BaseBlockPosition;
+ import net.minecraft.server.BlockPosition;
+ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkProviderServer;
+@@ -29,7 +28,6 @@ import java.util.List;
+ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.function.Predicate;
+-import java.util.stream.Stream;
+ 
+ public final class PaperTickList<T> extends TickListServer<T> { // extend to avoid breaking ABI
+ 
+@@ -266,6 +264,8 @@ public final class PaperTickList<T> extends TickListServer<T> { // extend to avo
+         }
+     }
+ 
++    private boolean warnedAboutDesync;
++
+     @Override
+     public void tick() {
+         final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
+@@ -278,7 +278,14 @@ public final class PaperTickList<T> extends TickListServer<T> { // extend to avo
+         // this must be done here in case something schedules in the tick code
+         this.shortScheduled[this.shortScheduledIndex].clear();
+         this.shortScheduledIndex = getNextIndex(this.shortScheduledIndex, SHORT_SCHEDULE_TICK_THRESHOLD);
+-        this.nextTick = this.world.getTime() + 1;
++        ++this.nextTick;
++        if (this.nextTick != this.world.getTime()) {
++            if (!this.warnedAboutDesync) {
++                this.warnedAboutDesync = true;
++                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.nextTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
++                MinecraftServer.LOGGER.error("Preventing redstone from breaking by refusing to accept new tick time");
++            }
++        }
+ 
+         this.timingCleanup.stopTiming();
+         this.world.getMethodProfiler().exitEnter("ticking");
+diff --git a/src/main/java/net/minecraft/server/TickListChunk.java b/src/main/java/net/minecraft/server/TickListChunk.java
+index f94234b0a247e378ff9056d6c418464d619a356b..e836b4eac97db322d1185794b5e853f474556a13 100644
+--- a/src/main/java/net/minecraft/server/TickListChunk.java
++++ b/src/main/java/net/minecraft/server/TickListChunk.java
+@@ -57,6 +57,8 @@ public class TickListChunk<T> implements TickList<T> {
+         return nbttaglist;
+     }
+ 
++    private static final int MAX_TICK_DELAY = Integer.getInteger("paper.ticklist-max-tick-delay", -1).intValue(); // Paper - clean up broken entries
++
+     public static <T> TickListChunk<T> a(NBTTagList nbttaglist, Function<T, MinecraftKey> function, Function<MinecraftKey, T> function1) {
+         List<TickListChunk.a<T>> list = Lists.newArrayList();
+ 
+@@ -67,7 +69,13 @@ public class TickListChunk<T> implements TickList<T> {
+             if (t0 != null) {
+                 BlockPosition blockposition = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
+ 
+-                list.add(new TickListChunk.a<>(t0, blockposition, nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p"))));
++                // Paper start - clean up broken entries
++                int delay = nbttagcompound.getInt("t");
++                if (MAX_TICK_DELAY > 0 && delay > MAX_TICK_DELAY) {
++                    continue;
++                }
++                list.add(new TickListChunk.a<>(t0, blockposition, delay, TickListPriority.a(nbttagcompound.getInt("p"))));
++                // Paper end - clean up broken entries
+             }
+         }
+ 
