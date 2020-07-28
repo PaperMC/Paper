@@ -61,10 +61,10 @@ index 74295466e53db06d0d019a13768f3575ac61d699..f1b41e16c8ce8323a896339c5d822f8f
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533dabf8a1603
+index 0000000000000000000000000000000000000000..1587424c88fa3fbfc5e41e2232160abbdf6c9d9b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -0,0 +1,630 @@
+@@ -0,0 +1,634 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
 +import net.minecraft.server.MCUtil;
@@ -138,7 +138,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +    }
 +    private int shortScheduledIndex;
 +
-+    private long nextTick;
++    private long currentTick;
 +
 +    private static final boolean WARN_ON_EXCESSIVE_DELAY = Boolean.getBoolean("paper.ticklist-warn-on-excessive-delay");
 +    private static final long EXCESSIVE_DELAY_THRESHOLD = Long.getLong("paper.ticklist-excessive-delay-threshold", 60 * 20).longValue(); // 1 min dfl
@@ -165,7 +165,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Cleanup"); // Paper
 +        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Ticking"); // Paper
 +        this.timingFinished = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Finish");
-+        this.nextTick = this.world.getTime();
++        this.currentTick = this.world.getTime();
 +    }
 +
 +    private void queueEntryForTick(final NextTickListEntry<T> entry, final ChunkProviderServer chunkProvider) {
@@ -187,7 +187,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +    }
 +
 +    private void addToSchedule(final NextTickListEntry<T> entry) {
-+        long delay = entry.getTargetTick() - this.nextTick;
++        long delay = entry.getTargetTick() - (this.currentTick + 1);
 +        if (delay < SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            if (delay < 0) {
 +                // longScheduled orders by tick time, short scheduled does not
@@ -248,7 +248,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +            }
 +        }
 +
-+        long delay = entry.getTargetTick() - this.nextTick;
++        long delay = entry.getTargetTick() - (this.currentTick + 1);
 +        if (delay >= SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            this.longScheduled.remove(entry);
 +        }
@@ -268,7 +268,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +    }
 +
 +    private void prepare() {
-+        final long currentTick = this.nextTick;
++        final long currentTick = this.currentTick;
 +
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
@@ -336,15 +336,19 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +    private boolean warnedAboutDesync;
 +
 +    @Override
-+    public void tick() {
-+        ++this.nextTick;
-+        if (this.nextTick != this.world.getTime()) {
++    protected void nextTick() {
++        ++this.currentTick;
++        if (this.currentTick != this.world.getTime()) {
 +            if (!this.warnedAboutDesync) {
 +                this.warnedAboutDesync = true;
-+                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.nextTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
++                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.currentTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
 +                MinecraftServer.LOGGER.error("Preventing redstone from breaking by refusing to accept new tick time");
 +            }
 +        }
++    }
++
++    @Override
++    public void tick() {
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
 +        this.world.getMethodProfiler().enter("cleaning");
@@ -481,7 +485,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +
 +    @Override
 +    public void schedule(BlockPosition blockPosition, T t, int i, TickListPriority tickListPriority) {
-+        this.schedule(blockPosition, t, i + this.nextTick, tickListPriority);
++        this.schedule(blockPosition, t, i + this.currentTick, tickListPriority);
 +    }
 +
 +    public void schedule(final NextTickListEntry<T> entry) {
@@ -495,7 +499,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +        }
 +
 +        if (WARN_ON_EXCESSIVE_DELAY) {
-+            final long delay = entry.getTargetTick() - this.nextTick;
++            final long delay = entry.getTargetTick() - this.currentTick;
 +            if (delay >= EXCESSIVE_DELAY_THRESHOLD) {
 +                MinecraftServer.LOGGER.warn("Entry " + entry.toString() + " has been scheduled with an excessive delay of: " + delay, new Throwable());
 +            }
@@ -657,7 +661,7 @@ index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533da
 +        // start copy from TickListServer  // TODO check on update
 +        List<NextTickListEntry<T>> list = this.getEntriesInChunk(chunkcoordintpair, false, true);
 +
-+        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.nextTick);
++        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.currentTick);
 +        // end copy from TickListServer
 +    }
 +
@@ -1076,12 +1080,17 @@ index eb526530fba30c313482355b74a01258b9b79410..485a029790ea91e61c2bb1a43d75317e
          }
  
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
-index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5dc98b8166 100644
+index f533860bbed19ff2915c90186c259b466f41ce90..2888ff74ba1e8e9b29f6e521f7eabc37a5b62920 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java
 +++ b/src/main/java/net/minecraft/server/TickListServer.java
-@@ -42,6 +42,11 @@ public class TickListServer<T> implements TickList<T> {
+@@ -41,7 +41,16 @@ public class TickListServer<T> implements TickList<T> {
+     private final co.aikar.timings.Timing timingTicking; // Paper
      // Paper end
  
++    // Paper start
++    protected void nextTick() {}
++    // Paper end
++
      public void b() {
 +        // Paper start - allow overriding
 +        this.tick();
@@ -1091,7 +1100,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          int i = this.nextTickList.size();
  
          if (false) { // CraftBukkit
-@@ -109,15 +114,30 @@ public class TickListServer<T> implements TickList<T> {
+@@ -109,15 +118,30 @@ public class TickListServer<T> implements TickList<T> {
  
      @Override
      public boolean b(BlockPosition blockposition, T t0) {
@@ -1122,7 +1131,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          int i = (chunkcoordintpair.x << 4) - 2;
          int j = i + 16 + 2;
          int k = (chunkcoordintpair.z << 4) - 2;
-@@ -127,6 +147,11 @@ public class TickListServer<T> implements TickList<T> {
+@@ -127,6 +151,11 @@ public class TickListServer<T> implements TickList<T> {
      }
  
      public List<NextTickListEntry<T>> a(StructureBoundingBox structureboundingbox, boolean flag, boolean flag1) {
@@ -1134,7 +1143,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          List<NextTickListEntry<T>> list = this.a((List) null, this.nextTickList, structureboundingbox, flag);
  
          if (flag && list != null) {
-@@ -166,6 +191,11 @@ public class TickListServer<T> implements TickList<T> {
+@@ -166,6 +195,11 @@ public class TickListServer<T> implements TickList<T> {
      }
  
      public void a(StructureBoundingBox structureboundingbox, BlockPosition blockposition) {
@@ -1146,7 +1155,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          List<NextTickListEntry<T>> list = this.a(structureboundingbox, false, false);
          Iterator iterator = list.iterator();
  
-@@ -183,11 +213,17 @@ public class TickListServer<T> implements TickList<T> {
+@@ -183,11 +217,17 @@ public class TickListServer<T> implements TickList<T> {
      }
  
      public NBTTagList a(ChunkCoordIntPair chunkcoordintpair) {
@@ -1164,7 +1173,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
      public static <T> NBTTagList a(Function<T, MinecraftKey> function, Iterable<NextTickListEntry<T>> iterable, long i) {
          NBTTagList nbttaglist = new NBTTagList();
          Iterator iterator = iterable.iterator();
-@@ -210,11 +246,21 @@ public class TickListServer<T> implements TickList<T> {
+@@ -210,11 +250,21 @@ public class TickListServer<T> implements TickList<T> {
  
      @Override
      public boolean a(BlockPosition blockposition, T t0) {
@@ -1186,7 +1195,7 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          if (!this.a.test(t0)) {
              this.a(new NextTickListEntry<>(blockposition, t0, (long) i + this.f.getTime(), ticklistpriority));
          }
-@@ -230,6 +276,11 @@ public class TickListServer<T> implements TickList<T> {
+@@ -230,6 +280,11 @@ public class TickListServer<T> implements TickList<T> {
      }
  
      public int a() {
@@ -1198,6 +1207,21 @@ index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5d
          return this.nextTickListHash.size();
      }
  }
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index a52d8a27cee6721c32444d9d2bd81135b7d4b859..cbcd41108cda2294275d1843bc24b681145b4767 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1380,7 +1380,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     protected void a() {
+-        this.a(this.worldData.getTime() + 1L);
++        this.a(this.worldData.getTime() + 1L); // Paper - diff on change, we want the below to be ran right after this
++        ((TickListServer)this.getBlockTickList()).nextTick(); // Paper
++        ((TickListServer)this.getFluidTickList()).nextTick(); // Paper
+         if (this.worldData.v().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
+             this.setDayTime(this.worldData.getDayTime() + 1L);
+         }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
 index 7fded15f14a3f5c04a676e9e25413718b9922c13..642b5b485df28149f255ae9b5e43083821b20a0a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
