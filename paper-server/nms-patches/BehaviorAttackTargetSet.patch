@@ -1,0 +1,38 @@
+--- a/net/minecraft/server/BehaviorAttackTargetSet.java
++++ b/net/minecraft/server/BehaviorAttackTargetSet.java
+@@ -4,6 +4,11 @@
+ import java.util.Optional;
+ import java.util.function.Function;
+ import java.util.function.Predicate;
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class BehaviorAttackTargetSet<E extends EntityInsentient> extends Behavior<E> {
+ 
+@@ -33,13 +38,21 @@
+     }
+ 
+     protected void a(WorldServer worldserver, E e0, long i) {
+-        ((Optional) this.c.apply(e0)).ifPresent((entityliving) -> {
++        (this.c.apply(e0)).ifPresent((entityliving) -> { // CraftBukkit - decompile error
+             this.a(e0, entityliving);
+         });
+     }
+ 
+     private void a(E e0, EntityLiving entityliving) {
+-        e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, (Object) entityliving);
++        // CraftBukkit start
++        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(e0, entityliving, (entityliving instanceof EntityPlayer) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
++        if (event.isCancelled()) {
++            return;
++        }
++        entityliving = (event.getTarget() != null) ? ((CraftLivingEntity) event.getTarget()).getHandle() : null;
++        // CraftBukkit end
++
++        e0.getBehaviorController().setMemory(MemoryModuleType.ATTACK_TARGET, entityliving); // CraftBukkit - decompile error
+         e0.getBehaviorController().removeMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
+     }
+ }
