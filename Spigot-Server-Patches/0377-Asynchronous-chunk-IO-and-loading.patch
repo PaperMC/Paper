@@ -199,7 +199,7 @@ index af810987846efcd2bffbd23c31481b2d31c168dd..331493a172f58e71b464d635efdba461
                  doChunkInfo(sender, args);
                  break;
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index f9b1b198299166759fe0bd0a36d8d88c626e06a4..bf86444c479f346e7d56f10a7c0ebefd62f08f59 100644
+index f9b1b198299166759fe0bd0a36d8d88c626e06a4..f4a56028c21427d1164c5777285114a284b5643c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -1,5 +1,6 @@
@@ -218,9 +218,7 @@ index f9b1b198299166759fe0bd0a36d8d88c626e06a4..bf86444c479f346e7d56f10a7c0ebefd
 +    private static void asyncChunks() {
 +        ConfigurationSection section;
 +        if (version < 15) {
-+            boolean enabled = config.getBoolean("settings.async-chunks", true);
 +            section = config.createSection("settings.async-chunks");
-+            section.set("enable", enabled);
 +            section.set("threads", -1);
 +        } else {
 +            section = config.getConfigurationSection("settings.async-chunks");
@@ -236,9 +234,9 @@ index f9b1b198299166759fe0bd0a36d8d88c626e06a4..bf86444c479f346e7d56f10a7c0ebefd
 +            section.set("load-threads", null);
 +        }
 +        section.set("generation", null);
++        section.set("enabled", null);
 +        section.set("thread-per-world-generation", null);
 +
-+        asyncChunks = getBoolean("settings.async-chunks.enable", true);
 +        int threads = getInt("settings.async-chunks.threads", -1);
 +        int cpus = Runtime.getRuntime().availableProcessors();
 +        if (threads <= 0) {
@@ -246,6 +244,8 @@ index f9b1b198299166759fe0bd0a36d8d88c626e06a4..bf86444c479f346e7d56f10a7c0ebefd
 +        }
 +        if (cpus == 1 && !Boolean.getBoolean("Paper.allowAsyncChunksSingleCore")) {
 +            asyncChunks = false;
++        } else {
++            asyncChunks = true;
 +        }
 +
 +        // Let Shared Host set some limits
@@ -3496,7 +3496,7 @@ index 24f3e8a6866bb416f04aca342514fa5dd3d314c8..2021c77c2cc832927de642d3542c3850
          return this.m;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 62a0db6c08047be4ab28f5c23f4ae12694cf003f..70d3b429bfe08f1d2e5a3ac8368d8221770d5307 100644
+index 03ee383bfc3114a3be82d767d376bbf5f41bc5a7..0cba23c2c0880970dbb930caecb91bbc022cb52f 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -544,6 +544,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
