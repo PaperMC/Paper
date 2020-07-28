@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.material.MaterialData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
@@ -115,5 +116,11 @@ public class LegacyTest extends AbstractTestingBase {
         for (Material material : org.bukkit.craftbukkit.util.CraftLegacy.modern_values()) {
             Assert.assertFalse("Must iterate only modern materials", material.isLegacy());
         }
+    }
+
+    @Test
+    public void testManual() {
+        Assert.assertEquals(Material.YELLOW_DYE, CraftMagicNumbers.INSTANCE.getMaterial("dandelion_yellow", 1631));
+        Assert.assertEquals(Material.OAK_WALL_SIGN, CraftMagicNumbers.INSTANCE.getMaterial("wall_sign", 1631));
     }
 }
