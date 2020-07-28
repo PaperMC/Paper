@@ -1030,18 +1030,18 @@ diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
- public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private static final Logger LOGGER = LogManager.getLogger();
--    private final ThreadedMailbox<Runnable> b;
+     private final ThreadedMailbox<Runnable> b;
 -    private final ObjectList<Pair<LightEngineThreaded.Update, Runnable>> c = new ObjectArrayList();
-+    private final ThreadedMailbox<Runnable> b; ThreadedMailbox<Runnable> mailbox; // Paper
+-    private final PlayerChunkMap d;
 +    // Paper start
 +    private static final int MAX_PRIORITIES = PlayerChunkMap.GOLDEN_TICKET + 2;
++    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +    public void changePriority(long pair, int currentPriority, int priority) {
-+        this.mailbox.queue(() -> {
++        this.priorityChanges.add(() -> {
 +            ChunkLightQueue remove = this.queue.buckets[currentPriority].remove(pair);
 +            if (remove != null) {
 +                ChunkLightQueue existing = this.queue.buckets[priority].put(pair, remove);
@@ -1051,6 +1051,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +        });
++    }
++
++    private boolean isChunkLightStatus(long pair) {
++        PlayerChunk playerChunk = playerChunkMap.getUpdatingChunk(pair);
++        if (playerChunk == null) {
++            return false;
++        }
++        ChunkStatus status = PlayerChunk.getChunkStatus(playerChunk.getTicketLevel());
++        return status != null && status.isAtLeastStatus(ChunkStatus.LIGHT);
 +    }
 +
 +    static class ChunkLightQueue {
@@ -1063,7 +1072,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +
 +    // Retain the chunks priority level for queued light tasks
-+    private static class LightQueue {
++    private class LightQueue {
 +        private int size = 0;
 +        private int lowestPriority = MAX_PRIORITIES;
 +        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
@@ -1103,6 +1112,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        public boolean poll(java.util.List<Runnable> pre, java.util.List<Runnable> post) {
++            Runnable run;
++            while ((run = priorityChanges.poll()) != null) {
++                run.run();
++            }
 +            boolean hasWork = false;
 +            it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
 +            while (lowestPriority < MAX_PRIORITIES && !isEmpty()) {
@@ -1128,49 +1141,69 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private final LightQueue queue = new LightQueue();
 +    // Paper end
-     private final PlayerChunkMap d;
++    private final PlayerChunkMap d; private final PlayerChunkMap playerChunkMap; // Paper
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> e;
      private volatile int f = 5;
-@@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
-         super(ilightaccess, true, flag);
-         this.d = playerchunkmap;
-         this.e = mailbox;
--        this.b = threadedmailbox;
-+        this.mailbox = this.b = threadedmailbox; // Paper
-     }
+     private final AtomicBoolean g = new AtomicBoolean();
  
-     public void close() {}
+     public LightEngineThreaded(ILightAccess ilightaccess, PlayerChunkMap playerchunkmap, boolean flag, ThreadedMailbox<Runnable> threadedmailbox, Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailbox) {
+         super(ilightaccess, true, flag);
+-        this.d = playerchunkmap;
++        this.d = playerchunkmap; this.playerChunkMap = d; // Paper
+         this.e = mailbox;
+         this.b = threadedmailbox;
+     }
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
          this.e.a(ChunkTaskQueueSorter.a(() -> {
 -            this.c.add(Pair.of(lightenginethreaded_update, runnable));
 -            if (this.c.size() >= this.f) {
+-                this.b();
+-            }
 +            // Paper start
 +            int priority = intsupplier.getAsInt();
-+            this.queue.add(ChunkCoordIntPair.pair(i, j), priority, lightenginethreaded_update, runnable); // Paper
-+            if (priority <= 25) { // don't auto kick off unless priority
-+                // Paper end
-                 this.b();
-             }
++            this.queue.add(ChunkCoordIntPair.pair(i, j), priority, lightenginethreaded_update, runnable);
++            // Paper end
  
+         }, ChunkCoordIntPair.pair(i, j), intsupplier));
+     }
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+     public CompletableFuture<IChunkAccess> a(IChunkAccess ichunkaccess, boolean flag) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
-         ichunkaccess.b(false);
+-        ichunkaccess.b(false);
 -        this.a(chunkcoordintpair.x, chunkcoordintpair.z, LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
 +        // Paper start
++        //ichunkaccess.b(false); // Don't need to disable this
 +        long pair = chunkcoordintpair.pair();
 +        CompletableFuture<IChunkAccess> future = new CompletableFuture<>();
-+        IntSupplier prioritySupplier = d.getPrioritySupplier(pair);
++        IntSupplier prioritySupplier = playerChunkMap.getPrioritySupplier(pair);
 +        this.e.a(ChunkTaskQueueSorter.a(() -> {
++            // Chunk's no longer needed
++            if (!isChunkLightStatus(pair)) {
++                this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
++                future.complete(ichunkaccess);
++                return;
++            }
++            boolean[] skippedPre = {false};
 +            this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
++                if (!isChunkLightStatus(pair)) {
++                    this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
++                    future.complete(ichunkaccess);
++                    skippedPre[0] = true;
++                    return;
++                }
 +                // Paper end
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
 @@ -0,0 +0,0 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
-             this.d.c(chunkcoordintpair);
+                 });
+             }
+ 
+-            this.d.c(chunkcoordintpair);
++            this.d.c(chunkcoordintpair); // Paper - if change, copy into !isChunkLightStatus above
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
 +            // Paper start  - merge the 2 together
@@ -1178,6 +1211,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return CompletableFuture.supplyAsync(() -> {
 +
 +        this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.POST_UPDATE, () -> {
++            if (skippedPre[0]) return; // Paper - future's already complete
              ichunkaccess.b(true);
              super.b(chunkcoordintpair, false);
 -            return ichunkaccess;
