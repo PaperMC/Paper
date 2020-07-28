@@ -72,7 +72,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
-+import net.minecraft.server.BaseBlockPosition;
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.ChunkCoordIntPair;
 +import net.minecraft.server.ChunkProviderServer;
@@ -96,7 +95,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.function.Consumer;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
-+import java.util.stream.Stream;
 +
 +public final class PaperTickList<T> extends TickListServer<T> { // extend to avoid breaking ABI
 +
@@ -268,7 +266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void prepare() {
-+        final long currentTick = this.world.getTime();
++        final long currentTick = this.nextTick;
 +
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
@@ -333,8 +331,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
++    private boolean warnedAboutDesync;
++
 +    @Override
 +    public void tick() {
++        ++this.nextTick;
++        if (this.nextTick != this.world.getTime()) {
++            if (!this.warnedAboutDesync) {
++                this.warnedAboutDesync = true;
++                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.nextTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
++                MinecraftServer.LOGGER.error("Preventing redstone from breaking by refusing to accept new tick time");
++            }
++        }
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
 +        this.world.getMethodProfiler().enter("cleaning");
@@ -345,7 +353,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // this must be done here in case something schedules in the tick code
 +        this.shortScheduled[this.shortScheduledIndex].clear();
 +        this.shortScheduledIndex = getNextIndex(this.shortScheduledIndex, SHORT_SCHEDULE_TICK_THRESHOLD);
-+        this.nextTick = this.world.getTime() + 1;
 +
 +        this.timingCleanup.stopTiming();
 +        this.world.getMethodProfiler().exitEnter("ticking");
@@ -472,7 +479,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void schedule(BlockPosition blockPosition, T t, int i, TickListPriority tickListPriority) {
-+        this.schedule(blockPosition, t, i + this.world.getTime(), tickListPriority);
++        this.schedule(blockPosition, t, i + this.nextTick, tickListPriority);
 +    }
 +
 +    public void schedule(final NextTickListEntry<T> entry) {
@@ -644,7 +651,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // start copy from TickListServer  // TODO check on update
 +        List<NextTickListEntry<T>> list = this.getEntriesInChunk(chunkcoordintpair, false, true);
 +
-+        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.world.getTime());
++        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.nextTick);
 +        // end copy from TickListServer
 +    }
 +
@@ -1032,6 +1039,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public boolean b(BaseBlockPosition baseblockposition) {
          return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
      }
+diff --git a/src/main/java/net/minecraft/server/TickListChunk.java b/src/main/java/net/minecraft/server/TickListChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TickListChunk.java
++++ b/src/main/java/net/minecraft/server/TickListChunk.java
+@@ -0,0 +0,0 @@ public class TickListChunk<T> implements TickList<T> {
+         return nbttaglist;
+     }
+ 
++    private static final int MAX_TICK_DELAY = Integer.getInteger("paper.ticklist-max-tick-delay", -1).intValue(); // Paper - clean up broken entries
++
+     public static <T> TickListChunk<T> a(NBTTagList nbttaglist, Function<T, MinecraftKey> function, Function<MinecraftKey, T> function1) {
+         List<TickListChunk.a<T>> list = Lists.newArrayList();
+ 
+@@ -0,0 +0,0 @@ public class TickListChunk<T> implements TickList<T> {
+             if (t0 != null) {
+                 BlockPosition blockposition = new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z"));
+ 
+-                list.add(new TickListChunk.a<>(t0, blockposition, nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p"))));
++                // Paper start - clean up broken entries
++                int delay = nbttagcompound.getInt("t");
++                if (MAX_TICK_DELAY > 0 && delay > MAX_TICK_DELAY) {
++                    MinecraftServer.LOGGER.warn("Dropping tick for pos " + blockposition + ", tick delay " + delay);
++                    continue;
++                }
++                list.add(new TickListChunk.a<>(t0, blockposition, delay, TickListPriority.a(nbttagcompound.getInt("p"))));
++                // Paper end - clean up broken entries
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java

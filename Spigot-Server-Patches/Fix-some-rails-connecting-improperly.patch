@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@spottedleaf.dev>
+Date: Fri, 24 Jul 2020 15:56:05 -0700
+Subject: [PATCH] Fix some rails connecting improperly
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockMinecartDetector.java b/src/main/java/net/minecraft/server/BlockMinecartDetector.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockMinecartDetector.java
++++ b/src/main/java/net/minecraft/server/BlockMinecartDetector.java
+@@ -0,0 +0,0 @@ public class BlockMinecartDetector extends BlockMinecartTrackAbstract {
+     }
+ 
+     private void a(World world, BlockPosition blockposition, IBlockData iblockdata) {
++        if (iblockdata.getBlock() != this) { return; } // Paper - not our block, don't do anything
+         boolean flag = (Boolean) iblockdata.get(BlockMinecartDetector.POWERED);
+         boolean flag1 = false;
+         List<EntityMinecartAbstract> list = this.a(world, blockposition, EntityMinecartAbstract.class, (Predicate) null);
+diff --git a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
++++ b/src/main/java/net/minecraft/server/BlockMinecartTrackAbstract.java
+@@ -0,0 +0,0 @@ public abstract class BlockMinecartTrackAbstract extends Block {
+         iblockdata = this.a(world, blockposition, iblockdata, true);
+         if (this.c) {
+             iblockdata.doPhysics(world, blockposition, this, blockposition, flag);
++            iblockdata = world.getType(blockposition); // Paper - don't desync, update again
+         }
+ 
+         return iblockdata;
+diff --git a/src/main/java/net/minecraft/server/MinecartTrackLogic.java b/src/main/java/net/minecraft/server/MinecartTrackLogic.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecartTrackLogic.java
++++ b/src/main/java/net/minecraft/server/MinecartTrackLogic.java
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ 
+ public class MinecartTrackLogic {
+ 
+-    private final World a;
+-    private final BlockPosition b;
++    private final World a; public final World getWorld() { return this.a; } // Paper - OBFHELPER
++    private final BlockPosition b; public final BlockPosition getPos() { return this.b; } // Paper - OBFHELPER
+     private final BlockMinecartTrackAbstract c;
+-    private IBlockData d;
++    private IBlockData d; public final IBlockData getRailState() { return this.d; } // Paper - OBFHELPER
+     private final boolean e;
+     private final List<BlockPosition> f = Lists.newArrayList();
+ 
++    // Paper start - prevent desync
++    public boolean isValid() {
++        return this.getWorld().getType(this.getPos()).getBlock() == this.getRailState().getBlock();
++    }
++    // Paper end - prevent desync
++
+     public MinecartTrackLogic(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         this.a = world;
+         this.b = blockposition;
+@@ -0,0 +0,0 @@ public class MinecartTrackLogic {
+     }
+ 
+     private void c(MinecartTrackLogic minecarttracklogic) {
++        // Paper start - prevent desync
++        if (!this.isValid() || !minecarttracklogic.isValid()) {
++            return;
++        }
++        // Paper end - prevent desync
+         this.f.add(minecarttracklogic.b);
+         BlockPosition blockposition = this.b.north();
+         BlockPosition blockposition1 = this.b.south();
+@@ -0,0 +0,0 @@ public class MinecartTrackLogic {
+         this.d = (IBlockData) this.d.set(this.c.d(), blockpropertytrackposition1);
+         if (flag1 || this.a.getType(this.b) != this.d) {
+             this.a.setTypeAndData(this.b, this.d, 3);
++            // Paper start - prevent desync
++            if (!this.isValid()) {
++                return this;
++            }
++            // Paper end - prevent desync
+ 
+             for (int i = 0; i < this.f.size(); ++i) {
+                 MinecartTrackLogic minecarttracklogic = this.b((BlockPosition) this.f.get(i));
+ 
+-                if (minecarttracklogic != null) {
++                if (minecarttracklogic != null && minecarttracklogic.isValid()) { // Paper - prevent desync
+                     minecarttracklogic.d();
+                     if (minecarttracklogic.b(this)) {
+                         minecarttracklogic.c(this);
+@@ -0,0 +0,0 @@ public class MinecartTrackLogic {
+     }
+ 
+     public IBlockData c() {
+-        return this.d;
++        return this.getWorld().getType(this.getPos()); // Paper - prevent desync
+     }
+ }
