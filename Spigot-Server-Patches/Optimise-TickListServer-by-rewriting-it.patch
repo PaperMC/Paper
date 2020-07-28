@@ -137,7 +137,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    private int shortScheduledIndex;
 +
-+    private long nextTick;
++    private long currentTick;
 +
 +    private static final boolean WARN_ON_EXCESSIVE_DELAY = Boolean.getBoolean("paper.ticklist-warn-on-excessive-delay");
 +    private static final long EXCESSIVE_DELAY_THRESHOLD = Long.getLong("paper.ticklist-excessive-delay-threshold", 60 * 20).longValue(); // 1 min dfl
@@ -163,7 +163,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.timingCleanup = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Cleanup"); // Paper
 +        this.timingTicking = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Ticking"); // Paper
 +        this.timingFinished = co.aikar.timings.WorldTimingsHandler.getTickList(world, timingsType + " - Finish");
-+        this.nextTick = this.world.getTime();
++        this.currentTick = this.world.getTime();
 +    }
 +
 +    private void queueEntryForTick(final NextTickListEntry<T> entry, final ChunkProviderServer chunkProvider) {
@@ -185,7 +185,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void addToSchedule(final NextTickListEntry<T> entry) {
-+        long delay = entry.getTargetTick() - this.nextTick;
++        long delay = entry.getTargetTick() - (this.currentTick + 1);
 +        if (delay < SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            if (delay < 0) {
 +                // longScheduled orders by tick time, short scheduled does not
@@ -246,7 +246,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +
-+        long delay = entry.getTargetTick() - this.nextTick;
++        long delay = entry.getTargetTick() - (this.currentTick + 1);
 +        if (delay >= SHORT_SCHEDULE_TICK_THRESHOLD) {
 +            this.longScheduled.remove(entry);
 +        }
@@ -266,7 +266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void prepare() {
-+        final long currentTick = this.nextTick;
++        final long currentTick = this.currentTick;
 +
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
@@ -334,15 +334,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private boolean warnedAboutDesync;
 +
 +    @Override
-+    public void tick() {
-+        ++this.nextTick;
-+        if (this.nextTick != this.world.getTime()) {
++    protected void nextTick() {
++        ++this.currentTick;
++        if (this.currentTick != this.world.getTime()) {
 +            if (!this.warnedAboutDesync) {
 +                this.warnedAboutDesync = true;
-+                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.nextTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
++                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.currentTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
 +                MinecraftServer.LOGGER.error("Preventing redstone from breaking by refusing to accept new tick time");
 +            }
 +        }
++    }
++
++    @Override
++    public void tick() {
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
 +        this.world.getMethodProfiler().enter("cleaning");
@@ -479,7 +483,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void schedule(BlockPosition blockPosition, T t, int i, TickListPriority tickListPriority) {
-+        this.schedule(blockPosition, t, i + this.nextTick, tickListPriority);
++        this.schedule(blockPosition, t, i + this.currentTick, tickListPriority);
 +    }
 +
 +    public void schedule(final NextTickListEntry<T> entry) {
@@ -493,7 +497,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        if (WARN_ON_EXCESSIVE_DELAY) {
-+            final long delay = entry.getTargetTick() - this.nextTick;
++            final long delay = entry.getTargetTick() - this.currentTick;
 +            if (delay >= EXCESSIVE_DELAY_THRESHOLD) {
 +                MinecraftServer.LOGGER.warn("Entry " + entry.toString() + " has been scheduled with an excessive delay of: " + delay, new Throwable());
 +            }
@@ -651,7 +655,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // start copy from TickListServer  // TODO check on update
 +        List<NextTickListEntry<T>> list = this.getEntriesInChunk(chunkcoordintpair, false, true);
 +
-+        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.nextTick);
++        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.currentTick);
 +        // end copy from TickListServer
 +    }
 +
@@ -1073,8 +1077,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/TickListServer.java
 +++ b/src/main/java/net/minecraft/server/TickListServer.java
 @@ -0,0 +0,0 @@ public class TickListServer<T> implements TickList<T> {
+     private final co.aikar.timings.Timing timingTicking; // Paper
      // Paper end
  
++    // Paper start
++    protected void nextTick() {}
++    // Paper end
++
      public void b() {
 +        // Paper start - allow overriding
 +        this.tick();
@@ -1229,3 +1238,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.navigators = Sets.newHashSet();
          this.L = new ObjectLinkedOpenHashSet();
          this.Q = flag1;
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         if (this.Q) {
+             long i = this.worldData.getTime() + 1L;
+ 
+-            this.worldDataServer.setTime(i);
++            this.worldDataServer.setTime(i); // Paper - diff on change, we want the below to be ran right after this
++            this.nextTickListBlock.nextTick(); // Paper
++            this.nextTickListFluid.nextTick(); // Paper
+             this.worldDataServer.t().a(this.server, i);
+             if (this.worldData.p().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
+                 this.setDayTime(this.worldData.getDayTime() + 1L);
