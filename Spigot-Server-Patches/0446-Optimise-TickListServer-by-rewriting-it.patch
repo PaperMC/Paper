@@ -61,10 +61,10 @@ index 74295466e53db06d0d019a13768f3575ac61d699..f1b41e16c8ce8323a896339c5d822f8f
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8c8759e25
+index 0000000000000000000000000000000000000000..466d4ae811e85fa95bca007ec3f533dabf8a1603
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
-@@ -0,0 +1,622 @@
+@@ -0,0 +1,630 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
 +import net.minecraft.server.MCUtil;
@@ -72,7 +72,6 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
-+import net.minecraft.server.BaseBlockPosition;
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.ChunkCoordIntPair;
 +import net.minecraft.server.ChunkProviderServer;
@@ -269,7 +268,7 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +    }
 +
 +    private void prepare() {
-+        final long currentTick = this.world.getTime();
++        final long currentTick = this.nextTick;
 +
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
@@ -334,8 +333,18 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +        }
 +    }
 +
++    private boolean warnedAboutDesync;
++
 +    @Override
 +    public void tick() {
++        ++this.nextTick;
++        if (this.nextTick != this.world.getTime()) {
++            if (!this.warnedAboutDesync) {
++                this.warnedAboutDesync = true;
++                MinecraftServer.LOGGER.error("World tick desync detected! Expected " + this.nextTick + " ticks, but got " + this.world.getTime() + " ticks for world '" + this.world.getWorld().getName() + "'", new Throwable());
++                MinecraftServer.LOGGER.error("Preventing redstone from breaking by refusing to accept new tick time");
++            }
++        }
 +        final ChunkProviderServer chunkProvider = this.world.getChunkProvider();
 +
 +        this.world.getMethodProfiler().enter("cleaning");
@@ -346,7 +355,6 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +        // this must be done here in case something schedules in the tick code
 +        this.shortScheduled[this.shortScheduledIndex].clear();
 +        this.shortScheduledIndex = getNextIndex(this.shortScheduledIndex, SHORT_SCHEDULE_TICK_THRESHOLD);
-+        this.nextTick = this.world.getTime() + 1;
 +
 +        this.timingCleanup.stopTiming();
 +        this.world.getMethodProfiler().exitEnter("ticking");
@@ -473,7 +481,7 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +
 +    @Override
 +    public void schedule(BlockPosition blockPosition, T t, int i, TickListPriority tickListPriority) {
-+        this.schedule(blockPosition, t, i + this.world.getTime(), tickListPriority);
++        this.schedule(blockPosition, t, i + this.nextTick, tickListPriority);
 +    }
 +
 +    public void schedule(final NextTickListEntry<T> entry) {
@@ -649,7 +657,7 @@ index 0000000000000000000000000000000000000000..ce653f6b4be3ab6c6d35cb3e9222e7f8
 +        // start copy from TickListServer  // TODO check on update
 +        List<NextTickListEntry<T>> list = this.getEntriesInChunk(chunkcoordintpair, false, true);
 +
-+        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.world.getTime());
++        return TickListServer.serialize(this.getMinecraftKeyFrom, list, this.nextTick);
 +        // end copy from TickListServer
 +    }
 +
@@ -883,7 +891,7 @@ index 0000000000000000000000000000000000000000..118988c39e58f28e8a2851792b9c014f
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 3fcfe416d26808fa1c9bfdc5b413b149764c544a..3bf17ccdaef21322b787db538d569e0bc614ef22 100644
+index 9fc34246a845168d158a6b2793d8e344f2d2b008..8c3e09a5a3b4e6c38790735db4b3b316d7cdd39a 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -126,6 +126,7 @@ public class BlockPosition extends BaseBlockPosition implements MinecraftSeriali
@@ -895,7 +903,7 @@ index 3fcfe416d26808fa1c9bfdc5b413b149764c544a..3bf17ccdaef21322b787db538d569e0b
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 6688b1340e2cc8fb13a7e80c9b7c37b8822dcecd..d53b34ba552771bf271131ce0a56ebb992ccc84c 100644
+index e467cd8123dafc46a8c894f1ffa9440de0d45340..9e3471be219b5e061486c8a3e4b638a45e6f28f5 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -200,6 +200,13 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -1037,6 +1045,36 @@ index dbb565e74d211ef35d5d40b3d024e2f07cef9031..185658e230688a9939c89dae9167217c
      public boolean b(BaseBlockPosition baseblockposition) {
          return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
      }
+diff --git a/src/main/java/net/minecraft/server/TickListChunk.java b/src/main/java/net/minecraft/server/TickListChunk.java
+index eb526530fba30c313482355b74a01258b9b79410..485a029790ea91e61c2bb1a43d75317ecf40b317 100644
+--- a/src/main/java/net/minecraft/server/TickListChunk.java
++++ b/src/main/java/net/minecraft/server/TickListChunk.java
+@@ -51,6 +51,8 @@ public class TickListChunk<T> implements TickList<T> {
+         return TickListServer.a(this.b, this.a, i);
+     }
+ 
++    private static final int MAX_TICK_DELAY = Integer.getInteger("paper.ticklist-max-tick-delay", -1).intValue(); // Paper - clean up broken entries
++
+     public static <T> TickListChunk<T> a(NBTTagList nbttaglist, Function<T, MinecraftKey> function, Function<MinecraftKey, T> function1) {
+         Set<NextTickListEntry<T>> set = Sets.newHashSet();
+ 
+@@ -59,7 +61,15 @@ public class TickListChunk<T> implements TickList<T> {
+             T t0 = function1.apply(new MinecraftKey(nbttagcompound.getString("i")));
+ 
+             if (t0 != null) {
+-                set.add(new NextTickListEntry<>(new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z")), t0, (long) nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p"))));
++                // Paper start - clean up broken entries
++                NextTickListEntry<T> pending = new NextTickListEntry<>(new BlockPosition(nbttagcompound.getInt("x"), nbttagcompound.getInt("y"), nbttagcompound.getInt("z")), t0, (long) nbttagcompound.getInt("t"), TickListPriority.a(nbttagcompound.getInt("p")));
++                long delay = pending.getTargetTick();
++                if (MAX_TICK_DELAY > 0 && delay > MAX_TICK_DELAY) {
++                    MinecraftServer.LOGGER.warn("Dropping tick for pos " + pending.getPosition() + ", tick delay " + delay);
++                    continue;
++                }
++                set.add(pending);
++                // Paper end - clean up broken entries
+             }
+         }
+ 
 diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
 index f533860bbed19ff2915c90186c259b466f41ce90..3f1aa5ced697490b5481ba992cf5af5dc98b8166 100644
 --- a/src/main/java/net/minecraft/server/TickListServer.java
