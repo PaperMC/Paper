@@ -1881,7 +1881,7 @@ public class CraftWorld implements World {
 
     @Override
     public File getWorldFolder() {
-        return world.convertable.getWorldFolder(SavedFile.ROOT).toFile();
+        return world.convertable.getWorldFolder(SavedFile.ROOT).toFile().getParentFile();
     }
 
     @Override
