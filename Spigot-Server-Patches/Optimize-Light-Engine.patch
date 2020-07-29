@@ -1038,20 +1038,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private final PlayerChunkMap d;
 +    // Paper start
 +    private static final int MAX_PRIORITIES = PlayerChunkMap.GOLDEN_TICKET + 2;
-+    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
-+
-+    public void changePriority(long pair, int currentPriority, int priority) {
-+        this.priorityChanges.add(() -> {
-+            ChunkLightQueue remove = this.queue.buckets[currentPriority].remove(pair);
-+            if (remove != null) {
-+                ChunkLightQueue existing = this.queue.buckets[priority].put(pair, remove);
-+                if (existing != null) {
-+                    remove.pre.addAll(existing.pre);
-+                    remove.post.addAll(existing.post);
-+                }
-+            }
-+        });
-+    }
 +
 +    private boolean isChunkLightStatus(long pair) {
 +        PlayerChunk playerChunk = playerChunkMap.getUpdatingChunk(pair);
@@ -1070,17 +1056,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ChunkLightQueue(long chunk) {}
 +    }
 +
++    static class PendingChunkLight {
++        long chunkId;
++        int priority;
++        Runnable pre;
++        Runnable post;
++
++        public PendingChunkLight(long chunkId, int priority, Runnable pre, Runnable post) {
++            this.chunkId = chunkId;
++            this.priority = priority;
++            this.pre = pre;
++            this.post = post;
++        }
++    }
++
 +
 +    // Retain the chunks priority level for queued light tasks
-+    private class LightQueue {
++    class LightQueue {
 +        private int size = 0;
 +        private int lowestPriority = MAX_PRIORITIES;
 +        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
++        private final java.util.concurrent.ConcurrentLinkedQueue<PendingChunkLight> pendingChunks = new java.util.concurrent.ConcurrentLinkedQueue<>();
++        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +        private LightQueue() {
 +            for (int i = 0; i < buckets.length; i++) {
 +                buckets[i] = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<>();
 +            }
++        }
++
++        public void changePriority(long pair, int currentPriority, int priority) {
++            this.priorityChanges.add(() -> {
++                ChunkLightQueue remove = this.buckets[currentPriority].remove(pair);
++                if (remove != null) {
++                    ChunkLightQueue existing = this.buckets[priority].put(pair, remove);
++                    if (existing != null) {
++                        remove.pre.addAll(existing.pre);
++                        remove.post.addAll(existing.post);
++                    }
++                }
++                if (this.buckets[priority].containsKey(pair)) {
++                    if (lowestPriority > priority) {
++                        lowestPriority = priority;
++                    }
++                }
++            });
++        }
++
++        public final void addChunk(long chunkId, int priority, Runnable pre, Runnable post) {
++            pendingChunks.add(new PendingChunkLight(chunkId, priority, pre, post));
++            queueUpdate();
 +        }
 +
 +        public final void add(long chunkId, int priority, LightEngineThreaded.Update type, Runnable run) {
@@ -1104,7 +1129,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        public final boolean isEmpty() {
-+            return this.size == 0;
++            return this.size == 0 && this.pendingChunks.isEmpty();
 +        }
 +
 +        public final int size() {
@@ -1112,6 +1137,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        public boolean poll(java.util.List<Runnable> pre, java.util.List<Runnable> post) {
++            PendingChunkLight chunk;
++            while ((chunk = pendingChunks.poll()) != null) {
++                add(chunk.chunkId, chunk.priority, Update.PRE_UPDATE, chunk.pre, true);
++                add(chunk.chunkId, chunk.priority, Update.POST_UPDATE, chunk.post, true);
++            }
 +            Runnable run;
 +            while ((run = priorityChanges.poll()) != null) {
 +                run.run();
@@ -1122,7 +1152,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
 +                if (bucket.isEmpty()) {
 +                    lowestPriority++;
-+                    continue;
++                    if (hasWork && lowestPriority <= 3) {
++                        return true;
++                    } else {
++                        continue;
++                    }
 +                }
 +                ChunkLightQueue queue = bucket.removeFirst();
 +                this.size -= queue.pre.size() + queue.post.size();
@@ -1139,7 +1173,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    private final LightQueue queue = new LightQueue();
++    final LightQueue queue = new LightQueue();
 +    // Paper end
 +    private final PlayerChunkMap d; private final PlayerChunkMap playerChunkMap; // Paper
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> e;
@@ -1179,22 +1213,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        long pair = chunkcoordintpair.pair();
 +        CompletableFuture<IChunkAccess> future = new CompletableFuture<>();
 +        IntSupplier prioritySupplier = playerChunkMap.getPrioritySupplier(pair);
-+        this.e.a(ChunkTaskQueueSorter.a(() -> {
-+            // Chunk's no longer needed
++        boolean[] skippedPre = {false};
++        int priority = prioritySupplier.getAsInt();
++        this.queue.addChunk(pair, priority, SystemUtils.a(() -> {
 +            if (!isChunkLightStatus(pair)) {
 +                this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
 +                future.complete(ichunkaccess);
++                skippedPre[0] = true;
 +                return;
 +            }
-+            boolean[] skippedPre = {false};
-+            this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
-+                if (!isChunkLightStatus(pair)) {
-+                    this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
-+                    future.complete(ichunkaccess);
-+                    skippedPre[0] = true;
-+                    return;
-+                }
-+                // Paper end
++            // Paper end
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
@@ -1206,11 +1234,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.d.c(chunkcoordintpair); // Paper - if change, copy into !isChunkLightStatus above
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
-+            // Paper start  - merge the 2 together
-         }));
+-        }));
 -        return CompletableFuture.supplyAsync(() -> {
-+
-+        this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.POST_UPDATE, () -> {
++            // Paper start  - merge the 2 together
++        }), () -> {
 +            if (skippedPre[0]) return; // Paper - future's already complete
              ichunkaccess.b(true);
              super.b(chunkcoordintpair, false);
@@ -1220,8 +1247,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start
 +            future.complete(ichunkaccess);
          });
-+            queueUpdate(); // run queue now
-+        }, pair, prioritySupplier));
 +        return future;
 +        // Paper end
      }
@@ -1253,15 +1278,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (pair.getFirst() == LightEngineThreaded.Update.PRE_UPDATE) {
 -                ((Runnable) pair.getSecond()).run();
 -            }
-+        int i = Math.min(queue.size(), 4);
-+        boolean ran = false;
-+        while (i-- > 0 && queue.poll(pre, post)) {
++        if (queue.poll(pre, post)) {
 +            pre.forEach(Runnable::run);
 +            pre.clear();
 +            super.a(Integer.MAX_VALUE, true, true);
 +            post.forEach(Runnable::run);
 +            post.clear();
-+            ran = true;
++        } else {
++            // might have level updates to go still
++            super.a(Integer.MAX_VALUE, true, true);
          }
 -
 -        objectlistiterator.back(j);
@@ -1274,10 +1299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -
 -            objectlistiterator.remove();
-+        if (!ran) {
-+            // might have level updates to go still
-+            super.a(Integer.MAX_VALUE, true, true);
-         }
+-        }
 -
 +        // Paper end
      }
@@ -1309,7 +1331,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
              }
              chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
-+            chunkMap.world.getChunkProvider().getLightEngine().changePriority(location.pair(), getCurrentPriority(), priority);
++            chunkMap.world.getChunkProvider().getLightEngine().queue.changePriority(location.pair(), getCurrentPriority(), priority);
          }
          if (getCurrentPriority() != priority) {
              this.v.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
