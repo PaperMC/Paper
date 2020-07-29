@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a ShulkerBox.
  */
-public interface ShulkerBox extends Container, Lootable {
+public interface ShulkerBox extends Container, Lootable, Lidded {
 
     /**
      * Get the {@link DyeColor} corresponding to this ShulkerBox
