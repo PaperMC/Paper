@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import net.minecraft.server.BlockChest;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.ITileInventory;
+import net.minecraft.server.SoundEffects;
 import net.minecraft.server.TileEntityChest;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -53,5 +54,27 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
             inventory = new CraftInventoryDoubleChest((BlockChest.DoubleInventory) nms);
         }
         return inventory;
+    }
+
+    @Override
+    public void open() {
+        requirePlaced();
+        if (!getTileEntity().opened) {
+            net.minecraft.server.Block block = getTileEntity().getBlock().getBlock();
+            getTileEntity().getWorld().playBlockAction(getTileEntity().getPosition(), block, 1, getTileEntity().viewingCount + 1);
+            getTileEntity().a(SoundEffects.BLOCK_CHEST_OPEN);
+        }
+        getTileEntity().opened = true;
+    }
+
+    @Override
+    public void close() {
+        requirePlaced();
+        if (getTileEntity().opened) {
+            net.minecraft.server.Block block = getTileEntity().getBlock().getBlock();
+            getTileEntity().getWorld().playBlockAction(getTileEntity().getPosition(), block, 1, 0);
+            getTileEntity().a(SoundEffects.BLOCK_CHEST_CLOSE);
+        }
+        getTileEntity().opened = false;
     }
 }
