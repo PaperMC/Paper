@@ -139,29 +139,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final boolean hasStopped() {
          synchronized (stopLock) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         // CraftBukkit start - prevent double stopping on multiple threads
-         synchronized(stopLock) {
              if (hasStopped) return;
-+            shutdownThread = Thread.currentThread();
              hasStopped = true;
-+            org.spigotmc.WatchdogThread.doStop(); // Paper
-+            // Paper start - kill main thread, and kill it hard
-+            if (!isMainThread()) {
-+                while (this.getThread().isAlive()) {
-+                    this.getThread().stop();
-+                    try {
-+                        Thread.sleep(1);
-+                    } catch (InterruptedException e) {}
-+                }
-+            }
-+            // Paper end
          }
++        // Paper start - kill main thread, and kill it hard
++        shutdownThread = Thread.currentThread();
++        org.spigotmc.WatchdogThread.doStop(); // Paper
++        if (!isMainThread()) {
++            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)");
++            while (this.getThread().isAlive()) {
++                this.getThread().stop();
++                try {
++                    Thread.sleep(1);
++                } catch (InterruptedException e) {}
++            }
++        }
++        // Paper end
          // CraftBukkit end
--        MinecraftServer.LOGGER.info("Stopping server");
-+        MinecraftServer.LOGGER.info("Stopping server (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PAPER)"); // Paper
+         MinecraftServer.LOGGER.info("Stopping server");
          MinecraftTimings.stopServer(); // Paper
-         // CraftBukkit start
-         if (this.server != null) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().c(false); // Paper
          }
