@@ -1095,10 +1095,10 @@ index 097f58e9ac3f4096d3b9dad75b6ebe76021fa92c..f744f62c93370d096c113f92ee81a823
                                  lightenginelayer.a(Long.MAX_VALUE, l3, 15, false);
                              }
 diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b968b90902 100644
+index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..adda887214df10840daf7c266595f5e3c7c708a2 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-@@ -15,15 +15,119 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -15,15 +15,153 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private static final Logger LOGGER = LogManager.getLogger();
      private final ThreadedMailbox<Runnable> b;
@@ -1106,20 +1106,6 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 -    private final PlayerChunkMap d;
 +    // Paper start
 +    private static final int MAX_PRIORITIES = PlayerChunkMap.GOLDEN_TICKET + 2;
-+    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
-+
-+    public void changePriority(long pair, int currentPriority, int priority) {
-+        this.priorityChanges.add(() -> {
-+            ChunkLightQueue remove = this.queue.buckets[currentPriority].remove(pair);
-+            if (remove != null) {
-+                ChunkLightQueue existing = this.queue.buckets[priority].put(pair, remove);
-+                if (existing != null) {
-+                    remove.pre.addAll(existing.pre);
-+                    remove.post.addAll(existing.post);
-+                }
-+            }
-+        });
-+    }
 +
 +    private boolean isChunkLightStatus(long pair) {
 +        PlayerChunk playerChunk = playerChunkMap.getUpdatingChunk(pair);
@@ -1138,17 +1124,56 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +        ChunkLightQueue(long chunk) {}
 +    }
 +
++    static class PendingChunkLight {
++        long chunkId;
++        int priority;
++        Runnable pre;
++        Runnable post;
++
++        public PendingChunkLight(long chunkId, int priority, Runnable pre, Runnable post) {
++            this.chunkId = chunkId;
++            this.priority = priority;
++            this.pre = pre;
++            this.post = post;
++        }
++    }
++
 +
 +    // Retain the chunks priority level for queued light tasks
-+    private class LightQueue {
++    class LightQueue {
 +        private int size = 0;
 +        private int lowestPriority = MAX_PRIORITIES;
 +        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
++        private final java.util.concurrent.ConcurrentLinkedQueue<PendingChunkLight> pendingChunks = new java.util.concurrent.ConcurrentLinkedQueue<>();
++        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +        private LightQueue() {
 +            for (int i = 0; i < buckets.length; i++) {
 +                buckets[i] = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<>();
 +            }
++        }
++
++        public void changePriority(long pair, int currentPriority, int priority) {
++            this.priorityChanges.add(() -> {
++                ChunkLightQueue remove = this.buckets[currentPriority].remove(pair);
++                if (remove != null) {
++                    ChunkLightQueue existing = this.buckets[priority].put(pair, remove);
++                    if (existing != null) {
++                        remove.pre.addAll(existing.pre);
++                        remove.post.addAll(existing.post);
++                    }
++                }
++                if (this.buckets[priority].containsKey(pair)) {
++                    if (lowestPriority > priority) {
++                        lowestPriority = priority;
++                    }
++                }
++            });
++        }
++
++        public final void addChunk(long chunkId, int priority, Runnable pre, Runnable post) {
++            pendingChunks.add(new PendingChunkLight(chunkId, priority, pre, post));
++            queueUpdate();
 +        }
 +
 +        public final void add(long chunkId, int priority, LightEngineThreaded.Update type, Runnable run) {
@@ -1172,7 +1197,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +        }
 +
 +        public final boolean isEmpty() {
-+            return this.size == 0;
++            return this.size == 0 && this.pendingChunks.isEmpty();
 +        }
 +
 +        public final int size() {
@@ -1180,6 +1205,11 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +        }
 +
 +        public boolean poll(java.util.List<Runnable> pre, java.util.List<Runnable> post) {
++            PendingChunkLight chunk;
++            while ((chunk = pendingChunks.poll()) != null) {
++                add(chunk.chunkId, chunk.priority, Update.PRE_UPDATE, chunk.pre, true);
++                add(chunk.chunkId, chunk.priority, Update.POST_UPDATE, chunk.post, true);
++            }
 +            Runnable run;
 +            while ((run = priorityChanges.poll()) != null) {
 +                run.run();
@@ -1190,7 +1220,11 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +                it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
 +                if (bucket.isEmpty()) {
 +                    lowestPriority++;
-+                    continue;
++                    if (hasWork && lowestPriority <= 3) {
++                        return true;
++                    } else {
++                        continue;
++                    }
 +                }
 +                ChunkLightQueue queue = bucket.removeFirst();
 +                this.size -= queue.pre.size() + queue.post.size();
@@ -1207,7 +1241,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +        }
 +    }
 +
-+    private final LightQueue queue = new LightQueue();
++    final LightQueue queue = new LightQueue();
 +    // Paper end
 +    private final PlayerChunkMap d; private final PlayerChunkMap playerChunkMap; // Paper
      private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> e;
@@ -1221,7 +1255,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
          this.e = mailbox;
          this.b = threadedmailbox;
      }
-@@ -111,10 +215,10 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -111,10 +249,10 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
          this.e.a(ChunkTaskQueueSorter.a(() -> { // Paper - decompile error
@@ -1236,7 +1270,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
  
          }, ChunkCoordIntPair.pair(i, j), intsupplier));
      }
-@@ -133,8 +237,27 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -133,8 +271,21 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
      public CompletableFuture<IChunkAccess> a(IChunkAccess ichunkaccess, boolean flag) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
@@ -1247,26 +1281,20 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +        long pair = chunkcoordintpair.pair();
 +        CompletableFuture<IChunkAccess> future = new CompletableFuture<>();
 +        IntSupplier prioritySupplier = playerChunkMap.getPrioritySupplier(pair);
-+        this.e.a(ChunkTaskQueueSorter.a(() -> {
-+            // Chunk's no longer needed
++        boolean[] skippedPre = {false};
++        int priority = prioritySupplier.getAsInt();
++        this.queue.addChunk(pair, priority, SystemUtils.a(() -> {
 +            if (!isChunkLightStatus(pair)) {
 +                this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
 +                future.complete(ichunkaccess);
++                skippedPre[0] = true;
 +                return;
 +            }
-+            boolean[] skippedPre = {false};
-+            this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.PRE_UPDATE, SystemUtils.a(() -> {
-+                if (!isChunkLightStatus(pair)) {
-+                    this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
-+                    future.complete(ichunkaccess);
-+                    skippedPre[0] = true;
-+                    return;
-+                }
-+                // Paper end
++            // Paper end
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
-@@ -152,55 +275,55 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -152,55 +303,47 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
                  });
              }
  
@@ -1274,11 +1302,10 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +            this.d.c(chunkcoordintpair); // Paper - if change, copy into !isChunkLightStatus above
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
-+            // Paper start  - merge the 2 together
-         }));
+-        }));
 -        return CompletableFuture.supplyAsync(() -> {
-+
-+        this.queue.add(pair, prioritySupplier.getAsInt(), LightEngineThreaded.Update.POST_UPDATE, () -> {
++            // Paper start  - merge the 2 together
++        }), () -> {
 +            if (skippedPre[0]) return; // Paper - future's already complete
              ichunkaccess.b(true);
              super.b(chunkcoordintpair, false);
@@ -1288,8 +1315,6 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 +            // Paper start
 +            future.complete(ichunkaccess);
          });
-+            queueUpdate(); // run queue now
-+        }, pair, prioritySupplier));
 +        return future;
 +        // Paper end
      }
@@ -1321,15 +1346,15 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 -            if (pair.getFirst() == LightEngineThreaded.Update.PRE_UPDATE) {
 -                ((Runnable) pair.getSecond()).run();
 -            }
-+        int i = Math.min(queue.size(), 4);
-+        boolean ran = false;
-+        while (i-- > 0 && queue.poll(pre, post)) {
++        if (queue.poll(pre, post)) {
 +            pre.forEach(Runnable::run);
 +            pre.clear();
 +            super.a(Integer.MAX_VALUE, true, true);
 +            post.forEach(Runnable::run);
 +            post.clear();
-+            ran = true;
++        } else {
++            // might have level updates to go still
++            super.a(Integer.MAX_VALUE, true, true);
          }
 -
 -        objectlistiterator.back(j);
@@ -1342,10 +1367,7 @@ index 8776799de033f02b0f87e9ea7e4a4ce912e94dd4..23352a82852404a294c882ed51b917b9
 -            }
 -
 -            objectlistiterator.remove();
-+        if (!ran) {
-+            // might have level updates to go still
-+            super.a(Integer.MAX_VALUE, true, true);
-         }
+-        }
 -
 +        // Paper end
      }
@@ -1370,14 +1392,14 @@ index 8cedfdd820cc02a76607b53e0b054fc74654f907..a9795394c9b17f9f0ce4c4f9c8f51a48
      private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
      private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 69899c100dd86c6c4795013364472336327ce036..2edb4904d3071aa9de6517c375410b814a45cfbe 100644
+index 69899c100dd86c6c4795013364472336327ce036..df5996aaadfd28c217cc20c8b6b038ff3b5aaf0d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -728,6 +728,7 @@ public class PlayerChunk {
                  ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
              }
              chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
-+            chunkMap.world.getChunkProvider().getLightEngine().changePriority(location.pair(), getCurrentPriority(), priority);
++            chunkMap.world.getChunkProvider().getLightEngine().queue.changePriority(location.pair(), getCurrentPriority(), priority);
          }
          if (getCurrentPriority() != priority) {
              this.w.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
