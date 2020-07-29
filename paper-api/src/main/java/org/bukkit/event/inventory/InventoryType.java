@@ -84,7 +84,7 @@ public enum InventoryType {
     /**
      * A smithing inventory, with 2 CRAFTING slots and 1 RESULT slot
      */
-    SMITHING(3, "Smithing"),
+    SMITHING(3, "Upgrade Gear"),
     /**
      * A beacon inventory, with 1 CRAFTING slot
      */
