@@ -6,7 +6,7 @@ Subject: [PATCH] Send attack SoundEffects only to players who can see the
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 69c0a4c7bfb1c753d544dcd074ad832d3e5ef3a0..eaed020982bd19dab72872849170fa62d75699eb 100644
+index 69c0a4c7bfb1c753d544dcd074ad832d3e5ef3a0..8ea9e23649da37f853478e4e7a9b2542de2a0355 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -1002,6 +1002,15 @@ public abstract class EntityHuman extends EntityLiving {
@@ -15,7 +15,7 @@ index 69c0a4c7bfb1c753d544dcd074ad832d3e5ef3a0..eaed020982bd19dab72872849170fa62
  
 +    // Paper start - send SoundEffect to everyone who can see fromEntity
 +    private static void sendSoundEffect(EntityHuman fromEntity, double x, double y, double z, SoundEffect soundEffect, SoundCategory soundCategory, float volume, float pitch) {
-+        fromEntity.world.sendSoundEffect(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity himself
++        fromEntity.world.playSound(fromEntity, x, y, z, soundEffect, soundCategory, volume, pitch); // This will not send the effect to the entity himself
 +        if (fromEntity instanceof EntityPlayer) {
 +            ((EntityPlayer) fromEntity).playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(soundEffect, soundCategory, x, y, z, volume, pitch));
 +        }
@@ -71,19 +71,3 @@ index 69c0a4c7bfb1c753d544dcd074ad832d3e5ef3a0..eaed020982bd19dab72872849170fa62
                          if (flag4) {
                              entity.extinguish();
                          }
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index f182fb60f572fe6e1f055cdb3ce28581a46783ad..16a87029aaa34601bc312db29925af1b0e568247 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -646,6 +646,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         this.playSound(entityhuman, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, soundeffect, soundcategory, f, f1);
-     }
- 
-+    // Paper start - OBFHELPER
-+    public final void sendSoundEffect(@Nullable EntityHuman fromEntity, double x, double y, double z, SoundEffect soundeffect, SoundCategory soundcategory, float volume, float pitch) {
-+        this.playSound(fromEntity, x, y, z, soundeffect, soundcategory, volume, pitch);
-+    }
-+    // Paper end
-     public abstract void playSound(@Nullable EntityHuman entityhuman, double d0, double d1, double d2, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1);
- 
-     public abstract void playSound(@Nullable EntityHuman entityhuman, Entity entity, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1);
