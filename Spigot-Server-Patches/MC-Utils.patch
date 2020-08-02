@@ -2288,6 +2288,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+         return IntStream.of(new int[]{baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ()});
+     });
+     public static final BaseBlockPosition ZERO = new BaseBlockPosition(0, 0, 0);
+-    private int a;
+-    private int b;
+-    private int e;
++    private int a;public final void setX(final int x) { this.a = x; } // Paper - OBFHELPER
++    private int b;public final void setY(final int y) { this.b = y; } // Paper - OBFHELPER
++    private int e;public final void setZ(final int z) { this.e = z; } // Paper - OBFHELPER
+ 
+     public BaseBlockPosition(int i, int j, int k) {
+         this.a = i;
+@@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
          return this.distanceSquared(iposition.getX(), iposition.getY(), iposition.getZ(), true) < d0 * d0;
      }
  
@@ -2326,7 +2339,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return this.a != null ? this.a.e : Block.a(this.getCollisionShape(iblockaccess, blockposition));
          }
  
-+        public IBlockData getBlockData() { return p(); } // Paper - OBFHELPER
++        public final IBlockData getBlockData() { return p(); } // Paper - OBFHELPER
          protected abstract IBlockData p();
  
          public boolean isAlwaysDestroyable() {
@@ -2338,24 +2351,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return d0 == 0.0D && d1 == 0.0D && d2 == 0.0D ? this : new BlockPosition((double) this.getX() + d0, (double) this.getY() + d1, (double) this.getZ() + d2);
      }
  
-+    public BlockPosition add(int i, int j, int k) {return b(i, j, k);} // Paper - OBFHELPER
++    public final BlockPosition add(int i, int j, int k) {return b(i, j, k);} // Paper - OBFHELPER
      public BlockPosition b(int i, int j, int k) {
          return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
-     }
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
-         return new BlockPosition(this.getY() * baseblockposition.getZ() - this.getZ() * baseblockposition.getY(), this.getZ() * baseblockposition.getX() - this.getX() * baseblockposition.getZ(), this.getX() * baseblockposition.getY() - this.getY() * baseblockposition.getX());
-     }
- 
-+    @Deprecated // We'll replace this...
-+    public BlockPosition asImmutable() { return immutableCopy(); } // Paper - OBFHELPER
-     public BlockPosition immutableCopy() {
-         return this;
      }
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
              return super.a(enumblockrotation).immutableCopy();
          }
  
-+        public BlockPosition.MutableBlockPosition setValues(int i, int j, int k) { return d(i, j, k);} // Paper - OBFHELPER
++        public final BlockPosition.MutableBlockPosition setValues(int i, int j, int k) { return d(i, j, k);} // Paper - OBFHELPER
          public BlockPosition.MutableBlockPosition d(int i, int j, int k) {
              this.o(i);
              this.p(j);
@@ -2363,7 +2367,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return this;
          }
  
-+        public BlockPosition.MutableBlockPosition setValues(double d0, double d1, double d2) { return c(d0, d1, d2);} // Paper - OBFHELPER
++        public final BlockPosition.MutableBlockPosition setValues(double d0, double d1, double d2) { return c(d0, d1, d2);} // Paper - OBFHELPER
          public BlockPosition.MutableBlockPosition c(double d0, double d1, double d2) {
              return this.d(MathHelper.floor(d0), MathHelper.floor(d1), MathHelper.floor(d2));
          }
@@ -2371,36 +2375,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-+        public final void setX(final int x) { super.o(x); } // Paper - OBFHELPER
++        /* // Paper start - comment out useless overrides @Override
          @Override
          public void o(int i) {
              super.o(i);
-         }
- 
-+        public final void setY(final int y) { super.p(y); } // Paper - OBFHELPER
-         @Override
-         public void p(int i) {
+@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
              super.p(i);
          }
  
-+        public final void setZ(final int z) { super.q(z); } // Paper - OBFHELPER
-         @Override
+-        @Override
          public void q(int i) {
              super.q(i);
-@@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
-             return new BlockPosition(this);
          }
-     }
-+
-+    // Paper start
-+    public static class PooledBlockPosition extends BlockPosition.MutableBlockPosition implements AutoCloseable {
-+        @Deprecated
-+        public void close() {}
-+        @Deprecated
-+        public static BlockPosition.PooledBlockPosition acquire() { return new PooledBlockPosition(); }
-+    }
-+    // Paper end
- }
++        */ // Paper end
+ 
+         @Override
+         public BlockPosition immutableCopy() {
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
@@ -2730,8 +2720,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    public static long pair(int i, int j) {
-+    public static long asLong(final BlockPosition pos) { return pair(pos.getX() >> 4, pos.getZ() >> 4); } // Paper - OBFHELPER
-+    public static long asLong(int x, int z) { return pair(x, z); } // Paper - OBFHELPER
++    public static long pair(final BlockPosition pos) { return pair(pos.getX() >> 4, pos.getZ() >> 4); } // Paper - OBFHELPER
 +        public static long pair(int i, int j) {
          return (long) i & 4294967295L | ((long) j & 4294967295L) << 32;
      }
@@ -3001,7 +2990,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return (int) (k >> l & this.d);
      }
  
-+    public long[] getDataBits() { return this.a(); } // Paper - OBFHELPER
++    public final long[] getDataBits() { return this.a(); } // Paper - OBFHELPER
      public long[] a() {
          return this.b;
      }
@@ -3042,7 +3031,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    protected DataBits a;
 -    private DataPalette<T> h;
 -    private int i;
-+    protected DataBits a; protected DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
++    protected DataBits a; public final DataBits getDataBits() { return this.a; } // Paper - OBFHELPER
 +    private DataPalette<T> h; private DataPalette<T> getDataPalette() { return this.h; } // Paper - OBFHELPER
 +    private int i; private int getBitsPerObject() { return this.i; } // Paper - OBFHELPER
      private final ReentrantLock j = new ReentrantLock();
@@ -3198,7 +3187,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-+    public void addTask(R r0) { a(r0); }; // Paper - OBFHELPER
++    public final void addTask(R r0) { a(r0); }; // Paper - OBFHELPER
      public void a(R r0) {
          this.d.add(r0);
          LockSupport.unpark(this.getThread());
