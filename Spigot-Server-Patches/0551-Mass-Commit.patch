@@ -1,0 +1,217 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BuildTools <unconfigured@null.spigotmc.org>
+Date: Wed, 5 Aug 2020 23:24:57 +0800
+Subject: [PATCH] Mass-Commit
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e471e764935e2a89560de56959a782b02e5e8fe1..c73b10f9694108eb5e022e56b4bbfc289fd09482 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -66,7 +66,16 @@ public class PaperWorldConfig {
+         config.addDefault("world-settings.default." + path, def);
+         return (List<T>) config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path));
+     }
+-
++    
++    public boolean disableWitchConversion;
++    public boolean removeAttackCooldown;
++    private void advancedSurvivalSettings() {
++        disableWitchConversion = getBoolean("no-witch-conversions", true);
++        removeAttackCooldown = getBoolean("no-combat-cooldown", true);
++        log("Villagers turning to Witches on Lightning strike: " + disableWitchConversion);
++        log("Disable Attack Cooldown: " + removeAttackCooldown);
++    }
++    
+     private String getString(String path, String def) {
+         config.addDefault("world-settings.default." + path, def);
+         return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
+@@ -78,7 +87,6 @@ public class PaperWorldConfig {
+         cactusMaxHeight = getInt("max-growth-height.cactus", 3);
+         reedMaxHeight = getInt("max-growth-height.reeds", 3);
+         log("Max height for cactus growth " + cactusMaxHeight + ". Max height for reed growth " + reedMaxHeight);
+-
+     }
+ 
+     public double babyZombieMovementModifier;
+@@ -578,14 +586,14 @@ public class PaperWorldConfig {
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+     }
+ 
+-    public boolean disablePillagerPatrols = false;
++    //public boolean disablePillagerPatrols = false; Redundant with the addition of gamerule "doPatrolSpawning"
+     public double patrolSpawnChance = 0.2;
+     public boolean patrolPerPlayerDelay = false;
+     public int patrolDelay = 12000;
+     public boolean patrolPerPlayerStart = false;
+     public int patrolStartDay = 5;
+     private void pillagerSettings() {
+-        disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
++        //disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
+         patrolSpawnChance = getDouble("game-mechanics.pillager-patrols.spawn-chance", patrolSpawnChance);
+         patrolPerPlayerDelay = getBoolean("game-mechanics.pillager-patrols.spawn-delay.per-player", patrolPerPlayerDelay);
+         patrolDelay = getInt("game-mechanics.pillager-patrols.spawn-delay.ticks", patrolDelay);
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index bf019043a9338aca8d91da809f1d5520531386e7..9ac2a6fdc76d974948b0148470b825d17bc733da 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -722,6 +722,10 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+ 
+     @Override
+     public void onLightningStrike(EntityLightning entitylightning) {
++    	if(this.world.paperConfig.disableWitchConversion) {
++    		super.onLightningStrike(entitylightning);
++    		return;
++    	}
+         if (this.world.getDifficulty() != EnumDifficulty.PEACEFUL) {
+             EntityVillager.LOGGER.info("Villager {} was struck by lightning {}.", this, entitylightning);
+             EntityWitch entitywitch = (EntityWitch) EntityTypes.WITCH.a(this.world);
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerPatrol.java b/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
+index 776e54ff472a67f535dfb409e753325a1105bcce..10fd307626921ccde43f35e1992a2731e4d43efd 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
+@@ -10,10 +10,8 @@ public class MobSpawnerPatrol implements MobSpawner {
+ 
+     @Override
+     public int a(WorldServer worldserver, boolean flag, boolean flag1) {
+-        if (worldserver.paperConfig.disablePillagerPatrols || worldserver.paperConfig.patrolSpawnChance == 0) return 0; // Paper
+-        if (!flag) {
+-            return 0;
+-        } else if (!worldserver.getGameRules().getBoolean(GameRules.DO_PATROL_SPAWNING)) {
++        if (/*worldserver.paperConfig.disablePillagerPatrols || */worldserver.paperConfig.patrolSpawnChance == 0) return 0; // Paper
++        if (!worldserver.getGameRules().getBoolean(GameRules.DO_PATROL_SPAWNING)) {
+             return 0;
+         } else {
+             Random random = worldserver.random;
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerTrader.java b/src/main/java/net/minecraft/server/MobSpawnerTrader.java
+index 736b794f8268858e2e63a3aafef328b443386989..2466c10a69baab49289587a8894d52e2f316c780 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerTrader.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerTrader.java
+@@ -41,22 +41,19 @@ public class MobSpawnerTrader implements MobSpawner {
+                 return 0;
+             } else {
+                 this.d = 24000;
+-                if (!worldserver.getGameRules().getBoolean(GameRules.DO_MOB_SPAWNING)) {
++                int i = this.e;
++
++                this.e = MathHelper.clamp(this.e + 25, 25, 75);
++                this.b.h(this.e);
++                if (this.a.nextInt(100) > i) {
+                     return 0;
++                } else if (this.a(worldserver)) {
++                    this.e = 25;
++                    return 1;
+                 } else {
+-                    int i = this.e;
+-
+-                    this.e = MathHelper.clamp(this.e + 25, 25, 75);
+-                    this.b.h(this.e);
+-                    if (this.a.nextInt(100) > i) {
+-                        return 0;
+-                    } else if (this.a(worldserver)) {
+-                        this.e = 25;
+-                        return 1;
+-                    } else {
+-                        return 0;
+-                    }
++                    return 0;
+                 }
++                
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 9382e8f79e8edec8885c629a36e230fbec50e1fb..fea6a29f7d1aa264ff67f5e5df65bd6811c9c82f 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -18,6 +18,8 @@ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.jar.Attributes;
++
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -888,9 +890,15 @@ public abstract class PlayerList {
+         if (isRespawn) {
+             cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn));
+         }
++        
++        if(entityplayer1.world.paperConfig.removeAttackCooldown) {
++        	entityplayer1.getAttributeInstance(GenericAttributes.ATTACK_SPEED).addModifier(new AttributeModifier("DisableCooldown", 2700, AttributeModifier.Operation.ADDITION));
++        }
++        
+         // Paper end
+ 
+         // CraftBukkit end
++        
+         return entityplayer1;
+     }
+ 
+@@ -1010,14 +1018,25 @@ public abstract class PlayerList {
+     public IpBanList getIPBans() {
+         return this.l;
+     }
+-
+-    public void addOp(GameProfile gameprofile) {
+-        this.operators.add(new OpListEntry(gameprofile, this.server.g(), this.operators.b(gameprofile)));
+-        EntityPlayer entityplayer = this.getPlayer(gameprofile.getId());
++    
++    public void setOpLevel(GameProfile profile, int level) {
++    	if(level > 4) {
++    		level = 4;
++    	}
++    	if(level <= 0) {
++    		this.removeOp(profile);
++    		return;
++    	}
++    	this.operators.add(new OpListEntry(profile, level, this.operators.b(profile)));
++        EntityPlayer entityplayer = this.getPlayer(profile.getId());
+ 
+         if (entityplayer != null) {
+             this.d(entityplayer);
+         }
++    }
++
++    public void addOp(GameProfile gameprofile) {
++        this.setOpLevel(gameprofile, this.server.g());
+ 
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index adf918fd757fe3147f897de3ade64a9adf1d3203..754ff9121ec9727e4ffc89d6e74d6bbdea50eeba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -160,12 +160,22 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public GameProfile getProfile() {
+         return getHandle().getProfile();
+     }
+-
++    
++    @Override
++    public int getOpLevel() {
++    	return server.getServer().b(getProfile());
++    }
++    
++    @Override
++	public void setOpLevel(int level) {
++		server.getHandle().setOpLevel(getProfile(), level);
++	}
++    
+     @Override
+     public boolean isOp() {
+         return server.getHandle().isOp(getProfile());
+     }
+-
++    
+     @Override
+     public void setOp(boolean value) {
+         if (value == isOp()) return;
+@@ -2155,4 +2165,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return spigot;
+     }
+     // Spigot end
++
++	
+ }
