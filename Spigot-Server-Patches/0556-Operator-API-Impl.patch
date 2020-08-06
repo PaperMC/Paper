@@ -1,0 +1,183 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BuildTools <unconfigured@null.spigotmc.org>
+Date: Thu, 6 Aug 2020 23:55:39 +0800
+Subject: [PATCH] Operator-API-Impl
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 9382e8f79e8edec8885c629a36e230fbec50e1fb..fda45f3e4588c46d40ccedf5ef1fd1dbc2b70ae3 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1011,6 +1011,19 @@ public abstract class PlayerList {
+         return this.l;
+     }
+ 
++    public void setOPLevel(GameProfile profile, int level) {
++    	if(level > 4) level = 4;
++    	if(level <= 0) {
++    		this.removeOp(profile);
++    		return;
++    	}
++    	this.operators.add(new OpListEntry(profile, level, this.operators.b(profile)));
++    	EntityPlayer entityplayer = this.getPlayer(profile.getId());
++        if (entityplayer != null) {
++            this.d(entityplayer);
++        }
++    }
++
+     public void addOp(GameProfile gameprofile) {
+         this.operators.add(new OpListEntry(gameprofile, this.server.g(), this.operators.b(gameprofile)));
+         EntityPlayer entityplayer = this.getPlayer(gameprofile.getId());
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+index 5770d4183c1b9ab6119a25930283c0235250ed6e..631eb25ef344818e349b401133ecc7f8da61efd5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -525,4 +525,14 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
+             manager.save();
+         }
+     }
++
++	@Override
++	public int getOPLevel() {
++		return server.getServer().b(getProfile());
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		server.getHandle().setOPLevel(getProfile(), level);
++	}
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
+index 17aa866252a95a9d9a22f0b0b98f2f9d2c700bb5..2925415133af82434fbb82efbc80486cc815a93d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftBlockCommandSender.java
+@@ -59,4 +59,14 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
+     public CommandListenerWrapper getWrapper() {
+         return block;
+     }
++
++	@Override
++	public int getOPLevel() {
++		return 4;
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		return;
++	}
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
+index e67da10f9bfbb8125d8fbf34695997ecfebcc484..3c989d0a4a4433f836a4030a2690522fb69c1f11 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
+@@ -86,4 +86,14 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
+         return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
+     }
+     // Paper end
++
++	@Override
++	public int getOPLevel() {
++		return 4;
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		return;
++	}
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
+index 5562a7199f9b73d6af539360d4912d1dbde5d6cf..dc304487cc35a7fc08bc0a8df7cd5991eaa79516 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftRemoteConsoleCommandSender.java
+@@ -51,4 +51,14 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
+         return com.destroystokyo.paper.PaperConfig.consoleHasAllPermissions || super.hasPermission(perm);
+     }
+     // Paper end
++
++	@Override
++	public int getOPLevel() {
++		return 4;
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		return;
++	}
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
+index ce2c5c38c3df124ca1569cbd7cec62a9cf11f3d5..8d43131b2fbe02ab13fc0e97c327f8eb4180d6d2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/ProxiedNativeCommandSender.java
+@@ -129,4 +129,14 @@ public class ProxiedNativeCommandSender implements ProxiedCommandSender {
+        return getCaller().spigot();
+     }
+     // Spigot end
++
++	@Override
++	public int getOPLevel() {
++		return 4;
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		return;
++	}
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index d1df4e5799de4bf0a1fcc6940e2498374cd3db9d..8373daec010b43a3f897e618992f6b9d33817a5a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -915,6 +915,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return getPermissibleBase().isOp();
+     }
+ 
++    @Override
++    public int getOPLevel() {
++    	return 0;
++    }
++
++    @Override
++    public void setOPLevel(int level) {};
++
+     @Override
+     public void setOp(boolean value) {
+         getPermissibleBase().setOp(value);
+@@ -1045,6 +1053,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+                 public void setOp(boolean value) {
+ 
+                 }
++
++				@Override
++				public int getOPLevel() {
++					return 0;
++				}
++
++				@Override
++				public void setOPLevel(int level) {
++
++				}
+             });
+         }
+         return perm;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index adf918fd757fe3147f897de3ade64a9adf1d3203..546cd65b8e235cc6e2e44faa5e7cd3fec0c732b1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -161,6 +161,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return getHandle().getProfile();
+     }
+ 
++    @Override
++	public int getOPLevel() {
++		return server.getServer().b(getProfile());
++	}
++
++	@Override
++	public void setOPLevel(int level) {
++		server.getHandle().setOPLevel(getProfile(), level);
++		perm.recalculatePermissions();
++	}
++
+     @Override
+     public boolean isOp() {
+         return server.getHandle().isOp(getProfile());
