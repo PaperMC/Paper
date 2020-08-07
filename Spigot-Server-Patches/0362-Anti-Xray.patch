@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..b9410e3affed4004548acdc9355ac14d18c4a2c8 100644
+index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..46a726f46b4f2d884d6657ebb49061ff1ae77138 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 @@ -1,7 +1,9 @@
@@ -18,7 +18,7 @@ index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..b9410e3affed4004548acdc9355ac14d
  import org.bukkit.Bukkit;
  import org.bukkit.configuration.file.YamlConfiguration;
  import org.spigotmc.SpigotWorldConfig;
-@@ -455,4 +457,33 @@ public class PaperWorldConfig {
+@@ -455,4 +457,38 @@ public class PaperWorldConfig {
      private void maxAutoSaveChunksPerTick() {
          maxAutoSaveChunksPerTick = getInt("max-auto-save-chunks-per-tick", 24);
      }
@@ -28,6 +28,7 @@ index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..b9410e3affed4004548acdc9355ac14d
 +    public int maxChunkSectionIndex;
 +    public int updateRadius;
 +    public boolean lavaObscures;
++    public boolean usePermission;
 +    public List<String> hiddenBlocks;
 +    public List<String> replacementBlocks;
 +    private void antiXray() {
@@ -38,6 +39,7 @@ index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..b9410e3affed4004548acdc9355ac14d
 +        maxChunkSectionIndex = maxChunkSectionIndex > 15 ? 15 : maxChunkSectionIndex;
 +        updateRadius = getInt("anti-xray.update-radius", 2);
 +        lavaObscures = getBoolean("anti-xray.lava-obscures", false);
++        usePermission = getBoolean("anti-xray.use-permission", false);
 +        hiddenBlocks = getList("anti-xray.hidden-blocks", Arrays.asList("gold_ore", "iron_ore", "coal_ore", "lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "redstone_ore", "clay", "emerald_ore", "ender_chest"));
 +        replacementBlocks = getList("anti-xray.replacement-blocks", Arrays.asList("stone", "oak_planks"));
 +        if (PaperConfig.version < 19) {
@@ -50,19 +52,23 @@ index d1ff673d8b5aafac58b082c9abc9257f0b2dfb15..b9410e3affed4004548acdc9355ac14d
 +            set("anti-xray.replacement-blocks", replacementBlocks);
 +        }
 +        log("Anti-Xray: " + (antiXray ? "enabled" : "disabled") + " / Engine Mode: " + engineMode.getDescription() + " / Up to " + ((maxChunkSectionIndex + 1) * 16) + " blocks / Update Radius: " + updateRadius);
++        if (antiXray && usePermission) {
++            Bukkit.getLogger().warning("You have enabled permission-based Anti-Xray checking - depending on your permission plugin, this may cause performance issues");
++        }
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90742ff43c
+index 0000000000000000000000000000000000000000..2bfab782472b0b4f3a9cbb2b51183f286c314dcf
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockController.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,45 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import net.minecraft.server.BlockPosition;
 +import net.minecraft.server.Chunk;
 +import net.minecraft.server.ChunkSection;
++import net.minecraft.server.EntityPlayer;
 +import net.minecraft.server.EnumDirection;
 +import net.minecraft.server.IBlockData;
 +import net.minecraft.server.IChunkAccess;
@@ -80,6 +86,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +
 +    public IBlockData[] getPredefinedBlockData(World world, IChunkAccess chunk, ChunkSection chunkSection, boolean initializeBlocks) {
 +        return null;
++    }
++
++    public boolean shouldModify(EntityPlayer entityPlayer, Chunk chunk, int chunkSectionSelector) {
++        return false;
 +    }
 +
 +    public ChunkPacketInfo<IBlockData> getChunkPacketInfo(PacketPlayOutMapChunk packetPlayOutMapChunk, Chunk chunk, int chunkSectionSelector) {
@@ -100,10 +110,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac2dd0841dc849c3ceabb5ea899594ae73fb52fc
+index 0000000000000000000000000000000000000000..bba2dbaf9549690d929f546c2a4a845b03e86130
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,615 @@
+@@ -0,0 +1,627 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -127,6 +137,7 @@ index 0000000000000000000000000000000000000000..ac2dd0841dc849c3ceabb5ea899594ae
 +    private final EngineMode engineMode;
 +    private final int maxChunkSectionIndex;
 +    private final int updateRadius;
++    private final boolean usePermission;
 +    private final IBlockData[] predefinedBlockData;
 +    private final IBlockData[] predefinedBlockDataFull;
 +    private final IBlockData[] predefinedBlockDataStone;
@@ -146,6 +157,7 @@ index 0000000000000000000000000000000000000000..ac2dd0841dc849c3ceabb5ea899594ae
 +        engineMode = paperWorldConfig.engineMode;
 +        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
 +        updateRadius = paperWorldConfig.updateRadius;
++        usePermission = paperWorldConfig.usePermission;
 +
 +        this.executor = executor;
 +
@@ -248,6 +260,11 @@ index 0000000000000000000000000000000000000000..ac2dd0841dc849c3ceabb5ea899594ae
 +    }
 +
 +    @Override
++    public boolean shouldModify(EntityPlayer entityPlayer, Chunk chunk, int chunkSectionSelector) {
++        return !usePermission || !entityPlayer.getBukkitEntity().hasPermission("paper.antixray.bypass");
++    }
++
++    @Override
 +    public ChunkPacketInfoAntiXray getChunkPacketInfo(PacketPlayOutMapChunk packetPlayOutMapChunk, Chunk chunk, int chunkSectionSelector) {
 +        // Return a new instance to collect data and objects in the right state while creating the chunk packet for thread safe access later
 +        // Note: As of 1.14 this has to be moved later due to the chunk system.
@@ -257,6 +274,11 @@ index 0000000000000000000000000000000000000000..ac2dd0841dc849c3ceabb5ea899594ae
 +
 +    @Override
 +    public void modifyBlocks(PacketPlayOutMapChunk packetPlayOutMapChunk, ChunkPacketInfo<IBlockData> chunkPacketInfo) {
++        if (chunkPacketInfo == null) {
++            packetPlayOutMapChunk.setReady(true);
++            return;
++        }
++
 +        if (!Bukkit.isPrimaryThread()) {
 +            // plugins?
 +            MinecraftServer.getServer().scheduleOnMain(() -> {
@@ -1211,7 +1233,7 @@ index f4c1b8d32b239c44e70d3fa6d094b74955f75339..ed77117630d54b7ad81f633110c7d2a7
  
          if (this.h == this.b) {
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
-index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c047d9cfa 100644
+index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..b9276928a58d56ca9aac95d262d8555522946bd7 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 +++ b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 @@ -1,5 +1,6 @@
@@ -1236,15 +1258,20 @@ index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c
      // Paper start
      private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
      private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
-@@ -32,6 +39,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -31,7 +38,11 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+         return extraPackets;
      }
      // Paper end
-     public PacketPlayOutMapChunk(Chunk chunk, int i) {
-+        ChunkPacketInfo<IBlockData> chunkPacketInfo = chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i); // Paper - Anti-Xray - Add chunk packet info
+-    public PacketPlayOutMapChunk(Chunk chunk, int i) {
++    // Paper start - Anti-Xray - Add chunk packet info
++    @Deprecated public PacketPlayOutMapChunk(Chunk chunk, int i) { this(chunk, i, true); } // Notice for updates: Please make sure this constructor isn't used anywhere
++    public PacketPlayOutMapChunk(Chunk chunk, int i, boolean modifyBlocks) {
++        ChunkPacketInfo<IBlockData> chunkPacketInfo = modifyBlocks ? chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i) : null;
++        // Paper end
          ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
  
          this.a = chunkcoordintpair.x;
-@@ -54,7 +62,12 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -54,7 +65,12 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          }
  
          this.f = new byte[this.a(chunk, i)];
@@ -1258,7 +1285,7 @@ index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c
          this.g = Lists.newArrayList();
          iterator = chunk.getTileEntities().entrySet().iterator();
          int totalTileEntities = 0; // Paper
-@@ -81,8 +94,19 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -81,8 +97,19 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
                  this.g.add(nbttagcompound);
              }
          }
@@ -1278,7 +1305,7 @@ index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c
  
      @Override
      public void a(PacketDataSerializer packetdataserializer) throws IOException {
-@@ -148,8 +172,12 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -148,8 +175,12 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          return bytebuf;
      }
  
@@ -1293,7 +1320,7 @@ index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
          int k = 0;
-@@ -159,7 +187,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+@@ -159,7 +190,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
  
              if (chunksection != Chunk.a && (!this.f() || !chunksection.c()) && (i & 1 << k) != 0) {
                  j |= 1 << k;
@@ -1303,7 +1330,7 @@ index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c
          }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index c4ed4d58f7b344626acb13baeb14288970a7bb90..8e79200b23f2dee612b0cbdcd6359a25dc2323cb 100644
+index c4ed4d58f7b344626acb13baeb14288970a7bb90..325532e1585beefe1cb341580e0bb3e95020b6fe 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -609,7 +609,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -1314,6 +1341,18 @@ index c4ed4d58f7b344626acb13baeb14288970a7bb90..8e79200b23f2dee612b0cbdcd6359a25
 +            return Either.left(new ProtoChunk(chunkcoordintpair, ChunkConverter.a, this.world)); // Paper - Anti-Xray - Add parameter
          }, this.executor);
      }
+ 
+@@ -1349,9 +1349,10 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+ 
+     }
+ 
++    private final void sendChunk(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) { this.a(entityplayer, apacket, chunk); } // Paper - OBFHELPER
+     private void a(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) {
+         if (apacket[0] == null) {
+-            apacket[0] = new PacketPlayOutMapChunk(chunk, 65535);
++            apacket[0] = new PacketPlayOutMapChunk(chunk, 65535, chunk.world.chunkPacketBlockController.shouldModify(entityplayer, chunk, 65535)); // Paper - Anti-Xray - Bypass
+             apacket[1] = new PacketPlayOutLightUpdate(chunk.getPos(), this.lightEngine, true);
+         }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 index 3056468a7e70238228b91be0f103cfbe111fedb5..cdaeeb8b01f084ae7a91f9681850a737af8a74be 100644
