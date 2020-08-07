@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheShermanTanker <tanksherman27@gmail.com>
+Date: Fri, 7 Aug 2020 20:53:44 +0800
+Subject: [PATCH] Updated-Paper-Config
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e471e764935e2a89560de56959a782b02e5e8fe1..d806ab16178b3b85aea55142aeaef9b103516cc1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -72,6 +72,14 @@ public class PaperWorldConfig {
+         return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
+     }
+ 
++    public boolean removeAttackCooldown;
++    public boolean enableAdvancedSurvivalMode;
++    private void advancedSurvivalSettings() {
++    	removeAttackCooldown = getBoolean("game-mechanics.disable-attack-cooldown", true);
++    	enableAdvancedSurvivalMode = getBoolean("game-mechanics.enhanced-survival-mode", true);
++    	log("Attack Cooldown is Disabled: " + removeAttackCooldown);
++    }
++
+     public int cactusMaxHeight;
+     public int reedMaxHeight;
+     private void blockGrowthHeight() {
+@@ -578,14 +586,12 @@ public class PaperWorldConfig {
+         generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
+     }
+ 
+-    public boolean disablePillagerPatrols = false;
+     public double patrolSpawnChance = 0.2;
+     public boolean patrolPerPlayerDelay = false;
+     public int patrolDelay = 12000;
+     public boolean patrolPerPlayerStart = false;
+     public int patrolStartDay = 5;
+-    private void pillagerSettings() {
+-        disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
++    private void pillagerSettings() { //Paper - Removed redundant option to disable Patrols
+         patrolSpawnChance = getDouble("game-mechanics.pillager-patrols.spawn-chance", patrolSpawnChance);
+         patrolPerPlayerDelay = getBoolean("game-mechanics.pillager-patrols.spawn-delay.per-player", patrolPerPlayerDelay);
+         patrolDelay = getInt("game-mechanics.pillager-patrols.spawn-delay.ticks", patrolDelay);
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index e5a81f831813209d224ffedbc03f6d8243721a25..c685d96b97b955c62a3700c0e9e4578f73c8c692 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -122,6 +122,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+ 
+     boolean needsChunkCenterUpdate; // Paper - no-tick view distance
++    private AttributeModifier disableAttackCooldown = new AttributeModifier("DisableCooldown", Double.POSITIVE_INFINITY, AttributeModifier.Operation.ADDITION); //Paper 
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super(worldserver, worldserver.getSpawn(), gameprofile);
+@@ -548,6 +549,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 this.a(IScoreboardCriteria.XP, MathHelper.f((float) this.lastExpTotalScored));
+             }
+ 
++            if(this.world.paperConfig.removeAttackCooldown && !this.getAttributeInstance(GenericAttributes.ATTACK_SPEED).getModifiers().contains(disableAttackCooldown)) { //Paper - Add Option to remove Cooldown without interfering with other 1.9 mechanics
++            	this.getAttributeInstance(GenericAttributes.ATTACK_SPEED).addModifier(disableAttackCooldown);
++            }
++
+             // CraftBukkit start - Force max health updates
+             if (this.maxHealthCache != this.getMaxHealth()) {
+                 this.getBukkitEntity().updateScaledHealth();
+diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+index bf019043a9338aca8d91da809f1d5520531386e7..706c0d7b2863a05a75c40e2739704837db7d644f 100644
+--- a/src/main/java/net/minecraft/server/EntityVillager.java
++++ b/src/main/java/net/minecraft/server/EntityVillager.java
+@@ -722,6 +722,10 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+ 
+     @Override
+     public void onLightningStrike(EntityLightning entitylightning) {
++    	if(this.world.paperConfig.enableAdvancedSurvivalMode) { //Paper - Add Option to disable Witch conversion
++    		super.onLightningStrike(entitylightning);
++    		return;
++    	}
+         if (this.world.getDifficulty() != EnumDifficulty.PEACEFUL) {
+             EntityVillager.LOGGER.info("Villager {} was struck by lightning {}.", this, entitylightning);
+             EntityWitch entitywitch = (EntityWitch) EntityTypes.WITCH.a(this.world);
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerPatrol.java b/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
+index 776e54ff472a67f535dfb409e753325a1105bcce..0054f379cbe766613ed0934f6cb5cd60b1d375d7 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerPatrol.java
+@@ -10,7 +10,7 @@ public class MobSpawnerPatrol implements MobSpawner {
+ 
+     @Override
+     public int a(WorldServer worldserver, boolean flag, boolean flag1) {
+-        if (worldserver.paperConfig.disablePillagerPatrols || worldserver.paperConfig.patrolSpawnChance == 0) return 0; // Paper
++        if (worldserver.paperConfig.patrolSpawnChance == 0) return 0; // Paper 
+         if (!flag) {
+             return 0;
+         } else if (!worldserver.getGameRules().getBoolean(GameRules.DO_PATROL_SPAWNING)) {
