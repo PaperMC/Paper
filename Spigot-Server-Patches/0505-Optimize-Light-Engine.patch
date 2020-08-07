@@ -1342,16 +1342,24 @@ index 446c401b3139f8c6c0e70d883340f0140d94b752..c14cdb60243e16810ad711d204678d51
          if (getCurrentPriority() != priority) {
              this.v.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index a35b161035dd26e437f5c49fd650802281aa66a1..5c5ee28f2349ea4cdb90bdca947a736483c43b2b 100644
+index a35b161035dd26e437f5c49fd650802281aa66a1..03a79ff9929d0df6b5a2da9d86a31c0c67a4b8cf 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -306,7 +306,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -275,6 +275,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+     // Paper end
+ 
++    private final java.util.concurrent.ExecutorService lightThread;
+     public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
+         super(new File(convertable_conversionsession.a(worldserver.getDimensionKey()), "region"), datafixer, flag);
+         //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+@@ -306,7 +307,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          Mailbox<Runnable> mailbox = Mailbox.a("main", iasynctaskhandler::a);
  
          this.worldLoadListener = worldloadlistener;
 -        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(executor, "light"); // Paper
 +        // Paper start - use light thread
-+        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
++        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(lightThread = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 +            Thread thread = new Thread(r);
 +            thread.setName(((WorldDataServer)world.getWorldData()).getName() + " - Light");
 +            thread.setDaemon(true);
@@ -1362,7 +1370,7 @@ index a35b161035dd26e437f5c49fd650802281aa66a1..5c5ee28f2349ea4cdb90bdca947a7364
  
          this.p = new ChunkTaskQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.mailboxWorldGen = this.p.a(threadedmailbox, false);
-@@ -652,6 +660,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -652,6 +661,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          // Paper end
      }
  
@@ -1370,6 +1378,14 @@ index a35b161035dd26e437f5c49fd650802281aa66a1..5c5ee28f2349ea4cdb90bdca947a7364
      protected IntSupplier c(long i) {
          return () -> {
              PlayerChunk playerchunk = this.getVisibleChunk(i);
+@@ -779,6 +789,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     @Override
+     public void close() throws IOException {
+         try {
++            this.lightThread.shutdown(); // Paper
+             this.p.close();
+             this.world.asyncChunkTaskManager.close(true); // Paper - Required since we're closing regionfiles in the next line
+             this.m.close();
 diff --git a/src/main/java/net/minecraft/server/ThreadedMailbox.java b/src/main/java/net/minecraft/server/ThreadedMailbox.java
 index 35f4d2d9591e625ab0bbeab7b606761e74965eec..cd30215dc098068ae034117c409cb295ebca58c1 100644
 --- a/src/main/java/net/minecraft/server/ThreadedMailbox.java
