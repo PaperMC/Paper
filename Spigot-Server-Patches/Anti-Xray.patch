@@ -109,6 +109,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.Set;
 +import java.util.concurrent.Executor;
++import java.util.concurrent.ThreadLocalRandom;
++import java.util.function.IntSupplier;
 +
 +import net.minecraft.server.*;
 +import org.bukkit.Bukkit;
@@ -290,7 +292,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        boolean[] obfuscateTemp = null;
 +        dataBitsReader.setDataBits(chunkPacketInfoAntiXray.getData());
 +        dataBitsWriter.setDataBits(chunkPacketInfoAntiXray.getData());
-+        int counter = 0;
++        int numberOfBlocks = predefinedBlockDataBits.length;
++        // Keep the lambda expressions as simple as possible. They are used very frequently.
++        IntSupplier random = numberOfBlocks == 1 ? (() -> 0) : new IntSupplier() {
++            private int state;
++
++            {
++                while ((state = ThreadLocalRandom.current().nextInt()) == 0);
++            }
++
++            @Override
++            public int getAsInt() {
++                // https://en.wikipedia.org/wiki/Xorshift
++                state ^= state << 13;
++                state ^= state >>> 17;
++                state ^= state << 5;
++                // https://www.pcg-random.org/posts/bounded-rands.html
++                return (int) ((Integer.toUnsignedLong(state) * numberOfBlocks) >>> 32);
++            }
++        };
 +
 +        for (int chunkSectionIndex = 0; chunkSectionIndex <= maxChunkSectionIndex; chunkSectionIndex++) {
 +            if (chunkPacketInfoAntiXray.isWritten(chunkSectionIndex) && chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex) != null) {
@@ -328,7 +348,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                    // Abuse the obfuscateLayer method to read the blocks of the first layer of the current chunk section
 +                    dataBitsWriter.setBitsPerObject(0);
-+                    obfuscateLayer(-1, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, emptyNearbyChunkSections, counter);
++                    obfuscateLayer(-1, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, emptyNearbyChunkSections, random);
 +                }
 +
 +                dataBitsWriter.setBitsPerObject(chunkPacketInfoAntiXray.getBitsPerObject(chunkSectionIndex));
@@ -343,7 +363,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
-+                    counter = obfuscateLayer(y, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, counter);
++                    obfuscateLayer(y, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
 +                // Check if the chunk section above doesn't need obfuscation
@@ -368,7 +388,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        // There is nothing to read anymore
 +                        dataBitsReader.setBitsPerObject(0);
 +                        solid[0] = true;
-+                        counter = obfuscateLayer(15, dataBitsReader, dataBitsWriter, solid, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, counter);
++                        obfuscateLayer(15, dataBitsReader, dataBitsWriter, solid, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                    }
 +                } else {
 +                    // If not, initialize the reader and other stuff for the chunk section above to obfuscate the upper layer of the current chunk section
@@ -380,7 +400,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    current = next;
 +                    next = nextNext;
 +                    nextNext = temp;
-+                    counter = obfuscateLayer(15, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, counter);
++                    obfuscateLayer(15, dataBitsReader, dataBitsWriter, solidTemp, obfuscateTemp, predefinedBlockDataBitsTemp, current, next, nextNext, nearbyChunkSections, random);
 +                }
 +
 +                dataBitsWriter.finish();
@@ -390,7 +410,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        chunkPacketInfoAntiXray.getPacketPlayOutMapChunk().setReady(true);
 +    }
 +
-+    private int obfuscateLayer(int y, DataBitsReader dataBitsReader, DataBitsWriter dataBitsWriter, boolean[] solid, boolean[] obfuscate, int[] predefinedBlockDataBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, ChunkSection[] nearbyChunkSections, int counter) {
++    private void obfuscateLayer(int y, DataBitsReader dataBitsReader, DataBitsWriter dataBitsWriter, boolean[] solid, boolean[] obfuscate, int[] predefinedBlockDataBits, boolean[][] current, boolean[][] next, boolean[][] nextNext, ChunkSection[] nearbyChunkSections, IntSupplier random) {
 +        // First block of first line
 +        int dataBits = dataBitsReader.read();
 +
@@ -402,11 +422,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(0, y, 15))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, 0))] || current[0][0]) {
 +                dataBitsWriter.skip();
 +            } else {
-+                if (counter >= predefinedBlockDataBits.length) {
-+                    counter = 0;
-+                }
-+
-+                dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +            }
 +        }
 +
@@ -427,11 +443,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(x, y, 15))] || current[0][x]) {
 +                    dataBitsWriter.skip();
 +                } else {
-+                    if (counter >= predefinedBlockDataBits.length) {
-+                        counter = 0;
-+                    }
-+
-+                    dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                    dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +                }
 +            }
 +
@@ -451,11 +463,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (nearbyChunkSections[2] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[2].getType(15, y, 15))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, 0))] || current[0][15]) {
 +                dataBitsWriter.skip();
 +            } else {
-+                if (counter >= predefinedBlockDataBits.length) {
-+                    counter = 0;
-+                }
-+
-+                dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +            }
 +        }
 +
@@ -477,11 +485,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, z))] || current[z][0]) {
 +                    dataBitsWriter.skip();
 +                } else {
-+                    if (counter >= predefinedBlockDataBits.length) {
-+                        counter = 0;
-+                    }
-+
-+                    dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                    dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +                }
 +            }
 +
@@ -503,11 +507,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (current[z][x]) {
 +                        dataBitsWriter.skip();
 +                    } else {
-+                        if (counter >= predefinedBlockDataBits.length) {
-+                            counter = 0;
-+                        }
-+
-+                        dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                        dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +                    }
 +                }
 +
@@ -528,11 +528,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, z))] || current[z][15]) {
 +                    dataBitsWriter.skip();
 +                } else {
-+                    if (counter >= predefinedBlockDataBits.length) {
-+                        counter = 0;
-+                    }
-+
-+                    dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                    dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +                }
 +            }
 +
@@ -552,11 +548,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(0, y, 0))] || nearbyChunkSections[0] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[0].getType(15, y, 15))] || current[15][0]) {
 +                dataBitsWriter.skip();
 +            } else {
-+                if (counter >= predefinedBlockDataBits.length) {
-+                    counter = 0;
-+                }
-+
-+                dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +            }
 +        }
 +
@@ -577,11 +569,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(x, y, 0))] || current[15][x]) {
 +                    dataBitsWriter.skip();
 +                } else {
-+                    if (counter >= predefinedBlockDataBits.length) {
-+                        counter = 0;
-+                    }
-+
-+                    dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                    dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +                }
 +            }
 +
@@ -601,19 +589,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (nearbyChunkSections[3] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[3].getType(15, y, 0))] || nearbyChunkSections[1] == Chunk.EMPTY_CHUNK_SECTION || !solidGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(nearbyChunkSections[1].getType(0, y, 15))] || current[15][15]) {
 +                dataBitsWriter.skip();
 +            } else {
-+                if (counter >= predefinedBlockDataBits.length) {
-+                    counter = 0;
-+                }
-+
-+                dataBitsWriter.write(predefinedBlockDataBits[counter++]);
++                dataBitsWriter.write(predefinedBlockDataBits[random.getAsInt()]);
 +            }
 +        }
 +
 +        if (!obfuscate[dataBits]) {
 +            next[15][15] = true;
 +        }
-+
-+        return counter;
 +    }
 +
 +    private boolean[] readDataPalette(DataPalette<IBlockData> dataPalette, boolean[] temp, boolean[] global) {
