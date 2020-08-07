@@ -1346,12 +1346,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+     // Paper end
+ 
++    private final java.util.concurrent.ExecutorService lightThread;
+     public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
+         super(new File(convertable_conversionsession.a(worldserver.getDimensionKey()), "region"), datafixer, flag);
+         //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          Mailbox<Runnable> mailbox = Mailbox.a("main", iasynctaskhandler::a);
  
          this.worldLoadListener = worldloadlistener;
 -        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(executor, "light"); // Paper
 +        // Paper start - use light thread
-+        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
++        ThreadedMailbox<Runnable> lightthreaded; ThreadedMailbox<Runnable> threadedmailbox1 = lightthreaded = ThreadedMailbox.a(lightThread = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 +            Thread thread = new Thread(r);
 +            thread.setName(((WorldDataServer)world.getWorldData()).getName() + " - Light");
 +            thread.setDaemon(true);
@@ -1370,6 +1378,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected IntSupplier c(long i) {
          return () -> {
              PlayerChunk playerchunk = this.getVisibleChunk(i);
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     @Override
+     public void close() throws IOException {
+         try {
++            this.lightThread.shutdown(); // Paper
+             this.p.close();
+             this.world.asyncChunkTaskManager.close(true); // Paper - Required since we're closing regionfiles in the next line
+             this.m.close();
 diff --git a/src/main/java/net/minecraft/server/ThreadedMailbox.java b/src/main/java/net/minecraft/server/ThreadedMailbox.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ThreadedMailbox.java
