@@ -1226,9 +1226,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
         //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
             //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
             serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
+            // Paper start
+            int playerSaveInterval = com.destroystokyo.paper.PaperConfig.playerAutoSaveRate;
+            if (playerSaveInterval < 0) {
+                playerSaveInterval = autosavePeriod;
+            }
+            // Paper end
             this.methodProfiler.enter("save");
-            if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // Paper
-            this.playerList.savePlayers();
+            if (playerSaveInterval > 0) { // Paper
+            this.playerList.savePlayers(playerSaveInterval); // Paper
             }// Paper
             // Paper start
             for (WorldServer world : getWorlds()) {

@@ -43,6 +43,7 @@ import org.bukkit.inventory.MainHand;
 public class EntityPlayer extends EntityHuman implements ICrafting {
 
     private static final Logger LOGGER = LogManager.getLogger();
+    public long lastSave = MinecraftServer.currentTick; // Paper
     public PlayerConnection playerConnection;
     public NetworkManager networkManager; // Paper
     public final MinecraftServer server;

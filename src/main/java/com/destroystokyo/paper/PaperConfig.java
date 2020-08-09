@@ -435,4 +435,15 @@ public class PaperConfig {
         allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
         set("settings.unsupported-settings.allow-tnt-duplication", null);
     }
+
+    public static int playerAutoSaveRate = -1;
+    public static int maxPlayerAutoSavePerTick = 10;
+    private static void playerAutoSaveRate() {
+        playerAutoSaveRate = getInt("settings.player-auto-save-rate", -1);
+        maxPlayerAutoSavePerTick = getInt("settings.max-player-auto-save-per-tick", -1);
+        if (maxPlayerAutoSavePerTick == -1) { // -1 Automatic / "Recommended"
+            // 10 should be safe for everyone unless you mass spamming player auto save
+            maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
+        }
+    }
 }
