@@ -1,0 +1,193 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Sun, 9 Aug 2020 09:12:26 -0500
+Subject: [PATCH] Add BlockDestroyedByNeighborEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
+index 7b0cc7833448a9e77e85be10f4e02ce43fdead58..d91cf7a951c793211d2ee170cd0f5476c8e34cc3 100644
+--- a/src/main/java/net/minecraft/server/BlockBase.java
++++ b/src/main/java/net/minecraft/server/BlockBase.java
+@@ -525,6 +525,19 @@ public abstract class BlockBase {
+ 
+                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, enumdirection);
+                 IBlockData iblockdata = generatoraccess.getType(blockposition_mutableblockposition);
++
++                // Paper start - Propagate the pendingPlayerBlockEvents
++                World world = generatoraccess.getMinecraftWorld();
++                if (getMaterial() == Material.AIR && !iblockdata.canPlace(generatoraccess, blockposition_mutableblockposition)) {
++                    World.PendingBlockEvent blockEvent = world.pendingPlayerBlockEvents.get(blockposition);
++                    if (blockEvent != null) {
++                        BlockPosition blockPositionCopy = blockposition_mutableblockposition.immutableCopy();
++                        World.PendingBlockEvent newBlockEvent = new World.PendingBlockEvent(blockPositionCopy, blockEvent.player, blockposition);
++                        world.pendingPlayerBlockEvents.put(blockPositionCopy, newBlockEvent);
++                    }
++                }
++                // Paper end
++
+                 IBlockData iblockdata1 = iblockdata.updateState(enumdirection.opposite(), this.p(), generatoraccess, blockposition_mutableblockposition, blockposition);
+ 
+                 Block.a(iblockdata, iblockdata1, generatoraccess, blockposition_mutableblockposition, i, j);
+diff --git a/src/main/java/net/minecraft/server/BlockTallPlant.java b/src/main/java/net/minecraft/server/BlockTallPlant.java
+index 446a2ffcd95fd631750b74fd31b4c41013b8a5a8..edb68cfb2c676d71a345a424423bca34fdc99ab3 100644
+--- a/src/main/java/net/minecraft/server/BlockTallPlant.java
++++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
+@@ -1,5 +1,8 @@
+ package net.minecraft.server;
+ 
++import org.bukkit.craftbukkit.block.CraftBlock; // Paper
++import org.bukkit.event.block.BlockDestroyedByNeighborEvent; // Paper
++
+ import javax.annotation.Nullable;
+ 
+ public class BlockTallPlant extends BlockPlant {
+@@ -77,6 +80,19 @@ public class BlockTallPlant extends BlockPlant {
+             BlockPosition blockposition1 = blockposition.down();
+             IBlockData iblockdata1 = world.getType(blockposition1);
+ 
++            // Paper start
++            World.PendingBlockEvent blockEvent = world.pendingPlayerBlockEvents.remove(blockposition);
++            if (blockEvent != null) {
++                org.bukkit.block.Block blockAt = world.getWorld().getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
++                BlockDestroyedByNeighborEvent breakByBlockEvent = new BlockDestroyedByNeighborEvent(blockAt, blockEvent.player, CraftBlock.at(world, blockposition));
++                world.getServer().getPluginManager().callEvent(breakByBlockEvent);
++
++                if (breakByBlockEvent.isCancelled()) {
++                    return;
++                }
++            }
++            // Paper end
++
+             if (iblockdata1.getBlock() == iblockdata.getBlock() && iblockdata1.get(BlockTallPlant.HALF) == BlockPropertyDoubleBlockHalf.LOWER) {
+                 world.setTypeAndData(blockposition1, Blocks.AIR.getBlockData(), 35);
+                 world.a(entityhuman, 2001, blockposition1, Block.getCombinedId(iblockdata1));
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 3c56053e3075173edd22eccb277f51a12287ab56..9e7eb9b68d0475fcec2062f5804d5b2450d55645 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -231,6 +231,9 @@ public final class ItemStack {
+                 }
+             }
+             Item item = this.getItem();
++
++            world.pendingPlayerBlockEvents.put(blockposition, new World.PendingBlockEvent(blockposition, (Player) entityhuman.getBukkitEntity())); // Paper
++
+             EnumInteractionResult enuminteractionresult = item.a(itemactioncontext);
+             NBTTagCompound newData = this.getTagClone();
+             int newCount = this.getCount();
+diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+index 6d192b27440ddfd34555005dafefbce6bbb67236..274aec46dc96f6caee080677352393a62dac1220 100644
+--- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
++++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
+@@ -363,6 +363,9 @@ public class PlayerInteractManager {
+                 org.bukkit.block.BlockState state = bblock.getState();
+                 world.captureDrops = new ArrayList<>();
+                 // CraftBukkit end
++
++                world.pendingPlayerBlockEvents.put(blockposition, new World.PendingBlockEvent(blockposition, this.player.getBukkitEntity())); // Paper
++
+                 block.a((World) this.world, blockposition, iblockdata, (EntityHuman) this.player);
+                 boolean flag = this.world.a(blockposition, false);
+ 
+@@ -390,6 +393,8 @@ public class PlayerInteractManager {
+                 }
+                 world.captureDrops = null;
+ 
++                world.pendingPlayerBlockEvents.remove(blockposition); // Paper
++
+                 // Drop event experience
+                 if (flag && event != null) {
+                     iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop(), this.player); // Paper
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index a173d2562e0c549184f5e82f112843a9893cb502..7155a7ec206b6891c13c5b1c5b46f498cc547e44 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -28,8 +28,11 @@ import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.block.CapturedBlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.block.CraftBlockState;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.entity.Player;
++import org.bukkit.event.block.BlockDestroyedByNeighborEvent;
+ import org.bukkit.event.block.BlockPhysicsEvent;
+ // CraftBukkit end
+ 
+@@ -102,6 +105,28 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+     public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
+ 
++    // Paper start - Abstract holder class that can be used to track what Player did the last "block thing"
++    public static class PendingBlockEvent {
++
++        public final BlockPosition block;
++        public final Player player;
++        public BlockPosition sourceBlock;
++
++        public PendingBlockEvent(BlockPosition block, Player player) {
++            this.block = block;
++            this.player = player;
++        }
++
++        public PendingBlockEvent(BlockPosition block, Player player, BlockPosition sourceBlock) {
++            this.block = block;
++            this.player = player;
++            this.sourceBlock = sourceBlock;
++        }
++
++    }
++    public final Map<BlockPosition, PendingBlockEvent> pendingPlayerBlockEvents = new HashMap<>();
++    // Paper end
++
+     public CraftWorld getWorld() {
+         return this.world;
+     }
+@@ -548,6 +573,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+             }
+ 
+             this.a(blockposition, iblockdata1, iblockdata2);
++
++            pendingPlayerBlockEvents.remove(blockposition); //Paper
+         }
+     }
+     // CraftBukkit end
+@@ -569,6 +596,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         if (iblockdata.isAir()) {
+             return false;
+         } else {
++            // Paper start
++            PendingBlockEvent blockEvent = pendingPlayerBlockEvents.get(blockposition);
++            if (blockEvent != null && blockEvent.sourceBlock != null) {
++                BlockDestroyedByNeighborEvent breakByBlockEvent = new BlockDestroyedByNeighborEvent(CraftBlock.at(this, blockposition), blockEvent.player, CraftBlock.at(this, blockEvent.sourceBlock));
++                getServer().getPluginManager().callEvent(breakByBlockEvent);
++            }
++            // Paper end
++
+             Fluid fluid = this.getFluid(blockposition);
+             // Paper start - while the above setAir method is named same and looks very similar
+             // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
+@@ -645,8 +680,23 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public void a(BlockPosition blockposition, Block block, BlockPosition blockposition1) {
+         if (!this.isClientSide) {
+             IBlockData iblockdata = this.getType(blockposition);
++            org.bukkit.block.Block blockAt = world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // Paper
+ 
+             try {
++                // Paper start
++                if (blockAt.getType() != org.bukkit.Material.AIR && iblockdata.getMaterial() == Material.AIR) {
++                    PendingBlockEvent blockEvent = pendingPlayerBlockEvents.remove(blockposition);
++                    if (blockEvent != null) {
++                        BlockDestroyedByNeighborEvent breakByBlockEvent = new BlockDestroyedByNeighborEvent(blockAt, blockEvent.player, CraftBlock.at(this, blockposition));
++                        getServer().getPluginManager().callEvent(breakByBlockEvent);
++
++                        if (breakByBlockEvent.isCancelled()) {
++                            return;
++                        }
++                    }
++                }
++                // Paper end
++
+                 // CraftBukkit start
+                 CraftWorld world = ((WorldServer) this).getWorld();
+                 if (world != null && ((WorldServer)this).hasPhysicsEvent) { // Paper
