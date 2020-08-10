@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
-Date: Tue, 26 May 2020 21:32:05 -0400
+Date: Mon, 10 Aug 2020 17:12:02 +0300
 Subject: [PATCH] Optimize Villagers
 
 This change reimplements the entire BehaviorFindPosition method to
@@ -39,29 +39,38 @@ So we cache that and only rebuild it if professions change, which should be neve
 a plugin manipulates and adds custom professions, which it will handle by rebuilding.
 
 diff --git a/src/main/java/net/minecraft/server/BehaviorFindPosition.java b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..6861b1a345496a83900b0ef702ba34315a030ef6 100644
+index 63a761ebef80d4af09cdc2682e496d78492c4a3a..466180158919c4bf9fde54791511702b36181f29 100644
 --- a/src/main/java/net/minecraft/server/BehaviorFindPosition.java
 +++ b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-@@ -29,8 +29,55 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -48,7 +48,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+         if (this.d && entitycreature.isBaby()) {
+             return false;
+         } else if (this.f == 0L) {
+-            this.f = entitycreature.world.getTime() + (long) worldserver.random.nextInt(20);
++            this.f = entitycreature.world.getTime() + (long) java.util.concurrent.ThreadLocalRandom.current().nextInt(20); // Paper
+             return false;
+         } else {
+             return worldserver.getTime() >= this.f;
+@@ -56,12 +56,56 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+     }
  
      protected void a(WorldServer worldserver, EntityCreature entitycreature, long i) {
-         this.f = 0;
--        this.d = worldserver.getTime() + (long) worldserver.getRandom().nextInt(20);
-+        this.d = worldserver.getTime() + (long) java.util.concurrent.ThreadLocalRandom.current().nextInt(20); // Paper
-         VillagePlace villageplace = worldserver.B();
-+
+-        this.f = i + 20L + (long) worldserver.getRandom().nextInt(20);
++        this.f = i + 20L + (long) java.util.concurrent.ThreadLocalRandom.current().nextInt(20); // Paper
+         VillagePlace villageplace = worldserver.y();
+ 
 +        // Paper start - replace implementation completely
-+        BlockPosition blockposition2 = new BlockPosition(entitycreature);
++        BlockPosition blockposition2 = new BlockPosition(entitycreature.locX(), entitycreature.locY(), entitycreature.locZ());
 +        int dist = 48;
 +        int requiredDist = dist * dist;
 +        int cdist = Math.floorDiv(dist, 16);
-+        Predicate<VillagePlaceType> predicate = this.a.c();
++        Predicate<VillagePlaceType> predicate = this.b.getPredicate();
 +        int maxPoiAttempts = 4;
 +        int poiAttempts = 0;
 +        OUT:
 +        for (ChunkCoordIntPair chunkcoordintpair : MCUtil.getSpiralOutChunks(blockposition2, cdist)) {
 +            for (int i1 = 0; i1 < 16; i1++) {
-+                java.util.Optional<VillagePlaceSection> section = villageplace.getSection(SectionPosition.a(chunkcoordintpair, i1).v());
++                java.util.Optional<VillagePlaceSection> section = villageplace.getSection(SectionPosition.a(chunkcoordintpair, i1).asLong());
 +                if (section == null || !section.isPresent()) continue;
 +                for (java.util.Map.Entry<VillagePlaceType, java.util.Set<VillagePlaceRecord>> e : section.get().getRecords().entrySet()) {
 +                    if (!predicate.test(e.getKey())) continue;
@@ -70,19 +79,18 @@ index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..6861b1a345496a83900b0ef702ba3431
 +
 +                        BlockPosition pos = record.getPosition();
 +                        long key = pos.asLong();
-+                        if (this.e.containsKey(key)) {
++                        if (this.g.containsKey(key)) {
 +                            continue;
 +                        }
 +                        double poiDist = pos.distanceSquared(blockposition2);
 +                        if (poiDist <= (double) requiredDist) {
-+                            this.e.put(key, (long) (this.d + Math.sqrt(poiDist) * 4)); // use dist instead of 40 to blacklist longer if farther distance
++                            this.g.put(key, new BehaviorFindPosition.a(java.util.concurrent.ThreadLocalRandom.current(), (long) (this.f + Math.sqrt(poiDist) * 4))); // use dist instead of 40 to blacklist longer if farther distance
 +                            ++poiAttempts;
-+                            PathEntity pathentity = entitycreature.getNavigation().a(com.google.common.collect.ImmutableSet.of(pos), 8, false, this.a.d());
++                            PathEntity pathentity = entitycreature.getNavigation().a(com.google.common.collect.ImmutableSet.of(pos), 8, false, this.b.getValidRange());
 +
-+                            if (pathentity != null && pathentity.h()) {
-+                                record.decreaseVacancy();
-+                                GlobalPos globalPos = GlobalPos.create(worldserver.getWorldProvider().getDimensionManager(), pos);
-+                                entitycreature.getBehaviorController().setMemory(this.b, globalPos);
++                            if (pathentity != null && pathentity.canReach()) {
++                                GlobalPos globalPos = GlobalPos.create(worldserver.getDimensionKey(), pos);
++                                entitycreature.getBehaviorController().setMemory(c, globalPos);
 +                                break OUT;
 +                            }
 +                            if (poiAttempts >= maxPoiAttempts) {
@@ -93,25 +101,40 @@ index 35eb3a5a61145e94d5b0c77c0eb13bfa46fac23b..6861b1a345496a83900b0ef702ba3431
 +                }
 +            }
 +        }
-+        // Clean up - vanilla does this only when it runs out, but that would push it to try farther POI's...
-+        this.e.long2LongEntrySet().removeIf((entry) -> entry.getLongValue() < this.d);
++
+         this.g.long2ObjectEntrySet().removeIf((entry) -> {
+-            return !((BehaviorFindPosition.a) entry.getValue()).b(i);
++            return entry.getValue().b < f;
+         });
 +        /*
          Predicate<BlockPosition> predicate = (blockposition) -> {
-             long j = blockposition.asLong();
+             BehaviorFindPosition.a behaviorfindposition_a = (BehaviorFindPosition.a) this.g.get(blockposition.asLong());
  
-@@ -61,6 +108,6 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
-                 return entry.getLongValue() < this.d;
-             });
+@@ -103,6 +147,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+             }
          }
--
+ 
 +        */ // Paper end
      }
- }
+ 
+     static class a {
+diff --git a/src/main/java/net/minecraft/server/PathEntity.java b/src/main/java/net/minecraft/server/PathEntity.java
+index c81a5d50c480b064ab60ed6f25f9e2c0bedb6ece..f633796f754fd1b80047033c37a38b099d9b9a9c 100644
+--- a/src/main/java/net/minecraft/server/PathEntity.java
++++ b/src/main/java/net/minecraft/server/PathEntity.java
+@@ -114,6 +114,7 @@ public class PathEntity {
+         }
+     }
+ 
++    public final boolean canReach() { return this.j(); } // Paper - OBFHELPER
+     public boolean j() {
+         return this.h;
+     }
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index a6d8ef5eb44f3f851a3a1be4032ca21ab1d7f2b2..c3e8a0145d63843736d2060f978cdf38df359563 100644
+index 04256a95108b8182e8f808e856e0d2b62165e242..b42590586ab68facdb3e25ea91a9e19348019dbf 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
 +++ b/src/main/java/net/minecraft/server/RegionFileSection.java
-@@ -51,29 +51,15 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+@@ -52,10 +52,13 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
  
      @Nullable
      protected Optional<R> c(long i) {
@@ -121,51 +144,41 @@ index a6d8ef5eb44f3f851a3a1be4032ca21ab1d7f2b2..c3e8a0145d63843736d2060f978cdf38
  
 +    protected final Optional<R> getSection(long i) { return d(i); } // Paper - OBFHELPER
      protected Optional<R> d(long i) {
--        SectionPosition sectionposition = SectionPosition.a(i);
--
--        if (this.b(sectionposition)) {
--            return Optional.empty();
--        } else {
--            Optional<R> optional = this.c(i);
--
--            if (optional != null) {
--                return optional;
--            } else {
--                this.b(sectionposition.u());
--                optional = this.c(i);
--                if (optional == null) {
--                    throw (IllegalStateException) SystemUtils.c(new IllegalStateException());
--                } else {
--                    return optional;
--                }
--            }
--        }
 +        // Paper start - replace method - never load POI data sync, we load this in chunk load already, reduce ops
++        /*
+         SectionPosition sectionposition = SectionPosition.a(i);
+ 
+         if (this.b(sectionposition)) {
+@@ -75,6 +78,10 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
+                 }
+             }
+         }
++         */
 +        // If it's an unloaded chunk, well too bad.
 +        return this.c(i);
 +        // Paper end
      }
  
      protected boolean b(SectionPosition sectionposition) {
-@@ -117,7 +103,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+@@ -118,7 +125,7 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
      private <T> void a(ChunkCoordIntPair chunkcoordintpair, DynamicOps<T> dynamicops, @Nullable T t0) {
          if (t0 == null) {
              for (int i = 0; i < 16; ++i) {
--                this.c.put(SectionPosition.a(chunkcoordintpair, i).v(), Optional.empty());
-+                //this.c.put(SectionPosition.a(chunkcoordintpair, i).v(), Optional.empty()); // Paper - NO!!!
+-                this.c.put(SectionPosition.a(chunkcoordintpair, i).s(), Optional.empty());
++                //this.c.put(SectionPosition.a(chunkcoordintpair, i).s(), Optional.empty()); // Paper - NO!!!
              }
          } else {
              Dynamic<T> dynamic = new Dynamic(dynamicops, t0);
-@@ -135,7 +121,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
-                     }, dynamic2);
+@@ -140,7 +147,7 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
+                     return dataresult.resultOrPartial(logger::error);
                  });
  
 -                this.c.put(i1, optional);
 +                if (optional.isPresent()) this.c.put(i1, optional); // Paper - NO!!!
-                 optional.ifPresent((minecraftserializable) -> {
+                 optional.ifPresent((object) -> {
                      this.b(i1);
                      if (flag) {
-@@ -199,7 +185,7 @@ public class RegionFileSection<R extends MinecraftSerializable> extends RegionFi
+@@ -213,7 +220,7 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
          if (optional != null && optional.isPresent()) {
              this.d.add(i);
          } else {
@@ -174,19 +187,23 @@ index a6d8ef5eb44f3f851a3a1be4032ca21ab1d7f2b2..c3e8a0145d63843736d2060f978cdf38
          }
      }
  
-diff --git a/src/main/java/net/minecraft/server/VillagePlaceRecord.java b/src/main/java/net/minecraft/server/VillagePlaceRecord.java
-index 1e9d7a3f902eb4571b93bb0e58cba966365f07b8..44535a3e2c3320aac472c5a7ee557fac7bab2530 100644
---- a/src/main/java/net/minecraft/server/VillagePlaceRecord.java
-+++ b/src/main/java/net/minecraft/server/VillagePlaceRecord.java
-@@ -32,6 +32,7 @@ public class VillagePlaceRecord implements MinecraftSerializable {
-         return dynamicops.createMap(ImmutableMap.of(dynamicops.createString("pos"), this.a.a(dynamicops), dynamicops.createString("type"), dynamicops.createString(IRegistry.POINT_OF_INTEREST_TYPE.getKey(this.b).toString()), dynamicops.createString("free_tickets"), dynamicops.createInt(this.c)));
+diff --git a/src/main/java/net/minecraft/server/SectionPosition.java b/src/main/java/net/minecraft/server/SectionPosition.java
+index f95925f1c5d091f1a129d0437bb6e175c6ac080f..6c8695d659e369e993d959f8b92309953f21ab1f 100644
+--- a/src/main/java/net/minecraft/server/SectionPosition.java
++++ b/src/main/java/net/minecraft/server/SectionPosition.java
+@@ -173,6 +173,7 @@ public class SectionPosition extends BaseBlockPosition {
+         return (((long) i & 4194303L) << 42) | (((long) j & 1048575L)) | (((long) k & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
-+    protected final boolean decreaseVacancy() { return b(); } // Paper - OBFHELPER
-     protected boolean b() {
-         if (this.c <= 0) {
-             return false;
-@@ -42,6 +43,7 @@ public class VillagePlaceRecord implements MinecraftSerializable {
++    public long asLong() { return s(); } // Paper - OBFHELPER
+     public long s() {
+         return (((long) getX() & 4194303L) << 42) | (((long) getY() & 1048575L)) | (((long) getZ() & 4194303L) << 20); // Paper - Simplify to reduce instruction count
+     }
+diff --git a/src/main/java/net/minecraft/server/VillagePlaceRecord.java b/src/main/java/net/minecraft/server/VillagePlaceRecord.java
+index 0b40c2f4dada7d8432e3f91e9cf206c2bda3b24b..ac1a7b7f82436568e10e10b30aab7d1588a8b640 100644
+--- a/src/main/java/net/minecraft/server/VillagePlaceRecord.java
++++ b/src/main/java/net/minecraft/server/VillagePlaceRecord.java
+@@ -44,6 +44,7 @@ public class VillagePlaceRecord {
          }
      }
  
@@ -194,7 +211,7 @@ index 1e9d7a3f902eb4571b93bb0e58cba966365f07b8..44535a3e2c3320aac472c5a7ee557fac
      protected boolean c() {
          if (this.c >= this.b.b()) {
              return false;
-@@ -52,14 +54,17 @@ public class VillagePlaceRecord implements MinecraftSerializable {
+@@ -54,14 +55,17 @@ public class VillagePlaceRecord {
          }
      }
  
@@ -208,62 +225,81 @@ index 1e9d7a3f902eb4571b93bb0e58cba966365f07b8..44535a3e2c3320aac472c5a7ee557fac
          return this.c != this.b.b();
      }
  
-+    public final BlockPosition getPosition() { return f(); } // Paper
++    public final BlockPosition getPosition() { return f(); } // Paper - OBFHELPER
      public BlockPosition f() {
          return this.a;
      }
 diff --git a/src/main/java/net/minecraft/server/VillagePlaceSection.java b/src/main/java/net/minecraft/server/VillagePlaceSection.java
-index 3f2602dbe0995f8d01d4a1428d919405d711a205..436b064c3b277143075386fc9a71027fb5962681 100644
+index 77c66bc9952542d2444b402896a3d9f622ca2ff9..0f27429b960395130410f4d96ff285a59a35d4d6 100644
 --- a/src/main/java/net/minecraft/server/VillagePlaceSection.java
 +++ b/src/main/java/net/minecraft/server/VillagePlaceSection.java
-@@ -23,7 +23,7 @@ public class VillagePlaceSection implements MinecraftSerializable {
+@@ -23,12 +23,12 @@ public class VillagePlaceSection {
  
      private static final Logger LOGGER = LogManager.getLogger();
-     private final Short2ObjectMap<VillagePlaceRecord> b = new Short2ObjectOpenHashMap();
--    private final Map<VillagePlaceType, Set<VillagePlaceRecord>> c = Maps.newHashMap();
-+    private final Map<VillagePlaceType, Set<VillagePlaceRecord>> c = Maps.newHashMap(); public final Map<VillagePlaceType, Set<VillagePlaceRecord>> getRecords() { return c; } // Paper - OBFHELPER
+     private final Short2ObjectMap<VillagePlaceRecord> b;
+-    private final Map<VillagePlaceType, Set<VillagePlaceRecord>> c;
++    private final Map<VillagePlaceType, Set<VillagePlaceRecord>> c; public final Map<VillagePlaceType, Set<VillagePlaceRecord>> getRecords() { return c; } // Paper - OBFHELPER
      private final Runnable d;
      private boolean e;
  
+     public static Codec<VillagePlaceSection> a(Runnable runnable) {
+-        Codec codec = RecordCodecBuilder.create((instance) -> {
++        Codec<VillagePlaceSection> codec = RecordCodecBuilder.create((instance) -> { // Paper - decompile fix
+             return instance.group(RecordCodecBuilder.point(runnable), Codec.BOOL.optionalFieldOf("Valid", false).forGetter((villageplacesection) -> {
+                 return villageplacesection.e;
+             }), VillagePlaceRecord.a(runnable).listOf().fieldOf("Records").forGetter((villageplacesection) -> {
 diff --git a/src/main/java/net/minecraft/server/VillagePlaceType.java b/src/main/java/net/minecraft/server/VillagePlaceType.java
-index ab3e054cd2f38756a5d802d4d981022318ab047d..c1f293fc98d3efb4665cfb9036f208b842fc8e36 100644
+index a5718af9b614ae505067131f04ebb490617d6aa4..18e4c2b6f8616ededba36caf0b76d39a11ae20b2 100644
 --- a/src/main/java/net/minecraft/server/VillagePlaceType.java
 +++ b/src/main/java/net/minecraft/server/VillagePlaceType.java
-@@ -12,8 +12,14 @@ import java.util.stream.Stream;
+@@ -14,11 +14,20 @@ import java.util.stream.Collectors;
  
  public class VillagePlaceType {
  
 +    static Set<VillagePlaceType> professionCache; // Paper
-     private static final Predicate<VillagePlaceType> v = (villageplacetype) -> {
--        return ((Set) IRegistry.VILLAGER_PROFESSION.d().map(VillagerProfession::b).collect(Collectors.toSet())).contains(villageplacetype);
+     private static final Supplier<Set<VillagePlaceType>> y = Suppliers.memoize(() -> {
+         return (Set) IRegistry.VILLAGER_PROFESSION.g().map(VillagerProfession::b).collect(Collectors.toSet());
+     });
+     public static final Predicate<VillagePlaceType> a = (villageplacetype) -> {
+-        return ((Set) VillagePlaceType.y.get()).contains(villageplacetype);
 +        // Paper start
 +        if (professionCache == null) {
-+            professionCache = IRegistry.VILLAGER_PROFESSION.d().map(VillagerProfession::b).collect(Collectors.toSet());
++            professionCache = new java.util.HashSet<>();
++            for (VillagerProfession profession : IRegistry.VILLAGER_PROFESSION) {
++                professionCache.add(profession.getPlaceType());
++            }
 +        }
 +        return professionCache.contains(villageplacetype);
 +        // Paper end
      };
-     public static final Predicate<VillagePlaceType> a = (villageplacetype) -> {
+     public static final Predicate<VillagePlaceType> b = (villageplacetype) -> {
          return true;
-@@ -89,11 +95,11 @@ public class VillagePlaceType {
+@@ -83,10 +92,12 @@ public class VillagePlaceType {
+         return this.D;
      }
  
-     private static VillagePlaceType a(String s, Set<IBlockData> set, int i, int j) {
--        return a((VillagePlaceType) IRegistry.POINT_OF_INTEREST_TYPE.a(new MinecraftKey(s), (Object) (new VillagePlaceType(s, set, i, j))));
-+        return a((VillagePlaceType) IRegistry.POINT_OF_INTEREST_TYPE.a(new MinecraftKey(s), (new VillagePlaceType(s, set, i, j)))); // Paper - decompile error
++    public final Predicate<VillagePlaceType> getPredicate() { return c(); } // Paper - OBFHELPER
+     public Predicate<VillagePlaceType> c() {
+         return this.E;
      }
  
-     private static VillagePlaceType a(String s, Set<IBlockData> set, int i, Predicate<VillagePlaceType> predicate, int j) {
--        return a((VillagePlaceType) IRegistry.POINT_OF_INTEREST_TYPE.a(new MinecraftKey(s), (Object) (new VillagePlaceType(s, set, i, predicate, j))));
-+        return a((VillagePlaceType) IRegistry.POINT_OF_INTEREST_TYPE.a(new MinecraftKey(s), (new VillagePlaceType(s, set, i, predicate, j)))); // Paper - decompile error
++    public final int getValidRange() { return d(); } // Paper - OBFHELPER
+     public int d() {
+         return this.F;
      }
- 
-     private static VillagePlaceType a(VillagePlaceType villageplacetype) {
 diff --git a/src/main/java/net/minecraft/server/VillagerProfession.java b/src/main/java/net/minecraft/server/VillagerProfession.java
-index c38296165b33698bc15fe49a2de0d0d19cfb910a..f9d7a16c79a4e3ffe8b6e7ed469236a93892f01d 100644
+index 3c60da7ac6faebe9d964e893974e42613c59b4c1..ffdd9cdde094fcb401cf69daab12aa39623632df 100644
 --- a/src/main/java/net/minecraft/server/VillagerProfession.java
 +++ b/src/main/java/net/minecraft/server/VillagerProfession.java
-@@ -61,6 +61,7 @@ public class VillagerProfession {
+@@ -35,6 +35,7 @@ public class VillagerProfession {
+         this.t = soundeffect;
+     }
+ 
++    public final VillagePlaceType getPlaceType() { return b(); } // Paper - OBFHELPER
+     public VillagePlaceType b() {
+         return this.q;
+     }
+@@ -61,6 +62,7 @@ public class VillagerProfession {
      }
  
      static VillagerProfession a(String s, VillagePlaceType villageplacetype, ImmutableSet<Item> immutableset, ImmutableSet<Block> immutableset1, @Nullable SoundEffect soundeffect) {
