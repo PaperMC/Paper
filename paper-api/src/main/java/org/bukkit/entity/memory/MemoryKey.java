@@ -50,6 +50,7 @@ public final class MemoryKey<T> implements Keyed {
     public static final MemoryKey<Location> POTENTIAL_JOB_SITE = new MemoryKey<>(NamespacedKey.minecraft("potential_job_site"), Location.class);
     public static final MemoryKey<Location> JOB_SITE = new MemoryKey<>(NamespacedKey.minecraft("job_site"), Location.class);
     public static final MemoryKey<Location> MEETING_POINT = new MemoryKey<>(NamespacedKey.minecraft("meeting_point"), Location.class);
+    public static final MemoryKey<Boolean> GOLEM_DETECTED_RECENTLY = new MemoryKey<>(NamespacedKey.minecraft("golem_detected_recently"), Boolean.class);
     public static final MemoryKey<Long> LAST_SLEPT = new MemoryKey<>(NamespacedKey.minecraft("last_slept"), Long.class);
     public static final MemoryKey<Long> LAST_WOKEN = new MemoryKey<>(NamespacedKey.minecraft("last_woken"), Long.class);
     public static final MemoryKey<Long> LAST_WORKED_AT_POI = new MemoryKey<>(NamespacedKey.minecraft("last_worked_at_poi"), Long.class);

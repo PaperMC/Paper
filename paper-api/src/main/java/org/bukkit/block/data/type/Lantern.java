@@ -1,11 +1,11 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Waterlogged;
 
 /**
  * 'hanging' denotes whether the lantern is hanging from a block.
  */
-public interface Lantern extends BlockData {
+public interface Lantern extends Waterlogged {
 
     /**
      * Gets the value of the 'hanging' property.

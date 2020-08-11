@@ -265,6 +265,7 @@ public enum EntityType implements Keyed {
     PIGLIN("piglin", Piglin.class, -1),
     STRIDER("strider", Strider.class, -1),
     ZOGLIN("zoglin", Zoglin.class, -1),
+    PIGLIN_BRUTE("piglin_brute", PiglinBrute.class, -1),
     /**
      * A fishing line and bobber.
      */

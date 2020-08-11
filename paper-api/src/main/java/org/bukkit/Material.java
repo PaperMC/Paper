@@ -28,6 +28,7 @@ import org.bukkit.block.data.type.BrewingStand;
 import org.bukkit.block.data.type.BubbleColumn;
 import org.bukkit.block.data.type.Cake;
 import org.bukkit.block.data.type.Campfire;
+import org.bukkit.block.data.type.Chain;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Cocoa;
 import org.bukkit.block.data.type.CommandBlock;
@@ -747,9 +748,9 @@ public enum Material implements Keyed {
      */
     IRON_BARS(9378, Fence.class),
     /**
-     * BlockData: {@link Waterlogged}
+     * BlockData: {@link Chain}
      */
-    CHAIN(28265, Waterlogged.class),
+    CHAIN(28265, Chain.class),
     /**
      * BlockData: {@link Fence}
      */
@@ -1658,9 +1659,6 @@ public enum Material implements Keyed {
     JIGSAW(17398, Jigsaw.class),
     TURTLE_HELMET(30120, 1, 275),
     SCUTE(11914),
-    IRON_SHOVEL(30045, 1, 250),
-    IRON_PICKAXE(8842, 1, 250),
-    IRON_AXE(15894, 1, 250),
     FLINT_AND_STEEL(28620, 1, 64),
     APPLE(7720),
     BOW(8745, 1, 384),
@@ -1672,39 +1670,42 @@ public enum Material implements Keyed {
     GOLD_INGOT(28927),
     NETHERITE_INGOT(32457),
     NETHERITE_SCRAP(29331),
-    IRON_SWORD(10904, 1, 250),
     WOODEN_SWORD(7175, 1, 59),
     WOODEN_SHOVEL(28432, 1, 59),
     WOODEN_PICKAXE(12792, 1, 59),
     WOODEN_AXE(6292, 1, 59),
+    WOODEN_HOE(16043, 1, 59),
     STONE_SWORD(25084, 1, 131),
     STONE_SHOVEL(9520, 1, 131),
     STONE_PICKAXE(14611, 1, 131),
     STONE_AXE(6338, 1, 131),
-    DIAMOND_SWORD(27707, 1, 1561),
-    DIAMOND_SHOVEL(25415, 1, 1561),
-    DIAMOND_PICKAXE(24291, 1, 1561),
-    DIAMOND_AXE(27277, 1, 1561),
-    STICK(9773),
-    BOWL(32661),
-    MUSHROOM_STEW(16336, 1),
+    STONE_HOE(22855, 1, 131),
     GOLDEN_SWORD(10505, 1, 32),
     GOLDEN_SHOVEL(15597, 1, 32),
     GOLDEN_PICKAXE(25898, 1, 32),
     GOLDEN_AXE(4878, 1, 32),
+    GOLDEN_HOE(19337, 1, 32),
+    IRON_SWORD(10904, 1, 250),
+    IRON_SHOVEL(30045, 1, 250),
+    IRON_PICKAXE(8842, 1, 250),
+    IRON_AXE(15894, 1, 250),
+    IRON_HOE(11339, 1, 250),
+    DIAMOND_SWORD(27707, 1, 1561),
+    DIAMOND_SHOVEL(25415, 1, 1561),
+    DIAMOND_PICKAXE(24291, 1, 1561),
+    DIAMOND_AXE(27277, 1, 1561),
+    DIAMOND_HOE(24050, 1, 1561),
     NETHERITE_SWORD(23871, 1, 2031),
     NETHERITE_SHOVEL(29728, 1, 2031),
     NETHERITE_PICKAXE(9930, 1, 2031),
     NETHERITE_AXE(29533, 1, 2031),
+    NETHERITE_HOE(27385, 1, 2031),
+    STICK(9773),
+    BOWL(32661),
+    MUSHROOM_STEW(16336, 1),
     STRING(12806),
     FEATHER(30548),
     GUNPOWDER(29974),
-    WOODEN_HOE(16043, 1, 59),
-    STONE_HOE(22855, 1, 131),
-    IRON_HOE(11339, 1, 250),
-    DIAMOND_HOE(24050, 1, 1561),
-    GOLDEN_HOE(19337, 1, 32),
-    NETHERITE_HOE(27385, 1, 2031),
     WHEAT_SEEDS(28742),
     /**
      * BlockData: {@link Ageable}
@@ -1807,25 +1808,25 @@ public enum Material implements Keyed {
     COOKED_COD(9681),
     COOKED_SALMON(5615),
     INK_SAC(7184),
-    RED_DYE(5728),
-    GREEN_DYE(23215),
     COCOA_BEANS(30186),
     LAPIS_LAZULI(11075),
-    PURPLE_DYE(6347),
-    CYAN_DYE(8043),
-    LIGHT_GRAY_DYE(27643),
-    GRAY_DYE(9184),
-    PINK_DYE(31151),
-    LIME_DYE(6147),
-    YELLOW_DYE(5952),
-    LIGHT_BLUE_DYE(28738),
-    MAGENTA_DYE(11788),
+    WHITE_DYE(10758),
     ORANGE_DYE(13866),
-    BONE_MEAL(32458),
+    MAGENTA_DYE(11788),
+    LIGHT_BLUE_DYE(28738),
+    YELLOW_DYE(5952),
+    LIME_DYE(6147),
+    PINK_DYE(31151),
+    GRAY_DYE(9184),
+    LIGHT_GRAY_DYE(27643),
+    CYAN_DYE(8043),
+    PURPLE_DYE(6347),
     BLUE_DYE(11588),
     BROWN_DYE(7648),
+    GREEN_DYE(23215),
+    RED_DYE(5728),
     BLACK_DYE(6202),
-    WHITE_DYE(10758),
+    BONE_MEAL(32458),
     BONE(5686),
     SUGAR(30638),
     /**
@@ -1964,6 +1965,7 @@ public enum Material implements Keyed {
     PHANTOM_SPAWN_EGG(24648),
     PIG_SPAWN_EGG(22584),
     PIGLIN_SPAWN_EGG(16193),
+    PIGLIN_BRUTE_SPAWN_EGG(30230),
     PILLAGER_SPAWN_EGG(28659),
     POLAR_BEAR_SPAWN_EGG(17015),
     PUFFERFISH_SPAWN_EGG(24570),
@@ -5751,7 +5753,6 @@ public enum Material implements Keyed {
             case CHEST:
             case COMPOSTER:
             case CRAFTING_TABLE:
-            case CRIMSON_ROOTS:
             case CYAN_BANNER:
             case CYAN_BED:
             case CYAN_CARPET:
@@ -5824,7 +5825,6 @@ public enum Material implements Keyed {
             case MAGENTA_WALL_BANNER:
             case MAGENTA_WOOL:
             case MUSHROOM_STEM:
-            case NETHER_SPROUTS:
             case NOTE_BLOCK:
             case OAK_DOOR:
             case OAK_FENCE:
@@ -5894,7 +5894,6 @@ public enum Material implements Keyed {
             case TNT:
             case TRAPPED_CHEST:
             case VINE:
-            case WARPED_ROOTS:
             case WHITE_BANNER:
             case WHITE_BED:
             case WHITE_CARPET:

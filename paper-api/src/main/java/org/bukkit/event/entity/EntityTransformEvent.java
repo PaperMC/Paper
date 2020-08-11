@@ -103,6 +103,10 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
         /**
          * When a slime splits into multiple smaller slimes.
          */
-        SPLIT
+        SPLIT,
+        /**
+         * When reason is unknown.
+         */
+        UNKNOWN
     }
 }
