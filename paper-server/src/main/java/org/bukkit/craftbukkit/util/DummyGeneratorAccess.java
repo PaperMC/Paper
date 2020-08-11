@@ -26,6 +26,7 @@ import net.minecraft.server.ParticleParam;
 import net.minecraft.server.SoundCategory;
 import net.minecraft.server.SoundEffect;
 import net.minecraft.server.TickList;
+import net.minecraft.server.TickListEmpty;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.WorldBorder;
 import net.minecraft.server.WorldData;
@@ -40,12 +41,12 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public TickList<Block> getBlockTickList() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return TickListEmpty.b();
     }
 
     @Override
     public TickList<FluidType> getFluidTickList() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return TickListEmpty.b();
     }
 
     @Override
@@ -190,11 +191,6 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public long ab() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }
