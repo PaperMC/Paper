@@ -147,6 +147,7 @@ public class EntityTypes<T extends Entity> {
         return IRegistry.ENTITY_TYPE.getKey(entitytypes);
     }
 
+    public static Optional<EntityTypes<?>> getByName(String name) { return a(name); } // Paper - OBFHELPER
     public static Optional<EntityTypes<?>> a(String s) {
         return IRegistry.ENTITY_TYPE.getOptional(MinecraftKey.a(s));
     }
@@ -285,6 +286,7 @@ public class EntityTypes<T extends Entity> {
         return this.bg;
     }
 
+    public String getDescriptionId() { return f(); } // Paper - OBFHELPER
     public String f() {
         if (this.bo == null) {
             this.bo = SystemUtils.a("entity", IRegistry.ENTITY_TYPE.getKey(this));

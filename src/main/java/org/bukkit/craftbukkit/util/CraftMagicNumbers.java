@@ -45,6 +45,7 @@ import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
@@ -393,6 +394,22 @@ public final class CraftMagicNumbers implements UnsafeValues {
             throw new RuntimeException();
         }
     }
+
+    @Override
+    public String getTranslationKey(Material mat) {
+        return getItem(mat).getOrCreateDescriptionId();
+    }
+
+    @Override
+    public String getTranslationKey(org.bukkit.block.Block block) {
+        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getDescriptionId();
+    }
+
+    @Override
+    public String getTranslationKey(org.bukkit.entity.EntityType type) {
+        return net.minecraft.server.EntityTypes.getByName(type.getName()).map(net.minecraft.server.EntityTypes::getDescriptionId).orElse(null);
+    }
+
     // Paper end
 
     /**

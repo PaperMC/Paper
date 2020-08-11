@@ -752,5 +752,10 @@ public class CraftBlock implements Block {
     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
         return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getNMSBlock().getBlockData().getStepSound());
     }
+
+    @Override
+    public String getTranslationKey() {
+        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
+    }
     // Paper end
 }

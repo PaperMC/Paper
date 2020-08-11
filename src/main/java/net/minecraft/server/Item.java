@@ -26,7 +26,7 @@ public class Item implements IMaterial {
     private final FoodInfo foodInfo;
 
     public static int getId(Item item) {
-        return item == null ? 0 : IRegistry.ITEM.a((Object) item);
+        return item == null ? 0 : IRegistry.ITEM.a(item);  // Paper - Fix Decompiler Issue
     }
 
     public static Item getById(int i) {
@@ -122,6 +122,7 @@ public class Item implements IMaterial {
         return IRegistry.ITEM.getKey(this).getKey();
     }
 
+    public String getOrCreateDescriptionId() { return m(); } // Paper - OBFHELPER
     protected String m() {
         if (this.name == null) {
             this.name = SystemUtils.a("item", IRegistry.ITEM.getKey(this));
