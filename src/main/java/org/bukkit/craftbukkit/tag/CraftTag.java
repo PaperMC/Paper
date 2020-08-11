@@ -20,6 +20,10 @@ public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
     }
 
     protected net.minecraft.server.Tag<N> getHandle() {
+        if (handle == null) {
+            handle = registry.b(tag);
+        }
+
         return handle;
     }
 
