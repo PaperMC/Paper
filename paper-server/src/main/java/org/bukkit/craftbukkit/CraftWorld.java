@@ -1921,7 +1921,7 @@ public class CraftWorld implements World {
 
     @Override
     public void setHardcore(boolean hardcore) {
-        world.worldDataServer.b.hardcore = true;
+        world.worldDataServer.b.hardcore = hardcore;
     }
 
     @Override
