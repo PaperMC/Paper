@@ -25,7 +25,7 @@ public class CraftPig extends CraftAnimals implements Pig {
 
     @Override
     public int getBoostTicks() {
-        return getHandle().saddleStorage.a ? getHandle().saddleStorage.c : 0;
+        return getHandle().saddleStorage.boosting ? getHandle().saddleStorage.boostTicks : 0;
     }
 
     @Override
@@ -37,19 +37,19 @@ public class CraftPig extends CraftAnimals implements Pig {
 
     @Override
     public int getCurrentBoostTicks() {
-        return getHandle().saddleStorage.a ? getHandle().saddleStorage.b : 0;
+        return getHandle().saddleStorage.boosting ? getHandle().saddleStorage.currentBoostTicks : 0;
     }
 
     @Override
     public void setCurrentBoostTicks(int ticks) {
-        if (!getHandle().saddleStorage.a) {
+        if (!getHandle().saddleStorage.boosting) {
             return;
         }
 
-        int max = getHandle().saddleStorage.c;
+        int max = getHandle().saddleStorage.boostTicks;
         Preconditions.checkArgument(ticks >= 0 && ticks <= max, "boost ticks must not exceed 0 or %d (inclusive)", max);
 
-        this.getHandle().saddleStorage.b = ticks;
+        this.getHandle().saddleStorage.currentBoostTicks = ticks;
     }
 
     @Override

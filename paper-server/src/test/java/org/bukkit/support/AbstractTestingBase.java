@@ -42,7 +42,7 @@ public abstract class AbstractTestingBase {
         // Register vanilla pack
         resourceManager.a(MoreExecutors.directExecutor(), MoreExecutors.directExecutor(), Collections.singletonList(new ResourcePackVanilla("minecraft")), CompletableFuture.completedFuture(Unit.INSTANCE)).join();
         // Bind tags
-        TAG_REGISTRY.bind();
+        TAG_REGISTRY.a().bind();
 
         DummyServer.setup();
         DummyEnchantments.setup();

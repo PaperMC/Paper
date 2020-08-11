@@ -5,13 +5,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.server.Item;
 import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.TagsServer;
+import net.minecraft.server.Tags;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
 public class CraftItemTag extends CraftTag<Item, Material> {
 
-    public CraftItemTag(TagsServer<Item> registry, MinecraftKey tag) {
+    public CraftItemTag(Tags<Item> registry, MinecraftKey tag) {
         super(registry, tag);
     }
 

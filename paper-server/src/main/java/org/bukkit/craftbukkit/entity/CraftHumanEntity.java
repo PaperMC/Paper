@@ -522,7 +522,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         CraftingManager manager = getHandle().world.getMinecraftServer().getCraftingManager();
 
         for (NamespacedKey recipeKey : recipeKeys) {
-            Optional<? extends IRecipe<?>> recipe = manager.a(CraftNamespacedKey.toMinecraft(recipeKey));
+            Optional<? extends IRecipe<?>> recipe = manager.getRecipe(CraftNamespacedKey.toMinecraft(recipeKey));
             if (!recipe.isPresent()) {
                 continue;
             }

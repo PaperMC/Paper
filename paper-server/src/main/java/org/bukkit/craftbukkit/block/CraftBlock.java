@@ -19,6 +19,7 @@ import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MovingObjectPosition;
 import net.minecraft.server.RayTrace;
+import net.minecraft.server.RegistryGeneration;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.VoxelShape;
@@ -152,7 +153,7 @@ public class CraftBlock implements Block {
 
     @Override
     public BlockData getBlockData() {
-       return CraftBlockData.fromData(getNMS());
+        return CraftBlockData.fromData(getNMS());
     }
 
     @Override
@@ -225,7 +226,6 @@ public class CraftBlock implements Block {
         return (byte) world.getBrightness(EnumSkyBlock.BLOCK, position);
     }
 
-
     public Block getFace(final BlockFace face) {
         return getRelative(face, 1);
     }
@@ -268,41 +268,43 @@ public class CraftBlock implements Block {
     }
 
     public static BlockFace notchToBlockFace(EnumDirection notch) {
-        if (notch == null) return BlockFace.SELF;
-        switch (notch) {
-        case DOWN:
-            return BlockFace.DOWN;
-        case UP:
-            return BlockFace.UP;
-        case NORTH:
-            return BlockFace.NORTH;
-        case SOUTH:
-            return BlockFace.SOUTH;
-        case WEST:
-            return BlockFace.WEST;
-        case EAST:
-            return BlockFace.EAST;
-        default:
+        if (notch == null) {
             return BlockFace.SELF;
+        }
+        switch (notch) {
+            case DOWN:
+                return BlockFace.DOWN;
+            case UP:
+                return BlockFace.UP;
+            case NORTH:
+                return BlockFace.NORTH;
+            case SOUTH:
+                return BlockFace.SOUTH;
+            case WEST:
+                return BlockFace.WEST;
+            case EAST:
+                return BlockFace.EAST;
+            default:
+                return BlockFace.SELF;
         }
     }
 
     public static EnumDirection blockFaceToNotch(BlockFace face) {
         switch (face) {
-        case DOWN:
-            return EnumDirection.DOWN;
-        case UP:
-            return EnumDirection.UP;
-        case NORTH:
-            return EnumDirection.NORTH;
-        case SOUTH:
-            return EnumDirection.SOUTH;
-        case WEST:
-            return EnumDirection.WEST;
-        case EAST:
-            return EnumDirection.EAST;
-        default:
-            return null;
+            case DOWN:
+                return EnumDirection.DOWN;
+            case UP:
+                return EnumDirection.UP;
+            case NORTH:
+                return EnumDirection.NORTH;
+            case SOUTH:
+                return EnumDirection.SOUTH;
+            case WEST:
+                return EnumDirection.WEST;
+            case EAST:
+                return EnumDirection.EAST;
+            default:
+                return null;
         }
     }
 
@@ -311,168 +313,168 @@ public class CraftBlock implements Block {
         Material material = getType();
 
         switch (material) {
-        case ACACIA_SIGN:
-        case ACACIA_WALL_SIGN:
-        case BIRCH_SIGN:
-        case BIRCH_WALL_SIGN:
-        case CRIMSON_SIGN:
-        case CRIMSON_WALL_SIGN:
-        case DARK_OAK_SIGN:
-        case DARK_OAK_WALL_SIGN:
-        case JUNGLE_SIGN:
-        case JUNGLE_WALL_SIGN:
-        case OAK_SIGN:
-        case OAK_WALL_SIGN:
-        case SPRUCE_SIGN:
-        case SPRUCE_WALL_SIGN:
-        case WARPED_SIGN:
-        case WARPED_WALL_SIGN:
-            return new CraftSign(this);
-        case CHEST:
-        case TRAPPED_CHEST:
-            return new CraftChest(this);
-        case FURNACE:
-            return new CraftFurnaceFurnace(this);
-        case DISPENSER:
-            return new CraftDispenser(this);
-        case DROPPER:
-            return new CraftDropper(this);
-        case END_GATEWAY:
-            return new CraftEndGateway(this);
-        case HOPPER:
-            return new CraftHopper(this);
-        case SPAWNER:
-            return new CraftCreatureSpawner(this);
-        case JUKEBOX:
-            return new CraftJukebox(this);
-        case BREWING_STAND:
-            return new CraftBrewingStand(this);
-        case CREEPER_HEAD:
-        case CREEPER_WALL_HEAD:
-        case DRAGON_HEAD:
-        case DRAGON_WALL_HEAD:
-        case PLAYER_HEAD:
-        case PLAYER_WALL_HEAD:
-        case SKELETON_SKULL:
-        case SKELETON_WALL_SKULL:
-        case WITHER_SKELETON_SKULL:
-        case WITHER_SKELETON_WALL_SKULL:
-        case ZOMBIE_HEAD:
-        case ZOMBIE_WALL_HEAD:
-            return new CraftSkull(this);
-        case COMMAND_BLOCK:
-        case CHAIN_COMMAND_BLOCK:
-        case REPEATING_COMMAND_BLOCK:
-            return new CraftCommandBlock(this);
-        case BEACON:
-            return new CraftBeacon(this);
-        case BLACK_BANNER:
-        case BLACK_WALL_BANNER:
-        case BLUE_BANNER:
-        case BLUE_WALL_BANNER:
-        case BROWN_BANNER:
-        case BROWN_WALL_BANNER:
-        case CYAN_BANNER:
-        case CYAN_WALL_BANNER:
-        case GRAY_BANNER:
-        case GRAY_WALL_BANNER:
-        case GREEN_BANNER:
-        case GREEN_WALL_BANNER:
-        case LIGHT_BLUE_BANNER:
-        case LIGHT_BLUE_WALL_BANNER:
-        case LIGHT_GRAY_BANNER:
-        case LIGHT_GRAY_WALL_BANNER:
-        case LIME_BANNER:
-        case LIME_WALL_BANNER:
-        case MAGENTA_BANNER:
-        case MAGENTA_WALL_BANNER:
-        case ORANGE_BANNER:
-        case ORANGE_WALL_BANNER:
-        case PINK_BANNER:
-        case PINK_WALL_BANNER:
-        case PURPLE_BANNER:
-        case PURPLE_WALL_BANNER:
-        case RED_BANNER:
-        case RED_WALL_BANNER:
-        case WHITE_BANNER:
-        case WHITE_WALL_BANNER:
-        case YELLOW_BANNER:
-        case YELLOW_WALL_BANNER:
-            return new CraftBanner(this);
-        case STRUCTURE_BLOCK:
-            return new CraftStructureBlock(this);
-        case SHULKER_BOX:
-        case WHITE_SHULKER_BOX:
-        case ORANGE_SHULKER_BOX:
-        case MAGENTA_SHULKER_BOX:
-        case LIGHT_BLUE_SHULKER_BOX:
-        case YELLOW_SHULKER_BOX:
-        case LIME_SHULKER_BOX:
-        case PINK_SHULKER_BOX:
-        case GRAY_SHULKER_BOX:
-        case LIGHT_GRAY_SHULKER_BOX:
-        case CYAN_SHULKER_BOX:
-        case PURPLE_SHULKER_BOX:
-        case BLUE_SHULKER_BOX:
-        case BROWN_SHULKER_BOX:
-        case GREEN_SHULKER_BOX:
-        case RED_SHULKER_BOX:
-        case BLACK_SHULKER_BOX:
-            return new CraftShulkerBox(this);
-        case ENCHANTING_TABLE:
-            return new CraftEnchantingTable(this);
-        case ENDER_CHEST:
-            return new CraftEnderChest(this);
-        case DAYLIGHT_DETECTOR:
-            return new CraftDaylightDetector(this);
-        case COMPARATOR:
-            return new CraftComparator(this);
-        case BLACK_BED:
-        case BLUE_BED:
-        case BROWN_BED:
-        case CYAN_BED:
-        case GRAY_BED:
-        case GREEN_BED:
-        case LIGHT_BLUE_BED:
-        case LIGHT_GRAY_BED:
-        case LIME_BED:
-        case MAGENTA_BED:
-        case ORANGE_BED:
-        case PINK_BED:
-        case PURPLE_BED:
-        case RED_BED:
-        case WHITE_BED:
-        case YELLOW_BED:
-            return new CraftBed(this);
-        case CONDUIT:
-            return new CraftConduit(this);
-        case BARREL:
-            return new CraftBarrel(this);
-        case BELL:
-            return new CraftBell(this);
-        case BLAST_FURNACE:
-            return new CraftBlastFurnace(this);
-        case CAMPFIRE:
-        case SOUL_CAMPFIRE:
-            return new CraftCampfire(this);
-        case JIGSAW:
-            return new CraftJigsaw(this);
-        case LECTERN:
-            return new CraftLectern(this);
-        case SMOKER:
-            return new CraftSmoker(this);
-        case BEEHIVE:
-        case BEE_NEST:
-            return new CraftBeehive(this);
-        default:
-            TileEntity tileEntity = world.getTileEntity(position);
-            if (tileEntity != null) {
-                // block with unhandled TileEntity:
-                return new CraftBlockEntityState<TileEntity>(this, (Class<TileEntity>) tileEntity.getClass());
-            } else {
-                // Block without TileEntity:
-                return new CraftBlockState(this);
-            }
+            case ACACIA_SIGN:
+            case ACACIA_WALL_SIGN:
+            case BIRCH_SIGN:
+            case BIRCH_WALL_SIGN:
+            case CRIMSON_SIGN:
+            case CRIMSON_WALL_SIGN:
+            case DARK_OAK_SIGN:
+            case DARK_OAK_WALL_SIGN:
+            case JUNGLE_SIGN:
+            case JUNGLE_WALL_SIGN:
+            case OAK_SIGN:
+            case OAK_WALL_SIGN:
+            case SPRUCE_SIGN:
+            case SPRUCE_WALL_SIGN:
+            case WARPED_SIGN:
+            case WARPED_WALL_SIGN:
+                return new CraftSign(this);
+            case CHEST:
+            case TRAPPED_CHEST:
+                return new CraftChest(this);
+            case FURNACE:
+                return new CraftFurnaceFurnace(this);
+            case DISPENSER:
+                return new CraftDispenser(this);
+            case DROPPER:
+                return new CraftDropper(this);
+            case END_GATEWAY:
+                return new CraftEndGateway(this);
+            case HOPPER:
+                return new CraftHopper(this);
+            case SPAWNER:
+                return new CraftCreatureSpawner(this);
+            case JUKEBOX:
+                return new CraftJukebox(this);
+            case BREWING_STAND:
+                return new CraftBrewingStand(this);
+            case CREEPER_HEAD:
+            case CREEPER_WALL_HEAD:
+            case DRAGON_HEAD:
+            case DRAGON_WALL_HEAD:
+            case PLAYER_HEAD:
+            case PLAYER_WALL_HEAD:
+            case SKELETON_SKULL:
+            case SKELETON_WALL_SKULL:
+            case WITHER_SKELETON_SKULL:
+            case WITHER_SKELETON_WALL_SKULL:
+            case ZOMBIE_HEAD:
+            case ZOMBIE_WALL_HEAD:
+                return new CraftSkull(this);
+            case COMMAND_BLOCK:
+            case CHAIN_COMMAND_BLOCK:
+            case REPEATING_COMMAND_BLOCK:
+                return new CraftCommandBlock(this);
+            case BEACON:
+                return new CraftBeacon(this);
+            case BLACK_BANNER:
+            case BLACK_WALL_BANNER:
+            case BLUE_BANNER:
+            case BLUE_WALL_BANNER:
+            case BROWN_BANNER:
+            case BROWN_WALL_BANNER:
+            case CYAN_BANNER:
+            case CYAN_WALL_BANNER:
+            case GRAY_BANNER:
+            case GRAY_WALL_BANNER:
+            case GREEN_BANNER:
+            case GREEN_WALL_BANNER:
+            case LIGHT_BLUE_BANNER:
+            case LIGHT_BLUE_WALL_BANNER:
+            case LIGHT_GRAY_BANNER:
+            case LIGHT_GRAY_WALL_BANNER:
+            case LIME_BANNER:
+            case LIME_WALL_BANNER:
+            case MAGENTA_BANNER:
+            case MAGENTA_WALL_BANNER:
+            case ORANGE_BANNER:
+            case ORANGE_WALL_BANNER:
+            case PINK_BANNER:
+            case PINK_WALL_BANNER:
+            case PURPLE_BANNER:
+            case PURPLE_WALL_BANNER:
+            case RED_BANNER:
+            case RED_WALL_BANNER:
+            case WHITE_BANNER:
+            case WHITE_WALL_BANNER:
+            case YELLOW_BANNER:
+            case YELLOW_WALL_BANNER:
+                return new CraftBanner(this);
+            case STRUCTURE_BLOCK:
+                return new CraftStructureBlock(this);
+            case SHULKER_BOX:
+            case WHITE_SHULKER_BOX:
+            case ORANGE_SHULKER_BOX:
+            case MAGENTA_SHULKER_BOX:
+            case LIGHT_BLUE_SHULKER_BOX:
+            case YELLOW_SHULKER_BOX:
+            case LIME_SHULKER_BOX:
+            case PINK_SHULKER_BOX:
+            case GRAY_SHULKER_BOX:
+            case LIGHT_GRAY_SHULKER_BOX:
+            case CYAN_SHULKER_BOX:
+            case PURPLE_SHULKER_BOX:
+            case BLUE_SHULKER_BOX:
+            case BROWN_SHULKER_BOX:
+            case GREEN_SHULKER_BOX:
+            case RED_SHULKER_BOX:
+            case BLACK_SHULKER_BOX:
+                return new CraftShulkerBox(this);
+            case ENCHANTING_TABLE:
+                return new CraftEnchantingTable(this);
+            case ENDER_CHEST:
+                return new CraftEnderChest(this);
+            case DAYLIGHT_DETECTOR:
+                return new CraftDaylightDetector(this);
+            case COMPARATOR:
+                return new CraftComparator(this);
+            case BLACK_BED:
+            case BLUE_BED:
+            case BROWN_BED:
+            case CYAN_BED:
+            case GRAY_BED:
+            case GREEN_BED:
+            case LIGHT_BLUE_BED:
+            case LIGHT_GRAY_BED:
+            case LIME_BED:
+            case MAGENTA_BED:
+            case ORANGE_BED:
+            case PINK_BED:
+            case PURPLE_BED:
+            case RED_BED:
+            case WHITE_BED:
+            case YELLOW_BED:
+                return new CraftBed(this);
+            case CONDUIT:
+                return new CraftConduit(this);
+            case BARREL:
+                return new CraftBarrel(this);
+            case BELL:
+                return new CraftBell(this);
+            case BLAST_FURNACE:
+                return new CraftBlastFurnace(this);
+            case CAMPFIRE:
+            case SOUL_CAMPFIRE:
+                return new CraftCampfire(this);
+            case JIGSAW:
+                return new CraftJigsaw(this);
+            case LECTERN:
+                return new CraftLectern(this);
+            case SMOKER:
+                return new CraftSmoker(this);
+            case BEEHIVE:
+            case BEE_NEST:
+                return new CraftBeehive(this);
+            default:
+                TileEntity tileEntity = world.getTileEntity(position);
+                if (tileEntity != null) {
+                    // block with unhandled TileEntity:
+                    return new CraftBlockEntityState<TileEntity>(this, (Class<TileEntity>) tileEntity.getClass());
+                } else {
+                    // Block without TileEntity:
+                    return new CraftBlockState(this);
+                }
         }
     }
 
@@ -491,7 +493,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return Biome.valueOf(IRegistry.BIOME.getKey(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
+        return Biome.valueOf(RegistryGeneration.WORLDGEN_BIOME.getKey(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
     }
 
     public static BiomeBase biomeToBiomeBase(Biome bio) {
@@ -499,7 +501,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return IRegistry.BIOME.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
+        return RegistryGeneration.WORLDGEN_BIOME.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
     }
 
     @Override
@@ -524,8 +526,12 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) return true;
-        if (!(o instanceof CraftBlock)) return false;
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof CraftBlock)) {
+            return false;
+        }
         CraftBlock other = (CraftBlock) o;
 
         return this.position.equals(other.position) && this.getWorld().equals(other.getWorld());
@@ -613,7 +619,7 @@ public class CraftBlock implements Block {
         boolean result = false;
 
         // Modelled off EntityHuman#hasBlock
-        if (block != Blocks.AIR && (item == null || !iblockdata.isAlwaysDestroyable() || nmsItem.canDestroySpecialBlock(iblockdata))) {
+        if (block != Blocks.AIR && (item == null || !iblockdata.isRequiresSpecialTool() || nmsItem.canDestroySpecialBlock(iblockdata))) {
             net.minecraft.server.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
             result = true;
         }
@@ -637,7 +643,7 @@ public class CraftBlock implements Block {
         net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
-        if (item == null || !iblockdata.isAlwaysDestroyable() || nms.canDestroySpecialBlock(iblockdata)) {
+        if (item == null || !iblockdata.isRequiresSpecialTool() || nms.canDestroySpecialBlock(iblockdata)) {
             return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {

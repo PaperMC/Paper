@@ -70,6 +70,6 @@ public class MaterialTest extends AbstractTestingBase {
                 .sorted(Comparator.comparingInt(Material::getId))
                 .forEach(expectedOrder::add);
 
-        assertArrayEquals(Material.values(), expectedOrder.toArray());
+        assertArrayEquals(expectedOrder.toArray(), Material.values());
     }
 }

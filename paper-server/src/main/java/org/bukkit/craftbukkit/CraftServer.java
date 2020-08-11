@@ -92,9 +92,8 @@ import net.minecraft.server.PlayerList;
 import net.minecraft.server.RegistryMaterials;
 import net.minecraft.server.RegistryReadOps;
 import net.minecraft.server.ResourceKey;
-import net.minecraft.server.SaveData;
 import net.minecraft.server.ServerCommand;
-import net.minecraft.server.TagsServer;
+import net.minecraft.server.Tags;
 import net.minecraft.server.TicketType;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.VillageSiege;
@@ -752,7 +751,7 @@ public final class CraftServer implements Server {
         configuration = YamlConfiguration.loadConfiguration(getConfigFile());
         commandsConfiguration = YamlConfiguration.loadConfiguration(getCommandsConfigFile());
 
-        console.propertyManager = new DedicatedServerSettings(console.options);
+        console.propertyManager = new DedicatedServerSettings(console.aX(), console.options);
         DedicatedServerProperties config = console.propertyManager.getProperties();
 
         console.setPVP(config.pvp);
@@ -986,7 +985,7 @@ public final class CraftServer implements Server {
 
         IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.b();
 
-        RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.a, console.dataPackResources.h(), (IRegistryCustom) iregistrycustom_dimension);
+        RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.a, console.dataPackResources.h(), iregistrycustom_dimension);
         WorldDataServer worlddata = (WorldDataServer) worldSession.a((DynamicOps) registryreadops, console.datapackconfiguration);
 
         WorldSettings worldSettings;
@@ -998,7 +997,7 @@ public final class CraftServer implements Server {
             properties.put("generate-structures", Objects.toString(creator.generateStructures()));
             properties.put("level-type", Objects.toString(creator.type().getName()));
 
-            GeneratorSettings generatorsettings = GeneratorSettings.a(properties);
+            GeneratorSettings generatorsettings = GeneratorSettings.a(console.aX(), properties);
             worldSettings = new WorldSettings(name, EnumGamemode.getById(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), console.datapackconfiguration);
             worlddata = new WorldDataServer(worldSettings, generatorsettings, Lifecycle.stable());
         }
@@ -1008,32 +1007,29 @@ public final class CraftServer implements Server {
         if (console.options.has("forceUpgrade")) {
             net.minecraft.server.Main.convertWorld(worldSession, DataConverterRegistry.a(), console.options.has("eraseCache"), () -> {
                 return true;
-            }, worlddata.getGeneratorSettings().e().c().stream().map((entry) -> {
-                return ResourceKey.a(IRegistry.ad, ((ResourceKey) entry.getKey()).a());
+            }, worlddata.getGeneratorSettings().d().d().stream().map((entry) -> {
+                return ResourceKey.a(IRegistry.K, ((ResourceKey) entry.getKey()).a());
             }).collect(ImmutableSet.toImmutableSet()));
         }
 
         long j = BiomeManager.a(creator.seed());
         List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
-        RegistryMaterials<WorldDimension> registrymaterials = worlddata.getGeneratorSettings().e();
+        RegistryMaterials<WorldDimension> registrymaterials = worlddata.getGeneratorSettings().d();
         WorldDimension worlddimension = (WorldDimension) registrymaterials.a(actualDimension);
         DimensionManager dimensionmanager;
         net.minecraft.server.ChunkGenerator chunkgenerator;
 
         if (worlddimension == null) {
-            dimensionmanager = DimensionManager.a();
-            chunkgenerator = GeneratorSettings.a((new Random()).nextLong());
+            dimensionmanager = (DimensionManager) console.f.a().d(DimensionManager.OVERWORLD);
+            chunkgenerator = GeneratorSettings.a(console.f.b(IRegistry.ay), console.f.b(IRegistry.ar), (new Random()).nextLong());
         } else {
             dimensionmanager = worlddimension.b();
             chunkgenerator = worlddimension.c();
         }
 
-        ResourceKey<DimensionManager> typeKey = (ResourceKey) console.f.a().c(dimensionmanager).orElseThrow(() -> {
-            return new IllegalStateException("Unregistered dimension type: " + dimensionmanager);
-        });
-        ResourceKey<net.minecraft.server.World> worldKey = ResourceKey.a(IRegistry.ae, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
+        ResourceKey<net.minecraft.server.World> worldKey = ResourceKey.a(IRegistry.L, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
 
-        WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, worldSession, worlddata, worldKey, typeKey, dimensionmanager, getServer().worldLoadListenerFactory.create(11),
+        WorldServer internal = (WorldServer) new WorldServer(console, console.executorService, worldSession, worlddata, worldKey, dimensionmanager, getServer().worldLoadListenerFactory.create(11),
                 chunkgenerator, worlddata.getGeneratorSettings().isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator);
 
         if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
@@ -1212,7 +1208,7 @@ public final class CraftServer implements Server {
     public Recipe getRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-        return getServer().getCraftingManager().a(CraftNamespacedKey.toMinecraft(recipeKey)).map(IRecipe::toBukkitRecipe).orElse(null);
+        return getServer().getCraftingManager().getRecipe(CraftNamespacedKey.toMinecraft(recipeKey)).map(IRecipe::toBukkitRecipe).orElse(null);
     }
 
     @Override
@@ -1971,13 +1967,13 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have material type");
 
-                TagsServer<Block> blockTags = console.getTagRegistry().getBlockTags();
-                return blockTags.b().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, key)).collect(ImmutableList.toImmutableList());
+                Tags<Block> blockTags = console.getTagRegistry().getBlockTags();
+                return blockTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, key)).collect(ImmutableList.toImmutableList());
             case org.bukkit.Tag.REGISTRY_ITEMS:
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
 
-                TagsServer<Item> itemTags = console.getTagRegistry().getItemTags();
-                return itemTags.b().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, key)).collect(ImmutableList.toImmutableList());
+                Tags<Item> itemTags = console.getTagRegistry().getItemTags();
+                return itemTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, key)).collect(ImmutableList.toImmutableList());
             default:
                 throw new IllegalArgumentException();
         }

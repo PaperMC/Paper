@@ -14,43 +14,43 @@ public class CraftHoglin extends CraftAnimals implements Hoglin {
 
     @Override
     public boolean isImmuneToZombification() {
-        return getHandle().eW();
+        return getHandle().isImmuneToZombification();
     }
 
     @Override
     public void setImmuneToZombification(boolean flag) {
-        getHandle().t(flag);
+        getHandle().setImmuneToZombification(flag);
     }
 
     @Override
     public boolean isAbleToBeHunted() {
-        return getHandle().bA;
+        return getHandle().cannotBeHunted;
     }
 
     @Override
     public void setIsAbleToBeHunted(boolean flag) {
-        getHandle().bA = flag;
+        getHandle().cannotBeHunted = flag;
     }
 
     @Override
     public int getConversionTime() {
         Preconditions.checkState(isConverting(), "Entity not converting");
-        return getHandle().bz;
+        return getHandle().conversionTicks;
     }
 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            getHandle().bz = -1;
-            getHandle().t(false);
+            getHandle().conversionTicks = -1;
+            getHandle().setImmuneToZombification(false);
         } else {
-            getHandle().bz = time;
+            getHandle().conversionTicks = time;
         }
     }
 
     @Override
     public boolean isConverting() {
-        return getHandle().eO(); // PAIL rename isConverting()
+        return getHandle().isConverting();
     }
 
     @Override

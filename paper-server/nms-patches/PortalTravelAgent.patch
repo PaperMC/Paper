@@ -1,162 +1,93 @@
 --- a/net/minecraft/server/PortalTravelAgent.java
 +++ b/net/minecraft/server/PortalTravelAgent.java
-@@ -18,12 +18,19 @@
+@@ -13,13 +13,19 @@
      }
  
-     public boolean findAndTeleport(Entity entity, float f) {
+     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
 +        // CraftBukkit start
-+        return findAndTeleport(entity, entity.getChunkCoordinates(), f, 128, false) != null;
++        return findPortal(blockposition, flag ? 16 : 128); // Search Radius
 +    }
 +
-+    public ShapeDetector.Shape findAndTeleport(Entity entity, BlockPosition findPosition, float f, int searchRadius, boolean searchOnly) {
++    public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {
+         VillagePlace villageplace = this.world.y();
+-        int i = flag ? 16 : 128;
++        // int i = flag ? 16 : 128;
 +        // CraftBukkit end
-         Vec3D vec3d = entity.getPortalOffset();
-         EnumDirection enumdirection = entity.getPortalDirection();
--        ShapeDetector.Shape shapedetector_shape = this.a(entity.getChunkCoordinates(), entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman);
-+        ShapeDetector.Shape shapedetector_shape = this.findPortal(findPosition, entity.getMot(), enumdirection, vec3d.x, vec3d.y, entity instanceof EntityHuman, searchRadius); // CraftBukkit - add location and searchRadius
-+        if (searchOnly) return shapedetector_shape; // CraftBukkit - optional teleporting
  
-         if (shapedetector_shape == null) {
--            return false;
-+            return null; // CraftBukkit - return shape
-         } else {
-             Vec3D vec3d1 = shapedetector_shape.position;
-             Vec3D vec3d2 = shapedetector_shape.velocity;
-@@ -31,19 +38,26 @@
-             entity.setMot(vec3d2);
-             entity.yaw = f + (float) shapedetector_shape.yaw;
-             entity.teleportAndSync(vec3d1.x, vec3d1.y, vec3d1.z);
--            return true;
-+            return shapedetector_shape; // CraftBukkit - return shape
-         }
-     }
- 
-     @Nullable
--    public ShapeDetector.Shape a(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag) {
-+    public ShapeDetector.Shape a(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag) { // PAIL: rename to findPortal, d0 = portal offset x, d1 = portal offset z, flag = instanceof EntityHuman
-+        // CraftBukkit start
-+        return findPortal(blockposition, vec3d, enumdirection, d0, d1, flag, 128);
-+    }
-+
-+    @Nullable
-+    public ShapeDetector.Shape findPortal(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag, int searchRadius) {
-+        // CraftBukkit end
-         VillagePlace villageplace = this.world.x();
- 
-         villageplace.a(this.world, blockposition, 128);
-         List<VillagePlaceRecord> list = (List) villageplace.b((villageplacetype) -> {
+         villageplace.a(this.world, blockposition, i);
+         Optional<VillagePlaceRecord> optional = villageplace.b((villageplacetype) -> {
              return villageplacetype == VillagePlaceType.v;
--        }, blockposition, 128, VillagePlace.Occupancy.ANY).collect(Collectors.toList());
--        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.comparingDouble((villageplacerecord) -> {
-+        }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
-+        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.<VillagePlaceRecord>comparingDouble((villageplacerecord) -> { // CraftBukkit - decompile error
+-        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((villageplacerecord) -> {
++        }, blockposition, i, VillagePlace.Occupancy.ANY).sorted(Comparator.comparingDouble((VillagePlaceRecord villageplacerecord) -> { // CraftBukkit - decompile error
              return villageplacerecord.f().j(blockposition);
          }).thenComparingInt((villageplacerecord) -> {
              return villageplacerecord.f().getY();
-@@ -56,15 +70,23 @@
-             ShapeDetector.ShapeDetectorCollection shapedetector_shapedetectorcollection = BlockPortal.c((GeneratorAccess) this.world, blockposition1);
- 
-             return shapedetector_shapedetectorcollection.a(enumdirection, blockposition1, d1, vec3d, d0);
--        }).orElse((Object) null);
-+        }).orElse(null); // CraftBukkit - decompile error
+@@ -40,6 +46,12 @@
      }
  
-     public boolean createPortal(Entity entity) {
-+        // CraftBukkit start - providable position and creation radius
-+        return createPortal(entity, entity.getChunkCoordinates(), 16);
+     public Optional<BlockUtil.Rectangle> createPortal(BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
++        // CraftBukkit start
++        return this.createPortal(blockposition, enumdirection_enumaxis, null, 16);
 +    }
 +
-+    public boolean createPortal(Entity entity, BlockPosition createPosition, int createRadius) {
++    public Optional<BlockUtil.Rectangle> createPortal(BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis, Entity entity, int createRadius) {
 +        // CraftBukkit end
-         boolean flag = true;
+         EnumDirection enumdirection = EnumDirection.a(EnumDirection.EnumAxisDirection.POSITIVE, enumdirection_enumaxis);
          double d0 = -1.0D;
--        int i = MathHelper.floor(entity.locX());
--        int j = MathHelper.floor(entity.locY());
--        int k = MathHelper.floor(entity.locZ());
-+        // CraftBukkit start - providable position
-+        int i = createPosition.getX();
-+        int j = createPosition.getY();
-+        int k = createPosition.getZ();
-+        // CraftBukkit end
-         int l = i;
-         int i1 = j;
-         int j1 = k;
-@@ -88,11 +110,11 @@
-         double d3;
-         double d4;
+         BlockPosition blockposition1 = null;
+@@ -48,7 +60,7 @@
+         WorldBorder worldborder = this.world.getWorldBorder();
+         int i = this.world.getHeight() - 1;
+         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.i();
+-        Iterator iterator = BlockPosition.a(blockposition, 16, EnumDirection.EAST, EnumDirection.SOUTH).iterator();
++        Iterator iterator = BlockPosition.a(blockposition, createRadius, EnumDirection.EAST, EnumDirection.SOUTH).iterator(); // CraftBukkit
  
--        for (i2 = i - 16; i2 <= i + 16; ++i2) {
--            d1 = (double) i2 + 0.5D - entity.locX();
-+        for (i2 = i - createRadius; i2 <= i + createRadius; ++i2) { // CraftBukkit - createRadius
-+            d1 = (double) i2 + 0.5D - createPosition.getX(); // CraftBukkit - providable position
+         int j;
  
--            for (j2 = k - 16; j2 <= k + 16; ++j2) {
--                d2 = (double) j2 + 0.5D - entity.locZ();
-+            for (j2 = k - createRadius; j2 <= k + createRadius; ++j2) { // CraftBukkit - createRadius
-+                d2 = (double) j2 + 0.5D - createPosition.getZ(); // CraftBukkit - providable position
+@@ -102,6 +114,7 @@
  
-                 label257:
-                 for (k2 = this.world.getHeight() - 1; k2 >= 0; --k2) {
-@@ -140,11 +162,11 @@
-         }
- 
-         if (d0 < 0.0D) {
--            for (i2 = i - 16; i2 <= i + 16; ++i2) {
--                d1 = (double) i2 + 0.5D - entity.locX();
-+            for (i2 = i - createRadius; i2 <= i + createRadius; ++i2) { // CraftBukkit - createRadius
-+                d1 = (double) i2 + 0.5D - createPosition.getX(); // CraftBukkit - providable position
- 
--                for (j2 = k - 16; j2 <= k + 16; ++j2) {
--                    d2 = (double) j2 + 0.5D - entity.locZ();
-+                for (j2 = k - createRadius; j2 <= k + createRadius; ++j2) { // CraftBukkit - createRadius
-+                    d2 = (double) j2 + 0.5D - createPosition.getZ(); // CraftBukkit - providable position
- 
-                     label205:
-                     for (k2 = this.world.getHeight() - 1; k2 >= 0; --k2) {
-@@ -197,6 +219,7 @@
-             l5 = -l5;
-         }
+         int j1;
  
 +        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(this.world); // CraftBukkit - Use BlockStateListPopulator
-         if (d0 < 0.0D) {
-             i1 = MathHelper.clamp(i1, 70, this.world.getHeight() - 10);
-             j5 = i1;
-@@ -210,7 +233,7 @@
-                         boolean flag1 = l2 < 0;
+         if (d0 == -1.0D) {
+             blockposition1 = (new BlockPosition(blockposition.getX(), MathHelper.clamp(blockposition.getY(), 70, this.world.getHeight() - 10), blockposition.getZ())).immutableCopy();
+             EnumDirection enumdirection1 = enumdirection.g();
+@@ -116,7 +129,7 @@
+                         IBlockData iblockdata = k1 < 0 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData();
  
-                         blockposition_mutableblockposition.d(j3, l3, i4);
--                        this.world.setTypeUpdate(blockposition_mutableblockposition, flag1 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData());
-+                        blockList.setTypeAndData(blockposition_mutableblockposition, flag1 ? Blocks.OBSIDIAN.getBlockData() : Blocks.AIR.getBlockData(), 3); // CraftBukkit
+                         blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j * enumdirection.getAdjacentX() + j1 * enumdirection1.getAdjacentX(), k1, j * enumdirection.getAdjacentZ() + j1 * enumdirection1.getAdjacentZ());
+-                        this.world.setTypeUpdate(blockposition_mutableblockposition, iblockdata);
++                        blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata, 3); // CraftBukkit
                      }
                  }
              }
-@@ -220,7 +243,7 @@
-             for (i3 = -1; i3 < 4; ++i3) {
-                 if (k2 == -1 || k2 == 2 || i3 == -1 || i3 == 3) {
-                     blockposition_mutableblockposition.d(i5 + k2 * k5, j5 + i3, j2 + k2 * l5);
+@@ -126,7 +139,7 @@
+             for (j1 = -1; j1 < 4; ++j1) {
+                 if (l1 == -1 || l1 == 2 || j1 == -1 || j1 == 3) {
+                     blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, l1 * enumdirection.getAdjacentX(), j1, l1 * enumdirection.getAdjacentZ());
 -                    this.world.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3);
 +                    blockList.setTypeAndData(blockposition_mutableblockposition, Blocks.OBSIDIAN.getBlockData(), 3); // CraftBukkit
                  }
              }
          }
-@@ -230,10 +253,19 @@
-         for (i3 = 0; i3 < 2; ++i3) {
-             for (l2 = 0; l2 < 3; ++l2) {
-                 blockposition_mutableblockposition.d(i5 + i3 * k5, j5 + l2, j2 + i3 * l5);
--                this.world.setTypeAndData(blockposition_mutableblockposition, iblockdata, 18);
-+                blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata, 18); // CraftBukkit
+@@ -136,10 +149,19 @@
+         for (j1 = 0; j1 < 2; ++j1) {
+             for (j = 0; j < 3; ++j) {
+                 blockposition_mutableblockposition.a((BaseBlockPosition) blockposition1, j1 * enumdirection.getAdjacentX(), j, j1 * enumdirection.getAdjacentZ());
+-                this.world.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18);
++                blockList.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit
              }
          }
  
 +        // CraftBukkit start
 +        org.bukkit.World bworld = this.world.getWorld();
-+        org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blockList.getList(), bworld, entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.NETHER_PAIR);
++        org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blockList.getList(), bworld, (entity == null) ? null : entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.NETHER_PAIR);
 +
 +        this.world.getServer().getPluginManager().callEvent(event);
 +        if (!event.isCancelled()) {
 +            blockList.updateList();
 +        }
 +        // CraftBukkit end
-         return true;
+         return Optional.of(new BlockUtil.Rectangle(blockposition1.immutableCopy(), 2, 3));
      }
- }
+ 

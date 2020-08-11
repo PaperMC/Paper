@@ -204,7 +204,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "25afc67716a170ea965092c1067ff439";
+        return "c2d5d7871edcc4fb0f81d18959c647af";
     }
 
     @Override
@@ -240,7 +240,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         JsonElement jsonelement = AdvancementDataWorld.DESERIALIZER.fromJson(advancement, JsonElement.class);
         JsonObject jsonobject = ChatDeserializer.m(jsonelement, "advancement");
-        net.minecraft.server.Advancement.SerializedAdvancement nms = net.minecraft.server.Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, MinecraftServer.getServer().aI()));
+        net.minecraft.server.Advancement.SerializedAdvancement nms = net.minecraft.server.Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, MinecraftServer.getServer().getLootPredicateManager()));
         if (nms != null) {
             MinecraftServer.getServer().getAdvancementData().REGISTRY.a(Maps.newHashMap(Collections.singletonMap(minecraftkey, nms)));
             Advancement bukkit = Bukkit.getAdvancement(key);

@@ -1,26 +1,27 @@
 --- a/net/minecraft/server/EntityZombieVillager.java
 +++ b/net/minecraft/server/EntityZombieVillager.java
-@@ -5,6 +5,11 @@
+@@ -5,6 +5,12 @@
  import java.util.UUID;
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.Logger;
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.ZombieVillager;
++import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityTransformEvent;
 +// CraftBukkit end
  
  public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
-@@ -15,6 +20,7 @@
-     private NBTBase bw;
-     private NBTTagCompound bx;
-     private int by;
+@@ -15,6 +21,7 @@
+     private NBTBase bp;
+     private NBTTagCompound bq;
+     private int br;
 +    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
  
      public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
          super(entitytypes, world);
-@@ -31,7 +37,7 @@
+@@ -31,7 +38,7 @@
      @Override
      public void saveData(NBTTagCompound nbttagcompound) {
          super.saveData(nbttagcompound);
@@ -29,7 +30,7 @@
          Logger logger = EntityZombieVillager.LOGGER;
  
          logger.getClass();
-@@ -87,6 +93,10 @@
+@@ -87,6 +94,10 @@
      public void tick() {
          if (!this.world.isClientSide && this.isAlive() && this.isConverting()) {
              int i = this.getConversionProgress();
@@ -40,7 +41,7 @@
  
              this.conversionTime -= i;
              if (this.conversionTime <= 0) {
-@@ -95,6 +105,7 @@
+@@ -95,6 +106,7 @@
          }
  
          super.tick();
@@ -48,7 +49,7 @@
      }
  
      @Override
-@@ -138,8 +149,11 @@
+@@ -138,13 +150,22 @@
          this.conversionPlayer = uuid;
          this.conversionTime = i;
          this.getDataWatcher().set(EntityZombieVillager.CONVERTING, true);
@@ -62,32 +63,19 @@
          this.world.broadcastEntityEffect(this, (byte) 16);
      }
  
-@@ -181,7 +195,7 @@
-             entityvillager.setAgeRaw(-24000);
-         }
- 
--        this.die();
-+        // this.die(); // CraftBukkit - moved down
-         entityvillager.setNoAI(this.isNoAI());
-         if (this.hasCustomName()) {
-             entityvillager.setCustomName(this.getCustomName());
-@@ -193,7 +207,14 @@
-         }
- 
-         entityvillager.setInvulnerable(this.isInvulnerable());
--        worldserver.addEntity(entityvillager);
+     private void c(WorldServer worldserver) {
+-        EntityVillager entityvillager = (EntityVillager) this.a(EntityTypes.VILLAGER, false);
 +        // CraftBukkit start
-+        if (CraftEventFactory.callEntityTransformEvent(this, entityvillager, EntityTransformEvent.TransformReason.CURED).isCancelled()) {
++        EntityVillager entityvillager = (EntityVillager) this.a(EntityTypes.VILLAGER, false, EntityTransformEvent.TransformReason.CURED, CreatureSpawnEvent.SpawnReason.CURED);
++        if (entityvillager == null) {
 +            ((ZombieVillager) getBukkitEntity()).setConversionTime(-1); // SPIGOT-5208: End conversion to stop event spam
 +            return;
 +        }
-+        this.die(); // CraftBukkit - from above
-+        worldserver.addEntity(entityvillager, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CURED); // CraftBukkit - add SpawnReason
 +        // CraftBukkit end
-         if (this.conversionPlayer != null) {
-             EntityHuman entityhuman = worldserver.b(this.conversionPlayer);
+         EnumItemSlot[] aenumitemslot = EnumItemSlot.values();
+         int i = aenumitemslot.length;
  
-@@ -203,7 +224,7 @@
+@@ -185,7 +206,7 @@
              }
          }
  

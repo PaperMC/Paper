@@ -20,16 +20,16 @@ import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
 import net.minecraft.server.IChunkProvider;
+import net.minecraft.server.IRegistryCustom;
 import net.minecraft.server.LightEngine;
 import net.minecraft.server.ParticleParam;
 import net.minecraft.server.SoundCategory;
 import net.minecraft.server.SoundEffect;
 import net.minecraft.server.TickList;
-import net.minecraft.server.TickListEmpty;
 import net.minecraft.server.TileEntity;
-import net.minecraft.server.World;
 import net.minecraft.server.WorldBorder;
 import net.minecraft.server.WorldData;
+import net.minecraft.server.WorldServer;
 
 public class DummyGeneratorAccess implements GeneratorAccess {
 
@@ -40,16 +40,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public TickList<Block> getBlockTickList() {
-        return TickListEmpty.b();
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public TickList<FluidType> getFluidTickList() {
-        return TickListEmpty.b();
-    }
-
-    @Override
-    public World getMinecraftWorld() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -59,7 +54,7 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public DifficultyDamageScaler getDamageScaler(BlockPosition bp) {
+    public DifficultyDamageScaler getDamageScaler(BlockPosition blockposition) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -74,17 +69,27 @@ public class DummyGeneratorAccess implements GeneratorAccess {
     }
 
     @Override
-    public void playSound(EntityHuman eh, BlockPosition bp, SoundEffect se, SoundCategory sc, float f, float f1) {
+    public void playSound(EntityHuman entityhuman, BlockPosition blockposition, SoundEffect soundeffect, SoundCategory soundcategory, float f, float f1) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void addParticle(ParticleParam pp, double d, double d1, double d2, double d3, double d4, double d5) {
+    public void addParticle(ParticleParam particleparam, double d0, double d1, double d2, double d3, double d4, double d5) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void a(EntityHuman eh, int i, BlockPosition bp, int i1) {
+    public void a(EntityHuman entityhuman, int i, BlockPosition blockposition, int j) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public WorldServer getMinecraftWorld() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public IRegistryCustom r() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -185,6 +190,11 @@ public class DummyGeneratorAccess implements GeneratorAccess {
 
     @Override
     public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public long ab() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

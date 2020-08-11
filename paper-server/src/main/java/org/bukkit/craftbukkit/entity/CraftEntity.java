@@ -94,6 +94,8 @@ import net.minecraft.server.EntityPhantom;
 import net.minecraft.server.EntityPig;
 import net.minecraft.server.EntityPigZombie;
 import net.minecraft.server.EntityPiglin;
+import net.minecraft.server.EntityPiglinAbstract;
+import net.minecraft.server.EntityPiglinBrute;
 import net.minecraft.server.EntityPillager;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EntityPolarBear;
@@ -284,7 +286,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         else { return new CraftIllager(server, (EntityIllagerAbstract) entity); }
                     }
                     else if (entity instanceof EntityRavager) { return new CraftRavager(server, (EntityRavager) entity); }
-                    else if (entity instanceof EntityPiglin) { return new CraftPiglin(server, (EntityPiglin) entity); }
+                    else if (entity instanceof EntityPiglinAbstract) {
+                        if (entity instanceof EntityPiglin) return new CraftPiglin(server, (EntityPiglin) entity);
+                        else if (entity instanceof EntityPiglinBrute) { return new CraftPiglinBrute(server, (EntityPiglinBrute) entity); }
+                        else { return new CraftPiglinAbstract(server, (EntityPiglinAbstract) entity); }
+                    }
                     else if (entity instanceof EntityZoglin) { return new CraftZoglin(server, (EntityZoglin) entity); }
 
                     else  { return new CraftMonster(server, (EntityMonster) entity); }
