@@ -39,11 +39,11 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public boolean generateEndPortal(boolean withPortals) {
-        if (handle.exitPortalLocation != null || handle.j() != null) {
+        if (handle.exitPortalLocation != null || handle.getExitPortalShape() != null) {
             return false;
         }
 
-        this.handle.a(withPortals);
+        this.handle.generateExitPortal(withPortals);
         return true;
     }
 

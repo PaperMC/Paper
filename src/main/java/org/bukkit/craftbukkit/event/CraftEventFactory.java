@@ -1460,7 +1460,7 @@ public class CraftEventFactory {
         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
         // Suppress during worldgen
         if (world instanceof World) {
-            world.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
+            ((World) world).getMinecraftServer().server.getPluginManager().callEvent(event);
         }
         return event;
     }

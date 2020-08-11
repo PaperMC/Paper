@@ -38,8 +38,8 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         requirePlaced();
         if (!getTileEntity().opened) {
             IBlockData blockData = getTileEntity().getBlock();
-            getTileEntity().a(blockData, true);
-            getTileEntity().a(blockData, SoundEffects.BLOCK_BARREL_OPEN);
+            getTileEntity().setOpenFlag(blockData, true);
+            getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_OPEN);
         }
         getTileEntity().opened = true;
     }
@@ -49,8 +49,8 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         requirePlaced();
         if (getTileEntity().opened) {
             IBlockData blockData = getTileEntity().getBlock();
-            getTileEntity().a(blockData, false);
-            getTileEntity().a(blockData, SoundEffects.BLOCK_BARREL_CLOSE);
+            getTileEntity().setOpenFlag(blockData, false);
+            getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_CLOSE);
         }
         getTileEntity().opened = false;
     }

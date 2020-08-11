@@ -16,6 +16,7 @@ import net.minecraft.server.EnumSkyBlock;
 import net.minecraft.server.GameProfileSerializer;
 import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.LightEngine;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.NibbleArray;
@@ -288,7 +289,7 @@ public class CraftChunk implements Chunk {
         BiomeStorage biome = null;
 
         if (includeBiome || includeBiomeTempRain) {
-            biome = chunk.getBiomeIndex().b();
+            biome = chunk.getBiomeIndex();
         }
 
         World world = getWorld();
@@ -300,7 +301,7 @@ public class CraftChunk implements Chunk {
 
         if (includeBiome || includeBiomeTempRain) {
             WorldChunkManager wcm = world.getHandle().getChunkProvider().getChunkGenerator().getWorldChunkManager();
-            biome = new BiomeStorage(new ChunkCoordIntPair(x, z), wcm);
+            biome = new BiomeStorage(world.getHandle().r().b(IRegistry.ay), new ChunkCoordIntPair(x, z), wcm);
         }
 
         /* Fill with empty data */

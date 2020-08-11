@@ -1,8 +1,8 @@
 --- a/net/minecraft/server/BlockPortal.java
 +++ b/net/minecraft/server/BlockPortal.java
-@@ -4,6 +4,13 @@
+@@ -2,6 +2,13 @@
+ 
  import java.util.Random;
- import javax.annotation.Nullable;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.block.CraftBlock;
@@ -14,7 +14,7 @@
  public class BlockPortal extends Block {
  
      public static final BlockStateEnum<EnumDirection.EnumAxis> AXIS = BlockProperties.E;
-@@ -34,7 +41,8 @@
+@@ -32,7 +39,8 @@
              }
  
              if (worldserver.getType(blockposition).a((IBlockAccess) worldserver, blockposition, EntityTypes.ZOMBIFIED_PIGLIN)) {
@@ -23,21 +23,8 @@
 +                Entity entity = EntityTypes.ZOMBIFIED_PIGLIN.spawnCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition.up(), EnumMobSpawn.STRUCTURE, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
  
                  if (entity != null) {
-                     entity.portalCooldown = entity.getDefaultPortalCooldown();
-@@ -48,8 +56,10 @@
-         BlockPortal.Shape blockportal_shape = b(generatoraccess, blockposition);
- 
-         if (blockportal_shape != null) {
--            blockportal_shape.createPortal();
--            return true;
-+            // CraftBukkit start - return portalcreator
-+            return blockportal_shape.createPortal();
-+            // return true;
-+            // CraftBukkit end
-         } else {
-             return false;
-         }
-@@ -80,6 +90,10 @@
+                     entity.resetPortalCooldown();
+@@ -54,6 +62,10 @@
      @Override
      public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
          if (!entity.isPassenger() && !entity.isVehicle() && entity.canPortal()) {
@@ -48,92 +35,3 @@
              entity.d(blockposition);
          }
  
-@@ -172,6 +186,7 @@
-         private BlockPosition position;
-         private int height;
-         private int width;
-+        java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<org.bukkit.block.BlockState>(); // CraftBukkit - add field
- 
-         public Shape(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
-             this.a = generatoraccess;
-@@ -228,6 +243,9 @@
-         }
- 
-         protected int c() {
-+            // CraftBukkit start
-+            this.blocks.clear();
-+            // CraftBukkit end
-             int i;
- 
-             label56:
-@@ -247,9 +265,19 @@
-                     if (i == 0) {
-                         if (!this.a.getType(blockposition.shift(this.d)).a(Blocks.OBSIDIAN)) {
-                             break label56;
-+                            // CraftBukkit start - add the block to our list
-+                        } else {
-+                            BlockPosition pos = blockposition.shift(this.d);
-+                            blocks.add(CraftBlock.at(this.a, pos).getState());
-+                            // CraftBukkit end
-                         }
-                     } else if (i == this.width - 1 && !this.a.getType(blockposition.shift(this.c)).a(Blocks.OBSIDIAN)) {
-                         break label56;
-+                        // CraftBukkit start - add the block to our list
-+                    } else {
-+                        BlockPosition pos = blockposition.shift(this.c);
-+                        blocks.add(CraftBlock.at(this.a, pos).getState());
-+                        // CraftBukkit end
-                     }
-                 }
-             }
-@@ -258,6 +286,11 @@
-                 if (!this.a.getType(this.position.shift(this.c, i).up(this.height)).a(Blocks.OBSIDIAN)) {
-                     this.height = 0;
-                     break;
-+                    // CraftBukkit start - add the block to our list
-+                } else {
-+                    BlockPosition pos = this.position.shift(this.c, i).up(this.height);
-+                    blocks.add(CraftBlock.at(this.a, pos).getState());
-+                    // CraftBukkit end
-                 }
-             }
- 
-@@ -279,7 +312,29 @@
-             return this.position != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
-         }
- 
--        public void createPortal() {
-+        // CraftBukkit start - return boolean
-+        public boolean createPortal() {
-+            org.bukkit.World bworld = this.a.getMinecraftWorld().getWorld();
-+
-+            // Copy below for loop
-+            for (int i = 0; i < this.width; ++i) {
-+                BlockPosition blockposition = this.position.shift(this.c, i);
-+
-+                for (int j = 0; j < this.height; ++j) {
-+                    BlockPosition pos = blockposition.up(j);
-+                    CraftBlockState state = CraftBlockState.getBlockState(this.a.getMinecraftWorld(), pos, 18);
-+                    state.setData((IBlockData) Blocks.NETHER_PORTAL.getBlockData().set(BlockPortal.AXIS, this.b));
-+                    blocks.add(state);
-+                }
-+            }
-+
-+            PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, null, PortalCreateEvent.CreateReason.FIRE);
-+            this.a.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
-+                return false;
-+            }
-+            // CraftBukkit end
-             for (int i = 0; i < this.width; ++i) {
-                 BlockPosition blockposition = this.position.shift(this.c, i);
- 
-@@ -288,6 +343,7 @@
-                 }
-             }
- 
-+            return true; // CraftBukkit
-         }
- 
-         private boolean g() {

@@ -15,12 +15,12 @@ public class CraftStrider extends CraftAnimals implements Strider {
 
     @Override
     public boolean isShivering() {
-        return getHandle().eL(); // PAIL rename isShivering
+        return getHandle().isShivering();
     }
 
     @Override
     public void setShivering(boolean shivering) {
-        this.getHandle().t(shivering); // PAIL rename setShivering
+        this.getHandle().setShivering(shivering);
     }
 
     @Override
@@ -30,36 +30,36 @@ public class CraftStrider extends CraftAnimals implements Strider {
 
     @Override
     public void setSaddle(boolean saddled) {
-        getHandle().bA.setSaddle(saddled);
+        getHandle().saddleStorage.setSaddle(saddled);
     }
 
     @Override
     public int getBoostTicks() {
-        return getHandle().bA.a ? getHandle().bA.c : 0;
+        return getHandle().saddleStorage.boosting ? getHandle().saddleStorage.boostTicks : 0;
     }
 
     @Override
     public void setBoostTicks(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
 
-        getHandle().bA.setBoostTicks(ticks);
+        getHandle().saddleStorage.setBoostTicks(ticks);
     }
 
     @Override
     public int getCurrentBoostTicks() {
-        return getHandle().bA.a ? getHandle().bA.b : 0;
+        return getHandle().saddleStorage.boosting ? getHandle().saddleStorage.currentBoostTicks : 0;
     }
 
     @Override
     public void setCurrentBoostTicks(int ticks) {
-        if (!getHandle().bA.a) {
+        if (!getHandle().saddleStorage.boosting) {
             return;
         }
 
-        int max = getHandle().bA.c;
+        int max = getHandle().saddleStorage.boostTicks;
         Preconditions.checkArgument(ticks >= 0 && ticks <= max, "boost ticks must not exceed 0 or %d (inclusive)", max);
 
-        this.getHandle().bA.b = ticks;
+        this.getHandle().saddleStorage.currentBoostTicks = ticks;
     }
 
     @Override

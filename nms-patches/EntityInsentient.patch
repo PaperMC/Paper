@@ -21,22 +21,22 @@
      private static final DataWatcherObject<Byte> b = DataWatcher.a(EntityInsentient.class, DataWatcherRegistry.a);
 @@ -28,7 +40,7 @@
      public final float[] dropChanceHand;
-     private final NonNullList<ItemStack> bx;
+     private final NonNullList<ItemStack> bq;
      public final float[] dropChanceArmor;
 -    private boolean canPickUpLoot;
 +    // private boolean canPickUpLoot; // CraftBukkit - moved up to EntityLiving
      public boolean persistent;
-     private final Map<PathType, Float> bA;
+     private final Map<PathType, Float> bt;
      public MinecraftKey lootTableKey;
 @@ -41,6 +53,8 @@
-     private BlockPosition bG;
-     private float bH;
+     private BlockPosition bz;
+     private float bA;
  
 +    public boolean aware = true; // CraftBukkit
 +
      protected EntityInsentient(EntityTypes<? extends EntityInsentient> entitytypes, World world) {
          super(entitytypes, world);
-         this.bw = NonNullList.a(2, ItemStack.b);
+         this.bp = NonNullList.a(2, ItemStack.b);
 @@ -64,6 +78,9 @@
              this.initPathfinder();
          }
@@ -207,9 +207,9 @@
          ++this.ticksFarFromPlayer;
 +        if (!this.aware) return; // CraftBukkit
          this.world.getMethodProfiler().enter("sensing");
-         this.bv.a();
+         this.bo.a();
          this.world.getMethodProfiler().exit();
-@@ -1014,6 +1097,12 @@
+@@ -1023,6 +1106,12 @@
          if (!this.isAlive()) {
              return EnumInteractionResult.PASS;
          } else if (this.getLeashHolder() == entityhuman) {
@@ -222,7 +222,7 @@
              this.unleash(true, !entityhuman.abilities.canInstantlyBuild);
              return EnumInteractionResult.a(this.world.isClientSide);
          } else {
-@@ -1032,6 +1121,12 @@
+@@ -1041,6 +1130,12 @@
          ItemStack itemstack = entityhuman.b(enumhand);
  
          if (itemstack.getItem() == Items.LEAD && this.a(entityhuman)) {
@@ -235,16 +235,28 @@
              this.setLeashHolder(entityhuman, true);
              itemstack.subtract(1);
              return EnumInteractionResult.a(this.world.isClientSide);
-@@ -1047,7 +1142,7 @@
+@@ -1056,7 +1151,7 @@
              if (itemstack.getItem() instanceof ItemMonsterEgg) {
-                 if (!this.world.isClientSide) {
+                 if (this.world instanceof WorldServer) {
                      ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
--                    Optional<EntityInsentient> optional = itemmonsteregg.a(entityhuman, this, this.getEntityType(), this.world, this.getPositionVector(), itemstack);
-+                    Optional<EntityInsentient> optional = itemmonsteregg.a(entityhuman, this, (EntityTypes<? extends EntityInsentient>) this.getEntityType(), this.world, this.getPositionVector(), itemstack); // CraftBukkit - decompile error
+-                    Optional<EntityInsentient> optional = itemmonsteregg.a(entityhuman, this, this.getEntityType(), (WorldServer) this.world, this.getPositionVector(), itemstack);
++                    Optional<EntityInsentient> optional = itemmonsteregg.a(entityhuman, this, (EntityTypes<? extends EntityInsentient>) this.getEntityType(), (WorldServer) this.world, this.getPositionVector(), itemstack); // CraftBukkit - decompile error
  
                      optional.ifPresent((entityinsentient) -> {
                          this.a(entityhuman, entityinsentient);
-@@ -1098,7 +1193,7 @@
+@@ -1102,12 +1197,19 @@
+         return this.bA != -1.0F;
+     }
+ 
++    // CraftBukkit start
+     @Nullable
+     public <T extends EntityInsentient> T a(EntityTypes<T> entitytypes, boolean flag) {
++        return this.a(entitytypes, flag, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Nullable
++    public <T extends EntityInsentient> T a(EntityTypes<T> entitytypes, boolean flag, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit end
          if (this.dead) {
              return null;
          } else {
@@ -252,22 +264,22 @@
 +            T t0 = entitytypes.a(this.world); // CraftBukkit - decompile error
  
              t0.u(this);
-             t0.setCanPickupLoot(this.canPickupLoot());
-@@ -1128,7 +1223,12 @@
+             t0.setBaby(this.isBaby());
+@@ -1139,7 +1241,12 @@
                  }
              }
  
 -            this.world.addEntity(t0);
 +            // CraftBukkit start
-+            if (CraftEventFactory.callEntityTransformEvent(this, t0, EntityTransformEvent.TransformReason.DROWNED).isCancelled()) {
++            if (CraftEventFactory.callEntityTransformEvent(this, t0, transformReason).isCancelled()) {
 +                return null;
 +            }
-+            this.world.addEntity(t0, CreatureSpawnEvent.SpawnReason.DROWNED);
++            this.world.addEntity(t0, spawnReason);
 +            // CraftBukkit end
-             this.die();
-             return t0;
-         }
-@@ -1141,6 +1241,7 @@
+             if (this.isPassenger()) {
+                 Entity entity = this.getVehicle();
+ 
+@@ -1159,6 +1266,7 @@
  
          if (this.leashHolder != null) {
              if (!this.isAlive() || !this.leashHolder.isAlive()) {
@@ -275,9 +287,9 @@
                  this.unleash(true, true);
              }
  
-@@ -1157,7 +1258,9 @@
+@@ -1175,7 +1283,9 @@
              this.leashHolder = null;
-             this.bF = null;
+             this.by = null;
              if (!this.world.isClientSide && flag1) {
 +                this.forceDrops = true; // CraftBukkit
                  this.a((IMaterial) Items.LEAD);
@@ -285,7 +297,7 @@
              }
  
              if (!this.world.isClientSide && flag && this.world instanceof WorldServer) {
-@@ -1207,6 +1310,7 @@
+@@ -1225,6 +1335,7 @@
          boolean flag1 = super.a(entity, flag);
  
          if (flag1 && this.isLeashed()) {
@@ -293,7 +305,7 @@
              this.unleash(true, true);
          }
  
-@@ -1339,7 +1443,14 @@
+@@ -1357,7 +1468,14 @@
          int i = EnchantmentManager.getFireAspectEnchantmentLevel(this);
  
          if (i > 0) {
@@ -309,10 +321,10 @@
          }
  
          boolean flag = entity.damageEntity(DamageSource.mobAttack(this), f);
-@@ -1401,6 +1512,7 @@
+@@ -1419,6 +1537,7 @@
      @Override
-     protected void bJ() {
-         super.bJ();
+     protected void bM() {
+         super.bM();
 +        this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
          this.unleash(true, false);
      }

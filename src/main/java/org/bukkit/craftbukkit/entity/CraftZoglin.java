@@ -18,7 +18,7 @@ public class CraftZoglin extends CraftMonster implements Zoglin {
 
     @Override
     public void setBaby(boolean flag) {
-        getHandle().a(flag);
+        getHandle().setBaby(flag);
     }
 
     @Override

@@ -4,7 +4,7 @@ import java.util.Random;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityBee;
 import net.minecraft.server.EntityTypes;
-import net.minecraft.server.GeneratorAccess;
+import net.minecraft.server.GeneratorAccessSeed;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.TileEntityBeehive;
 import net.minecraft.server.World;
@@ -27,19 +27,19 @@ public final class CapturedBlockState extends CraftBlockState {
 
         // SPIGOT-5537: Horrible hack to manually add bees given World.captureTreeGeneration does not support tiles
         if (this.treeBlock && getType() == Material.BEE_NEST) {
-            GeneratorAccess generatoraccess = this.world.getHandle();
+            GeneratorAccessSeed generatoraccessseed = this.world.getHandle();
             BlockPosition blockposition1 = this.getPosition();
-            Random random = generatoraccess.getRandom();
+            Random random = generatoraccessseed.getRandom();
 
             // Begin copied block from WorldGenFeatureTreeBeehive
-            TileEntity tileentity = generatoraccess.getTileEntity(blockposition1);
+            TileEntity tileentity = generatoraccessseed.getTileEntity(blockposition1);
 
             if (tileentity instanceof TileEntityBeehive) {
                 TileEntityBeehive tileentitybeehive = (TileEntityBeehive) tileentity;
                 int j = 2 + random.nextInt(2);
 
                 for (int k = 0; k < j; ++k) {
-                    EntityBee entitybee = new EntityBee(EntityTypes.BEE, generatoraccess.getMinecraftWorld());
+                    EntityBee entitybee = new EntityBee(EntityTypes.BEE, generatoraccessseed.getMinecraftWorld());
 
                     tileentitybeehive.a(entitybee, false, random.nextInt(599));
                 }

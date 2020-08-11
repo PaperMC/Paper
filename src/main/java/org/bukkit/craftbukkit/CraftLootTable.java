@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.server.BlockPosition;
 import net.minecraft.server.DamageSource;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityHuman;
@@ -14,6 +13,7 @@ import net.minecraft.server.LootContextParameterSet;
 import net.minecraft.server.LootContextParameters;
 import net.minecraft.server.LootTable;
 import net.minecraft.server.LootTableInfo;
+import net.minecraft.server.Vec3D;
 import net.minecraft.server.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -82,7 +82,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
                 Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
                 builder.set(LootContextParameters.THIS_ENTITY, nmsLootedEntity);
                 builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
-                builder.set(LootContextParameters.POSITION, nmsLootedEntity.getChunkCoordinates());
+                builder.set(LootContextParameters.ORIGIN, nmsLootedEntity.getPositionVector());
             }
 
             if (context.getKiller() != null) {
@@ -115,7 +115,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     public static LootContext convertContext(LootTableInfo info) {
-        BlockPosition position = info.getContextParameter(LootContextParameters.POSITION);
+        Vec3D position = info.getContextParameter(LootContextParameters.ORIGIN);
         Location location = new Location(info.getWorld().getWorld(), position.getX(), position.getY(), position.getZ());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
