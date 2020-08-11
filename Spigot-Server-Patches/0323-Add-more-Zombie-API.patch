@@ -4,21 +4,8 @@ Date: Sun, 7 Oct 2018 04:29:59 -0500
 Subject: [PATCH] Add more Zombie API
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index e0ecdb8f87ec82b97a056c8f6d91d6a86f37bd34..5e9a05dfe822c42b83da84a154fe881d57ac1689 100644
---- a/src/main/java/net/minecraft/server/EntityInsentient.java
-+++ b/src/main/java/net/minecraft/server/EntityInsentient.java
-@@ -1418,6 +1418,8 @@ public abstract class EntityInsentient extends EntityLiving {
-         this.datawatcher.set(EntityInsentient.b, flag ? (byte) (b0 | 2) : (byte) (b0 & -3));
-     }
- 
-+    public boolean isArmsRaisedZombie() { return (this.datawatcher.get(EntityInsentient.b) & 4) != 0; } // Paper - OBFHELPER
-+    public void setArmsRaisedZombie(boolean flag) { this.setAggressive(flag); } // Paper - OBFHELPER
-     public void setAggressive(boolean flag) {
-         byte b0 = (Byte) this.datawatcher.get(EntityInsentient.b);
- 
 diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
-index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d91900f2e9c5f 100644
+index bb7f62fa52b758ed83db7def9053b79da3d97dcd..641d0b462d326dc9b5f6ce2d7f620e428dc25539 100644
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
 @@ -33,6 +33,7 @@ public class EntityZombie extends EntityMonster {
@@ -29,15 +16,7 @@ index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d9190
  
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
-@@ -74,6 +75,7 @@ public class EntityZombie extends EntityMonster {
-         this.getDataWatcher().register(EntityZombie.DROWN_CONVERTING, false);
-     }
- 
-+    public boolean isDrowning() { return isDrownConverting(); } // Paper - OBFHELPER
-     public boolean isDrownConverting() {
-         return (Boolean) this.getDataWatcher().get(EntityZombie.DROWN_CONVERTING);
-     }
-@@ -206,6 +208,13 @@ public class EntityZombie extends EntityMonster {
+@@ -206,6 +207,13 @@ public class EntityZombie extends EntityMonster {
          this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, true);
      }
  
@@ -51,7 +30,7 @@ index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d9190
      protected void eQ() {
          this.c(EntityTypes.DROWNED);
          if (!this.isSilent()) {
-@@ -225,10 +234,17 @@ public class EntityZombie extends EntityMonster {
+@@ -225,10 +233,17 @@ public class EntityZombie extends EntityMonster {
  
      }
  
@@ -70,7 +49,7 @@ index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d9190
      @Override
      public boolean damageEntity(DamageSource damagesource, float f) {
          if (super.damageEntity(damagesource, f)) {
-@@ -348,6 +364,7 @@ public class EntityZombie extends EntityMonster {
+@@ -348,6 +363,7 @@ public class EntityZombie extends EntityMonster {
          nbttagcompound.setBoolean("CanBreakDoors", this.eV());
          nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bA : -1);
          nbttagcompound.setInt("DrownedConversionTime", this.isDrownConverting() ? this.drownedConversionTime : -1);
@@ -78,7 +57,7 @@ index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d9190
      }
  
      @Override
-@@ -362,7 +379,11 @@ public class EntityZombie extends EntityMonster {
+@@ -362,7 +378,11 @@ public class EntityZombie extends EntityMonster {
          if (nbttagcompound.hasKeyOfType("DrownedConversionTime", 99) && nbttagcompound.getInt("DrownedConversionTime") > -1) {
              this.startDrownedConversion(nbttagcompound.getInt("DrownedConversionTime"));
          }
@@ -92,7 +71,7 @@ index bb7f62fa52b758ed83db7def9053b79da3d97dcd..c9f212b586662856f1503bb0ca8d9190
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
-index 0429cf020e462d3655bf1159ec857cad33544b71..c4320dbb67059be9456b0eef700a5f3e83c7c75b 100644
+index 0429cf020e462d3655bf1159ec857cad33544b71..30004ea3a36029827e90e587017a1dad2ede4435 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 @@ -80,4 +80,41 @@ public class CraftZombie extends CraftMonster implements Zombie {
@@ -103,7 +82,7 @@ index 0429cf020e462d3655bf1159ec857cad33544b71..c4320dbb67059be9456b0eef700a5f3e
 +    // Paper start
 +    @Override
 +    public boolean isDrowning() {
-+        return getHandle().isDrowning();
++        return getHandle().isDrownConverting();
 +    }
 +
 +    @Override
@@ -123,12 +102,12 @@ index 0429cf020e462d3655bf1159ec857cad33544b71..c4320dbb67059be9456b0eef700a5f3e
 +
 +    @Override
 +    public boolean isArmsRaised() {
-+        return getHandle().isArmsRaisedZombie();
++        return getHandle().isAggressive();
 +    }
 +
 +    @Override
 +    public void setArmsRaised(final boolean raised) {
-+        getHandle().setArmsRaisedZombie(raised);
++        getHandle().setAggressive(raised);
 +    }
 +
 +    @Override

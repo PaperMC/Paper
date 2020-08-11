@@ -132,7 +132,7 @@ index d806b6acbcfbf141f4c1436bd5a163fbf11bf4e6..3b0d13d319fe1d274ab657c7c87e5a2d
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 684d84e3c5caf1a0c816895c4930d056b2ba8be5..6dda11ffc022aa9bc7481506811a710a184f5e78 100644
+index ee062b05d0de2c434ca1199e9614824a3a23e73b..dbfd1f4d2156a99ff11bc295d3751eadc87fd40c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -938,12 +938,61 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -200,7 +200,7 @@ index 684d84e3c5caf1a0c816895c4930d056b2ba8be5..6dda11ffc022aa9bc7481506811a710a
          // Spigot start
          return isOutsideOfRange(chunkcoordintpair, false);
 diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
-index f781bb12a1c37d8b3088d0f638eae80d5b80aca4..e1730709fff5dfee68621d0aaed70a00bab97948 100644
+index f781bb12a1c37d8b3088d0f638eae80d5b80aca4..4f1a6954ea880857352003982627545dd3483ad2 100644
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -36,6 +36,30 @@ public class RegionFile implements AutoCloseable {
@@ -218,7 +218,7 @@ index f781bb12a1c37d8b3088d0f638eae80d5b80aca4..e1730709fff5dfee68621d0aaed70a00
 +            // We've used an invalid region file.
 +            throw new IllegalStateException("RegionFile is closed");
 +        }
-+        this.statuses[this.getChunkLocation(new ChunkCoordIntPair(x, z))] = status;
++        this.statuses[getChunkLocation(x, z)] = status;
 +    }
 +
 +    public ChunkStatus getStatusIfCached(int x, int z) {
@@ -226,7 +226,7 @@ index f781bb12a1c37d8b3088d0f638eae80d5b80aca4..e1730709fff5dfee68621d0aaed70a00
 +            // We've used an invalid region file.
 +            throw new IllegalStateException("RegionFile is closed");
 +        }
-+        final int location = this.getChunkLocation(new ChunkCoordIntPair(x, z));
++        final int location = getChunkLocation(x, z);
 +        return this.statuses[location];
 +    }
 +    // Paper end
@@ -238,7 +238,7 @@ index f781bb12a1c37d8b3088d0f638eae80d5b80aca4..e1730709fff5dfee68621d0aaed70a00
          return this.getOffset(chunkcoordintpair) != 0;
      }
  
-+    private final int getChunkLocation(ChunkCoordIntPair chunkcoordintpair) { return this.g(chunkcoordintpair); } // Paper - OBFHELPER
++    private static int getChunkLocation(int x, int z) { return (x & 31) + (z & 31) * 32; } // Paper - OBFHELPER - sort of, mirror of logic below
      private static int g(ChunkCoordIntPair chunkcoordintpair) {
          return chunkcoordintpair.j() + chunkcoordintpair.k() * 32;
      }
@@ -279,7 +279,7 @@ index 02bd568af727633a6e834d5328683a9ff67b9dd7..341689ac996164b7b53e095495b92b6e
              throwable = throwable1;
              throw throwable1;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 29d88bf1a8c5272822dd26e5e93d102748d9abf2..412dc3865dfee606c37c06daefeacc6ed14ced7b 100644
+index c99932bc38ac2bb0bd82c694a76b844efcdbdd52..2f10a1c6f4f7b31c8054f3cd72947b2eb3a6ef24 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -19,6 +19,7 @@ import java.util.Objects;
