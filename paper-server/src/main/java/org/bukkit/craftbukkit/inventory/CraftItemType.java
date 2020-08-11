@@ -237,4 +237,11 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     public Material asMaterial() {
         return Registry.MATERIAL.get(this.key);
     }
+
+    // Paper start - add Translatable
+    @Override
+    public String translationKey() {
+        return this.item.getDescriptionId();
+    }
+    // Paper end - add Translatable
 }

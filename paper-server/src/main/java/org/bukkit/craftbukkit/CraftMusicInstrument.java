@@ -68,6 +68,16 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
         return this.key;
     }
 
+    // Paper start - add translationKey methods
+    @Override
+    public @NotNull String translationKey() {
+        if (!(this.getHandle().description().getContents() instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents)) {
+            throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
+        }
+        return translatableContents.getKey();
+    }
+    // Paper end - add translationKey methods
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {

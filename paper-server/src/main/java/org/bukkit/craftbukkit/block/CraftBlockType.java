@@ -234,4 +234,11 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
     public Material asMaterial() {
         return Registry.MATERIAL.get(this.key);
     }
+
+    // Paper start - add Translatable
+    @Override
+    public String translationKey() {
+        return this.block.getDescriptionId();
+    }
+    // Paper end - add Translatable
 }

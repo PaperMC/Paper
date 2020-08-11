@@ -99,6 +99,11 @@ public class CraftAttribute implements Attribute, Handleable<net.minecraft.world
     }
 
     @Override
+    public @NotNull String translationKey() {
+        return this.attributeBase.getDescriptionId();
+    }
+
+    @Override
     public int compareTo(@NotNull Attribute attribute) {
         return this.ordinal - attribute.ordinal();
     }

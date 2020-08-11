@@ -123,7 +123,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         return new FireworkExplosion(CraftMetaFirework.getNBT(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
     }
 
-    static FireworkExplosion.Shape getNBT(Type type) {
+    public static FireworkExplosion.Shape getNBT(Type type) { // Paper - package-private -> public
         switch (type) {
             case BALL:
                 return FireworkExplosion.Shape.SMALL_BALL;

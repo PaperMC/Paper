@@ -669,5 +669,10 @@ public class CraftBlock implements Block {
     public org.bukkit.SoundGroup getBlockSoundGroup() {
         return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getNMS().getSoundType());
     }
+
+    @Override
+    public String translationKey() {
+        return this.getNMS().getBlock().getDescriptionId();
+    }
     // Paper end
 }
