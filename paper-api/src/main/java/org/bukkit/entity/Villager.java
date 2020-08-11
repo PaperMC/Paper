@@ -181,7 +181,7 @@ public interface Villager extends AbstractVillager {
      * Represents the various different Villager professions there may be.
      * Villagers have different trading options depending on their profession,
      */
-    interface Profession extends OldEnum<Profession>, Keyed {
+    interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
         Profession NONE = getProfession("none");
         /**
@@ -282,6 +282,13 @@ public interface Villager extends AbstractVillager {
         static Profession[] values() {
             return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
         }
+
+        // Paper start
+        @Override
+        default @NotNull String translationKey() {
+            return "entity.minecraft.villager." + this.getKey().getKey();
+        }
+        // Paper end
     }
 
     // Paper start - Add villager reputation API

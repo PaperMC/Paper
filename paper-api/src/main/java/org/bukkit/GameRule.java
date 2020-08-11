@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> type of rule (Boolean or Integer)
  */
-public final class GameRule<T> {
+public final class GameRule<T> implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     private static Map<String, GameRule<?>> gameRules = new HashMap<>();
     // Boolean rules
@@ -366,4 +366,11 @@ public final class GameRule<T> {
     public static GameRule<?>[] values() {
         return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
     }
+
+    // Paper start
+    @Override
+    public @NotNull String translationKey() {
+        return "gamerule." + this.name;
+    }
+    // Paper end
 }

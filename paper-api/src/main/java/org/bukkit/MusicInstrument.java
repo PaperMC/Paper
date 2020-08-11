@@ -6,7 +6,7 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class MusicInstrument implements Keyed {
+public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
 
     public static final MusicInstrument PONDER_GOAT_HORN = getInstrument("ponder_goat_horn");
     public static final MusicInstrument SING_GOAT_HORN = getInstrument("sing_goat_horn");
@@ -46,4 +46,14 @@ public abstract class MusicInstrument implements Keyed {
     private static MusicInstrument getInstrument(@NotNull String key) {
         return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
     }
+
+    // Paper start - mark translation key as deprecated
+    /**
+     * @deprecated this method assumes that the instrument description
+     * always be a translatable component which is not guaranteed.
+     */
+    @Override
+    @Deprecated(forRemoval = true)
+    public abstract @NotNull String translationKey();
+    // Paper end - mark translation key as deprecated
 }

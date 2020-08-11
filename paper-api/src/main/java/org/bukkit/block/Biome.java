@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * There may be additional biomes present in the server, for example from a {@link DataPack}
  * which can be accessed via {@link Registry#BIOME}.
  */
-public interface Biome extends OldEnum<Biome>, Keyed {
+public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     Biome OCEAN = getBiome("ocean");
     Biome PLAINS = getBiome("plains");
@@ -127,4 +127,11 @@ public interface Biome extends OldEnum<Biome>, Keyed {
     static Biome[] values() {
         return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
     }
+
+    // Paper start
+    @Override
+    default @NotNull String translationKey() {
+        return "biome.minecraft." + this.getKey().getKey();
+    }
+    // Paper end
 }

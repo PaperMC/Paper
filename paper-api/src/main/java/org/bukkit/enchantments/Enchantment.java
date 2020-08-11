@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The various type of enchantments that may be added to armour or weapons
  */
-public abstract class Enchantment implements Keyed, Translatable {
+public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
     /**
      * Provides protection against environmental damage
      */
@@ -323,6 +323,16 @@ public abstract class Enchantment implements Keyed, Translatable {
      */
     public abstract net.kyori.adventure.text.@NotNull Component displayName(int level);
     // Paper end
+
+    // Paper start - mark translation key as deprecated
+    /**
+     * @deprecated this method assumes that the enchantments description
+     * always be a translatable component which is not guaranteed.
+     */
+    @Override
+    @Deprecated(forRemoval = true)
+    public abstract @NotNull String translationKey();
+    // Paper end - mark translation key as deprecated
 
     /**
      * Gets the Enchantment at the specified key

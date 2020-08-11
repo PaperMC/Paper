@@ -18,28 +18,44 @@ public final class FireworkEffect implements ConfigurationSerializable {
     /**
      * The type or shape of the effect.
      */
-    public enum Type {
+    public enum Type implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
         /**
          * A small ball effect.
          */
-        BALL,
+        BALL("small_ball"), // Paper - add name
         /**
          * A large ball effect.
          */
-        BALL_LARGE,
+        BALL_LARGE("large_ball"), // Paper - add name
         /**
          * A star-shaped effect.
          */
-        STAR,
+        STAR("star"), // Paper - add name
         /**
          * A burst effect.
          */
-        BURST,
+        BURST("burst"), // Paper - add name
         /**
          * A creeper-face effect.
          */
-        CREEPER,
+        CREEPER("creeper"), // Paper - add name
         ;
+        // Paper start
+        /**
+         * The name map.
+         */
+        public static final net.kyori.adventure.util.Index<String, org.bukkit.FireworkEffect.Type> NAMES = net.kyori.adventure.util.Index.create(Type.class, type -> type.name);
+        private final String name;
+
+        Type(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public @NotNull String translationKey() {
+            return "item.minecraft.firework_star.shape." + this.name;
+        }
+        // Paper end
     }
 
     /**

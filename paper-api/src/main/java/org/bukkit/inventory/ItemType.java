@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
  * changes may occur. Do not use this API in plugins.
  */
 @ApiStatus.Internal
-public interface ItemType extends Keyed, Translatable {
+public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - add Translatable
 
     /**
      * Typed represents a subtype of {@link ItemType}s that have a known item meta type
@@ -2409,4 +2409,13 @@ public interface ItemType extends Keyed, Translatable {
     @Nullable
     @Deprecated(since = "1.20.6")
     Material asMaterial();
+
+    // Paper start - add Translatable
+    /**
+     * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
+     */
+    @Deprecated(forRemoval = true)
+    @Override
+    @NotNull String getTranslationKey();
+    // Paper end - add Translatable
 }

@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * (i.e. lighting and power) may not be able to be safely accessed during world
  * generation when used in cases like BlockPhysicsEvent!!!!
  */
-public interface Block extends Metadatable, Translatable {
+public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
 
     /**
      * Gets the metadata for this block
@@ -682,5 +682,12 @@ public interface Block extends Metadatable, Translatable {
      * @return the sound group for this block
      */
     @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
+
+    /**
+     * @deprecated use {@link #translationKey()}
+     */
+    @NotNull
+    @Deprecated(forRemoval = true)
+    String getTranslationKey();
     // Paper end
 }

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Types of attributes which may be present on an {@link Attributable}.
  */
-public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable {
+public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     /**
      * Maximum health of an Entity.
