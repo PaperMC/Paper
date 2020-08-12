@@ -72,6 +72,7 @@ import net.minecraft.server.GameRules;
 import net.minecraft.server.GroupDataEntity;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IChunkAccess;
+import net.minecraft.server.IRegistry;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MovingObjectPosition;
 import net.minecraft.server.PacketPlayOutCustomSoundEffect;
@@ -88,9 +89,6 @@ import net.minecraft.server.Ticket;
 import net.minecraft.server.TicketType;
 import net.minecraft.server.Unit;
 import net.minecraft.server.Vec3D;
-import net.minecraft.server.WorldGenFeatureConfigured;
-import net.minecraft.server.WorldGenFeatureHugeFungiConfiguration;
-import net.minecraft.server.WorldGenerator;
 import net.minecraft.server.WorldServer;
 import org.apache.commons.lang.Validate;
 import org.bukkit.BlockChangeDelegate;
@@ -920,7 +918,7 @@ public class CraftWorld implements World {
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBlock.biomeBaseToBiome(this.world.getBiome(x >> 2, y >> 2, z >> 2));
+        return CraftBlock.biomeBaseToBiome(getHandle().r().b(IRegistry.ay), this.world.getBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
@@ -932,7 +930,7 @@ public class CraftWorld implements World {
 
     @Override
     public void setBiome(int x, int y, int z, Biome bio) {
-        BiomeBase bb = CraftBlock.biomeToBiomeBase(bio);
+        BiomeBase bb = CraftBlock.biomeToBiomeBase(getHandle().r().b(IRegistry.ay), bio);
         BlockPosition pos = new BlockPosition(x, 0, z);
         if (this.world.isLoaded(pos)) {
             net.minecraft.server.Chunk chunk = this.world.getChunkAtWorldCoords(pos);

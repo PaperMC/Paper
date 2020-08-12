@@ -3,11 +3,13 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import java.util.function.Predicate;
+import net.minecraft.server.BiomeBase;
 import net.minecraft.server.BiomeStorage;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.DataPaletteBlock;
 import net.minecraft.server.HeightMap;
 import net.minecraft.server.IBlockData;
+import net.minecraft.server.IRegistry;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
@@ -128,7 +130,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         CraftChunk.validateChunkCoordinates(x, y, z);
 
-        return CraftBlock.biomeBaseToBiome(biome.getBiome(x >> 2, y >> 2, z >> 2));
+        return CraftBlock.biomeBaseToBiome((IRegistry<BiomeBase>) biome.g, biome.getBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
