@@ -32,7 +32,7 @@ public class AttributeModifier implements ConfigurationSerializable {
 
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @Nullable EquipmentSlot slot) {
         Validate.notNull(uuid, "UUID cannot be null");
-        Validate.notEmpty(name, "Name cannot be empty");
+        Validate.notNull(name, "Name cannot be null");
         Validate.notNull(operation, "Operation cannot be null");
         this.uuid = uuid;
         this.name = name;
