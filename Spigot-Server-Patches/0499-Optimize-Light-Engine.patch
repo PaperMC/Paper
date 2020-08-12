@@ -25,10 +25,10 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index a73c950fba6c04c503712a340b7e49823b741b4b..b06e04b4caff194c8d35596abfea9c67c3f9911c 100644
+index afcbdd8e54ad936a4a3ac03341e1c52524624474..45c142c227bc258bbd5c8c03c6012663dccf8f3f 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -1045,7 +1045,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -1046,7 +1046,7 @@ public class ChunkProviderServer extends IChunkProvider {
              if (ChunkProviderServer.this.tickDistanceManager()) {
                  return true;
              } else {
@@ -1027,10 +1027,18 @@ index a35e7b392c74fadf2760d1fc2021e98d33858cb5..944094e8e770cc8c0205ef2aa6c48fff
                                  lightenginelayer.a(Long.MAX_VALUE, l3, 15, false);
                              }
 diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6648b4fed 100644
+index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..ec8498c3db7a8d417f27eed5d3af38cb726b95b6 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-@@ -15,15 +15,158 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+ import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap; // Paper
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import it.unimi.dsi.fastutil.objects.ObjectList;
+ import it.unimi.dsi.fastutil.objects.ObjectListIterator;
+@@ -15,15 +16,158 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private static final Logger LOGGER = LogManager.getLogger();
      private final ThreadedMailbox<Runnable> b;
@@ -1077,13 +1085,13 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6
 +    class LightQueue {
 +        private int size = 0;
 +        private int lowestPriority = MAX_PRIORITIES;
-+        private final it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
++        private final Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
 +        private final java.util.concurrent.ConcurrentLinkedQueue<PendingLightTask> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +
 +        private LightQueue() {
 +            for (int i = 0; i < buckets.length; i++) {
-+                buckets[i] = new it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<>();
++                buckets[i] = new Long2ObjectLinkedOpenHashMap<>();
 +            }
 +        }
 +
@@ -1152,9 +1160,9 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6
 +                run.run();
 +            }
 +            boolean hasWork = false;
-+            it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
++            Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
 +            while (lowestPriority < MAX_PRIORITIES && !isEmpty()) {
-+                it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
++                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
 +                if (bucket.isEmpty()) {
 +                    lowestPriority++;
 +                    if (hasWork && lowestPriority <= 3) {
@@ -1192,7 +1200,7 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6
          this.e = mailbox;
          this.b = threadedmailbox;
      }
-@@ -110,13 +253,9 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -110,13 +254,9 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
      }
  
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
@@ -1209,7 +1217,7 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6
      }
  
      @Override
-@@ -133,8 +272,20 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -133,8 +273,20 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
      public CompletableFuture<IChunkAccess> a(IChunkAccess ichunkaccess, boolean flag) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
@@ -1232,7 +1240,7 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..eab244473e4f82bd8ca1ad9c467f4ff6
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
-@@ -152,55 +303,47 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -152,55 +304,47 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
                  });
              }
  
@@ -1330,10 +1338,10 @@ index ff00830b95a17f66d0c913087492dbf4b066df8a..4085426af03f032cf405bdfd1e40a8e5
      private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
      private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 0781331896aa24311da42831a02fd4e89f71ecd0..1fd5c478d2f88df3d6ed2f3debfc513c148b67f8 100644
+index 44b3fe5b6f0cc4ea853173c8fe015d1453a54939..92a5a5cefb048d4a65ba64e154ce2a3459b28b28 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -722,6 +722,7 @@ public class PlayerChunk {
+@@ -723,6 +723,7 @@ public class PlayerChunk {
                  ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
              }
              chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
@@ -1342,10 +1350,10 @@ index 0781331896aa24311da42831a02fd4e89f71ecd0..1fd5c478d2f88df3d6ed2f3debfc513c
          if (getCurrentPriority() != priority) {
              this.u.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 30d8b3c6306db2f2438c7c7a7f6e8b8c72856f82..453e6b7e5d63e3a0dace092232fc50c499c7a6b3 100644
+index 13c2da8000b22a4be98bbdd723fc06b04834b02d..8a069cfcbf60f4ef409299cff59232c0cfd7db54 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -275,6 +275,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -277,6 +277,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
      // Paper end
  
@@ -1353,7 +1361,7 @@ index 30d8b3c6306db2f2438c7c7a7f6e8b8c72856f82..453e6b7e5d63e3a0dace092232fc50c4
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(new File(convertable_conversionsession.a(worldserver.getDimensionKey()), "region"), datafixer, flag);
          //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
-@@ -306,7 +307,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -308,7 +309,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          Mailbox<Runnable> mailbox = Mailbox.a("main", iasynctaskhandler::a);
  
          this.worldLoadListener = worldloadlistener;
@@ -1370,7 +1378,7 @@ index 30d8b3c6306db2f2438c7c7a7f6e8b8c72856f82..453e6b7e5d63e3a0dace092232fc50c4
  
          this.p = new ChunkTaskQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.mailboxWorldGen = this.p.a(threadedmailbox, false);
-@@ -652,6 +661,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -654,6 +663,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          // Paper end
      }
  
@@ -1378,7 +1386,7 @@ index 30d8b3c6306db2f2438c7c7a7f6e8b8c72856f82..453e6b7e5d63e3a0dace092232fc50c4
      protected IntSupplier c(long i) {
          return () -> {
              PlayerChunk playerchunk = this.getVisibleChunk(i);
-@@ -779,6 +789,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -781,6 +791,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      @Override
      public void close() throws IOException {
          try {
@@ -1401,10 +1409,10 @@ index ebb9737995e0f738700d598af46a63f605f2b165..27e01bca675e46e814d18959702bb2ac
          this.a.a(t0);
          this.f();
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 69a947fd7b78e3b32f8ea32cde685516c3a4ef85..a3356fa90b8f936b0094977968d770d1c9e32ce8 100644
+index 6ea416f25395fe8dac2d147c20e5d9c5a5083242..a21ce4855187b771b1c8a1ca3f914026d7b92e3a 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -709,6 +709,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -710,6 +710,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
              }
              gameprofilerfiller.exit();
              timings.chunkTicksBlocks.stopTiming(); // Paper

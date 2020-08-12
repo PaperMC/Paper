@@ -2344,7 +2344,7 @@ index 2bc024b2e43d8fa874e0c285c322a8e117fe2dd0..e7052aba9d63a296873044623808e003
  
          public boolean isRequiresSpecialTool() {
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index df7c2353a62cb3d6a08d452cc5233eb4d9522cb7..c417c702ecc67d3b7f09ae5c9a71e2e8a713f760 100644
+index 1b2f415e3ed7f6dca12d13cd098cb4ec3af54020..64e8088d394ddcda59d0209883b778ab74638c02 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
 +++ b/src/main/java/net/minecraft/server/BlockPosition.java
 @@ -99,6 +99,7 @@ public class BlockPosition extends BaseBlockPosition {
@@ -2726,10 +2726,21 @@ index ae61d0a7676bf06c8c9aa5c68ccb8dd4baf326b6..b12e43ed13a1a9d7d418831b8988c30a
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..2d8da02fa22b756baa02cd88e5ed8b6002c80f0e 100644
+index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d953765d03e36 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -24,7 +24,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -17,6 +17,10 @@ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.function.Supplier;
+ import javax.annotation.Nullable;
++import com.destroystokyo.paper.exception.ServerInternalException;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
+ 
+ public class ChunkProviderServer extends IChunkProvider {
+ 
+@@ -24,7 +28,7 @@ public class ChunkProviderServer extends IChunkProvider {
      private final ChunkMapDistance chunkMapDistance;
      public final ChunkGenerator chunkGenerator;
      private final WorldServer world;
@@ -2738,13 +2749,13 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..2d8da02fa22b756baa02cd88e5ed8b60
      private final LightEngineThreaded lightEngine;
      private final ChunkProviderServer.a serverThreadQueue;
      public final PlayerChunkMap playerChunkMap;
-@@ -37,6 +37,167 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -37,6 +41,167 @@ public class ChunkProviderServer extends IChunkProvider {
      private final IChunkAccess[] cacheChunk = new IChunkAccess[4];
      @Nullable
      private SpawnerCreature.d p;
 +    // Paper start
 +    final com.destroystokyo.paper.util.concurrent.WeakSeqLock loadedChunkMapSeqLock = new com.destroystokyo.paper.util.concurrent.WeakSeqLock();
-+    final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(8192, 0.5f);
++    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
 +
 +    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
 +    private final long[] lastLoadedChunkKeys = new long[4 * 4];
@@ -2906,7 +2917,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..2d8da02fa22b756baa02cd88e5ed8b60
  
      public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
-@@ -90,6 +251,49 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -90,6 +255,49 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
  
@@ -2956,7 +2967,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..2d8da02fa22b756baa02cd88e5ed8b60
      @Nullable
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
-@@ -372,10 +576,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -372,10 +580,9 @@ public class ChunkProviderServer extends IChunkProvider {
  
              this.p = spawnercreature_d;
              this.world.getMethodProfiler().exit();
@@ -3272,14 +3283,15 @@ index 035ee010eb0183c3c13cae8d3004960486845493..10b98ba59570ae12797fa29533a6e567
      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da7a325d070e194cd1664ed20dcb3a762c9a517a
+index 0000000000000000000000000000000000000000..17d73ebbe51a83f79f338bdb1b366cecd99f880d
 --- /dev/null
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -0,0 +1,502 @@
+@@ -0,0 +1,503 @@
 +package net.minecraft.server;
 +
 +import com.destroystokyo.paper.block.TargetBlockInfo;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 +import org.apache.commons.lang.exception.ExceptionUtils;
 +import org.bukkit.Location;
 +import org.bukkit.block.BlockFace;
@@ -3488,7 +3500,7 @@ index 0000000000000000000000000000000000000000..da7a325d070e194cd1664ed20dcb3a76
 +
 +    // assumes the sets have the same comparator, and if this comparator is null then assume T is Comparable
 +    public static <T> void mergeSortedSets(final java.util.function.Consumer<T> consumer, final java.util.Comparator<? super T> comparator, final java.util.SortedSet<T>...sets) {
-+        final it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<T> all = new it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<>(comparator);
++        final ObjectRBTreeSet<T> all = new ObjectRBTreeSet<>(comparator);
 +        // note: this is done in log(n!) ~ nlogn time. It could be improved if it were to mimic what mergesort does.
 +        for (java.util.SortedSet<T> set : sets) {
 +            if (set != null) {
@@ -4267,10 +4279,10 @@ index e804c09cc89c21351c9241f426122e28e5d08452..e9fbeaf309735ea5fcb0c53b8b2485b0
      public IBlockData getType(BlockPosition blockposition) {
          return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4).getType(blockposition);
 diff --git a/src/main/java/net/minecraft/server/RegistryBlockID.java b/src/main/java/net/minecraft/server/RegistryBlockID.java
-index 4efcb8b595750891b421e524812542f0f67e9f3f..60948afa4ead71010dc27c7cef3e5acdb0ba005a 100644
+index 06ea0c3bfcb54a5f6a42363f633800c687b6f19d..f9c444c3caa1a38feafca0c59a937868b528fffe 100644
 --- a/src/main/java/net/minecraft/server/RegistryBlockID.java
 +++ b/src/main/java/net/minecraft/server/RegistryBlockID.java
-@@ -57,6 +57,7 @@ public class RegistryBlockID<T> implements Registry<T> {
+@@ -64,6 +64,7 @@ public class RegistryBlockID<T> implements Registry<T> {
          return Iterators.filter(this.c.iterator(), Predicates.notNull());
      }
  
@@ -4406,10 +4418,18 @@ index 5719ef9714e9680596a08c42c33508c16c0e676a..bb0f30f182856d2701fde9b1a65eeb98
          return this.j.m();
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index c2bbcdb7a0fb2d17deb74dcbecbd8e8d99d9aaae..79e36eca1e8a0e2d103e3997caa4f0368d089441 100644
+index c2bbcdb7a0fb2d17deb74dcbecbd8e8d99d9aaae..56ba84a0fcd3e6a6e2dbd035f466112bf17c6845 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -56,7 +56,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.LongSets;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+ import java.io.BufferedWriter;
+@@ -56,7 +57,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
      private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
      private final List<EntityPlayer> players = Lists.newArrayList();
@@ -4418,6 +4438,15 @@ index c2bbcdb7a0fb2d17deb74dcbecbd8e8d99d9aaae..79e36eca1e8a0e2d103e3997caa4f036
      boolean tickingEntities;
      private final MinecraftServer server;
      public final WorldDataServer worldDataServer; // CraftBukkit - type
+@@ -1561,7 +1562,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                 ObjectIterator objectiterator = spawnercreature_d.b().object2IntEntrySet().iterator();
+ 
+                 while (objectiterator.hasNext()) {
+-                    it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<EnumCreatureType> it_unimi_dsi_fastutil_objects_object2intmap_entry = (it.unimi.dsi.fastutil.objects.Object2IntMap.Entry) objectiterator.next();
++                    Object2IntMap.Entry<EnumCreatureType> it_unimi_dsi_fastutil_objects_object2intmap_entry = (Object2IntMap.Entry) objectiterator.next(); // Paper - decompile fix
+ 
+                     bufferedwriter.write(String.format("spawn_count.%s: %d\n", ((EnumCreatureType) it_unimi_dsi_fastutil_objects_object2intmap_entry.getKey()).b(), it_unimi_dsi_fastutil_objects_object2intmap_entry.getIntValue()));
+                 }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index 62cdb32a63cdcbaee80946f73d23817bbb455488..721a1c6bd4505cb132e7004c45b795d4959389e3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
