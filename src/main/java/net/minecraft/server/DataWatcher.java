@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.Nullable;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap; // Paper
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +22,7 @@ public class DataWatcher {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Map<Class<? extends Entity>, Integer> b = Maps.newHashMap();
     private final Entity entity;
-    private final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<DataWatcher.Item<?>> entries = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(); // Spigot - use better map // PAIL
+    private final Int2ObjectOpenHashMap<Item<?>> entries = new Int2ObjectOpenHashMap<>(); // Spigot - use better map // PAIL
     // private final ReadWriteLock lock = new ReentrantReadWriteLock(); // Spigot - not required
     private boolean f = true;
     private boolean g;
