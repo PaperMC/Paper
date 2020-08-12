@@ -5,23 +5,25 @@ Subject: [PATCH] Add configurable portal search radius
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 62e793b71b313146b86b466421e7a5f894bef9df..cd47a4ca069df26969de3051c2aac80540093818 100644
+index 62e793b71b313146b86b466421e7a5f894bef9df..cec28bfaaa4498308ce6ac0a0ec0f711826b9457 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -191,4 +191,11 @@ public class PaperWorldConfig {
+@@ -191,4 +191,13 @@ public class PaperWorldConfig {
      private void allChunksAreSlimeChunks() {
          allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
      }
 +
 +    public int portalSearchRadius;
++    public boolean portalSearchRadiusExact;
 +    public int portalCreateRadius;
 +    private void portalSearchRadius() {
 +        portalSearchRadius = getInt("portal-search-radius", 128);
++        portalSearchRadiusExact = getBoolean("portal-search-radius-exact", false);
 +        portalCreateRadius = getInt("portal-create-radius", 16);
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9e132052e1a9b997300e3f5d88473fc5f9ebdd73..1a8fc714f6e4663fc02c1df6a67aaa37d48f743d 100644
+index d151340f346b1d34e0d7eed93fceebefbec6799c..4aee6e73017de0cd71b87f62eb3dc5bf7fa96ac5 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -2508,7 +2508,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -48,7 +50,7 @@ index 5dce27334541d55c7a7d494cd92370570615dc05..2cdb999dd78611e6f72ef06d9128f21a
              if (event.isCancelled() || event.getTo() == null) {
                  return null;
 diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-index 8eacfc66dc04bba89c8e1c03746c67068e07718b..f6ec165f9c7d83698100c85b1d4bf6b4cea0f458 100644
+index 8eacfc66dc04bba89c8e1c03746c67068e07718b..46bbf92f60e2a0198493d83577f44d89f77977c5 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
 +++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
 @@ -45,7 +45,7 @@ public class PortalTravelAgent {
@@ -60,7 +62,7 @@ index 8eacfc66dc04bba89c8e1c03746c67068e07718b..f6ec165f9c7d83698100c85b1d4bf6b4
      }
  
      @Nullable
-@@ -53,7 +53,7 @@ public class PortalTravelAgent {
+@@ -53,15 +53,23 @@ public class PortalTravelAgent {
          // CraftBukkit end
          VillagePlace villageplace = this.world.x();
  
@@ -69,3 +71,24 @@ index 8eacfc66dc04bba89c8e1c03746c67068e07718b..f6ec165f9c7d83698100c85b1d4bf6b4
          List<VillagePlaceRecord> list = (List) villageplace.b((villageplacetype) -> {
              return villageplacetype == VillagePlaceType.v;
          }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
+-        Optional<VillagePlaceRecord> optional = list.stream().min(Comparator.<VillagePlaceRecord>comparingDouble((villageplacerecord) -> { // CraftBukkit - decompile error
+-            return villageplacerecord.f().j(blockposition);
+-        }).thenComparingInt((villageplacerecord) -> {
+-            return villageplacerecord.f().getY();
+-        }));
++        // Paper start - filter by searchRadius
++        if (world.paperConfig.portalSearchRadiusExact)
++            list.removeIf(villagePlaceRecord -> {
++                BlockPosition portalPosition = villagePlaceRecord.f();
++                return Math.abs(portalPosition.getX() - blockposition.getX()) > searchRadius || Math.abs(portalPosition.getZ() - blockposition.getZ()) > searchRadius;
++            });
++        Optional<VillagePlaceRecord> optional = list.size() == 0 ? Optional.empty() : Optional.of(
++            java.util.Collections.min(list, Comparator.<VillagePlaceRecord>comparingDouble((villageplacerecord) -> {
++                return villageplacerecord.f().j(blockposition);
++            }).thenComparingInt((villageplacerecord) -> {
++                return villageplacerecord.f().getY();
++            })));
++        // Paper end
+ 
+         return (ShapeDetector.Shape) optional.map((villageplacerecord) -> {
+             BlockPosition blockposition1 = villageplacerecord.f();
