@@ -29,6 +29,7 @@ import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -42,6 +43,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
@@ -488,20 +490,20 @@ public class CraftBlock implements Block {
         getWorld().setBiome(getX(), getY(), getZ(), bio);
     }
 
-    public static Biome biomeBaseToBiome(BiomeBase base) {
+    public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, BiomeBase base) {
         if (base == null) {
             return null;
         }
 
-        return Biome.valueOf(RegistryGeneration.WORLDGEN_BIOME.getKey(base).getKey().toUpperCase(java.util.Locale.ENGLISH));
+        return Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getKey(base)));
     }
 
-    public static BiomeBase biomeToBiomeBase(Biome bio) {
+    public static BiomeBase biomeToBiomeBase(IRegistry<BiomeBase> registry, Biome bio) {
         if (bio == null) {
             return null;
         }
 
-        return RegistryGeneration.WORLDGEN_BIOME.get(new MinecraftKey(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
+        return registry.get(CraftNamespacedKey.toMinecraft(bio.getKey()));
     }
 
     @Override
