@@ -6,7 +6,7 @@ Subject: [PATCH] Optimize Biome Mob Lookups for Mob Spawning
 Uses an EnumMap as well as a Set paired List for O(1) contains calls.
 
 diff --git a/src/main/java/net/minecraft/server/BiomeSettingsMobs.java b/src/main/java/net/minecraft/server/BiomeSettingsMobs.java
-index 558344a2fa7f755152d4674c698d7f47ba1beaa2..778804611af822ac09d102823e9e2f785f8e4904 100644
+index 558344a2fa7f755152d4674c698d7f47ba1beaa2..a18ca3f0001a771f21012bd39711f581efb2fef0 100644
 --- a/src/main/java/net/minecraft/server/BiomeSettingsMobs.java
 +++ b/src/main/java/net/minecraft/server/BiomeSettingsMobs.java
 @@ -24,18 +24,27 @@ public class BiomeSettingsMobs {
@@ -50,8 +50,8 @@ index 558344a2fa7f755152d4674c698d7f47ba1beaa2..778804611af822ac09d102823e9e2f78
  
 -        private final Map<EnumCreatureType, List<BiomeSettingsMobs.c>> a = (Map) Stream.of(EnumCreatureType.values()).collect(ImmutableMap.toImmutableMap((enumcreaturetype) -> {
 +        // Paper start - keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
-+        public static class MobList extends java.util.ArrayList<BiomeSettingsMobs> {
-+            java.util.Set<BiomeSettingsMobs> biomes = new java.util.HashSet<>();
++        public static class MobList extends java.util.ArrayList<BiomeSettingsMobs.c> {
++            java.util.Set<BiomeSettingsMobs.c> biomes = new java.util.HashSet<>();
 +
 +            @Override
 +            public boolean contains(Object o) {
@@ -59,14 +59,14 @@ index 558344a2fa7f755152d4674c698d7f47ba1beaa2..778804611af822ac09d102823e9e2f78
 +            }
 +
 +            @Override
-+            public boolean add(BiomeSettingsMobs BiomeSettingsMobs) {
++            public boolean add(BiomeSettingsMobs.c BiomeSettingsMobs) {
 +                biomes.add(BiomeSettingsMobs);
 +                return super.add(BiomeSettingsMobs);
 +            }
 +
 +            @Override
-+            public BiomeSettingsMobs remove(int index) {
-+                BiomeSettingsMobs removed = super.remove(index);
++            public BiomeSettingsMobs.c remove(int index) {
++                BiomeSettingsMobs.c removed = super.remove(index);
 +                if (removed != null) {
 +                    biomes.remove(removed);
 +                }
