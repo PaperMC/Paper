@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AJMFactsheets <AJMFactsheets@gmail.com>
+Date: Wed, 22 Jan 2020 19:52:28 -0600
+Subject: [PATCH] Fix items vanishing through end portal
+
+If the Paper configuration option "keep-spawn-loaded" is set to false,
+items entering the overworld from the end will spawn at Y = 0.
+
+This is due to logic in the getHighestBlockYAt method in World.java
+only searching the heightmap if the chunk is loaded.
+
+Quickly loading the exact world spawn chunk before searching the
+heightmap resolves the issue without having to load all spawn chunks.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index b18b2a2f59aa63cc1c23071d32e07e2a05ca520a..d22271679d2334a2d887f15de56ee31e4d62f068 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -163,11 +163,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public boolean Y;
+     public boolean impulse;
+     public int portalCooldown;
+-<<<<<<< HEAD
+-    protected boolean inPortal;
+-=======
+     public boolean inPortal; // Paper - public
+->>>>>>> Entity Activation Range 2.0
+     protected int portalTicks;
+     protected BlockPosition ac;
+     private boolean invulnerable;
+@@ -581,12 +577,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             this.recalcPosition();
+         } else {
+             if (enummovetype == EnumMoveType.PISTON) {
+-<<<<<<< HEAD
+-                vec3d = this.b(vec3d);
+-=======
+                 this.activatedTick = MinecraftServer.currentTick + 20; // Paper
+-                vec3d = this.a(vec3d);
+->>>>>>> Entity Activation Range 2.0
++                vec3d = this.b(vec3d);
+                 if (vec3d.equals(Vec3D.a)) {
+                     return;
+                 }
+@@ -2625,6 +2617,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             BlockPosition blockposition1;
+ 
+             if (flag1) {
++                // Paper start - Ensure spawn chunk is always loaded before calculating Y coordinate
++                this.world.getChunkAtWorldCoords(this.world.getSpawn());
++                // Paper end
+                 blockposition1 = WorldServer.a;
+             } else {
+                 blockposition1 = worldserver.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSpawn());
