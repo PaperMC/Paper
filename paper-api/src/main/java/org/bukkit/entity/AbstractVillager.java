@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a villager NPC
  */
-public interface AbstractVillager extends Ageable, NPC, InventoryHolder, Merchant {
+public interface AbstractVillager extends Breedable, NPC, InventoryHolder, Merchant {
 
     /**
      * Gets this villager's inventory.

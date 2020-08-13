@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Piglin / Piglin Brute.
  */
-public interface PiglinAbstract extends Monster {
+public interface PiglinAbstract extends Monster, Ageable {
 
     /**
      * Gets whether the piglin is immune to zombification.
@@ -53,13 +53,17 @@ public interface PiglinAbstract extends Monster {
      * Gets whether the piglin is a baby
      *
      * @return Whether the piglin is a baby
+     * @deprecated see {@link Ageable#isAdult()}
      */
+    @Deprecated
     public boolean isBaby();
 
     /**
      * Sets whether the piglin is a baby
      *
      * @param flag Whether the piglin is a baby
+     * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
+    @Deprecated
     public void setBaby(boolean flag);
 }

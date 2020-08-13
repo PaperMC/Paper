@@ -6,20 +6,24 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Zombie.
  */
-public interface Zombie extends Monster {
+public interface Zombie extends Monster, Ageable {
 
     /**
      * Gets whether the zombie is a baby
      *
      * @return Whether the zombie is a baby
+     * @deprecated see {@link Ageable#isAdult()}
      */
+    @Deprecated
     public boolean isBaby();
 
     /**
      * Sets whether the zombie is a baby
      *
      * @param flag Whether the zombie is a baby
+     * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
+    @Deprecated
     public void setBaby(boolean flag);
 
     /**
