@@ -1572,22 +1572,6 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
     }
 
-    /**
-     * EntityPortalEvent
-     */
-    public static EntityPortalEvent callEntityPortalEvent(Entity entity, World exitWorld, BlockPosition exitPosition, int searchRadius) {
-        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
-        Location enter = bukkitEntity.getLocation();
-        Location exit = new Location(exitWorld.getWorld(), exitPosition.getX(), exitPosition.getY(), exitPosition.getZ());
-
-        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius);
-        event.getEntity().getServer().getPluginManager().callEvent(event);
-        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
-            return null;
-        }
-        return event;
-    }
-
     public static LootGenerateEvent callLootGenerateEvent(IInventory inventory, LootTable lootTable, LootTableInfo lootInfo, List<ItemStack> loot, boolean plugin) {
         CraftWorld world = lootInfo.getWorld().getWorld();
         Entity entity = lootInfo.getContextParameter(LootContextParameters.THIS_ENTITY);
