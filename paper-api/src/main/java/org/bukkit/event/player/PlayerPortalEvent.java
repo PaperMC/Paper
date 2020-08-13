@@ -38,9 +38,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      *
      * @param searchRadius the radius in which to search for a portal from the
      * location
-     * @deprecated not currently functional
      */
-    @Deprecated
     public void setSearchRadius(int searchRadius) {
         this.getSearchRadius = searchRadius;
     }
@@ -70,9 +68,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      *
      * @param canCreatePortal Sets whether there should be a destination portal
      * created
-     * @deprecated not currently functional
      */
-    @Deprecated
     public void setCanCreatePortal(boolean canCreatePortal) {
         this.canCreatePortal = canCreatePortal;
     }
@@ -89,9 +85,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      *
      * @param creationRadius the radius in which to create a portal from the
      * location
-     * @deprecated not currently functional
      */
-    @Deprecated
     public void setCreationRadius(int creationRadius) {
         this.creationRadius = creationRadius;
     }
