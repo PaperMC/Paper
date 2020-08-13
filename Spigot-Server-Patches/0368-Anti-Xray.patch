@@ -98,10 +98,10 @@ index 0000000000000000000000000000000000000000..df7e4183d8842f5be8ae9d0698f8fa90
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0d7767adb996edf9f645be591e4eee1d1dddf97
+index 0000000000000000000000000000000000000000..5a69dde15f88ac051d25eaec4e07d1b030319c48
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
-@@ -0,0 +1,620 @@
+@@ -0,0 +1,621 @@
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
@@ -135,7 +135,8 @@ index 0000000000000000000000000000000000000000..c0d7767adb996edf9f645be591e4eee1
 +    private final ChunkSection[] emptyNearbyChunkSections = {Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION};
 +    private final int maxBlockYUpdatePosition;
 +
-+    public ChunkPacketBlockControllerAntiXray(PaperWorldConfig paperWorldConfig, Executor executor) {
++    public ChunkPacketBlockControllerAntiXray(World world, Executor executor) {
++        PaperWorldConfig paperWorldConfig = world.paperConfig;
 +        engineMode = paperWorldConfig.engineMode;
 +        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
 +        updateRadius = paperWorldConfig.updateRadius;
@@ -190,7 +191,7 @@ index 0000000000000000000000000000000000000000..c0d7767adb996edf9f645be591e4eee1
 +            }
 +        }
 +
-+        ChunkEmpty emptyChunk = new ChunkEmpty(null, new ChunkCoordIntPair(0, 0));
++        ChunkEmpty emptyChunk = new ChunkEmpty(world, new ChunkCoordIntPair(0, 0));
 +        BlockPosition zeroPos = new BlockPosition(0, 0, 0);
 +
 +        for (int i = 0; i < solidGlobal.length; i++) {
@@ -1000,6 +1001,19 @@ index 62758052546fac25fc90a9d26e5081d92eeba8b5..8dea2c50529478cf8473a53b7f760546
              this.sections[j >> 4] = chunksection;
          }
  
+diff --git a/src/main/java/net/minecraft/server/ChunkEmpty.java b/src/main/java/net/minecraft/server/ChunkEmpty.java
+index ed22ff28ea6c0978ec0d9d1ecf7baa3f422ed677..d2286f1549de563332c3e4181b9ada30845b3725 100644
+--- a/src/main/java/net/minecraft/server/ChunkEmpty.java
++++ b/src/main/java/net/minecraft/server/ChunkEmpty.java
+@@ -12,7 +12,7 @@ public class ChunkEmpty extends Chunk {
+     });
+ 
+     public ChunkEmpty(World world, ChunkCoordIntPair chunkcoordintpair) {
+-        super(world, chunkcoordintpair, new BiomeStorage(world.r().b(IRegistry.ay), ChunkEmpty.b));
++        super(world, chunkcoordintpair, new BiomeStorage(MinecraftServer.getServer().getCustomRegistry().b(IRegistry.ay), ChunkEmpty.b)); // Paper - world isnt ready yet for anti xray use here, use server singleton for registry
+     }
+ 
+     // Paper start
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index ff859311abb0eeaedb9c9d9cf7a9e858f4e12978..95bc46e8d9c9f75147cfdeaf464ec3ca2e491b1c 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -1200,6 +1214,18 @@ index f4c1b8d32b239c44e70d3fa6d094b74955f75339..ed77117630d54b7ad81f633110c7d2a7
          int j = along.length * 64 / 4096;
  
          if (this.h == this.b) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 122485e7351791e54e1d2ac8a71e3623a8d4cb29..15714009820659e298a2fff002a64c60b668c79a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2142,6 +2142,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         return this.saveData;
+     }
+ 
++    public final IRegistryCustom getCustomRegistry() { return aX(); } // Paper - OBFHELPER
+     public IRegistryCustom aX() {
+         return this.f;
+     }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 index 5fae0ec8933cef2b87d2f465c8019af0af2e130d..5094a5d6fb3c1a84d6e8f6abe79e894c047d9cfa 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
@@ -1373,7 +1399,7 @@ index 09da0cc8f02c504191dfec8be93e6cf67c6afb78..9ee7e1e93659beb747b8fe2b926522b1
      }
  
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 7c7c038dde32c2acd10cd653c6c85bca466d3a6c..ef68c1e1e6196c4af1234e892f7c642174c43a8a 100644
+index 7c7c038dde32c2acd10cd653c6c85bca466d3a6c..fa134406c7d0132971ad5d75f1e0f46667f94a01 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -2,6 +2,8 @@ package net.minecraft.server;
@@ -1401,7 +1427,7 @@ index 7c7c038dde32c2acd10cd653c6c85bca466d3a6c..ef68c1e1e6196c4af1234e892f7c6421
 +    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
-+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this.paperConfig, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
