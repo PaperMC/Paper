@@ -23,13 +23,21 @@ public class CraftSpellcaster extends CraftIllager implements Spellcaster {
 
     @Override
     public Spell getSpell() {
-        return Spell.valueOf(getHandle().getSpell().name());
+        return toBukkitSpell(getHandle().getSpell());
     }
 
     @Override
     public void setSpell(Spell spell) {
         Preconditions.checkArgument(spell != null, "Use Spell.NONE");
 
-        getHandle().setSpell(EntityIllagerWizard.Spell.a(spell.ordinal()));
+        getHandle().setSpell(toNMSSpell(spell));
+    }
+
+    public static Spell toBukkitSpell(EntityIllagerWizard.Spell spell) {
+        return Spell.valueOf(spell.name());
+    }
+
+    public static EntityIllagerWizard.Spell toNMSSpell(Spell spell) {
+        return EntityIllagerWizard.Spell.a(spell.ordinal());
     }
 }
