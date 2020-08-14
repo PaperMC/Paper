@@ -420,6 +420,7 @@ public class PlayerChunk {
                         this.a(world, blockposition, iblockdata);
                     } else {
                         ChunkSection chunksection = chunk.getSections()[sectionposition.getY()];
+                        if (chunksection == null) chunksection = new ChunkSection(sectionposition.getY(), chunk, world, true); // Paper - make a new chunk section if none was found
                         PacketPlayOutMultiBlockChange packetplayoutmultiblockchange = new PacketPlayOutMultiBlockChange(sectionposition, shortset, chunksection, this.x);
 
                         this.a(packetplayoutmultiblockchange, false);
