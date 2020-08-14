@@ -42,6 +42,8 @@ public class TileEntityPiston extends TileEntity implements ITickable {
         return this.b;
     }
 
+    public final boolean isHead() { return this.h(); } // Paper - OBFHELPER
+
     public boolean h() {
         return this.g;
     }

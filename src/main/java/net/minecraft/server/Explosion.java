@@ -135,6 +135,15 @@ public class Explosion {
 
                             if (f > 0.0F && this.l.a(this, this.world, blockposition, iblockdata, f) && blockposition.getY() < 256 && blockposition.getY() >= 0) { // CraftBukkit - don't wrap explosions
                                 set.add(blockposition);
+                                // Paper start - prevent headless pistons from forming
+                                if (!com.destroystokyo.paper.PaperConfig.allowHeadlessPistons && iblockdata.getBlock() == Blocks.MOVING_PISTON) {
+                                    TileEntityPiston extension = (TileEntityPiston)this.world.getTileEntity(blockposition);
+                                    if (extension.isHead()) {
+                                       EnumDirection direction = iblockdata.get(BlockPistonExtension.FACING);
+                                       set.add(blockposition.shift(direction.opposite()));
+                                    }
+                                }
+                                // Paper end
                             }
 
                             d4 += d0 * 0.30000001192092896D;

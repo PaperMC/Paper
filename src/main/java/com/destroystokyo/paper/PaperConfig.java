@@ -436,6 +436,12 @@ public class PaperConfig {
         set("settings.unsupported-settings.allow-tnt-duplication", null);
     }
 
+    public static boolean allowHeadlessPistons;
+    private static void allowHeadlessPistons() {
+        config.set("settings.unsupported-settings.allow-headless-pistons-readme", "This setting controls if players should be able to create headless pistons.");
+        allowHeadlessPistons = getBoolean("settings.unsupported-settings.allow-headless-pistons", false);
+    }
+
     public static int playerAutoSaveRate = -1;
     public static int maxPlayerAutoSavePerTick = 10;
     private static void playerAutoSaveRate() {
