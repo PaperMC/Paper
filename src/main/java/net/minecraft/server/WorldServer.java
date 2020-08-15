@@ -1257,7 +1257,11 @@ public class WorldServer extends World implements GeneratorAccessSeed {
         if (entity.co().anyMatch(this::isUUIDTaken)) {
             return false;
         } else {
-            return this.addAllEntities(entity, reason); // CraftBukkit
+            // Paper start - this method is _only_ designed to return false on duplicate uuids
+            // fixes issues with things such as a plugin cancelling spawn of a /summon
+            this.addAllEntities(entity, reason); // CraftBukkit
+            return true;
+            // Paper end
         }
     }
 
