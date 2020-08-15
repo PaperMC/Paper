@@ -441,4 +441,15 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Deprecated
     public void setShoulderEntityRight(@Nullable Entity entity);
+
+    /**
+     * Make the entity drop the item in their hand.
+     * <br>
+     * This will force the entity to drop the item they are holding with
+     * an option to drop the entire {@link ItemStack} or just 1 of the items.
+     *
+     * @param dropAll True to drop entire stack, false to drop 1 of the stack
+     * @return True if item was dropped successfully
+     */
+    public boolean dropItem(boolean dropAll);
 }
