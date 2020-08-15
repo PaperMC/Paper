@@ -37,7 +37,7 @@ public abstract class WorldGenSurfaceNetherAbstract extends WorldGenSurface<Worl
         BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
         IBlockData iblockdata4 = ichunkaccess.getType(blockposition_mutableblockposition.d(k1, 128, l1));
 
-        for (int k2 = 127; k2 >= 0; --k2) {
+        for (int k2 = k; k2 >= 0; --k2) { // Paper - fix MC-187716 - use configured height
             blockposition_mutableblockposition.d(k1, k2, l1);
             IBlockData iblockdata5 = ichunkaccess.getType(blockposition_mutableblockposition);
             int l2;

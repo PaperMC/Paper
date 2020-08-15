@@ -27,7 +27,7 @@ public class WorldGenSurfaceNetherForest extends WorldGenSurface<WorldGenSurface
         int j2 = -1;
         IBlockData iblockdata2 = worldgensurfaceconfigurationbase.b();
 
-        for (int k2 = 127; k2 >= 0; --k2) {
+        for (int k2 = k; k2 >= 0; --k2) { // Paper - fix MC-187716 - use configured height
             blockposition_mutableblockposition.d(k1, k2, l1);
             IBlockData iblockdata3 = worldgensurfaceconfigurationbase.a();
             IBlockData iblockdata4 = ichunkaccess.getType(blockposition_mutableblockposition);
