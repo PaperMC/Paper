@@ -248,6 +248,11 @@ public class CraftInventory implements Inventory {
         return -1;
     }
 
+    @Override
+    public boolean isEmpty() {
+        return inventory.isEmpty();
+    }
+
     public int firstPartial(Material material) {
         Validate.notNull(material, "Material cannot be null");
         material = CraftLegacy.fromLegacy(material);
