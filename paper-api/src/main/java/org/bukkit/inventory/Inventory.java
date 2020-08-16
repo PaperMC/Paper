@@ -289,6 +289,14 @@ public interface Inventory extends Iterable<ItemStack> {
     public int firstEmpty();
 
     /**
+     * Check whether or not this inventory is empty. An inventory is considered
+     * to be empty if there are no ItemStacks in any slot of this inventory.
+     *
+     * @return true if empty, false otherwise
+     */
+    public boolean isEmpty();
+
+    /**
      * Removes all stacks in the inventory matching the given material.
      *
      * @param material The material to remove
