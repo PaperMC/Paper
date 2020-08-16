@@ -21,34 +21,33 @@ index 62e793b71b313146b86b466421e7a5f894bef9df..cd47a4ca069df26969de3051c2aac805
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 6216617f2b90d6df4269a0642ec311976677695f..d0076326c14af0d8810c0bcdfa02aa216af0ff09 100644
+index e4a00ff8580649b31a4572c7cb055556d0f339fa..16375ec53bb15d604f96f380b95608a5ce827458 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2511,7 +2511,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -2513,7 +2513,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                  double d4 = DimensionManager.a(this.world.getDimensionManager(), worldserver.getDimensionManager());
                  BlockPosition blockposition = new BlockPosition(MathHelper.a(this.locX() * d4, d0, d2), this.locY(), MathHelper.a(this.locZ() * d4, d1, d3));
                  // CraftBukkit start
--                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver, blockposition, 128);
-+                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver, blockposition, worldserver.paperConfig.portalSearchRadius); // Paper - use portal search radius
+-                CraftPortalEvent event = callPortalEvent(this, worldserver, blockposition, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, flag2 ? 16 : 128, 16);
++                CraftPortalEvent event = callPortalEvent(this, worldserver, blockposition, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, worldserver.paperConfig.portalSearchRadius, worldserver.paperConfig.portalCreateRadius); // Paper start - configurable portal radius
                  if (event == null) {
                      return null;
                  }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 04ecfd9723a509a17f7cd709df535fbd684771e2..a3cf0fed0f6362c076dcad9e47dc843a7578dd64 100644
+index 603d42098d9f78828e75e5411f1a97371ebaebab..339cb8c54152290b048d7d601e0ebb7ad9f4c646 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -808,7 +808,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-             }
-             Location enter = this.getBukkitEntity().getLocation();
-             Location exit = (worldserver == null) ? null : new Location(worldserver.getWorld(), shapedetectorshape.position.x, shapedetectorshape.position.y, shapedetectorshape.position.z, shapedetectorshape.yaw, shapedetectorshape.pitch);
--            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, resourcekey == DimensionManager.THE_END ? 0 : 16);
-+            com.destroystokyo.paper.PaperWorldConfig config = worldserver != null ? worldserver.paperConfig : worldserver1.paperConfig; // Paper - portal radius
-+            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, config.portalSearchRadius, true, resourcekey == DimensionManager.THE_END ? 0 : config.portalCreateRadius); // Paper - portal radius
-             Bukkit.getServer().getPluginManager().callEvent(event);
-             if (event.isCancelled() || event.getTo() == null) {
-                 return null;
+@@ -871,7 +871,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     protected CraftPortalEvent callPortalEvent(Entity entity, WorldServer exitWorldServer, BlockPosition exitPosition, TeleportCause cause, int searchRadius, int creationRadius) {
+         Location enter = this.getBukkitEntity().getLocation();
+         Location exit = new Location(exitWorldServer.getWorld(), exitPosition.getX(), exitPosition.getY(), exitPosition.getZ(), yaw, pitch);
+-        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, creationRadius);
++        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius); // Paper - use searchRadius
+         Bukkit.getServer().getPluginManager().callEvent(event);
+         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
+             return null;
 diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-index dc972bf0abc87c2b2fb84d8fffc368a947b2d9a3..62edfda9cc326a428cd267227054f03d94d22dce 100644
+index dc972bf0abc87c2b2fb84d8fffc368a947b2d9a3..205f3f697e9c31674a4ac8db38467bb2e61cfe6b 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
 +++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
 @@ -14,7 +14,7 @@ public class PortalTravelAgent {
@@ -56,7 +55,7 @@ index dc972bf0abc87c2b2fb84d8fffc368a947b2d9a3..62edfda9cc326a428cd267227054f03d
      public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
          // CraftBukkit start
 -        return findPortal(blockposition, flag ? 16 : 128); // Search Radius
-+        return findPortal(blockposition, flag ? world.paperConfig.portalCreateRadius : world.paperConfig.portalSearchRadius); // Search Radius
++        return findPortal(blockposition, flag ? world.paperConfig.portalCreateRadius : world.paperConfig.portalSearchRadius); // Paper - search Radius
      }
  
      public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {
