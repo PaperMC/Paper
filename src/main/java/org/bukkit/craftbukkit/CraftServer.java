@@ -983,9 +983,7 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        IRegistryCustom.Dimension iregistrycustom_dimension = IRegistryCustom.b();
-
-        RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.a, console.dataPackResources.h(), iregistrycustom_dimension);
+        RegistryReadOps<NBTBase> registryreadops = RegistryReadOps.a((DynamicOps) DynamicOpsNBT.a, console.dataPackResources.h(), console.f);
         WorldDataServer worlddata = (WorldDataServer) worldSession.a((DynamicOps) registryreadops, console.datapackconfiguration);
 
         WorldSettings worldSettings;
