@@ -19,7 +19,7 @@ import net.minecraft.server.NBTTagString;
 public class CraftNBTTagConfigSerializer {
 
     private static final Pattern ARRAY = Pattern.compile("^\\[.*]");
-    private static final Pattern INTEGER = Pattern.compile("[-+]?(?:0|[1-9][0-9]*)?i", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INTEGER = Pattern.compile("[-+]?(?:0|[1-9][0-9]*)i", Pattern.CASE_INSENSITIVE); // Paper - fix regex
     private static final Pattern DOUBLE = Pattern.compile("[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d", Pattern.CASE_INSENSITIVE);
     private static final MojangsonParser MOJANGSON_PARSER = new MojangsonParser(new StringReader(""));
 
