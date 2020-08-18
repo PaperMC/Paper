@@ -310,14 +310,14 @@ public class CraftWorld implements World {
     public boolean setSpawnLocation(Location location) {
         Preconditions.checkArgument(location != null, "location");
 
-        return equals(location.getWorld()) ? setSpawnLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ()) : false;
+        return equals(location.getWorld()) ? setSpawnLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ(), location.getYaw()) : false;
     }
 
     @Override
-    public boolean setSpawnLocation(int x, int y, int z) {
+    public boolean setSpawnLocation(int x, int y, int z, float angle) {
         try {
             Location previousLocation = getSpawnLocation();
-            world.worldData.setSpawn(new BlockPosition(x, y, z), 0.0F);
+            world.worldData.setSpawn(new BlockPosition(x, y, z), angle);
 
             // Notify anyone who's listening.
             SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
@@ -327,6 +327,11 @@ public class CraftWorld implements World {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public boolean setSpawnLocation(int x, int y, int z) {
+        return setSpawnLocation(x, y, z, 0.0F);
     }
 
     @Override
