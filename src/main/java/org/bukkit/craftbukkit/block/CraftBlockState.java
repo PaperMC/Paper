@@ -182,12 +182,6 @@ public class CraftBlockState implements BlockState {
 
         IBlockData newBlock = this.data;
         block.setTypeAndData(newBlock, applyPhysics);
-        world.getHandle().notify(
-                position,
-                block.getNMS(),
-                newBlock,
-                3
-        );
 
         // Update levers etc
         if (false && applyPhysics && getData() instanceof Attachable) { // Call does not map to new API
