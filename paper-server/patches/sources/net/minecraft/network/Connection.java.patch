@@ -82,7 +82,34 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -431,7 +458,7 @@
+@@ -418,12 +445,26 @@
+         }
+     }
+ 
++    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
++    private static int joinAttemptsThisTick; // Paper - Buffer joins to world
++    private static int currTick; // Paper - Buffer joins to world
+     public void tick() {
+         this.flushQueue();
++        // Paper start - Buffer joins to world
++        if (Connection.currTick != net.minecraft.server.MinecraftServer.currentTick) {
++            Connection.currTick = net.minecraft.server.MinecraftServer.currentTick;
++            Connection.joinAttemptsThisTick = 0;
++        }
++        // Paper end - Buffer joins to world
+         PacketListener packetlistener = this.packetListener;
+ 
+         if (packetlistener instanceof TickablePacketListener tickablepacketlistener) {
++            // Paper start - Buffer joins to world
++            if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
++                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
++                || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
+             tickablepacketlistener.tick();
++            } // Paper end - Buffer joins to world
+         }
+ 
+         if (!this.isConnected() && !this.disconnectionHandled) {
+@@ -431,7 +472,7 @@
          }
  
          if (this.channel != null) {
@@ -91,7 +118,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -464,12 +491,15 @@
+@@ -464,12 +505,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -108,7 +135,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +567,7 @@
+@@ -537,7 +581,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -117,11 +144,10 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -660,7 +690,28 @@
-                     });
+@@ -661,6 +705,27 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
-+                }
+                 }
 +                this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
 +                final PacketListener packetListener = this.getPacketListener();
@@ -141,7 +167,7 @@
 +                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.getId(), profile.getName(),
 +                                ((InetSocketAddress) this.address).getAddress(), false).callEvent();
 +                    }
-                 }
++                }
 +                // Paper end - Add PlayerConnectionCloseEvent
  
              }
