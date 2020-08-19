@@ -363,10 +363,22 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
     }
     // Paper end
 
+    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
+    private static int joinAttemptsThisTick; // Paper
+    private static int currTick; // Paper
     public void a() {
         this.p();
+        // Paper start
+        if (currTick != MinecraftServer.currentTick) {
+            currTick = MinecraftServer.currentTick;
+            joinAttemptsThisTick = 0;
+        }
+        // Paper end
         if (this.packetListener instanceof LoginListener) {
+            if ( ((LoginListener) this.packetListener).getLoginState() != LoginListener.EnumProtocolState.READY_TO_ACCEPT // Paper
+                     || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
             ((LoginListener) this.packetListener).tick();
+            } // Paper
         }
 
         if (this.packetListener instanceof PlayerConnection) {

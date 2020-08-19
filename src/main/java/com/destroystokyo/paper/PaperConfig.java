@@ -452,4 +452,9 @@ public class PaperConfig {
             maxPlayerAutoSavePerTick = (playerAutoSaveRate == -1 || playerAutoSaveRate > 100) ? 10 : 20;
         }
     }
+
+    public static int maxJoinsPerTick;
+    private static void maxJoinsPerTick() {
+        maxJoinsPerTick = getInt("settings.max-joins-per-tick", 3);
+    }
 }
