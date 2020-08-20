@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# This is NOT a POSIX shell script.
+# Several coreutils use extensions, and may not work for everyone.
+
 if [ -z "$1" ]; then
 	echo "$0 <prID>"
 	exit 1;

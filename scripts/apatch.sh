@@ -44,7 +44,7 @@ if [ "$isreject" ] || [ "$($gitcmd am -3 "$file")" ]; then
     for i in $(find . -name '*.rej'); do
         base="$(echo "$i" | sed 's/.rej//g')"
         if [ -f "$i" ]; then
-            sed -e 's/^diff a\/\(.*\) b\/\(.*\)[[:space:]].*rejected.*$/--- \1\n+++ \2/' -i "$i" && wiggle -v -l --replace "$base" "$i"
+            sed -e 's/^diff a\/\(.*\) b\/\(.*\)[[:space:]].*rejected.*$/--- \1\n+++ \2/' "$i" && wiggle -v -l --replace "$base" "$i"
             rm -f "$base.porig" "$i"
         else
             echo "No such file: $base"

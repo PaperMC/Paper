@@ -58,7 +58,7 @@ applyPatch() {
         $applycmd "$basedir/${what_name}-Patches"/*.patch
     fi
 
-    if [ $? ]; then
+    if [ ! $? ]; then
         echo 1 > "$statusfile"
         echo "  Something did not apply cleanly to $target."
         echo "  Please review above details and finish the apply then"
@@ -84,8 +84,8 @@ applyPatch() {
 # Apply Spigot
 (
     cd "$workdir/Spigot"
-    basedir=$(pwd)
-    applyPatch ../Bukkit Spigot-API HEAD &&
+    basedir="$(pwd)"
+    applyPatch ../Bukkit Spigot-API HEAD
     applyPatch ../CraftBukkit Spigot-Server patched
 ) || (echo "Failed to apply Spigot Patches"; return 1)
 
@@ -95,8 +95,8 @@ echo "Importing MC Dev"
 
 # Apply paper
 (
-    applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
-    applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
+    applyPatch work/Spigot/Spigot-API Paper-API HEAD
+    applyPatch work/Spigot/Spigot-Server Paper-Server HEAD
     cd "$basedir"
 
     # if we have previously ran ./paper mcdev, update it

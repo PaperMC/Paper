@@ -8,6 +8,6 @@ set -ue
     echo "Failed to build Paper"
     exit 1
 ) || exit 1
-if [ "$2" = "--jar" ]; then
+if [ "${2:-}" = "--jar" ]; then
     mvn clean install && "$basedir"/scripts/paperclip.sh "$basedir"
 fi
