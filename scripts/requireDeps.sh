@@ -7,6 +7,13 @@ _is_dep_available() {
 	command -v "$1" >/dev/null || (echo "$1 was not found and is a required dependency"; false)
 }
 
-_is_dep_available git
-_is_dep_available patch
-_is_dep_available mvn
+if [ -z "${1:-}" ]; then
+    _is_dep_available git
+    _is_dep_available patch
+else
+    for dep in $@; do
+        _is_dep_available "$dep"
+    done
+fi
+
+# vim: set ff=unix autoindent ts=4 sw=4 tw=0 et :

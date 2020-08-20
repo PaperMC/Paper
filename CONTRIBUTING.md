@@ -60,6 +60,7 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
 - `git` (package `git` everywhere);
 - `patch` (often package `patch`);
+- `wiggle` (often package `wiggle`);
 - A Java 8 or later JDK (packages vary, use Google/DuckDuckGo/etc.).  
 If you need one, you can find them on [AdoptOpenJDK](https://adoptopenjdk.net/).
 - `maven` (often package `maven`; can be found on
