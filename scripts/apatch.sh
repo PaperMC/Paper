@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 set -ue
 
-### Disclaimer: This should only be called from the paper tool (either directly
-###             or indirectly)
-
 "$basedir"/scripts/requireDeps.sh wiggle
+
+# We define gitcmd and some helper functions in here.
+. "$basedir"/scripts/functions.sh
 
 noapply=true
 isreject=false
