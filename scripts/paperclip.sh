@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
+set -ue
 
-(
-set -e
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-mcver=$(cat "$workdir/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
+mcver=$(grep minecraftVersion "$workdir/BuildData/info.json" | cut -d '"' -f 4)
 paperjar="$basedir/Paper-Server/target/paper-$mcver.jar"
 vanillajar="$workdir/Minecraft/$mcver/$mcver.jar"
 
@@ -18,5 +17,4 @@ echo ""
 echo ""
 echo ""
 echo "Build success!"
-echo "Copied final jar to $(cd "$basedir" && pwd -P)/paperclip.jar"
-) || exit 1
+echo "Copied final jar to $basedir/paperclip.jar"
