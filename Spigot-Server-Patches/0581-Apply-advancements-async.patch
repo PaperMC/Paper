@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Thu, 20 Aug 2020 17:57:02 +0200
+Subject: [PATCH] Apply advancements async
+
+
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index 17789407b9e86896a963a305a13357286aa5f319..cf539c98073b475eb5b769c8cc11d48a7e6d58f1 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -63,6 +63,7 @@ public class AdvancementDataPlayer {
+         this.d(advancementdataworld);
+     }
+ 
++    public final void setPlayer(EntityPlayer entityPlayer) { this.a(entityPlayer); } // Paper - OBFHELPER
+     public void a(EntityPlayer entityplayer) {
+         this.player = entityplayer;
+     }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 11fa231caa5be12a43e646eb2c0300e597d25dd2..c7a22cbeb524ecec0cbe52827e5bf6b997d93b1b 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -49,7 +49,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public final MinecraftServer server;
+     public final PlayerInteractManager playerInteractManager;
+     public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
+-    private final AdvancementDataPlayer advancementDataPlayer;
++    private AdvancementDataPlayer advancementDataPlayer; // Paper - remove final
++    private final java.util.concurrent.CompletableFuture<AdvancementDataPlayer> advancementDataPlayerCompletableFuture; // Paper - async advancements
+     private final ServerStatisticManager serverStatisticManager;
+     private float lastHealthScored = Float.MIN_VALUE;
+     private int lastFoodScored = Integer.MIN_VALUE;
+@@ -133,7 +134,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.playerInteractManager = playerinteractmanager;
+         this.server = minecraftserver;
+         this.serverStatisticManager = minecraftserver.getPlayerList().getStatisticManager(this);
+-        this.advancementDataPlayer = minecraftserver.getPlayerList().f(this);
++        this.advancementDataPlayerCompletableFuture = minecraftserver.getPlayerList().loadAdvancementDataPlayerAsync(this); // Paper - async advancements
+         this.G = 1.0F;
+         //this.c(worldserver); // Paper - don't move to spawn on login, only first join
+ 
+@@ -499,7 +500,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             CriterionTriggers.u.a(this, this.cf, this.ticksLived - this.cg);
+         }
+ 
+-        this.advancementDataPlayer.b(this);
++        if (areAdvancementsLoaded()) // Paper - async advancements: don't tick advancements until they're loaded
++            this.advancementDataPlayer.b(this); // Paper - conflict on change
+     }
+ 
+     public void playerTick() {
+@@ -1853,7 +1855,26 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.worldChangeInvuln = false;
+     }
+ 
++    // Paper start - async advancements
++    public boolean areAdvancementsLoaded() {
++        return this.advancementDataPlayer != null
++            || this.advancementDataPlayerCompletableFuture.isDone();
++    }
++
++    public AdvancementDataPlayer getAdvancementDataIfLoadedImmediately() {
++        // We need a null check here because this method is called before the future is assigned.
++        // Once assigned, it will essentially be a no-op as the field is final.
++        if (this.advancementDataPlayer == null && this.advancementDataPlayerCompletableFuture != null && this.advancementDataPlayerCompletableFuture.isDone())
++            this.advancementDataPlayer = this.advancementDataPlayerCompletableFuture.join();
++        return this.advancementDataPlayer;
++    }
++
+     public AdvancementDataPlayer getAdvancementData() {
++        if (this.advancementDataPlayer == null)
++            synchronized (this.advancementDataPlayerCompletableFuture) {
++                if (this.advancementDataPlayer == null) this.advancementDataPlayer = this.advancementDataPlayerCompletableFuture.join();
++            }
++        // Paper end
+         return this.advancementDataPlayer;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 883c17f00b3766b1e4e308bf9baf0ab07d6475bf..715c371fbb3b257fff6e287b5a22ec6239102363 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2232,6 +2232,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         return methodprofilerresults;
+     }
+ 
++    public final java.nio.file.Path getSavedFilePath(SavedFile savedFile) { return this.a(savedFile); } // Paper - OBFHELPER
+     public java.nio.file.Path a(SavedFile savedfile) {
+         return this.convertable.getWorldFolder(savedfile);
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 787e80c50a61d6bd80efd8bd0d4b5140908aaeed..aba7260b37664ac59ffebe71d9d0355454c0c726 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -18,6 +18,7 @@ import java.util.Map;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
++import java.util.concurrent.CompletableFuture;
+ import javax.annotation.Nullable;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -1333,9 +1334,26 @@ public abstract class PlayerList {
+         return serverstatisticmanager;
+     }
+ 
++    // Paper start - async advancements
++    public CompletableFuture<AdvancementDataPlayer> loadAdvancementDataPlayerAsync(EntityPlayer entityPlayer) {
++        if (entityPlayer.getAdvancementDataIfLoadedImmediately() != null) {
++            entityPlayer.getAdvancementData().setPlayer(entityPlayer);
++            return CompletableFuture.completedFuture(entityPlayer.getAdvancementData());
++        }
++
++        UUID uuid = entityPlayer.getUniqueID();
++        File file = this.server.getSavedFilePath(SavedFile.ADVANCEMENTS).toFile();
++        final File file1 = new File(file, uuid + ".json");
++        return CompletableFuture.supplyAsync(
++            () -> new AdvancementDataPlayer(this.server.getDataFixer(), this, this.server.getAdvancementData(), file1, entityPlayer),
++            server.executorService
++        );
++    }
++    // Paper end
++
+     public AdvancementDataPlayer f(EntityPlayer entityplayer) {
+         UUID uuid = entityplayer.getUniqueID();
+-        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementData(); // CraftBukkit
++        AdvancementDataPlayer advancementdataplayer = (AdvancementDataPlayer) entityplayer.getAdvancementDataIfLoadedImmediately(); // CraftBukkit // Paper
+ 
+         if (advancementdataplayer == null) {
+             File file = this.server.a(SavedFile.ADVANCEMENTS).toFile();
