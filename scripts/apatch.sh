@@ -37,7 +37,7 @@ if [ "$isreject" ] || [ "$($gitcmd am -3 "$file")" ]; then
     $gitcmd reset --hard
     $gitcmd clean -f
     errors=$($gitcmd apply --rej "$file" 2>&1)
-    echo "$errors" >> ~/patch.log # FIXME: Why in the wildest unicorn world would we be doing $HOME here?
+    echo "$errors" >> patch.log # Anyone encountering this should just be told to fix it or knows already.
     export missingfiles=""
     export summaryfail=""
     export summarygood=""
