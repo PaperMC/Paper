@@ -6,7 +6,11 @@ PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
+case "${OSTYPE:-}" in
+    "cygwin" | "msys")
+        windows=true
+        ;;
+esac
 decompiledir="$workdir/Minecraft/$minecraftversion"
 spigotdecompiledir="$decompiledir/spigot"
 forgedecompiledir="$decompiledir/forge"
@@ -22,7 +26,7 @@ forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptio
 classdir="$decompiledir/classes"
 versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
 
-if [[ ! -f "$versionjson" ]]; then
+if [ ! -f "$versionjson" ]; then
     echo "Downloading $minecraftversion JSON Data"
     verescaped=$(echo ${minecraftversion} | sed 's/\-pre/ Pre-Release /g' | sed 's/\./\\./g')
     urlescaped=$(echo ${verescaped} | sed 's/ /_/g')
@@ -136,7 +140,7 @@ fi
 
 # set a symlink to current
 currentlink="$workdir/Minecraft/current"
-if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "$windows" == "false" ]; then
+if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "${windows:-}" ]; then
 	set +e
 	echo "Pointing $currentlink to $minecraftversion"
 	rm -rf "$currentlink" || true

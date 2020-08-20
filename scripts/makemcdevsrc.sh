@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -ue
 
+# We define gitcmd and some helper functions in here.
+. "$basedir"/scripts/functions.sh
+
 PS1="$" # TODO: Why?
 
 basedir="$(cd "$1" && pwd -P)"

@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -ue
 
+# We define gitcmd and some helper functions in here.
+. "$basedir"/scripts/functions.sh
+
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
 mcver=$(grep minecraftVersion "$workdir/BuildData/info.json" | cut -d '"' -f 4)

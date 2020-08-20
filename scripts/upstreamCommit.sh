@@ -2,6 +2,9 @@
 set -ue
 PS1="$" # TODO: Why?
 
+# We define gitcmd and some helper functions in here.
+. "$basedir"/scripts/functions.sh
+
 changelog() {
     base="$(git ls-tree HEAD "$1" | cut -d' ' -f3 | cut -f1)"
     cd "$1" && git log --oneline "${base}...HEAD"
