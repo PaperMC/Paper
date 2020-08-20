@@ -1,203 +1,164 @@
-#!/usr/bin/env bash
+#!/bin/sh
+set -ue
 
-# resolve shell-specifics
-case "$(echo "$SHELL" | sed -E 's|/usr(/local)?||g')" in
-    "/bin/zsh")
-        RCPATH="$HOME/.zshrc"
-        SOURCE="${BASH_SOURCE[0]:-${(%):-%N}}"
-    ;;
-    *)
-        RCPATH="$HOME/.bashrc"
-        if [[ -f "$HOME/.bash_aliases" ]]; then
-            RCPATH="$HOME/.bash_aliases"
-        fi
-        SOURCE="${BASH_SOURCE[0]}"
-    ;;
-esac
+TOOL_NAME="paper" # The name of this very tool. There is no POSIX sh way to find this.
 
-# get base dir regardless of execution location
-while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+# Find the base directory. This is the directory which contains this tool.
+basedir="$(pwd -P)"
+while [ ! -x "$basedir/$TOOL_NAME" ]; do # Resolve until the tool is found.
+    basedir="$(cd -P "$(dirname "$basedir")" && pwd -P)" # Find the new basedir.
 done
-SOURCE=$([[ "$SOURCE" = /* ]] && echo "$SOURCE" || echo "$PWD/${SOURCE#./}")
-basedir=$(dirname "$SOURCE")
-gitcmd="git -c commit.gpgsign=false"
 
-source "$basedir/scripts/functions.sh"
+# Require all dependencies we need to exist.
+"$basedir"/scripts/requireDeps.sh
 
-failed=0
-case "$1" in
+# We define gitcmd and some helper functions in here.
+. "$basedir"/scripts/functions.sh
+
+case "${1:-}" in
+    ## Commands: Patch and source process
     "rb" | "rbp" | "rebuild")
-    (
-        set -e
-        cd "$basedir"
-        scripts/rebuildPatches.sh "$basedir" $2 || exit 1
-    ) || failed=1
-    ;;
+        "$basedir"/scripts/rebuildPatches.sh "$basedir" "${2:-}"
+        ;;
+
     "rbf" | "rbfull")
-    (
-        set -e
-        cd "$basedir"
-        scripts/rebuildPatches.sh "$basedir" "nofilter" || exit 1
-    ) || failed=1
-    ;;
+        "$basedir"/scripts/rebuildPatches.sh "$basedir" "nofilter"
+        ;;
+
     "p" | "patch")
-    (
-        set -e
-        cd "$basedir"
-        scripts/build.sh "$basedir" || exit 1
-    ) || failed=1
-    ;;
-    "j" | "jar")
-    (
-        set -e
-        cd "$basedir"
-        scripts/build.sh "$basedir" "--jar" || exit 1
-    ) || failed=1
-    ;;
-    "b" | "build")
-    (
-        set -e
-        cd "$basedir"
-        scripts/build.sh "$basedir" || exit 1
-        (cd Paper-API ; mvn clean install) || exit 1
-        (cd Paper-Server ; mvn clean package) || exit 1
-        echo "Paper jar successfully built"
-        ls -la Paper-Server/target/paper*.jar
-    ) || failed=1
-    ;;
-    "pc" | "paperclip")
-    (
-        set -e
-        cd "$basedir"
-        scripts/paperclip.sh "$basedir" || exit 1
-    ) || failed=1
-    ;;
-    "make")
-    (
-        if [[ "$2" = "bacon" ]] ; then
-            set -e
-            cd "$basedir"
-            scripts/build.sh "$basedir" "--jar"
-        fi
-    )
-    ;;
+        "$basedir"/scripts/build.sh "$basedir"
+        ;;
+
     "m" | "mcdev")
-    (
-        set -e
-        cd "$basedir"
-        scripts/makemcdevsrc.sh "$basedir"
-    )
-    ;;
+        "$basedir"/scripts/makemcdevsrc.sh "$basedir"
+        ;;
+
+    ## Commands: Build and run process
+    "j" | "jar")
+        "$basedir"/scripts/build.sh "$basedir" "--jar"
+        ;;
+
+    "b" | "build")
+        "$basedir"/scripts/build.sh "$basedir"
+        (cd "$basedir"/Paper-API; mvn clean install)
+        (cd "$basedir"/Paper-MojangAPI; mvn clean install)
+        (cd "$basedir"/Paper-Server; mvn clean package)
+        echo "Paper jar successfully built. This is not a paperclip!"
+        ls -l "$basedir"/Paper-Server/target/paper*.jar
+        ;;
+
+    "pc" | "paperclip")
+        "$basedir"/scripts/paperclip.sh "$basedir"
+        ;;
+
     "t" | "test" | "testserver")
-    (
-        cd "$basedir"
-        shift
-        scripts/testServer.sh "$basedir" "$@"
-    )
-    ;;
-    "td" | "testdir")
-        cd "${PAPER_TEST_DIR:-$basedir/work/test-server}"
-    ;;
+        (shift; "$basedir"/scripts/testServer.sh "$basedir" "$@")
+        ;;
+
+    ## Commands: Upstream management
     "u" | "up" | "upstream")
-    (
-        cd "$basedir"
-        scripts/upstreamMerge.sh "$basedir" "$2"
-    )
-    ;;
+        "$basedir"/scripts/upstreamMerge.sh "$basedir" "$2"
+        ;;
+
     "cu" | "commitup" | "commitupstream" | "upc" | "upcommit" | "upstreamcommit")
-    (
-        cd "$basedir"
-        shift
-        scripts/upstreamCommit.sh "$@"
-    )
-    ;;
+        (shift; "$basedir"/scripts/upstreamCommit.sh "$@")
+        ;;
+
+    ## Commands: cd into specific directories
     "r" | "root")
         cd "$basedir"
-    ;;
+        ;;
+
     "a" | "api")
-        cd "$basedir/Paper-API"
-    ;;
+        cd "$basedir"/Paper-API
+        ;;
+
     "s" | "server")
-        cd "$basedir/Paper-Server"
-    ;;
+        cd "$basedir"/Paper-Server
+        ;;
+
+    "td" | "testdir")
+        cd "${PAPER_TEST_DIR:-${2:-"$basedir"/work/test-server}}"
+        ;;
+
+    ## Commands: Cleanup
     "c" | "clean")
-        rm -rf Paper-API
-        rm -rf Paper-Server
-        rm -rf work
+        # Ensure we're not in a subdirectory first.
+        case "$(pwd)" in
+            "$basedir"/*)
+                # Uh oh, we're in a subdirectory.
+                echo "You were in a subdirectory of the base directory and have been cd'd into the base directory before cleanup."
+                cd "$basedir"
+                ;;
+        esac
+
+        rm -rf "$basedir"/Paper-API "$basedir"/Paper-Server "$basedir"/work
         echo "Cleaned build files"
-    ;;
+        ;;
+
+    ## Commands: Rebasing
     "con" | "continue")
         if [ -d ".git/rebase-apply" ]; then
-            git -c commit.gpgsign=false am --continue
+            $gitcmd am --continue
         elif [ -d ".git/rebase-merge" ]; then
-            git -c commit.gpgsign=false rebase --continue
+            $gitcmd rebase --continue
         fi
     ;;
+
     "e" | "edit")
-        case "$2" in
+        case "${2:-}" in
             "s" | "server")
-            mkdir -p "$basedir/work/Temp"
-            echo "$basedir/Paper-Server" > "$basedir/work/Temp/PAPER_LAST_EDIT"
-            cd "$basedir/Paper-Server"
-            (
-                set -e
-
+                mkdir -p "$basedir"/work/Temp
+                echo "$basedir/Paper-Server" > "$basedir"/work/Temp/PAPER_LAST_EDIT
+                cd "$basedir"/Paper-Server
                 paperstash
                 $gitcmd rebase -i upstream/upstream
                 paperunstash
-            )
-            ;;
+                ;;
+
             "a" | "api")
-            mkdir -p "$basedir/work/Temp"
-            echo "$basedir/Paper-API" > "$basedir/work/Temp/PAPER_LAST_EDIT"
-            cd "$basedir/Paper-API"
-            (
-                set -e
-
+                mkdir -p "$basedir"/work/Temp
+                echo "$basedir/Paper-API" > "$basedir"/work/Temp/PAPER_LAST_EDIT
+                cd "$basedir"/Paper-API
                 paperstash
                 $gitcmd rebase -i upstream/upstream
                 paperunstash
-            )
-            ;;
+                ;;
+
             "c" | "continue")
-            cd "$( < "$basedir/work/Temp/PAPER_LAST_EDIT")"
-            rm -f "$basedir/work/Temp/PAPER_LAST_EDIT"
-            (
-                set -e
+                if [ ! -f "$basedir"/work/Temp/PAPER_LAST_EDIT ]; then
+                    echo "You must first edit to continue."
+                    exit 1
+                fi
+                cd "$(cat "$basedir"/work/Temp/PAPER_LAST_EDIT)"
+                rm -f "$basedir"/work/Temp/PAPER_LAST_EDIT
 
                 $gitcmd add .
                 $gitcmd commit --amend
                 $gitcmd rebase --continue
 
-                cd "$basedir"
-                scripts/rebuildPatches.sh "$basedir"
-            )
-            ;;
+                "$basedir"/scripts/rebuildPatches.sh "$basedir"
+                ;;
+
             *)
-                echo "You must edit either the api or server."
-            ;;
+                echo "You must edit either the \`api\` or \`server\`."
+                exit 1
+                ;;
         esac
-    ;;
+        ;;
+
+    ## Commands: Deprecated
     "setup")
-        if [[ -f "$RCPATH" ]] ; then
-            NAME="paper"
-            if [[ ! -z "${2+x}" ]] ; then
-                NAME="$2"
-            fi
-            (grep "alias $NAME=" "$RCPATH" > /dev/null) && (sed -i "s|alias $NAME=.*|alias $NAME='. $SOURCE'|g" "$RCPATH") || (echo "alias $NAME='. $SOURCE'" >> "$RCPATH")
-            alias "$NAME=. $SOURCE"
-            echo "You can now just type '$NAME' at any time to access the paper tool."
-        else
-          echo "We were unable to setup the paper build tool alias: $RCPATH is missing"
-        fi
-    ;;
+        echo "Please read the CONTRIBUTING.md file for information on how to do this."
+        exit 1
+        ;;
+
+    ## No match, print help
     *)
         echo "PaperMC build tool command. This provides a variety of commands to build and manage the PaperMC build"
-        echo "environment. For all of the functionality of this command to be available, you must first run the"
-        echo "'setup' command. View below for details. For essential building and patching, you do not need to do the setup."
+        echo "environment. For all of the functionality of this command to be available, you must first set up the"
+        echo "PATH to include this script. View below for details. For essential building and patching, you do"
+        echo "not need to do the setup. Read the CONTRIBUTING.md file for more information on setting up."
         echo ""
         echo " Normal commands:"
         echo "  * rb, rebuild       | Rebuild patches, can be called from anywhere."
@@ -207,36 +168,15 @@ case "$1" in
         echo "  * u, up, upstream   | Updates the submodules used by Paper to their latest upstream versions."
         echo "  * t, testserver     | Run the test server with the set of plugins Paper uses as a basis for server tests."
         echo ""
-        echo " These commands require the setup command before use:"
+        echo " These commands require setting up PATH before use:"
         echo "  * r, root           | Change directory to the root of the project."
-        echo "  * a. api            | Move to the Paper-API directory."
+        echo "  * a, api            | Move to the Paper-API directory."
         echo "  * s, server         | Move to the Paper-Server directory."
         echo "  * td, testdirectory | Move to the test-server directory."
         echo "  * e, edit           | Use to edit a specific patch, give it the argument \"server\" or \"api\""
         echo "                      | respectively to edit the correct project. Use the argument \"continue\" after"
         echo "                      | the changes have been made to finish and rebuild patches. Can be called from anywhere."
-        echo ""
-        echo "  * setup             | Add an alias to $RCPATH to allow full functionality of this script. Run as:"
-        echo "                      |     . ./paper setup"
-        echo "                      | After you run this command you'll be able to just run 'paper' from anywhere."
-        echo "                      | The default name for the resulting alias is 'paper', you can give an argument to override"
-        echo "                      | this default, such as:"
-        echo "                      |     . ./paper setup example"
-        echo "                      | Which will allow you to run 'example' instead."
-    ;;
+        ;;
 esac
 
-unset RCPATH
-unset SOURCE
-unset basedir
-unset -f color
-unset -f colorend
-unset -f paperstash
-unset -f paperunstash
-if [[ "$failed" == "1" ]]; then
-	unset failed
-	false
-else
-	unset failed
-	true
-fi
+# vim: set ff=unix autoindent ts=4 sw=4 tw=0 et :
