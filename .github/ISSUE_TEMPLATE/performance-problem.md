@@ -4,6 +4,9 @@ about: Report performance problems or areas of concern
 
 ---
 
+<!-- Before reporting performance problems here, please make sure you are on the latest version of Paper.  -->
+<!-- Forks of Paper receive no support here. Please make sure that this problem also affects Paper. -->
+
 ###  Timings or Profile link:
 ___We ask that all timings/profiles are a link, not a screenshot. Screenshots inhibit our ability to figure out the real cause of the issue.___
 

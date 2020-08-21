@@ -4,6 +4,9 @@ about: Server Bug or Plugin Incompatibility
 
 ---
 
+<!-- Before reporting an issue here, please make sure you are on the latest version of Paper. -->
+<!-- Forks of Paper receive no support here. Please make sure that your issue is reproducable on Paper first.  -->
+
 ### What behaviour is expected:
 ___What you expected to see___
 

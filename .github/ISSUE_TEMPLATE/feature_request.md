@@ -4,6 +4,8 @@ about: Suggest an idea for this project
 
 ---
 
+<!-- Before requesting a new feature, please make sure you are using the latest version and that the feature you are requesting is not already in Paper. -->
+
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
