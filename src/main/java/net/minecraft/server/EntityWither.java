@@ -343,8 +343,9 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
                 this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
             }
 
-            this.bossBattle.setProgress(this.getHealth() / this.getMaxHealth());
+            //this.bossBattle.setProgress(this.getHealth() / this.getMaxHealth()); // Paper - Moved down
         }
+        this.bossBattle.setProgress(this.getHealth() / this.getMaxHealth()); // Paper - Fix MC-99259 (Boss bar does not update until Wither invulnerability period ends)
     }
 
     public static boolean c(IBlockData iblockdata) {
