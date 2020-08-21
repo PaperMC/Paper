@@ -4,6 +4,9 @@ about: Report server crashes and/or scary stacktraces
 
 ---
 
+<!-- Before reporting a crash here, please make sure you are on the latest version of Paper.  -->
+<!-- Forks of Paper receive no support here. Please make sure that this crash also happens when using Paper.  -->
+
 ### Link/paste of stack trace
 
     You can also simply just use code formatting in markdown!
