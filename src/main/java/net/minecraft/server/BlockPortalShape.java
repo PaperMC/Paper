@@ -162,7 +162,10 @@ public class BlockPortalShape {
     }
 
     // CraftBukkit start - return boolean
-    public boolean createPortal() {
+    // Paper start - ItemActionContext param
+    @Deprecated public boolean createPortal() { return this.createPortal(null); }
+    public boolean createPortal(ItemActionContext itemActionContext) {
+        // Paper end
         org.bukkit.World bworld = this.b.getMinecraftWorld().getWorld();
 
         // Copy below for loop
@@ -174,7 +177,7 @@ public class BlockPortalShape {
             blocks.add(state);
         });
 
-        PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, null, PortalCreateEvent.CreateReason.FIRE);
+        PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, itemActionContext == null || itemActionContext.getEntity() == null ? null : itemActionContext.getEntity().getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE); // Paper - pass entity param
         this.b.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {

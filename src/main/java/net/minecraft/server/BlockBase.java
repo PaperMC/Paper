@@ -68,6 +68,12 @@ public abstract class BlockBase {
         PacketDebug.a(world, blockposition);
     }
 
+    // Paper start - add ItemActionContext param
+    @Deprecated
+    public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag, ItemActionContext itemActionContext) {
+        this.onPlace(iblockdata, world, blockposition, iblockdata1, flag);
+    }
+    // Paper end
     @Deprecated
     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
         org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot

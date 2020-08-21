@@ -313,7 +313,7 @@ public final class ItemStack {
                         IBlockData block = world.getType(newblockposition);
 
                         if (!(block.getBlock() instanceof BlockTileEntity)) { // Containers get placed automatically
-                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, itemactioncontext); // Paper - pass itemactioncontext
                         }
 
                         world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
