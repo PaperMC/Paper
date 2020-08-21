@@ -24,7 +24,7 @@ elif [[ "$REPLY" =~ ^[Rr]$ ]]; then
 	git rebase master
 fi
 echo "Dropping to new shell, exit to delete the refs"
-bash -i
+"${SHELL:-bash}" -i
 
 read -p "Press 'p' to push. " -n 1 -r >&2
 echo
