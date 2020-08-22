@@ -616,6 +616,13 @@ public final class CraftServer implements Server {
         return playerList.getMaxPlayers();
     }
 
+    // Paper start
+    @Override
+    public void setMaxPlayers(int maxPlayers) {
+        this.playerList.setMaxPlayers(maxPlayers);
+    }
+    // Paper end
+
     // NOTE: These are dependent on the corresponding call in MinecraftServer
     // so if that changes this will need to as well
     @Override

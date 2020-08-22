@@ -67,7 +67,7 @@ public abstract class PlayerList {
     public final WorldNBTStorage playerFileData;
     private boolean hasWhitelist;
     private final IRegistryCustom.Dimension s;
-    protected final int maxPlayers;
+    protected int maxPlayers; public final void setMaxPlayers(int maxPlayers) { this.maxPlayers = maxPlayers; } // Paper - remove final and add setter
     private int viewDistance;
     private EnumGamemode u;
     private boolean v;
