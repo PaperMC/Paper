@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 21 Aug 2020 21:05:28 -0400
+Subject: [PATCH] MC-197883: Bandaid decode issue
+
+Mojang has a mix of type and name in the data sets, but you can only
+use one.
+
+This will retry as name if type is asked for and not found.
+
+diff --git a/src/main/java/com/mojang/serialization/codecs/KeyDispatchCodec.java b/src/main/java/com/mojang/serialization/codecs/KeyDispatchCodec.java
+index de7d1e5e0319c65775d932144c268c2d55bb7dc7..bd6a0e1b5454e880a4f2a16be7dc8da64b73e11d 100644
+--- a/src/main/java/com/mojang/serialization/codecs/KeyDispatchCodec.java
++++ b/src/main/java/com/mojang/serialization/codecs/KeyDispatchCodec.java
+@@ -48,7 +48,12 @@ public class KeyDispatchCodec<K, V> extends MapCodec<V> {
+ 
+     @Override
+     public <T> DataResult<V> decode(final DynamicOps<T> ops, final MapLike<T> input) {
+-        final T elementName = input.get(typeKey);
++        // Paper start - bandaid MC-197883
++        T elementName = input.get(typeKey);
++        if (elementName == null && "type".equals(typeKey)) {
++            elementName = input.get("name");
++        }
++        // Paper end
+         if (elementName == null) {
+             return DataResult.error("Input does not contain a key [" + typeKey + "]: " + input);
+         }
