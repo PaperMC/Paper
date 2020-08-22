@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.EulerAngle;
 import org.jetbrains.annotations.NotNull;
@@ -291,4 +292,56 @@ public interface ArmorStand extends LivingEntity {
      * @param marker whether this is a marker
      */
     void setMarker(boolean marker);
+
+    /**
+     * Locks the equipment slot with the specified
+     * {@link LockType locking mechanism}.
+     *
+     * @param slot the equipment slot to lock
+     * @param lockType the LockType to lock the equipment slot with
+     */
+    void addEquipmentLock(@NotNull EquipmentSlot slot, @NotNull LockType lockType);
+
+    /**
+     * Remove a {@link LockType locking mechanism}.
+     *
+     * @param slot the equipment slot to change
+     * @param lockType the lockType to remove
+     */
+    void removeEquipmentLock(@NotNull EquipmentSlot slot, @NotNull LockType lockType);
+
+    /**
+     * Returns if the ArmorStand has the specified
+     * {@link LockType locking mechanism}.
+     *
+     * @param slot the EquipmentSlot to test
+     * @param lockType the LockType to test
+     * @return if the ArmnorStand has been locked with the parameters specified
+     */
+    boolean hasEquipmentLock(@NotNull EquipmentSlot slot, @NotNull LockType lockType);
+
+    /**
+     * Represents types of locking mechanisms for ArmorStand equipment.
+     */
+    public enum LockType {
+
+        /**
+         * Prevents adding or changing the respective equipment - players cannot
+         * replace the empty slot with a new item or swap the items between
+         * themselves and the ArmorStand.
+         */
+        ADDING_OR_CHANGING,
+        /**
+         * Prevents removing or changing the respective equipment - players
+         * cannot take an item from the slot or swap the items between
+         * themselves and the ArmorStand.
+         */
+        REMOVING_OR_CHANGING,
+        /**
+         * Prevents adding the respective equipment - players cannot replace the
+         * empty slot with a new item, but can swap items between themselves and
+         * the ArmorStand.
+         */
+        ADDING;
+    }
 }
