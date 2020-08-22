@@ -1862,12 +1862,14 @@ public class WorldServer extends World implements GeneratorAccessSeed {
     }
     // Paper end
 
+    public final void setSpawn(BlockPosition blockposition, float f) { this.a(blockposition, f); } // Paper - OBFHELPER
     public void a(BlockPosition blockposition, float f) {
         // Paper - configurable spawn radius
         BlockPosition prevSpawn = this.getSpawn();
         //ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(new BlockPosition(this.worldData.a(), 0, this.worldData.c()));
 
         this.worldData.setSpawn(blockposition, f);
+        new org.bukkit.event.world.SpawnChangeEvent(getWorld(), MCUtil.toLocation(this, prevSpawn)).callEvent(); // Paper
         if (this.keepSpawnInMemory) {
             // if this keepSpawnInMemory is false a plugin has already removed our tickets, do not re-add
             this.removeTicketsForSpawn(this.paperConfig.keepLoadedRange, prevSpawn);
