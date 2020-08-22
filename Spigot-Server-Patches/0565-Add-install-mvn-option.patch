@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 22 Aug 2020 20:53:25 +0200
+Subject: [PATCH] Add -install-mvn option
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index bac292e6d8e6cdb239d8accd21eaa25022f5640f..3147a0debca6248442dae05e2badf9a61e517909 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -2,6 +2,12 @@ package org.bukkit.craftbukkit;
+ 
+ import java.io.File;
+ import java.io.IOException;
++import java.io.InputStream;
++import java.net.URISyntaxException;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.Paths;
++import java.nio.file.StandardCopyOption;
+ import java.text.SimpleDateFormat;
+ import java.util.Arrays;
+ import java.util.Calendar;
+@@ -145,6 +151,8 @@ public class Main {
+                         .ofType(String.class)
+                         .defaultsTo("Unknown Server")
+                         .describedAs("Name");
++
++                acceptsAll(asList("install-mvn"), "Install the jar to maven local");
+                 // Paper end
+             }
+         };
+@@ -196,6 +204,53 @@ public class Main {
+             }
+         } else if (options.has("v")) {
+             System.out.println(CraftServer.class.getPackage().getImplementationVersion());
++            // Paper start - install to mvn local
++        } else if (options.has("install-mvn")) {
++            try {
++                if (new ProcessBuilder("mvn", "-version").start().waitFor() != 0) {
++                    // Error! It's either not on the path, or something went terribly wrong.
++                    System.err.println("Maven must be installed and on your PATH.");
++                    System.exit(1);
++                }
++            } catch (IOException | InterruptedException ex) {
++                System.err.println("Maven must be installed and on your PATH.");
++                ex.printStackTrace();
++                System.exit(1);
++            }
++
++            Path jarPath;
++            try {
++                jarPath = Paths.get(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI());
++            } catch (URISyntaxException e) {
++                System.err.println("Could not get running jar location");
++                e.printStackTrace();
++                System.exit(1);
++                return;
++            }
++
++            try {
++                Path pomPath = Paths.get("paper.xml");
++
++                // TODO: Replace with io.papermc.paper when the time is right
++                try(InputStream pom = Main.class.getResourceAsStream("/META-INF/maven/com.destroystokyo.paper/paper/pom.xml")) {
++                    Files.copy(pom, pomPath, StandardCopyOption.REPLACE_EXISTING);
++                }
++
++                if (new ProcessBuilder("mvn", "install:install-file", "-Dfile=" + jarPath, "-DpomFile=" + pomPath).start().waitFor() != 0) {
++                    // Error! Could not install the file.
++                    System.err.println("Could not install the Paper file.");
++                    System.exit(1);
++                    return;
++                }
++            } catch (IOException | InterruptedException ex) {
++                System.err.println("Could not install the Paper file.");
++                ex.printStackTrace();
++                System.exit(1);
++                return;
++            }
++
++            System.out.println("Installed jar into local maven repository.");
++            // Paper end
+         } else {
+             // Do you love Java using + and ! as string based identifiers? I sure do!
+             String path = new File(".").getAbsolutePath();
