@@ -48,7 +48,12 @@ public class KeyDispatchCodec<K, V> extends MapCodec<V> {
 
     @Override
     public <T> DataResult<V> decode(final DynamicOps<T> ops, final MapLike<T> input) {
-        final T elementName = input.get(typeKey);
+        // Paper start - bandaid MC-197883
+        T elementName = input.get(typeKey);
+        if (elementName == null && "type".equals(typeKey)) {
+            elementName = input.get("name");
+        }
+        // Paper end
         if (elementName == null) {
             return DataResult.error("Input does not contain a key [" + typeKey + "]: " + input);
         }
