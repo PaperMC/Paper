@@ -741,7 +741,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setBedSpawnLocation(Location location, boolean override) {
         if (location == null) {
-            getHandle().setRespawnPosition(null, null, location.getYaw(), override, false);
+            getHandle().setRespawnPosition(null, null, 0.0F, override, false);
         } else {
             getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().getDimensionKey(), new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), location.getYaw(), override, false);
         }
