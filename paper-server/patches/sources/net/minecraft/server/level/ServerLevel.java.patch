@@ -79,7 +79,7 @@
 +    public final LevelStorageSource.LevelStorageAccess convertable;
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -218,7 +218,7 @@
 +                chunkgenerator = new FlatLevelSource(cpf.settings(), worldChunkManager);
 +            }
 +        }
-+
+ 
 +        if (gen != null) {
 +            chunkgenerator = new org.bukkit.craftbukkit.generator.CustomChunkGenerator(this, chunkgenerator, gen);
 +        }
@@ -876,7 +876,17 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1649,6 +2012,11 @@
+@@ -1352,7 +1715,9 @@
+         float f1 = this.levelData.getSpawnAngle();
+ 
+         if (!blockposition1.equals(pos) || f1 != angle) {
++            org.bukkit.Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
+             this.levelData.setSpawn(pos, angle);
++            new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
+             this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
+         }
+ 
+@@ -1649,6 +2014,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -888,7 +898,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2036,12 @@
+@@ -1668,12 +2038,12 @@
      }
  
      public boolean isFlat() {
@@ -903,7 +913,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2064,7 @@
+@@ -1696,7 +2066,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -912,7 +922,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2073,7 @@
+@@ -1705,7 +2075,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -921,7 +931,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2085,7 @@
+@@ -1717,6 +2087,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -929,7 +939,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2171,17 @@
+@@ -1802,6 +2173,17 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -947,7 +957,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1836,7 +2216,8 @@
+@@ -1836,7 +2218,8 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -957,7 +967,7 @@
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
                  ServerLevel.this.updateSleepingPlayerList();
-@@ -1864,9 +2245,53 @@
+@@ -1864,9 +2247,53 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1011,7 +1021,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2320,15 @@
+@@ -1895,6 +2322,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
