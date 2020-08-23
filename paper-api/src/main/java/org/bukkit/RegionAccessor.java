@@ -445,4 +445,12 @@ public interface RegionAccessor {
      */
     @NotNull
     public <T extends Entity> T addEntity(@NotNull T entity);
+
+    // Paper start
+    /**
+     * @return the current moon phase at the current time in the world
+     */
+    @NotNull
+    io.papermc.paper.world.MoonPhase getMoonPhase();
+    // Paper end
 }
