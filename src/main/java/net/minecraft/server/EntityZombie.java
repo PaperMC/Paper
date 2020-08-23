@@ -46,7 +46,7 @@ public class EntityZombie extends EntityMonster {
 
     @Override
     protected void initPathfinder() {
-        this.goalSelector.a(4, new EntityZombie.a(this, 1.0D, 3));
+        if (world.paperConfig.zombiesTargetTurtleEggs) this.goalSelector.a(4, new EntityZombie.a(this, 1.0D, 3)); // Paper
         this.goalSelector.a(8, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
         this.goalSelector.a(8, new PathfinderGoalRandomLookaround(this));
         this.m();
