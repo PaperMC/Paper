@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 
 public class EntityEvoker extends EntityIllagerWizard {
 
-    private EntitySheep bo;
+    private EntitySheep bo; public final EntitySheep getWololoTarget() { return this.bo; } public final void setWololoTarget(EntitySheep sheep) { this.bo = sheep; } // Paper - OBFHELPER
 
     public EntityEvoker(EntityTypes<? extends EntityEvoker> entitytypes, World world) {
         super(entitytypes, world);
@@ -24,7 +24,7 @@ public class EntityEvoker extends EntityIllagerWizard {
         this.goalSelector.a(8, new PathfinderGoalRandomStroll(this, 0.6D));
         this.goalSelector.a(9, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 3.0F, 1.0F));
         this.goalSelector.a(10, new PathfinderGoalLookAtPlayer(this, EntityInsentient.class, 8.0F));
-        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityRaider.class})).a());
+        this.targetSelector.a(1, (new PathfinderGoalHurtByTarget(this, new Class[]{EntityRaider.class})).a(new Class[0])); // Paper - decompile fix
         this.targetSelector.a(2, (new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, true)).a(300));
         this.targetSelector.a(3, (new PathfinderGoalNearestAttackableTarget<>(this, EntityVillagerAbstract.class, false)).a(300));
         this.targetSelector.a(3, new PathfinderGoalNearestAttackableTarget<>(this, EntityIronGolem.class, false));
