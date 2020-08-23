@@ -1009,4 +1009,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
     }
     // Paper end - entity jump API
+
+    // Paper start - pickup animation API
+    @Override
+    public void playPickupItemAnimation(final org.bukkit.entity.Item item, final int quantity) {
+        this.getHandle().take(((CraftItem) item).getHandle(), quantity);
+    }
+    // Paper end - pickup animation API
 }
