@@ -377,10 +377,11 @@ public class CraftEventFactory {
         return tradeSelectEvent;
     }
 
+    @SuppressWarnings("deprecation") // Paper use deprecated event to maintain compat (it extends modern event)
     public static boolean handleBellRingEvent(Level world, BlockPos position, Direction direction, Entity entity) {
         Block block = CraftBlock.at(world, position);
         BlockFace bukkitDirection = CraftBlock.notchToBlockFace(direction);
-        BellRingEvent event = new BellRingEvent(block, bukkitDirection, (entity != null) ? entity.getBukkitEntity() : null);
+        BellRingEvent event = new io.papermc.paper.event.block.BellRingEvent(block, bukkitDirection, (entity != null) ? entity.getBukkitEntity() : null); // Paper - deprecated BellRingEvent
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
