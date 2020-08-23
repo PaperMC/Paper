@@ -327,6 +327,11 @@ public class CraftWorld implements World {
     public int getPlayerCount() {
         return world.players.size();
     }
+
+    @Override
+    public io.papermc.paper.world.MoonPhase getMoonPhase() {
+        return io.papermc.paper.world.MoonPhase.getPhase(getFullTime() / 24000L);
+    }
     // Paper end
 
     private static final Random rand = new Random();
