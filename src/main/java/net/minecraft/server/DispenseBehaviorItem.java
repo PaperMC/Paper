@@ -7,20 +7,22 @@ import org.bukkit.event.block.BlockDispenseEvent;
 // CraftBukkit end
 
 public class DispenseBehaviorItem implements IDispenseBehavior {
+    private EnumDirection enumdirection; // Paper
 
     public DispenseBehaviorItem() {}
 
     @Override
     public final ItemStack dispense(ISourceBlock isourceblock, ItemStack itemstack) {
+        enumdirection = isourceblock.getBlockData().get(BlockDispenser.FACING); // Paper - cache facing direction
         ItemStack itemstack1 = this.a(isourceblock, itemstack);
 
         this.a(isourceblock);
-        this.a(isourceblock, (EnumDirection) isourceblock.getBlockData().get(BlockDispenser.FACING));
+        this.a(isourceblock, enumdirection); // Paper - cache facing direction
         return itemstack1;
     }
 
     protected ItemStack a(ISourceBlock isourceblock, ItemStack itemstack) {
-        EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockData().get(BlockDispenser.FACING);
+        // Paper - cached enum direction
         IPosition iposition = BlockDispenser.a(isourceblock);
         ItemStack itemstack1 = itemstack.cloneAndSubtract(1);
 
