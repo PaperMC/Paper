@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import io.papermc.paper.event.block.BellRingEvent;
+
 import javax.annotation.Nullable;
 
 public class BlockBell extends BlockTileEntity {
@@ -58,7 +60,7 @@ public class BlockBell extends BlockTileEntity {
         boolean flag1 = !flag || this.a(iblockdata, enumdirection, movingobjectpositionblock.getPos().y - (double) blockposition.getY());
 
         if (flag1) {
-            boolean flag2 = this.a(world, blockposition, enumdirection);
+            boolean flag2 = this.handleBellRing(world, blockposition, enumdirection, entityhuman); // Paper
 
             if (flag2 && entityhuman != null) {
                 entityhuman.a(StatisticList.BELL_RING);
@@ -92,6 +94,11 @@ public class BlockBell extends BlockTileEntity {
     }
 
     public boolean a(World world, BlockPosition blockposition, @Nullable EnumDirection enumdirection) {
+        // Paper start - add ringer param
+        return this.handleBellRing(world, blockposition, enumdirection, null);
+    }
+    public boolean handleBellRing(World world, BlockPosition blockposition, @Nullable EnumDirection enumdirection, @Nullable Entity ringer) {
+        // Paper end
         TileEntity tileentity = world.getTileEntity(blockposition);
 
         if (!world.isClientSide && tileentity instanceof TileEntityBell) {
@@ -99,6 +106,7 @@ public class BlockBell extends BlockTileEntity {
                 enumdirection = (EnumDirection) world.getType(blockposition).get(BlockBell.a);
             }
 
+            if (!new BellRingEvent(world.getWorld().getBlockAt(MCUtil.toLocation(world, blockposition)), ringer == null ? null : ringer.getBukkitEntity()).callEvent()) return false; // Paper - BellRingEvent
             ((TileEntityBell) tileentity).a(enumdirection);
             world.playSound((EntityHuman) null, blockposition, SoundEffects.BLOCK_BELL_USE, SoundCategory.BLOCKS, 2.0F, 1.0F);
             return true;
