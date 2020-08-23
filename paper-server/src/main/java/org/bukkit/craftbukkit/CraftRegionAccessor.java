@@ -515,4 +515,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
     }
+
+    // Paper start
+    @Override
+    public io.papermc.paper.world.MoonPhase getMoonPhase() {
+        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / 24000L);
+    }
+    // Paper end
 }
