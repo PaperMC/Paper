@@ -23,5 +23,5 @@ ___Gist/pastebin/hastebin links___
 ___The more information we receive, the quicker and more effective we can be at finding the solution to the
 issue.___
 
-### Paper build number:
-___This can be found by running `/version` on your server. `latest` is not a proper version number; we require the output of `/version` so we can properly track down the issue.___
+### Paper version:
+___Paste the output of running `/version` on your server WITH the Minecraft version. `latest` is not a version; we require the output of `/version` so we can properly track down the issue.___
