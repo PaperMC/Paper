@@ -56,7 +56,7 @@ index 2f83f308596e97f82833d639fe2a2ce1017c0574..1241d0253508f79867c5393751c0e6eb
          return i;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index b6f7fd501432560d4ed557371bc770724ce032ce..33f5ec0552641e5e979f9a1f3e0d97b23798799b 100644
+index b6f7fd501432560d4ed557371bc770724ce032ce..21a9a0364ec6cfd28fcfc0a62d3465993dac1a1c 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -146,21 +146,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -146,7 +146,7 @@ index b6f7fd501432560d4ed557371bc770724ce032ce..33f5ec0552641e5e979f9a1f3e0d97b2
 +                    configuredSpigotValue = spigotWorldConfig.otherTrackingRange;
 +                    break;
 +                case ENDERDRAGON:
-+                    configuredSpigotValue = 10 * 16; // default is 10 chunk range // TODO check on update
++                    configuredSpigotValue = EntityTypes.ENDER_DRAGON.getChunkRange() * 16;
 +                    break;
 +                default:
 +                    throw new IllegalStateException("Missing case for enum " + trackingRangeType);
@@ -334,15 +334,22 @@ index b6f7fd501432560d4ed557371bc770724ce032ce..33f5ec0552641e5e979f9a1f3e0d97b2
                  }
              }
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
-index 03990231a8b6bc6925f054e9033825316abfafcc..627e9a90b3045602bc540a5f3f031aaf3716c942 100644
+index 03990231a8b6bc6925f054e9033825316abfafcc..5cfe16ef8c5a7b4405efa58b8fc532e14353f88d 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java
 +++ b/src/main/java/org/spigotmc/TrackingRange.java
-@@ -46,8 +46,49 @@ public class TrackingRange
+@@ -23,6 +23,7 @@ public class TrackingRange
+      */
+     public static int getEntityTrackingRange(Entity entity, int defaultRange)
+     {
++        if (entity instanceof EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
+         SpigotWorldConfig config = entity.world.spigotConfig;
+         if ( entity instanceof EntityPlayer )
+         {
+@@ -46,8 +47,48 @@ public class TrackingRange
              return config.miscTrackingRange;
          } else
          {
 -            if (entity instanceof EntityEnderDragon) return ((WorldServer)(entity.getWorld())).getChunkProvider().playerChunkMap.getLoadViewDistance(); // Paper - enderdragon is exempt
-+            if (entity instanceof EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
              return config.otherTrackingRange;
          }
      }
@@ -351,6 +358,7 @@ index 03990231a8b6bc6925f054e9033825316abfafcc..627e9a90b3045602bc540a5f3f031aaf
 +    // copied from above, TODO check on update
 +    public static TrackingRangeType getTrackingRangeType(Entity entity)
 +    {
++        if (entity instanceof EntityEnderDragon) return TrackingRangeType.ENDERDRAGON; // Paper - enderdragon is exempt
 +        if ( entity instanceof EntityPlayer )
 +        {
 +            return TrackingRangeType.PLAYER;
@@ -373,7 +381,6 @@ index 03990231a8b6bc6925f054e9033825316abfafcc..627e9a90b3045602bc540a5f3f031aaf
 +            return TrackingRangeType.MISC;
 +        } else
 +        {
-+            if (entity instanceof EntityEnderDragon) return TrackingRangeType.ENDERDRAGON; // Paper - enderdragon is exempt
 +            return TrackingRangeType.OTHER;
 +        }
 +    }
