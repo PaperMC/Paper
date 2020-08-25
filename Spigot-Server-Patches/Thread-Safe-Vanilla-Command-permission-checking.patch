@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 +++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
 @@ -0,0 +0,0 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
-         // CraftBukkit start
+     public synchronized boolean canUse(final S source) {
          if (source instanceof CommandListenerWrapper) {
              try {
 -                ((CommandListenerWrapper) source).currentCommand = this;
@@ -33,7 +33,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final ResultConsumer<CommandListenerWrapper> l;
      private final ArgumentAnchor.Anchor m;
      private final Vec2F n;
--    public CommandNode currentCommand; // CraftBukkit
+-    public volatile CommandNode currentCommand; // CraftBukkit
 +    public ThreadLocal<CommandNode> currentCommand = new ThreadLocal<>(); // CraftBukkit // Paper
  
      public CommandListenerWrapper(ICommandListener icommandlistener, Vec3D vec3d, Vec2F vec2f, WorldServer worldserver, int i, String s, IChatBaseComponent ichatbasecomponent, MinecraftServer minecraftserver, @Nullable Entity entity) {
@@ -42,6 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public boolean hasPermission(int i) {
          // CraftBukkit start
+-        CommandNode currentCommand = this.currentCommand;
 +        // Paper start - fix concurrency issue
 +        CommandNode currentCommand = this.currentCommand.get();
          if (currentCommand != null) {

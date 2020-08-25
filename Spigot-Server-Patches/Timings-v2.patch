@@ -720,7 +720,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
 @@ -0,0 +0,0 @@ public class Block extends BlockBase implements IMaterial {
-     private static final VoxelShape c = a(7.0D, 0.0D, 7.0D, 9.0D, 10.0D, 9.0D);
+     });
      protected final BlockStateList<Block, IBlockData> blockStateList;
      private IBlockData blockData;
 +    // Paper start
@@ -801,7 +801,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.world.getMethodProfiler().enter("naturalSpawnCount");
 +            this.world.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.chunkMapDistance.b();
-             SpawnerCreature.d spawnercreature_d = SpawnerCreature.a(l, this.world.z(), this::a);
+             SpawnerCreature.d spawnercreature_d = SpawnerCreature.a(l, this.world.A(), this::a);
 +            this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
  
              this.p = spawnercreature_d;
@@ -1006,7 +1006,7 @@ diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ import org.bukkit.command.CommandSender;
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.event.CraftPortalEvent;
  import org.bukkit.entity.Hanging;
  import org.bukkit.entity.LivingEntity;
  import org.bukkit.entity.Vehicle;
@@ -1040,7 +1040,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
      }
  
-     protected BlockPosition ak() {
+     protected BlockPosition ao() {
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
@@ -1060,8 +1060,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void tick() {
 -        SpigotTimings.timerEntityBaseTick.startTiming(); // Spigot
          super.tick();
-         this.u();
-         this.x();
+         this.t();
+         this.v();
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              }
          }
@@ -1080,7 +1080,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
      }
  
-     private void q() {
+     private void p() {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
  
          this.setMot(d4, d5, d6);
@@ -1088,7 +1088,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.timerEntityAI.startTiming(); // Spigot
          if (this.isFrozen()) {
              this.jumping = false;
-             this.aY = 0.0F;
+             this.aR = 0.0F;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              this.doTick();
              this.world.getMethodProfiler().exit();
@@ -1098,15 +1098,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world.getMethodProfiler().exit();
          this.world.getMethodProfiler().enter("jump");
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-         this.t();
+         this.r();
          AxisAlignedBB axisalignedbb = this.getBoundingBox();
  
 -        SpigotTimings.timerEntityAIMove.startTiming(); // Spigot
-         this.f(new Vec3D((double) this.aY, (double) this.aZ, (double) this.ba));
++        // SpigotTimings.timerEntityAIMove.startTiming(); // Spigot // Paper
+         this.g(new Vec3D((double) this.aR, (double) this.aS, (double) this.aT));
 -        SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot
++        // SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot // Paper
          this.world.getMethodProfiler().exit();
          this.world.getMethodProfiler().enter("push");
-         if (this.bm > 0) {
+         if (this.bf > 0) {
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              this.a(axisalignedbb, this.getBoundingBox());
          }
@@ -1115,7 +1117,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.collideNearby();
 -        SpigotTimings.timerEntityAICollision.stopTiming(); // Spigot
          this.world.getMethodProfiler().exit();
-         if (!this.world.isClientSide && this.dN() && this.aC()) {
+         if (!this.world.isClientSide && this.dN() && this.aF()) {
              this.damageEntity(DamageSource.DROWN, 1.0F);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -1136,9 +1138,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private long nextTick;
 -    private long W;
 -    private boolean X;
-+    private long W;final long getTickOversleepMaxTime() { return this.W; } // Paper - OBFHELPER
++    private long W; final long getTickOversleepMaxTime() { return this.W; } // Paper - OBFHELPER
 +    private boolean X; final boolean hasExecutedTask() { return this.X; } // Paper - OBFHELPER
-     private final ResourcePackRepository<ResourcePackLoader> resourcePackRepository;
+     private final ResourcePackRepository resourcePackRepository;
      private final ScoreboardServer scoreboardServer;
      @Nullable
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -1632,8 +1634,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -0,0 +0,0 @@ package net.minecraft.server;
+ 
  import com.google.common.annotations.VisibleForTesting;
- import com.google.common.collect.ImmutableList;
  import com.google.common.collect.Iterables;
 +import co.aikar.timings.TimingHistory; // Paper
 +import co.aikar.timings.Timings; // Paper
@@ -1662,7 +1664,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.L = new ObjectLinkedOpenHashSet();
          this.Q = flag1;
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-         this.N();
+         this.P();
          this.b();
          gameprofilerfiller.exitEnter("chunkSource");
 +        this.timings.chunkProviderTick.startTiming(); // Paper - timings
@@ -1684,7 +1686,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.timings.raids.stopTiming(); // Paper - timings
          gameprofilerfiller.exitEnter("blockEvents");
          timings.doSounds.startTiming(); // Spigot
-         this.ah();
+         this.aj();
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          }
  
@@ -1717,7 +1719,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            TimingHistory.activatedEntityTicks++; // Paper - timings
              entity.tickTimer.startTiming(); // Spigot
 +            try { // Paper - timings
-             entity.f(entity.locX(), entity.locY(), entity.locZ());
+             entity.g(entity.locX(), entity.locY(), entity.locZ());
              entity.lastYaw = entity.yaw;
              entity.lastPitch = entity.pitch;
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {

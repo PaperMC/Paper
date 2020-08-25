@@ -16,19 +16,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final String rconIp; // Paper - Add rcon ip
 +
      // CraftBukkit start
-     public DedicatedServerProperties(Properties properties, OptionSet optionset) {
+     public DedicatedServerProperties(Properties properties, IRegistryCustom iregistrycustom, OptionSet optionset) {
          super(properties, optionset);
 @@ -0,0 +0,0 @@ public class DedicatedServerProperties extends PropertyManager<DedicatedServerPr
+         }, 100);
          this.playerIdleTimeout = this.b("player-idle-timeout", 0);
          this.whiteList = this.b("white-list", false);
-         this.generatorSettings = GeneratorSettings.a(properties);
 +        // Paper start - Configurable rcon ip
 +        final String rconIp = this.getSettingIfExists("rcon.ip");
 +        this.rconIp = rconIp == null ? this.serverIp : rconIp;
 +        // Paper end
+         this.generatorSettings = GeneratorSettings.a(iregistrycustom, properties);
      }
  
-     // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/PropertyManager.java b/src/main/java/net/minecraft/server/PropertyManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PropertyManager.java
@@ -49,11 +49,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/RemoteControlListener.java
 +++ b/src/main/java/net/minecraft/server/RemoteControlListener.java
 @@ -0,0 +0,0 @@ public class RemoteControlListener extends RemoteConnectionThread {
+     @Nullable
+     public static RemoteControlListener a(IMinecraftServer iminecraftserver) {
+         DedicatedServerProperties dedicatedserverproperties = iminecraftserver.getDedicatedServerProperties();
+-        String s = iminecraftserver.h_();
++        String s = dedicatedserverproperties.rconIp; // Paper - Configurable rcon ip
  
-         this.e = dedicatedserverproperties.rconPort;
-         this.h = dedicatedserverproperties.rconPassword;
--        this.f = iminecraftserver.h_();
-+        this.f = dedicatedserverproperties.rconIp; // Paper - Configurable rcon ip
-         if (this.f.isEmpty()) {
-             this.f = "0.0.0.0";
-         }
+         if (s.isEmpty()) {
+             s = "0.0.0.0";

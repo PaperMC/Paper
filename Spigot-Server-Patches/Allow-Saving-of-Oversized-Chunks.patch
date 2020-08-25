@@ -38,9 +38,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    public static NBTTagCompound readNBT(DataInputStream datainputstream) throws IOException { return a(datainputstream); } // Paper - OBFHELPER
-     public static NBTTagCompound a(DataInputStream datainputstream) throws IOException {
-         return a((DataInput) datainputstream, NBTReadLimiter.a);
++    public static NBTTagCompound readNBT(DataInput datainput) throws IOException { return a(datainput); } // Paper - OBFHELPER
+     public static NBTTagCompound a(DataInput datainput) throws IOException {
+         return a(datainput, NBTReadLimiter.a);
      }
 @@ -0,0 +0,0 @@ public class NBTCompressedStreamTools {
          }
@@ -64,26 +64,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     private final IntBuffer g;
-     private final IntBuffer h;
-     private final RegionFileBitSet freeSectors;
-+    public final File file;
+     private final IntBuffer i;
+     @VisibleForTesting
+     protected final RegionFileBitSet freeSectors;
++    public final File file; // Paper
  
      public RegionFile(File file, File file1, boolean flag) throws IOException {
          this(file.toPath(), file1.toPath(), RegionFileCompression.b, flag);
-     }
+@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(java.nio.file.Path java_nio_file_path, java.nio.file.Path java_nio_file_path1, RegionFileCompression regionfilecompression, boolean flag) throws IOException {
+         this.g = ByteBuffer.allocateDirect(8192);
 +        this.file = java_nio_file_path.toFile(); // Paper
-         this.f = ByteBuffer.allocateDirect(8192);
-+        initOversizedState();
++        initOversizedState(); // Paper
          this.freeSectors = new RegionFileBitSet();
-         this.e = regionfilecompression;
+         this.f = regionfilecompression;
          if (!Files.isDirectory(java_nio_file_path1, new LinkOption[0])) {
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
          void run() throws IOException;
      }
  
++    // Paper start
 +    private final byte[] oversized = new byte[1024];
 +    private int oversizedCount = 0;
 +
@@ -146,12 +147,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    synchronized NBTTagCompound getOversizedData(int x, int z) throws IOException {
 +        File file = getOversizedFile(x, z);
 +        try (DataInputStream out = new DataInputStream(new BufferedInputStream(new InflaterInputStream(new java.io.FileInputStream(file))))) {
-+            return NBTCompressedStreamTools.readNBT(out);
++            return NBTCompressedStreamTools.readNBT((java.io.DataInput) out);
 +        }
 +
 +    }
 +    // Paper end
-+
      class ChunkBuffer extends ByteArrayOutputStream {
  
          private final ChunkCoordIntPair b;
@@ -188,7 +188,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        synchronized (regionfile) {
 +            try (DataInputStream datainputstream = regionfile.getReadStream(chunkCoordinate)) {
 +                NBTTagCompound oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
-+                NBTTagCompound chunk = NBTCompressedStreamTools.readNBT(datainputstream);
++                NBTTagCompound chunk = NBTCompressedStreamTools.readNBT((DataInput) datainputstream);
 +                if (oversizedData == null) {
 +                    return chunk;
 +                }
@@ -251,7 +251,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          try {
              NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
-+            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // We don't do this anymore
++            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
          } catch (Throwable throwable1) {
              throwable = throwable1;
              throw throwable1;

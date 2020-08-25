@@ -42,10 +42,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.fallDistance = 0.0F;
      }
  
-+    public final void onKill(EntityLiving entityLiving) { this.a_(entityLiving); } // Paper - OBFHELPER
-     public void a_(EntityLiving entityliving) {}
++    public final void onKill(WorldServer worldserver, EntityLiving entityLiving) { this.a(worldserver, entityLiving); } // Paper - OBFHELPER
+     public void a(WorldServer worldserver, EntityLiving entityliving) {}
  
-     protected void k(double d0, double d1, double d2) {
+     protected void l(double d0, double d1, double d2) {
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
@@ -123,14 +123,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-     protected float aS;
-     protected float aT;
-     protected float aU;
--    protected int aV;
-+    protected int aV; protected int getKillCount() { return this.aV; } // Paper - OBFHELPER
+     protected float aL;
+     protected float aM;
+     protected float aN;
+-    protected int aO;
++    protected int aO;protected int getKillCount() { return this.aO; } // Paper - OBFHELPER
      public float lastDamage;
      protected boolean jumping;
-     public float aY;
+     public float aR;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
      public Set<UUID> collidableExemptions = new HashSet<>();
      public boolean canPickUpLoot;
@@ -165,9 +165,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Entity entity = damagesource.getEntity();
              EntityLiving entityliving = this.getKillingEntity();
  
-+            /* // Paper - move down to make death event cancellable
-             if (this.aV >= 0 && entityliving != null) {
-                 entityliving.a(this, this.aV, damagesource);
++            /* // Paper - move down to make death event cancellable - this is the runKillTrigger below
+             if (this.aO >= 0 && entityliving != null) {
+                 entityliving.a(this, this.aO, damagesource);
              }
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
              if (this.isSleeping()) {
@@ -177,28 +177,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.killed = true;
 -            this.getCombatTracker().g();
-+            //this.getCombatTracker().g(); // Paper
-             if (!this.world.isClientSide) {
++            // this.getCombatTracker().g(); // Paper - moved into if below as .reset()
+             if (this.world instanceof WorldServer) {
+                 if (entity != null) {
+-                    entity.a((WorldServer) this.world, this);
++                    // entity.a((WorldServer) this.world, this); // Paper - move below into if for onKill
+                 }
+ 
 -                this.d(damagesource);
++                // Paper start
 +                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.d(damagesource);
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
 +                    if (this.getKillCount() >= 0 && entityliving != null) {
 +                        entityliving.runKillTrigger(this, this.getKillCount(), damagesource);
 +                    }
-+                    if (entity != null) {
-+                        entity.onKill(this);
-+                    }
 +                    if (this.isSleeping()) {
 +                        this.entityWakeup();
 +                    }
 +                    this.getCombatTracker().reset();
++                    if (entity != null) {
++                        entity.onKill((WorldServer) this.world, this);
++                    }
 +                } else {
 +                    this.killed = false;
 +                    this.setHealth((float) deathEvent.getReviveHealth());
 +                }
 +                // Paper end
-+
-                 this.g(entityliving);
+                 this.f(entityliving);
              }
  
 +            if (this.killed) { // Paper

@@ -27,6 +27,8 @@ gitcmd="git -c commit.gpgsign=false"
 
 source "$basedir/scripts/functions.sh"
 
+"$basedir"/scripts/requireDeps.sh || exit 1
+
 failed=0
 case "$1" in
     "rb" | "rbp" | "rebuild")
@@ -63,9 +65,19 @@ case "$1" in
         cd "$basedir"
         scripts/build.sh "$basedir" || exit 1
         (cd Paper-API ; mvn clean install) || exit 1
+        (cd Paper-MojangAPI ; mvn clean install) || exit 1
         (cd Paper-Server ; mvn clean package) || exit 1
         echo "Paper jar successfully built"
         ls -la Paper-Server/target/paper*.jar
+    ) || failed=1
+    ;;
+    "i" | "install")
+    (
+        set -e
+        cd "$basedir"
+        scripts/build.sh "$basedir" || exit 1
+        mvn clean install || exit 1
+        echo "Paper jar successfully built and installed to local repo"
     ) || failed=1
     ;;
     "pc" | "paperclip")

@@ -19,58 +19,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
-                     double d5 = j >= 3 ? nbttaglist.h(2) : (double) blockposition.getZ() + (world.random.nextDouble() - world.random.nextDouble()) * (double) this.spawnRange + 0.5D;
+                         WorldServer worldserver = (WorldServer) world;
  
-                     if (world.b(((EntityTypes) optional.get()).a(d3, d4, d5)) && EntityPositionTypes.a((EntityTypes) optional.get(), world.getMinecraftWorld(), EnumMobSpawn.SPAWNER, new BlockPosition(d3, d4, d5), world.getRandom())) {
-+                        // Paper start
-+                        EntityTypes<?> entityType = optional.get();
-+                        String key = EntityTypes.getName(entityType).getKey();
+                         if (EntityPositionTypes.a((EntityTypes) optional.get(), worldserver, EnumMobSpawn.SPAWNER, new BlockPosition(d3, d4, d5), world.getRandom())) {
++                            // Paper start
++                            EntityTypes<?> entityType = optional.get();
++                            String key = EntityTypes.getName(entityType).getKey();
 +
-+                        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(key);
-+                        if (type != null) {
-+                            com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
-+                            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
-+                                MCUtil.toLocation(world, d3, d4, d5),
-+                                type,
-+                                org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
-+                            );
-+                            if (!event.callEvent()) {
-+                                flag = true;
-+                                if (event.shouldAbortSpawn()) {
-+                                    break;
++                            org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(key);
++                            if (type != null) {
++                                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++                                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                                    MCUtil.toLocation(world, d3, d4, d5),
++                                    type,
++                                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
++                                );
++                                if (!event.callEvent()) {
++                                    flag = true;
++                                    if (event.shouldAbortSpawn()) {
++                                        break;
++                                    }
++                                    continue;
 +                                }
-+                                continue;
 +                            }
-+                        }
-+                        // Paper end
-                         Entity entity = EntityTypes.a(nbttagcompound, world, (entity1) -> {
-                             entity1.setPositionRotation(d3, d4, d5, entity1.yaw, entity1.pitch);
-                             return entity1;
++                            // Paper end
+                             Entity entity = EntityTypes.a(nbttagcompound, world, (entity1) -> {
+                                 entity1.setPositionRotation(d3, d4, d5, entity1.yaw, entity1.pitch);
+                                 return entity1;
 diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/SpawnerCreature.java
 +++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
-                                         j1 = biomebase_biomemeta.d + worldserver.random.nextInt(1 + biomebase_biomemeta.e - biomebase_biomemeta.d);
+                                         j1 = biomesettingsmobs_c.d + worldserver.random.nextInt(1 + biomesettingsmobs_c.e - biomesettingsmobs_c.d);
                                      }
  
--                                    if (a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomebase_biomemeta, blockposition_mutableblockposition, d2) && spawnercreature_c.test(biomebase_biomemeta.c, blockposition_mutableblockposition, ichunkaccess)) {
+-                                    if (a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
 +                                    // Paper start
-+                                    Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomebase_biomemeta, blockposition_mutableblockposition, d2);
++                                    Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
 +                                    if (doSpawning == null) {
 +                                        return;
 +                                    }
-+                                    if (doSpawning.booleanValue() && spawnercreature_c.test(biomebase_biomemeta.c, blockposition_mutableblockposition, ichunkaccess)) { // Paper end
-                                         EntityInsentient entityinsentient = a(worldserver, biomebase_biomemeta.c);
++                                    if (doSpawning && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
++                                        // Paper end
+                                         EntityInsentient entityinsentient = a(worldserver, biomesettingsmobs_c.c);
  
++
                                          if (entityinsentient == null) {
+                                             return;
+                                         }
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
          }
      }
  
--    private static boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) {
-+    private static Boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeBase.BiomeMeta biomebase_biomemeta, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) { // Paper
-         EntityTypes<?> entitytypes = biomebase_biomemeta.c;
+-    private static boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) {
++    private static Boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) { // Paper
+         EntityTypes<?> entitytypes = biomesettingsmobs_c.c;
 +        // Paper start
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
 +        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(entitytypes).getKey());
@@ -83,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (event.shouldAbortSpawn()) {
 +                    return null;
 +                }
-+                return false; // TODO is this handled correctly?
++                return false;
 +            }
 +        }
 +        // Paper end

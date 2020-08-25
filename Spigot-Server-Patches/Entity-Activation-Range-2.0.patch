@@ -18,14 +18,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-     public boolean ac;
+     public boolean Y;
      public boolean impulse;
      public int portalCooldown;
--    protected boolean inPortal; public final boolean inPortal() { return this.inPortal; } // Paper - OBFHELPER
+-    protected boolean inPortal;
 +    public boolean inPortal; // Paper - public
      protected int portalTicks;
-     protected BlockPosition ah;
-     protected Vec3D ai;
+     protected BlockPosition ac;
+     private boolean invulnerable;
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              if (enummovetype == EnumMoveType.PISTON) {
 +                this.activatedTick = MinecraftServer.currentTick + 20; // Paper
-                 vec3d = this.a(vec3d);
+                 vec3d = this.b(vec3d);
                  if (vec3d.equals(Vec3D.a)) {
                      return;
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -55,9 +55,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
  
              vec3d = this.a(vec3d, enummovetype);
-             Vec3D vec3d1 = this.f(vec3d);
+             Vec3D vec3d1 = this.g(vec3d);
 @@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         return this.al;
+         return this.ae;
      }
  
 +    public final boolean isPushedByWater() { return this.bU(); } // Paper - OBFHELPER - the below is not an obfhelper, don't use it!
@@ -86,9 +86,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
 -    private Entity leashHolder;
 +    public Entity leashHolder; // Paper - private -> public
-     private int bE;
+     private int bx;
      @Nullable
-     private NBTTagCompound bF;
+     private NBTTagCompound by;
 @@ -0,0 +0,0 @@ public abstract class EntityInsentient extends EntityLiving {
          return this.lookController;
      }
@@ -112,25 +112,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
-     protected float aU;
-     protected int aV; protected int getKillCount() { return this.aV; } // Paper - OBFHELPER
+     protected float aN;
+     protected int aO;protected int getKillCount() { return this.aO; } // Paper - OBFHELPER
      public float lastDamage;
 -    protected boolean jumping;
 +    public boolean jumping; // Paper protected -> public
-     public float aY;
-     public float aZ;
-     public float ba;
+     public float aR;
+     public float aS;
+     public float aT;
 diff --git a/src/main/java/net/minecraft/server/EntityLlama.java b/src/main/java/net/minecraft/server/EntityLlama.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityLlama.java
 +++ b/src/main/java/net/minecraft/server/EntityLlama.java
 @@ -0,0 +0,0 @@ public class EntityLlama extends EntityHorseChestedAbstract implements IRangedEn
-         return this.bJ != null;
+         return this.bC != null;
      }
  
-+    public final boolean inCaravan() { return this.fD(); } // Paper - OBFHELPER
-     public boolean fD() {
-         return this.bI != null;
++    public final boolean inCaravan() { return this.fC(); } // Paper - OBFHELPER
+     public boolean fC() {
+         return this.bB != null;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -166,22 +166,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected void mobTick(boolean inactive) {
          this.world.getMethodProfiler().enter("villagerBrain");
 -        this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error
--        this.world.getMethodProfiler().exit();
 +        if (!inactive) this.getBehaviorController().a((WorldServer) this.world, this); // CraftBukkit - decompile error // Paper
-         if (this.bM) {
-             this.bM = false;
-         }
+         this.world.getMethodProfiler().exit();
+         if (this.bF) {
+             this.bF = false;
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
-             this.bC = null;
+             this.bv = null;
          }
  
 -        if (!this.isNoAI() && this.random.nextInt(100) == 0) {
 +        if (!inactive && !this.isNoAI() && this.random.nextInt(100) == 0) { // Paper
-             Raid raid = ((WorldServer) this.world).c_(this.getChunkCoordinates());
+             Raid raid = ((WorldServer) this.world).b_(this.getChunkCoordinates());
  
              if (raid != null && raid.v() && !raid.a()) {
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
-         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.eO()) {
+         if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.eN()) {
              this.eT();
          }
 +        if (inactive) return; // Paper
@@ -192,8 +191,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-+    private void doReputationTick() { fv(); } // Paper - OBFHELPER
-     private void fv() {
++    private void doReputationTick() { fw(); } // Paper - OBFHELPER
+     private void fw() {
          long i = this.world.getTime();
  
 diff --git a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
@@ -201,17 +200,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
 +++ b/src/main/java/net/minecraft/server/EntityVillagerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class EntityVillagerAbstract extends EntityAgeable implements NP
-         return super.prepare(generatoraccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
+         return super.prepare(worldaccess, difficultydamagescaler, enummobspawn, (GroupDataEntity) groupdataentity, nbttagcompound);
      }
  
-+    public final int getUnhappy() { return eL(); } // Paper - OBFHELPER
-     public int eL() {
-         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bw);
++    public final int getUnhappy() { return eK(); } // Paper - OBFHELPER
+     public int eK() {
+         return (Integer) this.datawatcher.get(EntityVillagerAbstract.bp);
      }
  
 +    public final void setUnhappy(int i) { s(i); } // Paper - OBFHELPER
      public void s(int i) {
-         this.datawatcher.set(EntityVillagerAbstract.bw, i);
+         this.datawatcher.set(EntityVillagerAbstract.bp, i);
      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoal.java b/src/main/java/net/minecraft/server/PathfinderGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -243,8 +242,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected int c;
      protected int d;
      private int g;
--    protected BlockPosition e;
-+    protected BlockPosition e; public BlockPosition getTarget() { return e; } public void setTarget(BlockPosition pos) { this.e = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
+-    protected BlockPosition e;public final BlockPosition getTargetPosition() { return this.e; } // Paper - OBFHELPER
++    protected BlockPosition e; public final BlockPosition getTargetPosition() { return this.e; } public void setTargetPosition(BlockPosition pos) { this.e = pos; getEntity().movingTarget = pos != BlockPosition.ZERO ? pos : null; } // Paper - OBFHELPER
      private boolean h;
      private final int i;
      private final int j;
@@ -256,7 +255,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void onTaskReset() {
 +        super.onTaskReset();
-+        setTarget(BlockPosition.ZERO);
++        setTargetPosition(BlockPosition.ZERO);
 +    }
 +    // Paper end
  
@@ -266,7 +265,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, i1, k - 1, j1);
                          if (this.a.a((BlockPosition) blockposition_mutableblockposition) && this.a(this.a.world, blockposition_mutableblockposition)) {
                              this.e = blockposition_mutableblockposition;
-+                            setTarget(blockposition_mutableblockposition.immutableCopy()); // Paper
++                            setTargetPosition(blockposition_mutableblockposition.immutableCopy()); // Paper
                              return true;
                          }
                      }

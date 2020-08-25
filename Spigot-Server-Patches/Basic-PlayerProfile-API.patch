@@ -433,6 +433,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
 +import com.destroystokyo.paper.profile.PlayerProfile;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
  import org.apache.commons.lang.exception.ExceptionUtils;
 +import com.mojang.authlib.GameProfile;
  import org.bukkit.Location;
@@ -468,23 +469,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/UserCache.java
 @@ -0,0 +0,0 @@ public class UserCache {
  
-     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-     private static boolean c;
--    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-+    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>();private final Map<String, UserCache.UserCacheEntry> nameCache = d; // Paper - OBFHELPER // Paper
-     private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
-     private final GameProfileRepository g;
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static boolean b;
+-    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();
++    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();private final Map<String, UserCache.UserCacheEntry> nameCache = c; // Paper - OBFHELPER // Paper
+     private final Map<UUID, UserCache.UserCacheEntry> d = Maps.newConcurrentMap();
+     private final GameProfileRepository e;
+     private final Gson f = (new GsonBuilder()).create();
 @@ -0,0 +0,0 @@ public class UserCache {
-         return UserCache.c;
+         return UserCache.b;
      }
  
 +    public void saveProfile(GameProfile gameprofile) { a(gameprofile); } // Paper - OBFHELPER
-     public void a(GameProfile gameprofile) {
-         this.a(gameprofile, (Date) null);
-     }
+     public synchronized void a(GameProfile gameprofile) { // Paper - synchronize
+         Calendar calendar = Calendar.getInstance();
+ 
 @@ -0,0 +0,0 @@ public class UserCache {
-         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+         return gameprofile;
      }
  
 +    // Paper start
@@ -496,16 +497,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Nullable
      public GameProfile getProfile(UUID uuid) {
-         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(uuid);
 @@ -0,0 +0,0 @@ public class UserCache {
  
-     class UserCacheEntry {
+     static class UserCacheEntry {
  
--        private final GameProfile b;
-+        private final GameProfile b;public GameProfile getProfile() { return b; } // Paper - OBFHELPER
-         private final Date c;
+-        private final GameProfile a;
++        private final GameProfile a;public GameProfile getProfile() { return a; } // Paper - OBFHELPER
+         private final Date b;
+         private volatile long c;
  
-         private UserCacheEntry(GameProfile gameprofile, Date date) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java

@@ -9,6 +9,19 @@ easier to do this than replace the entire thing.
 Additionally, move Saving of the User cache to be done async, incase
 the user never changed the default setting for Spigot's save on stop only.
 
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         }
+ 
+         if (this.convertNames()) {
+-            this.getUserCache().b();
++            this.getUserCache().b(false); // Paper
+         }
+ 
+         if (!NameReferencingFileConverter.e(this)) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -17,8 +30,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              LOGGER.info("Saving usercache.json");
--            this.getUserCache().c();
-+            this.getUserCache().c(false); // Paper
+-            this.getUserCache().b();
++            this.getUserCache().b(false); // Paper
          }
          // Spigot end
  
@@ -27,36 +40,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
 @@ -0,0 +0,0 @@ public class UserCache {
- 
-     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-     private static boolean c;
--    private final Map<String, UserCache.UserCacheEntry> d = Maps.newHashMap();
--    private final Map<UUID, UserCache.UserCacheEntry> e = Maps.newHashMap();
-+    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-+    private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
-     private final GameProfileRepository g;
-     protected final Gson b;
-@@ -0,0 +0,0 @@ public class UserCache {
-         this.a(gameprofile, (Date) null);
+         return UserCache.b;
      }
  
--    private void a(GameProfile gameprofile, Date date) {
-+    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
-         UUID uuid = gameprofile.getId();
+-    public void a(GameProfile gameprofile) {
++    public synchronized void a(GameProfile gameprofile) { // Paper - synchronize
+         Calendar calendar = Calendar.getInstance();
  
-         if (date == null) {
+         calendar.setTime(new Date());
 @@ -0,0 +0,0 @@ public class UserCache {
- 
          UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date);
  
--        if (this.e.containsKey(uuid)) {
-+        //if (this.e.containsKey(uuid)) { // Paper
-             UserCache.UserCacheEntry usercache_usercacheentry1 = (UserCache.UserCacheEntry) this.e.get(uuid);
-+        if (usercache_usercacheentry1 != null) { // Paper
+         this.a(usercache_usercacheentry);
+-        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.b(); // Spigot - skip saving if disabled
++        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.b(true); // Spigot - skip saving if disabled // Paper - async
+     }
  
-             this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
-             this.f.remove(gameprofile);
+     private long d() {
 @@ -0,0 +0,0 @@ public class UserCache {
      }
  
@@ -64,27 +64,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public GameProfile getProfile(String s) {
 +    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
          String s1 = s.toLowerCase(Locale.ROOT);
-         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
- 
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.c.get(s1);
+         boolean flag = false;
 @@ -0,0 +0,0 @@ public class UserCache {
+         }
  
+         if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
+-            this.b();
++            this.b(true); // Paper
+         }
+ 
+         return gameprofile;
+@@ -0,0 +0,0 @@ public class UserCache {
+         return arraylist;
      }
  
-+    // Paper start
-     public void c() {
-+        c(true);
-+    }
-+    public void c(boolean asyncSave) {
-+        // Paper end
-         String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
-+        Runnable save = () -> {
-+
-         BufferedWriter bufferedwriter = null;
+-    public void b() {
++    public void b(boolean asyncSave) { // Paper
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = e();
+ 
+@@ -0,0 +0,0 @@ public class UserCache {
+             jsonarray.add(a(usercache_usercacheentry, dateformat));
+         });
+         String s = this.f.toJson(jsonarray);
++        Runnable save = () -> { // Paper
  
          try {
+             BufferedWriter bufferedwriter = Files.newWriter(this.g, StandardCharsets.UTF_8);
 @@ -0,0 +0,0 @@ public class UserCache {
-         } finally {
-             IOUtils.closeQuietly(bufferedwriter);
+         } catch (IOException ioexception) {
+             ;
          }
 +        // Paper start
 +        };

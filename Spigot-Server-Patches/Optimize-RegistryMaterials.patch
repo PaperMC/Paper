@@ -11,43 +11,51 @@ diff --git a/src/main/java/net/minecraft/server/RegistryMaterials.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/RegistryMaterials.java
 +++ b/src/main/java/net/minecraft/server/RegistryMaterials.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
- public class RegistryMaterials<T> extends IRegistryWritable<T> {
+@@ -0,0 +0,0 @@ import java.util.OptionalInt;
+ import java.util.Random;
+ import java.util.Set;
+ import javax.annotation.Nullable;
++import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap; // Paper
+ import org.apache.commons.lang3.Validate;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -0,0 +0,0 @@ public class RegistryMaterials<T> extends IRegistryWritable<T> {
  
      protected static final Logger LOGGER = LogManager.getLogger();
--    protected final RegistryID<T> b = new RegistryID<>(256);
--    protected final BiMap<MinecraftKey, T> c = HashBiMap.create();
--    private final BiMap<ResourceKey<T>, T> bb = HashBiMap.create();
-+    protected final RegistryID<T> b = new RegistryID<>(2048); // Paper - use bigger expected size to reduce collisions
-+    protected final BiMap<MinecraftKey, T> c = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
-+    private final BiMap<ResourceKey<T>, T> bb = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
-     private final Set<ResourceKey<T>> bc = Sets.newIdentityHashSet();
-     protected Object[] d;
-     private int bd;
+     private final ObjectList<T> bf = new ObjectArrayList(256);
+-    private final Object2IntMap<T> bg = new Object2IntOpenCustomHashMap(SystemUtils.k());
++    private final Reference2IntOpenHashMap<T> bg = new Reference2IntOpenHashMap<T>(2048);// Paper - use bigger expected size to reduce collisions and direct intent for FastUtil to be identity map
+     private final BiMap<MinecraftKey, T> bh;
+     private final BiMap<ResourceKey<T>, T> bi;
+     private final Map<T, Lifecycle> bj;
 @@ -0,0 +0,0 @@ public class RegistryMaterials<T> extends IRegistryWritable<T> {
-             this.d = collection.toArray(new Object[collection.size()]);
-         }
- 
--        return SystemUtils.a(this.d, random);
-+        return (T) SystemUtils.a(this.d, random);  // Paper - Decompile fix
+     public RegistryMaterials(ResourceKey<? extends IRegistry<T>> resourcekey, Lifecycle lifecycle) {
+         super(resourcekey, lifecycle);
+         this.bg.defaultReturnValue(-1);
+-        this.bh = HashBiMap.create();
+-        this.bi = HashBiMap.create();
+-        this.bj = Maps.newIdentityHashMap();
++        this.bh = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.bi = HashBiMap.create(2048); // Paper - use bigger expected size to reduce collisions
++        this.bj = new java.util.IdentityHashMap<>(2048); // Paper - use bigger expected size to reduce collisions
+         this.bk = lifecycle;
      }
  
-     @Override
 @@ -0,0 +0,0 @@ public class RegistryMaterials<T> extends IRegistryWritable<T> {
-             Iterator iterator = registrymaterials.b.iterator();
+             this.b = collection.toArray(new Object[collection.size()]);
+         }
+ 
+-        return SystemUtils.a(this.b, random);
++        return (T) SystemUtils.a(this.b, random);  // Paper - Decompile fix
+     }
+ 
+     public static <T> Codec<RegistryMaterials<T>> a(ResourceKey<? extends IRegistry<T>> resourcekey, Lifecycle lifecycle, Codec<T> codec) {
+@@ -0,0 +0,0 @@ public class RegistryMaterials<T> extends IRegistryWritable<T> {
+             Iterator iterator = registrymaterials.iterator();
  
              while (iterator.hasNext()) {
 -                T t0 = iterator.next();
 +                T t0 = (T) iterator.next(); // Paper - Decompile fix
  
-                 builder.add(Pair.of(registrymaterials.c(t0).get(), t0));
+                 builder.add(new RegistryMaterials.a<>((ResourceKey) registrymaterials.c(t0).get(), registrymaterials.a(t0), t0));
              }
-@@ -0,0 +0,0 @@ public class RegistryMaterials<T> extends IRegistryWritable<T> {
- 
-             registrymaterials.bb.entrySet().stream().filter((entry) -> {
-                 return registrymaterials.c((ResourceKey) entry.getKey());
--            }).forEach(com_google_common_collect_immutablemap_builder::put);
-+            }).forEach(entry1 -> com_google_common_collect_immutablemap_builder.put((java.util.Map.Entry<? extends net.minecraft.server.ResourceKey<T>,? extends T>) entry1)); // Paper - compiler fix (expand method reference + add cast)
-             return com_google_common_collect_immutablemap_builder.build();
-         });
-     }

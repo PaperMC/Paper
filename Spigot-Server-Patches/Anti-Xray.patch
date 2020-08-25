@@ -135,7 +135,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final ChunkSection[] emptyNearbyChunkSections = {Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION, Chunk.EMPTY_CHUNK_SECTION};
 +    private final int maxBlockYUpdatePosition;
 +
-+    public ChunkPacketBlockControllerAntiXray(PaperWorldConfig paperWorldConfig, Executor executor) {
++    public ChunkPacketBlockControllerAntiXray(World world, Executor executor) {
++        PaperWorldConfig paperWorldConfig = world.paperConfig;
 +        engineMode = paperWorldConfig.engineMode;
 +        maxChunkSectionIndex = paperWorldConfig.maxChunkSectionIndex;
 +        updateRadius = paperWorldConfig.updateRadius;
@@ -185,12 +186,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (String id : toObfuscate) {
 +            Block block = IRegistry.BLOCK.getOptional(new MinecraftKey(id)).orElse(null);
 +
-+            if (block != null) {
++            // Don't obfuscate air because air causes unnecessary block updates and causes block updates to fail in the void
++            if (block != null && !block.getBlockData().isAir()) {
 +                obfuscateGlobal[ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(block.getBlockData())] = true;
 +            }
 +        }
 +
-+        ChunkEmpty emptyChunk = new ChunkEmpty(null, new ChunkCoordIntPair(0, 0));
++        ChunkEmpty emptyChunk = new ChunkEmpty(world, new ChunkCoordIntPair(0, 0));
 +        BlockPosition zeroPos = new BlockPosition(0, 0, 0);
 +
 +        for (int i = 0; i < solidGlobal.length; i++) {
@@ -1000,6 +1002,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.sections[j >> 4] = chunksection;
          }
  
+diff --git a/src/main/java/net/minecraft/server/ChunkEmpty.java b/src/main/java/net/minecraft/server/ChunkEmpty.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkEmpty.java
++++ b/src/main/java/net/minecraft/server/ChunkEmpty.java
+@@ -0,0 +0,0 @@ public class ChunkEmpty extends Chunk {
+     });
+ 
+     public ChunkEmpty(World world, ChunkCoordIntPair chunkcoordintpair) {
+-        super(world, chunkcoordintpair, new BiomeStorage(world.r().b(IRegistry.ay), ChunkEmpty.b));
++        super(world, chunkcoordintpair, new BiomeStorage(MinecraftServer.getServer().getCustomRegistry().b(IRegistry.ay), ChunkEmpty.b)); // Paper - world isnt ready yet for anti xray use here, use server singleton for registry
+     }
+ 
+     // Paper start
 diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
@@ -1036,7 +1051,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public class ChunkSection {
 @@ -0,0 +0,0 @@ public class ChunkSection {
      private short e;
-     final DataPaletteBlock<IBlockData> blockIds;
+     final DataPaletteBlock<IBlockData> blockIds; // Paper - package-private
  
 -    public ChunkSection(int i) {
 -        this(i, (short) 0, (short) 0, (short) 0);
@@ -1200,6 +1215,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          int j = along.length * 64 / 4096;
  
          if (this.h == this.b) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         return this.saveData;
+     }
+ 
++    public final IRegistryCustom getCustomRegistry() { return aX(); } // Paper - OBFHELPER
+     public IRegistryCustom aX() {
+         return this.f;
+     }
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
@@ -1212,8 +1239,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import io.netty.buffer.ByteBuf;
  import io.netty.buffer.Unpooled;
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+     private List<NBTTagCompound> g;
      private boolean h;
-     private boolean i;
  
 -    public PacketPlayOutMapChunk() {}
 +    // Paper start - Async-Anti-Xray - Set the ready flag to true
@@ -1222,13 +1249,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.ready = true;
 +    }
 +    // Paper end
- 
++
      // Paper start
      private final java.util.List<Packet> extraPackets = new java.util.ArrayList<>();
+     private static final int TE_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
      }
      // Paper end
-     public PacketPlayOutMapChunk(Chunk chunk, int i, boolean flag) {
+     public PacketPlayOutMapChunk(Chunk chunk, int i) {
 +        ChunkPacketInfo<IBlockData> chunkPacketInfo = chunk.world.chunkPacketBlockController.getChunkPacketInfo(this, chunk, i); // Paper - Anti-Xray - Add chunk packet info
          ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
  
@@ -1237,12 +1265,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          this.f = new byte[this.a(chunk, i)];
--        this.c = this.a(new PacketDataSerializer(this.k()), chunk, i);
+-        this.c = this.a(new PacketDataSerializer(this.j()), chunk, i);
 +        // Paper start - Anti-Xray - Add chunk packet info
 +        if (chunkPacketInfo != null) {
 +            chunkPacketInfo.setData(this.getData());
 +        }
-+        this.c = this.writeChunk(new PacketDataSerializer(this.k()), chunk, i, chunkPacketInfo);
++        this.c = this.writeChunk(new PacketDataSerializer(this.j()), chunk, i, chunkPacketInfo);
 +        // Paper end
          this.g = Lists.newArrayList();
          iterator = chunk.getTileEntities().entrySet().iterator();
@@ -1393,14 +1421,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      public static BlockPosition lastPhysicsProblem; // Spigot
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         return (CraftServer) Bukkit.getServer();
+         return typeKey;
      }
  
--    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) {
+-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
++    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
          this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
-+        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this.paperConfig, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
++        this.chunkPacketBlockController = this.paperConfig.antiXray ? new ChunkPacketBlockControllerAntiXray(this, executor) : ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
@@ -1419,9 +1447,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
  
      // Add env and gen to constructor, WorldData -> WorldDataServer
-     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
--        super(iworlddataserver, resourcekey, resourcekey1, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env);
-+        super(iworlddataserver, resourcekey, resourcekey1, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+-        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env);
++        super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
          this.pvpMode = minecraftserver.getPVP();
          convertable = convertable_conversionsession;
          uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());

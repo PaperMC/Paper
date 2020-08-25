@@ -204,8 +204,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     private final RegionFileBitSet freeSectors;
-     public final File file;
+     protected final RegionFileBitSet freeSectors;
+     public final File file; // Paper
  
 +    // Paper start - Cache chunk status
 +    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
@@ -272,12 +272,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          try {
              NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
--            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // We don't do this anymore
 +            regionfile.setStatus(chunkcoordintpair.x, chunkcoordintpair.z, ChunkRegionLoader.getStatus(nbttagcompound)); // Paper - cache status on disk
-+            regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false);
+             regionfile.setOversized(chunkcoordintpair.x, chunkcoordintpair.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
          } catch (Throwable throwable1) {
              throwable = throwable1;
-             throw throwable1;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java

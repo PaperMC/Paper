@@ -99,7 +99,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void sendPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericfuturelistener) {
 -        if (this.isConnected()) {
--            this.o();
+-            this.p();
 -            this.b(packet, genericfuturelistener);
 -        } else {
 -            this.packetQueue.add(new NetworkManager.QueuedPacket(packet, genericfuturelistener));
@@ -212,14 +212,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
--    private void sendPacketQueue() { this.o(); } // Paper - OBFHELPER
--    private void o() {
+-    private void sendPacketQueue() { this.p(); } // Paper - OBFHELPER
+-    private void p() {
 -        if (this.channel != null && this.channel.isOpen()) {
 -            Queue queue = this.packetQueue;
 -
-+    // Paper start - rewrite this to be safer on
-+    private boolean sendPacketQueue() { return this.o(); } // OBFHELPER // void -> boolean
-+    private boolean o() { // void -> boolean
++    // Paper start - rewrite this to be safer if ran off main thread
++    private boolean sendPacketQueue() { return this.p(); } // OBFHELPER // void -> boolean
++    private boolean p() { // void -> boolean
 +        if (!isConnected()) {
 +            return true;
 +        }
@@ -264,7 +264,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
  
      public void a() {
-         this.o();
+         this.p();
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
          return this.socketAddress;
      }
@@ -295,15 +295,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                //NetworkManager.LOGGER.warn("handleDisconnection() called twice"); // Paper - Do not log useless message
              } else {
                  this.o = true;
-                 if (this.j() != null) {
+                 if (this.k() != null) {
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
-                 } else if (this.i() != null) {
-                     this.i().a(new ChatMessage("multiplayer.disconnect.generic"));
+                 } else if (this.j() != null) {
+                     this.j().a(new ChatMessage("multiplayer.disconnect.generic"));
                  }
 -                this.packetQueue.clear(); // Free up packet queue.
 +                clearPacketQueue(); // Paper
                  // Paper start - Add PlayerConnectionCloseEvent
-                 final PacketListener packetListener = this.i();
+                 final PacketListener packetListener = this.j();
                  if (packetListener instanceof PlayerConnection) {
 diff --git a/src/main/java/net/minecraft/server/Packet.java b/src/main/java/net/minecraft/server/Packet.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -368,5 +368,5 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new FlushConsolidationHandler()); // Paper
                      channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("legacy_query", new LegacyPingHandler(ServerConnection.this)).addLast("splitter", new PacketSplitter()).addLast("decoder", new PacketDecoder(EnumProtocolDirection.SERVERBOUND)).addLast("prepender", new PacketPrepender()).addLast("encoder", new PacketEncoder(EnumProtocolDirection.CLIENTBOUND));
-                     NetworkManager networkmanager = new NetworkManager(EnumProtocolDirection.SERVERBOUND);
- 
+                     int j = ServerConnection.this.e.k();
+                     Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);

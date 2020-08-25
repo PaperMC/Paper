@@ -631,6 +631,14 @@ diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
+ import com.mojang.datafixers.util.Either;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
+ import it.unimi.dsi.fastutil.shorts.ShortArraySet;
+ import it.unimi.dsi.fastutil.shorts.ShortSet;
+ import java.util.List;
 @@ -0,0 +0,0 @@ public class PlayerChunk {
      private CompletableFuture<IChunkAccess> chunkSave;
      public int oldTicketLevel;
@@ -639,11 +647,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    final ChunkCoordIntPair location; // Paper - private -> package
 +    volatile int n; public final int getCurrentPriority() { return n; } // Paper - OBFHELPER - make volatile since this is concurrently accessed
 +    public final ChunkCoordIntPair location; // Paper - private -> public
-     private final short[] dirtyBlocks;
-     private int dirtyCount;
+     private boolean p;
+     private final ShortSet[] dirtyBlocks;
      private int r;
 @@ -0,0 +0,0 @@ public class PlayerChunk {
-     private boolean hasBeenLoaded;
+     private boolean x;
  
      private final PlayerChunkMap chunkMap; // Paper
 +    public WorldServer getWorld() { return chunkMap.world; } // Paper
@@ -658,7 +666,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    volatile int neighborPriority = -1;
 +    volatile int priorityBoost = 0;
 +    public final java.util.concurrent.ConcurrentHashMap<PlayerChunk, ChunkStatus> neighbors = new java.util.concurrent.ConcurrentHashMap<>();
-+    public final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Integer> neighborPriorities = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
++    public final Long2ObjectOpenHashMap<Integer> neighborPriorities = new Long2ObjectOpenHashMap<>();
 +
 +    private int getDemandedPriority() {
 +        int priority = neighborPriority; // if we have a neighbor priority, use it
@@ -844,7 +852,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.entityTickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          }
  
--        this.v.a(this.location, this::k, this.ticketLevel, this::d);
+-        this.u.a(this.location, this::k, this.ticketLevel, this::d);
 +        // Paper start - raise IO/load priority if priority changes, use our preferred priority
 +        priorityBoost = chunkMap.chunkDistanceManager.getChunkPriority(location);
 +        int priority = getDemandedPriority();
@@ -858,7 +866,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
 +        }
 +        if (getCurrentPriority() != priority) {
-+            this.v.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
++            this.u.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 +            int neighborsPriority = getNeighborsPriority();
 +            this.neighbors.forEach((neighbor, neighborDesired) -> neighbor.setNeighborPriority(this, neighborsPriority));
 +        }
@@ -884,6 +892,14 @@ diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/j
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+ import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap; // Paper
+ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
 @@ -0,0 +0,0 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
@@ -980,7 +996,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return playerchunk == null || unloadQueue.contains(playerchunk.location.pair());
 +    }
 +
-+    private void updateChunkPriorityMap(it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap map, long chunk, int level) {
++    private void updateChunkPriorityMap(Long2IntOpenHashMap map, long chunk, int level) {
 +        int prev = map.getOrDefault(chunk, -1);
 +        if (level > prev) {
 +            map.put(chunk, level);
@@ -993,7 +1009,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        player.lastHighPriorityChecked = currentTick;
-+        it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap priorities = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
++        Long2IntOpenHashMap priorities = new Long2IntOpenHashMap();
 +
 +        int viewDistance = getEffectiveNoTickViewDistance();
 +        BlockPosition.MutableBlockPosition pos = new BlockPosition.MutableBlockPosition();

@@ -9,7 +9,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
-     private int bA;
+     private int bt;
      public int drownedConversionTime;
      private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
 +    private boolean shouldBurnInDay = true; // Paper
@@ -17,7 +17,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
-         this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, true);
+         super.movementTick();
      }
  
 +    // Paper start
@@ -26,18 +26,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, false);
 +    }
 +    // Paper end
-+
-     protected void eQ() {
-         this.c(EntityTypes.DROWNED);
-         if (!this.isSilent()) {
+     public void startDrownedConversion(int i) {
+         this.lastTick = MinecraftServer.currentTick; // CraftBukkit
+         this.drownedConversionTime = i;
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
  
      }
  
-+    public boolean shouldBurnInDay() { return U_(); } // Paper - OBFHELPER
-     protected boolean U_() {
--        return true;
-+        return shouldBurnInDay;
++    public boolean shouldBurnInDay() { return T_(); } // Paper - OBFHELPER
+     protected boolean T_() {
+         return true;
      }
  
 +    // Paper start
@@ -48,10 +46,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public boolean damageEntity(DamageSource damagesource, float f) {
-         if (super.damageEntity(damagesource, f)) {
+         if (!super.damageEntity(damagesource, f)) {
 @@ -0,0 +0,0 @@ public class EntityZombie extends EntityMonster {
-         nbttagcompound.setBoolean("CanBreakDoors", this.eV());
-         nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bA : -1);
+         nbttagcompound.setBoolean("CanBreakDoors", this.eU());
+         nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bt : -1);
          nbttagcompound.setInt("DrownedConversionTime", this.isDrownConverting() ? this.drownedConversionTime : -1);
 +        nbttagcompound.setBoolean("Paper.ShouldBurnInDay", shouldBurnInDay); // Paper
      }
@@ -75,10 +73,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
 @@ -0,0 +0,0 @@ public class CraftZombie extends CraftMonster implements Zombie {
-             getHandle().startDrownedConversion(time);
-         }
+     @Override
+     public void setAgeLock(boolean b) {
      }
-+
 +    // Paper start
 +    @Override
 +    public boolean isDrowning() {
@@ -115,4 +112,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        getHandle().setShouldBurnInDay(shouldBurnInDay);
 +    }
 +    // Paper end
- }
+ 
+     @Override
+     public boolean getAgeLock() {

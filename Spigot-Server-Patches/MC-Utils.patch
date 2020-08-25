@@ -2336,13 +2336,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/BlockBase.java
 +++ b/src/main/java/net/minecraft/server/BlockBase.java
 @@ -0,0 +0,0 @@ public abstract class BlockBase {
-             return this.a != null ? this.a.e : Block.a(this.getCollisionShape(iblockaccess, blockposition));
+             return this.a != null ? this.a.d : Block.a(this.getCollisionShape(iblockaccess, blockposition));
          }
  
 +        public final IBlockData getBlockData() { return p(); } // Paper - OBFHELPER
          protected abstract IBlockData p();
  
-         public boolean isAlwaysDestroyable() {
+         public boolean isRequiresSpecialTool() {
 diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockPosition.java
@@ -2729,6 +2729,17 @@ diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/m
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ import java.util.function.Consumer;
+ import java.util.function.Function;
+ import java.util.function.Supplier;
+ import javax.annotation.Nullable;
++import com.destroystokyo.paper.exception.ServerInternalException;
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
+ 
+ public class ChunkProviderServer extends IChunkProvider {
+ 
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
      private final ChunkMapDistance chunkMapDistance;
      public final ChunkGenerator chunkGenerator;
@@ -2744,7 +2755,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private SpawnerCreature.d p;
 +    // Paper start
 +    final com.destroystokyo.paper.util.concurrent.WeakSeqLock loadedChunkMapSeqLock = new com.destroystokyo.paper.util.concurrent.WeakSeqLock();
-+    final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(8192, 0.5f);
++    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
 +
 +    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
 +    private final long[] lastLoadedChunkKeys = new long[4 * 4];
@@ -3053,30 +3064,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void b(PacketDataSerializer packetdataserializer) {
          this.a();
          packetdataserializer.writeByte(this.i);
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
- 
-     }
- 
--    @Nullable
--    public AxisAlignedBB ay() {
-+
-+    @Nullable public final AxisAlignedBB getCollisionBox(){return ay();} //Paper - OBFHELPER
-+    @Nullable public AxisAlignedBB ay() {
-         return null;
-     }
- 
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener {
-         return EnumInteractionResult.PASS;
-     }
- 
-+    public final AxisAlignedBB getHardCollisionBox(Entity entity){ return j(entity);}//Paper - OBFHELPER
-     @Nullable
-     public AxisAlignedBB j(Entity entity) {
-         return null;
 diff --git a/src/main/java/net/minecraft/server/EntityCreature.java b/src/main/java/net/minecraft/server/EntityCreature.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityCreature.java
@@ -3137,11 +3124,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleHashSet; // Paper
 +
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
-         super(worldserver, worldserver.getSpawn(), gameprofile);
+         super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
          this.spawnDimension = World.OVERWORLD;
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.G = 1.0F;
-         this.b(worldserver);
+         this.c(worldserver);
  
 +        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 +
@@ -3161,14 +3148,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.function.Function;
  import java.util.stream.Stream;
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
-         return this.bq.height;
+         return this.br.height;
      }
  
 -    @Nullable
 -    public T a(World world) {
 +    public T create(World world) { return this.a(world); } // Paper - OBFHELPER
 +    @Nullable public T a(World world) { // Paper - OBFHELPER
-         return this.be.create(this, world);
+         return this.bf.create(this, world);
      }
  
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
@@ -3196,16 +3183,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/IBlockAccess.java
 +++ b/src/main/java/net/minecraft/server/IBlockAccess.java
 @@ -0,0 +0,0 @@ public interface IBlockAccess {
-     @Nullable
      TileEntity getTileEntity(BlockPosition blockposition);
  
-+    IBlockData getTypeIfLoaded(BlockPosition blockposition); // Paper - if loaded util
      IBlockData getType(BlockPosition blockposition);
- 
-+    Fluid getFluidIfLoaded(BlockPosition blockposition); // Paper - if loaded util
-     Fluid getFluid(BlockPosition blockposition);
- 
 +    // Paper start - if loaded util
++    IBlockData getTypeIfLoaded(BlockPosition blockposition);
 +    default Material getMaterialIfLoaded(BlockPosition blockposition) {
 +        IBlockData type = this.getTypeIfLoaded(blockposition);
 +        return type == null ? null : type.getMaterial();
@@ -3215,11 +3197,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        IBlockData type = this.getTypeIfLoaded(blockposition);
 +        return type == null ? null : type.getBlock();
 +    }
++    Fluid getFluidIfLoaded(BlockPosition blockposition);
 +    // Paper end
-+
-     default int h(BlockPosition blockposition) {
-         return this.getType(blockposition).f();
-     }
+ 
+     Fluid getFluid(BlockPosition blockposition);
+ 
 diff --git a/src/main/java/net/minecraft/server/IOWorker.java b/src/main/java/net/minecraft/server/IOWorker.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/IOWorker.java
@@ -3309,6 +3291,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.destroystokyo.paper.block.TargetBlockInfo;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 +import org.apache.commons.lang.exception.ExceptionUtils;
 +import org.bukkit.Location;
 +import org.bukkit.block.BlockFace;
@@ -3517,7 +3500,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // assumes the sets have the same comparator, and if this comparator is null then assume T is Comparable
 +    public static <T> void mergeSortedSets(final java.util.function.Consumer<T> consumer, final java.util.Comparator<? super T> comparator, final java.util.SortedSet<T>...sets) {
-+        final it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<T> all = new it.unimi.dsi.fastutil.objects.ObjectRBTreeSet<>(comparator);
++        final ObjectRBTreeSet<T> all = new ObjectRBTreeSet<>(comparator);
 +        // note: this is done in log(n!) ~ nlogn time. It could be improved if it were to mimic what mergesort does.
 +        for (java.util.SortedSet<T> set : sets) {
 +            if (set != null) {
@@ -3820,7 +3803,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              LOGGER.info("Saving usercache.json");
-             this.getUserCache().c();
+             this.getUserCache().b();
 diff --git a/src/main/java/net/minecraft/server/NBTTagCompound.java b/src/main/java/net/minecraft/server/NBTTagCompound.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/NBTTagCompound.java
@@ -3865,8 +3848,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    private void sendPacketQueue() { this.o(); } // Paper - OBFHELPER
-     private void o() {
++    private void sendPacketQueue() { this.p(); } // Paper - OBFHELPER
+     private void p() {
          if (this.channel != null && this.channel.isOpen()) {
              Queue queue = this.packetQueue;
 @@ -0,0 +0,0 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -3912,12 +3895,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
      private NBTTagCompound d;
      @Nullable
-     private BiomeStorage e;
+     private int[] e;
 -    private byte[] f;
 +    private byte[] f; private byte[] getData() { return this.f; } // Paper - OBFHELPER
      private List<NBTTagCompound> g;
      private boolean h;
-     private boolean i;
+ 
 @@ -0,0 +0,0 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
          return bytebuf;
      }
@@ -3944,8 +3927,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int oldTicketLevel;
      private int ticketLevel;
 @@ -0,0 +0,0 @@ public class PlayerChunk {
-     public final PlayerChunk.d players;
      private boolean hasBeenLoaded;
+     private boolean x;
  
 +    private final PlayerChunkMap chunkMap; // Paper
 +
@@ -4090,7 +4073,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 @@ -0,0 +0,0 @@ public class PlayerChunk {
-                 throw (IllegalStateException) SystemUtils.c(new IllegalStateException());
+                 throw (IllegalStateException) SystemUtils.c((Throwable) (new IllegalStateException()));
              }
  
 -            this.entityTickingFuture = playerchunkmap.b(this.location);
@@ -4168,7 +4151,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
 +            this.addPlayerToDistanceMaps(entityplayer); // Paper - distance maps
          } else {
-             SectionPosition sectionposition = entityplayer.N();
+             SectionPosition sectionposition = entityplayer.O();
  
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              if (!flag2) {
@@ -4257,7 +4240,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/RegionFile.java
 +++ b/src/main/java/net/minecraft/server/RegionFile.java
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-         return this.d.resolve(s);
+         return this.e.resolve(s);
      }
  
 +    @Nullable public synchronized DataInputStream getReadStream(ChunkCoordIntPair chunkCoordIntPair) throws IOException { return a(chunkCoordIntPair);} // Paper - OBFHELPER
@@ -4363,7 +4346,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  // CraftBukkit end
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
-     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, ResourceKey<DimensionManager> resourcekey1, DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
+     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
 -        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
 +        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
@@ -4438,6 +4421,14 @@ diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.LongSets;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
+ import it.unimi.dsi.fastutil.objects.ObjectIterator;
+ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+ import java.io.BufferedWriter;
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
      private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
@@ -4447,6 +4438,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      boolean tickingEntities;
      private final MinecraftServer server;
      public final WorldDataServer worldDataServer; // CraftBukkit - type
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                 ObjectIterator objectiterator = spawnercreature_d.b().object2IntEntrySet().iterator();
+ 
+                 while (objectiterator.hasNext()) {
+-                    it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<EnumCreatureType> it_unimi_dsi_fastutil_objects_object2intmap_entry = (it.unimi.dsi.fastutil.objects.Object2IntMap.Entry) objectiterator.next();
++                    Object2IntMap.Entry<EnumCreatureType> it_unimi_dsi_fastutil_objects_object2intmap_entry = (Object2IntMap.Entry) objectiterator.next(); // Paper - decompile fix
+ 
+                     bufferedwriter.write(String.format("spawn_count.%s: %d\n", ((EnumCreatureType) it_unimi_dsi_fastutil_objects_object2intmap_entry.getKey()).b(), it_unimi_dsi_fastutil_objects_object2intmap_entry.getIntValue()));
+                 }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
@@ -4678,10 +4678,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/DummyGeneratorAccess.java
 @@ -0,0 +0,0 @@ public class DummyGeneratorAccess implements GeneratorAccess {
-     public boolean a(BlockPosition blockposition, boolean flag, Entity entity, int i) {
+     public Fluid getFluid(BlockPosition blockposition) {
          throw new UnsupportedOperationException("Not supported yet.");
      }
-+
 +    // Paper start - if loaded util
 +    @javax.annotation.Nullable
 +    @Override
@@ -4693,13 +4692,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
 +        throw new UnsupportedOperationException("Not supported yet.");
 +    }
-+
+ 
 +    @Override
 +    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
 +        throw new UnsupportedOperationException("Not supported yet.");
 +    }
 +    // Paper end
- }
+     @Override
+     public WorldBorder getWorldBorder() {
+         throw new UnsupportedOperationException("Not supported yet.");
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java

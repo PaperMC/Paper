@@ -111,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private short tickingBlockCount;
 +    short tickingBlockCount; // Paper - private -> package-private
      private short e;
-     final DataPaletteBlock<IBlockData> blockIds;
+     final DataPaletteBlock<IBlockData> blockIds; // Paper - package-private
  
 +    final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
 +
@@ -237,17 +237,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void setHomePos(BlockPosition blockposition) {
--        this.datawatcher.set(EntityTurtle.bw, blockposition);
-+        this.datawatcher.set(EntityTurtle.bw, blockposition.immutableCopy()); // Paper - called with mutablepos...
+-        this.datawatcher.set(EntityTurtle.bp, blockposition);
++        this.datawatcher.set(EntityTurtle.bp, blockposition.immutableCopy()); // Paper - called with mutablepos...
      }
+ 
      public BlockPosition getHomePos() { // Paper - public
-         return (BlockPosition) this.datawatcher.get(EntityTurtle.bw);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     public abstract TagRegistry p();
+     public abstract ITagRegistry p();
  
      public BlockPosition a(int i, int j, int k, int l) {
 +        // Paper start - allow use of mutable pos
@@ -291,7 +291,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        BlockPosition blockposition;
 +        final BlockPosition.MutableBlockPosition blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
  
-         if (!this.paperConfig.disableThunder && flag && this.T() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
+         if (!this.paperConfig.disableThunder && flag && this.V() && this.random.nextInt(100000) == 0) { // Paper - Disable thunder
 -            blockposition = this.a(this.a(j, 0, k, 15));
 +            blockposition.setValues(this.a(this.a(j, 0, k, 15))); // Paper
              if (this.isRainingAt(blockposition)) {
@@ -313,11 +313,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end
              BiomeBase biomebase = this.getBiome(blockposition);
  
--            if (biomebase.a((IWorldReader) this, blockposition1)) {
+-            if (biomebase.a(this, blockposition1)) {
 -                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition1, Blocks.ICE.getBlockData(), null); // CraftBukkit
 +            // Paper start - optimise chunk ticking
 +            blockposition.setY(downY);
-+            if (biomebase.a((IWorldReader) this, blockposition)) {
++            if (biomebase.a(this, blockposition)) {
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.ICE.getBlockData(), null); // CraftBukkit
 +                // Paper end
              }
@@ -327,11 +327,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockposition, Blocks.SNOW.getBlockData(), null); // CraftBukkit
              }
  
--            if (flag && this.getBiome(blockposition1).d() == BiomeBase.Precipitation.RAIN) {
+-            if (flag && this.getBiome(blockposition1).c() == BiomeBase.Precipitation.RAIN) {
 -                this.getType(blockposition1).getBlock().c((World) this, blockposition1);
 +            // Paper start - optimise chunk ticking
 +            blockposition.setY(downY);
-+            if (flag && this.getBiome(blockposition).d() == BiomeBase.Precipitation.RAIN) {
++            if (flag && this.getBiome(blockposition).c() == BiomeBase.Precipitation.RAIN) {
 +                chunk.getType(blockposition).getBlock().c((World) this, blockposition);
 +                // Paper end
              }

@@ -552,7 +552,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.world.getMethodProfiler().enter("naturalSpawnCount");
              this.world.timings.countNaturalMobs.startTiming(); // Paper - timings
              int l = this.chunkMapDistance.b();
--            SpawnerCreature.d spawnercreature_d = SpawnerCreature.a(l, this.world.z(), this::a);
+-            SpawnerCreature.d spawnercreature_d = SpawnerCreature.a(l, this.world.A(), this::a);
 +            // Paper start - per player mob spawning
 +            SpawnerCreature.d spawnercreature_d; // moved down
 +            if (this.playerChunkMap.playerMobDistanceMap != null) {
@@ -564,9 +564,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                for (EntityPlayer player : this.world.players) {
 +                    Arrays.fill(player.mobCounts, 0);
 +                }
-+                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.z(), this::a, true);
++                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.A(), this::a, true);
 +            } else {
-+                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.z(), this::a, false);
++                spawnercreature_d = SpawnerCreature.countMobs(l, this.world.A(), this::a, false);
 +            }
 +            // Paper end
              this.world.timings.countNaturalMobs.stopTiming(); // Paper - timings
@@ -600,21 +600,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-+    public final SectionPosition getPlayerMapSection() { return this.N(); } // Paper - OBFHELPER
-     public SectionPosition N() {
-         return this.cq;
++    public final SectionPosition getPlayerMapSection() { return this.O(); } // Paper - OBFHELPER
+     public SectionPosition O() {
+         return this.cj;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
-         return this.bk;
+         return this.bl;
      }
  
 +    public final EnumCreatureType getEnumCreatureType() { return this.e(); } // Paper - OBFHELPER
      public EnumCreatureType e() {
-         return this.bf;
+         return this.bg;
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -758,13 +758,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              while (k < 3) {
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
                                      // Paper start
-                                     Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomebase_biomemeta, blockposition_mutableblockposition, d2);
+                                     Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
                                      if (doSpawning == null) {
 -                                        return;
 +                                        return j; // Paper
                                      }
-                                     if (doSpawning.booleanValue() && spawnercreature_c.test(biomebase_biomemeta.c, blockposition_mutableblockposition, ichunkaccess)) { // Paper end
-                                         EntityInsentient entityinsentient = a(worldserver, biomebase_biomemeta.c);
+                                     if (doSpawning && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
+                                         // Paper end
+@@ -0,0 +0,0 @@ public final class SpawnerCreature {
+ 
  
                                          if (entityinsentient == null) {
 -                                            return;
@@ -775,7 +777,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
                                              groupdataentity = entityinsentient.prepare(worldserver, worldserver.getDamageScaler(entityinsentient.getChunkCoordinates()), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
                                              // CraftBukkit start
-                                             if (worldserver.addEntity(entityinsentient, SpawnReason.NATURAL)) {
+                                             if (worldserver.addAllEntities(entityinsentient, SpawnReason.NATURAL)) {
 -                                                ++j;
 +                                                ++j; // Paper - force diff on name change - we expect this to be the total amount spawned
                                                  ++k1;

@@ -32,15 +32,29 @@ diff --git a/src/main/java/net/minecraft/server/BlockChest.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/BlockChest.java
 +++ b/src/main/java/net/minecraft/server/BlockChest.java
-@@ -0,0 +0,0 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
+@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements IBlockWaterlogged {
  
      public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
-     public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
+-    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
 -    public static final BlockStateBoolean d = BlockProperties.C;
++    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF; public static final BlockStateEnum<BlockPropertyChestType> CHEST_TYPE_PROPERTY = c; // Paper - OBFHELPER
 +    public static final BlockStateBoolean d = BlockProperties.C; public static final BlockStateBoolean waterlogged() { return d; } // Paper OBFHELPER
      protected static final VoxelShape e = Block.a(1.0D, 0.0D, 0.0D, 15.0D, 14.0D, 15.0D);
      protected static final VoxelShape f = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 16.0D);
      protected static final VoxelShape g = Block.a(0.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);
+diff --git a/src/main/java/net/minecraft/server/IBlockDataHolder.java b/src/main/java/net/minecraft/server/IBlockDataHolder.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/IBlockDataHolder.java
++++ b/src/main/java/net/minecraft/server/IBlockDataHolder.java
+@@ -0,0 +0,0 @@ public abstract class IBlockDataHolder<O, S> {
+         return Collections.unmodifiableCollection(this.b.keySet());
+     }
+ 
++    public <T extends Comparable<T>> boolean contains(IBlockState<T> iblockstate) { return this.b(iblockstate); } // Paper - OBFHELPER
+     public <T extends Comparable<T>> boolean b(IBlockState<T> iblockstate) {
+         return this.b.containsKey(iblockstate);
+     }
 diff --git a/src/main/java/net/minecraft/server/TileEntityChest.java b/src/main/java/net/minecraft/server/TileEntityChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/TileEntityChest.java
@@ -79,7 +93,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 @@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
          if (this.viewingCount > 0 && this.a == 0.0F) {
-             this.a(SoundEffects.BLOCK_CHEST_OPEN);
+             this.playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
          }
 +    }
  
@@ -94,11 +108,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              float f2 = 0.5F;
  
              if (this.a < 0.5F && f1 >= 0.5F) {
--                this.a(SoundEffects.BLOCK_CHEST_CLOSE);
--            }
-+             */
++            */
 +            MCUtil.scheduleTask(10, () -> {
-+                    this.a(SoundEffects.BLOCK_CHEST_CLOSE);
+                 this.playOpenSound(SoundEffects.BLOCK_CHEST_CLOSE);
+-            }
 +                }, "Chest Sounds");
 +            //} // Paper end
  
@@ -107,8 +120,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
      }
  
-     public void a(SoundEffect soundeffect) { // PAIL private -> public, rename playSound
-+        if (!this.getBlock().b(BlockChest.c)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
+     public void playOpenSound(SoundEffect soundeffect) {
++        if (!this.getBlock().contains(BlockChest.CHEST_TYPE_PROPERTY)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
          BlockPropertyChestType blockpropertychesttype = (BlockPropertyChestType) this.getBlock().get(BlockChest.c);
  
          if (blockpropertychesttype != BlockPropertyChestType.LEFT) {
