@@ -43,4 +43,5 @@ DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
 Josh Roy <10731363+JRoy@users.noreply.github.com>
 Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.com>
 ysl3000 <yannicklamprecht@live.de>
+Nassim Jahnke <nassim@njahnke.dev>
 ```
