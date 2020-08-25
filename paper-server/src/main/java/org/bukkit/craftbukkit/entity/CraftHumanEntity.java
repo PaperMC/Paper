@@ -619,7 +619,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         ItemCooldowns.CooldownInstance cooldown = this.getHandle().getCooldowns().cooldowns.get(group);
-        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime - this.getHandle().getCooldowns().tickCount);
+        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime() - this.getHandle().getCooldowns().tickCount);
     }
 
     @Override
