@@ -106,6 +106,7 @@ done
 # dont forget \ at end of each line but last
 importLibrary com.mojang authlib com/mojang/authlib yggdrasil/YggdrasilGameProfileRepository.java
 importLibrary com.mojang datafixerupper com/mojang/datafixers/util Either.java
+importLibrary com.mojang datafixerupper com/mojang/serialization/codecs KeyDispatchCodec.java
 
 ########################################################
 ########################################################
