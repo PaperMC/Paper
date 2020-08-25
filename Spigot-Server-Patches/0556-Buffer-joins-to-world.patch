@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 5d4783e357218694ac52ec0ab5c030470cc6595f..671a7551458080d10613aa9111b77ed3cf1d25ca 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -446,4 +446,9 @@ public class PaperConfig {
+         allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
+         set("settings.unsupported-settings.allow-tnt-duplication", null);
+     }
++
++    public static int maxJoinsPerTick;
++    private static void maxJoinsPerTick() {
++        getInt("settings.max-joins-per-tick", 3);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index ed63bf3648153ce9ecab75e960c612337cbcbfe8..c06b70fa490a3bf91ea20c8405178420d62e7df2 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -363,10 +363,22 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+     // Paper end
+ 
++    private static final int MAX_PER_TICK = com.destroystokyo.paper.PaperConfig.maxJoinsPerTick; // Paper
++    private static int joinAttemptsThisTick; // Paper
++    private static int currTick; // Paper
+     public void a() {
+         this.o();
++        // Paper start
++        if (currTick != MinecraftServer.currentTick) {
++            currTick = MinecraftServer.currentTick;
++            joinAttemptsThisTick = 0;
++        }
++        // Paper end
+         if (this.packetListener instanceof LoginListener) {
++            if ( ((LoginListener) this.packetListener).getLoginState() != LoginListener.EnumProtocolState.READY_TO_ACCEPT // Paper
++                     || (joinAttemptsThisTick++ < MAX_PER_TICK)) { // Paper - limit the number of joins which can be processed each tick
+             ((LoginListener) this.packetListener).tick();
++            } // Paper
+         }
+ 
+         if (this.packetListener instanceof PlayerConnection) {
