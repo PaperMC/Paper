@@ -182,6 +182,92 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     @Nullable
     public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
 
+    // Paper start - Add additional containers
+    /**
+     * Opens an empty anvil inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no anvil block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openAnvil(@Nullable Location location, boolean force);
+
+    /**
+     * Opens an empty cartography table inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no cartography table block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openCartographyTable(@Nullable Location location, boolean force);
+
+    /**
+     * Opens an empty grindstone inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no grindstone block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openGrindstone(@Nullable Location location, boolean force);
+
+    /**
+     * Opens an empty loom inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no loom block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openLoom(@Nullable Location location, boolean force);
+
+    /**
+     * Opens an empty smithing table inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no smithing table block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openSmithingTable(@Nullable Location location, boolean force);
+
+    /**
+     * Opens an empty stonecutter inventory window with the player's inventory
+     * on the bottom.
+     *
+     * @param location The location to attach it to. If null, the player's
+     *     location is used.
+     * @param force If false, and there is no stonecutter block at the location,
+     *     no inventory will be opened and null will be returned.
+     * @return The newly opened inventory view, or null if it could not be
+     *     opened.
+     */
+    @Nullable
+    public InventoryView openStonecutter(@Nullable Location location, boolean force);
+    // Paper end
+
     /**
      * Force-closes the currently open inventory view for this player, if any.
      */
