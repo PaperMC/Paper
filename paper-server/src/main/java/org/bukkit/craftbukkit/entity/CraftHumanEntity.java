@@ -471,6 +471,70 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return this.getHandle().containerMenu.getBukkitView();
     }
 
+    // Paper start - Add additional containers
+    @Override
+    public InventoryView openAnvil(Location location, boolean force) {
+        return this.openInventory(location, force, Material.ANVIL);
+    }
+
+    @Override
+    public InventoryView openCartographyTable(Location location, boolean force) {
+        return this.openInventory(location, force, Material.CARTOGRAPHY_TABLE);
+    }
+
+    @Override
+    public InventoryView openGrindstone(Location location, boolean force) {
+        return this.openInventory(location, force, Material.GRINDSTONE);
+    }
+
+    @Override
+    public InventoryView openLoom(Location location, boolean force) {
+        return this.openInventory(location, force, Material.LOOM);
+    }
+
+    @Override
+    public InventoryView openSmithingTable(Location location, boolean force) {
+        return this.openInventory(location, force, Material.SMITHING_TABLE);
+    }
+
+    @Override
+    public InventoryView openStonecutter(Location location, boolean force) {
+        return this.openInventory(location, force, Material.STONECUTTER);
+    }
+
+    private InventoryView openInventory(Location location, boolean force, Material material) {
+        org.spigotmc.AsyncCatcher.catchOp("open" + material);
+        if (location == null) {
+            location = this.getLocation();
+        }
+        if (!force) {
+            Block block = location.getBlock();
+            if (block.getType() != material) {
+                return null;
+            }
+        }
+        net.minecraft.world.level.block.Block block;
+        if (material == Material.ANVIL) {
+            block = Blocks.ANVIL;
+        } else if (material == Material.CARTOGRAPHY_TABLE) {
+            block = Blocks.CARTOGRAPHY_TABLE;
+        } else if (material == Material.GRINDSTONE) {
+            block = Blocks.GRINDSTONE;
+        } else if (material == Material.LOOM) {
+            block = Blocks.LOOM;
+        } else if (material == Material.SMITHING_TABLE) {
+            block = Blocks.SMITHING_TABLE;
+        } else if (material == Material.STONECUTTER) {
+            block = Blocks.STONECUTTER;
+        } else {
+            throw new IllegalArgumentException("Unsupported inventory type: " + material);
+        }
+        this.getHandle().openMenu(block.getMenuProvider(null, this.getHandle().level(), new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        this.getHandle().containerMenu.checkReachable = !force;
+        return this.getHandle().containerMenu.getBukkitView();
+    }
+    // Paper end
+
     @Override
     public void closeInventory() {
         // Paper start - Inventory close reason
