@@ -351,7 +351,7 @@
              }
          }
  
-@@ -531,7 +724,8 @@
+@@ -531,18 +724,20 @@
      }
  
      private boolean canPvP() {
@@ -361,9 +361,10 @@
      }
  
      @Nullable
-@@ -539,10 +733,10 @@
+     @Override
      protected ShapeDetectorShape a(WorldServer worldserver) {
          ShapeDetectorShape shapedetectorshape = super.a(worldserver);
++        worldserver = (shapedetectorshape == null) ? worldserver : shapedetectorshape.world; // CraftBukkit
  
 -        if (shapedetectorshape != null && this.world.getDimensionKey() == World.OVERWORLD && worldserver.getDimensionKey() == World.THE_END) {
 +        if (shapedetectorshape != null && this.world.getTypeKey() == DimensionManager.OVERWORLD && worldserver != null && worldserver.getTypeKey() == DimensionManager.THE_END) { // CraftBukkit
@@ -374,7 +375,7 @@
          } else {
              return shapedetectorshape;
          }
-@@ -551,11 +745,20 @@
+@@ -551,11 +746,20 @@
      @Nullable
      @Override
      public Entity b(WorldServer worldserver) {
@@ -398,7 +399,7 @@
              this.decouple();
              this.getWorldServer().removePlayer(this);
              if (!this.viewingCredits) {
-@@ -566,6 +769,8 @@
+@@ -566,6 +770,8 @@
  
              return this;
          } else {
@@ -407,7 +408,7 @@
              WorldData worlddata = worldserver.getWorldData();
  
              this.playerConnection.sendPacket(new PacketPlayOutRespawn(worldserver.getDimensionManager(), worldserver.getDimensionKey(), BiomeManager.a(worldserver.getSeed()), this.playerInteractManager.getGameMode(), this.playerInteractManager.c(), worldserver.isDebugWorld(), worldserver.isFlatWorld(), true));
-@@ -575,22 +780,52 @@
+@@ -575,22 +781,52 @@
              playerlist.d(this);
              worldserver1.removePlayer(this);
              this.dead = false;
@@ -466,7 +467,7 @@
                  worldserver1.getMethodProfiler().exit();
                  this.triggerDimensionAdvancements(worldserver1);
                  this.playerInteractManager.a(worldserver);
-@@ -609,12 +844,31 @@
+@@ -609,12 +845,31 @@
                  this.lastSentExp = -1;
                  this.lastHealthSent = -1.0F;
                  this.lastFoodSent = -1;
@@ -498,7 +499,7 @@
      private void a(WorldServer worldserver, BlockPosition blockposition) {
          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.i();
  
-@@ -631,14 +885,14 @@
+@@ -631,14 +886,14 @@
      }
  
      @Override
@@ -517,7 +518,7 @@
  
              if (!optional1.isPresent()) {
                  EntityPlayer.LOGGER.error("Unable to create a portal, likely target out of worldborder");
-@@ -685,10 +939,8 @@
+@@ -685,10 +940,8 @@
          this.activeContainer.c();
      }
  
@@ -530,7 +531,7 @@
          if (!this.isSleeping() && this.isAlive()) {
              if (!this.world.getDimensionManager().isNatural()) {
                  return Either.left(EntityHuman.EnumBedResult.NOT_POSSIBLE_HERE);
-@@ -714,7 +966,36 @@
+@@ -714,7 +967,36 @@
                          }
                      }
  
@@ -568,7 +569,7 @@
                          this.a(StatisticList.SLEEP_IN_BED);
                          CriterionTriggers.q.a(this);
                      });
-@@ -723,9 +1004,8 @@
+@@ -723,9 +1005,8 @@
                      return either;
                  }
              }
@@ -579,7 +580,7 @@
      }
  
      @Override
-@@ -752,6 +1032,7 @@
+@@ -752,6 +1033,7 @@
  
      @Override
      public void wakeup(boolean flag, boolean flag1) {
@@ -587,7 +588,7 @@
          if (this.isSleeping()) {
              this.getWorldServer().getChunkProvider().broadcastIncludingSelf(this, new PacketPlayOutAnimation(this, 2));
          }
-@@ -823,8 +1104,9 @@
+@@ -823,8 +1105,9 @@
          this.playerConnection.sendPacket(new PacketPlayOutOpenSignEditor(tileentitysign.getPosition()));
      }
  
@@ -598,7 +599,7 @@
      }
  
      @Override
-@@ -839,6 +1121,24 @@
+@@ -839,6 +1122,24 @@
              this.nextContainerCounter();
              Container container = itileinventory.createMenu(this.containerCounter, this.inventory, this);
  
@@ -623,7 +624,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.a((IChatBaseComponent) (new ChatMessage("container.spectatorCantOpen")).a(EnumChatFormat.RED), true);
-@@ -846,9 +1146,11 @@
+@@ -846,9 +1147,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -637,7 +638,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -861,13 +1163,24 @@
+@@ -861,13 +1164,24 @@
  
      @Override
      public void openHorseInventory(EntityHorseAbstract entityhorseabstract, IInventory iinventory) {
@@ -664,7 +665,7 @@
          this.activeContainer.addSlotListener(this);
      }
  
-@@ -912,6 +1225,11 @@
+@@ -912,6 +1226,11 @@
      public void a(Container container, NonNullList<ItemStack> nonnulllist) {
          this.playerConnection.sendPacket(new PacketPlayOutWindowItems(container.windowId, nonnulllist));
          this.playerConnection.sendPacket(new PacketPlayOutSetSlot(-1, -1, this.inventory.getCarried()));
@@ -676,7 +677,7 @@
      }
  
      @Override
-@@ -921,6 +1239,7 @@
+@@ -921,6 +1240,7 @@
  
      @Override
      public void closeInventory() {
@@ -684,7 +685,7 @@
          this.playerConnection.sendPacket(new PacketPlayOutCloseWindow(this.activeContainer.windowId));
          this.o();
      }
-@@ -955,7 +1274,7 @@
+@@ -955,7 +1275,7 @@
      @Override
      public void a(Statistic<?> statistic, int i) {
          this.serverStatisticManager.b(this, statistic, i);
@@ -693,7 +694,7 @@
              scoreboardscore.addScore(i);
          });
      }
-@@ -963,7 +1282,7 @@
+@@ -963,7 +1283,7 @@
      @Override
      public void a(Statistic<?> statistic) {
          this.serverStatisticManager.setStatistic(this, statistic, 0);
@@ -702,7 +703,7 @@
      }
  
      @Override
-@@ -1012,8 +1331,17 @@
+@@ -1012,8 +1332,17 @@
  
      public void triggerHealthUpdate() {
          this.lastHealthSent = -1.0E8F;
@@ -720,7 +721,7 @@
      @Override
      public void a(IChatBaseComponent ichatbasecomponent, boolean flag) {
          this.playerConnection.sendPacket(new PacketPlayOutChat(ichatbasecomponent, flag ? ChatMessageType.GAME_INFO : ChatMessageType.CHAT, SystemUtils.b));
-@@ -1065,12 +1393,13 @@
+@@ -1065,12 +1394,13 @@
          this.lastSentExp = -1;
          this.lastHealthSent = -1.0F;
          this.lastFoodSent = -1;
@@ -735,7 +736,7 @@
      }
  
      @Override
-@@ -1138,6 +1467,18 @@
+@@ -1138,6 +1468,18 @@
  
      @Override
      public void a(EnumGamemode enumgamemode) {
@@ -754,7 +755,7 @@
          this.playerInteractManager.setGameMode(enumgamemode);
          this.playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.d, (float) enumgamemode.getId()));
          if (enumgamemode == EnumGamemode.SPECTATOR) {
-@@ -1187,7 +1528,20 @@
+@@ -1187,7 +1529,20 @@
          return s;
      }
  
@@ -775,7 +776,7 @@
          this.bY = packetplayinsettings.d();
          this.bZ = packetplayinsettings.e();
          this.getDataWatcher().set(EntityPlayer.bi, (byte) packetplayinsettings.f());
-@@ -1223,13 +1577,13 @@
+@@ -1223,13 +1578,13 @@
          if (entity instanceof EntityHuman) {
              this.playerConnection.sendPacket(new PacketPlayOutEntityDestroy(new int[]{entity.getId()}));
          } else {
@@ -791,7 +792,7 @@
      }
  
      @Override
-@@ -1253,7 +1607,7 @@
+@@ -1253,7 +1608,7 @@
          this.spectatedEntity = (Entity) (entity == null ? this : entity);
          if (entity1 != this.spectatedEntity) {
              this.playerConnection.sendPacket(new PacketPlayOutCamera(this.spectatedEntity));
@@ -800,7 +801,7 @@
          }
  
      }
-@@ -1282,7 +1636,7 @@
+@@ -1282,7 +1637,7 @@
  
      @Nullable
      public IChatBaseComponent getPlayerListName() {
@@ -809,7 +810,7 @@
      }
  
      @Override
-@@ -1303,9 +1657,16 @@
+@@ -1303,9 +1658,16 @@
          return this.advancementDataPlayer;
      }
  
@@ -826,7 +827,7 @@
          if (worldserver == this.world) {
              this.playerConnection.a(d0, d1, d2, f, f1);
          } else {
-@@ -1326,6 +1687,9 @@
+@@ -1326,6 +1688,9 @@
              this.server.getPlayerList().a(this, worldserver);
              this.server.getPlayerList().updateClient(this);
          }
@@ -836,7 +837,7 @@
  
      }
  
-@@ -1418,4 +1782,144 @@
+@@ -1418,4 +1783,144 @@
              return entityitem;
          }
      }
