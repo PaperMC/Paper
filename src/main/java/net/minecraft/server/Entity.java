@@ -54,6 +54,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
 
     // CraftBukkit start
     private static final int CURRENT_LEVEL = 2;
+    boolean preserveMotion = true; // Paper - keep initial motion on first setPositionRotation
     static boolean isLevelAtLeast(NBTTagCompound tag, int level) {
         return tag.hasKey("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
     }
@@ -1316,6 +1317,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
     }
 
     public void setPositionRotation(double d0, double d1, double d2, float f, float f1) {
+        // Paper - cancel entity velocity if teleported
+        if (!preserveMotion) {
+            this.mot = Vec3D.ORIGIN;
+        } else {
+            this.preserveMotion = false;
+        }
+        // Paper end
         this.g(d0, d1, d2);
         this.yaw = f;
         this.pitch = f1;

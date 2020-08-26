@@ -501,7 +501,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
     public void a(PacketPlayInTeleportAccept packetplayinteleportaccept) {
         PlayerConnectionUtils.ensureMainThread(packetplayinteleportaccept, this, this.player.getWorldServer());
         if (packetplayinteleportaccept.b() == this.teleportAwait && this.teleportPos != null) { // CraftBukkit
-            this.player.setLocation(this.teleportPos.x, this.teleportPos.y, this.teleportPos.z, this.player.yaw, this.player.pitch);
+            this.player.setPositionRotation(this.teleportPos.x, this.teleportPos.y, this.teleportPos.z, this.player.yaw, this.player.pitch); // Paper - use proper setPositionRotation for teleportation
             this.o = this.teleportPos.x;
             this.p = this.teleportPos.y;
             this.q = this.teleportPos.z;
@@ -1302,7 +1302,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
         // CraftBukkit end
 
         this.A = this.e;
-        this.player.setLocation(d0, d1, d2, f, f1);
+        this.player.setPositionRotation(d0, d1, d2, f, f1); // Paper - use proper setPositionRotation for teleportation
         this.player.forceCheckHighPriority(); // Paper
         this.player.playerConnection.sendPacket(new PacketPlayOutPosition(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.teleportAwait));
     }
