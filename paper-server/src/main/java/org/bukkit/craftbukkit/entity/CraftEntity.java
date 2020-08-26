@@ -241,7 +241,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // entity.setLocation() throws no event, and so cannot be cancelled
-        this.entity.absMoveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
         // SPIGOT-619: Force sync head rotation also
         this.entity.setYHeadRot(location.getYaw());
 

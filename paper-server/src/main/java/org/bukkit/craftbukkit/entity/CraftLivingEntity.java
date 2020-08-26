@@ -603,6 +603,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             }
 
             ((AbstractHurtingProjectile) launch).projectileSource = this;
+            launch.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported
             launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
