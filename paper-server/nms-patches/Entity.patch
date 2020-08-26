@@ -306,7 +306,7 @@
              nbttagcompound.set("Rotation", this.a(this.yaw, this.pitch));
              nbttagcompound.setFloat("FallDistance", this.fallDistance);
              nbttagcompound.setShort("Fire", (short) this.fireTicks);
-@@ -1260,6 +1448,12 @@
+@@ -1260,6 +1448,15 @@
              nbttagcompound.setBoolean("Invulnerable", this.invulnerable);
              nbttagcompound.setInt("PortalCooldown", this.portalCooldown);
              nbttagcompound.a("UUID", this.getUniqueID());
@@ -315,11 +315,14 @@
 +            nbttagcompound.setLong("WorldUUIDLeast", ((WorldServer) this.world).getWorld().getUID().getLeastSignificantBits());
 +            nbttagcompound.setLong("WorldUUIDMost", ((WorldServer) this.world).getWorld().getUID().getMostSignificantBits());
 +            nbttagcompound.setInt("Bukkit.updateLevel", CURRENT_LEVEL);
++            if (!this.persist) {
++                nbttagcompound.setBoolean("Bukkit.persist", this.persist);
++            }
 +            // CraftBukkit end
              IChatBaseComponent ichatbasecomponent = this.getCustomName();
  
              if (ichatbasecomponent != null) {
-@@ -1317,6 +1511,11 @@
+@@ -1317,6 +1514,11 @@
                  }
              }
  
@@ -331,7 +334,7 @@
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-@@ -1394,6 +1593,43 @@
+@@ -1394,6 +1596,44 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
              }
@@ -346,6 +349,7 @@
 +                    entityinsentient.persistent = !entityinsentient.isTypeNotPersistent(0);
 +                }
 +            }
++            this.persist = !nbttagcompound.hasKey("Bukkit.persist") || nbttagcompound.getBoolean("Bukkit.persist");
 +            // CraftBukkit end
 +
 +            // CraftBukkit start - Reset world
@@ -375,7 +379,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
-@@ -1469,9 +1705,22 @@
+@@ -1469,9 +1709,22 @@
          } else if (this.world.isClientSide) {
              return null;
          } else {
@@ -398,7 +402,7 @@
              this.world.addEntity(entityitem);
              return entityitem;
          }
-@@ -1555,7 +1804,7 @@
+@@ -1555,7 +1808,7 @@
  
              this.setPose(EntityPose.STANDING);
              this.vehicle = entity;
@@ -407,7 +411,7 @@
              return true;
          }
      }
-@@ -1580,7 +1829,7 @@
+@@ -1580,7 +1833,7 @@
              Entity entity = this.vehicle;
  
              this.vehicle = null;
@@ -416,7 +420,7 @@
          }
  
      }
-@@ -1589,10 +1838,31 @@
+@@ -1589,10 +1842,31 @@
          this.be();
      }
  
@@ -449,7 +453,7 @@
              if (!this.world.isClientSide && entity instanceof EntityHuman && !(this.getRidingPassenger() instanceof EntityHuman)) {
                  this.passengers.add(0, entity);
              } else {
-@@ -1600,15 +1870,36 @@
+@@ -1600,15 +1874,36 @@
              }
  
          }
@@ -487,7 +491,7 @@
      }
  
      protected boolean q(Entity entity) {
-@@ -1649,11 +1940,17 @@
+@@ -1649,11 +1944,17 @@
                  ResourceKey<World> resourcekey = this.world.getDimensionKey() == World.THE_NETHER ? World.OVERWORLD : World.THE_NETHER;
                  WorldServer worldserver1 = minecraftserver.getWorldServer(resourcekey);
  
@@ -507,7 +511,7 @@
                      this.world.getMethodProfiler().exit();
                  }
  
-@@ -1753,6 +2050,13 @@
+@@ -1753,6 +2054,13 @@
      }
  
      public void setSwimming(boolean flag) {
@@ -521,7 +525,7 @@
          this.setFlag(4, flag);
      }
  
-@@ -1813,16 +2117,56 @@
+@@ -1813,16 +2121,56 @@
      }
  
      public void setAirTicks(int i) {
@@ -581,7 +585,7 @@
      }
  
      public void k(boolean flag) {
-@@ -1972,15 +2316,32 @@
+@@ -1972,15 +2320,32 @@
  
      @Nullable
      public Entity b(WorldServer worldserver) {
@@ -616,7 +620,7 @@
                  this.world.getMethodProfiler().exitEnter("reloading");
                  Entity entity = this.getEntityType().a((World) worldserver);
  
-@@ -1989,9 +2350,17 @@
+@@ -1989,9 +2354,17 @@
                      entity.setPositionRotation(shapedetectorshape.position.x, shapedetectorshape.position.y, shapedetectorshape.position.z, shapedetectorshape.yaw, entity.pitch);
                      entity.setMot(shapedetectorshape.velocity);
                      worldserver.addEntityTeleport(entity);
@@ -636,7 +640,7 @@
                  }
  
                  this.bM();
-@@ -2012,13 +2381,18 @@
+@@ -2012,13 +2385,18 @@
  
      @Nullable
      protected ShapeDetectorShape a(WorldServer worldserver) {
@@ -659,7 +663,7 @@
                  return null;
              } else {
                  WorldBorder worldborder = worldserver.getWorldBorder();
-@@ -2028,8 +2402,16 @@
+@@ -2028,8 +2406,16 @@
                  double d3 = Math.min(2.9999872E7D, worldborder.h() - 16.0D);
                  double d4 = DimensionManager.a(this.world.getDimensionManager(), worldserver.getDimensionManager());
                  BlockPosition blockposition = new BlockPosition(MathHelper.a(this.locX() * d4, d0, d2), this.locY(), MathHelper.a(this.locZ() * d4, d1, d3));
@@ -677,7 +681,7 @@
                      IBlockData iblockdata = this.world.getType(this.ac);
                      EnumDirection.EnumAxis enumdirection_enumaxis;
                      Vec3D vec3d;
-@@ -2046,8 +2428,8 @@
+@@ -2046,8 +2432,8 @@
                          vec3d = new Vec3D(0.5D, 0.0D, 0.0D);
                      }
  
@@ -688,7 +692,7 @@
              }
          } else {
              BlockPosition blockposition1;
-@@ -2057,8 +2439,15 @@
+@@ -2057,8 +2443,15 @@
              } else {
                  blockposition1 = worldserver.getHighestBlockYAt(HeightMap.Type.MOTION_BLOCKING_NO_LEAVES, worldserver.getSpawn());
              }
@@ -705,7 +709,7 @@
          }
      }
  
-@@ -2066,8 +2455,23 @@
+@@ -2066,8 +2459,23 @@
          return BlockPortalShape.a(blockutil_rectangle, enumdirection_enumaxis, this.getPositionVector(), this.a(this.getPose()));
      }
  
@@ -731,7 +735,7 @@
      }
  
      public boolean canPortal() {
-@@ -2253,7 +2657,26 @@
+@@ -2253,7 +2661,26 @@
      }
  
      public void a(AxisAlignedBB axisalignedbb) {
