@@ -84,14 +84,7 @@ public class LoginListener implements PacketLoginInListener {
     // CraftBukkit start
     @Deprecated
     public void disconnect(String s) {
-        try {
-            IChatBaseComponent ichatbasecomponent = new ChatComponentText(s);
-            LoginListener.LOGGER.info("Disconnecting {}: {}", this.d(), s);
-            this.networkManager.sendPacket(new PacketLoginOutDisconnect(ichatbasecomponent));
-            this.networkManager.close(ichatbasecomponent);
-        } catch (Exception exception) {
-            LoginListener.LOGGER.error("Error whilst disconnecting player", exception);
-        }
+        disconnect(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s, true)[0]); // Paper - Fix hex colors not working in some kick messages
     }
     // CraftBukkit end
 
