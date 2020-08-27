@@ -410,6 +410,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return net.minecraft.server.EntityTypes.getByName(type.getName()).map(net.minecraft.server.EntityTypes::getDescriptionId).orElse(null);
     }
 
+    public int nextEntityId() {
+        return net.minecraft.server.Entity.nextEntityId();
+    }
+
     // Paper end
 
     /**
