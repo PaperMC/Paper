@@ -10,7 +10,8 @@ __For Example:__
 * SPIGOT-3510: Velocity broken for certain entities
 * MC-111753, SPIGOT-2971: Brewing stand not reloading
 
-As you can see, Minecraft tickets can be referenced by including the appropriate ticket number (i.e. MC-111753)
+As you can see, Minecraft tickets can be referenced by including the appropriate ticket number (i.e. MC-111753).
+Where a pull request is spread across multiple repositories, please keep the title and first line of the commit message the same for each.
 
 ##### Pull Request Message Expectations
 The body of a PR needs to describe how the ticket was resolved, or if there was no ticket, describe the problem itself.
