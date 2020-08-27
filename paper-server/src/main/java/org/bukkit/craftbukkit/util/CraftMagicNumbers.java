@@ -527,6 +527,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
         return compound;
     }
+
+    @Override
+    public int nextEntityId() {
+        return net.minecraft.world.entity.Entity.nextEntityId();
+    }
     // Paper end
 
     /**
