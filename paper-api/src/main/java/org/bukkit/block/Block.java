@@ -393,6 +393,15 @@ public interface Block extends Metadatable {
     boolean breakNaturally(@Nullable ItemStack tool);
 
     /**
+     * Simulate bone meal application to this block (if possible).
+     *
+     * @param face the face on which bonemeal should be applied
+     *
+     * @return true if the block was bonemealed, false otherwise
+     */
+    boolean applyBoneMeal(@NotNull BlockFace face);
+
+    /**
      * Returns a list of items which would drop by destroying this block
      *
      * @return a list of dropped items for this type of block
