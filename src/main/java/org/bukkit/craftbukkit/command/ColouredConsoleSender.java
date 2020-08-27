@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.command;
 
+import java.awt.Color;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jline.Terminal;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,6 +18,9 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
     private final Map<ChatColor, String> replacements = new EnumMap<ChatColor, String>(ChatColor.class);
     private final ChatColor[] colors = ChatColor.values();
     private final boolean jansiPassthrough;
+    private static final char ANSI_ESC_CHAR = '\u001B';
+    private static final String RGB_STRING = String.valueOf(ANSI_ESC_CHAR) + "[38;2;%d;%d;%dm";
+    private static final Pattern RBG_TRANSLATE = Pattern.compile(String.valueOf(ChatColor.COLOR_CHAR) + "x(" + String.valueOf(ChatColor.COLOR_CHAR) + "[A-F0-9]){6}", Pattern.CASE_INSENSITIVE);
 
     protected ColouredConsoleSender() {
         super();
@@ -50,7 +56,7 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
         // support jansi passthrough VM option when jansi doesn't detect an ANSI supported terminal
         if (jansiPassthrough || terminal.isAnsiSupported()) {
             if (!conversationTracker.isConversingModaly()) {
-                String result = message.replaceAll("(?i)" + ChatColor.COLOR_CHAR + "x(" + ChatColor.COLOR_CHAR + "[0-9a-f]){6}", ""); // Hex is not supported by ANSI console
+                String result = convertRGBColors(message);
                 for (ChatColor color : colors) {
                     if (replacements.containsKey(color)) {
                         result = result.replaceAll("(?i)" + color.toString(), replacements.get(color));
@@ -63,6 +69,22 @@ public class ColouredConsoleSender extends CraftConsoleCommandSender {
         } else {
             super.sendMessage(message);
         }
+    }
+
+    private static String convertRGBColors(String input) {
+        Matcher matcher = RBG_TRANSLATE.matcher(input);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String s = matcher.group().replace("§", "").replace('x', '#');
+            Color color = Color.decode(s);
+            int red = color.getRed();
+            int blue = color.getBlue();
+            int green = color.getGreen();
+            String replacement = String.format(RGB_STRING, red, green, blue);
+            matcher.appendReplacement(buffer, replacement);
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     public static ConsoleCommandSender getInstance() {
