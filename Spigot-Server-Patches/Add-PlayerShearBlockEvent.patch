@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josh Roy <10731363+JRoy@users.noreply.github.com>
+Date: Thu, 27 Aug 2020 15:02:48 -0400
+Subject: [PATCH] Add PlayerShearBlockEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Block.java
++++ b/src/main/java/net/minecraft/server/Block.java
+@@ -0,0 +0,0 @@ public class Block extends BlockBase implements IMaterial {
+ 
+     }
+ 
+-    public static void a(World world, BlockPosition blockposition, ItemStack itemstack) {
++    public static void a(World world, BlockPosition blockposition, ItemStack itemstack) { dropItem(world, blockposition, itemstack); } public static void dropItem(World world, BlockPosition blockposition, ItemStack itemstack) { // Paper - OBFHELPER
+         if (!world.isClientSide && !itemstack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
+             float f = 0.5F;
+             double d0 = (double) (world.random.nextFloat() * 0.5F) + 0.25D;
+diff --git a/src/main/java/net/minecraft/server/BlockBeehive.java b/src/main/java/net/minecraft/server/BlockBeehive.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockBeehive.java
++++ b/src/main/java/net/minecraft/server/BlockBeehive.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import io.papermc.paper.event.block.PlayerShearBlockEvent; // Paper - PlayerShearBlockEvent namespace conflicts
++
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+@@ -0,0 +0,0 @@ public class BlockBeehive extends BlockTileEntity {
+ 
+         if (i >= 5) {
+             if (itemstack.getItem() == Items.SHEARS) {
++                // Paper start - Add PlayerShearBlockEvent
++                PlayerShearBlockEvent event = new PlayerShearBlockEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), MCUtil.toBukkitBlock(world, blockposition), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (enumhand == EnumHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.HONEYCOMB, 3)));
++                if (!event.callEvent()) {
++                    return EnumInteractionResult.PASS;
++                }
++                // Paper end
+                 world.playSound(entityhuman, entityhuman.locX(), entityhuman.locY(), entityhuman.locZ(), SoundEffects.BLOCK_BEEHIVE_SHEAR, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+-                a(world, blockposition);
++                // Paper start - Add PlayerShearBlockEvent
++                for (org.bukkit.inventory.ItemStack item : event.getDrops()) {
++                    dropItem(world, blockposition, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item));
++                }
++                // Paper end
+                 itemstack.damage(1, entityhuman, (entityhuman1) -> {
+                     entityhuman1.broadcastItemBreak(enumhand);
+                 });
+diff --git a/src/main/java/net/minecraft/server/BlockPumpkin.java b/src/main/java/net/minecraft/server/BlockPumpkin.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/BlockPumpkin.java
++++ b/src/main/java/net/minecraft/server/BlockPumpkin.java
+@@ -0,0 +0,0 @@
+ package net.minecraft.server;
+ 
++import io.papermc.paper.event.block.PlayerShearBlockEvent; // Paper - PlayerShearBlockEvent namespace conflicts
++
+ public class BlockPumpkin extends BlockStemmed {
+ 
+     protected BlockPumpkin(BlockBase.Info blockbase_info) {
+@@ -0,0 +0,0 @@ public class BlockPumpkin extends BlockStemmed {
+ 
+         if (itemstack.getItem() == Items.SHEARS) {
+             if (!world.isClientSide) {
++                // Paper start - Add PlayerShearBlockEvent
++                PlayerShearBlockEvent event = new PlayerShearBlockEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), MCUtil.toBukkitBlock(world, blockposition), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (enumhand == EnumHand.OFF_HAND ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND), new java.util.ArrayList<>());
++                event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.PUMPKIN_SEEDS, 4)));
++                if (!event.callEvent()) {
++                    return EnumInteractionResult.PASS;
++                }
++                // Paper end
+                 EnumDirection enumdirection = movingobjectpositionblock.getDirection();
+                 EnumDirection enumdirection1 = enumdirection.n() == EnumDirection.EnumAxis.Y ? entityhuman.getDirection().opposite() : enumdirection;
+ 
+                 world.playSound((EntityHuman) null, blockposition, SoundEffects.BLOCK_PUMPKIN_CARVE, SoundCategory.BLOCKS, 1.0F, 1.0F);
+                 world.setTypeAndData(blockposition, (IBlockData) Blocks.CARVED_PUMPKIN.getBlockData().set(BlockPumpkinCarved.a, enumdirection1), 11);
+-                EntityItem entityitem = new EntityItem(world, (double) blockposition.getX() + 0.5D + (double) enumdirection1.getAdjacentX() * 0.65D, (double) blockposition.getY() + 0.1D, (double) blockposition.getZ() + 0.5D + (double) enumdirection1.getAdjacentZ() * 0.65D, new ItemStack(Items.PUMPKIN_SEEDS, 4));
++                // Paper start - Add PlayerShearBlockEvent
++                for (org.bukkit.inventory.ItemStack item : event.getDrops()) {
++                EntityItem entityitem = new EntityItem(world, (double) blockposition.getX() + 0.5D + (double) enumdirection1.getAdjacentX() * 0.65D, (double) blockposition.getY() + 0.1D, (double) blockposition.getZ() + 0.5D + (double) enumdirection1.getAdjacentZ() * 0.65D, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item));
++                // Paper end
+ 
+                 entityitem.setMot(0.05D * (double) enumdirection1.getAdjacentX() + world.random.nextDouble() * 0.02D, 0.05D, 0.05D * (double) enumdirection1.getAdjacentZ() + world.random.nextDouble() * 0.02D);
+                 world.addEntity(entityitem);
++                } // Paper - Add PlayerShearBlockEvent
+                 itemstack.damage(1, entityhuman, (entityhuman1) -> {
+                     entityhuman1.broadcastItemBreak(enumhand);
+                 });
