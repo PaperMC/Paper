@@ -168,5 +168,12 @@ public interface UnsafeValues {
     byte[] serializeItem(ItemStack item);
 
     ItemStack deserializeItem(byte[] data);
+
+    /**
+     * Creates and returns the next EntityId available.
+     * <p>
+     * Use this when sending custom packets, so that there are no collisions on the client or server.
+     */
+    public int nextEntityId();
     // Paper end
 }
