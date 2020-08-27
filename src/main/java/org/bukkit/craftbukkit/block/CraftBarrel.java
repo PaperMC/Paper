@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.server.BlockBarrel;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.SoundEffects;
 import net.minecraft.server.TileEntityBarrel;
@@ -38,8 +39,12 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         requirePlaced();
         if (!getTileEntity().opened) {
             IBlockData blockData = getTileEntity().getBlock();
-            getTileEntity().setOpenFlag(blockData, true);
-            getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_OPEN);
+            boolean open = blockData.get(BlockBarrel.b);
+
+            if (!open) {
+                getTileEntity().setOpenFlag(blockData, true);
+                getTileEntity().playOpenSound(blockData, SoundEffects.BLOCK_BARREL_OPEN);
+            }
         }
         getTileEntity().opened = true;
     }
