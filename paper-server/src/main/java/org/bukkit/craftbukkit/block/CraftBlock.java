@@ -12,14 +12,18 @@ import net.minecraft.server.BlockRedstoneWire;
 import net.minecraft.server.BlockTileEntity;
 import net.minecraft.server.Blocks;
 import net.minecraft.server.EnumDirection;
+import net.minecraft.server.EnumHand;
+import net.minecraft.server.EnumInteractionResult;
 import net.minecraft.server.EnumSkyBlock;
 import net.minecraft.server.GeneratorAccess;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
-import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.ItemActionContext;
+import net.minecraft.server.ItemBoneMeal;
+import net.minecraft.server.Items;
 import net.minecraft.server.MovingObjectPosition;
+import net.minecraft.server.MovingObjectPositionBlock;
 import net.minecraft.server.RayTrace;
-import net.minecraft.server.RegistryGeneration;
 import net.minecraft.server.TileEntity;
 import net.minecraft.server.Vec3D;
 import net.minecraft.server.VoxelShape;
@@ -627,6 +631,14 @@ public class CraftBlock implements Block {
         }
 
         return setTypeAndData(Blocks.AIR.getBlockData(), true) && result;
+    }
+
+    @Override
+    public boolean applyBoneMeal(BlockFace face) {
+        EnumDirection direction = blockFaceToNotch(face);
+        ItemActionContext context = new ItemActionContext(getCraftWorld().getHandle(), null, EnumHand.MAIN_HAND, Items.BONE_MEAL.r(), new MovingObjectPositionBlock(Vec3D.a, direction, getPosition(), false)); // PAIL rename createItemStack, ZERO
+
+        return ItemBoneMeal.applyBonemeal(context) == EnumInteractionResult.SUCCESS;
     }
 
     @Override
