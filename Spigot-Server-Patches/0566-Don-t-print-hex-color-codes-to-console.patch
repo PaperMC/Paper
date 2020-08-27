@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Esophose <esophose@gmail.com>
+Date: Thu, 27 Aug 2020 01:00:24 -0600
+Subject: [PATCH] Don't print hex color codes to console
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+index 685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869..ab13f7e0be5f81acefc5cbfd6b32033d276f46ea 100644
+--- a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
++++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
+@@ -1,17 +1,21 @@
+ package com.destroystokyo.paper.console;
+ 
++import java.util.regex.Pattern;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
++import org.bukkit.ChatColor;
+ import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
+ 
+ public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
+ 
+     private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final Pattern HEX_STRIP_PATTERN = Pattern.compile("(?i)" + ChatColor.COLOR_CHAR + "x(" + ChatColor.COLOR_CHAR + "[0-9a-f]){6}");
+ 
+     @Override
+     public void sendRawMessage(String message) {
+         // TerminalConsoleAppender supports color codes directly in log messages
+-        LOGGER.info(message);
++        // However, we need to strip out hex colors, as those can not be represented correctly
++        LOGGER.info(HEX_STRIP_PATTERN.matcher(message).replaceAll(""));
+     }
+ 
+ }
