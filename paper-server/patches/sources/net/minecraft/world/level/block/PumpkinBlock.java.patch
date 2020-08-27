@@ -1,0 +1,36 @@
+--- a/net/minecraft/world/level/block/PumpkinBlock.java
++++ b/net/minecraft/world/level/block/PumpkinBlock.java
+@@ -38,16 +38,24 @@
+         } else if (world.isClientSide) {
+             return InteractionResult.SUCCESS;
+         } else {
++            // Paper start - Add PlayerShearBlockEvent
++            io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), new java.util.ArrayList<>());
++            event.getDrops().add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(Items.PUMPKIN_SEEDS, 4)));
++            if (!event.callEvent()) {
++                return InteractionResult.PASS;
++            }
++            // Paper end - Add PlayerShearBlockEvent
+             Direction direction = hit.getDirection();
+             Direction direction2 = direction.getAxis() == Direction.Axis.Y ? player.getDirection().getOpposite() : direction;
+             world.playSound(null, pos, SoundEvents.PUMPKIN_CARVE, SoundSource.BLOCKS, 1.0F, 1.0F);
+             world.setBlock(pos, Blocks.CARVED_PUMPKIN.defaultBlockState().setValue(CarvedPumpkinBlock.FACING, direction2), 11);
++            for (org.bukkit.inventory.ItemStack item : event.getDrops()) { // Paper - Add PlayerShearBlockEvent
+             ItemEntity itemEntity = new ItemEntity(
+                 world,
+                 (double)pos.getX() + 0.5 + (double)direction2.getStepX() * 0.65,
+                 (double)pos.getY() + 0.1,
+                 (double)pos.getZ() + 0.5 + (double)direction2.getStepZ() * 0.65,
+-                new ItemStack(Items.PUMPKIN_SEEDS, 4)
++                org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item) // Paper - Add PlayerShearBlockEvent
+             );
+             itemEntity.setDeltaMovement(
+                 0.05 * (double)direction2.getStepX() + world.random.nextDouble() * 0.02,
+@@ -55,6 +63,7 @@
+                 0.05 * (double)direction2.getStepZ() + world.random.nextDouble() * 0.02
+             );
+             world.addFreshEntity(itemEntity);
++            } // Paper - Add PlayerShearBlockEvent
+             stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+             world.gameEvent(player, GameEvent.SHEAR, pos);
+             player.awardStat(Stats.ITEM_USED.get(Items.SHEARS));
