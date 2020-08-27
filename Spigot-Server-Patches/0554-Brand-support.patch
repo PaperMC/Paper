@@ -5,7 +5,7 @@ Subject: [PATCH] Brand support
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index bc613281d18efac7bb926d84ec54653368b93f43..1519813d35541199e860234dc3fb121a35604c0f 100644
+index bc613281d18efac7bb926d84ec54653368b93f43..a5f5a985ba5333f9df6ad56fbd7d843807ea946d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -4,6 +4,7 @@ import com.google.common.primitives.Doubles;
@@ -34,20 +34,24 @@ index bc613281d18efac7bb926d84ec54653368b93f43..1519813d35541199e860234dc3fb121a
      @Override
      public void a(PacketPlayInCustomPayload packetplayincustompayload) {
          PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.getWorldServer());
-@@ -2759,6 +2764,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2759,6 +2764,16 @@ public class PlayerConnection implements PacketListenerPlayIn {
              try {
                  byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
                  packetplayincustompayload.data.readBytes(data);
 +
 +                // Paper start - Brand support
 +                if (packetplayincustompayload.tag.equals(MINECRAFT_BRAND)) {
-+                     this.clientBrandName = data.length < 512 ? new String(data) : "unknown-too-large";
++                    try {
++                        this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.clientBrandName = "illegal";
++                    }
 +                }
 +                // Paper end
                  server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.tag.toString(), data);
              } catch (Exception ex) {
                  PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -2768,6 +2779,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2768,6 +2783,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
  
      }
  
