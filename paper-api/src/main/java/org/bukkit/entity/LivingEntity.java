@@ -552,4 +552,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param <T> the type of the passed value
      */
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
+
+    /**
+     * Get the category to which this entity belongs.
+     *
+     * Categories may subject this entity to additional effects, benefits or
+     * debuffs.
+     *
+     * @return the entity category
+     */
+    @NotNull
+    public EntityCategory getCategory();
 }
