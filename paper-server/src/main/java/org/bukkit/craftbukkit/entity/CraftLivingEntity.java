@@ -35,6 +35,7 @@ import net.minecraft.server.EntityTypes;
 import net.minecraft.server.EntityWither;
 import net.minecraft.server.EntityWitherSkull;
 import net.minecraft.server.EnumHand;
+import net.minecraft.server.EnumMonsterType;
 import net.minecraft.server.GenericAttributes;
 import net.minecraft.server.MobEffect;
 import net.minecraft.server.MobEffectList;
@@ -57,6 +58,7 @@ import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityCategory;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Firework;
@@ -632,5 +634,24 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
         getHandle().getBehaviorController().setMemory(CraftMemoryKey.fromMemoryKey(memoryKey), CraftMemoryMapper.toNms(t));
+    }
+
+    @Override
+    public EntityCategory getCategory() {
+        EnumMonsterType type = getHandle().getMonsterType(); // Not actually an enum?
+
+        if (type == EnumMonsterType.UNDEFINED) {
+            return EntityCategory.NONE;
+        } else if (type == EnumMonsterType.UNDEAD) {
+            return EntityCategory.UNDEAD;
+        } else if (type == EnumMonsterType.ARTHROPOD) {
+            return EntityCategory.ARTHROPOD;
+        } else if (type == EnumMonsterType.ILLAGER) {
+            return EntityCategory.ILLAGER;
+        } else if (type == EnumMonsterType.e) { // PAIL rename WATER_MOB
+            return EntityCategory.WATER;
+        }
+
+        throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Spigot.");
     }
 }
