@@ -30,13 +30,14 @@
      FluidState getFluidState(BlockPos pos);
  
      default int getLightEmission(BlockPos pos) {
-@@ -59,9 +69,17 @@
+@@ -59,10 +69,19 @@
          });
      }
  
 -    default BlockHitResult clip(ClipContext context) {
 -        return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
 -            BlockState iblockdata = this.getBlockState(blockposition);
+-            FluidState fluid = this.getFluidState(blockposition);
 +    // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
 +    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
 +            // Paper start - Prevent raytrace from loading chunks
@@ -48,10 +49,12 @@
 +                return BlockHitResult.miss(raytrace1.getTo(), Direction.getApproximateNearest(vec3d.x, vec3d.y, vec3d.z), BlockPos.containing(raytrace1.getTo()));
 +            }
 +            // Paper end - Prevent raytrace from loading chunks
-             FluidState fluid = this.getFluidState(blockposition);
++            if (iblockdata.isAir()) return null; // Paper - Perf: optimise air cases
++            FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: don't need to go to world state again
              Vec3 vec3d = raytrace1.getFrom();
              Vec3 vec3d1 = raytrace1.getTo();
-@@ -73,6 +91,12 @@
+             VoxelShape voxelshape = raytrace1.getBlockShape(iblockdata, this, blockposition);
+@@ -73,6 +92,12 @@
              double d1 = movingobjectpositionblock1 == null ? Double.MAX_VALUE : raytrace1.getFrom().distanceToSqr(movingobjectpositionblock1.getLocation());
  
              return d0 <= d1 ? movingobjectpositionblock : movingobjectpositionblock1;
@@ -64,7 +67,7 @@
          }, (raytrace1) -> {
              Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
  
-@@ -145,7 +169,7 @@
+@@ -145,7 +170,7 @@
                  double d13 = d10 * (i1 > 0 ? 1.0D - Mth.frac(d4) : Mth.frac(d4));
                  double d14 = d11 * (j1 > 0 ? 1.0D - Mth.frac(d5) : Mth.frac(d5));
  
