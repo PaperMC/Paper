@@ -3,10 +3,13 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.EntityEnderSignal;
+import net.minecraft.server.Items;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EnderSignal;
 import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
 
 public class CraftEnderSignal extends CraftEntity implements EnderSignal {
     public CraftEnderSignal(CraftServer server, EntityEnderSignal entity) {
@@ -47,6 +50,16 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
     @Override
     public void setDropItem(boolean shouldDropItem) {
         getHandle().shouldDropItem = shouldDropItem;
+    }
+
+    @Override
+    public ItemStack getItem() {
+        return CraftItemStack.asBukkitCopy(getHandle().g()); // PAIL rename getItemStack
+    }
+
+    @Override
+    public void setItem(ItemStack item) {
+        getHandle().b(item != null ? CraftItemStack.asNMSCopy(item) : Items.ENDER_EYE.r()); // PAIL rename setItemStack, createItemStack
     }
 
     @Override
