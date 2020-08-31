@@ -91,12 +91,28 @@ diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -0,0 +0,0 @@ import org.bukkit.event.inventory.ClickType;
+ import org.bukkit.event.inventory.CraftItemEvent;
+ import org.bukkit.event.inventory.InventoryAction;
+ import org.bukkit.event.inventory.InventoryClickEvent;
++import org.bukkit.event.inventory.InventoryCloseEvent; // Paper
+ import org.bukkit.event.inventory.InventoryCreativeEvent;
+ import org.bukkit.event.inventory.InventoryType.SlotType;
+ import org.bukkit.event.player.AsyncPlayerChatEvent;
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+     @Override
+     public void a(PacketPlayInCloseWindow packetplayinclosewindow) {
++        // Paper start
++        handleContainerClose(packetplayinclosewindow, InventoryCloseEvent.Reason.PLAYER);
++    }
++    public void handleContainerClose(PacketPlayInCloseWindow packetplayinclosewindow, InventoryCloseEvent.Reason reason) {
++        // Paper end
          PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.getWorldServer());
  
          if (this.player.isFrozen()) return; // CraftBukkit
 -        CraftEventFactory.handleInventoryCloseEvent(this.player); // CraftBukkit
-+        CraftEventFactory.handleInventoryCloseEvent(this.player, org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLAYER); // CraftBukkit // Paper
++        CraftEventFactory.handleInventoryCloseEvent(this.player, reason); // CraftBukkit // Paper
  
          this.player.o();
      }
@@ -140,6 +156,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 @@ -0,0 +0,0 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         if (((EntityPlayer) getHandle()).playerConnection == null) return;
+         if (getHandle().activeContainer != getHandle().defaultContainer) {
+             // fire INVENTORY_CLOSE if one already open
+-            ((EntityPlayer) getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
++            ((EntityPlayer) getHandle()).playerConnection.handleContainerClose(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper
+         }
+         EntityPlayer player = (EntityPlayer) getHandle();
+         Container container;
+@@ -0,0 +0,0 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
  
      @Override
      public void closeInventory() {
@@ -171,6 +196,15 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -0,0 +0,0 @@ public class CraftEventFactory {
+ 
+     public static Container callInventoryOpenEvent(EntityPlayer player, Container container, boolean cancelled) {
+         if (player.activeContainer != player.defaultContainer) { // fire INVENTORY_CLOSE if one already open
+-            player.playerConnection.a(new PacketPlayInCloseWindow(player.activeContainer.windowId));
++            player.playerConnection.handleContainerClose(new PacketPlayInCloseWindow(player.activeContainer.windowId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper
+         }
+ 
+         CraftServer server = player.world.getServer();
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          return event;
      }
