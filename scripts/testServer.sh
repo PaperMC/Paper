@@ -8,7 +8,7 @@ minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion |
 gitcmd="git -c commit.gpgsign=false"
 
 #
-# FUNCTIONS
+# FUNCTIONS !
 #
 source "$basedir"/scripts/functions.sh
 
@@ -24,7 +24,7 @@ mkdir -p "$papertestdir"
 cd "$papertestdir"
 
 #
-# SKELETON CHECK
+# SKELETON CHECK !
 #
 
 if [ ! -d .git ]; then
@@ -44,7 +44,7 @@ fi
 
 
 #
-# EULA CHECK
+# EULA CHECK !
 #
 
 if [ -z "$(grep true eula.txt 2>/dev/null)" ]; then
@@ -60,7 +60,7 @@ if [ -z "$(grep true eula.txt 2>/dev/null)" ]; then
 fi
 
 #
-# JAR CHECK
+# JAR CHECK !
 #
 
 folder="$basedir/Paper-Server"
@@ -84,7 +84,7 @@ if [ "$2" == "build" ] || [ "$3" == "build" ]; then
 )
 fi
 #
-# JVM FLAGS
+# JVM FLAGS !
 #
 
 if [ -f "$jar" ]; then
@@ -102,7 +102,7 @@ screen_command="screen -DURS papertest $cmd"
 tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
 
 #
-# MULTIPLEXER CHOICE
+# MULTIPLEXER CHOICE !
 #
 
 multiplex=${PAPER_TEST_MULTIPLEXER}
@@ -135,7 +135,7 @@ else
 fi
 
 #
-# START / LOG
+# START / LOG !
 #
 
 if [ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]; then
