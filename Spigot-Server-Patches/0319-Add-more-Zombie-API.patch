@@ -5,10 +5,40 @@ Subject: [PATCH] Add more Zombie API
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
-index 12f954723ac2f0058081d810ce83aed99532caad..02a845f99bb445fb4aa66a90273469a848195747 100644
+index 12f954723ac2f0058081d810ce83aed99532caad..b72f42e5355e392dbec59e7827f746fffc22f466 100644
 --- a/src/main/java/net/minecraft/server/EntityZombie.java
 +++ b/src/main/java/net/minecraft/server/EntityZombie.java
-@@ -33,6 +33,7 @@ public class EntityZombie extends EntityMonster {
+@@ -1,21 +1,22 @@
+ package net.minecraft.server;
+ 
+ import com.mojang.serialization.DynamicOps;
++import org.bukkit.entity.Zombie;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.entity.EntityCombustByEntityEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.entity.EntityTransformEvent;
++
++import javax.annotation.Nullable;
++
+ import java.time.LocalDate;
+ import java.time.temporal.ChronoField;
+ import java.util.List;
+ import java.util.Random;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+-import javax.annotation.Nullable;
+ 
+ // CraftBukkit start
+-import org.bukkit.craftbukkit.event.CraftEventFactory;
+-import org.bukkit.entity.Zombie;
+-import org.bukkit.event.entity.CreatureSpawnEvent;
+-import org.bukkit.event.entity.EntityCombustByEntityEvent;
+-import org.bukkit.event.entity.EntityTargetEvent;
+-import org.bukkit.event.entity.EntityTransformEvent;
+ // CraftBukkit end
+ 
+ public class EntityZombie extends EntityMonster {
+@@ -33,6 +34,7 @@ public class EntityZombie extends EntityMonster {
      private int bt;
      public int drownedConversionTime;
      private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
@@ -16,7 +46,7 @@ index 12f954723ac2f0058081d810ce83aed99532caad..02a845f99bb445fb4aa66a90273469a8
  
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
-@@ -201,6 +202,12 @@ public class EntityZombie extends EntityMonster {
+@@ -201,6 +203,12 @@ public class EntityZombie extends EntityMonster {
          super.movementTick();
      }
  
@@ -29,25 +59,25 @@ index 12f954723ac2f0058081d810ce83aed99532caad..02a845f99bb445fb4aa66a90273469a8
      public void startDrownedConversion(int i) {
          this.lastTick = MinecraftServer.currentTick; // CraftBukkit
          this.drownedConversionTime = i;
-@@ -226,10 +233,17 @@ public class EntityZombie extends EntityMonster {
+@@ -226,9 +234,16 @@ public class EntityZombie extends EntityMonster {
  
      }
  
 +    public boolean shouldBurnInDay() { return T_(); } // Paper - OBFHELPER
      protected boolean T_() {
-         return true;
-     }
- 
+-        return true;
++        return this.shouldBurnInDay; // Paper - use overridden value instead
++    }
++
 +    // Paper start
 +    public void setShouldBurnInDay(boolean shouldBurnInDay) {
 +        this.shouldBurnInDay = shouldBurnInDay;
-+    }
+     }
 +    // Paper end
-+
+ 
      @Override
      public boolean damageEntity(DamageSource damagesource, float f) {
-         if (!super.damageEntity(damagesource, f)) {
-@@ -349,6 +363,7 @@ public class EntityZombie extends EntityMonster {
+@@ -349,6 +364,7 @@ public class EntityZombie extends EntityMonster {
          nbttagcompound.setBoolean("CanBreakDoors", this.eU());
          nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bt : -1);
          nbttagcompound.setInt("DrownedConversionTime", this.isDrownConverting() ? this.drownedConversionTime : -1);
@@ -55,7 +85,7 @@ index 12f954723ac2f0058081d810ce83aed99532caad..02a845f99bb445fb4aa66a90273469a8
      }
  
      @Override
-@@ -360,7 +375,11 @@ public class EntityZombie extends EntityMonster {
+@@ -360,7 +376,11 @@ public class EntityZombie extends EntityMonster {
          if (nbttagcompound.hasKeyOfType("DrownedConversionTime", 99) && nbttagcompound.getInt("DrownedConversionTime") > -1) {
              this.startDrownedConversion(nbttagcompound.getInt("DrownedConversionTime"));
          }
