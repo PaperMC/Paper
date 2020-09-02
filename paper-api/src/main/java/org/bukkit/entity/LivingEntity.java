@@ -193,6 +193,34 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void setMaximumAir(int ticks);
 
     /**
+     * Gets the time in ticks until the next arrow leaves the entity's body.
+     *
+     * @return ticks until arrow leaves
+     */
+    public int getArrowCooldown();
+
+    /**
+     * Sets the time in ticks until the next arrow leaves the entity's body.
+     *
+     * @param ticks time until arrow leaves
+     */
+    public void setArrowCooldown(int ticks);
+
+    /**
+     * Gets the amount of arrows in an entity's body.
+     *
+     * @return amount of arrows in body
+     */
+    public int getArrowsInBody();
+
+    /**
+     * Set the amount of arrows in the entity's body.
+     *
+     * @param count amount of arrows in entity's body
+     */
+    public void setArrowsInBody(int count);
+
+    /**
      * Returns the living entity's current maximum no damage ticks.
      * <p>
      * This is the maximum duration in which the living entity will not take
