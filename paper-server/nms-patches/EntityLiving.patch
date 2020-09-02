@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/EntityLiving.java
 +++ b/net/minecraft/server/EntityLiving.java
-@@ -21,6 +21,26 @@
+@@ -21,6 +21,27 @@
  import javax.annotation.Nullable;
  import org.apache.logging.log4j.Logger;
  
@@ -15,6 +15,7 @@
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Player;
++import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
 +import org.bukkit.event.entity.EntityDamageEvent;
 +import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 +import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -27,7 +28,16 @@
  public abstract class EntityLiving extends Entity {
  
      private static final UUID b = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
-@@ -106,6 +126,21 @@
+@@ -30,7 +51,7 @@
+     public static final DataWatcherObject<Float> HEALTH = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.c);
+     private static final DataWatcherObject<Integer> f = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.b);
+     private static final DataWatcherObject<Boolean> g = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.i);
+-    private static final DataWatcherObject<Integer> bh = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.b);
++    public static final DataWatcherObject<Integer> bh = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.b); // PAIL private -> public, rename ARROWS_IN_BODY
+     private static final DataWatcherObject<Integer> bi = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.b);
+     private static final DataWatcherObject<Optional<BlockPosition>> bj = DataWatcher.a(EntityLiving.class, DataWatcherRegistry.m);
+     protected static final EntitySize ah = EntitySize.c(0.2F, 0.2F);
+@@ -106,6 +127,21 @@
      private float bB;
      private float bC;
      protected BehaviorController<?> bg;
@@ -49,7 +59,7 @@
  
      protected EntityLiving(EntityTypes<? extends EntityLiving> entitytypes, World world) {
          super(entitytypes, world);
-@@ -117,7 +152,9 @@
+@@ -117,7 +153,9 @@
          this.activeItem = ItemStack.b;
          this.by = Optional.empty();
          this.attributeMap = new AttributeMapBase(AttributeDefaults.a(entitytypes));
@@ -60,7 +70,7 @@
          this.i = true;
          this.az = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
          this.ae();
-@@ -184,7 +221,13 @@
+@@ -184,7 +222,13 @@
                  double d1 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
                  int i = (int) (150.0D * d1);
  
@@ -75,7 +85,7 @@
              }
          }
  
-@@ -406,7 +449,7 @@
+@@ -406,7 +450,7 @@
  
      protected void cT() {
          ++this.deathTicks;
@@ -84,7 +94,7 @@
              this.die();
  
              for (int i = 0; i < 20; ++i) {
-@@ -567,6 +610,17 @@
+@@ -567,6 +611,17 @@
              }
          }
  
@@ -102,7 +112,7 @@
          if (nbttagcompound.hasKeyOfType("Health", 99)) {
              this.setHealth(nbttagcompound.getFloat("Health"));
          }
-@@ -604,9 +658,32 @@
+@@ -604,9 +659,32 @@
  
      }
  
@@ -135,7 +145,7 @@
          try {
              while (iterator.hasNext()) {
                  MobEffectList mobeffectlist = (MobEffectList) iterator.next();
-@@ -616,6 +693,12 @@
+@@ -616,6 +694,12 @@
                      this.a(mobeffect, true);
                  })) {
                      if (!this.world.isClientSide) {
@@ -148,7 +158,7 @@
                          iterator.remove();
                          this.b(mobeffect);
                      }
-@@ -626,6 +709,17 @@
+@@ -626,6 +710,17 @@
          } catch (ConcurrentModificationException concurrentmodificationexception) {
              ;
          }
@@ -166,7 +176,7 @@
  
          if (this.updateEffects) {
              if (!this.world.isClientSide) {
-@@ -735,7 +829,13 @@
+@@ -735,7 +830,13 @@
          this.datawatcher.set(EntityLiving.f, 0);
      }
  
@@ -180,7 +190,7 @@
          if (this.world.isClientSide) {
              return false;
          } else {
-@@ -744,7 +844,14 @@
+@@ -744,7 +845,14 @@
              boolean flag;
  
              for (flag = false; iterator.hasNext(); flag = true) {
@@ -196,7 +206,7 @@
                  iterator.remove();
              }
  
-@@ -769,18 +876,44 @@
+@@ -769,18 +877,44 @@
          return (MobEffect) this.effects.get(mobeffectlist);
      }
  
@@ -242,7 +252,7 @@
                  return true;
              } else {
                  return false;
-@@ -804,13 +937,39 @@
+@@ -804,13 +938,39 @@
          return this.getMonsterType() == EnumMonsterType.UNDEAD;
      }
  
@@ -283,7 +293,7 @@
  
          if (mobeffect != null) {
              this.b(mobeffect);
-@@ -847,20 +1006,55 @@
+@@ -847,20 +1007,55 @@
  
      }
  
@@ -340,7 +350,7 @@
          this.datawatcher.set(EntityLiving.HEALTH, MathHelper.a(f, 0.0F, this.getMaxHealth()));
      }
  
-@@ -874,7 +1068,7 @@
+@@ -874,7 +1069,7 @@
              return false;
          } else if (this.world.isClientSide) {
              return false;
@@ -349,7 +359,7 @@
              return false;
          } else if (damagesource.isFire() && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -886,17 +1080,19 @@
+@@ -886,17 +1081,19 @@
              this.ticksFarFromPlayer = 0;
              float f1 = f;
  
@@ -372,7 +382,7 @@
                  this.damageShield(f);
                  f2 = f;
                  f = 0.0F;
-@@ -916,20 +1112,39 @@
+@@ -916,20 +1113,39 @@
  
              if ((float) this.noDamageTicks > 10.0F) {
                  if (f <= this.lastDamage) {
@@ -414,7 +424,7 @@
              this.ap = 0.0F;
              Entity entity1 = damagesource.getEntity();
  
-@@ -1050,19 +1265,29 @@
+@@ -1050,19 +1266,29 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -448,7 +458,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.b(StatisticList.ITEM_USED.b(Items.TOTEM_OF_UNDYING));
-@@ -1070,14 +1295,16 @@
+@@ -1070,14 +1296,16 @@
                  }
  
                  this.setHealth(1.0F);
@@ -470,7 +480,7 @@
          }
      }
  
-@@ -1194,28 +1421,46 @@
+@@ -1194,28 +1422,46 @@
  
          boolean flag = this.lastDamageByPlayerTime > 0;
  
@@ -519,7 +529,7 @@
  
      }
  
-@@ -1336,9 +1581,14 @@
+@@ -1336,9 +1582,14 @@
          int i = this.e(f, f1);
  
          if (i > 0) {
@@ -535,7 +545,7 @@
              return true;
          } else {
              return flag;
-@@ -1378,7 +1628,7 @@
+@@ -1378,7 +1629,7 @@
  
      protected float applyArmorModifier(DamageSource damagesource, float f) {
          if (!damagesource.ignoresArmor()) {
@@ -544,7 +554,7 @@
              f = CombatMath.a(f, (float) this.getArmorStrength(), (float) this.b(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1391,7 +1641,8 @@
+@@ -1391,7 +1642,8 @@
          } else {
              int i;
  
@@ -554,7 +564,7 @@
                  i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1422,28 +1673,173 @@
+@@ -1422,28 +1674,173 @@
          }
      }
  
@@ -665,21 +675,21 @@
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
 +                this.damageArmor(damagesource, armorDamage);
 +            }
- 
--            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
--            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
--            float f2 = f1 - f;
++
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
 +                this.world.broadcastEntityEffect(this, (byte) 29); // SPIGOT-4635 - shield damage sound
 +                this.damageShield((float) -event.getDamage(DamageModifier.BLOCKING));
 +                Entity entity = damagesource.j();
  
+-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
+-            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
+-            float f2 = f1 - f;
 +                if (entity instanceof EntityLiving) {
 +                    this.shieldBlock((EntityLiving) entity);
 +                }
 +            }
-+
+ 
 +            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionHearts(Math.max(this.getAbsorptionHearts() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
@@ -738,7 +748,28 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1815,6 +2211,7 @@
+@@ -1464,9 +1861,19 @@
+     }
+ 
+     public final void setArrowCount(int i) {
+-        this.datawatcher.set(EntityLiving.bh, i);
++        // CraftBukkit start
++        setArrowCount(i, false);
+     }
+ 
++    public final void setArrowCount(int i, boolean flag) {
++        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, getArrowCount(), i, flag);
++        if (event.isCancelled()) {
++            return;
++        }
++        this.datawatcher.set(EntityLiving.bh, event.getNewAmount());
++    }
++    // CraftBukkit end
++
+     public final int dy() {
+         return (Integer) this.datawatcher.get(EntityLiving.bi);
+     }
+@@ -1815,6 +2222,7 @@
                  }
  
                  if (this.onGround && !this.world.isClientSide) {
@@ -746,7 +777,7 @@
                      this.setFlag(7, false);
                  }
              } else {
-@@ -2320,6 +2717,7 @@
+@@ -2320,6 +2728,7 @@
          }
  
          if (!this.world.isClientSide) {
@@ -754,7 +785,7 @@
              this.setFlag(7, flag);
          }
  
-@@ -2440,6 +2838,7 @@
+@@ -2440,6 +2849,7 @@
      }
  
      public boolean hasLineOfSight(Entity entity) {
@@ -762,7 +793,7 @@
          Vec3D vec3d = new Vec3D(this.locX(), this.getHeadY(), this.locZ());
          Vec3D vec3d1 = new Vec3D(entity.locX(), entity.getHeadY(), entity.locZ());
  
-@@ -2457,13 +2856,20 @@
+@@ -2457,14 +2867,21 @@
  
      @Override
      public boolean isInteractable() {
@@ -774,18 +805,19 @@
      public boolean isCollidable() {
 -        return this.isAlive() && !this.isSpectator() && !this.isClimbing();
 +        return this.isAlive() && !this.isSpectator() && !this.isClimbing() && this.collides; // CraftBukkit
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - collidable API
 +    @Override
 +    public boolean canCollideWith(Entity entity) {
 +        return isCollidable() && this.collides != this.collidableExemptions.contains(entity.getUniqueID());
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      protected void velocityChanged() {
-@@ -2657,7 +3063,25 @@
+         this.velocityChanged = this.random.nextDouble() >= this.b(GenericAttributes.KNOCKBACK_RESISTANCE);
+@@ -2657,7 +3074,25 @@
          } else {
              if (!this.activeItem.isEmpty() && this.isHandRaised()) {
                  this.b(this.activeItem, 16);
@@ -812,7 +844,7 @@
  
                  if (itemstack != this.activeItem) {
                      this.a(enumhand, itemstack);
-@@ -2749,10 +3173,18 @@
+@@ -2749,10 +3184,18 @@
              }
  
              if (flag2) {
@@ -834,7 +866,7 @@
              }
          }
  
-@@ -2849,7 +3281,7 @@
+@@ -2849,7 +3292,7 @@
      }
  
      public void entityWakeup() {
@@ -843,7 +875,7 @@
          World world = this.world;
  
          this.world.getClass();
-@@ -2920,7 +3352,7 @@
+@@ -2920,7 +3363,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

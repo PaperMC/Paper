@@ -144,6 +144,7 @@ import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.FluidLevelChangeEvent;
 import org.bukkit.event.block.MoistureChangeEvent;
 import org.bukkit.event.block.NotePlayEvent;
+import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
 import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
 import org.bukkit.event.entity.BatToggleSleepEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -1595,5 +1596,17 @@ public class CraftEventFactory {
         EntitySpellCastEvent event = new EntitySpellCastEvent((Spellcaster) caster.getBukkitEntity(), CraftSpellcaster.toBukkitSpell(spell));
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
+    }
+
+    /**
+     * ArrowBodyCountChangeEvent
+     */
+    public static ArrowBodyCountChangeEvent callArrowBodyCountChangeEvent(EntityLiving entity, int oldAmount, int newAmount, boolean isReset) {
+        org.bukkit.entity.LivingEntity bukkitEntity = (LivingEntity) entity.getBukkitEntity();
+
+        ArrowBodyCountChangeEvent event = new ArrowBodyCountChangeEvent(bukkitEntity, oldAmount, newAmount, isReset);
+        Bukkit.getPluginManager().callEvent(event);
+
+        return event;
     }
 }
