@@ -247,6 +247,27 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public int getArrowCooldown() {
+        return getHandle().al; // PAIL rename arrowCooldown
+    }
+
+    @Override
+    public void setArrowCooldown(int ticks) {
+        getHandle().al = ticks;
+    }
+
+    @Override
+    public int getArrowsInBody() {
+        return getHandle().getArrowCount();
+    }
+
+    @Override
+    public void setArrowsInBody(int count) {
+        Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
+        getHandle().getDataWatcher().set(EntityLiving.bh, count);
+    }
+
+    @Override
     public void damage(double amount) {
         damage(amount, null);
     }
