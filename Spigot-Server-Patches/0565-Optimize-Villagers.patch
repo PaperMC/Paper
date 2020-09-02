@@ -39,9 +39,18 @@ So we cache that and only rebuild it if professions change, which should be neve
 a plugin manipulates and adds custom professions, which it will handle by rebuilding.
 
 diff --git a/src/main/java/net/minecraft/server/BehaviorFindPosition.java b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-index 63a761ebef80d4af09cdc2682e496d78492c4a3a..466180158919c4bf9fde54791511702b36181f29 100644
+index 63a761ebef80d4af09cdc2682e496d78492c4a3a..bab411b102355bc32ea1d2119604d8d363f6ba66 100644
 --- a/src/main/java/net/minecraft/server/BehaviorFindPosition.java
 +++ b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
+@@ -16,7 +16,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+     private final VillagePlaceType b;
+     private final MemoryModuleType<GlobalPos> c;
+     private final boolean d;
+-    private final Optional<Byte> e;
++    private final Optional<Byte> e; private Optional<Byte> getPoiAcquisitionEvent() { return this.e; } // Paper - OBFHELPER
+     private long f;
+     private final Long2ObjectMap<BehaviorFindPosition.a> g;
+ 
 @@ -48,7 +48,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
          if (this.d && entitycreature.isBaby()) {
              return false;
@@ -51,7 +60,7 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..466180158919c4bf9fde54791511702b
              return false;
          } else {
              return worldserver.getTime() >= this.f;
-@@ -56,12 +56,56 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -56,12 +56,57 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
      }
  
      protected void a(WorldServer worldserver, EntityCreature entitycreature, long i) {
@@ -91,6 +100,7 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..466180158919c4bf9fde54791511702b
 +                            if (pathentity != null && pathentity.canReach()) {
 +                                GlobalPos globalPos = GlobalPos.create(worldserver.getDimensionKey(), pos);
 +                                entitycreature.getBehaviorController().setMemory(c, globalPos);
++                                this.getPoiAcquisitionEvent().ifPresent((event) -> worldserver.broadcastEntityEffect(entitycreature, event));
 +                                break OUT;
 +                            }
 +                            if (poiAttempts >= maxPoiAttempts) {
@@ -110,7 +120,7 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..466180158919c4bf9fde54791511702b
          Predicate<BlockPosition> predicate = (blockposition) -> {
              BehaviorFindPosition.a behaviorfindposition_a = (BehaviorFindPosition.a) this.g.get(blockposition.asLong());
  
-@@ -103,6 +147,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -103,6 +148,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
              }
          }
  
