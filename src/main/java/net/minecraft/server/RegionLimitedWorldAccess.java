@@ -30,6 +30,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
     private final BiomeManager m;
     private final ChunkCoordIntPair n;
     private final ChunkCoordIntPair o;
+    private final StructureManager structureManager; // Paper - cache wrapped structure manager
 
     public RegionLimitedWorldAccess(WorldServer worldserver, List<IChunkAccess> list) {
         int i = MathHelper.floor(Math.sqrt((double) list.size()));
@@ -51,6 +52,7 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
             this.m = new BiomeManager(this, BiomeManager.a(this.g), worldserver.getDimensionManager().getGenLayerZoomer());
             this.n = ((IChunkAccess) list.get(0)).getPos();
             this.o = ((IChunkAccess) list.get(list.size() - 1)).getPos();
+            this.structureManager = this.f.getStructureManager().a(this); // Paper - cache wrapped structure manager
         }
     }
 
@@ -379,6 +381,6 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
 
     @Override
     public Stream<? extends StructureStart<?>> a(SectionPosition sectionposition, StructureGenerator<?> structuregenerator) {
-        return this.f.a(sectionposition, structuregenerator);
+        return structureManager.a(sectionposition, structuregenerator); // Paper - wrapped structure manager to prevent deadlock, see #4272 and MC-199487
     }
 }
