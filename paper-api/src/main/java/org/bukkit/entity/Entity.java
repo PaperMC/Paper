@@ -242,9 +242,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * despawning of living entities. </b>
      *
      * @return true if this entity is persistent
-     * @deprecated draft API
      */
-    @Deprecated
     public boolean isPersistent();
 
     /**
@@ -252,9 +250,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param persistent the persistence status
      * @see #isPersistent()
-     * @deprecated draft API
      */
-    @Deprecated
     public void setPersistent(boolean persistent);
 
     /**
