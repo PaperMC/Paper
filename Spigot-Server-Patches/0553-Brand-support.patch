@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DigitalRegent <misterwener@gmail.com>
+Date: Sat, 11 Apr 2020 13:10:58 +0200
+Subject: [PATCH] Brand support
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 911a6e7c2c4af9130384774072b1c92831bb1767..e0c3eab9aef950d91920076990215d79d2b710c6 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -4,6 +4,7 @@ import com.google.common.primitives.Doubles;
+ import com.google.common.primitives.Floats;
+ import com.mojang.brigadier.ParseResults;
+ import com.mojang.brigadier.StringReader;
++import io.netty.buffer.Unpooled;
+ import io.netty.util.concurrent.Future;
+ import io.netty.util.concurrent.GenericFutureListener;
+ import it.unimi.dsi.fastutil.ints.Int2ShortMap;
+@@ -108,6 +109,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
+     private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
+ 
++    private String clientBrandName = null; // Paper - Brand name
++
+     public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
+         this.minecraftServer = minecraftserver;
+         this.networkManager = networkmanager;
+@@ -2733,6 +2736,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     private static final MinecraftKey CUSTOM_REGISTER = new MinecraftKey("register");
+     private static final MinecraftKey CUSTOM_UNREGISTER = new MinecraftKey("unregister");
+ 
++    private static final MinecraftKey MINECRAFT_BRAND = new MinecraftKey("brand"); // Paper - Brand support
++
+     @Override
+     public void a(PacketPlayInCustomPayload packetplayincustompayload) {
+         PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.getWorldServer());
+@@ -2760,6 +2765,16 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             try {
+                 byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
+                 packetplayincustompayload.data.readBytes(data);
++
++                // Paper start - Brand support
++                if (packetplayincustompayload.tag.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end
+                 server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.tag.toString(), data);
+             } catch (Exception ex) {
+                 PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
+@@ -2769,6 +2784,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+     }
+ 
++    // Paper start - brand support
++    public String getClientBrandName() {
++        return clientBrandName;
++    }
++    // Paper end
++
+     public final boolean isDisconnected() {
+         return (!this.player.joining && !this.networkManager.isConnected()) || this.processedDisconnect; // Paper
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 9a812b34698feb7d09f1063a913363b3ea6820eb..c756b2f3faf253420b4d5737389acaa2f38b34ab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2143,6 +2143,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end
+     };
+ 
++    // Paper start - brand support
++    @Override
++    public String getClientBrandName() {
++        return getHandle().playerConnection.getClientBrandName();
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return spigot;

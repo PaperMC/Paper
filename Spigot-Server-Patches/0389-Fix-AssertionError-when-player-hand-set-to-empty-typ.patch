@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukasz Derlatka <toranktto@gmail.com>
+Date: Mon, 11 Nov 2019 16:08:13 +0100
+Subject: [PATCH] Fix AssertionError when player hand set to empty type
+
+Fixes an AssertionError when setting the player's item in hand to null or a new ItemStack of Air in PlayerInteractEvent
+Fixes GH-2718
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 501eb0c0f5aac4385b3eef0c334ed0cf1944abe1..b36f4b5cd023df2e31feafe52850e2dee3660014 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -2049,6 +2049,7 @@ public abstract class EntityLiving extends Entity {
+         return predicate.test(this.getItemInMainHand().getItem()) || predicate.test(this.getItemInOffHand().getItem());
+     }
+ 
++    public final ItemStack getItemInHand(EnumHand enumhand) { return this.b(enumhand); } // Paper - OBFHELPER
+     public ItemStack b(EnumHand enumhand) {
+         if (enumhand == EnumHand.MAIN_HAND) {
+             return this.getEquipment(EnumItemSlot.MAINHAND);
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index f1df55cfcaa3218d6e28df1448306a6f6e43ead6..3c7c092d3a2f0bf61fd9f548ff6f37ed7da6d843 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1468,6 +1468,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
+                 return;
+             }
++            // Paper start
++            itemstack = this.player.getItemInHand(enumhand);
++            if (itemstack.isEmpty()) return;
++            // Paper end
+             EnumInteractionResult enuminteractionresult = this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand);
+ 
+             if (enuminteractionresult.b()) {
