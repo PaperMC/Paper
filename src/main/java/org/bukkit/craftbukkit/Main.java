@@ -149,8 +149,8 @@ public class Main {
             }
 
             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
-            if (javaVersion > 58.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 14 is supported.");
+            if (javaVersion > 59.0) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 15 is supported.");
                 return;
             }
 
@@ -177,7 +177,7 @@ public class Main {
                     useConsole = false;
                 }
 
-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
                     Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
 
                     Calendar deadline = Calendar.getInstance();

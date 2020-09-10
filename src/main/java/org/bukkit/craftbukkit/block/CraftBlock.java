@@ -636,7 +636,7 @@ public class CraftBlock implements Block {
     @Override
     public boolean applyBoneMeal(BlockFace face) {
         EnumDirection direction = blockFaceToNotch(face);
-        ItemActionContext context = new ItemActionContext(getCraftWorld().getHandle(), null, EnumHand.MAIN_HAND, Items.BONE_MEAL.r(), new MovingObjectPositionBlock(Vec3D.a, direction, getPosition(), false)); // PAIL rename createItemStack, ZERO
+        ItemActionContext context = new ItemActionContext(getCraftWorld().getHandle(), null, EnumHand.MAIN_HAND, Items.BONE_MEAL.createItemStack(), new MovingObjectPositionBlock(Vec3D.ORIGIN, direction, getPosition(), false));
 
         return ItemBoneMeal.applyBonemeal(context) == EnumInteractionResult.SUCCESS;
     }
