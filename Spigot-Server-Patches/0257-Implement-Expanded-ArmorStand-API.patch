@@ -8,28 +8,19 @@ Add the following:
 - Enable/Disable slot interactions
 
 diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
-index 9017b98799bde141002282a2709a3ad943999ccb..944c34a7011a0cfc447014e2931c8742f324fe59 100644
+index f2938b115aa34158e76da9f974f5746ed43630e1..c83f7a0baee28c93b035a4bee68eb26374d50a79 100644
 --- a/src/main/java/net/minecraft/server/EntityArmorStand.java
 +++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
-@@ -38,7 +38,7 @@ public class EntityArmorStand extends EntityLiving {
-     private final NonNullList<ItemStack> armorItems;
-     private boolean armorStandInvisible;
-     public long bi;
--    public int bv; //PAIL private -> public, rename disabledSlots
-+    public int bv; public final void setDisabledSlots(int i) { bv = i; } public final int getDisabledSlots() { return bv; } // Paper - OBFHELPER
-     public Vector3f headPose;
-     public Vector3f bodyPose;
-     public Vector3f leftArmPose;
 @@ -387,6 +387,7 @@ public class EntityArmorStand extends EntityLiving {
          return enumitemslot;
      }
  
 +    public final boolean isSlotDisabled(EnumItemSlot slot) { return this.d(slot); } // Paper - OBFHELPER
      private boolean d(EnumItemSlot enumitemslot) {
-         return (this.bv & 1 << enumitemslot.c()) != 0 || enumitemslot.a() == EnumItemSlot.Function.HAND && !this.hasArms();
+         return (this.disabledSlots & 1 << enumitemslot.getSlotFlag()) != 0 || enumitemslot.a() == EnumItemSlot.Function.HAND && !this.hasArms();
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
-index 76176a3de05295a5493e0990116759505029dedc..83838500017025005b89361c0926b15eed003761 100644
+index bf2749fd724ac7b67fc0d5887aa307745c5f1835..c0182f4c1478e6db9901bf0357ad08c3fd3699a9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
 @@ -32,11 +32,13 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
@@ -102,7 +93,7 @@ index 76176a3de05295a5493e0990116759505029dedc..83838500017025005b89361c0926b15e
 +            net.minecraft.server.EnumItemSlot nmsSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot);
 +            disabled += (1 << nmsSlot.c()) + (1 << (nmsSlot.c() + 8)) + (1 << (nmsSlot.c() + 16));
 +        }
-+        getHandle().setDisabledSlots(disabled);
++        getHandle().disabledSlots = disabled;
 +    }
 +
 +    @Override

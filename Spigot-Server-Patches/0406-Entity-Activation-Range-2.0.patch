@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index ca24d27cbc3100e989bf26c0f3f57cad3f97c11f..5263e219ab6c334e55fa4188e7f71594ec764e91 100644
+index 697b3a5dd6664b9c3ce6e945ee7b1fe290ccaef0..64f4768d1f6c19fec39c8e8ffc6ddc30affebdbf 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -163,7 +163,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -40,15 +40,15 @@ index ca24d27cbc3100e989bf26c0f3f57cad3f97c11f..5263e219ab6c334e55fa4188e7f71594
              if (enummovetype == EnumMoveType.PISTON) {
 +                this.activatedTick = MinecraftServer.currentTick + 20; // Paper
                  vec3d = this.b(vec3d);
-                 if (vec3d.equals(Vec3D.a)) {
+                 if (vec3d.equals(Vec3D.ORIGIN)) {
                      return;
 @@ -587,6 +589,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-                 this.x = Vec3D.a;
-                 this.setMot(Vec3D.a);
+                 this.x = Vec3D.ORIGIN;
+                 this.setMot(Vec3D.ORIGIN);
              }
 +            // Paper start - ignore movement changes while inactive.
 +            if (isTemporarilyActive && !(this instanceof EntityItem || this instanceof EntityMinecartAbstract) && vec3d == getMot() && enummovetype == EnumMoveType.SELF) {
-+                setMot(Vec3D.a);
++                setMot(Vec3D.ORIGIN);
 +                this.world.getMethodProfiler().exit();
 +                return;
 +            }
@@ -85,7 +85,7 @@ index 68f1a101174f4a2f7ab5556a5b733f75f3a7802f..4757e5a92c9cf04fa52d62bac6dae782
      protected EntityCreature(EntityTypes<? extends EntityCreature> entitytypes, World world) {
          super(entitytypes, world);
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index f5203a0058974de7f1e3e9e291908ff37d54dbd0..9cf496b5e59b228ed65dca7b6b2fea725fd361d9 100644
+index 033a6c50dff9e5e5706f9e7ab8b95ea7bc37d5dd..04eff01825bcf4cc38a749902065a5f54e73f1d7 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -47,7 +47,7 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -116,7 +116,7 @@ index f5203a0058974de7f1e3e9e291908ff37d54dbd0..9cf496b5e59b228ed65dca7b6b2fea72
          if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {
              EntityInsentient entityinsentient = (EntityInsentient) this.getVehicle();
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 9eb7c8e4f58956d652b5b1f636353f0da98c2606..8ba93673ad5516b597cbe185bb8402fb5ab4e6e7 100644
+index 65a3123b9c623d0a19868ba3dd6456a98c8915ad..725c10f7bd8fab17044d3bbf4ac97d6a09a2dabe 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -98,7 +98,7 @@ public abstract class EntityLiving extends Entity {
@@ -334,7 +334,7 @@ index 182cd7e9110408fff9909ef362d368d055a2b167..f3df10587e652d3a26d15deb09304b97
          return this.c;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 930e41935e0ef1af37eafca005d4e492c3b72a6f..8afacfb8d5f4efd2ad6f95fbb7b0d62e68c51503 100644
+index 303d82bf4ba21b4a74805750650d07778b30d875..77c611a5366943031624b07e64d069f3f1d2e49a 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -82,6 +82,12 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -351,7 +351,7 @@ index 930e41935e0ef1af37eafca005d4e492c3b72a6f..8afacfb8d5f4efd2ad6f95fbb7b0d62e
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a16e64735b7d4c9b65c9d4cb2cdf56cf3e478f5f..49409f15b35f5f42f1f34824b80e0828fd655b56 100644
+index c417b5fae91ab681c44101c8ac233437a0a82343..712c9f5708b4ddaccf961c99aeb57771c7039014 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -743,17 +743,17 @@ public class WorldServer extends World implements GeneratorAccessSeed {
@@ -422,7 +422,7 @@ index a16e64735b7d4c9b65c9d4cb2cdf56cf3e478f5f..49409f15b35f5f42f1f34824b80e0828
 +                    if (isActive) {
                      entity1.passengerTick();
 +                    } else {
-+                        entity1.setMot(Vec3D.a);
++                        entity1.setMot(Vec3D.ORIGIN);
 +                        entity1.inactiveTick();
 +                        // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
 +                        entity.syncPositionOf(entity1);
