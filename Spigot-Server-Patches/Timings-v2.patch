@@ -118,9 +118,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param entity
 +     * @return
 +     */
-+    public static Timing getEntityTimings(Entity entity) {
-+        String entityType = entity.getClass().getName();
-+        return Timings.ofSafe("Minecraft", "## tickEntity - " + entityType, tickEntityTimer);
++    public static Timing getEntityTimings(String entityType, String type) {
++        return Timings.ofSafe("Minecraft", "## tickEntity - " + entityType + " - " + type, tickEntityTimer);
 +    }
 +
 +    /**
@@ -1011,8 +1010,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.entity.LivingEntity;
  import org.bukkit.entity.Vehicle;
 -import org.spigotmc.CustomTimingsHandler; // Spigot
-+import co.aikar.timings.MinecraftTimings; // Paper
-+import co.aikar.timings.Timing; // Paper
  import org.bukkit.event.entity.EntityCombustByEntityEvent;
  import org.bukkit.event.hanging.HangingBreakByEntityEvent;
  import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
@@ -1021,7 +1018,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
      public boolean forceExplosionKnockback; // SPIGOT-949
 -    public CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.SpigotTimings.getEntityTimings(this); // Spigot
-+    public Timing tickTimer = MinecraftTimings.getEntityTimings(this); // Paper
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
@@ -1119,6 +1115,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world.getMethodProfiler().exit();
          if (!this.world.isClientSide && this.dN() && this.aF()) {
              this.damageEntity(DamageSource.DROWN, 1.0F);
+diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityTypes.java
++++ b/src/main/java/net/minecraft/server/EntityTypes.java
+@@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
+         return IRegistry.ENTITY_TYPE.getOptional(MinecraftKey.a(s));
+     }
+ 
+-    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j) {
++    public final String id;
++    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j) { this(entitytypes_b, enumcreaturetype, flag, flag1, flag2, flag3, immutableset, entitysize, i, j, "custom"); } // Paper - old signature
++    public EntityTypes(EntityTypes.b<T> entitytypes_b, EnumCreatureType enumcreaturetype, boolean flag, boolean flag1, boolean flag2, boolean flag3, ImmutableSet<Block> immutableset, EntitySize entitysize, int i, int j, String id) { // Paper - add id
+         this.bf = entitytypes_b;
+         this.bg = enumcreaturetype;
+         this.bl = flag3;
+@@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
+         this.br = entitysize;
+         this.bm = i;
+         this.bn = j;
++
++        // Paper start - timings
++        this.id = id;
++        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
++        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
++        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
++        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
++        // Paper end
+     }
+ 
+     @Nullable
+@@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
+         return this.bn;
+     }
+ 
++    // Paper start - timings
++    public final co.aikar.timings.Timing tickTimer;
++    public final co.aikar.timings.Timing inactiveTickTimer;
++    public final co.aikar.timings.Timing passengerTickTimer;
++    public final co.aikar.timings.Timing passengerInactiveTickTimer;
++    // Paper end
+     public boolean isDeltaTracking() {
+         return this != EntityTypes.PLAYER && this != EntityTypes.LLAMA_SPIT && this != EntityTypes.WITHER && this != EntityTypes.BAT && this != EntityTypes.ITEM_FRAME && this != EntityTypes.LEASH_KNOT && this != EntityTypes.PAINTING && this != EntityTypes.END_CRYSTAL && this != EntityTypes.EVOKER_FANGS;
+     }
+@@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
+                 SystemUtils.a(DataConverterTypes.ENTITY_TREE, s);
+             }
+ 
+-            return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i);
++            return new EntityTypes<>(this.a, this.b, this.d, this.e, this.f, this.g, this.c, this.j, this.h, this.i, s); // Paper - add id
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -1710,15 +1758,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
 +            ++TimingHistory.entityTicks; // Paper - timings
              // Spigot start
++            co.aikar.timings.Timing timer; // Paper
              if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
                  entity.ticksLived++;
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
++                timer =  entity.getEntityType().inactiveTickTimer.startTiming(); try { // Paper - timings
+                 entity.inactiveTick();
++                } finally { timer.stopTiming(); } // Paper
                  return;
              }
              // Spigot end
-+            TimingHistory.activatedEntityTicks++; // Paper - timings
-             entity.tickTimer.startTiming(); // Spigot
-+            try { // Paper - timings
+-            entity.tickTimer.startTiming(); // Spigot
++            // Paper start- timings
++            TimingHistory.activatedEntityTicks++;
++            timer = entity.getVehicle() != null ? entity.getEntityType().passengerTickTimer.startTiming() : entity.getEntityType().tickTimer.startTiming();
++            try {
++            // Paper end - timings
              entity.g(entity.locX(), entity.locY(), entity.locZ());
              entity.lastYaw = entity.yaw;
              entity.lastPitch = entity.pitch;
@@ -1726,9 +1780,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      this.a(entity, entity1);
                  }
              }
-+            } finally { // Paper - timings
-             entity.tickTimer.stopTiming(); // Spigot
-+            } // Paper - timings
+-            entity.tickTimer.stopTiming(); // Spigot
++            } finally { timer.stopTiming(); } // Paper - timings
  
          }
      }
