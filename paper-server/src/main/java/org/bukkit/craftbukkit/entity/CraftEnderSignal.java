@@ -54,12 +54,12 @@ public class CraftEnderSignal extends CraftEntity implements EnderSignal {
 
     @Override
     public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().g()); // PAIL rename getItemStack
+        return CraftItemStack.asBukkitCopy(getHandle().getItem());
     }
 
     @Override
     public void setItem(ItemStack item) {
-        getHandle().b(item != null ? CraftItemStack.asNMSCopy(item) : Items.ENDER_EYE.r()); // PAIL rename setItemStack, createItemStack
+        getHandle().setItem(item != null ? CraftItemStack.asNMSCopy(item) : Items.ENDER_EYE.createItemStack());
     }
 
     @Override

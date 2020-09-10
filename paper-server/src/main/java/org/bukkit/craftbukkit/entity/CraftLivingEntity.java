@@ -248,12 +248,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public int getArrowCooldown() {
-        return getHandle().al; // PAIL rename arrowCooldown
+        return getHandle().arrowCooldown;
     }
 
     @Override
     public void setArrowCooldown(int ticks) {
-        getHandle().al = ticks;
+        getHandle().arrowCooldown = ticks;
     }
 
     @Override
@@ -264,7 +264,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setArrowsInBody(int count) {
         Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
-        getHandle().getDataWatcher().set(EntityLiving.bh, count);
+        getHandle().getDataWatcher().set(EntityLiving.ARROWS_IN_BODY, count);
     }
 
     @Override
@@ -669,7 +669,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             return EntityCategory.ARTHROPOD;
         } else if (type == EnumMonsterType.ILLAGER) {
             return EntityCategory.ILLAGER;
-        } else if (type == EnumMonsterType.e) { // PAIL rename WATER_MOB
+        } else if (type == EnumMonsterType.WATER_MOB) {
             return EntityCategory.WATER;
         }
 

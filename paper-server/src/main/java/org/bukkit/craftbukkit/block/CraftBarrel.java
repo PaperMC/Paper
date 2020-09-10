@@ -39,7 +39,7 @@ public class CraftBarrel extends CraftLootable<TileEntityBarrel> implements Barr
         requirePlaced();
         if (!getTileEntity().opened) {
             IBlockData blockData = getTileEntity().getBlock();
-            boolean open = blockData.get(BlockBarrel.b);
+            boolean open = blockData.get(BlockBarrel.OPEN);
 
             if (!open) {
                 getTileEntity().setOpenFlag(blockData, true);
