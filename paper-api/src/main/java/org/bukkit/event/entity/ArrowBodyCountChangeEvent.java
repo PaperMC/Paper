@@ -84,4 +84,9 @@ public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellabl
     public HandlerList getHandlers() {
         return handlers;
     }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
+        return handlers;
+    }
 }
