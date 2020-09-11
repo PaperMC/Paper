@@ -1,24 +1,21 @@
 --- a/net/minecraft/server/DedicatedServer.java
 +++ b/net/minecraft/server/DedicatedServer.java
-@@ -22,6 +22,17 @@
+@@ -22,6 +22,14 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
-+import java.io.PrintStream;
 +import org.apache.logging.log4j.Level;
-+
++import org.apache.logging.log4j.io.IoBuilder;
 +import org.bukkit.command.CommandSender;
-+import org.bukkit.craftbukkit.LoggerOutputStream;
 +import org.bukkit.event.server.ServerCommandEvent;
-+import org.bukkit.craftbukkit.util.Waitable;
 +import org.bukkit.event.server.RemoteServerCommandEvent;
 +// CraftBukkit end
 +
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -34,8 +45,10 @@
+@@ -34,8 +42,10 @@
      @Nullable
      private ServerGUI q;
  
@@ -31,7 +28,7 @@
          this.propertyManager = dedicatedserversettings;
          this.remoteControlCommandListener = new RemoteControlCommandListener(this);
      }
-@@ -44,13 +57,44 @@
+@@ -44,13 +54,44 @@
      public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -79,7 +76,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -59,6 +103,27 @@
+@@ -59,6 +100,27 @@
              }
          };
  
@@ -100,14 +97,14 @@
 +
 +        new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
 +
-+        System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
-+        System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
++        System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
++        System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
 +        // CraftBukkit end
 +
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -85,7 +150,7 @@
+@@ -85,7 +147,7 @@
          this.setForceGamemode(dedicatedserverproperties.forceGamemode);
          super.setIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
          this.i(dedicatedserverproperties.enforceWhitelist);
@@ -116,7 +113,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -110,6 +175,12 @@
+@@ -110,6 +172,12 @@
              return false;
          }
  
@@ -129,7 +126,7 @@
          if (!this.getOnlineMode()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -124,7 +195,7 @@
+@@ -124,7 +192,7 @@
          if (!NameReferencingFileConverter.e(this)) {
              return false;
          } else {
@@ -138,7 +135,7 @@
              long i = SystemUtils.getMonotonicNanos();
  
              this.c(dedicatedserverproperties.maxBuildHeight);
-@@ -132,7 +203,7 @@
+@@ -132,7 +200,7 @@
              TileEntitySkull.a(this.getMinecraftSessionService());
              UserCache.a(this.getOnlineMode());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getWorld());
@@ -147,7 +144,7 @@
              long j = SystemUtils.getMonotonicNanos() - i;
              String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
  
-@@ -149,6 +220,7 @@
+@@ -149,6 +217,7 @@
              if (dedicatedserverproperties.enableRcon) {
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.remoteControlListener = RemoteControlListener.a((IMinecraftServer) this);
@@ -155,7 +152,7 @@
              }
  
              if (this.getMaxTickTime() > 0L) {
-@@ -259,6 +331,7 @@
+@@ -259,6 +328,7 @@
              this.remoteStatusListener.b();
          }
  
@@ -163,7 +160,7 @@
      }
  
      @Override
-@@ -287,7 +360,15 @@
+@@ -287,7 +357,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
@@ -180,7 +177,7 @@
          }
  
      }
-@@ -497,14 +578,45 @@
+@@ -497,14 +575,45 @@
  
      @Override
      public String getPlugins() {
@@ -228,7 +225,7 @@
          });
          return this.remoteControlCommandListener.getMessages();
      }
-@@ -540,4 +652,15 @@
+@@ -540,4 +649,15 @@
      public boolean isSyncChunkWrites() {
          return this.propertyManager.getProperties().syncChunkWrites;
      }
