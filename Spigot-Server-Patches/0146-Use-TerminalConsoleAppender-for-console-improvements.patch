@@ -19,7 +19,7 @@ Other changes:
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 78c26572ab2ecdd554da38898f1c6c60e13e769c..a1b4f01782c896347c821af93606ed5d3b501c8d 100644
+index e954b100ea0c038c2e2aaba2a0937a6a9ef81f3d..2781d908fc9fcaa902fff1f86e7dffd86bd4c772 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -44,10 +44,27 @@
@@ -53,8 +53,8 @@ index 78c26572ab2ecdd554da38898f1c6c60e13e769c..a1b4f01782c896347c821af93606ed5d
 +            <scope>runtime</scope>
          </dependency>
          <dependency>
-             <groupId>org.ow2.asm</groupId>
-@@ -265,10 +282,18 @@
+             <groupId>org.apache.logging.log4j</groupId>
+@@ -271,10 +288,18 @@
                                  <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                      <resource>META-INF/services/java.sql.Driver</resource>
                                  </transformer>
@@ -144,10 +144,10 @@ index 0000000000000000000000000000000000000000..685deaa0e5d1ddc13e3a7c0471b1cfcf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 5745c6aa86a0411be8bc49ff8e9dd655e91fd68e..6e19b41f41137de8379eb6e0c8650441445e0f2e 100644
+index 2d74d14385c7e705cb210bcfc0780f4c9c6a1cda..4b5da3bf52dc55b7da3109da42c190d4e0d55e36 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -62,6 +62,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -60,6 +60,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                  if (!org.bukkit.craftbukkit.Main.useConsole) {
                      return;
                  }
@@ -157,7 +157,7 @@ index 5745c6aa86a0411be8bc49ff8e9dd655e91fd68e..6e19b41f41137de8379eb6e0c8650441
                  jline.console.ConsoleReader bufferedreader = reader;
  
                  // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
-@@ -101,6 +104,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -99,6 +102,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
                  }
  
@@ -166,7 +166,7 @@ index 5745c6aa86a0411be8bc49ff8e9dd655e91fd68e..6e19b41f41137de8379eb6e0c8650441
              }
          };
  
-@@ -112,6 +117,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -110,6 +115,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
          global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
  
@@ -176,15 +176,15 @@ index 5745c6aa86a0411be8bc49ff8e9dd655e91fd68e..6e19b41f41137de8379eb6e0c8650441
          final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
          for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
              if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-@@ -120,6 +128,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -118,6 +126,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
  
          new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
 +        */
 +        // Paper end
  
-         System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
-         System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
+         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 3f1ab69ac09c0c5ab50a99961a705254f3749f18..08708a42737ce66794083116f55ea209dbf81dcf 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
