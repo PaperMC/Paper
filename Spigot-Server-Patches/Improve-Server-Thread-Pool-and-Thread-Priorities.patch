@@ -31,40 +31,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package net.minecraft.server;
 +
-+import java.util.concurrent.CompletionException;
 +import java.util.concurrent.atomic.AtomicInteger;
 +
 +public class ServerWorkerThread extends Thread {
 +    private static final AtomicInteger threadId = new AtomicInteger(1);
-+    public ServerWorkerThread(Runnable target) {
-+        super(target, "Server-Worker-" + threadId.getAndIncrement());
-+        setPriority(Thread.NORM_PRIORITY-1); // Deprioritize over main
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
 +        this.setDaemon(true);
-+        this.setUncaughtExceptionHandler((thread, throwable) -> {
-+            thread.setDaemon(true);
-+            if (throwable instanceof CompletionException) {
-+                throwable = throwable.getCause();
-+            }
-+
-+            if (throwable instanceof ReportedException) {
-+                DispenserRegistry.a(((ReportedException) throwable).a().e());
-+                System.exit(-1);
-+            }
-+
-+            MinecraftServer.LOGGER.error(String.format("Caught exception in thread %s", thread), throwable);
-+        });
++        this.setUncaughtExceptionHandler(SystemUtils::onThreadError);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/SystemUtils.java
 +++ b/src/main/java/net/minecraft/server/SystemUtils.java
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+ public class SystemUtils {
+ 
+     private static final AtomicInteger c = new AtomicInteger(1);
+-    private static final ExecutorService d = a("Bootstrap");
+-    private static final ExecutorService e = a("Main");
++    private static final ExecutorService d = a("Bootstrap", -2); // Paper - add -2 priority
++    private static final ExecutorService e = a("Main", -1); // Paper - add -1 priority
+     private static final ExecutorService f = n();
+     public static LongSupplier a = System::nanoTime;
+     public static final UUID b = new UUID(0L, 0L); public static final UUID getNullUUID() {return b;} // Paper OBFHELPER
 @@ -0,0 +0,0 @@ public class SystemUtils {
+         return Instant.now().toEpochMilli();
      }
  
-     private static ExecutorService a(String s) {
+-    private static ExecutorService a(String s) {
 -        int i = MathHelper.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, 7);
 -        Object object;
++    private static ExecutorService a(String s, int priorityModifier) { // Paper - add priority
 +        // Paper start - use simpler thread pool that allows 1 thread
 +        int i = Math.min(8, Math.max(Runtime.getRuntime().availableProcessors() - 2, 1));
 +        i = Integer.getInteger("Paper.WorkerThreadCount", i);
@@ -75,7 +75,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
 -            object = new ForkJoinPool(i, (forkjoinpool) -> {
 -                ForkJoinWorkerThread forkjoinworkerthread = new ForkJoinWorkerThread(forkjoinpool) {
-+            object = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), ServerWorkerThread::new);
++            object = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<Runnable>(), target -> new ServerWorkerThread(target, s, priorityModifier));
 +        }
 +        /*
                      protected void onTermination(Throwable throwable) {
@@ -89,3 +89,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return (ExecutorService) object;
      }
+@@ -0,0 +0,0 @@ public class SystemUtils {
+         });
+     }
+ 
++    public static void onThreadError(Thread thread, Throwable throwable) { a(thread, throwable); } // Paper - OBFHELPER
+     private static void a(Thread thread, Throwable throwable) {
+         c(throwable);
+         if (throwable instanceof CompletionException) {
