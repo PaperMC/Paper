@@ -1,0 +1,156 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 12 Sep 2020 22:20:55 -0400
+Subject: [PATCH] Only consider chunks Loaded if at BORDER status
+
+This greatly improves performance as it drastically reduces the amount
+of Entities and Tile Entities that are "registered" into the world, as
+purely "cached" chunks will no longer have their entities hanging out in the world.
+
+Additionally this fixes our Entity Add To World and Entity Remove From World events
+
+Those events have not been firing correctly since MC changed how chunks work here.
+
+Now the server will only consider a chunk "loaded" if it's got a ticket putting
+it at level 33 or lower, which matches the public Bukkit API.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         int chunkX = this.loc.x;
+         int chunkZ = this.loc.z;
+         ChunkProviderServer chunkProvider = ((WorldServer)this.world).getChunkProvider();
++        chunkProvider.playerChunkMap.loadChunk(this); // Paper - move load logic from the entering full status to when it enters border status instead
+         for (int dx = -NEIGHBOUR_CACHE_RADIUS; dx <= NEIGHBOUR_CACHE_RADIUS; ++dx) {
+             for (int dz = -NEIGHBOUR_CACHE_RADIUS; dz <= NEIGHBOUR_CACHE_RADIUS; ++dz) {
+                 Chunk neighbour = chunkProvider.getChunkAtIfLoadedMainThreadNoCache(chunkX + dx, chunkZ + dz);
+@@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
+         this.loadedTicketLevel = false;
+         this.resetNeighbours();
+         // Paper end
++        // Paper start - move unload logic from the actual full unload to be when it leaves border status
++        chunkProvider.playerChunkMap.loadedChunks.remove(loc.longKey);
++        setLoaded(false);
++        this.world.unloadChunk(this);
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ import java.util.function.Supplier;
+ import javax.annotation.Nullable;
+ import com.destroystokyo.paper.exception.ServerInternalException;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap; // Paper
++import it.unimi.dsi.fastutil.longs.LongIterator; // Paper
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+             //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
+             //Collections.shuffle(list); // Paper
+             // Paper - moved up
+-            final int[] chunksTicked = {0}; this.playerChunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
++            final int[] chunksTicked = {0};
++            this.playerChunkMap.forEachVisibleChunk((playerchunk) -> {
++            //for (LongIterator iterator = this.playerChunkMap.loadedChunks.iterator() ; iterator.hasNext() ; ) { // Paper - iterate only loaded chunks
++                //PlayerChunk playerchunk = this.playerChunkMap.getVisibleChunk(iterator.nextLong());// Paper - iterate only loaded chunks
+                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
+ 
+                 if (optional.isPresent()) {
+@@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
+                         }
+                     }
+                 }
+-            });
++            });// Paper - use for instead of forEachVisibleChunk
+             this.world.getMethodProfiler().enter("customSpawners");
+             if (flag1) {
+                 try (co.aikar.timings.Timing ignored = this.world.timings.miscMobSpawning.startTiming()) { // Paper - timings
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                 this.a(i, playerchunk);
+             } else {
+                 if (this.pendingUnload.remove(i, playerchunk) && ichunkaccess != null) {
++                    // Paper start - coment out and move to ChunkUnloadEvent
+                     if (ichunkaccess instanceof Chunk) {
+-                        ((Chunk) ichunkaccess).setLoaded(false);
++                        //((Chunk) ichunkaccess).setLoaded(false);
+                     }
+ 
+                     //this.saveChunk(ichunkaccess);// Paper - delay
+-                    if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
+-                        Chunk chunk = (Chunk) ichunkaccess;
+-
+-                        this.world.unloadChunk(chunk);
+-                    }
++//                    if (this.loadedChunks.remove(i) && ichunkaccess instanceof Chunk) {
++//                        Chunk chunk = (Chunk) ichunkaccess;
++//
++//                        this.world.unloadChunk(chunk);
++//                    }
++                    // Paper end
+                     this.autoSaveQueue.remove(playerchunk); // Paper
+ 
+                     try {
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                     return PlayerChunk.getChunkState(playerchunk.getTicketLevel());
+                 });
+                 chunk.addEntities();
++                // Paper start
++                return chunk;
++            } // Paper
++            });
++        }, (runnable) -> {
++
++            this.mailboxMain.a(ChunkTaskQueueSorter.a(runnable, playerchunk.i().pair(), () -> 1)); // Paper - final loads are always urgent!
++        });
++    }
++    public void loadChunk(Chunk chunk) {
++        if (true) {
++            if (true) {
++                ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
++                // Paper end
+                 if (this.loadedChunks.add(chunkcoordintpair.pair())) {
+                     chunk.setLoaded(true);
+                     this.world.a(chunk.getTileEntities().values());
+@@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                         list.forEach(chunk::b);
+                     }
+                 }
+-
+-                return chunk;
+-                } // Paper
+-            });
+-        }, (runnable) -> {
+-            Mailbox mailbox = this.mailboxMain;
+-            long i = playerchunk.i().pair();
+-
+-            playerchunk.getClass();
+-            mailbox.a(ChunkTaskQueueSorter.a(runnable, i, () -> 1)); // Paper - final loads are always urgent!
+-        });
++                // Paper start
++            }
++        }
++        // Move code up
++//                return chunk;
++//                } // Paper
++//            });
++//        }, (runnable) -> {
++//            Mailbox mailbox = this.mailboxMain;
++//            long i = playerchunk.i().pair();
++//
++//            playerchunk.getClass();
++//            mailbox.a(ChunkTaskQueueSorter.a(runnable, i, () -> 1)); // Paper - final loads are always urgent!
++//        });
++        // Paper end
+     }
+ 
+     // Paper start
