@@ -409,6 +409,18 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all furnace materials.
      */
     Tag<Material> ITEMS_FURNACE_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("furnace_materials"), Material.class);
+    /**
+     * Key for the built in fluid registry.
+     */
+    String REGISTRY_FLUIDS = "fluids";
+    /**
+     * Vanilla fluid tag representing lava and flowing lava.
+     */
+    Tag<Fluid> FLUIDS_LAVA = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("lava"), Fluid.class);
+    /**
+     * Vanilla fluid tag representing water and flowing water.
+     */
+    Tag<Fluid> FLUIDS_WATER = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("water"), Fluid.class);
 
     /**
      * Returns whether or not this tag has an entry for the specified item.

@@ -158,6 +158,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return MemoryKey.getByKey(key);
         }
     };
+    /**
+     * Server fluids.
+     *
+     * @see Fluid
+     */
+    Registry<Fluid> FLUID = new SimpleRegistry<>(Fluid.class);
 
     /**
      * Get the object by its key.
