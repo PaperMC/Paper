@@ -68,6 +68,7 @@ import net.minecraft.server.Enchantments;
 import net.minecraft.server.EntityPlayer;
 import net.minecraft.server.EnumDifficulty;
 import net.minecraft.server.EnumGamemode;
+import net.minecraft.server.FluidType;
 import net.minecraft.server.GameRules;
 import net.minecraft.server.GeneratorSettings;
 import net.minecraft.server.IRecipe;
@@ -166,6 +167,7 @@ import org.bukkit.craftbukkit.potion.CraftPotionBrewer;
 import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftIconCache;
@@ -1953,6 +1955,10 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have material type");
 
                 return (org.bukkit.Tag<T>) new CraftItemTag(console.getTagRegistry().getItemTags(), key);
+            case org.bukkit.Tag.REGISTRY_FLUIDS:
+                Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+
+                return (org.bukkit.Tag<T>) new CraftFluidTag(console.getTagRegistry().getFluidTags(), key);
             default:
                 throw new IllegalArgumentException();
         }
@@ -1972,6 +1978,11 @@ public final class CraftServer implements Server {
 
                 Tags<Item> itemTags = console.getTagRegistry().getItemTags();
                 return itemTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, key)).collect(ImmutableList.toImmutableList());
+            case org.bukkit.Tag.REGISTRY_FLUIDS:
+                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace must have fluid type");
+
+                Tags<FluidType> fluidTags = console.getTagRegistry().getFluidTags();
+                return fluidTags.a().keySet().stream().map(key -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, key)).collect(ImmutableList.toImmutableList());
             default:
                 throw new IllegalArgumentException();
         }

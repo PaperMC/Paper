@@ -24,6 +24,7 @@ import net.minecraft.server.ChatDeserializer;
 import net.minecraft.server.DataConverterRegistry;
 import net.minecraft.server.DataConverterTypes;
 import net.minecraft.server.DynamicOpsNBT;
+import net.minecraft.server.FluidType;
 import net.minecraft.server.IBlockData;
 import net.minecraft.server.IRegistry;
 import net.minecraft.server.Item;
@@ -37,8 +38,10 @@ import net.minecraft.server.NBTTagString;
 import net.minecraft.server.SavedFile;
 import net.minecraft.server.SharedConstants;
 import org.bukkit.Bukkit;
+import org.bukkit.Fluid;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -83,8 +86,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
     // ========================================================================
     private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
     private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
+    private static final Map<FluidType, Fluid> FLUID_MATERIAL = new HashMap<>();
     private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
+    private static final Map<Material, FluidType> MATERIAL_FLUID = new HashMap<>();
 
     static {
         for (Block block : IRegistry.BLOCK) {
@@ -93,6 +98,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         for (Item item : IRegistry.ITEM) {
             ITEM_MATERIAL.put(item, Material.getMaterial(IRegistry.ITEM.getKey(item).getKey().toUpperCase(Locale.ROOT)));
+        }
+
+        for (FluidType fluid : IRegistry.FLUID) {
+            FLUID_MATERIAL.put(fluid, Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(IRegistry.FLUID.getKey(fluid))));
         }
 
         for (Material material : Material.values()) {
@@ -107,6 +116,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
             IRegistry.BLOCK.getOptional(key).ifPresent((block) -> {
                 MATERIAL_BLOCK.put(material, block);
             });
+            IRegistry.FLUID.getOptional(key).ifPresent((fluid) -> {
+                MATERIAL_FLUID.put(material, fluid);
+            });
         }
     }
 
@@ -116,6 +128,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     public static Material getMaterial(Item item) {
         return ITEM_MATERIAL.getOrDefault(item, Material.AIR);
+    }
+
+    public static Fluid getFluid(FluidType fluid) {
+        return FLUID_MATERIAL.get(fluid);
     }
 
     public static Item getItem(Material material) {
@@ -132,6 +148,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         return MATERIAL_BLOCK.get(material);
+    }
+
+    public static FluidType getFluid(Fluid fluid) {
+        return MATERIAL_FLUID.get(fluid);
     }
 
     public static MinecraftKey key(Material mat) {
