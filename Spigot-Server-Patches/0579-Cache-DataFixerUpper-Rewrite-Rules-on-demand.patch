@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 12 Sep 2020 17:21:38 -0400
+Subject: [PATCH] Cache DataFixerUpper Rewrite Rules on demand
+
+Mojang precaches every single potential rewrite rule that could ever
+exist on server startup. This includes rules from all the way back to versions from 6+ years ago.
+
+This is the source of why the server hogs every CPU core at 100% every start.
+
+For anyone who hard resets for updates or has force upgraded their entire world, this
+results in completely wasted cpu cycles.
+
+This massive CPU usage also delays server startup time.
+
+We improve this by making "min version to precache" that defaults to a future version
+so that no rewrite rules are precached.
+
+someone who expects to be converting a lot chunks could theoretically set
+-DPaper.minPrecachedDatafixVersion=<dataVersionConvertingFrom> as a startup
+parameter and only build from that point on.
+
+However this will likely never be needed as the server will still run
+the same cache logic on demand when it's actually needed. The only
+cost would be some delay on the FIRST chunk conversion, but paper already
+runs chunk conversions on another thread so this will likely never be
+a concern for TPS.
+
+This patch will significantly reduce CPU use on startup, reduce memory usage,
+and improve server startup time.
+
+diff --git a/src/main/java/com/mojang/datafixers/DataFixerBuilder.java b/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
+index edb77982d273e9492ab1a669ca1ad89da2ec3c3e..abc265b00044b14abb55c2628d454ee01fef467b 100644
+--- a/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
++++ b/src/main/java/com/mojang/datafixers/DataFixerBuilder.java
+@@ -26,8 +26,10 @@ public class DataFixerBuilder {
+     private final Int2ObjectSortedMap<Schema> schemas = new Int2ObjectAVLTreeMap<>();
+     private final List<DataFix> globalList = Lists.newArrayList();
+     private final IntSortedSet fixerVersions = new IntAVLTreeSet();
++    private final int minDataFixPrecacheVersion; // Paper
+ 
+     public DataFixerBuilder(final int dataVersion) {
++        minDataFixPrecacheVersion = Integer.getInteger("Paper.minPrecachedDatafixVersion", dataVersion+1) * 10; // Paper - default to precache nothing - mojang stores versions * 10 to allow for 'sub versions'
+         this.dataVersion = dataVersion;
+     }
+ 
+@@ -65,6 +67,7 @@ public class DataFixerBuilder {
+         final IntBidirectionalIterator iterator = fixerUpper.fixerVersions().iterator();
+         while (iterator.hasNext()) {
+             final int versionKey = iterator.nextInt();
++            if (versionKey < minDataFixPrecacheVersion) continue; // Paper
+             final Schema schema = schemas.get(versionKey);
+             for (final String typeName : schema.types()) {
+                 CompletableFuture.runAsync(() -> {

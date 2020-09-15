@@ -19,7 +19,7 @@ Other changes:
     configuration
 
 diff --git a/pom.xml b/pom.xml
-index 3dfb494e1f09da7a6ebf6c740d4e9e06eb7d4121..acb8c50c14b3bf4cc2468a426b93196117882d88 100644
+index e954b100ea0c038c2e2aaba2a0937a6a9ef81f3d..2781d908fc9fcaa902fff1f86e7dffd86bd4c772 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -44,10 +44,27 @@
@@ -53,8 +53,8 @@ index 3dfb494e1f09da7a6ebf6c740d4e9e06eb7d4121..acb8c50c14b3bf4cc2468a426b931961
 +            <scope>runtime</scope>
          </dependency>
          <dependency>
-             <groupId>org.ow2.asm</groupId>
-@@ -265,10 +282,18 @@
+             <groupId>org.apache.logging.log4j</groupId>
+@@ -271,10 +288,18 @@
                                  <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                      <resource>META-INF/services/java.sql.Driver</resource>
                                  </transformer>
@@ -144,10 +144,10 @@ index 0000000000000000000000000000000000000000..685deaa0e5d1ddc13e3a7c0471b1cfcf
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 56a3ef812966f9dce9c53b105a56e1761cdb467b..44da68eb8e7c01800156e157cf7bc1c9003bef59 100644
+index 971be962f5031dc6bb5f6cbb7bb7667896f4a50e..3bdde27a52c88b5f0621bdaf30ccd1ac00160b64 100644
 --- a/src/main/java/net/minecraft/server/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -62,6 +62,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -60,6 +60,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                  if (!org.bukkit.craftbukkit.Main.useConsole) {
                      return;
                  }
@@ -157,7 +157,7 @@ index 56a3ef812966f9dce9c53b105a56e1761cdb467b..44da68eb8e7c01800156e157cf7bc1c9
                  jline.console.ConsoleReader bufferedreader = reader;
  
                  // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
-@@ -101,6 +104,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -99,6 +102,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
                  }
  
@@ -166,7 +166,7 @@ index 56a3ef812966f9dce9c53b105a56e1761cdb467b..44da68eb8e7c01800156e157cf7bc1c9
              }
          };
  
-@@ -112,6 +117,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -110,6 +115,9 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
          global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
  
@@ -176,17 +176,17 @@ index 56a3ef812966f9dce9c53b105a56e1761cdb467b..44da68eb8e7c01800156e157cf7bc1c9
          final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
          for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
              if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-@@ -120,6 +128,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+@@ -118,6 +126,8 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
          }
  
          new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
 +        */
 +        // Paper end
  
-         System.setOut(new PrintStream(new LoggerOutputStream(logger, Level.INFO), true));
-         System.setErr(new PrintStream(new LoggerOutputStream(logger, Level.WARN), true));
+         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 42365b2f183a08e799533c1e9757cca13729d8fe..b10dc2e552a43cd632aaee336203ddccc64d43b9 100644
+index 3f1ab69ac09c0c5ab50a99961a705254f3749f18..08708a42737ce66794083116f55ea209dbf81dcf 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -58,7 +58,7 @@ import org.apache.logging.log4j.LogManager;
@@ -245,7 +245,7 @@ index 42365b2f183a08e799533c1e9757cca13729d8fe..b10dc2e552a43cd632aaee336203ddcc
  
      public KeyPair getKeyPair() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 6e4fb963cb5d8962a3021b1a614f81b08cb10bdb..847e132803afcedfaadbeb037f193841272942b7 100644
+index ab3c18b6d29397d1a7faff376043f6c3fe402f5d..fb14381b5bfca33431879c8b6a8b559c5599ba4a 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -79,8 +79,7 @@ public abstract class PlayerList {
@@ -259,7 +259,7 @@ index 6e4fb963cb5d8962a3021b1a614f81b08cb10bdb..847e132803afcedfaadbeb037f193841
  
          this.k = new GameProfileBanList(PlayerList.b);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 38d57b4769324c65ffa0812e8cc343ba0736a50e..fb2bc9fabefc5126b56979247ca0273c080605cc 100644
+index b54d24096bba7afd33b45cf22dfcdafcfa31eb3d..2eb2c0c93b0d67ad7474e37158dab44018c9cbac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -46,7 +46,7 @@ import java.util.function.Consumer;
@@ -271,7 +271,7 @@ index 38d57b4769324c65ffa0812e8cc343ba0736a50e..fb2bc9fabefc5126b56979247ca0273c
  import net.minecraft.server.Advancement;
  import net.minecraft.server.ArgumentEntity;
  import net.minecraft.server.BiomeManager;
-@@ -1192,9 +1192,13 @@ public final class CraftServer implements Server {
+@@ -1194,9 +1194,13 @@ public final class CraftServer implements Server {
          return logger;
      }
  
@@ -286,7 +286,7 @@ index 38d57b4769324c65ffa0812e8cc343ba0736a50e..fb2bc9fabefc5126b56979247ca0273c
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 463915ca7afa9a6f4337590e9c289fa23148aea8..a6f1d016696bd4feb836d5d12358b53ec9347c0e 100644
+index 868a67c5023e61960d6225de8ad1506c46177733..eae93b314fed9f7ddf1c0b87228a2f3bc9f73a78 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -12,7 +12,7 @@ import java.util.logging.Level;
