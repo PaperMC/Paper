@@ -385,10 +385,12 @@ public class PlayerInteractManager {
                     // return true; // CraftBukkit
                 }
                 // CraftBukkit start
+                java.util.List<EntityItem> itemsToDrop = world.captureDrops; // Paper - store current list
+                world.captureDrops = null; // Paper - Remove this earlier so that we can actually drop stuff
                 if (event.isDropItems()) {
-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, world.captureDrops);
+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, itemsToDrop); // Paper - use stored ref
                 }
-                world.captureDrops = null;
+                //world.captureDrops = null; // Paper - move up
 
                 // Drop event experience
                 if (flag && event != null) {
