@@ -11,7 +11,32 @@
      }
  
      public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
-@@ -223,6 +223,7 @@
+@@ -127,6 +127,24 @@
+ 
+     @Nullable
+     public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(ServerLevel world, HolderSet<Structure> structures, BlockPos center, int radius, boolean skipReferencedStructures) {
++        // Paper start - StructuresLocateEvent
++        final org.bukkit.World bukkitWorld = world.getWorld();
++        final org.bukkit.Location origin = io.papermc.paper.util.MCUtil.toLocation(world, center);
++        final List<org.bukkit.generator.structure.Structure> apiStructures = structures.stream().map(Holder::value).map(nms -> org.bukkit.craftbukkit.generator.structure.CraftStructure.minecraftToBukkit(nms)).toList();
++        if (!apiStructures.isEmpty()) {
++            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, radius, skipReferencedStructures);
++            if (!event.callEvent()) {
++                return null;
++            }
++            if (event.getResult() != null) {
++                return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), world.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(event.getResult().structure())));
++            }
++            center = io.papermc.paper.util.MCUtil.toBlockPosition(event.getOrigin());
++            radius = event.getRadius();
++            skipReferencedStructures = event.shouldFindUnexplored();
++            structures = HolderSet.direct(api -> world.registryAccess().lookupOrThrow(Registries.STRUCTURE).wrapAsHolder(org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraft(api)), event.getStructures());
++        }
++        // Paper end
+         ChunkGeneratorStructureState chunkgeneratorstructurestate = world.getChunkSource().getGeneratorState();
+         Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap();
+         Iterator iterator = structures.iterator();
+@@ -223,6 +241,7 @@
  
              while (iterator.hasNext()) {
                  ChunkPos chunkcoordintpair = (ChunkPos) iterator.next();
@@ -19,7 +44,7 @@
  
                  blockposition_mutableblockposition.set(SectionPos.sectionToBlockCoord(chunkcoordintpair.x, 8), 32, SectionPos.sectionToBlockCoord(chunkcoordintpair.z, 8));
                  double d1 = blockposition_mutableblockposition.distSqr(center);
-@@ -312,29 +313,29 @@
+@@ -312,29 +331,29 @@
          }
      }
  
@@ -56,7 +81,7 @@
  
                      Objects.requireNonNull(set);
                      palettedcontainerro.getAll(set::add);
-@@ -345,7 +346,7 @@
+@@ -345,7 +364,7 @@
              int j = list.size();
  
              try {
@@ -65,7 +90,7 @@
                  int k = Math.max(GenerationStep.Decoration.values().length, j);
  
                  for (int l = 0; l < k; ++l) {
-@@ -353,7 +354,7 @@
+@@ -353,7 +372,7 @@
                      Iterator iterator;
                      CrashReportCategory crashreportsystemdetails;
  
@@ -74,7 +99,7 @@
                          List<Structure> list1 = (List) map.getOrDefault(l, Collections.emptyList());
  
                          for (iterator = list1.iterator(); iterator.hasNext(); ++i1) {
-@@ -368,9 +369,9 @@
+@@ -368,9 +387,9 @@
                              };
  
                              try {
@@ -87,7 +112,7 @@
                                  });
                              } catch (Exception exception) {
                                  CrashReport crashreport = CrashReport.forThrowable(exception, "Feature placement");
-@@ -421,8 +422,8 @@
+@@ -421,8 +440,8 @@
                              seededrandom.setFeatureSeed(i, l1, l);
  
                              try {
@@ -98,7 +123,7 @@
                              } catch (Exception exception1) {
                                  CrashReport crashreport1 = CrashReport.forThrowable(exception1, "Feature placement");
  
-@@ -435,7 +436,7 @@
+@@ -435,7 +454,7 @@
                      }
                  }
  
@@ -107,7 +132,7 @@
              } catch (Exception exception2) {
                  CrashReport crashreport2 = CrashReport.forThrowable(exception2, "Biome decoration");
  
-@@ -445,6 +446,33 @@
+@@ -445,6 +464,33 @@
          }
      }
  
@@ -141,7 +166,7 @@
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos chunkcoordintpair = chunk.getPos();
          int i = chunkcoordintpair.getMinBlockX();
-@@ -582,6 +610,14 @@
+@@ -582,6 +628,14 @@
          StructureStart structurestart = structure.generate(weightedEntry.structure(), dimension, dynamicRegistryManager, this, this.biomeSource, noiseConfig, structureManager, seed, pos, j, chunk, predicate);
  
          if (structurestart.isValid()) {
