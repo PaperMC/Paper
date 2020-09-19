@@ -4000,14 +4000,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      // CraftBukkit start
-     public Chunk getFullChunk() {
+-    public Chunk getFullChunk() {
++    public final Chunk getFullChunk() { // Paper - final for inline
          if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
-@@ -0,0 +0,0 @@ public class PlayerChunk {
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
+         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
          return either == null ? null : (Chunk) either.left().orElse(null);
      }
      // CraftBukkit end
 +    // Paper start - "real" get full chunk immediately
-+    public Chunk getFullChunkIfCached() {
++    public final Chunk getFullChunkIfCached() {
 +        // Note: Copied from above without ticket level check
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
 +        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
@@ -4021,20 +4023,53 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() { // Paper - final for inline
          return this.tickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() { return this.b(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() { // Paper - final for inline
          return this.entityTickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getFullChunkFuture() { return this.c(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() { // Paper - final for inline
          return this.fullChunkFuture;
      }
+ 
+     @Nullable
+-    public Chunk getChunk() {
++    public final Chunk getChunk() { // Paper - final for inline
+         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
+         Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         return null;
+     }
+ 
+-    public CompletableFuture<IChunkAccess> getChunkSave() {
++    public final CompletableFuture<IChunkAccess> getChunkSave() { // Paper - final for inline
+         return this.chunkSave;
+     }
+ 
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+         });
+     }
+ 
+-    public ChunkCoordIntPair i() {
++    public final ChunkCoordIntPair i() { // Paper - final for inline
+         return this.location;
+     }
+ 
+-    public int getTicketLevel() {
++    public final int getTicketLevel() { // Paper - final for inline
+         return this.ticketLevel;
+     }
+ 
 @@ -0,0 +0,0 @@ public class PlayerChunk {
  
          this.hasBeenLoaded |= flag3;
@@ -4373,18 +4408,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+         return i < 0 || i >= 256;
      }
  
+-    public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
++    public final Chunk getChunkAtWorldCoords(BlockPosition blockposition) { // Paper - help inline
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
+ 
+     @Override
+-    public Chunk getChunkAt(int i, int j) {
+-        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
++    public final Chunk getChunkAt(int i, int j) { // Paper - final to help inline
++        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL, true); // Paper - avoid a method jump
++    }
++
 +    // Paper start - if loaded
 +    @Nullable
 +    @Override
-+    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++    public final IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((WorldServer)this).chunkProvider.getChunkAtIfLoadedImmediately(x, z);
-+    }
-+
-+    @Override
-+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+     }
+ 
+     @Override
+-    public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    public final IBlockData getTypeIfLoaded(BlockPosition blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
 +            CraftBlockState previous = capturedBlockStates.get(blockposition);
@@ -4409,9 +4457,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     @Override
-     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    @Override
++    public final IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) { // Paper - final for inline
          IChunkAccess ichunkaccess = this.getChunkProvider().getChunkAt(i, j, chunkstatus, flag);
+ 
+         if (ichunkaccess == null && flag) {
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     @Override
+-    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
++    public final boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) { // Paper - final for inline
+         return this.a(blockposition, iblockdata, i, 512);
+     }
+ 
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
