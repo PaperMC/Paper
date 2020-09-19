@@ -675,4 +675,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Spigot.");
     }
+
+    @Override
+    public boolean isInvisible() {
+        return getHandle().isInvisible();
+    }
+
+    @Override
+    public void setInvisible(boolean invisible) {
+        getHandle().persistentInvisibility = invisible;
+        getHandle().setFlag(5, invisible);
+    }
 }
