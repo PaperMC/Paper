@@ -3929,7 +3929,7 @@ index 8bdda63a2807635e8780481244251f6e35c13627..36a7e41cc5036345929ebf4d2fa160a8
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa34335fb0f 100644
+index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..0f82376ac386ce4dfcf2799fbd92a32ca37095e5 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -21,9 +21,9 @@ public class PlayerChunk {
@@ -3954,7 +3954,7 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
-@@ -54,8 +56,47 @@ public class PlayerChunk {
+@@ -54,16 +56,63 @@ public class PlayerChunk {
          this.ticketLevel = this.oldTicketLevel;
          this.n = this.oldTicketLevel;
          this.a(i);
@@ -4000,14 +4000,16 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
 +    // Paper end
 +
      // CraftBukkit start
-     public Chunk getFullChunk() {
+-    public Chunk getFullChunk() {
++    public final Chunk getFullChunk() { // Paper - final for inline
          if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
-@@ -64,6 +105,14 @@ public class PlayerChunk {
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
+         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
          return either == null ? null : (Chunk) either.left().orElse(null);
      }
      // CraftBukkit end
 +    // Paper start - "real" get full chunk immediately
-+    public Chunk getFullChunkIfCached() {
++    public final Chunk getFullChunkIfCached() {
 +        // Note: Copied from above without ticket level check
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
 +        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
@@ -4017,24 +4019,57 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
-@@ -75,14 +124,17 @@ public class PlayerChunk {
+@@ -75,20 +124,23 @@ public class PlayerChunk {
          return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() { // Paper - final for inline
          return this.tickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() { return this.b(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() { // Paper - final for inline
          return this.entityTickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getFullChunkFuture() { return this.c(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() { // Paper - final for inline
          return this.fullChunkFuture;
      }
+ 
+     @Nullable
+-    public Chunk getChunk() {
++    public final Chunk getChunk() { // Paper - final for inline
+         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
+         Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+@@ -113,7 +165,7 @@ public class PlayerChunk {
+         return null;
+     }
+ 
+-    public CompletableFuture<IChunkAccess> getChunkSave() {
++    public final CompletableFuture<IChunkAccess> getChunkSave() { // Paper - final for inline
+         return this.chunkSave;
+     }
+ 
+@@ -254,11 +306,11 @@ public class PlayerChunk {
+         });
+     }
+ 
+-    public ChunkCoordIntPair i() {
++    public final ChunkCoordIntPair i() { // Paper - final for inline
+         return this.location;
+     }
+ 
+-    public int getTicketLevel() {
++    public final int getTicketLevel() { // Paper - final for inline
+         return this.ticketLevel;
+     }
+ 
 @@ -329,13 +381,27 @@ public class PlayerChunk {
  
          this.hasBeenLoaded |= flag3;
@@ -4352,7 +4387,7 @@ index ff41038ce6d2c1a8093bce3539070fa0ccfd61c2..ed0f9c5d29c4f88b7beee4b0ecdd7a56
          return VoxelShapes.b;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498ba0fd4e71 100644
+index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..4059aaf6da1bfe6003e2d94ce33e32eb1aaa93c9 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -4372,19 +4407,32 @@ index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498b
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
-@@ -212,6 +213,39 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+@@ -203,17 +204,50 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return i < 0 || i >= 256;
      }
  
+-    public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
++    public final Chunk getChunkAtWorldCoords(BlockPosition blockposition) { // Paper - help inline
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
+ 
+     @Override
+-    public Chunk getChunkAt(int i, int j) {
+-        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
++    public final Chunk getChunkAt(int i, int j) { // Paper - final to help inline
++        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL, true); // Paper - avoid a method jump
++    }
++
 +    // Paper start - if loaded
 +    @Nullable
 +    @Override
-+    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++    public final IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((WorldServer)this).chunkProvider.getChunkAtIfLoadedImmediately(x, z);
-+    }
-+
-+    @Override
-+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+     }
+ 
+     @Override
+-    public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    public final IBlockData getTypeIfLoaded(BlockPosition blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
 +            CraftBlockState previous = capturedBlockStates.get(blockposition);
@@ -4409,9 +4457,20 @@ index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498b
 +    }
 +    // Paper end
 +
-     @Override
-     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    @Override
++    public final IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) { // Paper - final for inline
          IChunkAccess ichunkaccess = this.getChunkProvider().getChunkAt(i, j, chunkstatus, flag);
+ 
+         if (ichunkaccess == null && flag) {
+@@ -224,7 +258,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     @Override
+-    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
++    public final boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) { // Paper - final for inline
+         return this.a(blockposition, iblockdata, i, 512);
+     }
+ 
 @@ -370,8 +404,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
