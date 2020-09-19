@@ -1048,7 +1048,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final int MAX_PRIORITIES = PlayerChunkMap.GOLDEN_TICKET + 2;
 +
 +    private boolean isChunkLightStatus(long pair) {
-+        PlayerChunk playerChunk = playerChunkMap.getUpdatingChunk(pair);
++        PlayerChunk playerChunk = playerChunkMap.getVisibleChunk(pair);
 +        if (playerChunk == null) {
 +            return false;
 +        }
@@ -1084,7 +1084,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Retain the chunks priority level for queued light tasks
 +    class LightQueue {
 +        private int size = 0;
-+        private int lowestPriority = MAX_PRIORITIES;
 +        private final Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = new Long2ObjectLinkedOpenHashMap[MAX_PRIORITIES];
 +        private final java.util.concurrent.ConcurrentLinkedQueue<PendingLightTask> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<>();
 +        private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> priorityChanges = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -1103,11 +1102,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (existing != null) {
 +                        remove.pre.addAll(existing.pre);
 +                        remove.post.addAll(existing.post);
-+                    }
-+                }
-+                if (!this.buckets[priority].isEmpty()) {
-+                    if (lowestPriority > priority) {
-+                        lowestPriority = priority;
 +                    }
 +                }
 +            });
@@ -1136,10 +1130,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (update.fastUpdate) {
 +                lightQueue.shouldFastUpdate = true;
 +            }
-+
-+            if (this.lowestPriority > priority) {
-+                this.lowestPriority = priority;
-+            }
 +        }
 +
 +        public final boolean isEmpty() {
@@ -1161,11 +1151,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            boolean hasWork = false;
 +            Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
++            int lowestPriority = 0;
 +            while (lowestPriority < MAX_PRIORITIES && !isEmpty()) {
 +                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
 +                if (bucket.isEmpty()) {
 +                    lowestPriority++;
-+                    if (hasWork && lowestPriority <= 3) {
++                    if (hasWork && lowestPriority <= 5) {
 +                        return true;
 +                    } else {
 +                        continue;
@@ -1231,7 +1222,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        boolean[] skippedPre = {false};
 +        this.queue.addChunk(pair, prioritySupplier, SystemUtils.a(() -> {
 +            if (!isChunkLightStatus(pair)) {
-+                this.d.c(chunkcoordintpair); // copied from end of method to release light ticket
 +                future.complete(ichunkaccess);
 +                skippedPre[0] = true;
 +                return;
@@ -1245,13 +1235,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 -            this.d.c(chunkcoordintpair);
-+            this.d.c(chunkcoordintpair); // Paper - if change, copy into !isChunkLightStatus above
++            // this.d.c(chunkcoordintpair); // Paper - move into post task below
          }, () -> {
              return "lightChunk " + chunkcoordintpair + " " + flag;
 -        }));
 -        return CompletableFuture.supplyAsync(() -> {
 +            // Paper start  - merge the 2 together
 +        }), () -> {
++            this.d.c(chunkcoordintpair); // Paper - release light tickets as post task to ensure they stay loaded until fully done
 +            if (skippedPre[0]) return; // Paper - future's already complete
              ichunkaccess.b(true);
              super.b(chunkcoordintpair, false);
