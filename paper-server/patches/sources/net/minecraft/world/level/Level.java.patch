@@ -270,7 +270,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
      }
-@@ -179,18 +345,73 @@
+@@ -179,18 +345,80 @@
          return y < -20000000 || y >= 20000000;
      }
  
@@ -283,12 +283,19 @@
 -    public LevelChunk getChunk(int chunkX, int chunkZ) {
 -        return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
 +    public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
-+        return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
++        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
++        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++        return (LevelChunk) cps.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper end - Perf: make sure loaded chunks get the inlined variant of this function
      }
  
 +    // Paper start - if loaded
      @Nullable
-+    @Override
+     @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
 +    }
@@ -341,13 +348,13 @@
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +
-     @Override
++    @Override
      public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -207,6 +428,18 @@
+@@ -207,6 +435,18 @@
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
@@ -366,7 +373,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -214,45 +447,125 @@
+@@ -214,45 +454,125 @@
          } else {
              LevelChunk chunk = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -507,7 +514,7 @@
      public void onBlockStateChange(BlockPos pos, BlockState oldBlock, BlockState newBlock) {}
  
      @Override
-@@ -270,9 +583,26 @@
+@@ -270,9 +590,26 @@
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
@@ -536,7 +543,7 @@
              }
  
              if (drop) {
-@@ -340,10 +670,18 @@
+@@ -340,10 +677,18 @@
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -556,7 +563,7 @@
  
              return chunk.getBlockState(pos);
          }
-@@ -446,34 +784,53 @@
+@@ -446,34 +791,53 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -608,26 +615,26 @@
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
          }
-+    }
+     }
 +    // Paper start - Option to prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
 +        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
 +        return LevelAccessor.super.noCollision(entity, box);
-     }
++    }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
  
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -510,13 +867,32 @@
+@@ -510,13 +874,32 @@
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 -        return this.isOutsideBuildHeight(pos) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE));
 +        // CraftBukkit start
 +        return this.getBlockEntity(pos, true);
-     }
- 
++    }
++
 +    @Nullable
 +    public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
@@ -638,8 +645,8 @@
 +        // Paper end - Perf: Optimize capturedTileEntities lookup
 +        // CraftBukkit end
 +        return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
-+    }
-+
+     }
+ 
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockposition = blockEntity.getBlockPos();
  
@@ -653,7 +660,7 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -643,7 +1019,7 @@
+@@ -643,7 +1026,7 @@
  
                  for (int k = 0; k < j; ++k) {
                      EnderDragonPart entitycomplexpart = aentitycomplexpart[k];
@@ -662,7 +669,7 @@
  
                      if (t0 != null && predicate.test(t0)) {
                          result.add(t0);
-@@ -912,7 +1288,7 @@
+@@ -912,7 +1295,7 @@
  
      public static enum ExplosionInteraction implements StringRepresentable {
  
