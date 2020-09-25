@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.server.GameProfileSerializer;
 import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
@@ -59,7 +60,14 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         super.deserializeInternal(tag, context);
 
         if (tag.hasKeyOfType(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            this.setProfile(GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT)));
+            NBTTagCompound skullTag = tag.getCompound(SKULL_PROFILE.NBT);
+            // convert type of stored Id from String to UUID for backwards compatibility
+            if (skullTag.hasKeyOfType("Id", CraftMagicNumbers.NBT.TAG_STRING)) {
+                UUID uuid = UUID.fromString(skullTag.getString("Id"));
+                skullTag.a("Id", uuid);
+            }
+
+            this.setProfile(GameProfileSerializer.deserialize(skullTag));
         }
     }
 
