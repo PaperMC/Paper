@@ -359,6 +359,7 @@ public class PlayerChunk {
     }
 
     public void a(BlockPosition blockposition) {
+        if (!blockposition.isValidLocation()) return; // Paper - SPIGOT-6086 for all invalid locations; avoid acquiring locks
         Chunk chunk = this.getSendingChunk(); // Paper - no-tick view distance
 
         if (chunk != null) {
