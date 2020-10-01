@@ -1274,10 +1274,6 @@ public class CraftEventFactory {
     }
 
     public static void handleInventoryCloseEvent(EntityHuman human) {
-        // SPIGOT-5799 - no need to fire for when no inventory open
-        if (human.activeContainer == human.defaultContainer) {
-            return;
-        }
         InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView());
         human.world.getServer().getPluginManager().callEvent(event);
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());

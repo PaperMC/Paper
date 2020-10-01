@@ -250,7 +250,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.b();
-@@ -297,10 +387,21 @@
+@@ -297,10 +387,24 @@
  
      }
  
@@ -261,7 +261,10 @@
          entityplayer.a(StatisticList.LEAVE_GAME);
 +
 +        // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
-+        entityplayer.closeInventory();
++        // See SPIGOT-5799, SPIGOT-6145
++        if (entityplayer.activeContainer != entityplayer.defaultContainer) {
++            entityplayer.closeInventory();
++        }
 +
 +        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
 +        cserver.getPluginManager().callEvent(playerQuitEvent);
@@ -273,7 +276,7 @@
          this.savePlayerFile(entityplayer);
          if (entityplayer.isPassenger()) {
              Entity entity = entityplayer.getRootVehicle();
-@@ -332,18 +433,66 @@
+@@ -332,18 +436,66 @@
  
          if (entityplayer1 == entityplayer) {
              this.j.remove(uuid);
@@ -346,7 +349,7 @@
              GameProfileBanEntry gameprofilebanentry = (GameProfileBanEntry) this.k.get(gameprofile);
  
              chatmessage = new ChatMessage("multiplayer.disconnect.banned.reason", new Object[]{gameprofilebanentry.getReason()});
-@@ -351,10 +500,12 @@
+@@ -351,10 +503,12 @@
                  chatmessage.addSibling(new ChatMessage("multiplayer.disconnect.banned.expiration", new Object[]{PlayerList.g.format(gameprofilebanentry.getExpires())}));
              }
  
@@ -362,7 +365,7 @@
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
              chatmessage = new ChatMessage("multiplayer.disconnect.banned_ip.reason", new Object[]{ipbanentry.getReason()});
-@@ -362,13 +513,25 @@
+@@ -362,13 +516,25 @@
                  chatmessage.addSibling(new ChatMessage("multiplayer.disconnect.banned_ip.expiration", new Object[]{PlayerList.g.format(ipbanentry.getExpires())}));
              }
  
@@ -391,7 +394,7 @@
          UUID uuid = EntityHuman.a(gameprofile);
          List<EntityPlayer> list = Lists.newArrayList();
  
-@@ -404,14 +567,24 @@
+@@ -404,14 +570,24 @@
          }
  
          return new EntityPlayer(this.server, worldserver, gameprofile, (PlayerInteractManager) object);
@@ -416,7 +419,7 @@
          WorldServer worldserver = this.server.getWorldServer(entityplayer.getSpawnDimension());
          Optional optional;
  
-@@ -431,6 +604,11 @@
+@@ -431,6 +607,11 @@
          }
  
          EntityPlayer entityplayer1 = new EntityPlayer(this.server, worldserver1, entityplayer.getProfile(), (PlayerInteractManager) object);
@@ -428,7 +431,7 @@
  
          entityplayer1.playerConnection = entityplayer.playerConnection;
          entityplayer1.copyFrom(entityplayer, flag);
-@@ -444,52 +622,113 @@
+@@ -444,52 +625,113 @@
              entityplayer1.addScoreboardTag(s);
          }
  
@@ -567,7 +570,7 @@
          return entityplayer1;
      }
  
-@@ -502,7 +741,18 @@
+@@ -502,7 +744,18 @@
  
      public void tick() {
          if (++this.w > 600) {
@@ -587,7 +590,7 @@
              this.w = 0;
          }
  
-@@ -515,6 +765,25 @@
+@@ -515,6 +768,25 @@
  
      }
  
@@ -613,7 +616,7 @@
      public void a(Packet<?> packet, ResourceKey<World> resourcekey) {
          for (int i = 0; i < this.players.size(); ++i) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
-@@ -615,6 +884,7 @@
+@@ -615,6 +887,7 @@
              entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, b0));
          }
  
@@ -621,7 +624,7 @@
          this.server.getCommandDispatcher().a(entityplayer);
      }
  
-@@ -647,6 +917,12 @@
+@@ -647,6 +920,12 @@
          for (int i = 0; i < this.players.size(); ++i) {
              EntityPlayer entityplayer = (EntityPlayer) this.players.get(i);
  
@@ -634,7 +637,7 @@
              if (entityplayer != entityhuman && entityplayer.world.getDimensionKey() == resourcekey) {
                  double d4 = d0 - entityplayer.locX();
                  double d5 = d1 - entityplayer.locY();
-@@ -686,23 +962,34 @@
+@@ -686,23 +965,34 @@
      public void reloadWhitelist() {}
  
      public void a(EntityPlayer entityplayer, WorldServer worldserver) {
@@ -674,7 +677,7 @@
      }
  
      public int getPlayerCount() {
-@@ -755,31 +1042,54 @@
+@@ -755,31 +1045,54 @@
              entityplayer.playerInteractManager.a(this.u, EnumGamemode.NOT_SET);
          }
  
@@ -737,7 +740,7 @@
  
                  if (file2.exists() && file2.isFile()) {
                      file2.renameTo(file1);
-@@ -787,7 +1097,7 @@
+@@ -787,7 +1100,7 @@
              }
  
              serverstatisticmanager = new ServerStatisticManager(this.server, file1);
@@ -746,7 +749,7 @@
          }
  
          return serverstatisticmanager;
-@@ -795,14 +1105,14 @@
+@@ -795,14 +1108,14 @@
  
      public AdvancementDataPlayer f(EntityPlayer entityplayer) {
          UUID uuid = entityplayer.getUniqueID();
@@ -763,7 +766,7 @@
          }
  
          advancementdataplayer.a(entityplayer);
-@@ -838,13 +1148,20 @@
+@@ -838,13 +1151,20 @@
      }
  
      public void reload() {
