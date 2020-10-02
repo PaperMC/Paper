@@ -58,9 +58,15 @@ public class RAMDetails extends JList<String> {
     public void update() {
         GraphData data = RAMGraph.DATA.peekLast();
         Vector<String> vector = new Vector<>();
+
+        // Paper start - Add tps entry
+        double tps = Bukkit.getTPS()[0];
         vector.add("Memory use: " + (data.getUsedMem() / 1024L / 1024L) + " mb (" + (data.getFree() * 100L / data.getMax()) + "% free)");
         vector.add("Heap: " + (data.getTotal() / 1024L / 1024L) + " / " + (data.getMax() / 1024L / 1024L) + " mb");
         vector.add("Avg tick: " + DECIMAL_FORMAT.format(getAverage(server.getTickTimes())) + " ms");
+        vector.add("TPS: " + ( ( tps > 21.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 ));
+        // Paper end
+
         setListData(vector);
     }
 

@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import org.bukkit.Bukkit;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -16,7 +18,7 @@ public class GuiStatsComponent extends JComponent {
     });
     private final int[] b = new int[256];
     private int c;
-    private final String[] d = new String[11];
+    private final String[] d = new String[12];
     private final MinecraftServer e;
     private final Timer f;
 
@@ -35,8 +37,13 @@ public class GuiStatsComponent extends JComponent {
     private void b() {
         long i = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 
+        // Paper start - Add tps entry
+        double tps = Bukkit.getTPS()[0];
         this.d[0] = "Memory use: " + i / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
         this.d[1] = "Avg tick: " + GuiStatsComponent.a.format(this.a(this.e.h) * 1.0E-6D) + " ms";
+        this.d[2] = "TPS:" + ( ( tps > 21.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
+        // Paper end
+
         this.b[this.c++ & 255] = (int) (i * 100L / Runtime.getRuntime().maxMemory());
         this.repaint();
     }
