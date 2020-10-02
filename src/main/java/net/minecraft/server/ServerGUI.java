@@ -10,7 +10,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -22,6 +24,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.WindowConstants;
+import javax.swing.ScrollPaneConstants;
+import javax.imageio.ImageIO;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.AttributeSet;
@@ -32,7 +37,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ServerGUI extends JComponent {
 
-    private static final Font a = new Font("Monospaced", 0, 12);
+    private static final Font a = new Font("Monospaced", Font.PLAIN, 12); // Paper
     private static final Logger LOGGER = LogManager.getLogger();
     private final DedicatedServer c;
     private Thread d;
@@ -49,15 +54,25 @@ public class ServerGUI extends JComponent {
         final JFrame jframe = new JFrame("Minecraft server");
         final ServerGUI servergui = new ServerGUI(dedicatedserver);
 
-        jframe.setDefaultCloseOperation(2);
+        jframe.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE); // Paper
         jframe.add(servergui);
         jframe.pack();
         jframe.setLocationRelativeTo((Component) null);
         jframe.setVisible(true);
+        jframe.setName("Minecraft server"); // Paper
+
+        // Paper start - Add logo as frame image
+        try {
+            jframe.setIconImage(ImageIO.read(Objects.requireNonNull(ServerGUI.class.getClassLoader().getResourceAsStream("logo.png"))));
+        } catch (IOException ignore) {
+        }
+        // Paper end
+
         jframe.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowevent) {
                 if (!servergui.f.getAndSet(true)) {
                     jframe.setTitle("Minecraft server - shutting down!");
+                    jframe.setName("Minecraft server - shutting down!"); // Paper
                     dedicatedserver.safeShutdown(true);
                     servergui.f();
                 }
@@ -100,7 +115,7 @@ public class ServerGUI extends JComponent {
 
     private JComponent d() {
         JList<?> jlist = new PlayerListBox(this.c);
-        JScrollPane jscrollpane = new JScrollPane(jlist, 22, 30);
+        JScrollPane jscrollpane = new JScrollPane(jlist, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Paper
 
         jscrollpane.setBorder(new TitledBorder(new EtchedBorder(), "Players"));
         return jscrollpane;
@@ -109,7 +124,7 @@ public class ServerGUI extends JComponent {
     private JComponent e() {
         JPanel jpanel = new JPanel(new BorderLayout());
         JTextArea jtextarea = new JTextArea();
-        JScrollPane jscrollpane = new JScrollPane(jtextarea, 22, 30);
+        JScrollPane jscrollpane = new JScrollPane(jtextarea, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Paper
 
         jtextarea.setEditable(false);
         jtextarea.setFont(ServerGUI.a);
