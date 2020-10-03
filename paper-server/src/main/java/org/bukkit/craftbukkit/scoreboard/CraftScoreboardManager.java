@@ -30,6 +30,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
 
     public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
         this.mainScoreboard = new CraftScoreboard(scoreboardServer);
+        mainScoreboard.registeredGlobally = true; // Paper
         this.server = minecraftserver;
         this.scoreboards.add(this.mainScoreboard);
     }
@@ -43,9 +44,21 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     public CraftScoreboard getNewScoreboard() {
         org.spigotmc.AsyncCatcher.catchOp("scoreboard creation"); // Spigot
         CraftScoreboard scoreboard = new CraftScoreboard(new ServerScoreboard(this.server));
-        this.scoreboards.add(scoreboard);
+        // Paper start
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().scoreboards.trackPluginScoreboards) {
+            scoreboard.registeredGlobally = true;
+            scoreboards.add(scoreboard);
+        }
+        // Paper end
         return scoreboard;
     }
+
+    // Paper start
+    public void registerScoreboardForVanilla(CraftScoreboard scoreboard) {
+        org.spigotmc.AsyncCatcher.catchOp("scoreboard registration");
+        scoreboards.add(scoreboard);
+    }
+    // Paper end
 
     // CraftBukkit method
     public CraftScoreboard getPlayerBoard(CraftPlayer player) {
