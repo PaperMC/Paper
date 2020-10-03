@@ -26,6 +26,7 @@ public class ItemRecord extends Item {
             ItemStack itemstack = itemactioncontext.getItemStack();
 
             if (!world.isClientSide) {
+                if (true) return EnumInteractionResult.SUCCESS; // CraftBukkit - handled in ItemStack
                 ((BlockJukeBox) Blocks.JUKEBOX).a((GeneratorAccess) world, blockposition, iblockdata, itemstack);
                 world.a((EntityHuman) null, 1010, blockposition, Item.getId(this));
                 itemstack.subtract(1);

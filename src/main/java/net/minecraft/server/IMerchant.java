@@ -44,4 +44,6 @@ public interface IMerchant {
         }
 
     }
+
+    org.bukkit.craftbukkit.inventory.CraftMerchant getCraftMerchant(); // CraftBukkit
 }

@@ -42,7 +42,13 @@ public class BlockJukeBox extends BlockTileEntity {
         TileEntity tileentity = generatoraccess.getTileEntity(blockposition);
 
         if (tileentity instanceof TileEntityJukeBox) {
-            ((TileEntityJukeBox) tileentity).setRecord(itemstack.cloneItemStack());
+            // CraftBukkit start - There can only be one
+            itemstack = itemstack.cloneItemStack();
+            if (!itemstack.isEmpty()) {
+                itemstack.setCount(1);
+            }
+            ((TileEntityJukeBox) tileentity).setRecord(itemstack);
+            // CraftBukkit end
             generatoraccess.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockJukeBox.HAS_RECORD, true), 2);
         }
     }

@@ -8,9 +8,10 @@ public class BlockDispenser extends BlockTileEntity {
 
     public static final BlockStateDirection FACING = BlockDirectional.FACING;
     public static final BlockStateBoolean TRIGGERED = BlockProperties.A;
-    public static final Map<Item, IDispenseBehavior> REGISTRY = (Map) SystemUtils.a((Object) (new Object2ObjectOpenHashMap()), (object2objectopenhashmap) -> {
+    public static final Map<Item, IDispenseBehavior> REGISTRY = (Map) SystemUtils.a((new Object2ObjectOpenHashMap()), (object2objectopenhashmap) -> { // CraftBukkit - decompile error
         object2objectopenhashmap.defaultReturnValue(new DispenseBehaviorItem());
     });
+    public static boolean eventFired = false; // CraftBukkit
 
     public static void a(IMaterial imaterial, IDispenseBehavior idispensebehavior) {
         BlockDispenser.REGISTRY.put(imaterial.getItem(), idispensebehavior);
@@ -53,6 +54,7 @@ public class BlockDispenser extends BlockTileEntity {
             IDispenseBehavior idispensebehavior = this.a(itemstack);
 
             if (idispensebehavior != IDispenseBehavior.NONE) {
+                eventFired = false; // CraftBukkit - reset event status
                 tileentitydispenser.setItem(i, idispensebehavior.dispense(sourceblock, itemstack));
             }
 

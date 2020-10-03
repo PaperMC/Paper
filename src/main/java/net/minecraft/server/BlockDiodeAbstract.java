@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public abstract class BlockDiodeAbstract extends BlockFacingHorizontal {
 
     protected static final VoxelShape b = Block.a(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 16.0D);
@@ -28,8 +30,18 @@ public abstract class BlockDiodeAbstract extends BlockFacingHorizontal {
             boolean flag1 = this.a((World) worldserver, blockposition, iblockdata);
 
             if (flag && !flag1) {
+                // CraftBukkit start
+                if (CraftEventFactory.callRedstoneChange(worldserver, blockposition, 15, 0).getNewCurrent() != 0) {
+                    return;
+                }
+                // CraftBukkit end
                 worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockDiodeAbstract.c, false), 2);
             } else if (!flag) {
+                // CraftBukkit start
+                if (CraftEventFactory.callRedstoneChange(worldserver, blockposition, 0, 15).getNewCurrent() != 15) {
+                    return;
+                }
+                // CraftBukkit end
                 worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockDiodeAbstract.c, true), 2);
                 if (!flag1) {
                     worldserver.getBlockTickList().a(blockposition, this, this.g(iblockdata), TickListPriority.VERY_HIGH);

@@ -55,7 +55,7 @@ public class BlockBeehive extends BlockTileEntity {
                 EntityBee entitybee = (EntityBee) iterator.next();
 
                 if (entitybee.getGoalTarget() == null) {
-                    entitybee.setGoalTarget((EntityLiving) list1.get(world.random.nextInt(i)));
+                    entitybee.setGoalTarget((EntityLiving) list1.get(world.random.nextInt(i)), org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit
                 }
             }
         }

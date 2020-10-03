@@ -234,6 +234,13 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
 
     @Override
     public boolean addEntity(Entity entity) {
+        // CraftBukkit start
+        return addEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+    }
+
+    @Override
+    public boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+        // CraftBukkit end
         int i = MathHelper.floor(entity.locX() / 16.0D);
         int j = MathHelper.floor(entity.locZ() / 16.0D);
 

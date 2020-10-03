@@ -2,6 +2,13 @@ package net.minecraft.server;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.inventory.CraftSmithingRecipe;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.inventory.Recipe;
+// CraftBukkit end
 
 public class RecipeSmithing implements IRecipe<IInventory> {
 
@@ -57,6 +64,17 @@ public class RecipeSmithing implements IRecipe<IInventory> {
     public Recipes<?> g() {
         return Recipes.SMITHING;
     }
+
+    // CraftBukkit start
+    @Override
+    public Recipe toBukkitRecipe() {
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.c);
+
+        CraftSmithingRecipe recipe = new CraftSmithingRecipe(CraftNamespacedKey.fromMinecraft(this.d), result, CraftRecipe.toBukkit(this.a), CraftRecipe.toBukkit(this.b));
+
+        return recipe;
+    }
+    // CraftBukkit end
 
     public static class a implements RecipeSerializer<RecipeSmithing> {
 

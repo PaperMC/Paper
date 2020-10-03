@@ -18,7 +18,7 @@ public abstract class EntityFireballFireball extends EntityFireball {
 
     public void setItem(ItemStack itemstack) {
         if (itemstack.getItem() != Items.FIRE_CHARGE || itemstack.hasTag()) {
-            this.getDataWatcher().set(EntityFireballFireball.e, SystemUtils.a((Object) itemstack.cloneItemStack(), (itemstack1) -> {
+            this.getDataWatcher().set(EntityFireballFireball.e, SystemUtils.a(itemstack.cloneItemStack(), (itemstack1) -> { // CraftBukkit - decompile error
                 itemstack1.setCount(1);
             }));
         }
@@ -50,6 +50,6 @@ public abstract class EntityFireballFireball extends EntityFireball {
         super.loadData(nbttagcompound);
         ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("Item"));
 
-        this.setItem(itemstack);
+        if (!itemstack.isEmpty()) this.setItem(itemstack); // CraftBukkit - SPIGOT-5474 probably came from bugged earlier versions
     }
 }

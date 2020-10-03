@@ -15,6 +15,7 @@ public class BlockOre extends Block {
     @Override
     public void dropNaturally(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack) {
         super.dropNaturally(iblockdata, worldserver, blockposition, itemstack);
+        /* CraftBukkit start - Delegated to getExpDrop
         if (EnchantmentManager.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) == 0) {
             int i = this.a(worldserver.random);
 
@@ -22,6 +23,21 @@ public class BlockOre extends Block {
                 this.dropExperience(worldserver, blockposition, i);
             }
         }
+        // */
 
+    }
+
+    @Override
+    public int getExpDrop(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack) {
+        if (EnchantmentManager.getEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) == 0) {
+            int i = this.a(worldserver.random);
+
+            if (i > 0) {
+                return i;
+            }
+        }
+
+        return 0;
+        // CraftBukkit end
     }
 }

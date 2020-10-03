@@ -65,7 +65,7 @@ public class EntityGuardianElder extends EntityGuardian {
 
                 if (!entityplayer.hasEffect(mobeffectlist) || entityplayer.getEffect(mobeffectlist).getAmplifier() < 2 || entityplayer.getEffect(mobeffectlist).getDuration() < 1200) {
                     entityplayer.playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.k, this.isSilent() ? 0.0F : 1.0F));
-                    entityplayer.addEffect(new MobEffect(mobeffectlist, 6000, 2));
+                    entityplayer.addEffect(new MobEffect(mobeffectlist, 6000, 2), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                 }
             }
         }

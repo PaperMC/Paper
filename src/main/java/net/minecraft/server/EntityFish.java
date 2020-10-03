@@ -32,7 +32,7 @@ public abstract class EntityFish extends EntityWaterAnimal {
 
     @Override
     public boolean isTypeNotPersistent(double d0) {
-        return !this.isFromBucket() && !this.hasCustomName();
+        return true; // CraftBukkit
     }
 
     @Override
@@ -52,6 +52,7 @@ public abstract class EntityFish extends EntityWaterAnimal {
 
     public void setFromBucket(boolean flag) {
         this.datawatcher.set(EntityFish.FROM_BUCKET, flag);
+        this.persistent = this.isPersistent(); // CraftBukkit - SPIGOT-4106 update persistence
     }
 
     @Override

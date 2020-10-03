@@ -58,7 +58,7 @@ public class EntityIronGolem extends EntityGolem implements IEntityAngerable {
     @Override
     protected void C(Entity entity) {
         if (entity instanceof IMonster && !(entity instanceof EntityCreeper) && this.getRandom().nextInt(20) == 0) {
-            this.setGoalTarget((EntityLiving) entity);
+            this.setGoalTarget((EntityLiving) entity, org.bukkit.event.entity.EntityTargetLivingEntityEvent.TargetReason.COLLISION, true); // CraftBukkit - set reason
         }
 
         super.C(entity);

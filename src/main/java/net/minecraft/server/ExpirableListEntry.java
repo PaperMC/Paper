@@ -23,7 +23,7 @@ public abstract class ExpirableListEntry<T> extends JsonListEntry<T> {
     }
 
     protected ExpirableListEntry(T t0, JsonObject jsonobject) {
-        super(t0);
+        super(checkExpiry(t0, jsonobject));
 
         Date date;
 
@@ -74,4 +74,26 @@ public abstract class ExpirableListEntry<T> extends JsonListEntry<T> {
         jsonobject.addProperty("expires", this.d == null ? "forever" : ExpirableListEntry.a.format(this.d));
         jsonobject.addProperty("reason", this.e);
     }
+
+    // CraftBukkit start
+    public Date getCreated() {
+        return this.b;
+    }
+
+    private static <T> T checkExpiry(T object, JsonObject jsonobject) {
+        Date expires = null;
+
+        try {
+            expires = jsonobject.has("expires") ? a.parse(jsonobject.get("expires").getAsString()) : null;
+        } catch (ParseException ex) {
+            // Guess we don't have a date
+        }
+
+        if (expires == null || expires.after(new Date())) {
+            return object;
+        } else {
+            return null;
+        }
+    }
+    // CraftBukkit end
 }

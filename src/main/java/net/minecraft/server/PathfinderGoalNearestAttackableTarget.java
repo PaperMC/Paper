@@ -52,7 +52,7 @@ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> exten
 
     @Override
     public void c() {
-        this.e.setGoalTarget(this.c);
+        this.e.setGoalTarget(this.c, c instanceof EntityPlayer ? org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER : org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY, true); // CraftBukkit - reason
         super.c();
     }
 

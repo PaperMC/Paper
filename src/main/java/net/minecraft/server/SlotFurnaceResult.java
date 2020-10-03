@@ -41,7 +41,7 @@ public class SlotFurnaceResult extends Slot {
     protected void c(ItemStack itemstack) {
         itemstack.a(this.a.world, this.a, this.b);
         if (!this.a.world.isClientSide && this.inventory instanceof TileEntityFurnace) {
-            ((TileEntityFurnace) this.inventory).d(this.a);
+            ((TileEntityFurnace) this.inventory).d(this.a, itemstack, this.b); // CraftBukkit
         }
 
         this.b = 0;

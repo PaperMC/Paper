@@ -80,7 +80,7 @@ public class EntitySkeletonWither extends EntitySkeletonAbstract {
             return false;
         } else {
             if (entity instanceof EntityLiving) {
-                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 200));
+                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.WITHER, 200), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
             }
 
             return true;

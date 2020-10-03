@@ -34,6 +34,11 @@ public class ItemEndCrystal extends Item {
                         EntityEnderCrystal entityendercrystal = new EntityEnderCrystal(world, d0 + 0.5D, d1, d2 + 0.5D);
 
                         entityendercrystal.setShowingBottom(false);
+                        // CraftBukkit start
+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(itemactioncontext, entityendercrystal).isCancelled()) {
+                            return EnumInteractionResult.FAIL;
+                        }
+                        // CraftBukkit end
                         world.addEntity(entityendercrystal);
                         EnderDragonBattle enderdragonbattle = ((WorldServer) world).getDragonBattle();
 

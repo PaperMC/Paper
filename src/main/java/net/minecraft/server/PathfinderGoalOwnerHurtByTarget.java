@@ -34,7 +34,7 @@ public class PathfinderGoalOwnerHurtByTarget extends PathfinderGoalTarget {
 
     @Override
     public void c() {
-        this.e.setGoalTarget(this.b);
+        this.e.setGoalTarget(this.b, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER, true); // CraftBukkit - reason
         EntityLiving entityliving = this.a.getOwner();
 
         if (entityliving != null) {

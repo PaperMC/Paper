@@ -10,6 +10,15 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
+// CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
+import org.bukkit.util.Vector;
+// CraftBukkit end
+
 public abstract class EntityMinecartAbstract extends Entity {
 
     private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.b);
@@ -20,7 +29,7 @@ public abstract class EntityMinecartAbstract extends Entity {
     private static final DataWatcherObject<Boolean> g = DataWatcher.a(EntityMinecartAbstract.class, DataWatcherRegistry.i);
     private static final ImmutableMap<EntityPose, ImmutableList<Integer>> ag = ImmutableMap.of(EntityPose.STANDING, ImmutableList.of(0, 1, -1), EntityPose.CROUCHING, ImmutableList.of(0, 1, -1), EntityPose.SWIMMING, ImmutableList.of(0, 1));
     private boolean ah;
-    private static final Map<BlockPropertyTrackPosition, Pair<BaseBlockPosition, BaseBlockPosition>> ai = (Map) SystemUtils.a((Object) Maps.newEnumMap(BlockPropertyTrackPosition.class), (enummap) -> {
+    private static final Map<BlockPropertyTrackPosition, Pair<BaseBlockPosition, BaseBlockPosition>> ai = (Map) SystemUtils.a(Maps.newEnumMap(BlockPropertyTrackPosition.class), (enummap) -> { // CraftBukkit - decompile error
         BaseBlockPosition baseblockposition = EnumDirection.WEST.p();
         BaseBlockPosition baseblockposition1 = EnumDirection.EAST.p();
         BaseBlockPosition baseblockposition2 = EnumDirection.NORTH.p();
@@ -47,6 +56,17 @@ public abstract class EntityMinecartAbstract extends Entity {
     private double am;
     private double an;
     private double ao;
+
+    // CraftBukkit start
+    public boolean slowWhenEmpty = true;
+    private double derailedX = 0.5;
+    private double derailedY = 0.5;
+    private double derailedZ = 0.5;
+    private double flyingX = 0.95;
+    private double flyingY = 0.95;
+    private double flyingZ = 0.95;
+    public double maxSpeed = 0.4D;
+    // CraftBukkit end
 
     protected EntityMinecartAbstract(EntityTypes<?> entitytypes, World world) {
         super(entitytypes, world);
@@ -175,6 +195,19 @@ public abstract class EntityMinecartAbstract extends Entity {
             if (this.isInvulnerable(damagesource)) {
                 return false;
             } else {
+                // CraftBukkit start - fire VehicleDamageEvent
+                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                org.bukkit.entity.Entity passenger = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
+
+                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, passenger, f);
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+
+                f = (float) event.getDamage();
+                // CraftBukkit end
                 this.d(-this.n());
                 this.c(10);
                 this.velocityChanged();
@@ -182,6 +215,15 @@ public abstract class EntityMinecartAbstract extends Entity {
                 boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
                 if (flag || this.getDamage() > 40.0F) {
+                    // CraftBukkit start
+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, passenger);
+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
+
+                    if (destroyEvent.isCancelled()) {
+                        this.setDamage(40); // Maximize damage so this doesn't get triggered again right away
+                        return true;
+                    }
+                    // CraftBukkit end
                     this.ejectPassengers();
                     if (flag && !this.hasCustomName()) {
                         this.die();
@@ -234,6 +276,14 @@ public abstract class EntityMinecartAbstract extends Entity {
 
     @Override
     public void tick() {
+        // CraftBukkit start
+        double prevX = this.locX();
+        double prevY = this.locY();
+        double prevZ = this.locZ();
+        float prevYaw = this.yaw;
+        float prevPitch = this.pitch;
+        // CraftBukkit end
+
         if (this.getType() > 0) {
             this.c(this.getType() - 1);
         }
@@ -246,7 +296,7 @@ public abstract class EntityMinecartAbstract extends Entity {
             this.am();
         }
 
-        this.doPortalTick();
+        // this.doPortalTick(); // CraftBukkit - handled in postTick
         if (this.world.isClientSide) {
             if (this.aj > 0) {
                 double d0 = this.locX() + (this.ak - this.locX()) / (double) this.aj;
@@ -309,6 +359,18 @@ public abstract class EntityMinecartAbstract extends Entity {
             }
 
             this.setYawPitch(this.yaw, this.pitch);
+            // CraftBukkit start
+            org.bukkit.World bworld = this.world.getWorld();
+            Location from = new Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
+            Location to = new Location(bworld, this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+
+            this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
+
+            if (!from.equals(to)) {
+                this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
+            }
+            // CraftBukkit end
             if (this.getMinecartType() == EntityMinecartAbstract.EnumMinecartType.RIDEABLE && c(this.getMot()) > 0.01D) {
                 List<Entity> list = this.world.getEntities(this, this.getBoundingBox().grow(0.20000000298023224D, 0.0D, 0.20000000298023224D), IEntitySelector.a(this));
 
@@ -317,8 +379,26 @@ public abstract class EntityMinecartAbstract extends Entity {
                         Entity entity = (Entity) list.get(l);
 
                         if (!(entity instanceof EntityHuman) && !(entity instanceof EntityIronGolem) && !(entity instanceof EntityMinecartAbstract) && !this.isVehicle() && !entity.isPassenger()) {
+                            // CraftBukkit start
+                            VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
+                            this.world.getServer().getPluginManager().callEvent(collisionEvent);
+
+                            if (collisionEvent.isCancelled()) {
+                                continue;
+                            }
+                            // CraftBukkit end
                             entity.startRiding(this);
                         } else {
+                            // CraftBukkit start
+                            if (!this.isSameVehicle(entity)) {
+                                VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
+                                this.world.getServer().getPluginManager().callEvent(collisionEvent);
+
+                                if (collisionEvent.isCancelled()) {
+                                    continue;
+                                }
+                            }
+                            // CraftBukkit end
                             entity.collide(this);
                         }
                     }
@@ -330,6 +410,14 @@ public abstract class EntityMinecartAbstract extends Entity {
                     Entity entity1 = (Entity) iterator.next();
 
                     if (!this.w(entity1) && entity1.isCollidable() && entity1 instanceof EntityMinecartAbstract) {
+                        // CraftBukkit start
+                        VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent(vehicle, entity1.getBukkitEntity());
+                        this.world.getServer().getPluginManager().callEvent(collisionEvent);
+
+                        if (collisionEvent.isCancelled()) {
+                            continue;
+                        }
+                        // CraftBukkit end
                         entity1.collide(this);
                     }
                 }
@@ -346,7 +434,7 @@ public abstract class EntityMinecartAbstract extends Entity {
     }
 
     protected double getMaxSpeed() {
-        return 0.4D;
+        return this.maxSpeed; // CraftBukkit
     }
 
     public void a(int i, int j, int k, boolean flag) {}
@@ -357,12 +445,16 @@ public abstract class EntityMinecartAbstract extends Entity {
 
         this.setMot(MathHelper.a(vec3d.x, -d0, d0), vec3d.y, MathHelper.a(vec3d.z, -d0, d0));
         if (this.onGround) {
-            this.setMot(this.getMot().a(0.5D));
+            // CraftBukkit start - replace magic numbers with our variables
+            this.setMot(new Vec3D(this.getMot().x * this.derailedX, this.getMot().y * this.derailedY, this.getMot().z * this.derailedZ));
+            // CraftBukkit end
         }
 
         this.move(EnumMoveType.SELF, this.getMot());
         if (!this.onGround) {
-            this.setMot(this.getMot().a(0.95D));
+            // CraftBukkit start - replace magic numbers with our variables
+            this.setMot(new Vec3D(this.getMot().x * this.flyingX, this.getMot().y * this.flyingY, this.getMot().z * this.flyingZ));
+            // CraftBukkit end
         }
 
     }
@@ -549,7 +641,7 @@ public abstract class EntityMinecartAbstract extends Entity {
     }
 
     protected void decelerate() {
-        double d0 = this.isVehicle() ? 0.997D : 0.96D;
+        double d0 = this.isVehicle() || !this.slowWhenEmpty ? 0.997D : 0.96D; // CraftBukkit - add !this.slowWhenEmpty
 
         this.setMot(this.getMot().d(d0, 0.0D, d0));
     }
@@ -632,6 +724,14 @@ public abstract class EntityMinecartAbstract extends Entity {
         if (!this.world.isClientSide) {
             if (!entity.noclip && !this.noclip) {
                 if (!this.w(entity)) {
+                    // CraftBukkit start
+                    VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
+                    this.world.getServer().getPluginManager().callEvent(collisionEvent);
+
+                    if (collisionEvent.isCancelled()) {
+                        return;
+                    }
+                    // CraftBukkit end
                     double d0 = entity.locX() - this.locX();
                     double d1 = entity.locZ() - this.locZ();
                     double d2 = d0 * d0 + d1 * d1;
@@ -767,4 +867,26 @@ public abstract class EntityMinecartAbstract extends Entity {
 
         private EnumMinecartType() {}
     }
+
+    // CraftBukkit start - Methods for getting and setting flying and derailed velocity modifiers
+    public Vector getFlyingVelocityMod() {
+        return new Vector(flyingX, flyingY, flyingZ);
+    }
+
+    public void setFlyingVelocityMod(Vector flying) {
+        flyingX = flying.getX();
+        flyingY = flying.getY();
+        flyingZ = flying.getZ();
+    }
+
+    public Vector getDerailedVelocityMod() {
+        return new Vector(derailedX, derailedY, derailedZ);
+    }
+
+    public void setDerailedVelocityMod(Vector derailed) {
+        derailedX = derailed.getX();
+        derailedY = derailed.getY();
+        derailedZ = derailed.getZ();
+    }
+    // CraftBukkit end
 }

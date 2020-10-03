@@ -129,6 +129,13 @@ public class DataWatcher {
 
     }
 
+    // CraftBukkit start - add method from above
+    public <T> void markDirty(DataWatcherObject<T> datawatcherobject) {
+        this.b(datawatcherobject).a(true);
+        this.g = true;
+    }
+    // CraftBukkit end
+
     public boolean a() {
         return this.g;
     }

@@ -74,13 +74,23 @@ public class ServerConnection {
                     int j = ServerConnection.this.e.k();
                     Object object = j > 0 ? new NetworkManagerServer(j) : new NetworkManager(EnumProtocolDirection.SERVERBOUND);
 
-                    ServerConnection.this.connectedChannels.add(object);
+                    ServerConnection.this.connectedChannels.add((NetworkManager) object); // CraftBukkit - decompile error
                     channel.pipeline().addLast("packet_handler", (ChannelHandler) object);
                     ((NetworkManager) object).setPacketListener(new HandshakeListener(ServerConnection.this.e, (NetworkManager) object));
                 }
-            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).bind().syncUninterruptibly());
+            }).group((EventLoopGroup) lazyinitvar.a()).localAddress(inetaddress, i)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
         }
     }
+
+    // CraftBukkit start
+    public void acceptConnections() {
+        synchronized (this.listeningChannels) {
+            for (ChannelFuture future : this.listeningChannels) {
+                future.channel().config().setAutoRead(true);
+            }
+        }
+    }
+    // CraftBukkit end
 
     public void b() {
         this.c = false;

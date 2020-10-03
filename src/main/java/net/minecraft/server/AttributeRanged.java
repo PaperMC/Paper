@@ -20,6 +20,8 @@ public class AttributeRanged extends AttributeBase {
 
     @Override
     public double a(double d0) {
+        if (d0 != d0) return getDefault(); // CraftBukkit
+
         d0 = MathHelper.a(d0, this.a, this.maximum);
         return d0;
     }

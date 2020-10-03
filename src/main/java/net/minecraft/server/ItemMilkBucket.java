@@ -20,7 +20,7 @@ public class ItemMilkBucket extends Item {
         }
 
         if (!world.isClientSide) {
-            entityliving.removeAllEffects();
+            entityliving.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.MILK); // CraftBukkit
         }
 
         return itemstack.isEmpty() ? new ItemStack(Items.BUCKET) : itemstack;

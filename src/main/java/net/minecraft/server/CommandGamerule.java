@@ -25,7 +25,7 @@ public class CommandGamerule {
 
     private static <T extends GameRules.GameRuleValue<T>> int b(CommandContext<CommandListenerWrapper> commandcontext, GameRules.GameRuleKey<T> gamerules_gamerulekey) {
         CommandListenerWrapper commandlistenerwrapper = (CommandListenerWrapper) commandcontext.getSource();
-        T t0 = commandlistenerwrapper.getServer().getGameRules().get(gamerules_gamerulekey);
+        T t0 = commandlistenerwrapper.getWorld().getGameRules().get(gamerules_gamerulekey); // CraftBukkit
 
         t0.b(commandcontext, "value");
         commandlistenerwrapper.sendMessage(new ChatMessage("commands.gamerule.set", new Object[]{gamerules_gamerulekey.a(), t0.toString()}), true);
@@ -33,7 +33,7 @@ public class CommandGamerule {
     }
 
     private static <T extends GameRules.GameRuleValue<T>> int b(CommandListenerWrapper commandlistenerwrapper, GameRules.GameRuleKey<T> gamerules_gamerulekey) {
-        T t0 = commandlistenerwrapper.getServer().getGameRules().get(gamerules_gamerulekey);
+        T t0 = commandlistenerwrapper.getWorld().getGameRules().get(gamerules_gamerulekey); // CraftBukkit
 
         commandlistenerwrapper.sendMessage(new ChatMessage("commands.gamerule.query", new Object[]{gamerules_gamerulekey.a(), t0.toString()}), false);
         return t0.getIntValue();

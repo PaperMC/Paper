@@ -35,24 +35,7 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
         public Optional<ITileInventory> a(final TileEntityChest tileentitychest, final TileEntityChest tileentitychest1) {
             final InventoryLargeChest inventorylargechest = new InventoryLargeChest(tileentitychest, tileentitychest1);
 
-            return Optional.of(new ITileInventory() {
-                @Nullable
-                @Override
-                public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {
-                    if (tileentitychest.e(entityhuman) && tileentitychest1.e(entityhuman)) {
-                        tileentitychest.d(playerinventory.player);
-                        tileentitychest1.d(playerinventory.player);
-                        return ContainerChest.b(i, playerinventory, inventorylargechest);
-                    } else {
-                        return null;
-                    }
-                }
-
-                @Override
-                public IChatBaseComponent getScoreboardDisplayName() {
-                    return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getScoreboardDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getScoreboardDisplayName() : new ChatMessage("container.chestDouble")));
-                }
-            });
+            return Optional.of(new DoubleInventory(tileentitychest, tileentitychest1, inventorylargechest)); // CraftBukkit
         }
 
         public Optional<ITileInventory> a(TileEntityChest tileentitychest) {
@@ -64,6 +47,38 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
             return Optional.empty();
         }
     };
+
+    // CraftBukkit start
+    public static class DoubleInventory implements ITileInventory {
+
+        private final TileEntityChest tileentitychest;
+        private final TileEntityChest tileentitychest1;
+        public final InventoryLargeChest inventorylargechest;
+
+        public DoubleInventory(TileEntityChest tileentitychest, TileEntityChest tileentitychest1, InventoryLargeChest inventorylargechest) {
+            this.tileentitychest = tileentitychest;
+            this.tileentitychest1 = tileentitychest1;
+            this.inventorylargechest = inventorylargechest;
+        }
+
+        @Nullable
+        @Override
+        public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {
+            if (tileentitychest.e(entityhuman) && tileentitychest1.e(entityhuman)) {
+                tileentitychest.d(playerinventory.player);
+                tileentitychest1.d(playerinventory.player);
+                return ContainerChest.b(i, playerinventory, inventorylargechest);
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public IChatBaseComponent getScoreboardDisplayName() {
+            return (IChatBaseComponent) (tileentitychest.hasCustomName() ? tileentitychest.getScoreboardDisplayName() : (tileentitychest1.hasCustomName() ? tileentitychest1.getScoreboardDisplayName() : new ChatMessage("container.chestDouble")));
+        }
+    };
+    // CraftBukkit end
 
     protected BlockChest(BlockBase.Info blockbase_info, Supplier<TileEntityTypes<? extends TileEntityChest>> supplier) {
         super(blockbase_info, supplier);
@@ -218,7 +233,7 @@ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements I
     }
 
     public DoubleBlockFinder.Result<? extends TileEntityChest> a(IBlockData iblockdata, World world, BlockPosition blockposition, boolean flag) {
-        BiPredicate bipredicate;
+        BiPredicate<GeneratorAccess, BlockPosition> bipredicate; // CraftBukkit - decompile error
 
         if (flag) {
             bipredicate = (generatoraccess, blockposition1) -> {

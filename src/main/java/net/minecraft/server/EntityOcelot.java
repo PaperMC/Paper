@@ -81,7 +81,7 @@ public class EntityOcelot extends EntityAnimal {
 
     @Override
     public boolean isTypeNotPersistent(double d0) {
-        return !this.isTrusting() && this.ticksLived > 2400;
+        return !this.isTrusting() /*&& this.ticksLived > 2400*/; // CraftBukkit
     }
 
     public static AttributeProvider.Builder eK() {
@@ -135,7 +135,8 @@ public class EntityOcelot extends EntityAnimal {
         if ((this.br == null || this.br.h()) && !this.isTrusting() && this.k(itemstack) && entityhuman.h((Entity) this) < 9.0D) {
             this.a(entityhuman, itemstack);
             if (!this.world.isClientSide) {
-                if (this.random.nextInt(3) == 0) {
+                // CraftBukkit - added event call and isCancelled check
+                if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                     this.setTrusting(true);
                     this.u(true);
                     this.world.broadcastEntityEffect(this, (byte) 41);
@@ -243,9 +244,9 @@ public class EntityOcelot extends EntityAnimal {
         private final EntityOcelot i;
 
         public a(EntityOcelot entityocelot, Class<T> oclass, float f, double d0, double d1) {
-            Predicate predicate = IEntitySelector.e;
+            // Predicate predicate = IEntitySelector.e; // CraftBukkit - decompile error
 
-            super(entityocelot, oclass, f, d0, d1, predicate::test);
+            super(entityocelot, oclass, f, d0, d1, IEntitySelector.e::test); // CraftBukkit - decompile error
             this.i = entityocelot;
         }
 

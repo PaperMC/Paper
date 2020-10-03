@@ -131,7 +131,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
                     MobEffect mobeffect1 = new MobEffect(MobEffects.BAD_OMEN, 120000, i, false, false, true);
 
                     if (!this.world.getGameRules().getBoolean(GameRules.DISABLE_RAIDS)) {
-                        entityhuman.addEffect(mobeffect1);
+                        entityhuman.addEffect(mobeffect1, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.PATROL_CAPTAIN); // CraftBukkit
                     }
                 }
             }
@@ -398,7 +398,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
             while (iterator.hasNext()) {
                 EntityRaider entityraider = (EntityRaider) iterator.next();
 
-                entityraider.setGoalTarget(this.c.getGoalTarget());
+                entityraider.setGoalTarget(this.c.getGoalTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
             }
 
         }
@@ -415,7 +415,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
                 while (iterator.hasNext()) {
                     EntityRaider entityraider = (EntityRaider) iterator.next();
 
-                    entityraider.setGoalTarget(entityliving);
+                    entityraider.setGoalTarget(this.c.getGoalTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
                     entityraider.setAggressive(true);
                 }
 
@@ -489,7 +489,7 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
 
         private final T b;
 
-        public b(EntityRaider entityraider) {
+        public b(T entityraider) { // CraftBukkit - decompile error
             this.b = entityraider;
             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
         }

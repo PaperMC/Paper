@@ -42,7 +42,15 @@ public class Enchantments {
     public static final Enchantment MENDING = a("mending", new EnchantmentMending(Enchantment.Rarity.RARE, EnumItemSlot.values()));
     public static final Enchantment VANISHING_CURSE = a("vanishing_curse", new EnchantmentVanishing(Enchantment.Rarity.VERY_RARE, EnumItemSlot.values()));
 
+    // CraftBukkit start
+    static {
+        for (Object enchantment : IRegistry.ENCHANTMENT) {
+            org.bukkit.enchantments.Enchantment.registerEnchantment(new org.bukkit.craftbukkit.enchantments.CraftEnchantment((Enchantment) enchantment));
+        }
+    }
+    // CraftBukkit end
+
     private static Enchantment a(String s, Enchantment enchantment) {
-        return (Enchantment) IRegistry.a(IRegistry.ENCHANTMENT, s, (Object) enchantment);
+        return (Enchantment) IRegistry.a(IRegistry.ENCHANTMENT, s, enchantment); // CraftBukkit - decompile error
     }
 }

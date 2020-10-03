@@ -5,6 +5,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Iterator;
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+// CraftBukkit end
 
 public class ShapelessRecipes implements RecipeCrafting {
 
@@ -19,6 +24,20 @@ public class ShapelessRecipes implements RecipeCrafting {
         this.result = itemstack;
         this.ingredients = nonnulllist;
     }
+
+    // CraftBukkit start
+    @SuppressWarnings("unchecked")
+    public org.bukkit.inventory.ShapelessRecipe toBukkitRecipe() {
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
+        CraftShapelessRecipe recipe = new CraftShapelessRecipe(result, this);
+        recipe.setGroup(this.group);
+
+        for (RecipeItemStack list : this.ingredients) {
+            recipe.addIngredient(CraftRecipe.toBukkit(list));
+        }
+        return recipe;
+    }
+    // CraftBukkit end
 
     @Override
     public MinecraftKey getKey() {

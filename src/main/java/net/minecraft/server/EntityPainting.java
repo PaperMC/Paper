@@ -11,6 +11,10 @@ public class EntityPainting extends EntityHanging {
 
     public EntityPainting(EntityTypes<? extends EntityPainting> entitytypes, World world) {
         super(entitytypes, world);
+        // CraftBukkit start - generate a non-null painting
+        List<Paintings> list = Lists.newArrayList(Paintings.a);
+        this.art = (Paintings) list.get(this.random.nextInt(list.size()));
+        // CraftBukkit end
     }
 
     public EntityPainting(World world, BlockPosition blockposition, EnumDirection enumdirection) {

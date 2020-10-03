@@ -163,7 +163,8 @@ public class EntityGhast extends EntityFlying implements IMonster {
 
                     EntityLargeFireball entitylargefireball = new EntityLargeFireball(world, this.ghast, d2, d3, d4);
 
-                    entitylargefireball.yield = this.ghast.getPower();
+                    // CraftBukkit - set bukkitYield when setting explosionpower
+                    entitylargefireball.bukkitYield = entitylargefireball.yield = this.ghast.getPower();
                     entitylargefireball.setPosition(this.ghast.locX() + vec3d.x * 4.0D, this.ghast.e(0.5D) + 0.5D, entitylargefireball.locZ() + vec3d.z * 4.0D);
                     world.addEntity(entitylargefireball);
                     this.a = -40;

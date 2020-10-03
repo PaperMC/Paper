@@ -22,8 +22,21 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import javax.annotation.Nullable;
+// CraftBukkit start
+import com.google.common.collect.Streams;
+import java.util.stream.Stream;
 
-public interface IChatBaseComponent extends Message, IChatFormatted {
+public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IChatBaseComponent> {
+
+    default Stream<IChatBaseComponent> stream() {
+        return Streams.concat(new Stream[]{Stream.of(this), this.getSiblings().stream().flatMap(IChatBaseComponent::stream)});
+    }
+
+    @Override
+    default Iterator<IChatBaseComponent> iterator() {
+        return this.stream().iterator();
+    }
+    // CraftBukkit end
 
     ChatModifier getChatModifier();
 

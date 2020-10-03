@@ -68,6 +68,7 @@ public class CrashReport {
 
             return String.format("%d total; %s", list.size(), list.stream().collect(Collectors.joining(" ")));
         });
+        this.d.a("CraftBukkit Information", (CrashReportCallable) new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
     }
 
     public String a() {

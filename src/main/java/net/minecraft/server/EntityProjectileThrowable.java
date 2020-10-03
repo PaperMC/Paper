@@ -18,14 +18,20 @@ public abstract class EntityProjectileThrowable extends EntityProjectile {
 
     public void setItem(ItemStack itemstack) {
         if (itemstack.getItem() != this.getDefaultItem() || itemstack.hasTag()) {
-            this.getDataWatcher().set(EntityProjectileThrowable.b, SystemUtils.a((Object) itemstack.cloneItemStack(), (itemstack1) -> {
-                itemstack1.setCount(1);
+            this.getDataWatcher().set(EntityProjectileThrowable.b, SystemUtils.a(itemstack.cloneItemStack(), (itemstack1) -> { // CraftBukkit - decompile error
+                if (!itemstack1.isEmpty()) itemstack1.setCount(1); // CraftBukkit
             }));
         }
 
     }
 
     protected abstract Item getDefaultItem();
+
+    // CraftBukkit start
+    public Item getDefaultItemPublic() {
+        return getDefaultItem();
+    }
+    // CraftBukkit end
 
     public ItemStack getItem() {
         return (ItemStack) this.getDataWatcher().get(EntityProjectileThrowable.b);

@@ -49,7 +49,7 @@ public class PathfinderGoalDefendVillage extends PathfinderGoalTarget {
 
     @Override
     public void c() {
-        this.a.setGoalTarget(this.b);
+        this.a.setGoalTarget(this.b, org.bukkit.event.entity.EntityTargetEvent.TargetReason.DEFEND_VILLAGE, true); // CraftBukkit - reason
         super.c();
     }
 }

@@ -70,6 +70,11 @@ public class TileEntityBanner extends TileEntity implements INamableTileEntity {
         }
 
         this.patterns = nbttagcompound.getList("Patterns", 10);
+        // CraftBukkit start
+        while (this.patterns.size() > 20) {
+            this.patterns.remove(20);
+        }
+        // CraftBukkit end
         this.h = null;
         this.g = true;
     }

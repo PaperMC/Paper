@@ -12,6 +12,12 @@ public class ItemBoneMeal extends Item {
 
     @Override
     public EnumInteractionResult a(ItemActionContext itemactioncontext) {
+        // CraftBukkit start - extract bonemeal application logic to separate, static method
+        return applyBonemeal(itemactioncontext);
+    }
+
+    public static EnumInteractionResult applyBonemeal(ItemActionContext itemactioncontext) {
+        // CraftBukkit end
         World world = itemactioncontext.getWorld();
         BlockPosition blockposition = itemactioncontext.getClickPosition();
         BlockPosition blockposition1 = blockposition.shift(itemactioncontext.getClickedFace());

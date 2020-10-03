@@ -15,7 +15,7 @@ public class RayTrace {
         this.b = vec3d1;
         this.c = raytrace_blockcollisionoption;
         this.d = raytrace_fluidcollisionoption;
-        this.e = VoxelShapeCollision.a(entity);
+        this.e = (entity == null) ? VoxelShapeCollision.a() : VoxelShapeCollision.a(entity); // CraftBukkit
     }
 
     public Vec3D a() {
@@ -44,7 +44,7 @@ public class RayTrace {
 
         private final Predicate<Fluid> predicate;
 
-        private FluidCollisionOption(Predicate predicate) {
+        private FluidCollisionOption(Predicate<Fluid> predicate) { // CraftBukkit - decompile error
             this.predicate = predicate;
         }
 

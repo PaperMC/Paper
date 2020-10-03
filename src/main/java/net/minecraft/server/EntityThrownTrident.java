@@ -132,7 +132,7 @@ public class EntityThrownTrident extends EntityArrow {
 
                 entitylightning.d(Vec3D.c((BaseBlockPosition) blockposition));
                 entitylightning.d(entity1 instanceof EntityPlayer ? (EntityPlayer) entity1 : null);
-                this.world.addEntity(entitylightning);
+                ((WorldServer) this.world).strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
                 soundeffect = SoundEffects.ITEM_TRIDENT_THUNDER;
                 f1 = 5.0F;
             }

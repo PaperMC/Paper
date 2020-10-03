@@ -2,6 +2,10 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 import java.util.List;
+// CraftBukkit start
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+// CraftBukkit end
 
 public class TileEntityChest extends TileEntityLootable implements ITickable {
 
@@ -10,6 +14,37 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
     protected float b;
     public int viewingCount;
     private int j;
+
+    // CraftBukkit start - add fields and methods
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+    private int maxStack = MAX_STACK;
+    public boolean opened;
+
+    public List<ItemStack> getContents() {
+        return this.items;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return maxStack;
+    }
+
+    public void setMaxStackSize(int size) {
+        maxStack = size;
+    }
+    // CraftBukkit end
 
     protected TileEntityChest(TileEntityTypes<?> tileentitytypes) {
         super(tileentitytypes);
@@ -60,6 +95,13 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
         this.viewingCount = a(this.world, this, this.j, i, j, k, this.viewingCount);
         this.b = this.a;
         float f = 0.1F;
+
+        // CraftBukkit start - If chest is forced open by API, remove a viewer due to playBlockAction() call and don't tick to prevent sound effects.
+        if (opened) {
+            this.viewingCount--;
+            return;
+        }
+        // CraftBukkit end
 
         if (this.viewingCount > 0 && this.a == 0.0F) {
             this.playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
@@ -155,8 +197,20 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
             if (this.viewingCount < 0) {
                 this.viewingCount = 0;
             }
+            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
 
             ++this.viewingCount;
+            if (this.world == null) return; // CraftBukkit
+
+            // CraftBukkit start - Call redstone event
+            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
+                int newPower = Math.max(0, Math.min(15, this.viewingCount));
+
+                if (oldPower != newPower) {
+                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
+                }
+            }
+            // CraftBukkit end
             this.onOpen();
         }
 
@@ -165,7 +219,18 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
     @Override
     public void closeContainer(EntityHuman entityhuman) {
         if (!entityhuman.isSpectator()) {
+            int oldPower = Math.max(0, Math.min(15, this.viewingCount)); // CraftBukkit - Get power before new viewer is added
             --this.viewingCount;
+
+            // CraftBukkit start - Call redstone event
+            if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
+                int newPower = Math.max(0, Math.min(15, this.viewingCount));
+
+                if (oldPower != newPower) {
+                    org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, position, oldPower, newPower);
+                }
+            }
+            // CraftBukkit end
             this.onOpen();
         }
 
@@ -175,7 +240,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
         Block block = this.getBlock().getBlock();
 
         if (block instanceof BlockChest) {
-            this.world.playBlockAction(this.position, block, 1, this.viewingCount);
+            if (!opened) this.world.playBlockAction(this.position, block, 1, this.viewingCount); // CraftBukkit
             this.world.applyPhysics(this.position, block);
         }
 
@@ -216,4 +281,11 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
     protected Container createContainer(int i, PlayerInventory playerinventory) {
         return ContainerChest.a(i, playerinventory, this);
     }
+
+    // CraftBukkit start
+    @Override
+    public boolean isFilteredNBT() {
+        return true;
+    }
+    // CraftBukkit end
 }

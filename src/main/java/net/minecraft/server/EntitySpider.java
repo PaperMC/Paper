@@ -136,7 +136,7 @@ public class EntitySpider extends EntityMonster {
             MobEffectList mobeffectlist = ((EntitySpider.GroupDataSpider) object).a;
 
             if (mobeffectlist != null) {
-                this.addEffect(new MobEffect(mobeffectlist, Integer.MAX_VALUE));
+                this.addEffect(new MobEffect(mobeffectlist, Integer.MAX_VALUE), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
             }
         }
 

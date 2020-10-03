@@ -1,10 +1,20 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+// CraftBukkit end
+
 public class ContainerBrewingStand extends Container {
 
     private final IInventory brewingStand;
     private final IContainerProperties d;
     private final Slot e;
+
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private PlayerInventory player;
+    // CraftBukkit end
 
     public ContainerBrewingStand(int i, PlayerInventory playerinventory) {
         this(i, playerinventory, new InventorySubcontainer(5), new ContainerProperties(2));
@@ -12,6 +22,7 @@ public class ContainerBrewingStand extends Container {
 
     public ContainerBrewingStand(int i, PlayerInventory playerinventory, IInventory iinventory, IContainerProperties icontainerproperties) {
         super(Containers.BREWING_STAND, i);
+        player = playerinventory; // CraftBukkit
         a(iinventory, 5);
         a(icontainerproperties, 2);
         this.brewingStand = iinventory;
@@ -39,6 +50,7 @@ public class ContainerBrewingStand extends Container {
 
     @Override
     public boolean canUse(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return this.brewingStand.a(entityhuman);
     }
 
@@ -171,4 +183,17 @@ public class ContainerBrewingStand extends Container {
             return item == Items.POTION || item == Items.SPLASH_POTION || item == Items.LINGERING_POTION || item == Items.GLASS_BOTTLE;
         }
     }
+
+    // CraftBukkit start
+    @Override
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+
+        CraftInventoryBrewer inventory = new CraftInventoryBrewer(this.brewingStand);
+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
 }

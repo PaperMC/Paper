@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockObserver extends BlockDirectional {
 
     public static final BlockStateBoolean b = BlockProperties.w;
@@ -29,8 +31,18 @@ public class BlockObserver extends BlockDirectional {
     @Override
     public void tickAlways(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
         if ((Boolean) iblockdata.get(BlockObserver.b)) {
+            // CraftBukkit start
+            if (CraftEventFactory.callRedstoneChange(worldserver, blockposition, 15, 0).getNewCurrent() != 0) {
+                return;
+            }
+            // CraftBukkit end
             worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockObserver.b, false), 2);
         } else {
+            // CraftBukkit start
+            if (CraftEventFactory.callRedstoneChange(worldserver, blockposition, 0, 15).getNewCurrent() != 15) {
+                return;
+            }
+            // CraftBukkit end
             worldserver.setTypeAndData(blockposition, (IBlockData) iblockdata.set(BlockObserver.b, true), 2);
             worldserver.getBlockTickList().a(blockposition, this, 2);
         }

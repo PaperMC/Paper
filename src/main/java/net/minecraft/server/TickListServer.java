@@ -36,11 +36,17 @@ public class TickListServer<T> implements TickList<T> {
     public void b() {
         int i = this.nextTickList.size();
 
-        if (i != this.nextTickListHash.size()) {
+        if (false) { // CraftBukkit
             throw new IllegalStateException("TickNextTick list out of synch");
         } else {
             if (i > 65536) {
-                i = 65536;
+                // CraftBukkit start - If the server has too much to process over time, try to alleviate that
+                if (i > 20 * 65536) {
+                    i = i / 20;
+                } else {
+                    i = 65536;
+                }
+                // CraftBukkit end
             }
 
             ChunkProviderServer chunkproviderserver = this.e.getChunkProvider();
@@ -79,7 +85,7 @@ public class TickListServer<T> implements TickList<T> {
                         throw new ReportedException(crashreport);
                     }
                 } else {
-                    this.a(nextticklistentry.a, nextticklistentry.b(), 0);
+                    this.a(nextticklistentry.a, (T) nextticklistentry.b(), 0); // CraftBukkit - decompile error
                 }
             }
 

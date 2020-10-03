@@ -35,4 +35,6 @@ public interface IRecipe<C extends IInventory> {
     RecipeSerializer<?> getRecipeSerializer();
 
     Recipes<?> g();
+
+    org.bukkit.inventory.Recipe toBukkitRecipe(); // CraftBukkit
 }

@@ -19,6 +19,11 @@ public class BlockCoralFanWall extends BlockCoralFanWallAbstract {
     @Override
     public void tickAlways(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, Random random) {
         if (!c(iblockdata, (IBlockAccess) worldserver, blockposition)) {
+            // CraftBukkit start
+            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, this.c.getBlockData().set(BlockCoralFanWall.b, false).set(BlockCoralFanWall.a, iblockdata.get(BlockCoralFanWall.a))).isCancelled()) {
+                return;
+            }
+            // CraftBukkit end
             worldserver.setTypeAndData(blockposition, (IBlockData) ((IBlockData) this.c.getBlockData().set(BlockCoralFanWall.b, false)).set(BlockCoralFanWall.a, iblockdata.get(BlockCoralFanWall.a)), 2);
         }
 

@@ -38,6 +38,11 @@ public class ItemArmorStand extends Item {
 
                     entityarmorstand.setPositionRotation(entityarmorstand.locX(), entityarmorstand.locY(), entityarmorstand.locZ(), f, 0.0F);
                     this.a(entityarmorstand, world.random);
+                    // CraftBukkit start
+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(itemactioncontext, entityarmorstand).isCancelled()) {
+                        return EnumInteractionResult.FAIL;
+                    }
+                    // CraftBukkit end
                     world.addEntity(entityarmorstand);
                     world.playSound((EntityHuman) null, entityarmorstand.locX(), entityarmorstand.locY(), entityarmorstand.locZ(), SoundEffects.ENTITY_ARMOR_STAND_PLACE, SoundCategory.BLOCKS, 0.75F, 0.8F);
                 }

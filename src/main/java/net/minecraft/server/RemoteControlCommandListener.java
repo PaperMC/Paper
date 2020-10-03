@@ -26,6 +26,17 @@ public class RemoteControlCommandListener implements ICommandListener {
         return new CommandListenerWrapper(this, Vec3D.b((BaseBlockPosition) worldserver.getSpawn()), Vec2F.a, worldserver, 4, "Rcon", RemoteControlCommandListener.b, this.server, (Entity) null);
     }
 
+    // CraftBukkit start - Send a String
+    public void sendMessage(String message) {
+        this.buffer.append(message);
+    }
+
+    @Override
+    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
+        return server.remoteConsole;
+    }
+    // CraftBukkit end
+
     @Override
     public void sendMessage(IChatBaseComponent ichatbasecomponent, UUID uuid) {
         this.buffer.append(ichatbasecomponent.getString());

@@ -113,14 +113,20 @@ public class BlockFluids extends Block implements IFluidSource {
                     if (world.getFluid(blockposition1).a((Tag) TagsFluid.WATER)) {
                         Block block = world.getFluid(blockposition).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;
 
-                        world.setTypeUpdate(blockposition, block.getBlockData());
-                        this.fizz(world, blockposition);
+                        // CraftBukkit start
+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, block.getBlockData())) {
+                            this.fizz(world, blockposition);
+                        }
+                        // CraftBukkit end
                         return false;
                     }
 
                     if (flag && world.getType(blockposition1).a(Blocks.BLUE_ICE)) {
-                        world.setTypeUpdate(blockposition, Blocks.BASALT.getBlockData());
-                        this.fizz(world, blockposition);
+                        // CraftBukkit start
+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, Blocks.BASALT.getBlockData())) {
+                            this.fizz(world, blockposition);
+                        }
+                        // CraftBukkit end
                         return false;
                     }
                 }

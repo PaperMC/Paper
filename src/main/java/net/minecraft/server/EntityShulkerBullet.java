@@ -34,7 +34,20 @@ public class EntityShulkerBullet extends IProjectile {
         this.target = entity;
         this.dir = EnumDirection.UP;
         this.a(enumdirection_enumaxis);
+        projectileSource = (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity(); // CraftBukkit
     }
+
+    // CraftBukkit start
+    public Entity getTarget() {
+        return this.target;
+    }
+
+    public void setTarget(Entity e) {
+        this.target = e;
+        this.dir = EnumDirection.UP;
+        this.a(EnumDirection.EnumAxis.X);
+    }
+    // CraftBukkit end
 
     @Override
     public SoundCategory getSoundCategory() {
@@ -256,7 +269,7 @@ public class EntityShulkerBullet extends IProjectile {
         if (flag) {
             this.a(entityliving, entity);
             if (entity instanceof EntityLiving) {
-                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200));
+                ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.LEVITATION, 200), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
             }
         }
 
@@ -282,6 +295,11 @@ public class EntityShulkerBullet extends IProjectile {
 
     @Override
     public boolean damageEntity(DamageSource damagesource, float f) {
+        // CraftBukkit start
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
+            return false;
+        }
+        // CraftBukkit end
         if (!this.world.isClientSide) {
             this.playSound(SoundEffects.ENTITY_SHULKER_BULLET_HURT, 1.0F, 1.0F);
             ((WorldServer) this.world).a(Particles.CRIT, this.locX(), this.locY(), this.locZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);

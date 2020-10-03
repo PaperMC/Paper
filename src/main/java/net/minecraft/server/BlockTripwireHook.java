@@ -4,6 +4,8 @@ import com.google.common.base.MoreObjects;
 import java.util.Random;
 import javax.annotation.Nullable;
 
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+
 public class BlockTripwireHook extends Block {
 
     public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
@@ -133,6 +135,17 @@ public class BlockTripwireHook extends Block {
             this.a(world, blockposition1, enumdirection1);
             this.a(world, blockposition1, flag4, flag5, flag2, flag3);
         }
+
+        // CraftBukkit start
+        org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+
+        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, 15, 0);
+        world.getServer().getPluginManager().callEvent(eventRedstone);
+
+        if (eventRedstone.getNewCurrent() > 0) {
+            return;
+        }
+        // CraftBukkit end
 
         this.a(world, blockposition, flag4, flag5, flag2, flag3);
         if (!flag) {

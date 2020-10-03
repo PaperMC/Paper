@@ -103,5 +103,12 @@ public class EntityMinecartCommandBlock extends EntityMinecartAbstract {
         public CommandListenerWrapper getWrapper() {
             return new CommandListenerWrapper(this, EntityMinecartCommandBlock.this.getPositionVector(), EntityMinecartCommandBlock.this.bh(), this.d(), 2, this.getName().getString(), EntityMinecartCommandBlock.this.getScoreboardDisplayName(), this.d().getMinecraftServer(), EntityMinecartCommandBlock.this);
         }
+
+        // CraftBukkit start
+        @Override
+        public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
+            return (org.bukkit.craftbukkit.entity.CraftMinecartCommand) EntityMinecartCommandBlock.this.getBukkitEntity();
+        }
+        // CraftBukkit end
     }
 }

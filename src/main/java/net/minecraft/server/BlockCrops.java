@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+
 public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement {
 
     public static final BlockStateInteger AGE = BlockProperties.ai;
@@ -56,7 +58,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
                 float f = a((Block) this, (IBlockAccess) worldserver, blockposition);
 
                 if (random.nextInt((int) (25.0F / f) + 1) == 0) {
-                    worldserver.setTypeAndData(blockposition, this.setAge(i + 1), 2);
+                    CraftEventFactory.handleBlockGrowEvent(worldserver, blockposition, this.setAge(i + 1), 2); // CraftBukkit
                 }
             }
         }
@@ -71,7 +73,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
             i = j;
         }
 
-        world.setTypeAndData(blockposition, this.setAge(i), 2);
+        CraftEventFactory.handleBlockGrowEvent(world, blockposition, this.setAge(i), 2); // CraftBukkit
     }
 
     protected int a(World world) {
@@ -129,7 +131,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement 
 
     @Override
     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-        if (entity instanceof EntityRavager && world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
+        if (entity instanceof EntityRavager && !CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.AIR.getBlockData(), !world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)).isCancelled()) { // CraftBukkit
             world.a(blockposition, true, entity);
         }
 

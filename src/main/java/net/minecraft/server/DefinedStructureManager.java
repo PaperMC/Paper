@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 public class DefinedStructureManager {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private final Map<MinecraftKey, DefinedStructure> b = Maps.newHashMap();
+    private final Map<MinecraftKey, DefinedStructure> b = Maps.newConcurrentMap(); // SPIGOT-5287
     private final DataFixer c;
     private IResourceManager d;
     private final java.nio.file.Path e;

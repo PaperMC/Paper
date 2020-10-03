@@ -15,6 +15,12 @@ public class StatisticManager {
     public void b(EntityHuman entityhuman, Statistic<?> statistic, int i) {
         int j = (int) Math.min((long) this.getStatisticValue(statistic) + (long) i, 2147483647L);
 
+        // CraftBukkit start - fire Statistic events
+        org.bukkit.event.Cancellable cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.handleStatisticsIncrease(entityhuman, statistic, this.getStatisticValue(statistic), j);
+        if (cancellable != null && cancellable.isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
         this.setStatistic(entityhuman, statistic, j);
     }
 

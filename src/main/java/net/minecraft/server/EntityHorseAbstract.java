@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
+import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason; // CraftBukkit
 
 public abstract class EntityHorseAbstract extends EntityAnimal implements IInventoryListener, IJumpable, ISaddleable {
 
@@ -34,6 +35,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
     private float bK;
     protected boolean bu = true;
     protected int bv;
+    public int maxDomestication = 100; // CraftBukkit - store max domestication value
 
     protected EntityHorseAbstract(EntityTypes<? extends EntityHorseAbstract> entitytypes, World world) {
         super(entitytypes, world);
@@ -218,7 +220,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
     public void loadChest() {
         InventorySubcontainer inventorysubcontainer = this.inventoryChest;
 
-        this.inventoryChest = new InventorySubcontainer(this.getChestSlots());
+        this.inventoryChest = new InventorySubcontainer(this.getChestSlots(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
         if (inventorysubcontainer != null) {
             inventorysubcontainer.b((IInventoryListener) this);
             int i = Math.min(inventorysubcontainer.getSize(), this.inventoryChest.getSize());
@@ -334,7 +336,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
     }
 
     public int getMaxDomestication() {
-        return 100;
+        return this.maxDomestication; // CraftBukkit - return stored max domestication instead of 100
     }
 
     @Override
@@ -405,7 +407,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
         }
 
         if (this.getHealth() < this.getMaxHealth() && f > 0.0F) {
-            this.heal(f);
+            this.heal(f, RegainReason.EATING); // CraftBukkit
             flag = true;
         }
 
@@ -481,7 +483,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
         super.movementTick();
         if (!this.world.isClientSide && this.isAlive()) {
             if (this.random.nextInt(900) == 0 && this.deathTicks == 0) {
-                this.heal(1.0F);
+                this.heal(1.0F, RegainReason.REGEN); // CraftBukkit
             }
 
             if (this.fl()) {
@@ -718,6 +720,7 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
         if (this.getOwnerUUID() != null) {
             nbttagcompound.a("Owner", this.getOwnerUUID());
         }
+        nbttagcompound.setInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
 
         if (!this.inventoryChest.getItem(0).isEmpty()) {
             nbttagcompound.set("SaddleItem", this.inventoryChest.getItem(0).save(new NBTTagCompound()));
@@ -745,6 +748,11 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
         if (uuid != null) {
             this.setOwnerUUID(uuid);
         }
+        // CraftBukkit start
+        if (nbttagcompound.hasKey("Bukkit.MaxDomestication")) {
+            this.maxDomestication = nbttagcompound.getInt("Bukkit.MaxDomestication");
+        }
+        // CraftBukkit end
 
         if (nbttagcompound.hasKeyOfType("SaddleItem", 10)) {
             ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("SaddleItem"));
@@ -796,6 +804,18 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
 
     @Override
     public void b(int i) {
+        // CraftBukkit start
+        float power;
+        if (i >= 90) {
+            power = 1.0F;
+        } else {
+            power = 0.4F + 0.4F * (float) i / 90.0F;
+        }
+        org.bukkit.event.entity.HorseJumpEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callHorseJumpEvent(this, power);
+        if (event.isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
         this.canSlide = true;
         this.eU();
         this.fn();

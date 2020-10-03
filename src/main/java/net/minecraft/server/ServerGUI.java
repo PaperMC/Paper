@@ -158,6 +158,7 @@ public class ServerGUI extends JComponent {
         this.e.forEach(Runnable::run);
     }
 
+    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]"); // CraftBukkit
     public void a(JTextArea jtextarea, JScrollPane jscrollpane, String s) {
         if (!SwingUtilities.isEventDispatchThread()) {
             SwingUtilities.invokeLater(() -> {
@@ -173,7 +174,7 @@ public class ServerGUI extends JComponent {
             }
 
             try {
-                document.insertString(document.getLength(), s, (AttributeSet) null);
+                document.insertString(document.getLength(), ANSI.matcher(s).replaceAll(""), (AttributeSet) null); // CraftBukkit
             } catch (BadLocationException badlocationexception) {
                 ;
             }

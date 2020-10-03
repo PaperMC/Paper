@@ -22,6 +22,13 @@ public interface ICommandListener {
         public boolean shouldBroadcastCommands() {
             return false;
         }
+
+        // CraftBukkit start
+        @Override
+        public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        // CraftBukkit end
     };
 
     void sendMessage(IChatBaseComponent ichatbasecomponent, UUID uuid);
@@ -31,4 +38,6 @@ public interface ICommandListener {
     boolean shouldSendFailure();
 
     boolean shouldBroadcastCommands();
+
+    org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper); // CraftBukkit
 }

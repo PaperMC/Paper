@@ -25,4 +25,10 @@ public interface IWorldWriter {
     default boolean addEntity(Entity entity) {
         return false;
     }
+
+    // CraftBukkit start
+    default boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+        return false;
+    }
+    // CraftBukkit end
 }

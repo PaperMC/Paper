@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import java.util.Random;
 
+import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+
 public abstract class BlockPressurePlateAbstract extends Block {
 
     protected static final VoxelShape a = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 0.5D, 15.0D);
@@ -64,6 +66,19 @@ public abstract class BlockPressurePlateAbstract extends Block {
         int j = this.b(world, blockposition);
         boolean flag = i > 0;
         boolean flag1 = j > 0;
+
+        // CraftBukkit start - Interact Pressure Plate
+        org.bukkit.World bworld = world.getWorld();
+        org.bukkit.plugin.PluginManager manager = world.getServer().getPluginManager();
+
+        if (flag != flag1) {
+            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bworld.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), i, j);
+            manager.callEvent(eventRedstone);
+
+            flag1 = eventRedstone.getNewCurrent() > 0;
+            j = eventRedstone.getNewCurrent();
+        }
+        // CraftBukkit end
 
         if (i != j) {
             IBlockData iblockdata1 = this.a(iblockdata, j);

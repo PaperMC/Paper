@@ -66,6 +66,11 @@ public class BlockTallPlant extends BlockPlant {
     }
 
     protected static void b(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+        // CraftBukkit start
+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
+            return;
+        }
+        // CraftBukkit end
         BlockPropertyDoubleBlockHalf blockpropertydoubleblockhalf = (BlockPropertyDoubleBlockHalf) iblockdata.get(BlockTallPlant.HALF);
 
         if (blockpropertydoubleblockhalf == BlockPropertyDoubleBlockHalf.UPPER) {

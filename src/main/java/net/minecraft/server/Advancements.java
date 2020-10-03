@@ -72,7 +72,7 @@ public class Advancements {
             }
         }
 
-        Advancements.LOGGER.info("Loaded {} advancements", this.advancements.size());
+        // Advancements.LOGGER.info("Loaded {} advancements", this.advancements.size()); // CraftBukkit - moved to AdvancementDataWorld#reload
     }
 
     public Iterable<Advancement> b() {

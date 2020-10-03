@@ -4,6 +4,11 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
+// CraftBukkit end
+
 public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable {
 
     private static final DataWatcherObject<Boolean> br = DataWatcher.a(EntityWolf.class, DataWatcherRegistry.i);
@@ -43,7 +48,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
         this.goalSelector.a(10, new PathfinderGoalRandomLookaround(this));
         this.targetSelector.a(1, new PathfinderGoalOwnerHurtByTarget(this));
         this.targetSelector.a(2, new PathfinderGoalOwnerHurtTarget(this));
-        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a());
+        this.targetSelector.a(3, (new PathfinderGoalHurtByTarget(this, new Class[0])).a(new Class[0])); // CraftBukkit - decompile error
         this.targetSelector.a(4, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, 10, true, false, this::a_));
         this.targetSelector.a(5, new PathfinderGoalRandomTargetNonTamed<>(this, EntityAnimal.class, false, EntityWolf.bq));
         this.targetSelector.a(6, new PathfinderGoalRandomTargetNonTamed<>(this, EntityTurtle.class, false, EntityTurtle.bo));
@@ -54,6 +59,24 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
     public static AttributeProvider.Builder eU() {
         return EntityInsentient.p().a(GenericAttributes.MOVEMENT_SPEED, 0.30000001192092896D).a(GenericAttributes.MAX_HEALTH, 8.0D).a(GenericAttributes.ATTACK_DAMAGE, 2.0D);
     }
+
+    // CraftBukkit - add overriden version
+    @Override
+    public boolean setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fire) {
+        if (!super.setGoalTarget(entityliving, reason, fire)) {
+            return false;
+        }
+        entityliving = getGoalTarget();
+        /* // PAIL
+        if (entityliving == null) {
+            this.setAngry(false);
+        } else if (!this.isTamed()) {
+            this.setAngry(true);
+        }
+        */
+        return true;
+    }
+    // CraftBukkit end
 
     @Override
     protected void initDatawatcher() {
@@ -201,7 +224,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
         } else {
             Entity entity = damagesource.getEntity();
 
-            this.setWillSit(false);
+            // this.setWillSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
             if (entity != null && !(entity instanceof EntityHuman) && !(entity instanceof EntityArrow)) {
                 f = (f + 1.0F) / 2.0F;
             }
@@ -226,7 +249,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
         super.setTamed(flag);
         if (flag) {
             this.getAttributeInstance(GenericAttributes.MAX_HEALTH).setValue(20.0D);
-            this.setHealth(20.0F);
+            this.setHealth(this.getMaxHealth()); // CraftBukkit - 20.0 -> getMaxHealth()
         } else {
             this.getAttributeInstance(GenericAttributes.MAX_HEALTH).setValue(8.0D);
         }
@@ -250,7 +273,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
                         itemstack.subtract(1);
                     }
 
-                    this.heal((float) item.getFoodInfo().getNutrition());
+                    this.heal((float) item.getFoodInfo().getNutrition(), org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
                     return EnumInteractionResult.SUCCESS;
                 }
 
@@ -261,7 +284,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
                         this.setWillSit(!this.isWillSit());
                         this.jumping = false;
                         this.navigation.o();
-                        this.setGoalTarget((EntityLiving) null);
+                        this.setGoalTarget((EntityLiving) null, TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
                         return EnumInteractionResult.SUCCESS;
                     }
 
@@ -283,7 +306,8 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
                     itemstack.subtract(1);
                 }
 
-                if (this.random.nextInt(3) == 0) {
+                // CraftBukkit - added event call and isCancelled check.
+                if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) {
                     this.tame(entityhuman);
                     this.navigation.o();
                     this.setGoalTarget((EntityLiving) null);

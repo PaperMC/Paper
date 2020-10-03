@@ -18,8 +18,10 @@ public class PacketPlayOutWorldBorder implements Packet<PacketListenerPlayOut> {
 
     public PacketPlayOutWorldBorder(WorldBorder worldborder, PacketPlayOutWorldBorder.EnumWorldBorderAction packetplayoutworldborder_enumworldborderaction) {
         this.a = packetplayoutworldborder_enumworldborderaction;
-        this.c = worldborder.getCenterX();
-        this.d = worldborder.getCenterZ();
+        // CraftBukkit start - multiply out nether border
+        this.c = worldborder.getCenterX() * worldborder.world.getDimensionManager().getCoordinateScale();
+        this.d = worldborder.getCenterZ() * worldborder.world.getDimensionManager().getCoordinateScale();
+        // CraftBukkit end
         this.f = worldborder.getSize();
         this.e = worldborder.k();
         this.g = worldborder.j();

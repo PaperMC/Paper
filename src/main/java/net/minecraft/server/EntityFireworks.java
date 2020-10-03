@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.OptionalInt;
 import javax.annotation.Nullable;
+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class EntityFireworks extends IProjectile {
 
@@ -119,7 +120,11 @@ public class EntityFireworks extends IProjectile {
         }
 
         if (!this.world.isClientSide && this.ticksFlown > this.expectedLifespan) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
 
     }
@@ -134,7 +139,11 @@ public class EntityFireworks extends IProjectile {
     protected void a(MovingObjectPositionEntity movingobjectpositionentity) {
         super.a(movingobjectpositionentity);
         if (!this.world.isClientSide) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
     }
 
@@ -144,7 +153,11 @@ public class EntityFireworks extends IProjectile {
 
         this.world.getType(blockposition).a(this.world, blockposition, (Entity) this);
         if (!this.world.s_() && this.hasExplosions()) {
-            this.explode();
+            // CraftBukkit start
+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
+                this.explode();
+            }
+            // CraftBukkit end
         }
 
         super.a(movingobjectpositionblock);
@@ -170,7 +183,9 @@ public class EntityFireworks extends IProjectile {
 
         if (f > 0.0F) {
             if (this.ridingEntity != null) {
+                CraftEventFactory.entityDamage = this; // CraftBukkit
                 this.ridingEntity.damageEntity(DamageSource.a(this, this.getShooter()), 5.0F + (float) (nbttaglist.size() * 2));
+                CraftEventFactory.entityDamage = null; // CraftBukkit
             }
 
             double d0 = 5.0D;
@@ -197,7 +212,9 @@ public class EntityFireworks extends IProjectile {
                     if (flag) {
                         float f1 = f * (float) Math.sqrt((5.0D - (double) this.g((Entity) entityliving)) / 5.0D);
 
+                        CraftEventFactory.entityDamage = this; // CraftBukkit
                         entityliving.damageEntity(DamageSource.a(this, this.getShooter()), f1);
+                        CraftEventFactory.entityDamage = null; // CraftBukkit
                     }
                 }
             }

@@ -18,7 +18,7 @@ public class BlockWitherRose extends BlockFlowers {
                 EntityLiving entityliving = (EntityLiving) entity;
 
                 if (!entityliving.isInvulnerable(DamageSource.WITHER)) {
-                    entityliving.addEffect(new MobEffect(MobEffects.WITHER, 40));
+                    entityliving.addEffect(new MobEffect(MobEffects.WITHER, 40), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.WITHER_ROSE); // CraftBukkit
                 }
             }
 

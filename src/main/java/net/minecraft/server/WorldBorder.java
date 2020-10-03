@@ -17,6 +17,7 @@ public class WorldBorder {
     private int i = 29999984;
     private WorldBorder.a j = new WorldBorder.d(6.0E7D);
     public static final WorldBorder.c c = new WorldBorder.c(0.0D, 0.0D, 0.2D, 5.0D, 5, 15, 6.0E7D, 0L, 0.0D);
+    public WorldServer world; // CraftBukkit
 
     public WorldBorder() {}
 
@@ -130,6 +131,7 @@ public class WorldBorder {
     }
 
     public void a(IWorldBorderListener iworldborderlistener) {
+        if (a.contains(iworldborderlistener)) return; // CraftBukkit
         this.a.add(iworldborderlistener);
     }
 

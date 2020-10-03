@@ -26,6 +26,8 @@ import java.util.Date;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+import org.bukkit.craftbukkit.inventory.CraftItemStack; // CraftBukkit
+
 public class PacketDataSerializer extends ByteBuf {
 
     private final ByteBuf a;
@@ -154,7 +156,7 @@ public class PacketDataSerializer extends ByteBuf {
     }
 
     public <T extends Enum<T>> T a(Class<T> oclass) {
-        return ((Enum[]) oclass.getEnumConstants())[this.i()];
+        return ((T[]) oclass.getEnumConstants())[this.i()]; // CraftBukkit - fix decompile error
     }
 
     public PacketDataSerializer a(Enum<?> oenum) {
@@ -231,7 +233,7 @@ public class PacketDataSerializer extends ByteBuf {
         } else {
             try {
                 NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) (new ByteBufOutputStream(this)));
-            } catch (IOException ioexception) {
+            } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
                 throw new EncoderException(ioexception);
             }
         }
@@ -268,7 +270,7 @@ public class PacketDataSerializer extends ByteBuf {
     }
 
     public PacketDataSerializer a(ItemStack itemstack) {
-        if (itemstack.isEmpty()) {
+        if (itemstack.isEmpty() || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
             this.writeBoolean(false);
         } else {
             this.writeBoolean(true);
@@ -297,6 +299,11 @@ public class PacketDataSerializer extends ByteBuf {
             ItemStack itemstack = new ItemStack(Item.getById(i), b0);
 
             itemstack.setTag(this.l());
+            // CraftBukkit start
+            if (itemstack.getTag() != null) {
+                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
+            }
+            // CraftBukkit end
             return itemstack;
         }
     }

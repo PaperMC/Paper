@@ -1,5 +1,11 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
+// CraftBukkit end
+
 public class ItemChorusFruit extends Item {
 
     public ItemChorusFruit(Item.Info item_info) {
@@ -19,6 +25,20 @@ public class ItemChorusFruit extends Item {
                 double d3 = entityliving.locX() + (entityliving.getRandom().nextDouble() - 0.5D) * 16.0D;
                 double d4 = MathHelper.a(entityliving.locY() + (double) (entityliving.getRandom().nextInt(16) - 8), 0.0D, (double) (world.getHeight() - 1));
                 double d5 = entityliving.locZ() + (entityliving.getRandom().nextDouble() - 0.5D) * 16.0D;
+
+                // CraftBukkit start
+                if (entityliving instanceof EntityPlayer) {
+                    Player player = ((EntityPlayer) entityliving).getBukkitEntity();
+                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), new Location(player.getWorld(), d3, d4, d5), PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
+                    world.getServer().getPluginManager().callEvent(teleEvent);
+                    if (teleEvent.isCancelled()) {
+                        break;
+                    }
+                    d3 = teleEvent.getTo().getX();
+                    d4 = teleEvent.getTo().getY();
+                    d5 = teleEvent.getTo().getZ();
+                }
+                // CraftBukkit end
 
                 if (entityliving.isPassenger()) {
                     entityliving.stopRiding();

@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+// CraftBukkit start
+import org.bukkit.event.entity.EntityUnleashEvent;
+// CraftBukkit end
+
 public abstract class EntityCreature extends EntityInsentient {
 
     protected EntityCreature(EntityTypes<? extends EntityCreature> entitytypes, World world) {
@@ -34,6 +38,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
                 if (f > 10.0F) {
+                    this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                     this.unleash(true, true);
                 }
 
@@ -42,6 +47,7 @@ public abstract class EntityCreature extends EntityInsentient {
 
             this.x(f);
             if (f > 10.0F) {
+                this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
                 this.unleash(true, true);
                 this.goalSelector.a(PathfinderGoal.Type.MOVE);
             } else if (f > 6.0F) {

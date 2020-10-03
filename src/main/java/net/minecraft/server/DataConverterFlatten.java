@@ -375,7 +375,7 @@ public class DataConverterFlatten extends DataFix {
                     Typed<?> typed2 = typed.getOrCreateTyped(opticfinder1);
                     Dynamic<?> dynamic1 = (Dynamic) typed2.get(DSL.remainderFinder());
 
-                    dynamic1 = dynamic1.set("Damage", dynamic1.createInt(i));
+                    if (i != 0) dynamic1 = dynamic1.set("Damage", dynamic1.createInt(i)); // CraftBukkit
                     typed1 = typed1.set(opticfinder1, typed2.set(DSL.remainderFinder(), dynamic1));
                 }
 

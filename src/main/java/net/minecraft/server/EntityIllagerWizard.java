@@ -145,6 +145,11 @@ public abstract class EntityIllagerWizard extends EntityIllagerAbstract {
         public void e() {
             --this.b;
             if (this.b == 0) {
+                // CraftBukkit start
+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleEntitySpellCastEvent(EntityIllagerWizard.this, this.getCastSpell())) {
+                    return;
+                }
+                // CraftBukkit end
                 this.j();
                 EntityIllagerWizard.this.playSound(EntityIllagerWizard.this.getSoundCastSpell(), 1.0F, 1.0F);
             }

@@ -98,7 +98,7 @@ public interface IEntityAngerable {
     default void pacify() {
         this.setLastDamager((EntityLiving) null);
         this.setAngerTarget((UUID) null);
-        this.setGoalTarget((EntityLiving) null);
+        this.setGoalTarget((EntityLiving) null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit
         this.setAnger(0);
     }
 
@@ -107,6 +107,8 @@ public interface IEntityAngerable {
     void e(@Nullable EntityHuman entityhuman);
 
     void setGoalTarget(@Nullable EntityLiving entityliving);
+
+    boolean setGoalTarget(EntityLiving entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent); // CraftBukkit
 
     @Nullable
     EntityLiving getGoalTarget();

@@ -210,7 +210,16 @@ public abstract class ChunkGenerator {
         while (iterator.hasNext()) {
             Supplier<StructureFeature<?, ?>> supplier = (Supplier) iterator.next();
 
-            this.a((StructureFeature) supplier.get(), iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
+            // CraftBukkit start
+            StructureFeature<?, ?> structurefeature = (StructureFeature) supplier.get();
+            if (structurefeature.c == StructureGenerator.STRONGHOLD) {
+                synchronized (structurefeature) {
+                    this.a(structurefeature, iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
+                }
+            } else {
+                this.a(structurefeature, iregistrycustom, structuremanager, ichunkaccess, definedstructuremanager, i, chunkcoordintpair, biomebase);
+            }
+            // CraftBukkit end
         }
 
     }
@@ -294,9 +303,11 @@ public abstract class ChunkGenerator {
     }
 
     static {
-        IRegistry.a(IRegistry.CHUNK_GENERATOR, "noise", (Object) ChunkGeneratorAbstract.d);
-        IRegistry.a(IRegistry.CHUNK_GENERATOR, "flat", (Object) ChunkProviderFlat.d);
-        IRegistry.a(IRegistry.CHUNK_GENERATOR, "debug", (Object) ChunkProviderDebug.d);
+        // CraftBukkit start - decompile errors
+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "noise", ChunkGeneratorAbstract.d);
+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "flat", ChunkProviderFlat.d);
+        IRegistry.a(IRegistry.CHUNK_GENERATOR, "debug", ChunkProviderDebug.d);
+        // CraftBukkit end
         a = IRegistry.CHUNK_GENERATOR.dispatchStable(ChunkGenerator::a, Function.identity());
     }
 }

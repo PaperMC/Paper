@@ -127,7 +127,7 @@ public class ArgumentParserSelector {
             axisalignedbb = this.a(this.v == null ? 0.0D : this.v, this.w == null ? 0.0D : this.w, this.x == null ? 0.0D : this.x);
         }
 
-        Function function;
+        Function<Vec3D, Vec3D> function; // CraftBukkit - decompile error
 
         if (this.s == null && this.t == null && this.u == null) {
             function = (vec3d) -> {
@@ -188,8 +188,10 @@ public class ArgumentParserSelector {
         };
     }
 
-    protected void parseSelector() throws CommandSyntaxException {
-        this.checkPermissions = true;
+    // CraftBukkit start
+    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
+        this.checkPermissions = !overridePermissions;
+        // CraftBukkit end
         this.G = this::d;
         if (!this.l.canRead()) {
             throw ArgumentParserSelector.d.createWithContext(this.l);
@@ -443,6 +445,12 @@ public class ArgumentParserSelector {
     }
 
     public EntitySelector parse() throws CommandSyntaxException {
+        // CraftBukkit start
+        return parse(false);
+    }
+
+    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
+        // CraftBukkit end
         this.E = this.l.getCursor();
         this.G = this::b;
         if (this.l.canRead() && this.l.peek() == '@') {
@@ -451,7 +459,7 @@ public class ArgumentParserSelector {
             }
 
             this.l.skip();
-            this.parseSelector();
+            this.parseSelector(overridePermissions); // CraftBukkit
         } else {
             this.c();
         }

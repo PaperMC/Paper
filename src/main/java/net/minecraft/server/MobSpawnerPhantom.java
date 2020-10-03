@@ -57,7 +57,7 @@ public class MobSpawnerPhantom implements MobSpawner {
 
                                                 entityphantom.setPositionRotation(blockposition1, 0.0F, 0.0F);
                                                 groupdataentity = entityphantom.prepare(worldserver, difficultydamagescaler, EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
-                                                worldserver.addAllEntities(entityphantom);
+                                                worldserver.addAllEntities(entityphantom, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
                                             }
 
                                             i += k;

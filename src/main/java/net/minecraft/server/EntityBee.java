@@ -137,7 +137,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
                 }
 
                 if (b0 > 0) {
-                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0));
+                    ((EntityLiving) entity).addEffect(new MobEffect(MobEffects.POISON, b0 * 20, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                 }
             }
 
@@ -512,11 +512,15 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         } else {
             Entity entity = damagesource.getEntity();
 
-            if (!this.world.isClientSide) {
+            // CraftBukkit start
+            boolean result = super.damageEntity(damagesource, f);
+
+            if (result && !this.world.isClientSide) {
                 this.bC.l();
             }
 
-            return super.damageEntity(damagesource, f);
+            return result;
+            // CraftBukkit end
         }
     }
 
@@ -537,7 +541,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
     class d extends EntityBee.a {
 
         private d() {
-            super(null);
+            super(); // CraftBukkit - decompile error
         }
 
         @Override
@@ -597,7 +601,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
     class g extends EntityBee.a {
 
         private g() {
-            super(null);
+            super(); // CraftBukkit - decompile error
         }
 
         @Override
@@ -646,7 +650,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
                             }
                         }
 
-                        if (flag) {
+                        if (flag && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(EntityBee.this, blockposition, iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1)).isCancelled()) { // Spigot
                             EntityBee.this.world.triggerEffect(2005, blockposition, 0);
                             EntityBee.this.world.setTypeUpdate(blockposition, (IBlockData) iblockdata.set(blockstateinteger, (Integer) iblockdata.get(blockstateinteger) + 1));
                             EntityBee.this.fi();
@@ -661,7 +665,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
     class i extends EntityBee.a {
 
         private i() {
-            super(null);
+            super(); // CraftBukkit - decompile error
         }
 
         @Override
@@ -725,7 +729,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         private int h = 0;
 
         k() {
-            super(null);
+            super(); // CraftBukkit - decompile error
             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
         }
 
@@ -909,7 +913,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         private int c;
 
         f() {
-            super(null);
+            super(); // CraftBukkit - decompile error
             this.c = EntityBee.this.world.random.nextInt(10);
             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
         }
@@ -967,7 +971,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         private int f;
 
         e() {
-            super(null);
+            super(); // CraftBukkit - decompile error
             this.c = EntityBee.this.world.random.nextInt(10);
             this.d = Lists.newArrayList();
             this.e = null;
@@ -1187,7 +1191,7 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
         @Override
         protected void a(EntityInsentient entityinsentient, EntityLiving entityliving) {
             if (entityinsentient instanceof EntityBee && this.e.hasLineOfSight(entityliving)) {
-                entityinsentient.setGoalTarget(entityliving);
+                entityinsentient.setGoalTarget(entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
             }
 
         }

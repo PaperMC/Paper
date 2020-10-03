@@ -20,8 +20,8 @@ public class EntityEnderSignal extends Entity {
     }
 
     public void setItem(ItemStack itemstack) {
-        if (itemstack.getItem() != Items.ENDER_EYE || itemstack.hasTag()) {
-            this.getDataWatcher().set(EntityEnderSignal.b, SystemUtils.a((Object) itemstack.cloneItemStack(), (itemstack1) -> {
+        if (true || itemstack.getItem() != Items.ENDER_EYE || itemstack.hasTag()) { // CraftBukkit - always allow item changing
+            this.getDataWatcher().set(EntityEnderSignal.b, SystemUtils.a(itemstack.cloneItemStack(), (itemstack1) -> { // CraftBukkit - decompile error
                 itemstack1.setCount(1);
             }));
         }
@@ -137,7 +137,7 @@ public class EntityEnderSignal extends Entity {
     public void loadData(NBTTagCompound nbttagcompound) {
         ItemStack itemstack = ItemStack.a(nbttagcompound.getCompound("Item"));
 
-        this.setItem(itemstack);
+        if (!itemstack.isEmpty()) this.setItem(itemstack); // CraftBukkit - SPIGOT-6103 summon, see also SPIGOT-5474
     }
 
     @Override

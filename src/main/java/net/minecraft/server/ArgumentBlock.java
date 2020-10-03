@@ -43,7 +43,7 @@ public class ArgumentBlock {
     };
     private final StringReader i;
     private final boolean j;
-    private final Map<IBlockState<?>, Comparable<?>> k = Maps.newHashMap();
+    private final Map<IBlockState<?>, Comparable<?>> k = Maps.newLinkedHashMap(); // CraftBukkit - stable
     private final Map<String, String> l = Maps.newHashMap();
     private MinecraftKey m = new MinecraftKey("");
     private BlockStateList<Block, IBlockData> n;
@@ -219,7 +219,7 @@ public class ArgumentBlock {
         Iterator iterator = iblockstate.getValues().iterator();
 
         while (iterator.hasNext()) {
-            T t0 = (Comparable) iterator.next();
+            T t0 = (T) iterator.next(); // CraftBukkit - decompile error
 
             if (t0 instanceof Integer) {
                 suggestionsbuilder.suggest((Integer) t0);
@@ -488,7 +488,7 @@ public class ArgumentBlock {
         Optional<T> optional = iblockstate.b(s);
 
         if (optional.isPresent()) {
-            this.o = (IBlockData) this.o.set(iblockstate, (Comparable) optional.get());
+            this.o = (IBlockData) this.o.set(iblockstate, (T) optional.get()); // CraftBukkit - decompile error
             this.k.put(iblockstate, optional.get());
         } else {
             this.i.setCursor(i);
@@ -522,7 +522,7 @@ public class ArgumentBlock {
     private static <T extends Comparable<T>> void a(StringBuilder stringbuilder, IBlockState<T> iblockstate, Comparable<?> comparable) {
         stringbuilder.append(iblockstate.getName());
         stringbuilder.append('=');
-        stringbuilder.append(iblockstate.a(comparable));
+        stringbuilder.append(iblockstate.a((T) comparable)); // CraftBukkit - decompile error
     }
 
     public CompletableFuture<Suggestions> a(SuggestionsBuilder suggestionsbuilder, Tags<Block> tags) {

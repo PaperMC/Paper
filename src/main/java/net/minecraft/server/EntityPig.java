@@ -3,6 +3,10 @@ package net.minecraft.server;
 import com.google.common.collect.UnmodifiableIterator;
 import javax.annotation.Nullable;
 
+// CraftBukkit start
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+// CraftBukkit end
+
 public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
 
     private static final DataWatcherObject<Boolean> bo = DataWatcher.a(EntityPig.class, DataWatcherRegistry.i);
@@ -204,7 +208,13 @@ public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
             }
 
             entitypigzombie.setPersistent();
-            worldserver.addEntity(entitypigzombie);
+            // CraftBukkit start
+            if (CraftEventFactory.callPigZapEvent(this, entitylightning, entitypigzombie).isCancelled()) {
+                return;
+            }
+            // CraftBukkit - added a reason for spawning this creature
+            worldserver.addEntity(entitypigzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
+            // CraftBukkit end
             this.die();
         } else {
             super.onLightningStrike(worldserver, entitylightning);

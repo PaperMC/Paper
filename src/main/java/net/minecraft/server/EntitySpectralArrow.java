@@ -35,7 +35,7 @@ public class EntitySpectralArrow extends EntityArrow {
         super.a(entityliving);
         MobEffect mobeffect = new MobEffect(MobEffects.GLOWING, this.duration, 0);
 
-        entityliving.addEffect(mobeffect);
+        entityliving.addEffect(mobeffect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); // CraftBukkit
     }
 
     @Override

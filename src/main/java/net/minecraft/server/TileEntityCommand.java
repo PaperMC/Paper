@@ -9,6 +9,13 @@ public class TileEntityCommand extends TileEntity {
     private boolean c;
     private boolean g;
     private final CommandBlockListenerAbstract h = new CommandBlockListenerAbstract() {
+        // CraftBukkit start
+        @Override
+        public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
+            return new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, TileEntityCommand.this);
+        }
+        // CraftBukkit end
+
         @Override
         public void setCommand(String s) {
             super.setCommand(s);

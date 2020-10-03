@@ -4,9 +4,30 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+// CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+import org.bukkit.entity.Player;
+// CraftBukkit end
 
 public class ContainerGrindstone extends Container {
 
+    // CraftBukkit start
+    private CraftInventoryView bukkitEntity = null;
+    private Player player;
+
+    @Override
+    public CraftInventoryView getBukkitView() {
+        if (bukkitEntity != null) {
+            return bukkitEntity;
+        }
+
+        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.craftInventory, this.resultInventory);
+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
+        return bukkitEntity;
+    }
+    // CraftBukkit end
     private final IInventory resultInventory;
     private final IInventory craftInventory;
     private final ContainerAccess containerAccess;
@@ -24,6 +45,13 @@ public class ContainerGrindstone extends Container {
                 super.update();
                 ContainerGrindstone.this.a((IInventory) this);
             }
+
+            // CraftBukkit start
+            @Override
+            public Location getLocation() {
+                return containeraccess.getLocation();
+            }
+            // CraftBukkit end
         };
         this.containerAccess = containeraccess;
         this.a(new Slot(this.craftInventory, 0, 49, 19) {
@@ -108,6 +136,7 @@ public class ContainerGrindstone extends Container {
             this.a(new Slot(playerinventory, j, 8 + j * 18, 142));
         }
 
+        player = (Player) playerinventory.player.getBukkitEntity(); // CraftBukkit
     }
 
     @Override
@@ -235,6 +264,7 @@ public class ContainerGrindstone extends Container {
 
     @Override
     public boolean canUse(EntityHuman entityhuman) {
+        if (!this.checkReachable) return true; // CraftBukkit
         return a(this.containerAccess, entityhuman, Blocks.GRINDSTONE);
     }
 

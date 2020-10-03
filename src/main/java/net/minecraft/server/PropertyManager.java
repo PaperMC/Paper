@@ -15,14 +15,29 @@ import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import joptsimple.OptionSet; // CraftBukkit
+
 public abstract class PropertyManager<T extends PropertyManager<T>> {
 
     private static final Logger LOGGER = LogManager.getLogger();
     public final Properties properties;
+    // CraftBukkit start
+    private OptionSet options = null;
 
-    public PropertyManager(Properties properties) {
+    public PropertyManager(Properties properties, final OptionSet options) {
         this.properties = properties;
+
+        this.options = options;
     }
+
+    private String getOverride(String name, String value) {
+        if ((this.options != null) && (this.options.has(name))) {
+            return String.valueOf(this.options.valueOf(name));
+        }
+
+        return value;
+    }
+    // CraftBukkit end
 
     public static Properties loadPropertiesFile(java.nio.file.Path java_nio_file_path) {
         Properties properties = new Properties();
@@ -59,6 +74,11 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
 
     public void savePropertiesFile(java.nio.file.Path java_nio_file_path) {
         try {
+            // CraftBukkit start - Don't attempt writing to file if it's read only
+            if (java_nio_file_path.toFile().exists() && !java_nio_file_path.toFile().canWrite()) {
+                return;
+            }
+            // CraftBukkit end
             OutputStream outputstream = Files.newOutputStream(java_nio_file_path);
             Throwable throwable = null;
 
@@ -90,7 +110,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
     private static <V extends Number> Function<String, V> a(Function<String, V> function) {
         return (s) -> {
             try {
-                return (Number) function.apply(s);
+                return (V) function.apply(s); // CraftBukkit - decompile error
             } catch (NumberFormatException numberformatexception) {
                 return null;
             }
@@ -109,7 +129,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
 
     @Nullable
     private String c(String s) {
-        return (String) this.properties.get(s);
+        return (String) getOverride(s, this.properties.getProperty(s)); // CraftBukkit
     }
 
     @Nullable
@@ -137,7 +157,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
         V v1 = MoreObjects.firstNonNull(s1 != null ? function.apply(s1) : null, v0);
 
         this.properties.put(s, function1.apply(v1));
-        return new PropertyManager.EditableProperty<>(s, v1, function1);
+        return new PropertyManager.EditableProperty(s, v1, function1); // CraftBukkit - decompile error
     }
 
     protected <V> V a(String s, Function<String, V> function, UnaryOperator<V> unaryoperator, Function<V, String> function1, V v0) {
@@ -166,7 +186,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
     }
 
     protected int getInt(String s, int i) {
-        return (Integer) this.a(s, a(Integer::parseInt), (Object) i);
+        return (Integer) this.a(s, a(Integer::parseInt), i); // CraftBukkit - decompile error
     }
 
     protected PropertyManager<T>.EditableProperty<Integer> b(String s, int i) {
@@ -178,7 +198,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
     }
 
     protected long getLong(String s, long i) {
-        return (Long) this.a(s, a(Long::parseLong), (Object) i);
+        return (Long) this.a(s, a(Long::parseLong), i); // CraftBukkit - decompile error
     }
 
     protected boolean getBoolean(String s, boolean flag) {
@@ -201,7 +221,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
         return properties;
     }
 
-    protected abstract T reload(IRegistryCustom iregistrycustom, Properties properties);
+    protected abstract T reload(IRegistryCustom iregistrycustom, Properties properties, OptionSet optionset); // CraftBukkit
 
     public class EditableProperty<V> implements Supplier<V> {
 
@@ -209,7 +229,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
         private final V c;
         private final Function<V, String> d;
 
-        private EditableProperty(String s, Object object, Function function) {
+        private EditableProperty(String s, V object, Function function) { // CraftBukkit - decompile error
             this.b = s;
             this.c = object;
             this.d = function;
@@ -223,7 +243,7 @@ public abstract class PropertyManager<T extends PropertyManager<T>> {
             Properties properties = PropertyManager.this.a();
 
             properties.put(this.b, this.d.apply(v0));
-            return PropertyManager.this.reload(iregistrycustom, properties);
+            return PropertyManager.this.reload(iregistrycustom, properties, PropertyManager.this.options); // CraftBukkit
         }
     }
 }

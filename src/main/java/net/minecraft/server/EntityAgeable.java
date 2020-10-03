@@ -8,6 +8,7 @@ public abstract class EntityAgeable extends EntityCreature {
     protected int b;
     protected int c;
     protected int d;
+    public boolean ageLocked; // CraftBukkit
 
     protected EntityAgeable(EntityTypes<? extends EntityAgeable> entitytypes, World world) {
         super(entitytypes, world);
@@ -91,6 +92,7 @@ public abstract class EntityAgeable extends EntityCreature {
         super.saveData(nbttagcompound);
         nbttagcompound.setInt("Age", this.getAge());
         nbttagcompound.setInt("ForcedAge", this.c);
+        nbttagcompound.setBoolean("AgeLocked", this.ageLocked); // CraftBukkit
     }
 
     @Override
@@ -98,6 +100,7 @@ public abstract class EntityAgeable extends EntityCreature {
         super.loadData(nbttagcompound);
         this.setAgeRaw(nbttagcompound.getInt("Age"));
         this.c = nbttagcompound.getInt("ForcedAge");
+        this.ageLocked = nbttagcompound.getBoolean("AgeLocked"); // CraftBukkit
     }
 
     @Override
@@ -112,7 +115,7 @@ public abstract class EntityAgeable extends EntityCreature {
     @Override
     public void movementTick() {
         super.movementTick();
-        if (this.world.isClientSide) {
+        if (this.world.isClientSide || ageLocked) { // CraftBukkit
             if (this.d > 0) {
                 if (this.d % 4 == 0) {
                     this.world.addParticle(Particles.HAPPY_VILLAGER, this.d(1.0D), this.cE() + 0.5D, this.g(1.0D), 0.0D, 0.0D, 0.0D);

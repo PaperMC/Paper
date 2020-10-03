@@ -76,4 +76,12 @@ public abstract class TileEntityContainer extends TileEntity implements IInvento
     }
 
     protected abstract Container createContainer(int i, PlayerInventory playerinventory);
+
+    // CraftBukkit start
+    @Override
+    public org.bukkit.Location getLocation() {
+        if (world == null) return null;
+        return new org.bukkit.Location(world.getWorld(), position.getX(), position.getY(), position.getZ());
+    }
+    // CraftBukkit end
 }

@@ -2,6 +2,13 @@ package net.minecraft.server;
 
 import java.util.Iterator;
 import javax.annotation.Nullable;
+// CraftBukkit start
+import java.util.List;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.craftbukkit.entity.CraftAbstractVillager;
+import org.bukkit.entity.HumanEntity;
+// CraftBukkit end
 
 public class InventoryMerchant implements IInventory {
 
@@ -11,6 +18,46 @@ public class InventoryMerchant implements IInventory {
     private MerchantRecipe recipe;
     public int selectedIndex;
     private int e;
+
+    // CraftBukkit start - add fields and methods
+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+    private int maxStack = MAX_STACK;
+
+    public List<ItemStack> getContents() {
+        return this.itemsInSlots;
+    }
+
+    public void onOpen(CraftHumanEntity who) {
+        transaction.add(who);
+    }
+
+    public void onClose(CraftHumanEntity who) {
+        transaction.remove(who);
+        merchant.setTradingPlayer((EntityHuman) null); // SPIGOT-4860
+    }
+
+    public List<HumanEntity> getViewers() {
+        return transaction;
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return maxStack;
+    }
+
+    public void setMaxStackSize(int i) {
+        maxStack = i;
+    }
+
+    public org.bukkit.inventory.InventoryHolder getOwner() {
+        return (merchant instanceof EntityVillagerAbstract) ? (CraftAbstractVillager) ((EntityVillagerAbstract) this.merchant).getBukkitEntity() : null;
+    }
+
+    @Override
+    public Location getLocation() {
+        return (merchant instanceof EntityVillager) ? ((EntityVillager) this.merchant).getBukkitEntity().getLocation() : null;
+    }
+    // CraftBukkit end
 
     public InventoryMerchant(IMerchant imerchant) {
         this.itemsInSlots = NonNullList.a(3, ItemStack.b);

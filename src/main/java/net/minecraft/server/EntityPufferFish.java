@@ -114,7 +114,7 @@ public class EntityPufferFish extends EntityFish {
         int i = this.getPuffState();
 
         if (entityinsentient.damageEntity(DamageSource.mobAttack(this), (float) (1 + i))) {
-            entityinsentient.addEffect(new MobEffect(MobEffects.POISON, 60 * i, 0));
+            entityinsentient.addEffect(new MobEffect(MobEffects.POISON, 60 * i, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
             this.playSound(SoundEffects.ENTITY_PUFFER_FISH_STING, 1.0F, 1.0F);
         }
 
@@ -129,7 +129,7 @@ public class EntityPufferFish extends EntityFish {
                 ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.j, 0.0F));
             }
 
-            entityhuman.addEffect(new MobEffect(MobEffects.POISON, 60 * i, 0));
+            entityhuman.addEffect(new MobEffect(MobEffects.POISON, 60 * i, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
         }
 
     }

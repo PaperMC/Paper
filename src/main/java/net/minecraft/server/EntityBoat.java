@@ -4,6 +4,15 @@ import com.google.common.collect.UnmodifiableIterator;
 import java.util.List;
 import javax.annotation.Nullable;
 
+// CraftBukkit start
+import org.bukkit.Location;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.vehicle.VehicleDamageEvent;
+import org.bukkit.event.vehicle.VehicleDestroyEvent;
+import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
+import org.bukkit.event.vehicle.VehicleMoveEvent;
+// CraftBukkit end
+
 public class EntityBoat extends Entity {
 
     private static final DataWatcherObject<Integer> b = DataWatcher.a(EntityBoat.class, DataWatcherRegistry.b);
@@ -37,6 +46,14 @@ public class EntityBoat extends Entity {
     private float aC;
     private float aD;
     private float aE;
+
+    // CraftBukkit start
+    // PAIL: Some of these haven't worked since a few updates, and since 1.9 they are less and less applicable.
+    public double maxSpeed = 0.4D;
+    public double occupiedDeceleration = 0.2D;
+    public double unoccupiedDeceleration = -1;
+    public boolean landBoats = false;
+    // CraftBukkit end
 
     public EntityBoat(EntityTypes<? extends EntityBoat> entitytypes, World world) {
         super(entitytypes, world);
@@ -108,6 +125,19 @@ public class EntityBoat extends Entity {
         if (this.isInvulnerable(damagesource)) {
             return false;
         } else if (!this.world.isClientSide && !this.dead) {
+            // CraftBukkit start
+            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
+
+            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) {
+                return false;
+            }
+            // f = event.getDamage(); // TODO Why don't we do this?
+            // CraftBukkit end
+
             this.c(-this.o());
             this.b(10);
             this.setDamage(this.getDamage() + f * 10.0F);
@@ -115,6 +145,15 @@ public class EntityBoat extends Entity {
             boolean flag = damagesource.getEntity() instanceof EntityHuman && ((EntityHuman) damagesource.getEntity()).abilities.canInstantlyBuild;
 
             if (flag || this.getDamage() > 40.0F) {
+                // CraftBukkit start
+                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
+                this.world.getServer().getPluginManager().callEvent(destroyEvent);
+
+                if (destroyEvent.isCancelled()) {
+                    this.setDamage(40F); // Maximize damage so this doesn't get triggered again right away
+                    return true;
+                }
+                // CraftBukkit end
                 if (!flag && this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                     this.a((IMaterial) this.g());
                 }
@@ -149,9 +188,29 @@ public class EntityBoat extends Entity {
     public void collide(Entity entity) {
         if (entity instanceof EntityBoat) {
             if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
+                // CraftBukkit start
+                if (!this.isSameVehicle(entity)) {
+                    VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
+                    this.world.getServer().getPluginManager().callEvent(event);
+
+                    if (event.isCancelled()) {
+                        return;
+                    }
+                }
+                // CraftBukkit end
                 super.collide(entity);
             }
         } else if (entity.getBoundingBox().minY <= this.getBoundingBox().minY) {
+            // CraftBukkit start
+            if (!this.isSameVehicle(entity)) {
+                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
+                this.world.getServer().getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return;
+                }
+            }
+            // CraftBukkit end
             super.collide(entity);
         }
 
@@ -185,6 +244,7 @@ public class EntityBoat extends Entity {
         return this.getDirection().g();
     }
 
+    private Location lastLocation; // CraftBukkit
     @Override
     public void tick() {
         this.ay = this.ax;
@@ -224,6 +284,22 @@ public class EntityBoat extends Entity {
         } else {
             this.setMot(Vec3D.ORIGIN);
         }
+
+        // CraftBukkit start
+        org.bukkit.Server server = this.world.getServer();
+        org.bukkit.World bworld = this.world.getWorld();
+
+        Location to = new Location(bworld, this.locX(), this.locY(), this.locZ(), this.yaw, this.pitch);
+        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+
+        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
+
+        if (lastLocation != null && !lastLocation.equals(to)) {
+            VehicleMoveEvent event = new VehicleMoveEvent(vehicle, lastLocation, to);
+            server.getPluginManager().callEvent(event);
+        }
+        lastLocation = vehicle.getLocation();
+        // CraftBukkit end
 
         this.q();
 
@@ -709,6 +785,11 @@ public class EntityBoat extends Entity {
 
                     this.b(this.fallDistance, 1.0F);
                     if (!this.world.isClientSide && !this.dead) {
+                    // CraftBukkit start
+                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
+                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
+                    if (!destroyEvent.isCancelled()) {
                         this.die();
                         if (this.world.getGameRules().getBoolean(GameRules.DO_ENTITY_DROPS)) {
                             int i;
@@ -722,6 +803,7 @@ public class EntityBoat extends Entity {
                             }
                         }
                     }
+                    } // CraftBukkit end
                 }
 
                 this.fallDistance = 0.0F;

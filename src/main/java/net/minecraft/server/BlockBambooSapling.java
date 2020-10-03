@@ -69,6 +69,6 @@ public class BlockBambooSapling extends Block implements IBlockFragilePlantEleme
     }
 
     protected void a(World world, BlockPosition blockposition) {
-        world.setTypeAndData(blockposition.up(), (IBlockData) Blocks.BAMBOO.getBlockData().set(BlockBamboo.e, BlockPropertyBambooSize.SMALL), 3);
+        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, blockposition, blockposition.up(), (IBlockData) Blocks.BAMBOO.getBlockData().set(BlockBamboo.e, BlockPropertyBambooSize.SMALL), 3); // CraftBukkit - BlockSpreadEvent
     }
 }

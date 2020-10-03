@@ -22,4 +22,11 @@ public abstract class IRecipeComplex implements RecipeCrafting {
     public ItemStack getResult() {
         return ItemStack.b;
     }
+
+    // CraftBukkit start
+    @Override
+    public org.bukkit.inventory.Recipe toBukkitRecipe() {
+        return new org.bukkit.craftbukkit.inventory.CraftComplexRecipe(this);
+    }
+    // CraftBukkit end
 }

@@ -32,4 +32,10 @@ public class EntityDamageSourceIndirect extends EntityDamageSource {
 
         return !itemstack.isEmpty() && itemstack.hasName() ? new ChatMessage(s1, new Object[]{entityliving.getScoreboardDisplayName(), ichatbasecomponent, itemstack.C()}) : new ChatMessage(s, new Object[]{entityliving.getScoreboardDisplayName(), ichatbasecomponent});
     }
+
+    // CraftBukkit start
+    public Entity getProximateDamageSource() {
+        return super.getEntity();
+    }
+    // CraftBukkit end
 }
