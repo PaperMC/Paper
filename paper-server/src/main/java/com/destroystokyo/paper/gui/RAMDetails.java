@@ -58,9 +58,22 @@ public class RAMDetails extends JList<String> {
     public void update() {
         GraphData data = RAMGraph.DATA.peekLast();
         Vector<String> vector = new Vector<>();
+
+        // Follows CraftServer#getTPS
+        double[] tps = new double[] {
+            server.tps1.getAverage(),
+            server.tps5.getAverage(),
+            server.tps15.getAverage()
+        };
+        String[] tpsAvg = new String[tps.length];
+
+        for ( int g = 0; g < tps.length; g++) {
+            tpsAvg[g] = format( tps[g] );
+        }
         vector.add("Memory use: " + (data.getUsedMem() / 1024L / 1024L) + " mb (" + (data.getFree() * 100L / data.getMax()) + "% free)");
         vector.add("Heap: " + (data.getTotal() / 1024L / 1024L) + " / " + (data.getMax() / 1024L / 1024L) + " mb");
         vector.add("Avg tick: " + DECIMAL_FORMAT.format((double)this.server.getAverageTickTimeNanos() / (double) TimeUtil.NANOSECONDS_PER_MILLISECOND) + " ms");
+        vector.add("TPS from last 1m, 5m, 15m: " + String.join(", ", tpsAvg));
         setListData(vector);
     }
 
@@ -70,5 +83,9 @@ public class RAMDetails extends JList<String> {
             total += value * 1000;
         }
         return ((double) total / (double) tickTimes.length) * 1.0E-6D;
+    }
+
+    private static String format(double tps) {
+        return ( ( tps > 21.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
     }
 }
