@@ -75,6 +75,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
+        builder.set(LootContextParameters.ORIGIN, new Vec3D(loc.getX(), loc.getY(), loc.getZ()));
         if (getHandle() != LootTable.EMPTY) {
             // builder.luck(context.getLuck());
 
