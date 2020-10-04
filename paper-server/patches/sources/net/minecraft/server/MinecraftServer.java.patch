@@ -555,10 +555,12 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -427,30 +717,8 @@
-             iworlddataserver.setInitialized(true);
-         }
+@@ -425,32 +715,10 @@
+             }
  
+             iworlddataserver.setInitialized(true);
+-        }
+-
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
@@ -579,8 +581,8 @@
 -                worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(worldserver1.getWorldBorder()));
 -                this.levels.put(resourcekey1, worldserver1);
 -            }
--        }
--
+         }
+ 
 -        worldborder.applySettings(iworlddataserver.getWorldBorder());
      }
 +    // CraftBukkit end
@@ -859,7 +861,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,11 +1152,30 @@
+@@ -744,12 +1152,31 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -868,7 +870,7 @@
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
                      }
-+                }
+                 }
 +                // Spigot start
 +                // Paper start - further improve server tick loop
 +                currentTime = Util.getNanos();
@@ -878,18 +880,19 @@
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
-+
+ 
 +                    // Backwards compat with bad plugins
 +                    this.recentTps[0] = tps1.getAverage();
 +                    this.recentTps[1] = tps5.getAverage();
 +                    this.recentTps[2] = tps15.getAverage();
 +                    tickSection = currentTime;
-                 }
++                }
 +                // Paper end - further improve server tick loop
 +                // Spigot end
- 
++
                  boolean flag = i == 0L;
  
+                 if (this.debugCommandProfilerDelayStart) {
 @@ -757,6 +1184,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
@@ -1223,7 +1226,23 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1952,7 +2472,7 @@
+@@ -1789,13 +2309,14 @@
+         if (this.isEnforceWhitelist()) {
+             PlayerList playerlist = source.getServer().getPlayerList();
+             UserWhiteList whitelist = playerlist.getWhiteList();
++            if (!((DedicatedServer) getServer()).getProperties().whiteList.get()) return; // Paper - whitelist not enabled
+             List<ServerPlayer> list = Lists.newArrayList(playerlist.getPlayers());
+             Iterator iterator = list.iterator();
+ 
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (!whitelist.isWhiteListed(entityplayer.getGameProfile())) {
++                if (!whitelist.isWhiteListed(entityplayer.getGameProfile()) && !this.getPlayerList().isOp(entityplayer.getGameProfile())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
+                     entityplayer.connection.disconnect((Component) Component.translatable("multiplayer.disconnect.not_whitelisted"));
+                 }
+             }
+@@ -1952,7 +2473,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1232,7 +1251,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2578,7 @@
+@@ -2058,7 +2579,7 @@
              try {
                  label51:
                  {
@@ -1241,7 +1260,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2628,21 @@
+@@ -2108,6 +2629,21 @@
  
      }
  
@@ -1263,7 +1282,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2760,24 @@
+@@ -2225,18 +2761,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1292,7 +1311,7 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2918,32 @@
+@@ -2377,6 +2919,32 @@
      }
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
