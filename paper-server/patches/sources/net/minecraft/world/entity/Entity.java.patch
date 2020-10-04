@@ -61,7 +61,7 @@
 +// CraftBukkit end
  
  public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, ScoreHolder {
- 
++
 +    // CraftBukkit start
 +    private static final int CURRENT_LEVEL = 2;
 +    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first setPositionRotation
@@ -151,7 +151,7 @@
 +        }
 +        return this.bukkitEntity;
 +    }
-+
+ 
 +    // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
 +    public int getDefaultMaxAirSupply() {
 +        return Entity.TOTAL_AIR_SUPPLY;
@@ -831,11 +831,10 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being saved");
-@@ -2079,7 +2520,69 @@
-                 }
+@@ -2080,6 +2521,68 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
-+            }
+             }
 +
 +            // CraftBukkit start
 +            // Spigot start
@@ -858,7 +857,7 @@
 +                boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");
 +                this.setInvisible(bukkitInvisible);
 +                this.persistentInvisibility = bukkitInvisible;
-             }
++            }
 +            // CraftBukkit end
 +
 +            // Paper start
@@ -1480,7 +1479,7 @@
 +
 +    // CraftBukkit start
 +    private final CommandSource commandSource = new CommandSource() {
-+
+ 
 +        @Override
 +        public void sendSystemMessage(Component message) {
 +        }
@@ -1506,21 +1505,22 @@
 +        }
 +    };
 +    // CraftBukkit end
- 
++
      public CommandSourceStack createCommandSourceStackForNameResolution(ServerLevel world) {
 -        return new CommandSourceStack(CommandSource.NULL, this.position(), this.getRotationVector(), world, 0, this.getName().getString(), this.getDisplayName(), world.getServer(), this);
 +        return new CommandSourceStack(this.commandSource, this.position(), this.getRotationVector(), world, 0, this.getName().getString(), this.getDisplayName(), world.getServer(), this); // CraftBukkit
      }
  
      public void lookAt(EntityAnchorArgument.Anchor anchorPoint, Vec3 target) {
-@@ -3551,6 +4308,11 @@
+@@ -3550,7 +4307,12 @@
+ 
                                      vec3d = vec3d.add(vec3d1);
                                      ++k1;
-                                 }
++                                }
 +                                // CraftBukkit start - store last lava contact location
 +                                if (tag == FluidTags.LAVA) {
 +                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
-+                                }
+                                 }
 +                                // CraftBukkit end
                              }
                          }
@@ -1615,7 +1615,7 @@
  
          if (entityliving instanceof Player entityhuman) {
              if (this.isAlive()) {
-@@ -3962,4 +4760,10 @@
+@@ -3962,4 +4760,14 @@
  
          void accept(Entity entity, double x, double y, double z);
      }
@@ -1623,6 +1623,10 @@
 +    // Paper start - Expose entity id counter
 +    public static int nextEntityId() {
 +        return ENTITY_COUNTER.incrementAndGet();
++    }
++
++    public boolean isTicking() {
++        return ((net.minecraft.server.level.ServerLevel) this.level).isPositionEntityTicking(this.blockPosition());
 +    }
 +    // Paper end - Expose entity id counter
  }

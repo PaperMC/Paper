@@ -1058,4 +1058,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return getHandle().isInLava();
     }
     // Paper end - entity liquid API
+
+    // Paper start - isTicking API
+    @Override
+    public boolean isTicking() {
+        return getHandle().isTicking();
+    }
+    // Paper end - isTicking API
 }
