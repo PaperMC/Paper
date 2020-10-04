@@ -15,10 +15,11 @@
  public class CampfireBlockEntity extends BlockEntity implements Clearable {
  
      private static final int BURN_COOL_SPEED = 2;
-@@ -63,6 +71,20 @@
+@@ -63,7 +71,28 @@
                      }).orElse(itemstack);
  
                      if (itemstack1.isItemEnabled(world.enabledFeatures())) {
+-                        Containers.dropItemStack(world, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), itemstack1);
 +                        // CraftBukkit start - fire BlockCookEvent
 +                        CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
 +                        org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
@@ -33,10 +34,18 @@
 +                        result = blockCookEvent.getResult();
 +                        itemstack1 = CraftItemStack.asNMSCopy(result);
 +                        // CraftBukkit end
-                         Containers.dropItemStack(world, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), itemstack1);
++                        // Paper start - Fix item locations dropped from campfires
++                        double deviation = 0.05F * RandomSource.GAUSSIAN_SPREAD_FACTOR;
++                        while (!itemstack1.isEmpty()) {
++                            net.minecraft.world.entity.item.ItemEntity droppedItem = new net.minecraft.world.entity.item.ItemEntity(world, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, itemstack1.split(world.random.nextInt(21) + 10));
++                            droppedItem.setDeltaMovement(world.random.triangle(0.0D, deviation), world.random.triangle(0.2D, deviation), world.random.triangle(0.0D, deviation));
++                            world.addFreshEntity(droppedItem);
++                        }
++                        // Paper end - Fix item locations dropped from campfires
                          blockEntity.items.set(i, ItemStack.EMPTY);
                          world.sendBlockUpdated(pos, state, state, 3);
-@@ -177,7 +199,11 @@
+                         world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
+@@ -177,7 +206,11 @@
                      return false;
                  }
  
