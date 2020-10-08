@@ -1027,7 +1027,7 @@ index a35e7b392c74fadf2760d1fc2021e98d33858cb5..944094e8e770cc8c0205ef2aa6c48fff
                                  lightenginelayer.a(Long.MAX_VALUE, l3, 15, false);
                              }
 diff --git a/src/main/java/net/minecraft/server/LightEngineThreaded.java b/src/main/java/net/minecraft/server/LightEngineThreaded.java
-index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..fd0beefb900c064d3c35a3d2f79f5b7d9c1287bb 100644
+index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..2f9c97dd4e1d705a87772d18c7ab4883a876af08 100644
 --- a/src/main/java/net/minecraft/server/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/LightEngineThreaded.java
 @@ -1,6 +1,7 @@
@@ -1098,7 +1098,7 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..fd0beefb900c064d3c35a3d2f79f5b7d
 +            this.priorityChanges.add(() -> {
 +                ChunkLightQueue remove = this.buckets[currentPriority].remove(pair);
 +                if (remove != null) {
-+                    ChunkLightQueue existing = this.buckets[priority].put(pair, remove);
++                    ChunkLightQueue existing = this.buckets[Math.max(1, priority)].put(pair, remove);
 +                    if (existing != null) {
 +                        remove.pre.addAll(existing.pre);
 +                        remove.post.addAll(existing.post);
@@ -1151,12 +1151,12 @@ index f8c2b957bb5b38f05251cccf5137a9c23262c3d6..fd0beefb900c064d3c35a3d2f79f5b7d
 +            }
 +            boolean hasWork = false;
 +            Long2ObjectLinkedOpenHashMap<ChunkLightQueue>[] buckets = this.buckets;
-+            int lowestPriority = 0;
-+            while (lowestPriority < MAX_PRIORITIES && !isEmpty()) {
-+                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[lowestPriority];
++            int priority = 0;
++            while (priority < MAX_PRIORITIES && !isEmpty()) {
++                Long2ObjectLinkedOpenHashMap<ChunkLightQueue> bucket = buckets[priority];
 +                if (bucket.isEmpty()) {
-+                    lowestPriority++;
-+                    if (hasWork && lowestPriority <= 5) {
++                    priority++;
++                    if (hasWork) {
 +                        return true;
 +                    } else {
 +                        continue;
@@ -1329,7 +1329,7 @@ index ff00830b95a17f66d0c913087492dbf4b066df8a..4085426af03f032cf405bdfd1e40a8e5
      private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
      private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 1f14ebf09de9f2671b30498ea8fd66750ae85dff..de1e409dc5161371c6f14d036603be448fcd3e26 100644
+index 7de56172023e49cd8957e3dd45fa8e731809c16a..8146d88a90a758760e383985170d580372577615 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -724,6 +724,7 @@ public class PlayerChunk {
