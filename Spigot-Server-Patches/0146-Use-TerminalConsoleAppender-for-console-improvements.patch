@@ -7,7 +7,7 @@ Rewrite console improvements (console colors, tab completion,
 persistent input line, ...) using JLine 3.x and TerminalConsoleAppender.
 
 New features:
-  - Support console colors for Vanilla commands
+  - Converts Minecraft color codes to Ansi color codes
   - Add console colors for warnings and errors
   - Server can now be turned off safely using CTRL + C. JLine catches
     the signal and the implementation shuts down the server cleanly.
@@ -122,24 +122,60 @@ index 0000000000000000000000000000000000000000..74ed02fa9296583977bb721014b10ff8
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..685deaa0e5d1ddc13e3a7c0471b1cfcf1710c869
+index 0000000000000000000000000000000000000000..b0219e29fd64a4a2d5410233db48a1edb34dbaa9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/console/TerminalConsoleCommandSender.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,53 @@
 +package com.destroystokyo.paper.console;
 +
++import java.awt.Color;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++import net.minecrell.terminalconsole.MinecraftFormattingConverter;
++import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
++import org.apache.logging.log4j.util.PropertiesUtil;
++import org.bukkit.ChatColor;
 +import org.bukkit.craftbukkit.command.CraftConsoleCommandSender;
 +
 +public class TerminalConsoleCommandSender extends CraftConsoleCommandSender {
 +
 +    private static final Logger LOGGER = LogManager.getRootLogger();
++    private static final char ANSI_ESC_CHAR = '\u001B';
++    private static final String RGB_STRING = ANSI_ESC_CHAR + "[38;2;%d;%d;%dm";
++    private static final String ANSI_RESET = ANSI_ESC_CHAR + "[m";
++    private static final Pattern HEX_PATTERN = Pattern.compile("(?i)(" + ChatColor.COLOR_CHAR + "x(" + ChatColor.COLOR_CHAR + "[0-9a-f]){6})");
++    private static final boolean keepFormatting = PropertiesUtil.getProperties().getBooleanProperty(MinecraftFormattingConverter.KEEP_FORMATTING_PROPERTY);
 +
 +    @Override
 +    public void sendRawMessage(String message) {
 +        // TerminalConsoleAppender supports color codes directly in log messages
-+        LOGGER.info(message);
++        // However, we need to convert hex colors manually, as those do not get transformed
++        LOGGER.info(hexMagicToAnsi(message));
++    }
++
++    private static String hexMagicToAnsi(String input) {
++        // If formatting should be kept, just leave the input as-is
++        if (keepFormatting)
++            return input;
++
++        // If Ansi is not supported, just strip out any hex coloring
++        if (!TerminalConsoleAppender.isAnsiSupported())
++            return HEX_PATTERN.matcher(input).replaceAll("");
++
++        Matcher matcher = HEX_PATTERN.matcher(input);
++        StringBuffer buffer = new StringBuffer();
++        while (matcher.find()) {
++            String hex = matcher.group().replace(String.valueOf(ChatColor.COLOR_CHAR), "").replace('x', '#');
++            Color color = Color.decode(hex);
++            String replacement = String.format(RGB_STRING, color.getRed(), color.getGreen(), color.getBlue());
++            matcher.appendReplacement(buffer, replacement);
++        }
++        matcher.appendTail(buffer);
++
++        // We add the Ansi reset to the end of each message to prevent the color from carrying over to the next logged message
++        return buffer.toString() + ANSI_RESET;
 +    }
 +
 +}
@@ -245,7 +281,7 @@ index 3f1ab69ac09c0c5ab50a99961a705254f3749f18..08708a42737ce66794083116f55ea209
  
      public KeyPair getKeyPair() {
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index ab3c18b6d29397d1a7faff376043f6c3fe402f5d..fb14381b5bfca33431879c8b6a8b559c5599ba4a 100644
+index 6375d1061859ea9fa0faef93a92b90d4b38d5903..11ecafedb839454bfac009dec5d41ed45b08c1d4 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -79,8 +79,7 @@ public abstract class PlayerList {
@@ -286,7 +322,7 @@ index b54d24096bba7afd33b45cf22dfcdafcfa31eb3d..2eb2c0c93b0d67ad7474e37158dab440
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 868a67c5023e61960d6225de8ad1506c46177733..eae93b314fed9f7ddf1c0b87228a2f3bc9f73a78 100644
+index 06e374db12953052874a8ed8b28c292386075420..de16a5f8b88d671c42db786ffcf60f4dce181029 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -12,7 +12,7 @@ import java.util.logging.Level;
