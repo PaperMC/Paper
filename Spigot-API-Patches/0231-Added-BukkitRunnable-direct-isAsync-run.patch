@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fruxz <cedricspitzer@outlook.de>
+Date: Fri, 9 Oct 2020 11:59:41 +0200
+Subject: [PATCH] Added BukkitRunnable direct isAsync run
+
+
+diff --git a/src/main/java/org/bukkit/scheduler/BukkitRunnable.java b/src/main/java/org/bukkit/scheduler/BukkitRunnable.java
+index 35599aac72c50273abb9efe35bcb6406d9b1aba6..72408590a15a4798ffda79667a903426cb468746 100644
+--- a/src/main/java/org/bukkit/scheduler/BukkitRunnable.java
++++ b/src/main/java/org/bukkit/scheduler/BukkitRunnable.java
+@@ -63,6 +63,32 @@ public abstract class BukkitRunnable implements Runnable {
+         return setupTask(Bukkit.getScheduler().runTaskAsynchronously(plugin, (Runnable) this));
+     }
+ 
++    // Paper start
++    /**
++     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
++     * should be taken to assure the thread-safety of asynchronous tasks.</b>
++     * <p>
++     * Schedules this in the Bukkit scheduler to run asynchronously.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param isAsync the task is async or not
++     * @return a BukkitTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public synchronized BukkitTask runTask(@NotNull Plugin plugin, boolean isAsync) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (isAsync) {
++            return setupTask(Bukkit.getScheduler().runTaskAsynchronously(plugin, (Runnable) this));
++        } else {
++            return setupTask(Bukkit.getScheduler().runTask(plugin, (Runnable) this));
++        }
++
++    }
++    // Paper end
++
+     /**
+      * Schedules this to run after the specified number of server ticks.
+      *
+@@ -99,6 +125,33 @@ public abstract class BukkitRunnable implements Runnable {
+         return setupTask(Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, (Runnable) this, delay));
+     }
+ 
++    // Paper start
++    /**
++     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
++     * should be taken to assure the thread-safety of asynchronous tasks.</b>
++     * <p>
++     * Schedules this to run asynchronously after the specified number of
++     * server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task
++     * @param isAsync the task is async or not
++     * @return a BukkitTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public synchronized BukkitTask runTaskLater(@NotNull Plugin plugin, long delay, boolean isAsync) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (isAsync) {
++            return setupTask(Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, (Runnable) this, delay));
++        } else {
++            return setupTask(Bukkit.getScheduler().runTaskLater(plugin, (Runnable) this, delay));
++        }
++    }
++    // Paper end
++
+     /**
+      * Schedules this to repeatedly run until cancelled, starting after the
+      * specified number of server ticks.
+@@ -140,6 +193,36 @@ public abstract class BukkitRunnable implements Runnable {
+         return setupTask(Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, (Runnable) this, delay, period));
+     }
+ 
++    // Paper start
++    /**
++     * <b>Asynchronous tasks should never access any API in Bukkit. Great care
++     * should be taken to assure the thread-safety of asynchronous tasks.</b>
++     * <p>
++     * Schedules this to repeatedly run asynchronously until cancelled,
++     * starting after the specified number of server ticks.
++     *
++     * @param plugin the reference to the plugin scheduling task
++     * @param delay the ticks to wait before running the task for the first
++     *     time
++     * @param period the ticks to wait between runs
++     * @param isAsync the task is async or not
++     * @return a BukkitTask that contains the id number
++     * @throws IllegalArgumentException if plugin is null
++     * @throws IllegalStateException if this was already scheduled
++     */
++    @NotNull
++    public synchronized BukkitTask runTaskTimer(@NotNull Plugin plugin, long delay, long period, boolean isAsync) throws IllegalArgumentException, IllegalStateException {
++        checkNotYetScheduled();
++
++        if (isAsync) {
++            return setupTask(Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, (Runnable) this, delay, period));
++        } else {
++            return setupTask(Bukkit.getScheduler().runTaskTimer(plugin, (Runnable) this, delay, period));
++        }
++
++    }
++    // Paper end
++
+     /**
+      * Gets the task id for this runnable.
+      *
