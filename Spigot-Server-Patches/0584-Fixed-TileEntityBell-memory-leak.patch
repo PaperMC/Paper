@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: giacomozama <32515303+giacomozama@users.noreply.github.com>
+Date: Fri, 9 Oct 2020 23:05:02 +0200
+Subject: [PATCH] Fixed TileEntityBell memory leak
+
+TileEntityBell has an "entitiesAtRing" list of EntityLiving which is never cleared when its contents are no longer needed, not even when the entities die
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityBell.java b/src/main/java/net/minecraft/server/TileEntityBell.java
+index 4c5aa99e092a9476e837a3e68d4cbab4b89c0259..848f47421e3c09d83ef520bc92a681a5b4d9e57c 100644
+--- a/src/main/java/net/minecraft/server/TileEntityBell.java
++++ b/src/main/java/net/minecraft/server/TileEntityBell.java
+@@ -10,8 +10,8 @@ public class TileEntityBell extends TileEntity implements ITickable {
+     public int a;
+     public boolean b;
+     public EnumDirection c;
+-    private List<EntityLiving> h;
+-    private boolean i;
++    private List<EntityLiving> h; private List<EntityLiving> getEntitiesAtRing() { return this.h; } // Paper - OBFHELPER
++    private boolean i; private boolean getShouldReveal() { return this.i; } // Paper - OBFHELPER
+     private int j;
+ 
+     public TileEntityBell() {
+@@ -40,6 +40,11 @@ public class TileEntityBell extends TileEntity implements ITickable {
+ 
+         if (this.a >= 50) {
+             this.b = false;
++            // Paper start
++            if (!this.getShouldReveal()) {
++                this.getEntitiesAtRing().clear();
++            }
++            // Paper end
+             this.a = 0;
+         }
+ 
+@@ -54,6 +59,7 @@ public class TileEntityBell extends TileEntity implements ITickable {
+             } else {
+                 this.a(this.world);
+                 this.b(this.world);
++                this.getEntitiesAtRing().clear(); // Paper
+                 this.i = false;
+             }
+         }
+@@ -99,6 +105,7 @@ public class TileEntityBell extends TileEntity implements ITickable {
+             }
+         }
+ 
++        this.getEntitiesAtRing().removeIf(e -> !e.isAlive()); // Paper
+     }
+ 
+     private boolean h() {
