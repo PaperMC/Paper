@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: giacomo <32515303+giacomozama@users.noreply.github.com>
+Date: Sat, 10 Oct 2020 12:15:33 +0200
+Subject: [PATCH] Fixed TileEntityBell memory leak
+
+TileEntityBell has a list of entities (entitiesAtRing) that was not being cleared at the right time, causing leaks whenever a bell would be rung near a crowd of entities.
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityBell.java b/src/main/java/net/minecraft/server/TileEntityBell.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/TileEntityBell.java
++++ b/src/main/java/net/minecraft/server/TileEntityBell.java
+@@ -0,0 +0,0 @@ public class TileEntityBell extends TileEntity implements ITickable {
+     public int a;
+     public boolean b;
+     public EnumDirection c;
+-    private List<EntityLiving> h;
+-    private boolean i;
++    private List<EntityLiving> h; private List<EntityLiving> getEntitiesAtRing() { return this.h; } // Paper - OBFHELPER
++    private boolean i; private boolean getShouldReveal() { return this.i; } // Paper - OBFHELPER
+     private int j;
+ 
+     public TileEntityBell() {
+@@ -0,0 +0,0 @@ public class TileEntityBell extends TileEntity implements ITickable {
+ 
+         if (this.a >= 50) {
+             this.b = false;
++            // Paper start
++            if (!this.getShouldReveal()) {
++                this.getEntitiesAtRing().clear();
++            }
++            // Paper end
+             this.a = 0;
+         }
+ 
+@@ -0,0 +0,0 @@ public class TileEntityBell extends TileEntity implements ITickable {
+             } else {
+                 this.a(this.world);
+                 this.b(this.world);
++                this.getEntitiesAtRing().clear(); // Paper
+                 this.i = false;
+             }
+         }
+@@ -0,0 +0,0 @@ public class TileEntityBell extends TileEntity implements ITickable {
+                 EntityLiving entityliving = (EntityLiving) iterator.next();
+ 
+                 if (entityliving.isAlive() && !entityliving.dead && blockposition.a((IPosition) entityliving.getPositionVector(), 32.0D)) {
+-                    entityliving.getBehaviorController().setMemory(MemoryModuleType.HEARD_BELL_TIME, (Object) this.world.getTime());
++                    entityliving.getBehaviorController().setMemory(MemoryModuleType.HEARD_BELL_TIME, this.world.getTime()); // Paper - decompile fix
+                 }
+             }
+         }
+ 
++        this.getEntitiesAtRing().removeIf(e -> !e.isAlive()); // Paper
+     }
+ 
+     private boolean h() {
