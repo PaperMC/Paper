@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 11 Oct 2020 00:02:58 +0200
+Subject: [PATCH] Add senderUuid to sendMessage
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7e91e95941039cce630ed3eb88e1919e1d08c091..8d63664b8c8f35735d619dcb5e3f3e48d34df903 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -218,24 +218,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void sendRawMessage(String message) {
++        // Paper start - add sender UUID
++        sendRawMessage(null, message);
++    }
++    @Override public void sendRawMessage(UUID senderUuid, String message) {
++        // Paper end
+         if (getHandle().playerConnection == null) return;
+ 
+         for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
+-            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.CHAT, SystemUtils.b));
++            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.CHAT, senderUuid != null ? senderUuid : SystemUtils.getNullUUID())); // Paper - senderUuid
+         }
+     }
+ 
+     @Override
+     public void sendMessage(String message) {
++        // Paper start - add sender UUID
++        sendMessage(null, message);
++    }
++    @Override public void sendMessage(UUID senderUuid, String message) {
++        // Paper end
+         if (!conversationTracker.isConversingModaly()) {
+-            this.sendRawMessage(message);
++            this.sendRawMessage(senderUuid, message); // Paper - senderUuid
+         }
+     }
+ 
+     @Override
+     public void sendMessage(String[] messages) {
++        // Paper start - add sender UUID
++        sendMessage(null, messages);
++    }
++    @Override public void sendMessage(UUID senderUuid, String[] messages) {
++        // Paper end
+         for (String message : messages) {
+-            sendMessage(message);
++            sendMessage(senderUuid, message); // Paper - senderUuid
+         }
+     }
+ 
