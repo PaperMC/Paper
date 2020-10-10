@@ -75,28 +75,28 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         WorldServer handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootTableInfo.Builder builder = new LootTableInfo.Builder(handle);
-        builder.set(LootContextParameters.ORIGIN, new Vec3D(loc.getX(), loc.getY(), loc.getZ()));
+        setMaybe(builder, LootContextParameters.ORIGIN, new Vec3D(loc.getX(), loc.getY(), loc.getZ()));
         if (getHandle() != LootTable.EMPTY) {
             // builder.luck(context.getLuck());
 
             if (context.getLootedEntity() != null) {
                 Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
-                builder.set(LootContextParameters.THIS_ENTITY, nmsLootedEntity);
-                builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
-                builder.set(LootContextParameters.ORIGIN, nmsLootedEntity.getPositionVector());
+                setMaybe(builder, LootContextParameters.THIS_ENTITY, nmsLootedEntity);
+                setMaybe(builder, LootContextParameters.DAMAGE_SOURCE, DamageSource.GENERIC);
+                setMaybe(builder, LootContextParameters.ORIGIN, nmsLootedEntity.getPositionVector());
             }
 
             if (context.getKiller() != null) {
                 EntityHuman nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
-                builder.set(LootContextParameters.KILLER_ENTITY, nmsKiller);
+                setMaybe(builder, LootContextParameters.KILLER_ENTITY, nmsKiller);
                 // If there is a player killer, damage source should reflect that in case loot tables use that information
-                builder.set(LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
-                builder.set(LootContextParameters.LAST_DAMAGE_PLAYER, nmsKiller); // SPIGOT-5603 - Set minecraft:killed_by_player
+                setMaybe(builder, LootContextParameters.DAMAGE_SOURCE, DamageSource.playerAttack(nmsKiller));
+                setMaybe(builder, LootContextParameters.LAST_DAMAGE_PLAYER, nmsKiller); // SPIGOT-5603 - Set minecraft:killed_by_player
             }
 
             // SPIGOT-5603 - Use LootContext#lootingModifier
             if (context.getLootingModifier() != LootContext.DEFAULT_LOOT_MODIFIER) {
-                builder.set(LootContextParameters.LOOTING_MOD, context.getLootingModifier());
+                setMaybe(builder, LootContextParameters.LOOTING_MOD, context.getLootingModifier());
             }
         }
 
@@ -115,8 +115,17 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         return builder.build(nmsBuilder.build());
     }
 
+    private <T> void setMaybe(LootTableInfo.Builder builder, LootContextParameter<T> param, T value) {
+        if (getHandle().getLootContextParameterSet().getRequired().contains(param) || getHandle().getLootContextParameterSet().getOptional().contains(param)) {
+            builder.set(param, value);
+        }
+    }
+
     public static LootContext convertContext(LootTableInfo info) {
         Vec3D position = info.getContextParameter(LootContextParameters.ORIGIN);
+        if (position == null) {
+            position = info.getContextParameter(LootContextParameters.THIS_ENTITY).getPositionVector(); // Every vanilla context has origin or this_entity, see LootContextParameterSets
+        }
         Location location = new Location(info.getWorld().getWorld(), position.getX(), position.getY(), position.getZ());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
