@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 11 Oct 2020 00:05:44 +0200
+Subject: [PATCH] Use sender UUID for sending player messages
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 8e1655a975af24f6781a95be7030afa8f1b14472..d29a683b879110c8131840abb5072c94a52e569d 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1483,8 +1483,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     // CraftBukkit start - Support multi-line messages
+     public void sendMessage(IChatBaseComponent[] ichatbasecomponent) {
++        // Paper start - add sender uuid
++        sendMessage(ichatbasecomponent, null);
++    }
++    public void sendMessage(IChatBaseComponent[] ichatbasecomponent, UUID sender) {
++        // Paper end
+         for (IChatBaseComponent component : ichatbasecomponent) {
+-            this.sendMessage(component, SystemUtils.b);
++            this.sendMessage(component, sender != null ? sender : SystemUtils.getNullUUID()); // Paper
+         }
+     }
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 05b3a7478195037927cd1a902b603862d9747e61..3fcde00ab10859bcbb57000719dadc30cc717a28 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1837,11 +1837,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                         PlayerConnection.this.minecraftServer.console.sendMessage(message);
+                         if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
+                             for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
+-                                ((EntityPlayer) player).sendMessage(CraftChatMessage.fromString(message));
++                                ((EntityPlayer) player).sendMessage(CraftChatMessage.fromString(message), PlayerConnection.this.player.getUniqueID()); // Paper - add sender UUID
+                             }
+                         } else {
+                             for (Player player : queueEvent.getRecipients()) {
+-                                player.sendMessage(message);
++                                player.sendMessage(PlayerConnection.this.player.getUniqueID(), message); // Paper - add sender UUID
+                             }
+                         }
+                         return null;
+@@ -1876,11 +1876,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 minecraftServer.console.sendMessage(s);
+                 if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
+                     for (Object recipient : minecraftServer.getPlayerList().players) {
+-                        ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s));
++                        ((EntityPlayer) recipient).sendMessage(CraftChatMessage.fromString(s), PlayerConnection.this.player.getUniqueID()); // Paper - add sender UUID
+                     }
+                 } else {
+                     for (Player recipient : event.getRecipients()) {
+-                        recipient.sendMessage(s);
++                        recipient.sendMessage(PlayerConnection.this.player.getUniqueID(), s); // Paper - add sender UUID
+                     }
+                 }
+             }
