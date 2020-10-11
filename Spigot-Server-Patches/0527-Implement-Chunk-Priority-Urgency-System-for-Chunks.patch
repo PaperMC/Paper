@@ -631,7 +631,7 @@ index ce0bf608b71cf492fc31e89a360ecd83fa5c23a6..87d58002116f361d8255d79fc0dbd120
                  chunkData.addProperty("queued-for-unload", chunkMap.unloadQueue.contains(playerChunk.location.pair()));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..52da9c78c0cc2b21533a1477a25a3dda492700e4 100644
+index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..72afc736c0973a9c2160b571aa740ba5fe374796 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -26,8 +26,8 @@ public class PlayerChunk {
@@ -682,7 +682,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..52da9c78c0cc2b21533a1477a25a3dda
 +    }
 +
 +    private int getNeighborsPriority() {
-+        return neighborPriorities.isEmpty() ? getMyPriority() : getDemandedPriority();
++        return (neighborPriorities.isEmpty() ? getMyPriority() : getDemandedPriority()) + 1;
 +    }
 +
 +    public void onNeighborRequest(PlayerChunk neighbor, ChunkStatus status) {
@@ -885,7 +885,7 @@ index aeca6b2b9d5d73aeb6dc639b5cad2f2533a2de44..52da9c78c0cc2b21533a1477a25a3dda
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..3139d55bb801b6c433de7274be4a1d0c0fd1eef7 100644
+index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..4bfef7520af497a29008919d5ff65d6db16e22a8 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -50,6 +50,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -988,13 +988,13 @@ index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..3139d55bb801b6c433de7274be4a1d0c
 +
 +            double dist = MCUtil.distance(playerChunkX, 0, playerChunkZ, coord.x, 0, coord.z);
 +            // Prioritize immediate
-+            if (dist <= 4 * 4) {
-+                updateChunkPriorityMap(priorities, coord.pair(), (int) (27 - Math.sqrt(dist)));
++            if (dist <= 4) {
++                updateChunkPriorityMap(priorities, coord.pair(), (int) (27 - dist));
 +                return;
 +            }
 +
 +            // Prioritize nearby chunks
-+            updateChunkPriorityMap(priorities, coord.pair(), (int) (20 - Math.sqrt(dist) * twoThirdModifier));
++            updateChunkPriorityMap(priorities, coord.pair(), (int) (20 - dist * twoThirdModifier));
 +        });
 +
 +        // Prioritize Frustum near 3
@@ -1004,7 +1004,7 @@ index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..3139d55bb801b6c433de7274be4a1d0c
 +            if (shouldSkipPrioritization(coord)) return;
 +
 +            double dist = MCUtil.distance(playerChunkX, 0, playerChunkZ, coord.x, 0, coord.z);
-+            updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - Math.sqrt(dist) * twoThirdModifier));
++            updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - dist * twoThirdModifier));
 +        });
 +
 +        // Prioritize Frustum near 5
@@ -1015,7 +1015,7 @@ index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..3139d55bb801b6c433de7274be4a1d0c
 +                if (shouldSkipPrioritization(coord)) return;
 +
 +                double dist = MCUtil.distance(playerChunkX, 0, playerChunkZ, coord.x, 0, coord.z);
-+                updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - Math.sqrt(dist) * twoThirdModifier));
++                updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - dist * twoThirdModifier));
 +            });
 +        }
 +
@@ -1028,7 +1028,7 @@ index 0aa14bfca6e1845eb6e9f5bd4e0e36335fa7f532..3139d55bb801b6c433de7274be4a1d0c
 +                    return;
 +                }
 +                double dist = MCUtil.distance(playerChunkX, 0, playerChunkZ, coord.x, 0, coord.z);
-+                updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - Math.sqrt(dist) * twoThirdModifier));
++                updateChunkPriorityMap(priorities, coord.pair(), (int) (25 - dist * twoThirdModifier));
 +            });
 +        }
 +
@@ -1123,7 +1123,7 @@ index d52fbda79fe1c52d3ddb53c0f1c1f521d7620702..f9cb87a3be35575ecf3362b10dc7fe5e
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 6daca5c0ffd1d84f9a25cd106e8992a055dfb912..f133e7baf958b031819c2c72ccd21c52ba9a683d 100644
+index 74571c1befa60e71e93de8052740a56f7b80e920..f0fe864026dc10cd809f06dc9d4e823c21494a8d 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -174,8 +174,8 @@ public abstract class PlayerList {
