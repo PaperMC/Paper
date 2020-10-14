@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import java.util.UUID;
 import net.minecraft.server.Entity;
 import net.minecraft.server.EntityItem;
 import org.bukkit.craftbukkit.CraftServer;
@@ -46,6 +47,26 @@ public class CraftItem extends CraftEntity implements Item {
 
         // Second field for EntityItem
         item.age = value;
+    }
+
+    @Override
+    public void setOwner(UUID uuid) {
+        item.setOwner(uuid);
+    }
+
+    @Override
+    public UUID getOwner() {
+        return item.getOwner();
+    }
+
+    @Override
+    public void setThrower(UUID uuid) {
+        item.setThrower(uuid);
+    }
+
+    @Override
+    public UUID getThrower() {
+        return item.getThrower();
     }
 
     @Override
