@@ -142,6 +142,7 @@ import net.minecraft.server.EntityZombie;
 import net.minecraft.server.EntityZombieHusk;
 import net.minecraft.server.EntityZombieVillager;
 import net.minecraft.server.IChatBaseComponent;
+import net.minecraft.server.NBTBase;
 import net.minecraft.server.NBTTagCompound;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
@@ -970,9 +971,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public void readBukkitValues(NBTTagCompound c) {
-        NBTTagCompound base = c.getCompound("BukkitValues");
-        if (base != null) {
-            this.persistentDataContainer.putAll(base);
+        NBTBase base = c.get("BukkitValues");
+        if (base instanceof NBTTagCompound) {
+            this.persistentDataContainer.putAll((NBTTagCompound) base);
         }
     }
 
