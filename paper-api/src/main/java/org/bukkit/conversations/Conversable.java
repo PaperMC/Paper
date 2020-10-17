@@ -1,6 +1,8 @@
 package org.bukkit.conversations;
 
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The Conversable interface is used to indicate objects that can have
@@ -54,4 +56,12 @@ public interface Conversable {
      * @param message Message to be displayed
      */
     public void sendRawMessage(@NotNull String message);
+
+    /**
+     * Sends this sender a message raw
+     *
+     * @param message Message to be displayed
+     * @param sender The sender of this message
+     */
+    public void sendRawMessage(@Nullable UUID sender, @NotNull String message);
 }
