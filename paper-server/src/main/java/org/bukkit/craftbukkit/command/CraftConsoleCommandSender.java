@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.command;
 
+import java.util.UUID;
 import org.bukkit.ChatColor;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.conversations.Conversation;
@@ -26,6 +27,11 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     @Override
     public void sendRawMessage(String message) {
         System.out.println(ChatColor.stripColor(message));
+    }
+
+    @Override
+    public void sendRawMessage(UUID sender, String message) {
+      this.sendRawMessage(message); // Console doesn't know of senders
     }
 
     @Override

@@ -794,6 +794,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public void sendMessage(UUID sender, String message) {
+        this.sendMessage(message); // Most entities don't know about senders
+    }
+
+    @Override
+    public void sendMessage(UUID sender, String[] messages) {
+        this.sendMessage(messages); // Most entities don't know about senders
+    }
+
+    @Override
     public String getName() {
         return CraftChatMessage.fromComponent(getHandle().getDisplayName());
     }

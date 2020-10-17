@@ -200,6 +200,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void sendRawMessage(UUID sender, String message) {
+        if (getHandle().playerConnection == null) return;
+
+        for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
+            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.CHAT, (sender == null) ? SystemUtils.b : sender));
+        }
+    }
+
+    @Override
     public void sendMessage(String message) {
         if (!conversationTracker.isConversingModaly()) {
             this.sendRawMessage(message);
@@ -210,6 +219,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendMessage(String[] messages) {
         for (String message : messages) {
             sendMessage(message);
+        }
+    }
+
+    @Override
+    public void sendMessage(UUID sender, String message) {
+        if (!conversationTracker.isConversingModaly()) {
+            this.sendRawMessage(sender, message);
+        }
+    }
+
+    @Override
+    public void sendMessage(UUID sender, String[] messages) {
+        for (String message : messages) {
+            sendMessage(sender, message);
         }
     }
 
