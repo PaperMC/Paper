@@ -25,9 +25,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, (chunk) -> {
 -                loadEntities(nbttagcompound1, chunk);
+-                // CraftBukkit start - load chunk persistent data from nbt
+-                NBTTagCompound persistentBase = nbttagcompound1.getCompound("BukkitValues");
+-                if (persistentBase != null) {
+-                    chunk.persistentDataContainer.putAll(nbttagcompound1);
+-                }
+-                // CraftBukkit end
 -            });
 +            object = new Chunk(worldserver.getMinecraftWorld(), chunkcoordintpair, biomestorage, chunkconverter, (TickList) object1, (TickList) object2, j, achunksection, // Paper start - fix massive nbt memory leak due to lambda. move lambda into a container method to not leak scope. Only clone needed NBT keys.
-+                createLoadEntitiesConsumer(new SafeNBTCopy(nbttagcompound1, "TileEntities", "Entities"))
++                createLoadEntitiesConsumer(new SafeNBTCopy(nbttagcompound1, "TileEntities", "Entities", "BukkitValues")) // Paper - move CB Chunk PDC into here
 +            );// Paper end
          } else {
              ProtoChunk protochunk = new ProtoChunk(chunkcoordintpair, chunkconverter, achunksection, protochunkticklist, protochunkticklist1, worldserver); // Paper - Anti-Xray - Add parameter
@@ -64,7 +70,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +    private static java.util.function.Consumer<Chunk> createLoadEntitiesConsumer(NBTTagCompound nbt) {
-+        return (chunk) -> loadEntities(nbt, chunk);
++        return (chunk) -> {
++            loadEntities(nbt, chunk);
++            // CraftBukkit start - load chunk persistent data from nbt
++            NBTTagCompound persistentBase = nbt.getCompound("BukkitValues");
++            if (persistentBase != null) {
++                chunk.persistentDataContainer.putAll(nbt);
++            }
++            // CraftBukkit end
++        };
 +    }
 +    // Paper end
  
