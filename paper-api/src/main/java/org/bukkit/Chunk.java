@@ -5,13 +5,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a chunk of blocks
  */
-public interface Chunk {
+public interface Chunk extends PersistentDataHolder {
 
     /**
      * Gets the X-coordinate of this chunk
