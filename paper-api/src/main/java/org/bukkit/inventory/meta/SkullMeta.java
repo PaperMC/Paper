@@ -13,7 +13,7 @@ public interface SkullMeta extends ItemMeta {
      * Gets the owner of the skull.
      *
      * @return the owner if the skull
-     * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
+     * @deprecated see {@link #getOwningPlayer()}.
      */
     @Deprecated
     @Nullable
