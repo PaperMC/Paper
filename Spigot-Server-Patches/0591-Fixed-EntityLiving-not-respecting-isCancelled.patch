@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jordan Adams <jordan@jordanplayz158.me>
+Date: Sun, 18 Oct 2020 19:13:30 -0400
+Subject: [PATCH] Fixed EntityLiving not respecting isCancelled
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 76185f042dd773f267dc7574116cec7bd8a28ca8..e20e7a51766fd5afdbe8ab9369980e12da5689d8 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.server;
+ 
+-import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent; // Paper
++import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
++import com.google.common.base.Function;
+ import com.google.common.base.Objects;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+@@ -10,40 +11,23 @@ import com.mojang.datafixers.util.Pair;
+ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.DynamicOps;
+-import java.util.Collection;
+-import java.util.ConcurrentModificationException;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Optional;
+-import java.util.Random;
+-import java.util.UUID;
+-import java.util.function.Predicate;
+-import javax.annotation.Nullable;
+ import org.apache.logging.log4j.Logger;
+-
+-// CraftBukkit start
+-import java.util.ArrayList;
+-import java.util.HashSet;
+-import java.util.Set;
+-import com.google.common.base.Function;
+ import org.bukkit.Location;
+ import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Player;
+-import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
+-import org.bukkit.event.entity.EntityDamageEvent;
++import org.bukkit.event.entity.*;
+ import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
+-import org.bukkit.event.entity.EntityPotionEffectEvent;
+-import org.bukkit.event.entity.EntityRegainHealthEvent;
+-import org.bukkit.event.entity.EntityResurrectEvent;
+-import org.bukkit.event.entity.EntityTeleportEvent;
+ import org.bukkit.event.player.PlayerItemConsumeEvent;
+-// CraftBukkit end
+ 
+-import co.aikar.timings.MinecraftTimings; // Paper
++import javax.annotation.Nullable;
++import java.util.*;
++import java.util.function.Predicate;
++
++// CraftBukkit start
++// CraftBukkit end
+ 
+ public abstract class EntityLiving extends Entity {
+ 
+@@ -869,7 +853,7 @@ public abstract class EntityLiving extends Entity {
+                 MobEffect effect = (MobEffect) iterator.next();
+                 EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, cause, EntityPotionEffectEvent.Action.CLEARED);
+                 if (event.isCancelled()) {
+-                    continue;
++                    break;
+                 }
+                 this.b(effect);
+                 // CraftBukkit end
