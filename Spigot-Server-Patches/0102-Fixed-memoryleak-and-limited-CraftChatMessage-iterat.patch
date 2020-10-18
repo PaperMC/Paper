@@ -1,0 +1,87 @@
+From 956ae4ca2a3adbce64ea558bb13bc40fce800a63 Mon Sep 17 00:00:00 2001
+From: Juan Cruz Linsalata <LinsaFTW@users.noreply.github.com>
+Date: Sun, 18 Oct 2020 15:36:00 -0300
+Subject: [PATCH] Fixed memoryleak and limited CraftChatMessage iterations
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index c4dab42b..fa73a6be 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -32,7 +32,8 @@ public class ChunkProviderServer implements IChunkProvider {
+     public LongHashSet unloadQueue = new LongHashSet(); // CraftBukkit - LongHashSet
+     public Chunk emptyChunk;
+     public IChunkProvider chunkProvider;
+-    private IChunkLoader chunkLoader;
++    // FlamePaper - Make chunkloader public
++    public IChunkLoader chunkLoader;
+     public boolean forceChunkLoad = false; // CraftBukkit - true -> false
+     public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>();
+     public WorldServer world;
+diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+index 6b244904..7889b91e 100644
+--- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+@@ -17,8 +17,9 @@ import org.apache.logging.log4j.Logger;
+ public class ChunkRegionLoader implements IChunkLoader, IAsyncChunkSaver {
+ 
+     private static final Logger a = LogManager.getLogger();
+-    private Map<ChunkCoordIntPair, NBTTagCompound> b = new ConcurrentHashMap();
+-    private Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap());
++    // FlamePaper - Make b and c public
++    public Map<ChunkCoordIntPair, NBTTagCompound> b = new ConcurrentHashMap();
++    public Set<ChunkCoordIntPair> c = Collections.newSetFromMap(new ConcurrentHashMap());
+     private final File d;
+     private boolean e = false;
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 69485fa6..dbaf70e9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1001,6 +1001,22 @@ public final class CraftServer implements Server {
+             } catch (ExceptionWorldConflict ex) {
+                 getLogger().log(Level.SEVERE, null, ex);
+             }
++        } else { // FlamePaper - Fix chunk memory leak
++            ChunkProviderServer chunkProviderServer = handle.chunkProviderServer;
++            ChunkRegionLoader regionLoader = (ChunkRegionLoader) chunkProviderServer.chunkLoader;
++
++            regionLoader.b.clear();
++            regionLoader.c.clear();
++
++            try {
++                FileIOThread.a().b();
++            } catch (InterruptedException ex) {
++                Thread.currentThread().interrupt();
++            }
++
++            chunkProviderServer.chunkLoader = null;
++            chunkProviderServer.chunkProvider = null;
++            chunkProviderServer.chunks.clear();
+         }
+ 
+         worlds.remove(world.getName().toLowerCase());
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+index 38ef8216..99035d5f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+@@ -143,8 +143,16 @@ public final class CraftChatMessage {
+     public static String fromComponent(IChatBaseComponent component, EnumChatFormat defaultColor) {
+         if (component == null) return "";
+         StringBuilder out = new StringBuilder();
++        // FlamePaper - Limit iterations to 5
++        int iterations = 0;
+         
+         for (IChatBaseComponent c : (Iterable<IChatBaseComponent>) component) {
++            if (iterations > 5) {
++                break;
++            } else {
++                iterations++;
++            }
++
+             ChatModifier modi = c.getChatModifier();
+             out.append(modi.getColor() == null ? defaultColor : modi.getColor());
+             if (modi.isBold()) {
+-- 
+2.27.0.windows.1
+
