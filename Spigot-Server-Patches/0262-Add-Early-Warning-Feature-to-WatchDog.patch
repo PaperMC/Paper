@@ -9,10 +9,10 @@ thread dumps at an interval until the point of crash.
 This will help diagnose what was going on in that time before the crash.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 2e5c71d6b7d120a308076d95a3d5b73c5aca8bc9..1b21911c3e4fd1d4a3305176bb8477c370256906 100644
+index 288245ee7f941eb6bbdd9ce356214239ae6029e0..2fa61b57fd7362a9e642f5f77c33ef87a7ada827 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -25,6 +25,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
+@@ -26,6 +26,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  import co.aikar.timings.Timings;
  import co.aikar.timings.TimingsManager;
  import org.spigotmc.SpigotConfig;
@@ -20,7 +20,7 @@ index 2e5c71d6b7d120a308076d95a3d5b73c5aca8bc9..1b21911c3e4fd1d4a3305176bb8477c3
  
  public class PaperConfig {
  
-@@ -289,6 +290,14 @@ public class PaperConfig {
+@@ -291,6 +292,14 @@ public class PaperConfig {
          }
      }
  
@@ -81,7 +81,7 @@ index 1cf214eaca80feae283f6524605976022f856116..e66050b87ace6544636e10123ad09631
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce362c816a54 100644
+index 121c7ff60195f9904b8afb3a305e97bbcb80a738..aab21a5e5f3336b14240ca43a4bf837b46033f5e 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -5,6 +5,7 @@ import java.lang.management.MonitorInfo;
@@ -112,13 +112,16 @@ index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce36
      }
  
      private static long monotonicMillis()
-@@ -56,10 +63,18 @@ public class WatchdogThread extends Thread
+@@ -56,10 +63,21 @@ public class WatchdogThread extends Thread
      {
          while ( !stopping )
          {
 -            //
 -            if ( lastTick != 0 && monotonicMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            // Paper start
++            if (Bukkit.getServer() == null) { // This is pre-init
++                continue;
++            }
 +            Logger log = Bukkit.getServer().getLogger();
 +            long currentTime = monotonicMillis();
 +            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
@@ -134,7 +137,7 @@ index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce36
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
                  log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
-@@ -89,29 +104,46 @@ public class WatchdogThread extends Thread
+@@ -89,29 +107,46 @@ public class WatchdogThread extends Thread
                      }
                  }
                  // Paper end
