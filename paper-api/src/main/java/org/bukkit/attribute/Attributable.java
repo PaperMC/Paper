@@ -17,4 +17,14 @@ public interface Attributable {
      */
     @Nullable
     AttributeInstance getAttribute(@NotNull Attribute attribute);
+
+    // Paper start
+    /**
+     * Registers a generic attribute to that attributable instance.
+     * Allows it to add attributes not registered by default to that entity.
+     *
+     * @param attribute the generic attribute to register
+     */
+    void registerAttribute(@NotNull Attribute attribute);
+    // Paper end
 }
