@@ -39,4 +39,18 @@ public interface TNTPrimed extends Explosive {
      */
     @Nullable
     public Entity getSource();
+
+    /**
+     * Sets the source of this primed TNT.
+     *
+     * The source is the entity responsible for the creation of this primed TNT.
+     * <p>
+     * Must be instance of {@link org.bukkit.entity.LivingEntity} otherwise will
+     * be set to null. The parameter is typed {@link
+     * org.bukkit.entity.Entity} to be consistent with {@link
+     * org.bukkit.entity.TNTPrimed#getSource()} method.
+     *
+     * @param source the source of this primed TNT
+     */
+    public void setSource(@Nullable Entity source);
 }
