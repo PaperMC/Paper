@@ -1374,6 +1374,27 @@ public final class Bukkit {
         return server.getOfflinePlayer(name);
     }
 
+    // Paper start
+    /**
+     * Gets the player by the given name, regardless if they are offline or
+     * online.
+     * <p>
+     * This will not make a web request to get the UUID for the given name,
+     * thus this method will not block. However this method will return
+     * {@code null} if the player is not cached.
+     * </p>
+     *
+     * @param name the name of the player to retrieve
+     * @return an offline player if cached, {@code null} otherwise
+     * @see #getOfflinePlayer(String)
+     * @see #getOfflinePlayer(java.util.UUID)
+     */
+    @Nullable
+    public static OfflinePlayer getOfflinePlayerIfCached(@NotNull String name) {
+        return server.getOfflinePlayerIfCached(name);
+    }
+    // Paper end
+
     /**
      * Gets the player by the given UUID, regardless if they are offline or
      * online.
