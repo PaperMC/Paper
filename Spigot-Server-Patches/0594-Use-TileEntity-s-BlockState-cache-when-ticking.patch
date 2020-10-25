@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yive <admin@yive.me>
+Date: Sun, 25 Oct 2020 11:46:40 -0700
+Subject: [PATCH] Use TileEntity's BlockState cache when ticking
+
+
+diff --git a/src/main/java/net/minecraft/server/TileEntityTypes.java b/src/main/java/net/minecraft/server/TileEntityTypes.java
+index 5fc302bf0631d4e0b887b7c2a4e0e5a3c78d6875..f6e0d81ee0f48a4c06034737a2f9c43441d9ba51 100644
+--- a/src/main/java/net/minecraft/server/TileEntityTypes.java
++++ b/src/main/java/net/minecraft/server/TileEntityTypes.java
+@@ -48,6 +48,8 @@ public class TileEntityTypes<T extends TileEntity> {
+     private final Set<Block> J;
+     private final Type<?> K;
+ 
++    private final Block validBlock; // Paper - Avoid using SingletonSets
++
+     @Nullable
+     public static MinecraftKey a(TileEntityTypes<?> tileentitytypes) {
+         return IRegistry.BLOCK_ENTITY_TYPE.getKey(tileentitytypes);
+@@ -60,29 +62,36 @@ public class TileEntityTypes<T extends TileEntity> {
+ 
+         Type<?> type = SystemUtils.a(DataConverterTypes.BLOCK_ENTITY, s);
+ 
+-        return (TileEntityTypes) IRegistry.a(IRegistry.BLOCK_ENTITY_TYPE, s, (Object) tileentitytypes_a.a(type));
++        return (TileEntityTypes) IRegistry.a(IRegistry.BLOCK_ENTITY_TYPE, s, tileentitytypes_a.a(type)); // Paper - Decompile Fix
+     }
+ 
+     public TileEntityTypes(Supplier<? extends T> supplier, Set<Block> set, Type<?> type) {
+         this.I = supplier;
+         this.J = set;
+         this.K = type;
++        // Paper start - Avoid using SingletonSets
++        if (set.size() == 1) {
++            this.validBlock = set.iterator().next();
++        } else {
++            this.validBlock = null;
++        }
++        // Paper end
+     }
+ 
+     @Nullable
+     public T a() {
+-        return (TileEntity) this.I.get();
++        return (T) this.I.get(); // Paper - Decompile Fix
+     }
+ 
+     public boolean isValidBlock(Block block) {
+-        return this.J.contains(block);
++        return this.validBlock == null ? this.J.contains(block) : this.validBlock.equals(block); // Paper - Avoid using SingletonSets
+     }
+ 
+     @Nullable
+     public T a(IBlockAccess iblockaccess, BlockPosition blockposition) {
+         TileEntity tileentity = iblockaccess.getTileEntity(blockposition);
+ 
+-        return tileentity != null && tileentity.getTileType() == this ? tileentity : null;
++        return tileentity != null && tileentity.getTileType() == this ? (T) tileentity : null; // Paper - Decompile Fix
+     }
+ 
+     public static final class a<T extends TileEntity> {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index d91124bc85ed1a5b39e0ac3966f0af8ed9ee62b9..74251ddca4227260a5b53b6543e9b808163852db 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -799,7 +799,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+                             return String.valueOf(TileEntityTypes.a(tileentity.getTileType()));
+                         });
+                         tileentity.tickTimer.startTiming(); // Spigot
+-                        if (tileentity.getTileType().isValidBlock(this.getType(blockposition).getBlock())) {
++                        if (tileentity.getTileType().isValidBlock(tileentity.getBlock().getBlock())) { // Paper
+                             ((ITickable) tileentity).tick();
+                         } else {
+                             tileentity.w();
