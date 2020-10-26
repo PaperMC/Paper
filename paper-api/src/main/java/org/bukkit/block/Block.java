@@ -690,4 +690,31 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     @Deprecated(forRemoval = true)
     String getTranslationKey();
     // Paper end
+
+    // Paper start - destroy speed API
+    /**
+     * Gets the speed at which this block will be destroyed by a given {@link ItemStack}
+     * <p>
+     * Default value is 1.0
+     *
+     * @param itemStack {@link ItemStack} used to mine this Block
+     * @return the speed that this Block will be mined by the given {@link ItemStack}
+     */
+    default float getDestroySpeed(final @NotNull ItemStack itemStack) {
+        return this.getBlockData().getDestroySpeed(itemStack);
+    }
+
+    /**
+     * Gets the speed at which this block will be destroyed by a given {@link ItemStack}
+     * <p>
+     * Default value is 1.0
+     *
+     * @param itemStack {@link ItemStack} used to mine this Block
+     * @param considerEnchants true to look at enchants on the itemstack
+     * @return the speed that this Block will be mined by the given {@link ItemStack}
+     */
+    default float getDestroySpeed(@NotNull ItemStack itemStack, boolean considerEnchants) {
+        return this.getBlockData().getDestroySpeed(itemStack, considerEnchants);
+    }
+    // Paper end - destroy speed API
 }
