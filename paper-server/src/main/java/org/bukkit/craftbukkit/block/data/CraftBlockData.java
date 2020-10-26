@@ -730,4 +730,35 @@ public class CraftBlockData implements BlockData {
     public BlockState createBlockState() {
         return CraftBlockStates.getBlockState(this.state, null);
     }
+
+    // Paper start - destroy speed API
+    @Override
+    public float getDestroySpeed(final ItemStack itemStack, final boolean considerEnchants) {
+        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(itemStack);
+        float speed = nmsItemStack.getDestroySpeed(this.state);
+        if (speed > 1.0F && considerEnchants) {
+            final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute = net.minecraft.world.entity.ai.attributes.Attributes.MINING_EFFICIENCY;
+            // Logic sourced from AttributeInstance#calculateValue
+            final double initialBaseValue = attribute.value().getDefaultValue();
+            final org.apache.commons.lang3.mutable.MutableDouble modifiedBaseValue = new org.apache.commons.lang3.mutable.MutableDouble(initialBaseValue);
+            final org.apache.commons.lang3.mutable.MutableDouble baseValMul = new org.apache.commons.lang3.mutable.MutableDouble(1);
+            final org.apache.commons.lang3.mutable.MutableDouble totalValMul = new org.apache.commons.lang3.mutable.MutableDouble(1);
+
+            net.minecraft.world.item.enchantment.EnchantmentHelper.forEachModifier(
+                nmsItemStack, net.minecraft.world.entity.EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
+                    switch (attributeModifier.operation()) {
+                        case ADD_VALUE -> modifiedBaseValue.add(attributeModifier.amount());
+                        case ADD_MULTIPLIED_BASE -> baseValMul.add(attributeModifier.amount());
+                        case ADD_MULTIPLIED_TOTAL -> totalValMul.setValue(totalValMul.doubleValue() * (1D + attributeModifier.amount()));
+                    }
+                }
+            );
+
+            final double actualModifier = modifiedBaseValue.doubleValue() * baseValMul.doubleValue() * totalValMul.doubleValue();
+
+            speed += (float) attribute.value().sanitizeValue(actualModifier);
+        }
+        return speed;
+    }
+    // Paper end - destroy speed API
 }
