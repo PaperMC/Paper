@@ -157,6 +157,25 @@ index 07e12714d064a2ccc7a3a50fbb88517f9a3b8b78..10abf20e907f1ea25797ff33d181de7e
  
          return InteractionResultWrapper.a(itemstack, world.s_());
      }
+diff --git a/src/main/java/net/minecraft/server/ItemFireworks.java b/src/main/java/net/minecraft/server/ItemFireworks.java
+index 885c03f62da3b14bf7aeb31f1ae6a95bc9f86de1..e775fe69ee7e555721bc73e7cb0dd3136736bc9c 100644
+--- a/src/main/java/net/minecraft/server/ItemFireworks.java
++++ b/src/main/java/net/minecraft/server/ItemFireworks.java
+@@ -20,8 +20,12 @@ public class ItemFireworks extends Item {
+             EntityFireworks entityfireworks = new EntityFireworks(world, itemactioncontext.getEntity(), vec3d.x + (double) enumdirection.getAdjacentX() * 0.15D, vec3d.y + (double) enumdirection.getAdjacentY() * 0.15D, vec3d.z + (double) enumdirection.getAdjacentZ() * 0.15D, itemstack);
+             entityfireworks.spawningEntity = itemactioncontext.getEntity().getUniqueID(); // Paper
+ 
+-            world.addEntity(entityfireworks);
+-            itemstack.subtract(1);
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) itemactioncontext.getEntity().getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Firework) entityfireworks.getBukkitEntity());
++            if (!event.callEvent() || !world.addEntity(entityfireworks)) return EnumInteractionResult.PASS;
++            if (event.shouldConsume() && !itemactioncontext.getEntity().abilities.canInstantlyBuild) itemstack.subtract(1);
++            else if (itemactioncontext.getEntity() instanceof EntityPlayer) ((EntityPlayer) itemactioncontext.getEntity()).getBukkitEntity().updateInventory();
++            // Paper end
+         }
+ 
+         return EnumInteractionResult.a(world.isClientSide);
 diff --git a/src/main/java/net/minecraft/server/ItemLingeringPotion.java b/src/main/java/net/minecraft/server/ItemLingeringPotion.java
 index 685d958994bc35ad5eceba629e6743b41e2cc04b..58f7191a6980265e8fab17cf39769bbbca0ee105 100644
 --- a/src/main/java/net/minecraft/server/ItemLingeringPotion.java
