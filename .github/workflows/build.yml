@@ -1,0 +1,36 @@
+# Here lie dragons!
+#
+# Note that there is no artifact step in this script. We do not want Paperclip
+# jars to be built for every push & PR; our CI handles pushes to branches, while
+# PRs can themselves link to Paperclip jars if it is necessary. Official such
+# PRs will take use of testing builds.
+
+name: Build Paper
+on: [push, pull_request]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                java: [11, 8]
+            fail-fast: true
+        steps:
+            - uses: actions/checkout@v2
+            - name: JDK ${{ matrix.java }}
+              uses: actions/setup-java@v1
+              with:
+                  java-version: ${{ matrix.java }}
+            - name: Cache maven
+              uses: actions/cache@v2
+              with:
+                  path: |
+                      ~/.m2/repository/
+                      work/Minecraft
+                  key: ${{ runner.os }}-paper-${{ hashFiles('**/pom.xml') }}
+                  restore-keys: ${{ runner.os }}-paper
+            - name: Patch and build
+              run: |
+                  git config --global user.email "no-reply@github.com"
+                  git config --global user.name "Github Actions"
+                  ./paper build
