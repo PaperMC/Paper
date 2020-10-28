@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Wed, 28 Oct 2020 18:56:15 +0100
+Subject: [PATCH] Rewrite enum to/from NMS type methods
+
+The methods would otherwise cache wrong enum types for specific enums.
+This would result in a `ClassCastException` at the caller location,
+which obviously is no fun. This broke API with Switch#getFace and
+FaceAttachable#getAttachedFace.
+
+The existing implementation was also stupid.
+
+This patch is licensed under the MIT Licence, as defined by the OSI:
+<https://opensource.org/licenses/MIT>.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 820644e0971b42a9698208544232ea87a04ed4a9..b0d6b131e796bd3740652c788c79e8cf9976a595 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -137,7 +137,8 @@ public class CraftBlockData implements BlockData {
+         return exactMatch;
+     }
+ 
+-    private static final Map<Class, BiMap<Enum<?>, Enum<?>>> classMappings = new HashMap<>();
++    // private static final Map<Class<?>, BiMap<Enum<?>, Enum<?>>> classMappings = new HashMap<>(); // Paper - comment
++    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new HashMap<>(); // Paper - cache constants; we don't want more than 1 clone
+ 
+     /**
+      * Convert an NMS Enum (usually a BlockStateEnum) to its appropriate Bukkit
+@@ -147,32 +148,12 @@ public class CraftBlockData implements BlockData {
+      */
+     @SuppressWarnings("unchecked")
+     private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
+-        Enum<?> converted;
+-        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms.getClass());
+-
+-        if (nmsToBukkit != null) {
+-            converted = nmsToBukkit.get(nms);
+-            if (converted != null) {
+-                return (B) converted;
+-            }
+-        }
+-
++        // Paper start - rewrite this
+         if (nms instanceof EnumDirection) {
+-            converted = CraftBlock.notchToBlockFace((EnumDirection) nms);
+-        } else {
+-            converted = bukkit.getEnumConstants()[nms.ordinal()];
++            return (B) CraftBlock.notchToBlockFace((EnumDirection) nms);
+         }
+-
+-        Preconditions.checkState(converted != null, "Could not convert enum %s->%s", nms, bukkit);
+-
+-        if (nmsToBukkit == null) {
+-            nmsToBukkit = HashBiMap.create();
+-            classMappings.put(nms.getClass(), nmsToBukkit);
+-        }
+-
+-        nmsToBukkit.put(nms, converted);
+-
+-        return (B) converted;
++        return (B) ENUM_VALUES.computeIfAbsent(bukkit, Class::getEnumConstants)[nms.ordinal()];
++        // Paper end
+     }
+ 
+     /**
+@@ -185,32 +166,12 @@ public class CraftBlockData implements BlockData {
+      */
+     @SuppressWarnings("unchecked")
+     private static <N extends Enum<N> & INamable> N toNMS(Enum<?> bukkit, Class<N> nms) {
+-        Enum<?> converted;
+-        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms);
+-
+-        if (nmsToBukkit != null) {
+-            converted = nmsToBukkit.inverse().get(bukkit);
+-            if (converted != null) {
+-                return (N) converted;
+-            }
+-        }
+-
++        // Paper start - rewrite this
+         if (bukkit instanceof BlockFace) {
+-            converted = CraftBlock.blockFaceToNotch((BlockFace) bukkit);
+-        } else {
+-            converted = nms.getEnumConstants()[bukkit.ordinal()];
++            return (N) CraftBlock.blockFaceToNotch((BlockFace) bukkit);
+         }
+-
+-        Preconditions.checkState(converted != null, "Could not convert enum %s->%s", nms, bukkit);
+-
+-        if (nmsToBukkit == null) {
+-            nmsToBukkit = HashBiMap.create();
+-            classMappings.put(nms, nmsToBukkit);
+-        }
+-
+-        nmsToBukkit.put(converted, bukkit);
+-
+-        return (N) converted;
++        return (N) ENUM_VALUES.computeIfAbsent(nms, Class::getEnumConstants)[bukkit.ordinal()];
++        // Paper end
+     }
+ 
+     /**
