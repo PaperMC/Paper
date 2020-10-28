@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Toon Schoenmakers <nighteyes1993@gmail.com>
+Date: Fri, 23 Oct 2020 15:01:44 +0200
+Subject: [PATCH] Avoid error bubbling up when item stack is empty in fishing
+ loot
+
+This can realistically only happen if there's custom loot active on fishing
+which can return 0 items. This would disconnect the player who's fishing.
+
+diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityFishingHook.java
++++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
+@@ -0,0 +0,0 @@ public class EntityFishingHook extends IProjectile {
+ 
+                 while (iterator.hasNext()) {
+                     ItemStack itemstack1 = (ItemStack) iterator.next();
+-                    EntityItem entityitem = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), itemstack1);
++                    // Paper start, new EntityItem would throw if for whatever reason (mostly shitty datapacks) the itemstack1 turns out to be empty
++                    // if the item stack is empty we instead just have our entityitem as null
++                    EntityItem entityitem = null;
++                    if (!itemstack1.isEmpty()) {
++                        entityitem = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), itemstack1);
++                    }
++                    // Paper end
+                     // CraftBukkit start
+-                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH);
++                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null
+                     playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
+                     this.world.getServer().getPluginManager().callEvent(playerFishEvent);
+ 
+@@ -0,0 +0,0 @@ public class EntityFishingHook extends IProjectile {
+                     double d2 = entityhuman.locZ() - this.locZ();
+                     double d3 = 0.1D;
+ 
+-                    entityitem.setMot(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
+-                    this.world.addEntity(entityitem);
++                    // Paper start, entity item can be null, so we need to check against this
++                    if (entityitem != null) {
++                        entityitem.setMot(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
++                        this.world.addEntity(entityitem);
++                    }
++                    // Paper end
+                     // CraftBukkit start - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
+                     if (playerFishEvent.getExpToDrop() > 0) {
+                         entityhuman.world.addEntity(new EntityExperienceOrb(entityhuman.world, entityhuman.locX(), entityhuman.locY() + 0.5D, entityhuman.locZ() + 0.5D, playerFishEvent.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.FISHING, this.getOwner(), this)); // Paper
