@@ -5,26 +5,25 @@ Subject: [PATCH] Implement furnace cook speed multiplier API
 
 Signed-off-by: Tassu <git@tassu.me
 
-Fixed an issue where a furnace's cook-speed multiplier no longer rounds down
+Fixed an issue where a furnace's cook-speed multiplier rounds down
 to the nearest Integer when updating its current cook time.
 
 Modified by: Eric Su <ericsu@alumni.usc.edu>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index 99b20fa5feff0f766124d4ec9474852e33e329f2..f69059cd960191c8638a0c485e3e2e2e373bee2d 100644
+index 99b20fa5feff0f766124d4ec9474852e33e329f2..75b499bcefe48c868397fa435b204895c873eb77 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-@@ -10,6 +10,9 @@ import java.util.List;
+@@ -10,6 +10,8 @@ import java.util.List;
  import java.util.Map;
  import javax.annotation.Nullable;
  // CraftBukkit start
 +import java.util.List;
 +
-+import org.apache.commons.lang.Validate;
  import org.bukkit.craftbukkit.block.CraftBlock;
  import org.bukkit.craftbukkit.entity.CraftHumanEntity;
  import org.bukkit.craftbukkit.inventory.CraftItemStack;
-@@ -28,6 +31,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+@@ -28,6 +30,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
      protected NonNullList<ItemStack> items;
      public int burnTime;
      private int ticksForCurrentFuel;
@@ -32,7 +31,7 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..f69059cd960191c8638a0c485e3e2e2e
      public int cookTime;
      public int cookTimeTotal;
      protected final IContainerProperties b;
-@@ -228,6 +232,11 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+@@ -228,6 +231,11 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
              this.n.put(new MinecraftKey(s), nbttagcompound1.getInt(s));
          }
  
@@ -44,7 +43,7 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..f69059cd960191c8638a0c485e3e2e2e
      }
  
      @Override
-@@ -236,6 +245,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+@@ -236,6 +244,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
          nbttagcompound.setShort("BurnTime", (short) this.burnTime);
          nbttagcompound.setShort("CookTime", (short) this.cookTime);
          nbttagcompound.setShort("CookTimeTotal", (short) this.cookTimeTotal);
@@ -52,7 +51,7 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..f69059cd960191c8638a0c485e3e2e2e
          ContainerUtil.a(nbttagcompound, this.items);
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
  
-@@ -295,13 +305,18 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+@@ -295,13 +304,18 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
                  }
  
                  if (this.isBurning() && this.canBurn(irecipe)) {
