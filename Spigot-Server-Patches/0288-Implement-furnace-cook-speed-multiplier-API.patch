@@ -11,7 +11,7 @@ to the nearest Integer when updating its current cook time.
 Modified by: Eric Su <ericsu@alumni.usc.edu>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index 99b20fa5feff0f766124d4ec9474852e33e329f2..75b499bcefe48c868397fa435b204895c873eb77 100644
+index 99b20fa5feff0f766124d4ec9474852e33e329f2..f9e3b3f076590951d558011d241e3f9359a41fd9 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 @@ -10,6 +10,8 @@ import java.util.List;
@@ -51,28 +51,20 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..75b499bcefe48c868397fa435b204895
          ContainerUtil.a(nbttagcompound, this.items);
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
  
-@@ -295,13 +304,18 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
-                 }
+@@ -397,7 +406,10 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+     }
  
-                 if (this.isBurning() && this.canBurn(irecipe)) {
-+                    // Paper start
-                     ++this.cookTime;
--                    if (this.cookTime == this.cookTimeTotal) {
-+                    /* Scales cookTimeTotal to the current cookSpeedMultiplier.
-+                     * Math.ceil is used  to replicate the previous behavior
-+                     * of incrementing cookTime by the its cookSpeedMultiplier. */
-+                    if (this.cookTime >= (int) Math.ceil(this.cookTimeTotal / this.cookSpeedMultiplier)) { // Paper - cook speed multiplier API
-                         this.cookTime = 0;
-                         this.cookTimeTotal = this.getRecipeCookingTime();
-                         this.burn(irecipe);
-                         flag1 = true;
-                     }
-+                    // Paper end
-                 } else {
-                     this.cookTime = 0;
-                 }
+     protected int getRecipeCookingTime() {
+-        return (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        // Paper begin - Scale the recipe's cooking time to the current cookSpeedMultiplier
++        Integer cookTime = (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
++        return (int) Math.ceil (cookTime.doubleValue() / this.cookSpeedMultiplier);
++        // Paper end
+     }
+ 
+     public static boolean isFuel(ItemStack itemstack) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-index e0e10feeb1608c46effd6104f64db50977f468fe..231c115635c4b4ecf1c2201a9e5a55fea98be080 100644
+index 27c8cc130e7466c396b514dd77f1385f967bebdb..05643f6cd28d22680a18c8b742af8e5e945d1503 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
 @@ -63,4 +63,18 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
