@@ -11,7 +11,7 @@ to the nearest Integer when updating its current cook time.
 Modified by: Eric Su <ericsu14@hotmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index 99b20fa5feff0f766124d4ec9474852e33e329f2..183cf32afe8f2b541326e64f766eaad4505734b0 100644
+index 99b20fa5feff0f766124d4ec9474852e33e329f2..ac098e9005bf491b40d988512b19da2c1a8cfb1a 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 @@ -10,6 +10,8 @@ import java.util.List;
@@ -60,23 +60,27 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..183cf32afe8f2b541326e64f766eaad4
                          this.cookTime = 0;
                          this.cookTimeTotal = this.getRecipeCookingTime();
                          this.burn(irecipe);
-@@ -397,7 +406,10 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+@@ -396,9 +405,13 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
+         }
      }
  
-     protected int getRecipeCookingTime() {
+-    protected int getRecipeCookingTime() {
 -        return (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
-+        // Paper begin - Scale the recipe's cooking time to the current cookSpeedMultiplier
++    // Paper begin - Expose this function so CraftFurnace can correctly scale the total cooking time to a new multiplier
++    public int getRecipeCookingTime() {
++        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
 +        Integer cookTime = (this.hasWorld()) ? (Integer) this.world.getCraftingManager().craft((Recipes<RecipeCooking>) this.c, this, this.world).map(RecipeCooking::getCookingTime).orElse(200) : 200; // CraftBukkit - SPIGOT-4302 // Eclipse fail
 +        return (int) Math.ceil (cookTime.doubleValue() / this.cookSpeedMultiplier);
-+        // Paper end
      }
++    // Paper end
  
      public static boolean isFuel(ItemStack itemstack) {
+         return f().containsKey(itemstack.getItem());
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-index 27c8cc130e7466c396b514dd77f1385f967bebdb..668f2d18a1abe5f5df8d4a8d71fdc8f352f71c27 100644
+index 27c8cc130e7466c396b514dd77f1385f967bebdb..298e75d72b889396a15907e713c29430c168b915 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-@@ -63,4 +63,21 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
+@@ -63,4 +63,20 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
      public void setCookTimeTotal(int cookTimeTotal) {
          this.getSnapshot().cookTimeTotal = cookTimeTotal;
      }
@@ -91,10 +95,9 @@ index 27c8cc130e7466c396b514dd77f1385f967bebdb..668f2d18a1abe5f5df8d4a8d71fdc8f3
 +    public void setCookSpeedMultiplier(double multiplier) {
 +        com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
 +        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
-+        this.getSnapshot().cookSpeedMultiplier = multiplier;
-+        /* Update the snapshot's current total cook time to scale with the set multiplier */
-+        double currentCookTimeTotal = this.getSnapshot().cookTimeTotal;
-+        this.getSnapshot().cookTimeTotal = (int) Math.ceil (currentCookTimeTotal / multiplier);
++        T snapshot = this.getSnapshot();
++        snapshot.cookSpeedMultiplier = multiplier;
++        snapshot.cookTimeTotal = snapshot.getRecipeCookingTime(); // Update the snapshot's current total cook time to scale with the newly set multiplier
 +    }
 +    // Paper end
  }
