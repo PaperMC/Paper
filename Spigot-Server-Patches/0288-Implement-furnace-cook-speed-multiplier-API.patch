@@ -3,12 +3,12 @@ From: Tassu <git@tassu.me>
 Date: Thu, 13 Sep 2018 08:45:21 +0300
 Subject: [PATCH] Implement furnace cook speed multiplier API
 
-Signed-off-by: Tassu <git@tassu.me
+Signed-off-by: Tassu <git@tassu.me>
 
 Fixed an issue where a furnace's cook-speed multiplier rounds down
 to the nearest Integer when updating its current cook time.
 
-Modified by: Eric Su <ericsu@alumni.usc.edu>
+Modified by: Eric Su <ericsu14@hotmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 index 99b20fa5feff0f766124d4ec9474852e33e329f2..f9e3b3f076590951d558011d241e3f9359a41fd9 100644
@@ -64,10 +64,10 @@ index 99b20fa5feff0f766124d4ec9474852e33e329f2..f9e3b3f076590951d558011d241e3f93
  
      public static boolean isFuel(ItemStack itemstack) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-index 27c8cc130e7466c396b514dd77f1385f967bebdb..05643f6cd28d22680a18c8b742af8e5e945d1503 100644
+index 27c8cc130e7466c396b514dd77f1385f967bebdb..668f2d18a1abe5f5df8d4a8d71fdc8f352f71c27 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
-@@ -63,4 +63,18 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
+@@ -63,4 +63,21 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
      public void setCookTimeTotal(int cookTimeTotal) {
          this.getSnapshot().cookTimeTotal = cookTimeTotal;
      }
@@ -83,6 +83,9 @@ index 27c8cc130e7466c396b514dd77f1385f967bebdb..05643f6cd28d22680a18c8b742af8e5e
 +        com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
 +        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
 +        this.getSnapshot().cookSpeedMultiplier = multiplier;
++        /* Update the snapshot's current total cook time to scale with the set multiplier */
++        double currentCookTimeTotal = this.getSnapshot().cookTimeTotal;
++        this.getSnapshot().cookTimeTotal = (int) Math.ceil (currentCookTimeTotal / multiplier);
 +    }
 +    // Paper end
  }
