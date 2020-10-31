@@ -8,7 +8,19 @@ Signed-off-by: Tassu <git@tassu.me>
 Fixed an issue where a furnace's cook-speed multiplier rounds down
 to the nearest Integer when updating its current cook time.
 
-Modified by: Eric Su <ericsu14@hotmail.com>
+Instead of incrementing the cookTime counter by the current cookSpeedMultiplier (which is causing 
+the loss in precision issue due to double -> integer casting), I have instead modified an internal function,
+getRecipeCookingTime(), to scale the total cooking time of the current item to the current cookSpeedMultiplier.
+
+This is done through dividing the total cook time of the item by the set multiplier, and taking the ceiling
+of the final output (ceiling is used here to replicate the behavior of this previous patch, otherwise items smelted
+in furnaces with odd multiplers will finish cooking at least 1 tick earlier).
+
+I also changed the access modifier for the getRecipeCookingTime() function to public, as it allows
+the setCookSpeedMultiplier API call to immediately adjust the current cooking time to the newly set multiplier.
+Please let me know if this is a safe change or not.
+
+Modified by: Eric Su <ericsu@alumni.usc.edu>
 
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 index 99b20fa5feff0f766124d4ec9474852e33e329f2..ac098e9005bf491b40d988512b19da2c1a8cfb1a 100644
