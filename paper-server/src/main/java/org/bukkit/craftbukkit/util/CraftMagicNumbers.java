@@ -318,7 +318,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
                 }
 
-                MinecraftServer.getServer().getPlayerList().reloadResources();
+                // Paper start - Fix client lag on advancement loading
+                //MinecraftServer.getServer().getPlayerList().reload();
+                MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
+                    player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
+                    player.getAdvancements().flushDirty(player);
+                });
+                // Paper end - Fix client lag on advancement loading
 
                 return bukkit;
             }
