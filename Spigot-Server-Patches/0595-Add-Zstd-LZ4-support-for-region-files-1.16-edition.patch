@@ -1,0 +1,330 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: egg82 <eggys82@gmail.com>
+Date: Sun, 1 Nov 2020 01:00:15 -0700
+Subject: [PATCH] Add Zstd/LZ4 support for region files (1.16 edition)
+
+Zstd using zstd-jni: https://github.com/luben/zstd-jni
+LZ4 using lz4-java: https://github.com/lz4/lz4-java
+
+Added new command-line option, --forceWrite, which will forcibly write the chunk/flush to disk regardless of whether or not the chunk has actually changed in a --forceUpgrade.
+New compression only happens when a chunk is saved, so running a --forceUpgrade AND --forceWrite may be desirable.
+
+New (hidden) config option for the compression method to use.
+There's a new option in PaperConfig (compression level) for Zstd which defaults to 6.
+There's a new option in PaperConfig (compression level) for Zlib which defaults to 5.
+
+Since the patch hooks Mojang's versioning system for new compression methods, it
+should be internally consistent, easily-updatable, and reversible with a --forceUpgrade AND a --forceWrite.
+
+This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
+
+diff --git a/pom.xml b/pom.xml
+index 9211fac2069652eff1429264be3a8fdaf50df2f4..5fe42c2b50f57f8e1768d8898d694c5f94e6c94a 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -121,6 +121,18 @@
+             <version>5.1.49</version>
+             <scope>runtime</scope>
+         </dependency>
++        <!-- Paper start - add LZ4 & ZSTD compression -->
++        <dependency>
++            <groupId>org.lz4</groupId>
++            <artifactId>lz4-java</artifactId>
++            <version>1.7.1</version>
++        </dependency>
++        <dependency>
++            <groupId>com.github.luben</groupId>
++            <artifactId>zstd-jni</artifactId>
++            <version>1.4.5-11</version>
++        </dependency>
++        <!-- Paper end -->
+         <!-- testing -->
+         <dependency>
+             <groupId>junit</groupId>
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 053da5119404ded5e3cf6bb55967cc8ffba47de6..61c9ba0b3be103ee59d8b4cf8c3387823c92ab9c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -1,6 +1,8 @@
+ package com.destroystokyo.paper;
+ 
+ import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
++import com.destroystokyo.paper.region.RegionCompressionType;
++import com.github.luben.zstd.Zstd;
+ import com.google.common.base.Strings;
+ import com.google.common.base.Throwables;
+ 
+@@ -10,12 +12,14 @@ import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
+ import java.lang.reflect.Modifier;
+ import java.nio.charset.StandardCharsets;
++import java.util.Arrays;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.concurrent.TimeUnit;
+ import java.util.logging.Level;
+ import java.util.regex.Pattern;
++import java.util.zip.Deflater;
+ 
+ import com.google.common.collect.Lists;
+ import net.minecraft.server.MinecraftServer;
+@@ -462,4 +466,30 @@ public class PaperConfig {
+     private static void trackPluginScoreboards() {
+         trackPluginScoreboards = getBoolean("settings.track-plugin-scoreboards", false);
+     }
++
++    public static RegionCompressionType regionCompressionMethod = RegionCompressionType.ZLIB;
++    public static int regionCompressionZstdLevel = 6;
++    public static int regionCompressionZlibLevel = 5;
++    private static void regionCompression() {
++        regionCompressionMethod = RegionCompressionType.getFromName(config.getString("settings.region-compression.method", "zlib")); // Hidden config option
++        if (regionCompressionMethod == null) {
++            fatal("Valid values for settings.region-compression.method are: " + String.join(", ", Arrays.copyOf(RegionCompressionType.values(), RegionCompressionType.values().length, String[].class)));
++        } else {
++            log("Using " + (regionCompressionMethod == RegionCompressionType.NONE ? "no" : regionCompressionMethod.getName()) + " compression for region files.");
++            regionCompressionZstdLevel = getInt("settings.region-compression.zstd-level", regionCompressionZstdLevel);
++            if (regionCompressionZstdLevel < Zstd.minCompressionLevel() || regionCompressionZstdLevel > Zstd.maxCompressionLevel()) {
++                fatal("Valid values for settings.region-compression.zstd-level are from " + Zstd.minCompressionLevel() + " to " + Zstd.maxCompressionLevel());
++            }
++            if (regionCompressionMethod == RegionCompressionType.ZSTD) {
++                log("Using level " + regionCompressionZstdLevel + " for Zstd compression." + (regionCompressionZstdLevel >= 14 ? " (Make my PC hurt)" : ""));
++            }
++            regionCompressionZlibLevel = getInt("settings.region-compression.zlib-level", regionCompressionZlibLevel);
++            if (regionCompressionZlibLevel != Deflater.DEFAULT_COMPRESSION && (regionCompressionZlibLevel < Deflater.BEST_SPEED || regionCompressionZlibLevel > Deflater.BEST_COMPRESSION)) {
++                fatal("Valid values for settings.region-compression.zlib-level are from " + Deflater.BEST_SPEED + " to " + Deflater.BEST_COMPRESSION + " OR " + Deflater.DEFAULT_COMPRESSION);
++            }
++            if (regionCompressionMethod == RegionCompressionType.ZLIB) {
++                log("Using level " + regionCompressionZlibLevel + " for Zlib compression." + (regionCompressionZlibLevel == 9 ? " (Make my PC hurt)" : ""));
++            }
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 18521e2df4a45a8c4e67770028586ffd779ea519..5fdde4ae87a1962bde0ddb015bb810a314f32c46 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -233,9 +233,14 @@ public class Main {
+     }
+     // Paper end
+ 
++    // Paper start - add forceWrite flag
+     public static void convertWorld(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionManager>> immutableset) { // CraftBukkit
++        convertWorld(convertable_conversionsession, datafixer, flag, booleansupplier, immutableset, false);
++    }
++    public static void convertWorld(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, boolean flag, BooleanSupplier booleansupplier, ImmutableSet<ResourceKey<DimensionManager>> immutableset, boolean forceWrite) {
++    // Paper end
+         Main.LOGGER.info("Forcing world upgrade! {}", convertable_conversionsession.getLevelName()); // CraftBukkit
+-        WorldUpgrader worldupgrader = new WorldUpgrader(convertable_conversionsession, datafixer, immutableset, flag);
++        WorldUpgrader worldupgrader = new WorldUpgrader(convertable_conversionsession, datafixer, immutableset, flag, forceWrite); // Paper - add forceWrite flag
+         IChatBaseComponent ichatbasecomponent = null;
+ 
+         while (!worldupgrader.b()) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 26bbfeba138f506200aad667b6f910b8fc0d2d6a..7082edd26b863d6535fddcfc54ed1ce742b4934f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -394,7 +394,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                     return true;
+                 }, worlddata.getGeneratorSettings().d().d().stream().map((entry) -> {
+                     return ResourceKey.a(IRegistry.K, ((ResourceKey) entry.getKey()).a());
+-                }).collect(ImmutableSet.toImmutableSet()));
++                }).collect(ImmutableSet.toImmutableSet()), options.has("forceWrite")); // Paper - add forceWrite flag
+             }
+ 
+             IWorldDataServer iworlddataserver = worlddata;
+diff --git a/src/main/java/net/minecraft/server/RegionFileCompression.java b/src/main/java/net/minecraft/server/RegionFileCompression.java
+index 3382d678e68e559b8d3cb9dced4fce24206cd38f..09df95412ff43a6ad0e99cd749199324567d204b 100644
+--- a/src/main/java/net/minecraft/server/RegionFileCompression.java
++++ b/src/main/java/net/minecraft/server/RegionFileCompression.java
+@@ -1,30 +1,122 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.PaperConfig; // Paper
++import com.destroystokyo.paper.region.RegionCompressionType; // Paper
++import com.google.common.cache.CacheBuilder; // Paper
++import com.google.common.cache.CacheLoader; // Paper
++import com.google.common.cache.LoadingCache; // Paper
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import java.io.ByteArrayOutputStream; // Paper
++import java.io.EOFException; // Paper
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.io.OutputStream;
++import java.util.concurrent.ExecutionException; // Paper
++import java.util.zip.Deflater; // Paper
+ import java.util.zip.DeflaterOutputStream;
+ import java.util.zip.GZIPInputStream;
+ import java.util.zip.GZIPOutputStream;
++import java.util.zip.Inflater; // Paper
+ import java.util.zip.InflaterInputStream;
+ import javax.annotation.Nullable;
+ 
+ public class RegionFileCompression {
+ 
+     private static final Int2ObjectMap<RegionFileCompression> d = new Int2ObjectOpenHashMap();
+-    public static final RegionFileCompression a = a(new RegionFileCompression(1, GZIPInputStream::new, GZIPOutputStream::new));
+-    public static final RegionFileCompression b = a(new RegionFileCompression(2, InflaterInputStream::new, DeflaterOutputStream::new));
++    public static final RegionFileCompression a = a(new RegionFileCompression(1, in -> new GZIPInputStream(in, 32 * 1024), out -> new GZIPOutputStream(out, 32 * 1024))); public static final RegionFileCompression GZIP = a; // Paper - OBFHELPER, optimize method
++    public static final RegionFileCompression b = a(new RegionFileCompression(2, in -> new InflaterInputStream(in, new Inflater(), 32 * 1024), out -> new DeflaterOutputStream(out, new Deflater(PaperConfig.regionCompressionZlibLevel), 32 * 1024))); public static final RegionFileCompression ZLIB = b; // Paper - OBFHELPER
+     public static final RegionFileCompression c = a(new RegionFileCompression(3, (inputstream) -> {
+         return inputstream;
+     }, (outputstream) -> {
+         return outputstream;
+-    }));
++    })); public static final RegionFileCompression NONE = c; // Paper - OBFHELPER
+     private final int e;
+     private final RegionFileCompression.a<InputStream> f;
+     private final RegionFileCompression.a<OutputStream> g;
+ 
++    // Paper start - add new compression methods
++    private static final net.jpountz.lz4.LZ4FastDecompressor lz4Decompressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastDecompressor();
++    private static final net.jpountz.lz4.LZ4Compressor lz4Compressor = net.jpountz.lz4.LZ4Factory.fastestJavaInstance().fastCompressor();
++    public static final RegionFileCompression LZ4 = a(new RegionFileCompression(RegionCompressionType.LZ4.getType(),
++        in -> new net.jpountz.lz4.LZ4BlockInputStream(in, lz4Decompressor),
++        out -> new net.jpountz.lz4.LZ4BlockOutputStream(out, 32 * 1024, lz4Compressor)
++    ));
++
++    private static final short CURRENT_ZSTD_VERSION = 0;
++    private static final LoadingCache<Short, byte[]> zstdDicts = CacheBuilder.newBuilder().build(
++        new CacheLoader<Short, byte[]>() {
++            @Override
++            public byte[] load(Short key) throws Exception {
++                byte[] retVal = toBytes(RegionFileCompression.class.getClassLoader().getResourceAsStream("paper.zstd.dict." + key));
++                if (retVal == null || retVal.length == 0) {
++                    throw new IOException("Could not get Zstd dictionary for version " + key + ".");
++                }
++                return retVal;
++            }
++        }
++    );
++    public static final RegionFileCompression ZSTD = a(new RegionFileCompression(RegionCompressionType.ZSTD.getType(),
++        in -> {
++            int high = in.read();
++            int low = in.read();
++            if ((high | low) == -1) {
++                throw new EOFException("Zstd dictionary version could not be read from chunk.");
++            }
++            short version = (short) ((high << 8) | low);
++            com.github.luben.zstd.ZstdInputStream retVal = new com.github.luben.zstd.ZstdInputStream(in);
++            try {
++                retVal.setDict(new com.github.luben.zstd.ZstdDictDecompress(zstdDicts.get(version)));
++            } catch (ExecutionException ex) {
++                throw new IOException("Could not get Zstd dictionary for chunk.", ex);
++            }
++            return retVal;
++        },
++        out -> {
++            out.write((CURRENT_ZSTD_VERSION >> 8) & 0xFF);
++            out.write(CURRENT_ZSTD_VERSION & 0xFF);
++            com.github.luben.zstd.ZstdOutputStream retVal = new com.github.luben.zstd.ZstdOutputStream(out);
++            try {
++                retVal.setDict(new com.github.luben.zstd.ZstdDictCompress(zstdDicts.get(CURRENT_ZSTD_VERSION), PaperConfig.regionCompressionZstdLevel));
++            } catch (ExecutionException ex) {
++                throw new IOException("Could not get Zstd dictionary for chunk.", ex);
++            }
++            return retVal;
++        }
++    ));
++
++    private static byte[] toBytes(InputStream inStream) throws IOException {
++        if (inStream == null) {
++            return null;
++        }
++        try (ByteArrayOutputStream out = new ByteArrayOutputStream(inStream.available())) {
++            byte[] buffer = new byte[1024 * 64];
++            int bytesRead;
++            while ((bytesRead = inStream.read(buffer)) > 0) {
++                out.write(buffer, 0, bytesRead);
++            }
++            return out.toByteArray();
++        }
++    }
++
++    public static RegionFileCompression getDefaultCompressionMethod() {
++        switch (PaperConfig.regionCompressionMethod) {
++            case GZIP:
++                return GZIP;
++            case ZLIB:
++                return ZLIB;
++            case NONE:
++                return NONE;
++            case LZ4:
++                return LZ4;
++            case ZSTD:
++                return ZSTD;
++            default:
++                throw new IllegalArgumentException("Cannot get region compression method.");
++        }
++    }
++    // Paper end
++
+     private RegionFileCompression(int i, RegionFileCompression.a<InputStream> regionfilecompression_a, RegionFileCompression.a<OutputStream> regionfilecompression_a1) {
+         this.e = i;
+         this.f = regionfilecompression_a;
+diff --git a/src/main/java/net/minecraft/server/WorldUpgrader.java b/src/main/java/net/minecraft/server/WorldUpgrader.java
+index 5ccdc0b87b922724c3dd3085860c55d4959ca0b4..578f1cf69a0bb50278b066adae29c55197f830cf 100644
+--- a/src/main/java/net/minecraft/server/WorldUpgrader.java
++++ b/src/main/java/net/minecraft/server/WorldUpgrader.java
+@@ -41,7 +41,14 @@ public class WorldUpgrader {
+     private static final Pattern p = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
+     private final WorldPersistentData q;
+ 
+-    public WorldUpgrader(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, ImmutableSet<ResourceKey<DimensionManager>> immutableset, boolean flag) { // CraftBukkit
++    // Paper start - add forceWrite flag
++    private final boolean forceWrite;
++    public WorldUpgrader(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, ImmutableSet<ResourceKey<DimensionManager>> immutableset, boolean flag) {
++        this(convertable_conversionsession, datafixer, immutableset, flag, false);
++    }
++    public WorldUpgrader(Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, ImmutableSet<ResourceKey<DimensionManager>> immutableset, boolean flag, boolean forceWrite) { // CraftBukkit // Paper
++        this.forceWrite = forceWrite;
++    // Paper end
+         this.c = immutableset;
+         this.d = flag;
+         this.g = datafixer;
+@@ -139,7 +146,7 @@ public class WorldUpgrader {
+                                     nbttagcompound2.remove("isLightOn");
+                                 }
+ 
+-                                if (flag2) {
++                                if (flag2 || forceWrite) { // Paper - add forceWrite flag
+                                     ichunkloader.a(chunkcoordintpair, nbttagcompound1);
+                                     flag1 = true;
+                                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index d8d29d14559169f5e8d8b4cf63d8b427b823eb2f..3aa68803d53999cea1e962a598d3b9c5e2357361 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1127,7 +1127,7 @@ public final class CraftServer implements Server {
+                 return true;
+             }, worlddata.getGeneratorSettings().d().d().stream().map((entry) -> {
+                 return ResourceKey.a(IRegistry.K, ((ResourceKey) entry.getKey()).a());
+-            }).collect(ImmutableSet.toImmutableSet()));
++            }).collect(ImmutableSet.toImmutableSet()), console.options.has("forceWrite")); // Paper - add forceWrite flag
+         }
+ 
+         long j = BiomeManager.a(creator.seed());
+@@ -2387,4 +2387,10 @@ public final class CraftServer implements Server {
+         return mobGoals;
+     }
+     // Paper end
++
++    // Paper start - API for compression settings
++    public com.destroystokyo.paper.region.RegionCompressionType getRegionCompressionType() {
++        return com.destroystokyo.paper.PaperConfig.regionCompressionMethod;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index e8f52003f33a1c92b14f43276ac7525a4479e70e..a0ccec6e6fd8013617f1159130c01a8a77ef8268 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -112,6 +112,7 @@ public class Main {
+                         .describedAs("Yml file");
+ 
+                 acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
++                acceptsAll(asList("forceWrite"), "Whether to force flushing to disk when upgrading"); // Paper - add forceWrite flag
+                 acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                 acceptsAll(asList("nogui"), "Disables the graphical console");
+ 
