@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/LoginListener.java
 +++ b/net/minecraft/server/LoginListener.java
-@@ -17,6 +17,12 @@
+@@ -18,6 +18,12 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -13,7 +13,7 @@
  public class LoginListener implements PacketLoginInListener {
  
      private static final AtomicInteger b = new AtomicInteger(0);
-@@ -31,6 +37,7 @@
+@@ -32,6 +38,7 @@
      private final String j;
      private SecretKey loginKey;
      private EntityPlayer l;
@@ -21,7 +21,7 @@
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -59,6 +66,20 @@
+@@ -60,6 +67,20 @@
  
      }
  
@@ -42,7 +42,7 @@
      @Override
      public NetworkManager a() {
          return this.networkManager;
-@@ -80,10 +101,12 @@
+@@ -81,10 +102,12 @@
              this.i = this.a(this.i);
          }
  
@@ -57,8 +57,8 @@
 +            // CraftBukkit end
          } else {
              this.g = LoginListener.EnumProtocolState.ACCEPTED;
-             if (this.server.aw() >= 0 && !this.networkManager.isLocal()) {
-@@ -97,9 +120,9 @@
+             if (this.server.ax() >= 0 && !this.networkManager.isLocal()) {
+@@ -98,9 +121,9 @@
  
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
@@ -70,59 +70,59 @@
              }
          }
  
-@@ -147,6 +170,43 @@
- 
-                         LoginListener.this.i = LoginListener.this.server.getMinecraftSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
-                         if (LoginListener.this.i != null) {
-+                            // CraftBukkit start - fire PlayerPreLoginEvent
-+                            if (!networkManager.isConnected()) {
+@@ -158,6 +181,43 @@
+                 try {
+                     LoginListener.this.i = LoginListener.this.server.getMinecraftSessionService().hasJoinedServer(new GameProfile((UUID) null, gameprofile.getName()), s, this.a());
+                     if (LoginListener.this.i != null) {
++                        // CraftBukkit start - fire PlayerPreLoginEvent
++                        if (!networkManager.isConnected()) {
++                            return;
++                        }
++
++                        String playerName = i.getName();
++                        java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
++                        java.util.UUID uniqueId = i.getId();
++                        final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
++
++                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
++                        server.getPluginManager().callEvent(asyncEvent);
++
++                        if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                            final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
++                            if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
++                                event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
++                            }
++                            Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
++                                @Override
++                                protected PlayerPreLoginEvent.Result evaluate() {
++                                    server.getPluginManager().callEvent(event);
++                                    return event.getResult();
++                                }};
++
++                            LoginListener.this.server.processQueue.add(waitable);
++                            if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
++                                disconnect(event.getKickMessage());
 +                                return;
 +                            }
-+
-+                            String playerName = i.getName();
-+                            java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
-+                            java.util.UUID uniqueId = i.getId();
-+                            final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
-+
-+                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
-+                            server.getPluginManager().callEvent(asyncEvent);
-+
-+                            if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+                                final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
-+                                if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
-+                                    event.disallow(asyncEvent.getResult(), asyncEvent.getKickMessage());
-+                                }
-+                                Waitable<PlayerPreLoginEvent.Result> waitable = new Waitable<PlayerPreLoginEvent.Result>() {
-+                                    @Override
-+                                    protected PlayerPreLoginEvent.Result evaluate() {
-+                                        server.getPluginManager().callEvent(event);
-+                                        return event.getResult();
-+                                    }};
-+
-+                                LoginListener.this.server.processQueue.add(waitable);
-+                                if (waitable.get() != PlayerPreLoginEvent.Result.ALLOWED) {
-+                                    disconnect(event.getKickMessage());
-+                                    return;
-+                                }
-+                            } else {
-+                                if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-+                                    disconnect(asyncEvent.getKickMessage());
-+                                    return;
-+                                }
++                        } else {
++                            if (asyncEvent.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
++                                disconnect(asyncEvent.getKickMessage());
++                                return;
 +                            }
-+                            // CraftBukkit end
-                             LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.i.getName(), LoginListener.this.i.getId());
-                             LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
-                         } else if (LoginListener.this.server.isEmbeddedServer()) {
-@@ -166,6 +226,11 @@
-                             LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down"));
-                             LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
-                         }
-+                        // CraftBukkit start - catch all exceptions
-+                    } catch (Exception exception) {
-+                        disconnect("Failed to verify username!");
-+                        server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameprofile.getName(), exception);
++                        }
 +                        // CraftBukkit end
+                         LoginListener.LOGGER.info("UUID of player {} is {}", LoginListener.this.i.getName(), LoginListener.this.i.getId());
+                         LoginListener.this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
+                     } else if (LoginListener.this.server.isEmbeddedServer()) {
+@@ -177,6 +237,11 @@
+                         LoginListener.this.disconnect(new ChatMessage("multiplayer.disconnect.authservers_down"));
+                         LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
- 
++                    // CraftBukkit start - catch all exceptions
++                } catch (Exception exception) {
++                    disconnect("Failed to verify username!");
++                    server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + gameprofile.getName(), exception);
++                    // CraftBukkit end
                  }
+ 
+             }

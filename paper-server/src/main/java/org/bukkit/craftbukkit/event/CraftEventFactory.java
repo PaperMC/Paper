@@ -1279,9 +1279,7 @@ public class CraftEventFactory {
         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
     }
 
-    public static ItemStack handleEditBookEvent(EntityPlayer player, EnumItemSlot slot, ItemStack itemInHand, ItemStack newBookItem) {
-        int itemInHandIndex = (slot == EnumItemSlot.MAINHAND) ? player.inventory.itemInHandIndex : -1;
-
+    public static ItemStack handleEditBookEvent(EntityPlayer player, int itemInHandIndex, ItemStack itemInHand, ItemStack newBookItem) {
         PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(itemInHand), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.getItem() == Items.WRITTEN_BOOK);
         player.world.getServer().getPluginManager().callEvent(editBookEvent);
 

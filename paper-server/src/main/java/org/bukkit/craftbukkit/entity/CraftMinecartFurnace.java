@@ -19,13 +19,13 @@ public class CraftMinecartFurnace extends CraftMinecart implements PoweredMineca
 
     @Override
     public int getFuel() {
-        return getHandle().e;
+        return getHandle().fuel;
     }
 
     @Override
     public void setFuel(int fuel) {
         Preconditions.checkArgument(fuel >= 0, "ticks cannot be negative");
-        getHandle().e = fuel;
+        getHandle().fuel = fuel;
     }
 
     @Override

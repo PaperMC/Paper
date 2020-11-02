@@ -17,10 +17,10 @@
      private static final IChatBaseComponent a = new ChatComponentText("Ignoring status request");
      private final MinecraftServer b;
      private final NetworkManager c;
-@@ -18,6 +27,41 @@
+@@ -16,6 +25,40 @@
+         switch (packethandshakinginsetprotocol.b()) {
+             case LOGIN:
                  this.c.setProtocol(EnumProtocol.LOGIN);
-                 ChatMessage chatmessage;
- 
 +                // CraftBukkit start - Connection throttle
 +                try {
 +                    long currentTime = System.currentTimeMillis();
@@ -30,7 +30,7 @@
 +                    synchronized (throttleTracker) {
 +                        if (throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - throttleTracker.get(address) < connectionThrottle) {
 +                            throttleTracker.put(address, currentTime);
-+                            chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
++                            ChatMessage chatmessage = new ChatMessage("Connection throttled! Please wait before reconnecting.");
 +                            this.c.sendPacket(new PacketLoginOutDisconnect(chatmessage));
 +                            this.c.close(chatmessage);
 +                            return;
@@ -55,11 +55,10 @@
 +                    org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +                }
 +                // CraftBukkit end
-+
-                 if (packethandshakinginsetprotocol.c() > SharedConstants.getGameVersion().getProtocolVersion()) {
-                     chatmessage = new ChatMessage("multiplayer.disconnect.outdated_server", new Object[]{SharedConstants.getGameVersion().getName()});
-                     this.c.sendPacket(new PacketLoginOutDisconnect(chatmessage));
-@@ -28,6 +72,7 @@
+                 if (packethandshakinginsetprotocol.c() != SharedConstants.getGameVersion().getProtocolVersion()) {
+                     ChatMessage chatmessage;
+ 
+@@ -29,6 +72,7 @@
                      this.c.close(chatmessage);
                  } else {
                      this.c.setPacketListener(new LoginListener(this.b, this.c));

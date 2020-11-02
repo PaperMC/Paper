@@ -15,9 +15,9 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -34,8 +42,10 @@
+@@ -36,8 +44,10 @@
      @Nullable
-     private ServerGUI q;
+     private final TextFilter r;
  
 -    public DedicatedServer(Thread thread, IRegistryCustom.Dimension iregistrycustom_dimension, Convertable.ConversionSession convertable_conversionsession, ResourcePackRepository resourcepackrepository, DataPackResources datapackresources, SaveData savedata, DedicatedServerSettings dedicatedserversettings, DataFixer datafixer, MinecraftSessionService minecraftsessionservice, GameProfileRepository gameprofilerepository, UserCache usercache, WorldLoadListenerFactory worldloadlistenerfactory) {
 -        super(thread, iregistrycustom_dimension, convertable_conversionsession, savedata, resourcepackrepository, Proxy.NO_PROXY, datafixer, datapackresources, minecraftsessionservice, gameprofilerepository, usercache, worldloadlistenerfactory);
@@ -27,8 +27,8 @@
 +        // CraftBukkit end
          this.propertyManager = dedicatedserversettings;
          this.remoteControlCommandListener = new RemoteControlCommandListener(this);
-     }
-@@ -44,13 +54,44 @@
+         this.r = null;
+@@ -47,13 +57,44 @@
      public boolean init() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -76,7 +76,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -59,6 +100,27 @@
+@@ -62,6 +103,27 @@
              }
          };
  
@@ -104,7 +104,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -85,7 +147,7 @@
+@@ -88,7 +150,7 @@
          this.setForceGamemode(dedicatedserverproperties.forceGamemode);
          super.setIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
          this.i(dedicatedserverproperties.enforceWhitelist);
@@ -113,7 +113,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -110,6 +172,12 @@
+@@ -112,6 +174,12 @@
              return false;
          }
  
@@ -126,7 +126,7 @@
          if (!this.getOnlineMode()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -124,7 +192,7 @@
+@@ -126,7 +194,7 @@
          if (!NameReferencingFileConverter.e(this)) {
              return false;
          } else {
@@ -135,7 +135,7 @@
              long i = SystemUtils.getMonotonicNanos();
  
              this.c(dedicatedserverproperties.maxBuildHeight);
-@@ -132,7 +200,7 @@
+@@ -134,7 +202,7 @@
              TileEntitySkull.a(this.getMinecraftSessionService());
              UserCache.a(this.getOnlineMode());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getWorld());
@@ -144,7 +144,7 @@
              long j = SystemUtils.getMonotonicNanos() - i;
              String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
  
-@@ -149,6 +217,7 @@
+@@ -151,6 +219,7 @@
              if (dedicatedserverproperties.enableRcon) {
                  DedicatedServer.LOGGER.info("Starting remote control listener");
                  this.remoteControlListener = RemoteControlListener.a((IMinecraftServer) this);
@@ -152,7 +152,7 @@
              }
  
              if (this.getMaxTickTime() > 0L) {
-@@ -259,6 +328,7 @@
+@@ -265,6 +334,7 @@
              this.remoteStatusListener.b();
          }
  
@@ -160,7 +160,7 @@
      }
  
      @Override
-@@ -287,7 +357,15 @@
+@@ -293,7 +363,15 @@
          while (!this.serverCommandQueue.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
  
@@ -177,7 +177,7 @@
          }
  
      }
-@@ -497,14 +575,45 @@
+@@ -503,14 +581,45 @@
  
      @Override
      public String getPlugins() {
@@ -225,9 +225,9 @@
          });
          return this.remoteControlCommandListener.getMessages();
      }
-@@ -540,4 +649,15 @@
-     public boolean isSyncChunkWrites() {
-         return this.propertyManager.getProperties().syncChunkWrites;
+@@ -552,4 +661,15 @@
+     public ITextFilter a(EntityPlayer entityplayer) {
+         return this.r != null ? this.r.a(entityplayer.getProfile()) : null;
      }
 +
 +    // CraftBukkit start
