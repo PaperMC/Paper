@@ -14,7 +14,7 @@ forwarding, and is integrated into the Minecraft login process by using the 1.13
 login plugin message packet.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index d5c97bb6503c9bfafd819dd62397b9decd515df5..478856f190a8d0177dee39dab4692fc54f9c8ed4 100644
+index 9e10e2e965dd52755ee5ede71104cc89b11da45e..7b905c16e3833741966cce301b0f7639addac05e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 @@ -8,6 +8,7 @@ import java.io.IOException;
@@ -130,10 +130,10 @@ index 0000000000000000000000000000000000000000..fdd8708f974700c7cde6e436c2f189d9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index a3555dd251af5dd4b320428aadaffe7063ecd356..afbe6defdffd967a841ebe51d260c418dcd23590 100644
+index 87dcb1688d1bf1221609a410c33a8d61b0761a1f..2b46943e094544611390758664f3b2a3e2949323 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.util.Waitable;
+@@ -26,6 +26,7 @@ import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
  // CraftBukkit end
@@ -141,7 +141,7 @@ index a3555dd251af5dd4b320428aadaffe7063ecd356..afbe6defdffd967a841ebe51d260c418
  
  public class LoginListener implements PacketLoginInListener {
  
-@@ -41,6 +42,7 @@ public class LoginListener implements PacketLoginInListener {
+@@ -42,6 +43,7 @@ public class LoginListener implements PacketLoginInListener {
      private SecretKey loginKey;
      private EntityPlayer l;
      public String hostname = ""; // CraftBukkit - add field
@@ -149,9 +149,9 @@ index a3555dd251af5dd4b320428aadaffe7063ecd356..afbe6defdffd967a841ebe51d260c418
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.g = LoginListener.EnumProtocolState.HELLO;
-@@ -192,6 +194,14 @@ public class LoginListener implements PacketLoginInListener {
+@@ -193,6 +195,14 @@ public class LoginListener implements PacketLoginInListener {
              this.g = LoginListener.EnumProtocolState.KEY;
-             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic(), this.e));
+             this.networkManager.sendPacket(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic().getEncoded(), this.e));
          } else {
 +            // Paper start - Velocity support
 +            if (com.destroystokyo.paper.PaperConfig.velocitySupport) {
@@ -164,20 +164,20 @@ index a3555dd251af5dd4b320428aadaffe7063ecd356..afbe6defdffd967a841ebe51d260c418
              // Spigot start
              // Paper start - Cache authenticator threads
              authenticatorPool.execute(new Runnable() {
-@@ -284,6 +294,12 @@ public class LoginListener implements PacketLoginInListener {
+@@ -294,6 +304,12 @@ public class LoginListener implements PacketLoginInListener {
      public class LoginHandler {
  
          public void fireEvents() throws Exception {
-+                            // Paper start - Velocity support
-+                            if (LoginListener.this.velocityLoginMessageId == -1 && com.destroystokyo.paper.PaperConfig.velocitySupport) {
-+                                disconnect("This server requires you to connect with Velocity.");
-+                                return;
-+                            }
-+                            // Paper end
-                             String playerName = i.getName();
-                             java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
-                             java.util.UUID uniqueId = i.getId();
-@@ -331,6 +347,35 @@ public class LoginListener implements PacketLoginInListener {
++                        // Paper start - Velocity support
++                        if (LoginListener.this.velocityLoginMessageId == -1 && com.destroystokyo.paper.PaperConfig.velocitySupport) {
++                            disconnect("This server requires you to connect with Velocity.");
++                            return;
++                        }
++                        // Paper end
+                         String playerName = i.getName();
+                         java.net.InetAddress address = ((java.net.InetSocketAddress) networkManager.getSocketAddress()).getAddress();
+                         java.util.UUID uniqueId = i.getId();
+@@ -341,6 +357,35 @@ public class LoginListener implements PacketLoginInListener {
      // Spigot end
  
      public void a(PacketLoginInCustomPayload packetloginincustompayload) {
