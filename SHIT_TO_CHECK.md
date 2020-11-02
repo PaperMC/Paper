@@ -7,3 +7,5 @@
 * lighting is bork (load chunk, fly away, come back, everything or parts are black)
 * chunk generation seems slow with a lot of it happening
 * Fix IDE Debug JVM Flag for new versions of minecraft
+
+* Check if `PlayerEditBookEvent`: https://github.com/PaperMC/Paper/pull/1751
