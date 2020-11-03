@@ -137,7 +137,7 @@ public class CraftBlockData implements BlockData {
         return exactMatch;
     }
 
-    private static final Map<Class, BiMap<Enum<?>, Enum<?>>> classMappings = new HashMap<>();
+    private static final Map<Class<? extends Enum<?>>, Enum<?>[]> ENUM_VALUES = new HashMap<>();
 
     /**
      * Convert an NMS Enum (usually a BlockStateEnum) to its appropriate Bukkit
@@ -147,32 +147,10 @@ public class CraftBlockData implements BlockData {
      */
     @SuppressWarnings("unchecked")
     private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
-        Enum<?> converted;
-        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms.getClass());
-
-        if (nmsToBukkit != null) {
-            converted = nmsToBukkit.get(nms);
-            if (converted != null) {
-                return (B) converted;
-            }
-        }
-
         if (nms instanceof EnumDirection) {
-            converted = CraftBlock.notchToBlockFace((EnumDirection) nms);
-        } else {
-            converted = bukkit.getEnumConstants()[nms.ordinal()];
+            return (B) CraftBlock.notchToBlockFace((EnumDirection) nms);
         }
-
-        Preconditions.checkState(converted != null, "Could not convert enum %s->%s", nms, bukkit);
-
-        if (nmsToBukkit == null) {
-            nmsToBukkit = HashBiMap.create();
-            classMappings.put(nms.getClass(), nmsToBukkit);
-        }
-
-        nmsToBukkit.put(nms, converted);
-
-        return (B) converted;
+        return (B) ENUM_VALUES.computeIfAbsent(bukkit, Class::getEnumConstants)[nms.ordinal()];
     }
 
     /**
@@ -185,32 +163,10 @@ public class CraftBlockData implements BlockData {
      */
     @SuppressWarnings("unchecked")
     private static <N extends Enum<N> & INamable> N toNMS(Enum<?> bukkit, Class<N> nms) {
-        Enum<?> converted;
-        BiMap<Enum<?>, Enum<?>> nmsToBukkit = classMappings.get(nms);
-
-        if (nmsToBukkit != null) {
-            converted = nmsToBukkit.inverse().get(bukkit);
-            if (converted != null) {
-                return (N) converted;
-            }
-        }
-
         if (bukkit instanceof BlockFace) {
-            converted = CraftBlock.blockFaceToNotch((BlockFace) bukkit);
-        } else {
-            converted = nms.getEnumConstants()[bukkit.ordinal()];
+            return (N) CraftBlock.blockFaceToNotch((BlockFace) bukkit);
         }
-
-        Preconditions.checkState(converted != null, "Could not convert enum %s->%s", nms, bukkit);
-
-        if (nmsToBukkit == null) {
-            nmsToBukkit = HashBiMap.create();
-            classMappings.put(nms, nmsToBukkit);
-        }
-
-        nmsToBukkit.put(converted, bukkit);
-
-        return (N) converted;
+        return (N) ENUM_VALUES.computeIfAbsent(nms, Class::getEnumConstants)[bukkit.ordinal()];
     }
 
     /**
