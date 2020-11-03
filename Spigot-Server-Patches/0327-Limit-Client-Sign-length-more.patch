@@ -22,7 +22,7 @@ it only impacts data sent from the client.
 Set -DPaper.maxSignLength=XX to change limit or -1 to disable
 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index b1faac1e2465cdae624ca5d8d999db3cdedfe3de..fccde94e0ccd0964a051383bd1fc38d7b5967cd4 100644
+index aca3aae216308544e527a6325b9a02a9a05c2551..040ed989dcfc59c8cb58d81070ea9c6cd493e47d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -110,6 +110,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -33,10 +33,11 @@ index b1faac1e2465cdae624ca5d8d999db3cdedfe3de..fccde94e0ccd0964a051383bd1fc38d7
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
-@@ -2696,8 +2697,18 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2696,7 +2697,17 @@ public class PlayerConnection implements PacketListenerPlayIn {
              String[] lines = new String[4];
  
              for (int i = 0; i < list.size(); ++i) {
+-                lines[i] = SharedConstants.filterAllowedChatCharacters(list.get(i)); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
 +                // Paper start - cap line length - modified clients can send longer data than normal
 +                String currentLine = list.get(i);
 +                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.length() > MAX_SIGN_LINE_LENGTH) {
@@ -47,9 +48,7 @@ index b1faac1e2465cdae624ca5d8d999db3cdedfe3de..fccde94e0ccd0964a051383bd1fc38d7
 +                    }
 +                }
 +                // Paper end
-                 // Paper TODO(Proximyst): Add obfhelper when 1.16.4 runs
--                lines[i] = SharedConstants.a(list.get(i)); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
-+                lines[i] = SharedConstants.a(currentLine); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
++                lines[i] = SharedConstants.filterAllowedChatCharacters(currentLine); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
              this.server.getPluginManager().callEvent(event);
