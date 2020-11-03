@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 3 Nov 2020 22:52:07 +0100
+Subject: [PATCH] Fix PlayerEditBookEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 17f093213f7023ab0aaae793874371fc0144c4f2..63ae6d57654861ca3f37de58019e560c98b96bb3 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -979,7 +979,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             NBTTagList nbttaglist = new NBTTagList();
+ 
+             list.stream().map(NBTTagString::a).forEach(nbttaglist::add);
+-            itemstack.a("pages", (NBTBase) nbttaglist);
++            // Paper start - call PlayerEditBookEvent for non-signing
++            ItemStack cloned = itemstack.cloneItemStack();
++            cloned.getOrCreateTagAndSet("pages", (NBTBase) nbttaglist);
++            this.player.inventory.setItem(i, CraftEventFactory.handleEditBookEvent(player, i, itemstack, cloned));
++            this.player.updateInventory(this.player.activeContainer); // Editing the book may result in its data persisting client-side
++            // Paper end
+         }
+     }
+ 
+@@ -1009,6 +1014,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+ 
+             itemstack1.a("pages", (NBTBase) nbttaglist);
+             this.player.inventory.setItem(i, CraftEventFactory.handleEditBookEvent(player, i, itemstack, itemstack1)); // CraftBukkit
++            this.player.updateInventory(this.player.activeContainer); // Paper - editing the book may result in its data persisting client-side
+         }
+     }
+ 
