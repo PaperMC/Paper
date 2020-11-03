@@ -36,16 +36,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
              String[] lines = new String[4];
  
-             for (int i = 0; i < astring.length; ++i) {
+             for (int i = 0; i < list.size(); ++i) {
 +                // Paper start - cap line length - modified clients can send longer data than normal
-+                if (MAX_SIGN_LINE_LENGTH > 0 && astring[i].length() > MAX_SIGN_LINE_LENGTH) {
++                String currentLine = list.get(i);
++                if (MAX_SIGN_LINE_LENGTH > 0 && currentLine.length() > MAX_SIGN_LINE_LENGTH) {
 +                    // This handles multibyte characters as 1
-+                    int offset = astring[i].codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
-+                    if (offset < astring[i].length()) {
-+                        astring[i] = astring[i].substring(0, offset);
++                    int offset = currentLine.codePoints().limit(MAX_SIGN_LINE_LENGTH).map(Character::charCount).sum();
++                    if (offset < currentLine.length()) {
++                        list.set(i, currentLine = currentLine.substring(0, offset));
 +                    }
 +                }
 +                // Paper end
-                 lines[i] = SharedConstants.a(astring[i]); //Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
+                 // Paper TODO(Proximyst): Add obfhelper when 1.16.4 runs
+-                lines[i] = SharedConstants.a(list.get(i)); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
++                lines[i] = SharedConstants.a(currentLine); // Paper - Replaced with anvil color stripping method to stop exploits that allow colored signs to be created.
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.server.getPlayer(this.player), lines);
+             this.server.getPluginManager().callEvent(event);
