@@ -1,0 +1,65 @@
+From 30eeed217ae5643e2f891bca2b9640351894de6c Mon Sep 17 00:00:00 2001
+From: BuildTools <LinsaFTW@users.noreply.github.com>
+Date: Tue, 3 Nov 2020 17:30:11 -0300
+Subject: [PATCH] Fix memoryleaks by Minetick
+
+
+diff --git a/src/main/java/net/minecraft/server/EnchantmentManager.java b/src/main/java/net/minecraft/server/EnchantmentManager.java
+index 98656815..07c72dc4 100644
+--- a/src/main/java/net/minecraft/server/EnchantmentManager.java
++++ b/src/main/java/net/minecraft/server/EnchantmentManager.java
+@@ -169,6 +169,9 @@ public class EnchantmentManager {
+             a((EnchantmentManager.EnchantmentModifier) EnchantmentManager.d, entityliving.bA());
+         }
+ 
++        // FlamePaper - Minetick fix memory leaks
++        EnchantmentManager.e.a = null;
++        EnchantmentManager.e.b = null;
+     }
+ 
+     public static void b(EntityLiving entityliving, Entity entity) {
+@@ -182,6 +185,9 @@ public class EnchantmentManager {
+             a((EnchantmentManager.EnchantmentModifier) EnchantmentManager.e, entityliving.bA());
+         }
+ 
++        // FlamePaper - Minetick fix memory leaks
++        EnchantmentManager.e.a = null;
++        EnchantmentManager.e.b = null;
+     }
+ 
+     public static int a(EntityLiving entityliving) {
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 9d23c6c0..2ec3c9fa 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -239,6 +239,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
+     }
+ 
+     public void close(IChatBaseComponent ichatbasecomponent) {
++        this.i.clear(); // FlamePaper - Minetick fix memory leaks
+         // Spigot Start
+         this.preparing = false;
+         // Spigot End
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 8f3511f8..e50f4beb 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -1093,6 +1093,7 @@ public abstract class World implements IBlockAccess {
+         entity.die();
+         if (entity instanceof EntityHuman) {
+             this.players.remove(entity);
++            this.worldMaps.removeTrackedPlayer((EntityHuman) entity); // FlamePaper - Minetick fix memory leaks
+             // Spigot start
+             for ( Object o : worldMaps.c )
+             {
+@@ -1121,6 +1122,7 @@ public abstract class World implements IBlockAccess {
+         entity.die();
+         if (entity instanceof EntityHuman) {
+             this.players.remove(entity);
++            this.worldMaps.removeTrackedPlayer((EntityHuman) entity);
+             this.everyoneSleeping();
+         }
+ 
+-- 
+2.27.0.windows.1
+
