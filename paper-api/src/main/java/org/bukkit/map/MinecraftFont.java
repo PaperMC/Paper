@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class MinecraftFont extends MapFont {
 
-    private static final int spaceSize = 2;
+    private static final int spaceSize = 3;
 
     // CHECKSTYLE:OFF
     private static final String fontChars =
