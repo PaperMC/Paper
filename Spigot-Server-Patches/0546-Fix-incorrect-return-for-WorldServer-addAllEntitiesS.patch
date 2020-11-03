@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 15 Aug 2020 09:32:00 -0500
+Subject: [PATCH] Fix incorrect return for WorldServer#addAllEntitiesSafely
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 1642bb724032530f6ecbc849f449b93e7c450873..d3a6247d6c8e566be11b8b2a3520b001fbdc2d42 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -1261,7 +1261,11 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         if (entity.cp().anyMatch(this::isUUIDTaken)) {
+             return false;
+         } else {
+-            return this.addAllEntities(entity, reason); // CraftBukkit
++            // Paper start - this method is _only_ designed to return false on duplicate uuids
++            // fixes issues with things such as a plugin cancelling spawn of a /summon
++            this.addAllEntities(entity, reason); // CraftBukkit
++            return true;
++            // Paper end
+         }
+     }
+ 

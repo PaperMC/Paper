@@ -6,7 +6,7 @@ Subject: [PATCH] Ability to change PlayerProfile in AsyncPreLoginEvent
 This will allow you to change the players name or skin on login.
 
 diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index 7400d85e21d8efd231b3a00f16765946bcc54e65..230dcda34707b822790ace75957174f937821898 100644
+index 63769f6d6e82f4c3758db0f82314c3cc28d44011..b8642986f4304b48bf88c4a1d4ddfab1fbae175a 100644
 --- a/src/main/java/net/minecraft/server/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/LoginListener.java
 @@ -1,5 +1,7 @@
@@ -17,7 +17,7 @@ index 7400d85e21d8efd231b3a00f16765946bcc54e65..230dcda34707b822790ace75957174f9
  import com.mojang.authlib.GameProfile;
  import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
  import java.math.BigInteger;
-@@ -18,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
+@@ -19,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
  // CraftBukkit start
@@ -25,15 +25,15 @@ index 7400d85e21d8efd231b3a00f16765946bcc54e65..230dcda34707b822790ace75957174f9
  import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
-@@ -286,8 +289,16 @@ public class LoginListener implements PacketLoginInListener {
-                             java.util.UUID uniqueId = i.getId();
-                             final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
+@@ -296,8 +299,16 @@ public class LoginListener implements PacketLoginInListener {
+                         java.util.UUID uniqueId = i.getId();
+                         final org.bukkit.craftbukkit.CraftServer server = LoginListener.this.server.server;
  
--                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
+-                        AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId);
 +                            // Paper start
 +                            PlayerProfile profile = Bukkit.createProfile(uniqueId, playerName);
 +                            AsyncPlayerPreLoginEvent asyncEvent = new AsyncPlayerPreLoginEvent(playerName, address, uniqueId, profile);
-                             server.getPluginManager().callEvent(asyncEvent);
+                         server.getPluginManager().callEvent(asyncEvent);
 +                            profile = asyncEvent.getPlayerProfile();
 +                            profile.complete();
 +                            i = CraftPlayerProfile.asAuthlibCopy(profile);
@@ -41,5 +41,5 @@ index 7400d85e21d8efd231b3a00f16765946bcc54e65..230dcda34707b822790ace75957174f9
 +                            uniqueId = i.getId();
 +                            // Paper end
  
-                             if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
-                                 final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
+                         if (PlayerPreLoginEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                             final PlayerPreLoginEvent event = new PlayerPreLoginEvent(playerName, address, uniqueId);
