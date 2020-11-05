@@ -10,17 +10,21 @@ Adds a 5 second grace period for any async tasks to finish and warns
 if any are still running after that delay just as reload does.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 225709a27396cbfa29c16499728e42170a8fef08..1175f23558fe694bfb77dd478b0a3ec15109dd9b 100644
+index 225709a27396cbfa29c16499728e42170a8fef08..c3c5514a294f45358f6f0a582cb8713f35288682 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -771,6 +771,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         // CraftBukkit start
-         if (this.server != null) {
-             this.server.disablePlugins();
-+            this.server.waitForAsyncTasksShutdown(); // Paper
+@@ -821,6 +821,11 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         } catch (IOException ioexception1) {
+             MinecraftServer.LOGGER.error("Failed to unlock level {}", this.convertable.getLevelName(), ioexception1);
          }
-         // CraftBukkit end
-         if (this.getServerConnection() != null) {
++        // Paper start
++        if (this.server != null) {
++            this.server.waitForAsyncTasksShutdown();
++        }
++        // Paper end
+         // Spigot start
+         MCUtil.asyncExecutor.shutdown(); // Paper
+         try { MCUtil.asyncExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 2b2d292fdd13d86159a791acfd1e70217401e795..9319dccbe6a33001cfb27866fd1d078e73fcc1e7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
