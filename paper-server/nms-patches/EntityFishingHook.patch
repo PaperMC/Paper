@@ -12,7 +12,20 @@
  
  public class EntityFishingHook extends IProjectile {
  
-@@ -253,6 +258,10 @@
+@@ -25,6 +30,12 @@
+     private final int an;
+     private final int ao;
+ 
++    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults
++    public int minWaitTime = 100;
++    public int maxWaitTime = 600;
++    public boolean applyLure = true;
++    // CraftBukkit end
++
+     private EntityFishingHook(World world, EntityHuman entityhuman, int i, int j) {
+         super(EntityTypes.FISHING_BOBBER, world);
+         this.b = new Random();
+@@ -253,6 +264,10 @@
                  this.ah = 0;
                  this.ai = 0;
                  this.getDataWatcher().set(EntityFishingHook.f, false);
@@ -23,7 +36,7 @@
              }
          } else {
              float f;
-@@ -286,6 +295,13 @@
+@@ -286,6 +301,13 @@
                          worldserver.a(Particles.FISHING, d0, d1, d2, 0, (double) (-f4), 0.01D, (double) f3, 1.0D);
                      }
                  } else {
@@ -37,7 +50,20 @@
                      this.playSound(SoundEffects.ENTITY_FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                      double d3 = this.locY() + 0.5D;
  
-@@ -390,6 +406,14 @@
+@@ -322,8 +344,10 @@
+                     this.ai = MathHelper.nextInt(this.random, 20, 80);
+                 }
+             } else {
+-                this.ah = MathHelper.nextInt(this.random, 100, 600);
+-                this.ah -= this.ao * 20 * 5;
++                // CraftBukkit start - logic to modify fishing wait time
++                this.ah = MathHelper.nextInt(this.random, this.minWaitTime, this.maxWaitTime); // PAIL rename waitTime
++                this.ah -= (this.applyLure) ? this.ao * 20 * 5 : 0; // PAIL rename waitTime, lureLevel
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -390,6 +414,14 @@
              int i = 0;
  
              if (this.hooked != null) {
@@ -52,7 +78,7 @@
                  this.reel();
                  CriterionTriggers.D.a((EntityPlayer) entityhuman, itemstack, this, (Collection) Collections.emptyList());
                  this.world.broadcastEntityEffect(this, (byte) 31);
-@@ -405,6 +429,15 @@
+@@ -405,6 +437,15 @@
                  while (iterator.hasNext()) {
                      ItemStack itemstack1 = (ItemStack) iterator.next();
                      EntityItem entityitem = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), itemstack1);
@@ -68,7 +94,7 @@
                      double d0 = entityhuman.locX() - this.locX();
                      double d1 = entityhuman.locY() - this.locY();
                      double d2 = entityhuman.locZ() - this.locZ();
-@@ -412,7 +445,11 @@
+@@ -412,7 +453,11 @@
  
                      entityitem.setMot(d0 * 0.1D, d1 * 0.1D + Math.sqrt(Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2)) * 0.08D, d2 * 0.1D);
                      this.world.addEntity(entityitem);
@@ -81,7 +107,7 @@
                      if (itemstack1.getItem().a((Tag) TagsItem.FISHES)) {
                          entityhuman.a(StatisticList.FISH_CAUGHT, 1);
                      }
-@@ -422,8 +459,25 @@
+@@ -422,8 +467,25 @@
              }
  
              if (this.onGround) {
