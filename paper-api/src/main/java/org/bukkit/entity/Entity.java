@@ -271,7 +271,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param passenger The new passenger.
      * @return false if it could not be done for whatever reason
      * @deprecated entities may have multiple passengers, use
-     * {@link #getPassengers()}
+     * {@link #addPassenger(org.bukkit.entity.Entity)}
      */
     @Deprecated
     public boolean setPassenger(@NotNull Entity passenger);
