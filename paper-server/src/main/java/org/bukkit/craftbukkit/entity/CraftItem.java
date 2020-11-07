@@ -9,6 +9,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftItem extends CraftEntity implements Item {
 
+    // Paper start
+    private final static int NO_AGE_TIME = (int) Short.MIN_VALUE;
+    private final static int NO_PICKUP_TIME = (int) Short.MAX_VALUE;
+    // Paper end
+
     public CraftItem(CraftServer server, ItemEntity entity) {
         super(server, entity);
     }
@@ -73,6 +78,26 @@ public class CraftItem extends CraftEntity implements Item {
     public void setCanMobPickup(boolean canMobPickup) {
         this.getHandle().canMobPickup = canMobPickup;
     }
+
+     @Override
+     public boolean canPlayerPickup() {
+        return this.getHandle().pickupDelay != NO_PICKUP_TIME;
+     }
+
+     @Override
+     public void setCanPlayerPickup(boolean canPlayerPickup) {
+        this.getHandle().pickupDelay = canPlayerPickup ? 0 : NO_PICKUP_TIME;
+     }
+
+     @Override
+     public boolean willAge() {
+        return this.getHandle().age != NO_AGE_TIME;
+     }
+
+     @Override
+     public void setWillAge(boolean willAge) {
+        this.getHandle().age = willAge ? 0 : NO_AGE_TIME;
+     }
     // Paper end
 
     @Override
