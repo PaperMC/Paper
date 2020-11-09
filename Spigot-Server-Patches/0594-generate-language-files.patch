@@ -5,7 +5,7 @@ Subject: [PATCH] generate language files
 
 
 diff --git a/pom.xml b/pom.xml
-index 80f165291385f5f54def1a8e8487b209fb06a4a3..1c977a86df6e45ce0d07ec46cf6cd5f0eab0e879 100644
+index 80f165291385f5f54def1a8e8487b209fb06a4a3..16bfa72312403a1e60ea1c5cae1180b0e7a70912 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -228,6 +228,28 @@
@@ -18,7 +18,7 @@ index 80f165291385f5f54def1a8e8487b209fb06a4a3..1c977a86df6e45ce0d07ec46cf6cd5f0
 +                <version>1.2</version>
 +                <executions>
 +                    <execution>
-+                        <phase>prepare-package</phase>
++                        <phase>generate-resources</phase>
 +                        <goals>
 +                            <goal>exec</goal>
 +                        </goals>
@@ -76,10 +76,10 @@ index af84813c703813ec3a6ca89ff437d89e31a9100f..2d80c2a258cc9ebc12cebf4a31361d9d
          net.md_5.bungee.api.chat.ItemTag itemTag = net.md_5.bungee.api.chat.ItemTag.ofNbt(CraftItemStack.asNMSCopy(itemStack).getOrCreateTag().toString());
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CustomLocaleLanguages.java b/src/main/java/org/bukkit/craftbukkit/util/CustomLocaleLanguages.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6b44fe1c73b53f04c5aca5d910a3958b5dd9530
+index 0000000000000000000000000000000000000000..ab07742067c9c4a65fa21eda4f3fcac296f62e39
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CustomLocaleLanguages.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,77 @@
 +package org.bukkit.craftbukkit.util;
 +
 +import com.google.gson.Gson;
@@ -151,17 +151,18 @@ index 0000000000000000000000000000000000000000..e6b44fe1c73b53f04c5aca5d910a3958
 +    public String translateKey(String key, Locale locale) {
 +        Map<String, String> translationMap = localeMapMap.computeIfAbsent(locale, ignoredlocale -> localeMapMap.get(Locale.US));
 +        if (translationMap == null) {
-+            return null;
++            return LocaleLanguage.getInstance().translateKey(key);
 +        }
-+        return translationMap.get(key);
++        String translatedValue = translationMap.get(key);
++        return translatedValue!=null? translatedValue: LocaleLanguage.getInstance().translateKey(key);
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/craftbukkit/util/CustomLocaleLanguagesTest.java b/src/test/java/org/bukkit/craftbukkit/util/CustomLocaleLanguagesTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3eaf7fb5f41f775a7668ddbf91903ffc22b5307d
+index 0000000000000000000000000000000000000000..6f29421725f9a33f629cb28f5474b86540075a9e
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/util/CustomLocaleLanguagesTest.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,58 @@
 +package org.bukkit.craftbukkit.util;
 +
 +import org.junit.Assert;
@@ -174,26 +175,46 @@ index 0000000000000000000000000000000000000000..3eaf7fb5f41f775a7668ddbf91903ffc
 +import java.util.Locale;
 +
 +public class CustomLocaleLanguagesTest {
++    private static final String missingKey = "missing.missing";
 +
 +    @Test
-+    public void test(){
++    public void localizationPresent() {
++        CustomLocaleLanguages customLocaleLanguages = CustomLocaleLanguages.create(this::getResourceAsStream);
 +
-+       CustomLocaleLanguages customLocaleLanguages = CustomLocaleLanguages.create(this::getResourceAsStream);
-+
-+       String value = customLocaleLanguages.translateKey("addServer.add", new Locale("de", "DE"));
++        String value = customLocaleLanguages.translateKey("addServer.add", new Locale("de", "DE"));
 +        Assert.assertEquals("Fertig", value);
++    }
 +
++    @Test
++    public void missingLocalizationShouldFallbackToEn_US() {
++        CustomLocaleLanguages customLocaleLanguages = CustomLocaleLanguages.create(this::getResourceAsStream);
 +
++        String value = customLocaleLanguages.translateKey("addServer.add", new Locale("en", "UK"));
++        Assert.assertEquals("Done", value);
++    }
++
++    @Test
++    public void missingValueShouldReturnKey() {
++        CustomLocaleLanguages customLocaleLanguages = CustomLocaleLanguages.create(this::getResourceAsStream);
++        String value = customLocaleLanguages.translateKey(missingKey, new Locale("de", "DE"));
++        Assert.assertEquals(missingKey, value);
++    }
++
++    @Test
++    public void missingLocalizationAndValueShouldReturnKey() {
++        CustomLocaleLanguages customLocaleLanguages = CustomLocaleLanguages.create(this::getResourceAsStream);
++        String value = customLocaleLanguages.translateKey(missingKey, new Locale("en", "UK"));
++        Assert.assertEquals(missingKey, value);
 +    }
 +
 +
-+    private InputStream getResourceAsStream(String path){
++    private InputStream getResourceAsStream(String path) {
 +        // depending
-+        String dirName = new File(".").getAbsolutePath().contains("test-server")?"../test-classes":"target/test-classes/";
-+        path = path.replaceAll("^\\./","");
-+        File file = new File((dirName+path).replaceAll("/\\./", "/"));
++        String dirName = new File(".").getAbsolutePath().contains("test-server") ? "../test-classes" : "target/test-classes/";
++        path = path.replaceAll("^\\./", "");
++        File file = new File((dirName + path).replaceAll("/\\./", "/"));
 +        try {
-+           return new FileInputStream(file);
++            return new FileInputStream(file);
 +        } catch (FileNotFoundException e) {
 +            e.printStackTrace();
 +        }
