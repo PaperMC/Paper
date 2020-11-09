@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: NeumimTo <chleba48@gmail.com>
+From: NeumimTo <NeumimTo@users.noreply.github.com>
 Date: Wed, 28 Oct 2020 18:42:39 +0100
 Subject: [PATCH] Damage with any cause
 
@@ -224,7 +224,7 @@ index e6d050099b787831bebedfa2c264e5a311776e3a..7eff473e6164cdc78302058ba0e5a7cb
      public double getHealth() {
          return getParent().getHealth();
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 9e9bdf9bc2e5c4d72d811fcb439628d946741324..3ffbbe4e04a3a43e5325b3b559751495f1dc7312 100644
+index 9e9bdf9bc2e5c4d72d811fcb439628d946741324..cb6d47cd5ff2598d2e34d0354aff2bd816bbadbc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -50,9 +50,11 @@ import org.bukkit.craftbukkit.CraftServer;
@@ -265,7 +265,7 @@ index 9e9bdf9bc2e5c4d72d811fcb439628d946741324..3ffbbe4e04a3a43e5325b3b559751495
      }
  
      @Override
-@@ -337,6 +342,22 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -337,6 +342,23 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          entity.damageEntity(reason, (float) amount);
      }
  
@@ -277,7 +277,8 @@ index 9e9bdf9bc2e5c4d72d811fcb439628d946741324..3ffbbe4e04a3a43e5325b3b559751495
 +    }
 +
 +    @Override
-+    public void damage(double amount, EntityDamageEvent.DamageCause damageCause, @Nullable org.bukkit.entity.Entity source) {
++    public void damage(double amount, EntityDamageEvent.DamageCause damageCause, org.bukkit.entity.Entity source) {
++        Preconditions.checkNotNull(source, "DamagerEntity cannot be null");
 +        net.minecraft.server.Entity handle = ((CraftEntity) source).getHandle();
 +        DamageSource reason = DamageUtils.damageCauseToDamageSource(damageCause, handle);
 +        CraftEventFactory.entityDamage = handle;
@@ -289,7 +290,7 @@ index 9e9bdf9bc2e5c4d72d811fcb439628d946741324..3ffbbe4e04a3a43e5325b3b559751495
      public Location getEyeLocation() {
          Location loc = getLocation();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 0f0d70c0622558740086f0f7cf89e5500128f955..312e52a6417fd7bb29bb20035a304cd74ba9fadb 100644
+index 0f0d70c0622558740086f0f7cf89e5500128f955..1e6c1a66aea773e06233ccf7ba4177f3b2952e0d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -99,6 +99,7 @@ import org.bukkit.craftbukkit.potion.CraftPotionUtil;
@@ -319,61 +320,56 @@ index 0f0d70c0622558740086f0f7cf89e5500128f955..312e52a6417fd7bb29bb20035a304cd7
              EntityDamageEvent event;
              if (damager == null) {
                  event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.BLOCK_EXPLOSION, modifiers, modifierFunctions);
-@@ -912,7 +919,9 @@ public class CraftEventFactory {
+@@ -912,9 +919,8 @@ public class CraftEventFactory {
              }
              return event;
          } else if (source instanceof EntityDamageSource) {
 -            Entity damager = source.getEntity();
-+
 +            damager = source.getEntity(); // Paper
-+
              DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
- 
+-
              if (source instanceof EntityDamageSourceIndirect) {
-@@ -928,7 +937,9 @@ public class CraftEventFactory {
+                 damager = ((EntityDamageSourceIndirect) source).getProximateDamageSource();
+                 if (damager.getBukkitEntity() instanceof ThrownPotion) {
+@@ -928,7 +934,7 @@ public class CraftEventFactory {
  
              return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
          } else if (source == DamageSource.OUT_OF_WORLD) {
 -            EntityDamageEvent event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions);
-+
 +            EntityDamageEvent event = damager == null ? new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions) : new EntityDamageByEntityEvent(damager.getBukkitEntity(), entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions); // Paper
-+
              event.setCancelled(cancelled);
              callEvent(event);
              if (!event.isCancelled()) {
-@@ -936,7 +947,9 @@ public class CraftEventFactory {
+@@ -936,7 +942,7 @@ public class CraftEventFactory {
              }
              return event;
          } else if (source == DamageSource.LAVA) {
 -            EntityDamageEvent event = (new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
-+
 +            EntityDamageEvent event = damager == null ? new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions) : new EntityDamageByEntityEvent(damager.getBukkitEntity(), entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions); // Paper
-+
              event.setCancelled(cancelled);
              callEvent(event);
              if (!event.isCancelled()) {
-@@ -945,7 +958,9 @@ public class CraftEventFactory {
+@@ -945,7 +951,7 @@ public class CraftEventFactory {
              return event;
          } else if (blockDamage != null) {
              DamageCause cause = null;
 -            Block damager = blockDamage;
-+
 +            Block blockDamager = blockDamage; // Paper
-+
              blockDamage = null;
              if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH) {
                  cause = DamageCause.CONTACT;
-@@ -956,69 +971,22 @@ public class CraftEventFactory {
+@@ -956,69 +962,20 @@ public class CraftEventFactory {
              } else {
                  throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager, source.translationIndex));
              }
 -            EntityDamageEvent event = new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
--            event.setCancelled(cancelled);
--            callEvent(event);
--            if (!event.isCancelled()) {
--                event.getEntity().setLastDamageCause(event);
--            }
--            return event;
++            EntityDamageEvent event = damager == null ? new EntityDamageByBlockEvent(blockDamager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions) : new EntityDamageByEntityEvent(damager.getBukkitEntity(), entity.getBukkitEntity(), cause, modifiers, modifierFunctions); // Paper
+             event.setCancelled(cancelled);
+             callEvent(event);
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
+             return event;
 -        } else if (entityDamage != null) {
 -            DamageCause cause = null;
 -            CraftEntity damager = entityDamage.getBukkitEntity();
@@ -392,20 +388,13 @@ index 0f0d70c0622558740086f0f7cf89e5500128f955..312e52a6417fd7bb29bb20035a304cd7
 -                throw new IllegalStateException(String.format("Unhandled damage of %s by %s from %s", entity, damager.getHandle(), source.translationIndex));
 -            }
 -            EntityDamageEvent event = new EntityDamageByEntityEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
-+
-+            EntityDamageEvent event = damager == null ? new EntityDamageByBlockEvent(blockDamager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions) : new EntityDamageByEntityEvent(damager.getBukkitEntity(), entity.getBukkitEntity(), cause, modifiers, modifierFunctions); // Paper
-+
-             event.setCancelled(cancelled);
-             callEvent(event);
-             if (!event.isCancelled()) {
-                 event.getEntity().setLastDamageCause(event);
-             }
-             return event;
-+        // Paper start
-+        } else if (damager != null) {
-+            DamageCause cause = DamageUtils.damageSourceToDamageCause(source, damager, entity);
-+            return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
-         }
+-            event.setCancelled(cancelled);
+-            callEvent(event);
+-            if (!event.isCancelled()) {
+-                event.getEntity().setLastDamageCause(event);
+-            }
+-            return event;
+-        }
 -
 -        DamageCause cause = null;
 -        if (source == DamageSource.FIRE) {
@@ -436,7 +425,11 @@ index 0f0d70c0622558740086f0f7cf89e5500128f955..312e52a6417fd7bb29bb20035a304cd7
 -            cause = DamageCause.DRYOUT;
 -        } else if (source == DamageSource.GENERIC) {
 -            cause = DamageCause.CUSTOM;
--        }
++        // Paper start
++        } else if (damager != null) {
++            DamageCause cause = DamageUtils.damageSourceToDamageCause(source, damager, entity);
++            return callEntityDamageEvent(damager, entity, cause, modifiers, modifierFunctions, cancelled);
+         }
 +        DamageCause cause = DamageUtils.damageSourceToDamageCause(source, damager, entity);
 +        // Paper end
  
