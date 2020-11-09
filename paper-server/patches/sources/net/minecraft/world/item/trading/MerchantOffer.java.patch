@@ -9,27 +9,64 @@
  public class MerchantOffer {
  
      public static final Codec<MerchantOffer> CODEC = RecordCodecBuilder.create((instance) -> {
-@@ -44,7 +46,19 @@
+@@ -31,6 +33,10 @@
+             return merchantrecipe.priceMultiplier;
+         }), Codec.INT.lenientOptionalFieldOf("xp", 1).forGetter((merchantrecipe) -> {
+             return merchantrecipe.xp;
++        // Paper start
++        }), Codec.BOOL.lenientOptionalFieldOf("Paper.IgnoreDiscounts", false).forGetter((merchantrecipe) -> {
++            return merchantrecipe.ignoreDiscounts;
++        // Paper end
+         })).apply(instance, MerchantOffer::new);
+     });
+     public static final StreamCodec<RegistryFriendlyByteBuf, MerchantOffer> STREAM_CODEC = StreamCodec.of(MerchantOffer::writeToStream, MerchantOffer::createFromStream);
+@@ -44,8 +50,22 @@
      public int demand;
      public float priceMultiplier;
      public int xp;
++    public boolean ignoreDiscounts; // Paper - Add ignore discounts API
 +    // CraftBukkit start
 +    private CraftMerchantRecipe bukkitHandle;
  
+-    private MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, boolean rewardingPlayerExperience, int specialPrice, int demandBonus, float priceMultiplier, int merchantExperience) {
 +    public CraftMerchantRecipe asBukkit() {
 +        return (this.bukkitHandle == null) ? this.bukkitHandle = new CraftMerchantRecipe(this) : this.bukkitHandle;
 +    }
 +
-+    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, CraftMerchantRecipe bukkit) {
++    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, final boolean ignoreDiscounts, CraftMerchantRecipe bukkit) { // Paper
 +        this(baseCostA, costB, result, uses, maxUses, experience, priceMultiplier, demand);
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
 +        this.bukkitHandle = bukkit;
 +    }
 +    // CraftBukkit end
 +
-     private MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, boolean rewardingPlayerExperience, int specialPrice, int demandBonus, float priceMultiplier, int merchantExperience) {
++    private MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, boolean rewardingPlayerExperience, int specialPrice, int demandBonus, float priceMultiplier, int merchantExperience, final boolean ignoreDiscounts) { // Paper
          this.baseCostA = firstBuyItem;
          this.costB = secondBuyItem;
-@@ -110,7 +124,7 @@
+         this.result = sellItem;
+@@ -56,6 +76,7 @@
+         this.demand = demandBonus;
+         this.priceMultiplier = priceMultiplier;
+         this.xp = merchantExperience;
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
+     }
+ 
+     public MerchantOffer(ItemCost buyItem, ItemStack sellItem, int maxUses, int merchantExperience, float priceMultiplier) {
+@@ -71,11 +92,11 @@
+     }
+ 
+     public MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, int merchantExperience, float priceMultiplier, int demandBonus) {
+-        this(firstBuyItem, secondBuyItem, sellItem, uses, maxUses, true, 0, demandBonus, priceMultiplier, merchantExperience);
++        this(firstBuyItem, secondBuyItem, sellItem, uses, maxUses, true, 0, demandBonus, priceMultiplier, merchantExperience, false); // Paper
+     }
+ 
+     private MerchantOffer(MerchantOffer offer) {
+-        this(offer.baseCostA, offer.costB, offer.result.copy(), offer.uses, offer.maxUses, offer.rewardExp, offer.specialPriceDiff, offer.demand, offer.priceMultiplier, offer.xp);
++        this(offer.baseCostA, offer.costB, offer.result.copy(), offer.uses, offer.maxUses, offer.rewardExp, offer.specialPriceDiff, offer.demand, offer.priceMultiplier, offer.xp, offer.ignoreDiscounts); // Paper
+     }
+ 
+     public ItemStack getBaseCostA() {
+@@ -110,7 +131,7 @@
      }
  
      public void updateDemand() {
@@ -38,7 +75,7 @@
      }
  
      public ItemStack assemble() {
-@@ -185,7 +199,11 @@
+@@ -185,7 +206,11 @@
          if (!this.satisfiedBy(firstBuyStack, secondBuyStack)) {
              return false;
          } else {
