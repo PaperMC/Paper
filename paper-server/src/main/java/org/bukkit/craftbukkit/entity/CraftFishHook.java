@@ -50,8 +50,8 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public void setMaxWaitTime(int maxWaitTime) {
         EntityFishingHook hook = getHandle();
-        Validate.isTrue(maxWaitTime >= 0 && maxWaitTime >= this.getMinWaitTime(), "The maximum wait time should higher than 0 and the minimum wait time.");
-        hook.minWaitTime = maxWaitTime;
+        Validate.isTrue(maxWaitTime >= 0 && maxWaitTime >= this.getMinWaitTime(), "The maximum wait time should be higher than or equal to 0 and the minimum wait time.");
+        hook.maxWaitTime = maxWaitTime;
     }
 
     @Override
