@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Fired when a player's item breaks (such as a shovel or flint and steel).
  * <p>
- * The item that's breaking will exist in the inventory with a stack size of
- * 0. After the event, the item's durability will be reset to 0.
+ * After this event, the item's amount will be set to {@code item amount - 1}
+ * and its durability will be reset to 0.
  */
 public class PlayerItemBreakEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
