@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This event is called when a player clicks a slot in an inventory.
+ * This event is called when a player clicks in an inventory.
  * <p>
  * Because InventoryClickEvent occurs within a modification of the Inventory,
  * not all Inventory related methods are safe to use.
