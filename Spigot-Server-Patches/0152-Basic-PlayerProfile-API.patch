@@ -310,7 +310,7 @@ index 0000000000000000000000000000000000000000..2751ce7f1556da07ef853807a588f096
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef9f55afd6bffa8c02c6820295223e5465eed91e
+index 0000000000000000000000000000000000000000..d64d45eb01c65864fca1077982d89bc05e0f811b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 @@ -0,0 +1,31 @@
@@ -325,8 +325,8 @@ index 0000000000000000000000000000000000000000..ef9f55afd6bffa8c02c6820295223e54
 +
 +public class PaperAuthenticationService extends YggdrasilAuthenticationService {
 +    private final Environment environment;
-+    public PaperAuthenticationService(Proxy proxy, String clientToken) {
-+        super(proxy, clientToken);
++    public PaperAuthenticationService(Proxy proxy) {
++        super(proxy);
 +        this.environment = (Environment)EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD);;
 +    }
 +
@@ -407,19 +407,20 @@ index 0000000000000000000000000000000000000000..93d73c27340645c7502acafdc0b2cfbc
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3aceb0ea8a1a3ed94dd8a9e954c52ecd341c6bd1
+index 0000000000000000000000000000000000000000..3cdd06d3af7ff94f1fe1a11b9a9275e17c695a38
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,12 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.Agent;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilUserAuthentication;
++import java.util.UUID;
 +
 +public class PaperUserAuthentication extends YggdrasilUserAuthentication {
 +    public PaperUserAuthentication(YggdrasilAuthenticationService authenticationService, Agent agent) {
-+        super(authenticationService, agent);
++        super(authenticationService, UUID.randomUUID().toString(), agent);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
@@ -451,15 +452,15 @@ index 17d73ebbe51a83f79f338bdb1b366cecd99f880d..39174bca00b4535e92f6b325b3fd058c
       * Calculates distance between 2 entities
       * @param e1
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 059b9634aeffc6f710d40112f5f8d9b877f2c7a3..d80235349ea8cc868b720b69f7f0812184e895c8 100644
+index 49649e70ee8bfb3dacd63a88a180f0f329f308c0..dacb8563bc823c8f6f1e1e10f2b8b9894819374f 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -94,7 +94,7 @@ public class Main {
+@@ -93,7 +93,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
--            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
-+            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
+-            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY);
++            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY); // Paper
              MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
              GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
              UserCache usercache = new UserCache(gameprofilerepository, new File(file, MinecraftServer.b.getName()));
@@ -508,10 +509,10 @@ index 7171bdf7fb0489e9678588dfa33410984015ea3f..2484293b12d9ec88b8a2570aa853a12f
          private volatile long c;
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c9726b9fde2a1df09022f7a82ae91cd87693c873..f7943251b81c06fcc7fc6b3eea80c521fd3f555d 100644
+index 3e3f2a3d3b5ab32f498b4dd65f35f4c26470790f..6137bb510eec7d8c2ff2908b1255e56d1e2a39ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -226,6 +226,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -228,6 +228,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
  
  import net.md_5.bungee.api.chat.BaseComponent; // Spigot
  
@@ -521,7 +522,7 @@ index c9726b9fde2a1df09022f7a82ae91cd87693c873..f7943251b81c06fcc7fc6b3eea80c521
  public final class CraftServer implements Server {
      private final String serverName = "Paper"; // Paper
      private final String serverVersion;
-@@ -2234,5 +2237,24 @@ public final class CraftServer implements Server {
+@@ -2245,5 +2248,24 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }
@@ -547,10 +548,10 @@ index c9726b9fde2a1df09022f7a82ae91cd87693c873..f7943251b81c06fcc7fc6b3eea80c521
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 4fb27cc7ed062696239f75b6f85ddb0a31866568..c31011ff91f4ea8368e3afbc5ec07eff84e93fe2 100644
+index c57634317b661e05ddd085d04f7338045445069f..da9ad92f6c999d87b790852cb3129f9b04f624a9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-@@ -71,6 +71,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -79,6 +79,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
      }
  
      private void setProfile(GameProfile profile) {
