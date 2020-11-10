@@ -6,19 +6,25 @@ Subject: [PATCH] Add World Util Methods
 Methods that can be used for other patches to help improve logic.
 
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c830fcb3b8ba836a88a81dc2ac19c997f0e438d7..1d0238566d8cef75c28389c5b7084019d25c8f72 100644
+index 89d773ff59ad884a49a9ef26bc590d14c7df7776..c1d3dd294049c93beddaf5e4d513913cebb639df 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
-@@ -250,6 +250,22 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -245,11 +245,27 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     @Override
+-    public Fluid getFluidIfLoaded(BlockPosition blockposition) {
++    public final Fluid getFluidIfLoaded(BlockPosition blockposition) {
+         IChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
  
          return chunk == null ? null : chunk.getFluid(blockposition);
      }
 +
-+    public boolean isLoadedAndInBounds(BlockPosition blockposition) {
++    public final boolean isLoadedAndInBounds(BlockPosition blockposition) { // Paper - final for inline
 +        return getWorldBorder().isInBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
 +
-+    public Chunk getChunkIfLoaded(int x, int z) {
++    public Chunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
 +        return ((WorldServer) this).getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
 +    }
 +    public final Chunk getChunkIfLoaded(BlockPosition blockposition) {
@@ -26,7 +32,7 @@ index c830fcb3b8ba836a88a81dc2ac19c997f0e438d7..1d0238566d8cef75c28389c5b7084019
 +    }
 +
 +    //  reduces need to do isLoaded before getType
-+    public IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
++    public final IBlockData getTypeIfLoadedAndInBounds(BlockPosition blockposition) {
 +        return getWorldBorder().isInBounds(blockposition) ? getTypeIfLoaded(blockposition) : null;
 +    }
      // Paper end
@@ -45,10 +51,10 @@ index bb0f30f182856d2701fde9b1a65eeb987462104a..717f495abd63218bb7ce9241e7cfeac8
          return (double) (blockposition.getX() + 1) > this.e() && (double) blockposition.getX() < this.g() && (double) (blockposition.getZ() + 1) > this.f() && (double) blockposition.getZ() < this.h();
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index d593899d3243d85bd1dafba4d2c603d6cfe32839..cbfb5538965201bcdcb96d75a9fc5be8bc1d39fd 100644
+index 8ed0c4f1e84adc602e01f10049c6e553880cb76a..e307f939745db9688e96c42a70d337e8751874f2 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -84,7 +84,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -88,7 +88,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      public final Convertable.ConversionSession convertable;
      public final UUID uuid;
  
