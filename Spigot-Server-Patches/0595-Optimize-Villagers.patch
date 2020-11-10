@@ -39,18 +39,27 @@ So we cache that and only rebuild it if professions change, which should be neve
 a plugin manipulates and adds custom professions, which it will handle by rebuilding.
 
 diff --git a/src/main/java/net/minecraft/server/BehaviorFindPosition.java b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-index 63a761ebef80d4af09cdc2682e496d78492c4a3a..bab411b102355bc32ea1d2119604d8d363f6ba66 100644
+index 63a761ebef80d4af09cdc2682e496d78492c4a3a..6bffce90fa887ef173ecd4260fd30a5e6c0feea5 100644
 --- a/src/main/java/net/minecraft/server/BehaviorFindPosition.java
 +++ b/src/main/java/net/minecraft/server/BehaviorFindPosition.java
-@@ -16,7 +16,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
-     private final VillagePlaceType b;
-     private final MemoryModuleType<GlobalPos> c;
+@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
+ 
+ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+ 
+-    private final VillagePlaceType b;
+-    private final MemoryModuleType<GlobalPos> c;
++    private final VillagePlaceType b; private final VillagePlaceType getPoiType() { return b; } // Paper - OBFHELPER
++    private final MemoryModuleType<GlobalPos> c; private final MemoryModuleType<GlobalPos> getTargetMemoryModuleType() { return c; } // Paper - OBFHELPER
      private final boolean d;
 -    private final Optional<Byte> e;
-+    private final Optional<Byte> e; private Optional<Byte> getPoiAcquisitionEvent() { return this.e; } // Paper - OBFHELPER
-     private long f;
-     private final Long2ObjectMap<BehaviorFindPosition.a> g;
+-    private long f;
+-    private final Long2ObjectMap<BehaviorFindPosition.a> g;
++    private final Optional<Byte> e; private final Optional<Byte> getPoiAcquisitionEvent() { return this.e; } // Paper - OBFHELPER
++    private long f; private final long getPositionExpireTimeLimit() { return f; } // Paper - OBFHELPER
++    private final Long2ObjectMap<BehaviorFindPosition.a> g; private Long2ObjectMap<BehaviorFindPosition.a> getFoundPositionsToExpiry() { return g; } // Paper - OBFHELPER
  
+     public BehaviorFindPosition(VillagePlaceType villageplacetype, MemoryModuleType<GlobalPos> memorymoduletype, MemoryModuleType<GlobalPos> memorymoduletype1, boolean flag, Optional<Byte> optional) {
+         super(a(memorymoduletype, memorymoduletype1));
 @@ -48,7 +48,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
          if (this.d && entitycreature.isBaby()) {
              return false;
@@ -68,38 +77,40 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..bab411b102355bc32ea1d2119604d8d3
 +        this.f = i + 20L + (long) java.util.concurrent.ThreadLocalRandom.current().nextInt(20); // Paper
          VillagePlace villageplace = worldserver.y();
  
+-        this.g.long2ObjectEntrySet().removeIf((entry) -> {
+-            return !((BehaviorFindPosition.a) entry.getValue()).b(i);
 +        // Paper start - replace implementation completely
 +        BlockPosition blockposition2 = new BlockPosition(entitycreature.locX(), entitycreature.locY(), entitycreature.locZ());
 +        int dist = 48;
 +        int requiredDist = dist * dist;
 +        int cdist = Math.floorDiv(dist, 16);
-+        Predicate<VillagePlaceType> predicate = this.b.getPredicate();
++        Predicate<VillagePlaceType> predicate = this.getPoiType().getCompletionCondition();
 +        int maxPoiAttempts = 4;
 +        int poiAttempts = 0;
 +        OUT:
 +        for (ChunkCoordIntPair chunkcoordintpair : MCUtil.getSpiralOutChunks(blockposition2, cdist)) {
 +            for (int i1 = 0; i1 < 16; i1++) {
-+                java.util.Optional<VillagePlaceSection> section = villageplace.getSection(SectionPosition.a(chunkcoordintpair, i1).asLong());
++                java.util.Optional<VillagePlaceSection> section = villageplace.getSection(SectionPosition.from(chunkcoordintpair, i1).asLong());
 +                if (section == null || !section.isPresent()) continue;
-+                for (java.util.Map.Entry<VillagePlaceType, java.util.Set<VillagePlaceRecord>> e : section.get().getRecords().entrySet()) {
-+                    if (!predicate.test(e.getKey())) continue;
-+                    for (VillagePlaceRecord record : e.getValue()) {
++                for (java.util.Map.Entry<VillagePlaceType, java.util.Set<VillagePlaceRecord>> entry : section.get().getRecords().entrySet()) {
++                    if (!predicate.test(entry.getKey())) continue;
++                    for (VillagePlaceRecord record : entry.getValue()) {
 +                        if (!record.hasVacancy()) continue;
 +
 +                        BlockPosition pos = record.getPosition();
 +                        long key = pos.asLong();
-+                        if (this.g.containsKey(key)) {
++                        if (this.getFoundPositionsToExpiry().containsKey(key)) {
 +                            continue;
 +                        }
 +                        double poiDist = pos.distanceSquared(blockposition2);
 +                        if (poiDist <= (double) requiredDist) {
-+                            this.g.put(key, new BehaviorFindPosition.a(java.util.concurrent.ThreadLocalRandom.current(), (long) (this.f + Math.sqrt(poiDist) * 4))); // use dist instead of 40 to blacklist longer if farther distance
++                            this.getFoundPositionsToExpiry().put(key, new BehaviorFindPosition.a(java.util.concurrent.ThreadLocalRandom.current(), (long) (this.getPositionExpireTimeLimit() + Math.sqrt(poiDist) * 4))); // use dist instead of 40 to blacklist longer if farther distance
 +                            ++poiAttempts;
-+                            PathEntity pathentity = entitycreature.getNavigation().a(com.google.common.collect.ImmutableSet.of(pos), 8, false, this.b.getValidRange());
++                            PathEntity pathentity = entitycreature.getNavigation().findPathToAny(com.google.common.collect.ImmutableSet.of(pos), 8, false, this.getPoiType().getValidRange());
 +
 +                            if (pathentity != null && pathentity.canReach()) {
 +                                GlobalPos globalPos = GlobalPos.create(worldserver.getDimensionKey(), pos);
-+                                entitycreature.getBehaviorController().setMemory(c, globalPos);
++                                entitycreature.getBehaviorController().setMemory(this.getTargetMemoryModuleType(), globalPos);
 +                                this.getPoiAcquisitionEvent().ifPresent((event) -> worldserver.broadcastEntityEffect(entitycreature, event));
 +                                break OUT;
 +                            }
@@ -112,15 +123,14 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..bab411b102355bc32ea1d2119604d8d3
 +            }
 +        }
 +
-         this.g.long2ObjectEntrySet().removeIf((entry) -> {
--            return !((BehaviorFindPosition.a) entry.getValue()).b(i);
-+            return entry.getValue().b < f;
++        this.getFoundPositionsToExpiry().long2ObjectEntrySet().removeIf((entry) -> {
++            return entry.getValue().getPreviousAttemptAt() < this.getPositionExpireTimeLimit();
          });
 +        /*
          Predicate<BlockPosition> predicate = (blockposition) -> {
              BehaviorFindPosition.a behaviorfindposition_a = (BehaviorFindPosition.a) this.g.get(blockposition.asLong());
  
-@@ -103,6 +148,7 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
+@@ -103,12 +148,13 @@ public class BehaviorFindPosition extends Behavior<EntityCreature> {
              }
          }
  
@@ -128,6 +138,25 @@ index 63a761ebef80d4af09cdc2682e496d78492c4a3a..bab411b102355bc32ea1d2119604d8d3
      }
  
      static class a {
+ 
+         private final Random a;
+-        private long b;
++        private long b; private final long getPreviousAttemptAt() { return b; } // Paper - OBFHELPER
+         private long c;
+         private int d;
+ 
+diff --git a/src/main/java/net/minecraft/server/NavigationAbstract.java b/src/main/java/net/minecraft/server/NavigationAbstract.java
+index 1558c5f8256f50be6850f1d7f70eee3e8ec76496..d97a2f826701d7f0ff36fb5fe6acbbfe8b36ed32 100644
+--- a/src/main/java/net/minecraft/server/NavigationAbstract.java
++++ b/src/main/java/net/minecraft/server/NavigationAbstract.java
+@@ -110,6 +110,7 @@ public abstract class NavigationAbstract {
+ 
+     @Nullable
+     // Paper start - Add target
++    protected PathEntity findPathToAny(Set<BlockPosition> set, int i, boolean flag, int j) { return a(set, i, flag, j); } // OBFHELPER
+     protected PathEntity a(Set<BlockPosition> set, int i, boolean flag, int j) {
+         return this.a(set, null, i, flag, j);
+     }
 diff --git a/src/main/java/net/minecraft/server/PathEntity.java b/src/main/java/net/minecraft/server/PathEntity.java
 index c81a5d50c480b064ab60ed6f25f9e2c0bedb6ece..f633796f754fd1b80047033c37a38b099d9b9a9c 100644
 --- a/src/main/java/net/minecraft/server/PathEntity.java
@@ -141,15 +170,27 @@ index c81a5d50c480b064ab60ed6f25f9e2c0bedb6ece..f633796f754fd1b80047033c37a38b09
          return this.h;
      }
 diff --git a/src/main/java/net/minecraft/server/RegionFileSection.java b/src/main/java/net/minecraft/server/RegionFileSection.java
-index 04256a95108b8182e8f808e856e0d2b62165e242..b42590586ab68facdb3e25ea91a9e19348019dbf 100644
+index 04256a95108b8182e8f808e856e0d2b62165e242..8c6675db41f2fffdc2fd6f244afd92dc4ad2acc9 100644
 --- a/src/main/java/net/minecraft/server/RegionFileSection.java
 +++ b/src/main/java/net/minecraft/server/RegionFileSection.java
-@@ -52,10 +52,13 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
+@@ -25,7 +25,7 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
  
-     @Nullable
+     private static final Logger LOGGER = LogManager.getLogger();
+     // Paper - nuke IOWorker
+-    private final Long2ObjectMap<Optional<R>> c = new Long2ObjectOpenHashMap();
++    private final Long2ObjectMap<Optional<R>> c = new Long2ObjectOpenHashMap(); private Long2ObjectMap<Optional<R>> getLoadedElements() { return c; } // Paper - OBFHELPER
+     protected final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet(); // Paper - private -> protected
+     private final Function<Runnable, Codec<R>> e;
+     private final Function<Runnable, R> f;
+@@ -50,12 +50,15 @@ public class RegionFileSection<R> extends RegionFileCache implements AutoCloseab
+ 
+     }
+ 
+-    @Nullable
++    @Nullable protected Optional<R> getIfLoaded(long i) { return c(i); } @Nullable // Paper - OBFHELPER
      protected Optional<R> c(long i) {
 -        return (Optional) this.c.get(i);
-+        return this.c.getOrDefault(i, Optional.empty()); // Paper
++        return this.getLoadedElements().getOrDefault(i, Optional.empty()); // Paper
      }
  
 +    protected final Optional<R> getSection(long i) { return d(i); } // Paper - OBFHELPER
@@ -165,7 +206,7 @@ index 04256a95108b8182e8f808e856e0d2b62165e242..b42590586ab68facdb3e25ea91a9e193
          }
 +         */
 +        // If it's an unloaded chunk, well too bad.
-+        return this.c(i);
++        return this.getIfLoaded(i);
 +        // Paper end
      }
  
@@ -184,7 +225,7 @@ index 04256a95108b8182e8f808e856e0d2b62165e242..b42590586ab68facdb3e25ea91a9e193
                  });
  
 -                this.c.put(i1, optional);
-+                if (optional.isPresent()) this.c.put(i1, optional); // Paper - NO!!!
++                if (optional.isPresent()) this.getLoadedElements().put(i1, optional); // Paper - NO!!!
                  optional.ifPresent((object) -> {
                      this.b(i1);
                      if (flag) {
@@ -198,10 +239,18 @@ index 04256a95108b8182e8f808e856e0d2b62165e242..b42590586ab68facdb3e25ea91a9e193
      }
  
 diff --git a/src/main/java/net/minecraft/server/SectionPosition.java b/src/main/java/net/minecraft/server/SectionPosition.java
-index f95925f1c5d091f1a129d0437bb6e175c6ac080f..6c8695d659e369e993d959f8b92309953f21ab1f 100644
+index f95925f1c5d091f1a129d0437bb6e175c6ac080f..5ac0c06315ad75e826e21b7e293e725c5192c70d 100644
 --- a/src/main/java/net/minecraft/server/SectionPosition.java
 +++ b/src/main/java/net/minecraft/server/SectionPosition.java
-@@ -173,6 +173,7 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -19,6 +19,7 @@ public class SectionPosition extends BaseBlockPosition {
+         return new SectionPosition(blockposition.getX() >> 4, blockposition.getY() >> 4, blockposition.getZ() >> 4); // Paper
+     }
+ 
++    public static final SectionPosition from(ChunkCoordIntPair chunkPos, int i) { return a(chunkPos, i); } // Paper - OBFHELPER
+     public static SectionPosition a(ChunkCoordIntPair chunkcoordintpair, int i) {
+         return new SectionPosition(chunkcoordintpair.x, i, chunkcoordintpair.z);
+     }
+@@ -173,6 +174,7 @@ public class SectionPosition extends BaseBlockPosition {
          return (((long) i & 4194303L) << 42) | (((long) j & 1048575L)) | (((long) k & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
@@ -259,7 +308,7 @@ index 77c66bc9952542d2444b402896a3d9f622ca2ff9..0f27429b960395130410f4d96ff285a5
                  return villageplacesection.e;
              }), VillagePlaceRecord.a(runnable).listOf().fieldOf("Records").forGetter((villageplacesection) -> {
 diff --git a/src/main/java/net/minecraft/server/VillagePlaceType.java b/src/main/java/net/minecraft/server/VillagePlaceType.java
-index a5718af9b614ae505067131f04ebb490617d6aa4..18e4c2b6f8616ededba36caf0b76d39a11ae20b2 100644
+index a5718af9b614ae505067131f04ebb490617d6aa4..a9708470c1d27e5f1a612eee84478fea1973311a 100644
 --- a/src/main/java/net/minecraft/server/VillagePlaceType.java
 +++ b/src/main/java/net/minecraft/server/VillagePlaceType.java
 @@ -14,11 +14,20 @@ import java.util.stream.Collectors;
@@ -288,7 +337,7 @@ index a5718af9b614ae505067131f04ebb490617d6aa4..18e4c2b6f8616ededba36caf0b76d39a
          return this.D;
      }
  
-+    public final Predicate<VillagePlaceType> getPredicate() { return c(); } // Paper - OBFHELPER
++    public final Predicate<VillagePlaceType> getCompletionCondition() { return c(); } // Paper - OBFHELPER
      public Predicate<VillagePlaceType> c() {
          return this.E;
      }
