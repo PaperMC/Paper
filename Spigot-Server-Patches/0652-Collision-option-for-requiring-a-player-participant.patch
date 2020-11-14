@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 14 Nov 2020 16:48:37 +0100
+Subject: [PATCH] Collision option for requiring a player participant
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 234d2daecc5d0bf6a99c0a5f4a87f947a15029d9..89f3a28c20f0e4db4650c435dbcbc923b7bde8aa 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -716,6 +716,18 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public boolean onlyPlayersCollide = false;
++    public boolean allowVehicleCollisions = true;
++    private void onlyPlayersCollide() {
++        onlyPlayersCollide = getBoolean("only-players-collide", onlyPlayersCollide);
++        allowVehicleCollisions = getBoolean("allow-vehicle-collisions", allowVehicleCollisions);
++        if (onlyPlayersCollide && !allowVehicleCollisions) {
++            log("Collisions will only work if a player is one of the two entities colliding.");
++        } else if (onlyPlayersCollide) {
++            log("Collisions will only work if a player OR a vehicle is one of the two entities colliding.");
++        }
++    }
++
+     public int wanderingTraderSpawnMinuteTicks = 1200;
+     public int wanderingTraderSpawnDayTicks = 24000;
+     public int wanderingTraderSpawnChanceFailureIncrement = 25;
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index f9d7419e376268b00db2eb98a3db4116bdb72bd8..f307a6361144c7e315b2e0ea45df27527cdb26ca 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1375,6 +1375,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+     public void collide(Entity entity) {
+         if (!this.isSameVehicle(entity)) {
+             if (!entity.noclip && !this.noclip) {
++                if (this.world.paperConfig.onlyPlayersCollide && !(entity instanceof EntityPlayer || this instanceof EntityPlayer)) return; // Paper
+                 double d0 = entity.locX() - this.locX();
+                 double d1 = entity.locZ() - this.locZ();
+                 double d2 = MathHelper.a(d0, d1);
+diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+index da84cf98022b771bdf0c9d0b284aa7d4d59318e0..baa4a61114e7460c74027e1519332f0dd9582647 100644
+--- a/src/main/java/net/minecraft/server/EntityBoat.java
++++ b/src/main/java/net/minecraft/server/EntityBoat.java
+@@ -186,6 +186,7 @@ public class EntityBoat extends Entity {
+ 
+     @Override
+     public void collide(Entity entity) {
++        if (!this.world.paperConfig.allowVehicleCollisions && this.world.paperConfig.onlyPlayersCollide && !(entity instanceof EntityPlayer)) return; // Paper
+         if (entity instanceof EntityBoat) {
+             if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
+                 // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+index efe5c0cecaf12ef921f6d32ff6670eff051bf323..022dfdc5b6af4b243e7e4da8660e8e41d04e1a30 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+@@ -729,6 +729,7 @@ public abstract class EntityMinecartAbstract extends Entity {
+     public void collide(Entity entity) {
+         if (!this.world.isClientSide) {
+             if (!entity.noclip && !this.noclip) {
++                if (!this.world.paperConfig.allowVehicleCollisions && this.world.paperConfig.onlyPlayersCollide && !(entity instanceof EntityPlayer)) return; // Paper
+                 if (!this.w(entity)) {
+                     // CraftBukkit start
+                     VehicleEntityCollisionEvent collisionEvent = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
