@@ -65,7 +65,26 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -176,6 +202,7 @@
+@@ -141,8 +167,10 @@
+ 
+             this.handlingFault = true;
+             if (this.channel.isOpen()) {
++                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
+                 if (throwable instanceof TimeoutException) {
+                     Connection.LOGGER.debug("Timeout", throwable);
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
+                     this.disconnect((Component) Component.translatable("disconnect.timeout"));
+                 } else {
+                     MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + String.valueOf(throwable));
+@@ -155,6 +183,7 @@
+                         disconnectiondetails = new DisconnectionDetails(ichatmutablecomponent);
+                     }
+ 
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
+                     if (flag) {
+                         Connection.LOGGER.debug("Failed to sent packet", throwable);
+                         if (this.getSending() == PacketFlow.CLIENTBOUND) {
+@@ -176,6 +205,7 @@
  
              }
          }
@@ -73,7 +92,7 @@
      }
  
      protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -205,7 +232,7 @@
+@@ -205,7 +235,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
@@ -82,7 +101,7 @@
      }
  
      private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -418,12 +445,26 @@
+@@ -418,12 +448,26 @@
          }
      }
  
@@ -109,7 +128,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -431,7 +472,7 @@
+@@ -431,7 +475,7 @@
          }
  
          if (this.channel != null) {
@@ -118,7 +137,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -464,12 +505,15 @@
+@@ -464,12 +508,15 @@
      }
  
      public void disconnect(DisconnectionDetails disconnectionInfo) {
@@ -135,7 +154,7 @@
              this.disconnectionDetails = disconnectionInfo;
          }
  
-@@ -537,7 +581,7 @@
+@@ -537,7 +584,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline pipeline) {
@@ -144,7 +163,7 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -661,6 +705,27 @@
+@@ -661,6 +708,27 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
