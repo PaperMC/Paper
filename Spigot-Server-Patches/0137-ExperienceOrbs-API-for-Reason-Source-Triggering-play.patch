@@ -8,22 +8,22 @@ Adds lots of information about why this orb exists.
 Replaces isFromBottle() with logic that persists entity reloads too.
 
 diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index 3cc572b0ce757160c7ab4733b98d8ca84f9f325a..247d9300a755aa22c2ca3bcef86b3b25f3ed75ee 100644
+index d847326b0099a0c05a085d5d62de630491c9ac56..b537385d12463adc82751e40b479b047b32fa5bd 100644
 --- a/src/main/java/net/minecraft/server/Block.java
 +++ b/src/main/java/net/minecraft/server/Block.java
-@@ -236,13 +236,13 @@ public class Block extends BlockBase implements IMaterial {
+@@ -228,13 +228,13 @@ public class Block extends BlockBase implements IMaterial {
          }
      }
  
--    protected void dropExperience(World world, BlockPosition blockposition, int i) {
-+    protected void dropExperience(World world, BlockPosition blockposition, int i, EntityPlayer player) { // Paper
-         if (!world.isClientSide && world.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
+-    protected void dropExperience(WorldServer worldserver, BlockPosition blockposition, int i) {
++    protected void dropExperience(WorldServer worldserver, BlockPosition blockposition, int i, EntityPlayer player) { // Paper
+         if (worldserver.getGameRules().getBoolean(GameRules.DO_TILE_DROPS)) {
              while (i > 0) {
                  int j = EntityExperienceOrb.getOrbValue(i);
  
                  i -= j;
--                world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j));
-+                world.addEntity(new EntityExperienceOrb(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, player)); // Paper
+-                worldserver.addEntity(new EntityExperienceOrb(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j));
++                worldserver.addEntity(new EntityExperienceOrb(worldserver, (double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, j, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, player)); // Paper
              }
          }
  
@@ -41,20 +41,20 @@ index 5bdb0c3a7a04a55cd5ddff8e375497e402408811..fe9a083b724a8657cac8462b3f44d3cc
  
                      world.triggerEffect(1042, blockposition, 0);
 diff --git a/src/main/java/net/minecraft/server/EntityAnimal.java b/src/main/java/net/minecraft/server/EntityAnimal.java
-index b09d7bccf6faae08284e905a8bad0c8f75f59109..b1a41ca53462e50dc0d5cabfcd91579908c07b62 100644
+index b2de91eebbc214cff34a3833541559b934c071f7..bba343542e7e6fa83ec802d97b4c139bb210ab28 100644
 --- a/src/main/java/net/minecraft/server/EntityAnimal.java
 +++ b/src/main/java/net/minecraft/server/EntityAnimal.java
 @@ -237,7 +237,7 @@ public abstract class EntityAnimal extends EntityAgeable {
-             if (world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+             if (worldserver.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
                  // CraftBukkit start - use event experience
                  if (experience > 0) {
--                    world.addEntity(new EntityExperienceOrb(world, this.locX(), this.locY(), this.locZ(), experience));
-+                    world.addEntity(new EntityExperienceOrb(world, this.locX(), this.locY(), this.locZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer, entityageable)); // Paper
+-                    worldserver.addEntity(new EntityExperienceOrb(worldserver, this.locX(), this.locY(), this.locZ(), experience));
++                    worldserver.addEntity(new EntityExperienceOrb(worldserver, this.locX(), this.locY(), this.locZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer, entityageable)); // Paper
                  }
                  // CraftBukkit end
              }
 diff --git a/src/main/java/net/minecraft/server/EntityEnderDragon.java b/src/main/java/net/minecraft/server/EntityEnderDragon.java
-index 72a9430789301b264a36c5060ded31ccdc4a1ebf..05b7cdb33b45a4f503cd7fe4130b54d59e7b6452 100644
+index 81c926e506c1b6e5c0d909b71f1db81beb645699..ef9df3c7c7c455373641f7a7c701f82a23ffef36 100644
 --- a/src/main/java/net/minecraft/server/EntityEnderDragon.java
 +++ b/src/main/java/net/minecraft/server/EntityEnderDragon.java
 @@ -612,7 +612,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
@@ -67,7 +67,7 @@ index 72a9430789301b264a36c5060ded31ccdc4a1ebf..05b7cdb33b45a4f503cd7fe4130b54d5
  
      }
 diff --git a/src/main/java/net/minecraft/server/EntityExperienceOrb.java b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
-index c13a47382d0a7456fa5035a64f42a6ed5e9f1c8e..d9a0cd1e90445ff7a1d9e7cef2f71e27bd3686cb 100644
+index 2c2d44562f732c75532cda910db5ce67d6a534ab..a9fff75882217b1fd680fd8fd47110f85d88df28 100644
 --- a/src/main/java/net/minecraft/server/EntityExperienceOrb.java
 +++ b/src/main/java/net/minecraft/server/EntityExperienceOrb.java
 @@ -16,9 +16,59 @@ public class EntityExperienceOrb extends Entity {
@@ -147,10 +147,10 @@ index c13a47382d0a7456fa5035a64f42a6ed5e9f1c8e..d9a0cd1e90445ff7a1d9e7cef2f71e27
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/EntityFishingHook.java b/src/main/java/net/minecraft/server/EntityFishingHook.java
-index 13b46c59b9a017bfa985ad74f80eca77608d1891..03c6a81346857392aacb22a0947bdc6391a260f2 100644
+index 9ab0a4638c36d46327435eec4745d2746819d9b0..7c3e36f62f4ab076807cd4b85a70528fffbbc2af 100644
 --- a/src/main/java/net/minecraft/server/EntityFishingHook.java
 +++ b/src/main/java/net/minecraft/server/EntityFishingHook.java
-@@ -454,7 +454,7 @@ public class EntityFishingHook extends IProjectile {
+@@ -464,7 +464,7 @@ public class EntityFishingHook extends IProjectile {
                      this.world.addEntity(entityitem);
                      // CraftBukkit start - this.random.nextInt(6) + 1 -> playerFishEvent.getExpToDrop()
                      if (playerFishEvent.getExpToDrop() > 0) {
@@ -160,10 +160,10 @@ index 13b46c59b9a017bfa985ad74f80eca77608d1891..03c6a81346857392aacb22a0947bdc63
                      // CraftBukkit end
                      if (itemstack1.getItem().a((Tag) TagsItem.FISHES)) {
 diff --git a/src/main/java/net/minecraft/server/EntityFox.java b/src/main/java/net/minecraft/server/EntityFox.java
-index c0c0187447976050ea57ae0c4bd62ba7f14c0f6b..95874526516291607a44ae2213d4d6d65edfe18d 100644
+index fef00b46e7cf3690044059f9ee527f799d535b81..a7bbf21e9736a0da38f95d93b013097b1e745306 100644
 --- a/src/main/java/net/minecraft/server/EntityFox.java
 +++ b/src/main/java/net/minecraft/server/EntityFox.java
-@@ -1234,7 +1234,7 @@ public class EntityFox extends EntityAnimal {
+@@ -1236,7 +1236,7 @@ public class EntityFox extends EntityAnimal {
                  if (this.b.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
                      // CraftBukkit start - use event experience
                      if (experience > 0) {
@@ -173,10 +173,10 @@ index c0c0187447976050ea57ae0c4bd62ba7f14c0f6b..95874526516291607a44ae2213d4d6d6
                      // CraftBukkit end
                  }
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 9618074cfba21a6ced4354df56ecd035521bbe69..ed25f93bdb62104f6114e1ecc5e62d5e55bc3b05 100644
+index a67f6d3bf22c7f59a87ab2340a0a9a6c162f5364..3c36b6ea1d130a150afb4116d18af93de9236cad 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
-@@ -1486,7 +1486,8 @@ public abstract class EntityLiving extends Entity {
+@@ -1488,7 +1488,8 @@ public abstract class EntityLiving extends Entity {
                  int j = EntityExperienceOrb.getOrbValue(i);
  
                  i -= j;
@@ -200,7 +200,7 @@ index 7a80b341ee7734cc289abdff8755834447cbef75..2d3ca8c424f2088027d51066d634c487
  
              this.die();
 diff --git a/src/main/java/net/minecraft/server/EntityTurtle.java b/src/main/java/net/minecraft/server/EntityTurtle.java
-index 13c8fab8a57eb3f90abb4bbc5a6c5b5f8bdad0d2..dd745894614982fad6277e77b98bed75fc2a2f55 100644
+index 61e24c2897a2cb93881caaa6fff86f44461765ac..19c92bea21ddcc3917eb011dcfe41006299356ef 100644
 --- a/src/main/java/net/minecraft/server/EntityTurtle.java
 +++ b/src/main/java/net/minecraft/server/EntityTurtle.java
 @@ -499,7 +499,7 @@ public class EntityTurtle extends EntityAnimal {
@@ -213,7 +213,7 @@ index 13c8fab8a57eb3f90abb4bbc5a6c5b5f8bdad0d2..dd745894614982fad6277e77b98bed75
  
          }
 diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
-index d0b04707e830fbaf3a6bfe92637e4432172fd9c7..00183a7f6e2000ce045ce50454f1296c4c93b148 100644
+index eedec25373cfc8adec7ac8a99b146770dc15c70e..732323ee1de01929c73bc5f98444c0f68f908a67 100644
 --- a/src/main/java/net/minecraft/server/EntityVillager.java
 +++ b/src/main/java/net/minecraft/server/EntityVillager.java
 @@ -532,7 +532,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
@@ -226,7 +226,7 @@ index d0b04707e830fbaf3a6bfe92637e4432172fd9c7..00183a7f6e2000ce045ce50454f1296c
  
      }
 diff --git a/src/main/java/net/minecraft/server/EntityVillagerTrader.java b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
-index e3a80bddc59c8f148a6a195deb3e8fa85fba4c7b..a0841cfaf950508b73b43a5fadbc1796015e5dbb 100644
+index c830b3c2145effc16314c6216be8af935416cb58..f1a509063c09e603140c74255a3fb901693d2cc5 100644
 --- a/src/main/java/net/minecraft/server/EntityVillagerTrader.java
 +++ b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
 @@ -144,7 +144,7 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
@@ -239,7 +239,7 @@ index e3a80bddc59c8f148a6a195deb3e8fa85fba4c7b..a0841cfaf950508b73b43a5fadbc1796
  
      }
 diff --git a/src/main/java/net/minecraft/server/PlayerInteractManager.java b/src/main/java/net/minecraft/server/PlayerInteractManager.java
-index 136bb85aace4efc34e1fe804bbccc78bf7495b41..ee59d76d31b8b8cfd39d612b1e6040891f2256f4 100644
+index 862b17e6226f1488167caf08afe7a37b942f7674..8e5975a4871b99329c78379153ad64575d08d123 100644
 --- a/src/main/java/net/minecraft/server/PlayerInteractManager.java
 +++ b/src/main/java/net/minecraft/server/PlayerInteractManager.java
 @@ -377,7 +377,7 @@ public class PlayerInteractManager {
@@ -265,7 +265,7 @@ index d2698e847cfcbc4d2f91b4f5d66b38b47f86c10e..edc4a5c34e8064d900668d132b3496e3
  
      public SlotFurnaceResult(EntityHuman entityhuman, IInventory iinventory, int i, int j, int k) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityFurnace.java b/src/main/java/net/minecraft/server/TileEntityFurnace.java
-index ba42ca08ca61832cb07bebcfa0b1e5422d7b30e9..623cd63711c6cb79dce7a46056e193fdb13334a5 100644
+index a3ddf7be4c7ea588098381b8f05b2bad5b388853..99b20fa5feff0f766124d4ec9474852e33e329f2 100644
 --- a/src/main/java/net/minecraft/server/TileEntityFurnace.java
 +++ b/src/main/java/net/minecraft/server/TileEntityFurnace.java
 @@ -573,7 +573,7 @@ public abstract class TileEntityFurnace extends TileEntityContainer implements I
@@ -278,10 +278,10 @@ index ba42ca08ca61832cb07bebcfa0b1e5422d7b30e9..623cd63711c6cb79dce7a46056e193fd
  
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index afc7263644c0bf45769dbdb6801d025c49e8d323..214e3d1a626a3a3ff523904d15aec1e351b9957b 100644
+index 948639d629d0126c914b1b4d20f7dfaa6137e63e..be55c6c63607f14d457b24b381fcf213d36f6f33 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1817,7 +1817,7 @@ public class CraftWorld implements World {
+@@ -1805,7 +1805,7 @@ public class CraftWorld implements World {
          } else if (TNTPrimed.class.isAssignableFrom(clazz)) {
              entity = new EntityTNTPrimed(world, x, y, z, null);
          } else if (ExperienceOrb.class.isAssignableFrom(clazz)) {

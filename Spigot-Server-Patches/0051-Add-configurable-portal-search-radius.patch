@@ -5,10 +5,10 @@ Subject: [PATCH] Add configurable portal search radius
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index 62e793b71b313146b86b466421e7a5f894bef9df..cd47a4ca069df26969de3051c2aac80540093818 100644
+index e2cb804fd40e236337c37d89dfc85a02486c1bf4..cff769a0cffd81501f919fad0c6456e1268bd223 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -191,4 +191,11 @@ public class PaperWorldConfig {
+@@ -192,4 +192,11 @@ public class PaperWorldConfig {
      private void allChunksAreSlimeChunks() {
          allChunksAreSlimeChunks = getBoolean("all-chunks-are-slime-chunks", false);
      }
@@ -21,51 +21,28 @@ index 62e793b71b313146b86b466421e7a5f894bef9df..cd47a4ca069df26969de3051c2aac805
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 9e132052e1a9b997300e3f5d88473fc5f9ebdd73..1a8fc714f6e4663fc02c1df6a67aaa37d48f743d 100644
+index 52595b6534e2798b36b3a7c2d97451bd0ea2f3a0..716ea2fced5dc9e9a790f25e68252d5bd445b9ce 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2508,7 +2508,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
- 
-                 blockposition = new BlockPosition(d0, this.locY(), d1);
+@@ -2528,7 +2528,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 double d4 = DimensionManager.a(this.world.getDimensionManager(), worldserver.getDimensionManager());
+                 BlockPosition blockposition = new BlockPosition(MathHelper.a(this.locX() * d4, d0, d2), this.locY(), MathHelper.a(this.locZ() * d4, d1, d3));
                  // CraftBukkit start
--                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver, blockposition, 128);
-+                EntityPortalEvent event = CraftEventFactory.callEntityPortalEvent(this, worldserver, blockposition, worldserver.paperConfig.portalSearchRadius); // Paper - use portal search radius
+-                CraftPortalEvent event = callPortalEvent(this, worldserver, blockposition, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, flag2 ? 16 : 128, 16);
++                CraftPortalEvent event = callPortalEvent(this, worldserver, blockposition, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, worldserver.paperConfig.portalSearchRadius, worldserver.paperConfig.portalCreateRadius); // Paper start - configurable portal radius
                  if (event == null) {
                      return null;
                  }
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 5dce27334541d55c7a7d494cd92370570615dc05..2cdb999dd78611e6f72ef06d9128f21a251cb061 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -815,7 +815,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-             // CraftBukkit start
-             Location enter = this.getBukkitEntity().getLocation();
-             Location exit = (worldserver == null) ? null : new Location(worldserver.getWorld(), d0, d1, d2, f1, f);
--            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, 128, true, resourcekey == DimensionManager.THE_END ? 0 : 16);
-+            com.destroystokyo.paper.PaperWorldConfig config = worldserver != null ? worldserver.paperConfig : worldserver1.paperConfig; // Paper - portal radius
-+            PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, config.portalSearchRadius, true, resourcekey == DimensionManager.THE_END ? 0 : config.portalCreateRadius); // Paper - portal radius
-             Bukkit.getServer().getPluginManager().callEvent(event);
-             if (event.isCancelled() || event.getTo() == null) {
-                 return null;
 diff --git a/src/main/java/net/minecraft/server/PortalTravelAgent.java b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-index 8eacfc66dc04bba89c8e1c03746c67068e07718b..f6ec165f9c7d83698100c85b1d4bf6b4cea0f458 100644
+index 150c688262e79b3b675685dbd1754b9e01cb4d75..e10995ec30dd9a10d781b3c1709fd2db5a9becdd 100644
 --- a/src/main/java/net/minecraft/server/PortalTravelAgent.java
 +++ b/src/main/java/net/minecraft/server/PortalTravelAgent.java
-@@ -45,7 +45,7 @@ public class PortalTravelAgent {
-     @Nullable
-     public ShapeDetector.Shape a(BlockPosition blockposition, Vec3D vec3d, EnumDirection enumdirection, double d0, double d1, boolean flag) { // PAIL: rename to findPortal, d0 = portal offset x, d1 = portal offset z, flag = instanceof EntityHuman
+@@ -14,7 +14,7 @@ public class PortalTravelAgent {
+ 
+     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, boolean flag) {
          // CraftBukkit start
--        return findPortal(blockposition, vec3d, enumdirection, d0, d1, flag, 128);
-+        return findPortal(blockposition, vec3d, enumdirection, d0, d1, flag, world.paperConfig.portalSearchRadius); // Paper
+-        return findPortal(blockposition, flag ? 16 : 128); // Search Radius
++        return findPortal(blockposition, flag ? world.paperConfig.portalCreateRadius : world.paperConfig.portalSearchRadius); // Paper - search Radius
      }
  
-     @Nullable
-@@ -53,7 +53,7 @@ public class PortalTravelAgent {
-         // CraftBukkit end
-         VillagePlace villageplace = this.world.x();
- 
--        villageplace.a(this.world, blockposition, 128);
-+        villageplace.a(this.world, blockposition, searchRadius); // Paper - This impacts the # of chunks searched for entries
-         List<VillagePlaceRecord> list = (List) villageplace.b((villageplacetype) -> {
-             return villageplacetype == VillagePlaceType.v;
-         }, blockposition, searchRadius, VillagePlace.Occupancy.ANY).collect(Collectors.toList()); // CraftBukkit - searchRadius
+     public Optional<BlockUtil.Rectangle> findPortal(BlockPosition blockposition, int i) {

@@ -4,12 +4,24 @@ Date: Tue, 1 Mar 2016 14:47:52 -0600
 Subject: [PATCH] Player affects spawning API
 
 
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index d8766f302ed6512d3b4e8bb6508a71e5c8910b54..39ee76225bcb6b44050d41bc5da1dbc63cab1220 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -1269,6 +1269,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         return MathHelper.c(f * f + f1 * f1 + f2 * f2);
+     }
+ 
++    public double getDistanceSquared(double x, double y, double z) { return h(x, y, z); } // Paper - OBFHELPER
+     public double h(double d0, double d1, double d2) {
+         double d3 = this.locX() - d0;
+         double d4 = this.locY() - d1;
 diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
-index 475a3bcabcb829b04124fe2c3393ec70fe90f4b2..94eab21f0defe90e7ad169c45de1fdd002f35f7a 100644
+index e16be546b22c09e1c6ed50c453e1f2c711832a81..683d98dea1b46931478ac7b55e49bc9d92d36f77 100644
 --- a/src/main/java/net/minecraft/server/EntityHuman.java
 +++ b/src/main/java/net/minecraft/server/EntityHuman.java
 @@ -70,6 +70,9 @@ public abstract class EntityHuman extends EntityLiving {
-     private final ItemCooldown bT;
+     private final ItemCooldown bM;
      @Nullable
      public EntityFishingHook hookedFish;
 +    // Paper start
@@ -19,7 +31,7 @@ index 475a3bcabcb829b04124fe2c3393ec70fe90f4b2..94eab21f0defe90e7ad169c45de1fdd0
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index 885b97f9397753e7561f113f588b4ca2d5edb0fe..9715f10c790c0210435622ab9997ac40f98da185 100644
+index 71e8d8c0c4c5ec1ebb67a4cf5ce3c751a5fd052a..4e46685e9d0564ed9330fbec35848f4cd1fb516c 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -691,7 +691,7 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -32,11 +44,11 @@ index 885b97f9397753e7561f113f588b4ca2d5edb0fe..9715f10c790c0210435622ab9997ac40
              if (entityhuman != null) {
                  double d0 = entityhuman.h((Entity) this); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/server/EntitySilverfish.java b/src/main/java/net/minecraft/server/EntitySilverfish.java
-index f9ae1ffbff3a813226b2081c79abf3b92d07754d..29c0a9c36a1f6727fb9485ab41e04f7dc9db1fe5 100644
+index 17a0ebfcd7eefa63adc581479244231b20150340..35f15c8ddd7c85aeb599bc7921053abe09130e59 100644
 --- a/src/main/java/net/minecraft/server/EntitySilverfish.java
 +++ b/src/main/java/net/minecraft/server/EntitySilverfish.java
 @@ -95,7 +95,7 @@ public class EntitySilverfish extends EntityMonster {
-         if (d(entitytypes, generatoraccess, enummobspawn, blockposition, random)) {
+         if (c(entitytypes, generatoraccess, enummobspawn, blockposition, random)) {
              EntityHuman entityhuman = generatoraccess.a((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, 5.0D, true);
  
 -            return entityhuman == null;
@@ -45,10 +57,10 @@ index f9ae1ffbff3a813226b2081c79abf3b92d07754d..29c0a9c36a1f6727fb9485ab41e04f7d
              return false;
          }
 diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
-index c469b5db81fb040fc27cd2e4f7cd61797f56a62d..48e8b005bd9589135eff03a110ecce8776ab208a 100644
+index 797249069b0b2adf91b4e69497752eed7116f02a..b6cf294e785b36b8bc800f26dbb8cfcb2119eae1 100644
 --- a/src/main/java/net/minecraft/server/IEntityAccess.java
 +++ b/src/main/java/net/minecraft/server/IEntityAccess.java
-@@ -75,8 +75,9 @@ public interface IEntityAccess {
+@@ -83,8 +83,9 @@ public interface IEntityAccess {
          }
      }
  
@@ -60,7 +72,7 @@ index c469b5db81fb040fc27cd2e4f7cd61797f56a62d..48e8b005bd9589135eff03a110ecce87
          double d4 = -1.0D;
          EntityHuman entityhuman = null;
          Iterator iterator = this.getPlayers().iterator();
-@@ -109,6 +110,27 @@ public interface IEntityAccess {
+@@ -117,6 +118,27 @@ public interface IEntityAccess {
          return this.a(d0, d1, d2, d3, predicate);
      }
  
@@ -78,7 +90,7 @@ index c469b5db81fb040fc27cd2e4f7cd61797f56a62d..48e8b005bd9589135eff03a110ecce87
 +                entityhuman = (EntityHuman) iterator.next();
 +            } while (!IEntitySelector.affectsSpawning.test(entityhuman));
 +
-+            d4 = entityhuman.g(d0, d1, d2);
++            d4 = entityhuman.getDistanceSquared(d0, d1, d2);
 +        } while (d3 >= 0.0D && d4 >= d3 * d3);
 +
 +        return true;
@@ -89,7 +101,7 @@ index c469b5db81fb040fc27cd2e4f7cd61797f56a62d..48e8b005bd9589135eff03a110ecce87
          Iterator iterator = this.getPlayers().iterator();
  
 diff --git a/src/main/java/net/minecraft/server/IEntitySelector.java b/src/main/java/net/minecraft/server/IEntitySelector.java
-index 37ece74b4265a6f555d2550df7dade416bc7ef84..ed7566591bac72d17b40a940531b7feb1cb8f392 100644
+index 8061f33c01b9c2382f72d2d1d1fa2fb8a731e3c8..e8e7532493c973ce10d94a41676859674fc4e6f6 100644
 --- a/src/main/java/net/minecraft/server/IEntitySelector.java
 +++ b/src/main/java/net/minecraft/server/IEntitySelector.java
 @@ -24,6 +24,12 @@ public final class IEntitySelector {
@@ -106,7 +118,7 @@ index 37ece74b4265a6f555d2550df7dade416bc7ef84..ed7566591bac72d17b40a940531b7feb
          double d4 = d3 * d3;
  
 diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-index 4f7dc23d67e97f9a2b8983750299fc43b0ed6db9..a4a48dbee002e96a5644d9a033f9f233cc9a6b46 100644
+index 90af43930f9141b0c7f51bb3d887d7b9c4d935eb..1741ec5e241f8ae7a3c30a9021d14cb0224da840 100644
 --- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 +++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
 @@ -49,7 +49,7 @@ public abstract class MobSpawnerAbstract {
@@ -119,10 +131,10 @@ index 4f7dc23d67e97f9a2b8983750299fc43b0ed6db9..a4a48dbee002e96a5644d9a033f9f233
  
      public void c() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index f8c4fb312232f1689fd19e165830e62609813213..8d4a0513df27767053342eddda05398eae7b46be 100644
+index 4f8745ce03eef96597963f5c2e08055f51686755..ae7fd1cfdf2a5c222959ca8694b98a77b69e7885 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1690,7 +1690,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1709,7 +1709,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      @Override
      public String getLocale() {
          return getHandle().locale;

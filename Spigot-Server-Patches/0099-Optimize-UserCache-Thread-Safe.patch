@@ -9,82 +9,92 @@ easier to do this than replace the entire thing.
 Additionally, move Saving of the User cache to be done async, incase
 the user never changed the default setting for Spigot's save on stop only.
 
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 7b52bf335e60a700b4c4e25cab1b0261f32775bc..dc0cb79525adf0d5afee1f677e1fde546529cf97 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -212,7 +212,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         }
+ 
+         if (this.convertNames()) {
+-            this.getUserCache().b();
++            this.getUserCache().b(false); // Paper
+         }
+ 
+         if (!NameReferencingFileConverter.e(this)) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f449a9aa819fca1fa1db72b8a76a2f2a2739ff96..793d4d928bac4febf090291eb773871b492cdc6d 100644
+index f45ff52fe33876251dea312155bf30b4bdbfa865..365719e9f6228f19dfb598d4850dc7ef69377f7c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -788,7 +788,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -787,7 +787,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              LOGGER.info("Saving usercache.json");
--            this.getUserCache().c();
-+            this.getUserCache().c(false); // Paper
+-            this.getUserCache().b();
++            this.getUserCache().b(false); // Paper
          }
          // Spigot end
  
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index b211609995b95c26317995f4d776d21ab58d6c0e..4d3cbe3e517a75269d5c9cdd7f3751b81daee1c2 100644
+index ce81aaf3e6ae97ad2af2aad6b668bdd4e18abcf1..15222ed19f049b7465a43a8651584a8a4c5fd666 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -43,8 +43,8 @@ public class UserCache {
- 
-     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-     private static boolean c;
--    private final Map<String, UserCache.UserCacheEntry> d = Maps.newHashMap();
--    private final Map<UUID, UserCache.UserCacheEntry> e = Maps.newHashMap();
-+    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-+    private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
-     private final GameProfileRepository g;
-     protected final Gson b;
-@@ -97,7 +97,7 @@ public class UserCache {
-         this.a(gameprofile, (Date) null);
+@@ -106,7 +106,7 @@ public class UserCache {
+         return UserCache.b;
      }
  
--    private void a(GameProfile gameprofile, Date date) {
-+    private synchronized void a(GameProfile gameprofile, Date date) { // Paper - synchronize
-         UUID uuid = gameprofile.getId();
+-    public void a(GameProfile gameprofile) {
++    public synchronized void a(GameProfile gameprofile) { // Paper - synchronize
+         Calendar calendar = Calendar.getInstance();
  
-         if (date == null) {
-@@ -110,8 +110,9 @@ public class UserCache {
- 
+         calendar.setTime(new Date());
+@@ -115,7 +115,7 @@ public class UserCache {
          UserCache.UserCacheEntry usercache_usercacheentry = new UserCache.UserCacheEntry(gameprofile, date);
  
--        if (this.e.containsKey(uuid)) {
-+        //if (this.e.containsKey(uuid)) { // Paper
-             UserCache.UserCacheEntry usercache_usercacheentry1 = (UserCache.UserCacheEntry) this.e.get(uuid);
-+        if (usercache_usercacheentry1 != null) { // Paper
+         this.a(usercache_usercacheentry);
+-        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.b(); // Spigot - skip saving if disabled
++        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.b(true); // Spigot - skip saving if disabled // Paper - async
+     }
  
-             this.d.remove(usercache_usercacheentry1.a().getName().toLowerCase(Locale.ROOT));
-             this.f.remove(gameprofile);
-@@ -124,7 +125,7 @@ public class UserCache {
+     private long d() {
+@@ -123,7 +123,7 @@ public class UserCache {
      }
  
      @Nullable
 -    public GameProfile getProfile(String s) {
 +    public synchronized GameProfile getProfile(String s) { // Paper - synchronize
          String s1 = s.toLowerCase(Locale.ROOT);
-         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(s1);
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.c.get(s1);
+         boolean flag = false;
+@@ -149,7 +149,7 @@ public class UserCache {
+         }
  
-@@ -209,8 +210,15 @@ public class UserCache {
+         if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
+-            this.b();
++            this.b(true); // Paper
+         }
  
+         return gameprofile;
+@@ -231,7 +231,7 @@ public class UserCache {
+         return arraylist;
      }
  
-+    // Paper start
-     public void c() {
-+        c(true);
-+    }
-+    public void c(boolean asyncSave) {
-+        // Paper end
-         String s = this.b.toJson(this.a(org.spigotmc.SpigotConfig.userCacheCap));
-+        Runnable save = () -> {
-+
-         BufferedWriter bufferedwriter = null;
+-    public void b() {
++    public void b(boolean asyncSave) { // Paper
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = e();
+ 
+@@ -239,6 +239,7 @@ public class UserCache {
+             jsonarray.add(a(usercache_usercacheentry, dateformat));
+         });
+         String s = this.f.toJson(jsonarray);
++        Runnable save = () -> { // Paper
  
          try {
-@@ -224,6 +232,14 @@ public class UserCache {
-         } finally {
-             IOUtils.closeQuietly(bufferedwriter);
+             BufferedWriter bufferedwriter = Files.newWriter(this.g, StandardCharsets.UTF_8);
+@@ -266,6 +267,14 @@ public class UserCache {
+         } catch (IOException ioexception) {
+             ;
          }
 +        // Paper start
 +        };

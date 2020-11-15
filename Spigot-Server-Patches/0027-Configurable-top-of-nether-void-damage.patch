@@ -5,10 +5,10 @@ Subject: [PATCH] Configurable top of nether void damage
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index d59b82b7bb1f6d1b231f4e394e0a67a3d154d7be..f7a0a33e49cadf9b2bd43f118c106937760da762 100644
+index 60c38406c599b5952855b3dc18fc3defa9d62ca4..a005c4398336dba3b5e3ef716f44f2eda7306442 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -129,4 +129,19 @@ public class PaperWorldConfig {
+@@ -130,4 +130,19 @@ public class PaperWorldConfig {
          if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
          if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
      }
@@ -29,10 +29,10 @@ index d59b82b7bb1f6d1b231f4e394e0a67a3d154d7be..f7a0a33e49cadf9b2bd43f118c106937
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index bfe36be070677d215eadd3ad38f93c6bddab0b75..9e132052e1a9b997300e3f5d88473fc5f9ebdd73 100644
+index 26ad7e7d44dc1195f7ab948d2b42bf629c2702a7..52595b6534e2798b36b3a7c2d97451bd0ea2f3a0 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -420,9 +420,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -415,9 +415,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
              this.fallDistance *= 0.5F;
          }
  
@@ -41,7 +41,7 @@ index bfe36be070677d215eadd3ad38f93c6bddab0b75..9e132052e1a9b997300e3f5d88473fc5
 +        // Extracted to own function
 +        /*
          if (this.locY() < -64.0D) {
-             this.ai();
+             this.an();
          }
 +        */
 +        this.performVoidDamage();
@@ -49,8 +49,8 @@ index bfe36be070677d215eadd3ad38f93c6bddab0b75..9e132052e1a9b997300e3f5d88473fc5
  
          if (!this.world.isClientSide) {
              this.setFlag(0, this.fireTicks > 0);
-@@ -432,6 +439,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         this.world.getMethodProfiler().exit();
+@@ -510,6 +517,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.setFireTicks(0);
      }
  
 +    // Paper start
@@ -58,28 +58,20 @@ index bfe36be070677d215eadd3ad38f93c6bddab0b75..9e132052e1a9b997300e3f5d88473fc5
 +        if (this.locY() < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
 +            && world.paperConfig.doNetherTopVoidDamage()
 +            && this.locY() >= world.paperConfig.netherVoidTopDamageHeight)) {
-+
 +            this.doVoidDamage();
 +        }
 +    }
 +    // Paper end
 +
-     protected void E() {
-         if (this.portalCooldown > 0) {
-             --this.portalCooldown;
-@@ -507,6 +525,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         this.setFireTicks(0);
-     }
- 
-+    protected final void doVoidDamage() { this.ai(); } // Paper - OBFHELPER
-     protected void ai() {
++    protected final void doVoidDamage() { this.an(); } // Paper - OBFHELPER
+     protected void an() {
          this.die();
      }
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-index cb25cf3bb7be041d9b135165b6f66b5c232a2553..9124d00521463157df6348b84260f91a47e1f076 100644
+index dcd381069c2fd4d037ae0bcf710b9ff6ee30bb8f..35b5d41084b47de6a1185e23970ebe21875668d6 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-@@ -285,9 +285,15 @@ public abstract class EntityMinecartAbstract extends Entity {
+@@ -292,9 +292,15 @@ public abstract class EntityMinecartAbstract extends Entity {
              this.setDamage(this.getDamage() - 1.0F);
          }
  
@@ -87,7 +79,7 @@ index cb25cf3bb7be041d9b135165b6f66b5c232a2553..9124d00521463157df6348b84260f91a
 +        // Extracted to own function
 +        /*
          if (this.locY() < -64.0D) {
-             this.ai();
+             this.an();
          }
 +        */
 +        this.performVoidDamage();

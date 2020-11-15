@@ -11,10 +11,10 @@ This feature is good for long term worlds so that newer players
 do not suffer with "Every chest has been looted"
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-index fd3793c55b8021b9fc61ce6be585a8c9b477aba2..05ea87a473228f5b386258fae3943f3f4561eaa6 100644
+index fd09df36c0f28f77b1f6c32b4e68da8a3ab59aa9..64da34a840dc433670675a30062b8b17c29dd0c4 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -262,4 +262,26 @@ public class PaperWorldConfig {
+@@ -263,4 +263,26 @@ public class PaperWorldConfig {
          this.frostedIceDelayMax = this.getInt("frosted-ice.delay.max", this.frostedIceDelayMax);
          log("Frosted Ice: " + (this.frostedIceEnabled ? "enabled" : "disabled") + " / delay: min=" + this.frostedIceDelayMin + ", max=" + this.frostedIceDelayMax);
      }
@@ -518,7 +518,7 @@ index 0000000000000000000000000000000000000000..a1923aff2b5e2e867670a5a064a76791
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index d20d8f37dd8e09afaa763312040d31adddff5838..05a297534e1986226404f5fa27d817eb0fe87fec 100644
+index 1769e9b0f3d358253b6387491589916f7bb219fe..92edb4474167fa95fd36ae9ef86a9eafd29f9b23 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -73,6 +73,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -530,7 +530,7 @@ index d20d8f37dd8e09afaa763312040d31adddff5838..05a297534e1986226404f5fa27d817eb
  
      public CraftEntity getBukkitEntity() {
 diff --git a/src/main/java/net/minecraft/server/EntityMinecartContainer.java b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
-index 9a969d71b078ec67a442cc2df387ad633e0fb0f7..510bfffcb986eed991f0b6981eeba5ce62fc3ed0 100644
+index 75e9c1538b3d8ef5186986ab3c8ca8b60f63ee6e..574838bd33a46e464ff7d801345613a3351f487f 100644
 --- a/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 +++ b/src/main/java/net/minecraft/server/EntityMinecartContainer.java
 @@ -19,6 +19,7 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
@@ -541,7 +541,7 @@ index 9a969d71b078ec67a442cc2df387ad633e0fb0f7..510bfffcb986eed991f0b6981eeba5ce
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
      private int maxStack = MAX_STACK;
  
-@@ -169,12 +170,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -176,12 +177,13 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      @Override
      protected void saveData(NBTTagCompound nbttagcompound) {
          super.saveData(nbttagcompound);
@@ -556,7 +556,7 @@ index 9a969d71b078ec67a442cc2df387ad633e0fb0f7..510bfffcb986eed991f0b6981eeba5ce
              ContainerUtil.a(nbttagcompound, this.items);
          }
  
-@@ -183,11 +185,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -190,11 +192,12 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      @Override
      protected void loadData(NBTTagCompound nbttagcompound) {
          super.loadData(nbttagcompound);
@@ -570,7 +570,7 @@ index 9a969d71b078ec67a442cc2df387ad633e0fb0f7..510bfffcb986eed991f0b6981eeba5ce
              ContainerUtil.b(nbttagcompound, this.items);
          }
  
-@@ -213,14 +216,15 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
+@@ -225,14 +228,15 @@ public abstract class EntityMinecartContainer extends EntityMinecartAbstract imp
      }
  
      public void d(@Nullable EntityHuman entityhuman) {
@@ -585,11 +585,11 @@ index 9a969d71b078ec67a442cc2df387ad633e0fb0f7..510bfffcb986eed991f0b6981eeba5ce
 -            this.lootTable = null;
 +            //this.lootTable = null; // Paper
 +            this.lootableData.processRefill(entityhuman); // Paper
-             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.POSITION, this.getChunkCoordinates()).a(this.lootTableSeed);
+             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.ORIGIN, this.getPositionVector()).a(this.lootTableSeed);
  
              if (entityhuman != null) {
 diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
-index 1eb43345bda9fa96d4f3383afb2fed1e998c9da6..006f8bace83ba1e540399b3f05952fa5edb0681f 100644
+index 9265bc7331f5d3cb43394a7457ab89140b731c8b..d9be182a574daaedcc7a106c759c2bde2e4eb19a 100644
 --- a/src/main/java/net/minecraft/server/TileEntityLootable.java
 +++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
 @@ -8,6 +8,7 @@ public abstract class TileEntityLootable extends TileEntityContainer {
@@ -600,13 +600,14 @@ index 1eb43345bda9fa96d4f3383afb2fed1e998c9da6..006f8bace83ba1e540399b3f05952fa5
  
      protected TileEntityLootable(TileEntityTypes<?> tileentitytypes) {
          super(tileentitytypes);
-@@ -23,16 +24,18 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+@@ -23,16 +24,19 @@ public abstract class TileEntityLootable extends TileEntityContainer {
      }
  
      protected boolean b(NBTTagCompound nbttagcompound) {
 +        this.lootableData.loadNbt(nbttagcompound); // Paper
          if (nbttagcompound.hasKeyOfType("LootTable", 8)) {
              this.lootTable = new MinecraftKey(nbttagcompound.getString("LootTable"));
++            try { org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.lootTable); } catch (IllegalArgumentException ex) { this.lootTable = null; } // Paper - validate
              this.lootTableSeed = nbttagcompound.getLong("LootTableSeed");
 -            return true;
 +            return false; // Paper - always load the items, table may still remain
@@ -620,7 +621,7 @@ index 1eb43345bda9fa96d4f3383afb2fed1e998c9da6..006f8bace83ba1e540399b3f05952fa5
          if (this.lootTable == null) {
              return false;
          } else {
-@@ -41,19 +44,20 @@ public abstract class TileEntityLootable extends TileEntityContainer {
+@@ -41,19 +45,20 @@ public abstract class TileEntityLootable extends TileEntityContainer {
                  nbttagcompound.setLong("LootTableSeed", this.lootTableSeed);
              }
  
@@ -641,7 +642,7 @@ index 1eb43345bda9fa96d4f3383afb2fed1e998c9da6..006f8bace83ba1e540399b3f05952fa5
 -            this.lootTable = null;
 +            //this.lootTable = null; // Paper
 +            this.lootableData.processRefill(entityhuman); // Paper
-             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.POSITION, new BlockPosition(this.position)).a(this.lootTableSeed);
+             LootTableInfo.Builder loottableinfo_builder = (new LootTableInfo.Builder((WorldServer) this.world)).set(LootContextParameters.ORIGIN, Vec3D.a((BaseBlockPosition) this.position)).a(this.lootTableSeed);
  
              if (entityhuman != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
@@ -658,7 +659,7 @@ index da5a80267b189d75374375211a574ca5f18d96be..26cc40e57f5b73b9c32859bff37c4a3d
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
-index 941cb98cc2c736e66af61171429243c484ceffc2..31585e9bb825fbd84e30b7c026da57734a3698b3 100644
+index 89df1d7f8b1221014affec459244223491fafaa2..c0fed05d3b68258a61980bdb84fe16dd6adba4c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
 @@ -12,8 +12,9 @@ import org.bukkit.craftbukkit.CraftWorld;

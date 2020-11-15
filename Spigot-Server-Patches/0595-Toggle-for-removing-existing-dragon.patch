@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Wed, 30 Sep 2020 22:49:14 +0200
+Subject: [PATCH] Toggle for removing existing dragon
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 8923314d731dea5c2707dbb271b8b0819d826a2e..9a0ade5875c34487a65f82f9380f9d25b4432586 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -672,4 +672,12 @@ public class PaperWorldConfig {
+             log("Using vanilla redstone algorithm.");
+         }
+     }
++
++    public boolean shouldRemoveDragon = false;
++    private void shouldRemoveDragon() {
++        shouldRemoveDragon = getBoolean("should-remove-dragon", shouldRemoveDragon);
++        if (shouldRemoveDragon) {
++            log("The Ender Dragon will be removed if she already exists without a portal.");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EnderDragonBattle.java b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+index 95ecf9dd511836cc2f70173f07234ef8822d6038..38dc6086d18951e065d4048d1d8eee288c5c5fd1 100644
+--- a/src/main/java/net/minecraft/server/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/server/EnderDragonBattle.java
+@@ -172,7 +172,7 @@ public class EnderDragonBattle {
+             this.dragonUUID = entityenderdragon.getUniqueID();
+             EnderDragonBattle.LOGGER.info("Found that there's a dragon still alive ({})", entityenderdragon);
+             this.dragonKilled = false;
+-            if (!flag) {
++            if (!flag && this.world.paperConfig.shouldRemoveDragon) { // Paper
+                 EnderDragonBattle.LOGGER.info("But we didn't have a portal, let's remove it.");
+                 entityenderdragon.die();
+                 this.dragonUUID = null;

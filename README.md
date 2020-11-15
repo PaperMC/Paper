@@ -1,11 +1,11 @@
-Paper [![Build Status](https://papermc.io/ci/job/Paper-1.15/badge/icon)](https://papermc.io/ci/job/Paper-1.15/)
+Paper [![Build Status](https://papermc.io/ci/job/Paper-1.16/badge/icon)](https://papermc.io/ci/job/Paper-1.16/)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
 
 **Support and Project Discussion:**
- - [IRC](https://irc.spi.gt/iris/?channels=paper) or [Discord](https://discord.gg/papermc)
+ - [IRC](https://webchat.esper.net/?channels=paper) or [Discord](https://discord.gg/papermc)
 
 
 How To (Server Admins)
@@ -36,7 +36,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>com.destroystokyo.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.16.1-R0.1-SNAPSHOT</version>
+    <version>1.16.4-R0.1-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
  ```
@@ -54,7 +54,7 @@ repositories {
  * Artifact:
 ```groovy
 dependencies {
-    compileOnly 'com.destroystokyo.paper:paper-api:1.16.1-R0.1-SNAPSHOT'
+    compileOnly 'com.destroystokyo.paper:paper-api:1.16.4-R0.1-SNAPSHOT'
 }
 ```
 

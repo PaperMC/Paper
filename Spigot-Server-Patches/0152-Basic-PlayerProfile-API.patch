@@ -310,7 +310,7 @@ index 0000000000000000000000000000000000000000..2751ce7f1556da07ef853807a588f096
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef9f55afd6bffa8c02c6820295223e5465eed91e
+index 0000000000000000000000000000000000000000..d64d45eb01c65864fca1077982d89bc05e0f811b
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperAuthenticationService.java
 @@ -0,0 +1,31 @@
@@ -325,8 +325,8 @@ index 0000000000000000000000000000000000000000..ef9f55afd6bffa8c02c6820295223e54
 +
 +public class PaperAuthenticationService extends YggdrasilAuthenticationService {
 +    private final Environment environment;
-+    public PaperAuthenticationService(Proxy proxy, String clientToken) {
-+        super(proxy, clientToken);
++    public PaperAuthenticationService(Proxy proxy) {
++        super(proxy);
 +        this.environment = (Environment)EnvironmentParser.getEnvironmentFromProperties().orElse(YggdrasilEnvironment.PROD);;
 +    }
 +
@@ -407,38 +407,40 @@ index 0000000000000000000000000000000000000000..93d73c27340645c7502acafdc0b2cfbc
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3aceb0ea8a1a3ed94dd8a9e954c52ecd341c6bd1
+index 0000000000000000000000000000000000000000..3cdd06d3af7ff94f1fe1a11b9a9275e17c695a38
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PaperUserAuthentication.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,12 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.Agent;
 +import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 +import com.mojang.authlib.yggdrasil.YggdrasilUserAuthentication;
++import java.util.UUID;
 +
 +public class PaperUserAuthentication extends YggdrasilUserAuthentication {
 +    public PaperUserAuthentication(YggdrasilAuthenticationService authenticationService, Agent agent) {
-+        super(authenticationService, agent);
++        super(authenticationService, UUID.randomUUID().toString(), agent);
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index da7a325d070e194cd1664ed20dcb3a762c9a517a..797654c653ec6dc4d46b457cf8a6121b29eca7aa 100644
+index 17d73ebbe51a83f79f338bdb1b366cecd99f880d..39174bca00b4535e92f6b325b3fd058ceae41f8b 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
-@@ -1,8 +1,11 @@
+@@ -1,9 +1,12 @@
  package net.minecraft.server;
  
  import com.destroystokyo.paper.block.TargetBlockInfo;
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
 +import com.destroystokyo.paper.profile.PlayerProfile;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
  import org.apache.commons.lang.exception.ExceptionUtils;
 +import com.mojang.authlib.GameProfile;
  import org.bukkit.Location;
  import org.bukkit.block.BlockFace;
  import org.bukkit.craftbukkit.CraftWorld;
-@@ -337,6 +340,10 @@ public final class MCUtil {
+@@ -338,6 +341,10 @@ public final class MCUtil {
          return run.get();
      }
  
@@ -450,41 +452,41 @@ index da7a325d070e194cd1664ed20dcb3a762c9a517a..797654c653ec6dc4d46b457cf8a6121b
       * Calculates distance between 2 entities
       * @param e1
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 11ad9ca7d030895662903a09558fd353dcc3e49e..52476513405a28b4125170650ff53a07deba0ec2 100644
+index 49649e70ee8bfb3dacd63a88a180f0f329f308c0..dacb8563bc823c8f6f1e1e10f2b8b9894819374f 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -93,7 +93,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
--            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString());
-+            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY, UUID.randomUUID().toString()); // Paper
+-            YggdrasilAuthenticationService yggdrasilauthenticationservice = new YggdrasilAuthenticationService(Proxy.NO_PROXY);
++            YggdrasilAuthenticationService yggdrasilauthenticationservice = new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY); // Paper
              MinecraftSessionService minecraftsessionservice = yggdrasilauthenticationservice.createMinecraftSessionService();
              GameProfileRepository gameprofilerepository = yggdrasilauthenticationservice.createProfileRepository();
              UserCache usercache = new UserCache(gameprofilerepository, new File(file, MinecraftServer.b.getName()));
 diff --git a/src/main/java/net/minecraft/server/UserCache.java b/src/main/java/net/minecraft/server/UserCache.java
-index 4f769211cf98c3da720a904da3dcdcd4c7611f0b..a038397028848edb4f43cd4f7262546666e32883 100644
+index 7171bdf7fb0489e9678588dfa33410984015ea3f..2484293b12d9ec88b8a2570aa853a12f0d858193 100644
 --- a/src/main/java/net/minecraft/server/UserCache.java
 +++ b/src/main/java/net/minecraft/server/UserCache.java
-@@ -43,7 +43,7 @@ public class UserCache {
+@@ -42,7 +42,7 @@ public class UserCache {
  
-     public static final SimpleDateFormat a = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
-     private static boolean c;
--    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-+    private final Map<String, UserCache.UserCacheEntry> d = new java.util.concurrent.ConcurrentHashMap<>();private final Map<String, UserCache.UserCacheEntry> nameCache = d; // Paper - OBFHELPER // Paper
-     private final Map<UUID, UserCache.UserCacheEntry> e = new java.util.concurrent.ConcurrentHashMap<>(); // Paper
-     private final Deque<GameProfile> f = new java.util.concurrent.LinkedBlockingDeque<GameProfile>(); // CraftBukkit
-     private final GameProfileRepository g;
-@@ -93,6 +93,7 @@ public class UserCache {
-         return UserCache.c;
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static boolean b;
+-    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();
++    private final Map<String, UserCache.UserCacheEntry> c = Maps.newConcurrentMap();private final Map<String, UserCache.UserCacheEntry> nameCache = c; // Paper - OBFHELPER // Paper
+     private final Map<UUID, UserCache.UserCacheEntry> d = Maps.newConcurrentMap();
+     private final GameProfileRepository e;
+     private final Gson f = (new GsonBuilder()).create();
+@@ -106,6 +106,7 @@ public class UserCache {
+         return UserCache.b;
      }
  
 +    public void saveProfile(GameProfile gameprofile) { a(gameprofile); } // Paper - OBFHELPER
-     public void a(GameProfile gameprofile) {
-         this.a(gameprofile, (Date) null);
-     }
-@@ -154,6 +155,13 @@ public class UserCache {
-         return usercache_usercacheentry == null ? null : usercache_usercacheentry.a();
+     public synchronized void a(GameProfile gameprofile) { // Paper - synchronize
+         Calendar calendar = Calendar.getInstance();
+ 
+@@ -155,6 +156,13 @@ public class UserCache {
+         return gameprofile;
      }
  
 +    // Paper start
@@ -496,21 +498,21 @@ index 4f769211cf98c3da720a904da3dcdcd4c7611f0b..a038397028848edb4f43cd4f72625466
 +
      @Nullable
      public GameProfile getProfile(UUID uuid) {
-         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.e.get(uuid);
-@@ -262,7 +270,7 @@ public class UserCache {
+         UserCache.UserCacheEntry usercache_usercacheentry = (UserCache.UserCacheEntry) this.d.get(uuid);
+@@ -337,7 +345,7 @@ public class UserCache {
  
-     class UserCacheEntry {
+     static class UserCacheEntry {
  
--        private final GameProfile b;
-+        private final GameProfile b;public GameProfile getProfile() { return b; } // Paper - OBFHELPER
-         private final Date c;
+-        private final GameProfile a;
++        private final GameProfile a;public GameProfile getProfile() { return a; } // Paper - OBFHELPER
+         private final Date b;
+         private volatile long c;
  
-         private UserCacheEntry(GameProfile gameprofile, Date date) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 30b0fe2f9168de8549481909e5d32cbd8ce4d09d..dd439acf4985ee7f4f329c63060988c10c6671f3 100644
+index 3e3f2a3d3b5ab32f498b4dd65f35f4c26470790f..6137bb510eec7d8c2ff2908b1255e56d1e2a39ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -227,6 +227,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -228,6 +228,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
  
  import net.md_5.bungee.api.chat.BaseComponent; // Spigot
  
@@ -520,7 +522,7 @@ index 30b0fe2f9168de8549481909e5d32cbd8ce4d09d..dd439acf4985ee7f4f329c63060988c1
  public final class CraftServer implements Server {
      private final String serverName = "Paper"; // Paper
      private final String serverVersion;
-@@ -2240,5 +2243,24 @@ public final class CraftServer implements Server {
+@@ -2245,5 +2248,24 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return com.destroystokyo.paper.PaperConfig.suggestPlayersWhenNullTabCompletions;
      }
@@ -546,10 +548,10 @@ index 30b0fe2f9168de8549481909e5d32cbd8ce4d09d..dd439acf4985ee7f4f329c63060988c1
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 4fb27cc7ed062696239f75b6f85ddb0a31866568..c31011ff91f4ea8368e3afbc5ec07eff84e93fe2 100644
+index c57634317b661e05ddd085d04f7338045445069f..da9ad92f6c999d87b790852cb3129f9b04f624a9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-@@ -71,6 +71,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -79,6 +79,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
      }
  
      private void setProfile(GameProfile profile) {
