@@ -5,10 +5,10 @@ Subject: [PATCH] Add BlockDestroyedByNeighborEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
-index 1c06647fb6f8e757ca7a737a371cb1dec2aeb80e..59b70970b95527df24d6c0533e775626e5602b33 100644
+index 1c06647fb6f8e757ca7a737a371cb1dec2aeb80e..2482955f943083ac5aadbdf96536009a84dc4d33 100644
 --- a/src/main/java/net/minecraft/server/BlockBase.java
 +++ b/src/main/java/net/minecraft/server/BlockBase.java
-@@ -525,6 +525,19 @@ public abstract class BlockBase {
+@@ -525,6 +525,18 @@ public abstract class BlockBase {
  
                  blockposition_mutableblockposition.a((BaseBlockPosition) blockposition, enumdirection);
                  IBlockData iblockdata = generatoraccess.getType(blockposition_mutableblockposition);
@@ -18,9 +18,8 @@ index 1c06647fb6f8e757ca7a737a371cb1dec2aeb80e..59b70970b95527df24d6c0533e775626
 +                if (getMaterial() == Material.AIR && !iblockdata.canPlace(generatoraccess, blockposition_mutableblockposition)) {
 +                    World.PendingBlockEvent blockEvent = world.pendingPlayerBlockEvents.get(blockposition);
 +                    if (blockEvent != null) {
-+                        BlockPosition blockPositionCopy = blockposition_mutableblockposition.immutableCopy();
-+                        World.PendingBlockEvent newBlockEvent = new World.PendingBlockEvent(blockPositionCopy, blockEvent.player, blockposition);
-+                        world.pendingPlayerBlockEvents.put(blockPositionCopy, newBlockEvent);
++                        blockEvent.block = blockposition_mutableblockposition.immutableCopy();
++                        blockEvent.sourceBlock = blockposition;
 +                    }
 +                }
 +                // Paper end
@@ -99,7 +98,7 @@ index 4b564d36135e9dbdbb57a95791f89aefd180457b..63894f58d64d169697075abb172f1464
                  if (flag && event != null) {
                      iblockdata.getBlock().dropExperience(this.world, blockposition, event.getExpToDrop(), this.player); // Paper
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index fb3776c00cf8b5125550e8a2bc6c270ba8a80dc5..ac8c52b5bb2f4f2ccec9ccb6c2ef7d40f05a83ce 100644
+index fb3776c00cf8b5125550e8a2bc6c270ba8a80dc5..3e1b5b35d8e4693fb9ce90c56e3011fbc38d17b5 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -28,8 +28,11 @@ import org.bukkit.Bukkit;
@@ -121,7 +120,7 @@ index fb3776c00cf8b5125550e8a2bc6c270ba8a80dc5..ac8c52b5bb2f4f2ccec9ccb6c2ef7d40
 +    // Paper start - Abstract holder class that can be used to track what Player did the last "block thing"
 +    public static class PendingBlockEvent {
 +
-+        public final BlockPosition block;
++        public BlockPosition block;
 +        public final Player player;
 +        public BlockPosition sourceBlock;
 +
@@ -175,7 +174,7 @@ index fb3776c00cf8b5125550e8a2bc6c270ba8a80dc5..ac8c52b5bb2f4f2ccec9ccb6c2ef7d40
  
              try {
 +                // Paper start
-+                if (blockAt.getType() != org.bukkit.Material.AIR && iblockdata.getMaterial() == Material.AIR) {
++                if (!blockAt.getType().isAir() && iblockdata.getMaterial() == Material.AIR) {
 +                    PendingBlockEvent blockEvent = pendingPlayerBlockEvents.remove(blockposition);
 +                    if (blockEvent != null) {
 +                        BlockDestroyedByNeighborEvent breakByBlockEvent = new BlockDestroyedByNeighborEvent(blockAt, blockEvent.player, CraftBlock.at(this, blockposition));
