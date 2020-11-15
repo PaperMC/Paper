@@ -12,6 +12,7 @@ if [ -z "${1:-}" ]; then
     _is_dep_available git
     _is_dep_available patch
     _is_dep_available mvn
+    _is_dep_available curl
 
     # Ensure we don't have a JAVA_HOME set first.
     # Maven should work fine without the JAVA_HOME var as long as the JDK is on the PATH.
