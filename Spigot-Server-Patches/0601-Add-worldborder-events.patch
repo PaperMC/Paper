@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jacob <jacobblair6789@gmail.com>
+Date: Mon, 16 Nov 2020 10:47:28 -0700
+Subject: [PATCH] Add worldborder events
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
+index f011869880fedae4b69e505491e8bdbc5f51dfba..6a5f11969a0710cb9303e07ad7d14e5974a2b842 100644
+--- a/src/main/java/net/minecraft/server/WorldBorder.java
++++ b/src/main/java/net/minecraft/server/WorldBorder.java
+@@ -2,6 +2,10 @@ package net.minecraft.server;
+ 
+ import com.google.common.collect.Lists;
+ import com.mojang.serialization.DynamicLike;
++import io.papermc.paper.event.world.*;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.CraftWorldBorder;
++
+ import java.util.Iterator;
+ import java.util.List;
+ 
+@@ -92,17 +96,23 @@ public class WorldBorder {
+     }
+ 
+     public void setCenter(double d0, double d1) {
+-        this.g = d0;
+-        this.h = d1;
+-        this.j.k();
+-        Iterator iterator = this.l().iterator();
++        // Paper start - call change event, check if cancelled
++        WorldBorderCenterChangeEvent event = new WorldBorderCenterChangeEvent(this.world.getWorld(), new Location(this.world.getWorld(), this.g, 0.0, this.h), new Location(this.world.getWorld(), d0, 0.0, d1));
++        if (event.callEvent()) {
++            // Bukkit start
++            this.g = d0;
++            this.h = d1;
++            this.j.k();
++            Iterator iterator = this.l().iterator();
+ 
+-        while (iterator.hasNext()) {
+-            IWorldBorderListener iworldborderlistener = (IWorldBorderListener) iterator.next();
++            while (iterator.hasNext()) {
++                IWorldBorderListener iworldborderlistener = (IWorldBorderListener) iterator.next();
+ 
+-            iworldborderlistener.a(this, d0, d1);
++                iworldborderlistener.a(this, d0, d1);
++            }
++            // Bukkit end
+         }
+-
++        // Paper end
+     }
+ 
+     public double getSize() {
+@@ -118,7 +128,11 @@ public class WorldBorder {
+     }
+ 
+     public void setSize(double d0) {
+-        this.j = new WorldBorder.d(d0);
++        // Paper start
++        StaticWorldBorderChangeEvent event = new StaticWorldBorderChangeEvent(this.world.getWorld(), this.j.e(), d0);
++        this.j = new WorldBorder.d(d0); // bukkit code
++        event.callEvent();
++        // Paper end
+         Iterator iterator = this.l().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -130,7 +144,11 @@ public class WorldBorder {
+     }
+ 
+     public void transitionSizeBetween(double d0, double d1, long i) {
+-        this.j = (WorldBorder.a) (d0 == d1 ? new WorldBorder.d(d1) : new WorldBorder.b(d0, d1, i));
++        // Paper start
++        WorldBorderStartChangeEvent event = new WorldBorderStartChangeEvent(this.world.getWorld(), d0, d1, i);
++        this.j = (WorldBorder.a) (d0 == d1 ? new WorldBorder.d(d1) : new WorldBorder.b(d0, d1, i)); // bukkit code
++        event.callEvent();
++        // Paper end
+         Iterator iterator = this.l().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -224,7 +242,26 @@ public class WorldBorder {
+     }
+ 
+     public void s() {
+-        this.j = this.j.l();
++        // Paper start - check if border is moving, if so call border change event
++        WorldBorder.a a_1 = this.j.l();
++        if (a_1 instanceof WorldBorder.d && this.j instanceof WorldBorder.b) { // if the border is now an instance of d (StaticBorderExtent) and the last state was MovingBorderExtent, call a WorldBorderFinishChangeEvent
++            WorldBorderFinishChangeEvent event = new WorldBorderFinishChangeEvent(this.world.getWorld(), new CraftWorldBorder(this.world.getWorld()));
++            event.callEvent();
++        }
++        if (!(a_1.g() <= 0.0)) {
++            WorldBorderChangeEvent event = new WorldBorderChangeEvent(this.world.getWorld(),
++                a_1.a(),
++                a_1.b(),
++                a_1.c(),
++                a_1.d(),
++                a_1.e());
++            if (event.callEvent()) {
++                this.j = a_1;
++                return;
++            }
++        }
++        this.j = a_1;
++        // Paper end
+     }
+ 
+     public WorldBorder.c t() {
+@@ -423,7 +460,6 @@ public class WorldBorder {
+     }
+ 
+     class b implements WorldBorder.a {
+-
+         private final double b;
+         private final double c;
+         private final long d;
