@@ -5,66 +5,55 @@ Subject: [PATCH] Add worldborder events
 
 
 diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
-index f011869880fedae4b69e505491e8bdbc5f51dfba..6a5f11969a0710cb9303e07ad7d14e5974a2b842 100644
+index f011869880fedae4b69e505491e8bdbc5f51dfba..c01b14e579773d6f32f8a00ce55f77c5c1ec5218 100644
 --- a/src/main/java/net/minecraft/server/WorldBorder.java
 +++ b/src/main/java/net/minecraft/server/WorldBorder.java
-@@ -2,6 +2,10 @@ package net.minecraft.server;
+@@ -2,6 +2,14 @@ package net.minecraft.server;
  
  import com.google.common.collect.Lists;
  import com.mojang.serialization.DynamicLike;
-+import io.papermc.paper.event.world.*;
++import io.papermc.paper.event.world.WorldBorderCenterChangeEvent;
++import io.papermc.paper.event.world.WorldBorderStartChangeEvent;
++import io.papermc.paper.event.world.StaticWorldBorderChangeEvent;
++import io.papermc.paper.event.world.WorldBorderFinishChangeEvent;
++import io.papermc.paper.event.world.MovingWorldBorderChangeEvent;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.CraftWorldBorder;
 +
  import java.util.Iterator;
  import java.util.List;
  
-@@ -92,17 +96,23 @@ public class WorldBorder {
+@@ -92,6 +100,10 @@ public class WorldBorder {
      }
  
      public void setCenter(double d0, double d1) {
--        this.g = d0;
--        this.h = d1;
--        this.j.k();
--        Iterator iterator = this.l().iterator();
 +        // Paper start - call change event, check if cancelled
 +        WorldBorderCenterChangeEvent event = new WorldBorderCenterChangeEvent(this.world.getWorld(), new Location(this.world.getWorld(), this.g, 0.0, this.h), new Location(this.world.getWorld(), d0, 0.0, d1));
-+        if (event.callEvent()) {
-+            // Bukkit start
-+            this.g = d0;
-+            this.h = d1;
-+            this.j.k();
-+            Iterator iterator = this.l().iterator();
++        if (!event.callEvent()) return;
++        // Paper end
+         this.g = d0;
+         this.h = d1;
+         this.j.k();
+@@ -102,7 +114,6 @@ public class WorldBorder {
  
--        while (iterator.hasNext()) {
--            IWorldBorderListener iworldborderlistener = (IWorldBorderListener) iterator.next();
-+            while (iterator.hasNext()) {
-+                IWorldBorderListener iworldborderlistener = (IWorldBorderListener) iterator.next();
- 
--            iworldborderlistener.a(this, d0, d1);
-+                iworldborderlistener.a(this, d0, d1);
-+            }
-+            // Bukkit end
+             iworldborderlistener.a(this, d0, d1);
          }
 -
-+        // Paper end
      }
  
      public double getSize() {
-@@ -118,7 +128,11 @@ public class WorldBorder {
+@@ -118,6 +129,10 @@ public class WorldBorder {
      }
  
      public void setSize(double d0) {
--        this.j = new WorldBorder.d(d0);
 +        // Paper start
-+        StaticWorldBorderChangeEvent event = new StaticWorldBorderChangeEvent(this.world.getWorld(), this.j.e(), d0);
-+        this.j = new WorldBorder.d(d0); // bukkit code
-+        event.callEvent();
++        StaticWorldBorderChangeEvent event = new StaticWorldBorderChangeEvent(this.world.getWorld(), this.j.getSize(), d0);
++        if (!event.callEvent()) return;
 +        // Paper end
+         this.j = new WorldBorder.d(d0);
          Iterator iterator = this.l().iterator();
  
-         while (iterator.hasNext()) {
-@@ -130,7 +144,11 @@ public class WorldBorder {
+@@ -130,7 +145,11 @@ public class WorldBorder {
      }
  
      public void transitionSizeBetween(double d0, double d1, long i) {
@@ -77,24 +66,25 @@ index f011869880fedae4b69e505491e8bdbc5f51dfba..6a5f11969a0710cb9303e07ad7d14e59
          Iterator iterator = this.l().iterator();
  
          while (iterator.hasNext()) {
-@@ -224,7 +242,26 @@ public class WorldBorder {
+@@ -224,7 +243,27 @@ public class WorldBorder {
      }
  
      public void s() {
 -        this.j = this.j.l();
 +        // Paper start - check if border is moving, if so call border change event
-+        WorldBorder.a a_1 = this.j.l();
++        WorldBorder.a a_1 = this.j.update();
 +        if (a_1 instanceof WorldBorder.d && this.j instanceof WorldBorder.b) { // if the border is now an instance of d (StaticBorderExtent) and the last state was MovingBorderExtent, call a WorldBorderFinishChangeEvent
 +            WorldBorderFinishChangeEvent event = new WorldBorderFinishChangeEvent(this.world.getWorld(), new CraftWorldBorder(this.world.getWorld()));
 +            event.callEvent();
 +        }
-+        if (!(a_1.g() <= 0.0)) {
-+            WorldBorderChangeEvent event = new WorldBorderChangeEvent(this.world.getWorld(),
-+                a_1.a(),
-+                a_1.b(),
-+                a_1.c(),
-+                a_1.d(),
-+                a_1.e());
++        if (!(a_1.getLerpRemainingTime() <= 0.0)) {
++            MovingWorldBorderChangeEvent event = new MovingWorldBorderChangeEvent(this.world.getWorld(),
++                a_1.getMinX(),
++                a_1.getMaxX(),
++                a_1.getMinZ(),
++                a_1.getMaxZ(),
++                a_1.getSize(),
++                this.j.getSize());
 +            if (event.callEvent()) {
 +                this.j = a_1;
 +                return;
@@ -105,7 +95,81 @@ index f011869880fedae4b69e505491e8bdbc5f51dfba..6a5f11969a0710cb9303e07ad7d14e59
      }
  
      public WorldBorder.c t() {
-@@ -423,7 +460,6 @@ public class WorldBorder {
+@@ -363,31 +402,61 @@ public class WorldBorder {
+             return this.c;
+         }
+ 
++        @Override
++        public double getMinX() { // Paper - OBFHELPER
++            return this.a();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double b() {
+             return this.e;
+         }
+ 
++        @Override
++        public double getMaxX() { // Paper - OBFHELPER
++            return this.b();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double c() {
+             return this.d;
+         }
+ 
++        @Override
++        public double getMinZ() { // Paper - OBFHELPER
++            return this.c();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double d() {
+             return this.f;
+         }
+ 
++        @Override
++        public double getMaxZ() { // Paper - OBFHELPER
++            return this.d();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double e() {
+             return this.b;
+         }
+ 
++        @Override
++        public double getSize() { // Paper - OBFHELPER
++            return this.e();
++        } // Paper - OBFHELPER
++
+         @Override
+         public long g() {
+             return 0L;
+         }
+ 
++        @Override
++        public long getLerpRemainingTime() { // Paper - OBFHELPER
++            return this.g();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double h() {
+             return this.b;
+@@ -416,6 +485,11 @@ public class WorldBorder {
+             return this;
+         }
+ 
++        @Override
++        public WorldBorder.a update() { // Paper - OBFHELPER
++            return this.l();
++        } // Paper - OBFHELPER
++
+         @Override
+         public VoxelShape m() {
+             return this.g;
+@@ -423,7 +497,6 @@ public class WorldBorder {
      }
  
      class b implements WorldBorder.a {
@@ -113,3 +177,117 @@ index f011869880fedae4b69e505491e8bdbc5f51dfba..6a5f11969a0710cb9303e07ad7d14e59
          private final double b;
          private final double c;
          private final long d;
+@@ -443,21 +516,41 @@ public class WorldBorder {
+             return Math.max(WorldBorder.this.getCenterX() - this.e() / 2.0D, (double) (-WorldBorder.this.i));
+         }
+ 
++        @Override
++        public double getMinX() { // Paper - OBFHELPER
++            return this.a();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double c() {
+             return Math.max(WorldBorder.this.getCenterZ() - this.e() / 2.0D, (double) (-WorldBorder.this.i));
+         }
+ 
++        @Override
++        public double getMinZ() { // Paper - OBFHELPER
++            return this.c();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double b() {
+             return Math.min(WorldBorder.this.getCenterX() + this.e() / 2.0D, (double) WorldBorder.this.i);
+         }
+ 
++        @Override
++        public double getMaxX() { // Paper - OBFHELPER
++            return this.b();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double d() {
+             return Math.min(WorldBorder.this.getCenterZ() + this.e() / 2.0D, (double) WorldBorder.this.i);
+         }
+ 
++        @Override
++        public double getMaxZ() { // Paper - OBFHELPER
++            return this.d();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double e() {
+             double d0 = (double) (SystemUtils.getMonotonicMillis() - this.e) / this.f;
+@@ -465,11 +558,21 @@ public class WorldBorder {
+             return d0 < 1.0D ? MathHelper.d(d0, this.b, this.c) : this.c;
+         }
+ 
++        @Override
++        public double getSize() { // Paper - OBFHELPER
++            return this.e();
++        } // Paper - OBFHELPER
++
+         @Override
+         public long g() {
+             return this.d - SystemUtils.getMonotonicMillis();
+         }
+ 
++        @Override
++        public long getLerpRemainingTime() { // Paper - OBFHELPER
++            return this.g();
++        } // Paper - OBFHELPER
++
+         @Override
+         public double h() {
+             return this.c;
+@@ -486,6 +589,11 @@ public class WorldBorder {
+             return (WorldBorder.a) (this.g() <= 0L ? WorldBorder.this.new d(this.c) : this);
+         }
+ 
++        @Override
++        public WorldBorder.a update() { // Paper - OBFHELPER
++            return this.l();
++        } // Paper - OBFHELPER
++
+         @Override
+         public VoxelShape m() {
+             return VoxelShapes.a(VoxelShapes.a, VoxelShapes.create(Math.floor(this.a()), Double.NEGATIVE_INFINITY, Math.floor(this.c()), Math.ceil(this.b()), Double.POSITIVE_INFINITY, Math.ceil(this.d())), OperatorBoolean.ONLY_FIRST);
+@@ -496,16 +604,28 @@ public class WorldBorder {
+ 
+         double a();
+ 
++        double getMinX(); // Paper - OBFHELPER
++
+         double b();
+ 
++        double getMaxX(); // Paper - OBFHELPER
++
+         double c();
+ 
++        double getMinZ(); // Paper - OBFHELPER
++
+         double d();
+ 
++        double getMaxZ(); // Paper - OBFHELPER
++
+         double e();
+ 
++        double getSize(); // Paper - OBFHELPER
++
+         long g();
+ 
++        long getLerpRemainingTime(); // Paper - OBFHELPER
++
+         double h();
+ 
+         void j();
+@@ -514,6 +634,8 @@ public class WorldBorder {
+ 
+         WorldBorder.a l();
+ 
++        WorldBorder.a update(); // Paper - OBFHELPER
++
+         VoxelShape m();
+     }
+ }
