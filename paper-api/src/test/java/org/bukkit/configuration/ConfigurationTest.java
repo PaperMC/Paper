@@ -7,10 +7,16 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.util.Vector;
 import org.junit.Test;
 
 public abstract class ConfigurationTest {
+
+    static {
+        ConfigurationSerialization.registerClass(ConfigurationSectionTest.TestEnum.class);
+    }
+
     public abstract Configuration getConfig();
 
     public Map<String, Object> getTestValues() {
@@ -24,6 +30,7 @@ public abstract class ConfigurationTest {
         result.put("vector", new Vector(12345.67, 64, -12345.6789));
         result.put("list", Arrays.asList(1, 2, 3, 4, 5));
         result.put("42", "The Answer");
+        result.put("enum", ConfigurationSectionTest.TestEnum.BANANAS);
 
         return result;
     }

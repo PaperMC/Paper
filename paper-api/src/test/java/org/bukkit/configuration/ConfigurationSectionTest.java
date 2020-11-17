@@ -2,11 +2,13 @@ package org.bukkit.configuration;
 
 import static org.junit.Assert.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.Material;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.junit.Test;
@@ -592,9 +594,18 @@ public abstract class ConfigurationSectionTest {
         assertFalse(section.isConfigurationSection("doesntExist"));
     }
 
-    public enum TestEnum {
+    public enum TestEnum implements ConfigurationSerializable {
         HELLO,
         WORLD,
-        BANANAS
+        BANANAS;
+
+        @Override
+        public Map<String, Object> serialize() {
+            return Collections.singletonMap("variant", this.name());
+        }
+
+        public static TestEnum deserialize(Map<String, Object> map) {
+            return TestEnum.valueOf((String) map.get("variant"));
+        }
     }
 }

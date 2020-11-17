@@ -38,7 +38,10 @@ public class YamlConfigurationTest extends FileConfigurationTest {
                 + "- 3\n"
                 + "- 4\n"
                 + "- 5\n"
-                + "'42': The Answer\n";
+                + "'42': The Answer\n"
+                + "enum:\n"
+                + "  ==: org.bukkit.configuration.ConfigurationSectionTest$TestEnum\n"
+                + "  variant: BANANAS\n";
     }
 
     @Test
