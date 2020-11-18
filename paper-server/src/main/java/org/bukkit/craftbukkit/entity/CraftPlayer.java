@@ -195,7 +195,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
 
         for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
-            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.CHAT, SystemUtils.b));
+            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component, ChatMessageType.SYSTEM, SystemUtils.b));
         }
     }
 
