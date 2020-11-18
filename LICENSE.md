@@ -44,4 +44,5 @@ Josh Roy <10731363+JRoy@users.noreply.github.com>
 Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.com>
 ysl3000 <yannicklamprecht@live.de>
 Nassim Jahnke <nassim@njahnke.dev>
+Machine_Maker <machine@machinemaker.me>
 ```
