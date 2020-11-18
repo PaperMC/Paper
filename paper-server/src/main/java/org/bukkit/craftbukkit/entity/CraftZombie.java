@@ -122,6 +122,11 @@ public class CraftZombie extends CraftMonster implements Zombie {
     public void setShouldBurnInDay(boolean shouldBurnInDay) {
         getHandle().setShouldBurnInDay(shouldBurnInDay);
     }
+
+    @Override
+    public boolean supportsBreakingDoors() {
+        return true; // All zombies are now capable of breaking doors, see https://bugs.mojang.com/browse/MC-137053
+    }
     // Paper end
 
     @Override
