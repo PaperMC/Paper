@@ -45,4 +45,5 @@ Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.c
 ysl3000 <yannicklamprecht@live.de>
 NeumimTo <NeumimTo@users.noreply.github.com>
 KennyTV <jahnke.nassim@gmail.com>
+Machine_Maker <machine@machinemaker.me>
 ```
