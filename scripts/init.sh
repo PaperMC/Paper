@@ -11,6 +11,18 @@ nms="$spigotdecompiledir/net/minecraft/server"
 cb="src/main/java/net/minecraft/server"
 gitcmd="git -c commit.gpgsign=false"
 
+# https://stackoverflow.com/a/38595160
+# https://stackoverflow.com/a/800644
+if sed --version >/dev/null 2>&1; then
+  strip_cr() {
+    sed -i -- "s/\r//" "$@"
+  }
+else
+  strip_cr () {
+    sed -i "" "s/$(printf '\r')//" "$@"
+  }
+fi
+
 patch=$(which patch 2>/dev/null)
 if [ "x$patch" == "x" ]; then
     patch="$basedir/hctap.exe"
@@ -53,7 +65,7 @@ do
 
     echo "Patching $file < $patchFile"
     set +e
-    sed -i 's/\r//' "$nms/$file" > /dev/null
+    strip_cr "$nms/$file" > /dev/null
     set -e
 
     "$patch" -s -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
