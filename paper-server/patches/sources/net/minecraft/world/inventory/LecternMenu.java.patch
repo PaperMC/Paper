@@ -35,7 +35,7 @@
      private static final int DATA_COUNT = 1;
      private static final int SLOT_COUNT = 1;
      public static final int BUTTON_PREV_PAGE = 1;
-@@ -16,28 +38,31 @@
+@@ -16,29 +38,33 @@
      private final Container lectern;
      private final ContainerData lecternData;
  
@@ -76,9 +76,38 @@
 -    public boolean clickMenuButton(Player player, int id) {
 +    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
          int j;
++        io.papermc.paper.event.player.PlayerLecternPageChangeEvent playerLecternPageChangeEvent; CraftInventoryLectern bukkitView; // Paper - Add PlayerLecternPageChangeEvent
  
          if (id >= 100) {
-@@ -59,6 +84,13 @@
+             j = id - 100;
+@@ -48,17 +74,38 @@
+             switch (id) {
+                 case 1:
+                     j = this.lecternData.get(0);
+-                    this.setData(0, j - 1);
++                    // Paper start - Add PlayerLecternPageChangeEvent
++                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.LEFT, j, j - 1);
++                    if (!playerLecternPageChangeEvent.callEvent()) {
++                        return false;
++                    }
++                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
++                    // Paper end - Add PlayerLecternPageChangeEvent
+                     return true;
+                 case 2:
+                     j = this.lecternData.get(0);
+-                    this.setData(0, j + 1);
++                    // Paper start - Add PlayerLecternPageChangeEvent
++                    bukkitView = (CraftInventoryLectern) getBukkitView().getTopInventory();
++                    playerLecternPageChangeEvent = new io.papermc.paper.event.player.PlayerLecternPageChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), bukkitView.getHolder(), bukkitView.getBook(), io.papermc.paper.event.player.PlayerLecternPageChangeEvent.PageChangeDirection.RIGHT, j, j + 1);
++                    if (!playerLecternPageChangeEvent.callEvent()) {
++                        return false;
++                    }
++                    this.setData(0, playerLecternPageChangeEvent.getNewPage());
++                    // Paper end - Add PlayerLecternPageChangeEvent
+                     return true;
+                 case 3:
+                     if (!player.mayBuild()) {
                          return false;
                      }
  
@@ -92,7 +121,7 @@
                      ItemStack itemstack = this.lectern.removeItemNoUpdate(0);
  
                      this.lectern.setChanged();
-@@ -74,7 +106,7 @@
+@@ -74,7 +121,7 @@
      }
  
      @Override
@@ -101,7 +130,7 @@
          return ItemStack.EMPTY;
      }
  
-@@ -85,7 +117,9 @@
+@@ -85,7 +132,9 @@
      }
  
      @Override
