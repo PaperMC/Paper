@@ -25,7 +25,7 @@ if [ ! -z "$spigot" ]; then
     logsuffix="$logsuffix\n\nSpigot Changes:\n$spigot"
     if [ -z "$updated" ]; then updated="Spigot"; else updated="$updated/Spigot"; fi
 fi
-disclaimer="Upstream has released updates that appears to apply and compile correctly.\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing"
+disclaimer="Upstream has released updates that appear to apply and compile correctly.\nThis update has not been tested by PaperMC and as with ANY update, please do your own testing"
 
 if [ ! -z "$1" ]; then
     disclaimer="$@"
