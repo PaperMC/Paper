@@ -107,7 +107,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.antixray;
 +
 +import java.util.ArrayList;
-+import java.util.HashSet;
++import java.util.LinkedHashSet;
++import java.util.LinkedList;
 +import java.util.List;
 +import java.util.Set;
 +import java.util.concurrent.Executor;
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final int maxChunkSectionIndex;
 +    private final int updateRadius;
 +    private final IBlockData[] predefinedBlockData;
++    private final IBlockData[] predefinedBlockDataFull;
 +    private final IBlockData[] predefinedBlockDataStone;
 +    private final IBlockData[] predefinedBlockDataNetherrack;
 +    private final IBlockData[] predefinedBlockDataEndStone;
@@ -152,6 +154,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (engineMode == EngineMode.HIDE) {
 +            toObfuscate = paperWorldConfig.hiddenBlocks;
 +            predefinedBlockData = null;
++            predefinedBlockDataFull = null;
 +            predefinedBlockDataStone = new IBlockData[] {Blocks.STONE.getBlockData()};
 +            predefinedBlockDataNetherrack = new IBlockData[] {Blocks.NETHERRACK.getBlockData()};
 +            predefinedBlockDataEndStone = new IBlockData[] {Blocks.END_STONE.getBlockData()};
@@ -161,25 +164,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            predefinedBlockDataBitsEndStoneGlobal = new int[] {ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(Blocks.END_STONE.getBlockData())};
 +        } else {
 +            toObfuscate = new ArrayList<>(paperWorldConfig.replacementBlocks);
-+            Set<IBlockData> predefinedBlockDataSet = new HashSet<IBlockData>();
++            List<IBlockData> predefinedBlockDataList = new LinkedList<IBlockData>();
 +
 +            for (String id : paperWorldConfig.hiddenBlocks) {
 +                Block block = IRegistry.BLOCK.getOptional(new MinecraftKey(id)).orElse(null);
 +
 +                if (block != null && !block.isTileEntity()) {
 +                    toObfuscate.add(id);
-+                    predefinedBlockDataSet.add(block.getBlockData());
++                    predefinedBlockDataList.add(block.getBlockData());
 +                }
 +            }
 +
++            // The doc of the LinkedHashSet(Collection<? extends E> c) constructor doesn't specify that the insertion order is the predictable iteration order of the specified Collection, although it is in the implementation
++            Set<IBlockData> predefinedBlockDataSet = new LinkedHashSet<IBlockData>();
++            // Therefore addAll(Collection<? extends E> c) is used, which guarantees this order in the doc
++            predefinedBlockDataSet.addAll(predefinedBlockDataList);
 +            predefinedBlockData = predefinedBlockDataSet.size() == 0 ? new IBlockData[] {Blocks.DIAMOND_ORE.getBlockData()} : predefinedBlockDataSet.toArray(new IBlockData[0]);
++            predefinedBlockDataFull = predefinedBlockDataSet.size() == 0 ? new IBlockData[] {Blocks.DIAMOND_ORE.getBlockData()} : predefinedBlockDataList.toArray(new IBlockData[0]);
 +            predefinedBlockDataStone = null;
 +            predefinedBlockDataNetherrack = null;
 +            predefinedBlockDataEndStone = null;
-+            predefinedBlockDataBitsGlobal = new int[predefinedBlockData.length];
++            predefinedBlockDataBitsGlobal = new int[predefinedBlockDataFull.length];
 +
-+            for (int i = 0; i < predefinedBlockData.length; i++) {
-+                predefinedBlockDataBitsGlobal[i] = ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(predefinedBlockData[i]);
++            for (int i = 0; i < predefinedBlockDataFull.length; i++) {
++                predefinedBlockDataBitsGlobal[i] = ChunkSection.GLOBAL_PALETTE.getOrCreateIdFor(predefinedBlockDataFull[i]);
 +            }
 +
 +            predefinedBlockDataBitsStoneGlobal = null;
@@ -213,8 +221,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.maxBlockYUpdatePosition = (maxChunkSectionIndex + 1) * 16 + updateRadius - 1;
 +    }
 +
-+    private int getPredefinedBlockDataLength() {
-+        return engineMode == EngineMode.HIDE ? 1 : predefinedBlockData.length;
++    private int getPredefinedBlockDataFullLength() {
++        return engineMode == EngineMode.HIDE ? 1 : predefinedBlockDataFull.length;
 +    }
 +
 +    @Override
@@ -272,7 +280,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    // Actually these fields should be variables inside the obfuscate method but in sync mode or with SingleThreadExecutor in async mode it's okay (even without ThreadLocal)
 +    // If an ExecutorService with multiple threads is used, ThreadLocal must be used here
-+    private final ThreadLocal<int[]> predefinedBlockDataBits = ThreadLocal.withInitial(() -> new int[getPredefinedBlockDataLength()]);
++    private final ThreadLocal<int[]> predefinedBlockDataBits = ThreadLocal.withInitial(() -> new int[getPredefinedBlockDataFullLength()]);
 +    private static final ThreadLocal<boolean[]> solid = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
 +    private static final ThreadLocal<boolean[]> obfuscate = ThreadLocal.withInitial(() -> new boolean[Block.REGISTRY_ID.size()]);
 +    // These boolean arrays represent chunk layers, true means don't obfuscate, false means obfuscate
@@ -322,10 +330,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex) == ChunkSection.GLOBAL_PALETTE) {
 +                    predefinedBlockDataBitsTemp = engineMode == EngineMode.HIDE ? chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.NETHER ? predefinedBlockDataBitsNetherrackGlobal : chunkPacketInfoAntiXray.getChunk().world.getWorld().getEnvironment() == Environment.THE_END ? predefinedBlockDataBitsEndStoneGlobal : predefinedBlockDataBitsStoneGlobal : predefinedBlockDataBitsGlobal;
 +                } else {
++                    // If it's this.predefinedBlockData, use this.predefinedBlockDataFull instead
++                    IBlockData[] predefinedBlockDataFull = chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex) == predefinedBlockData ? this.predefinedBlockDataFull : chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex);
 +                    predefinedBlockDataBitsTemp = predefinedBlockDataBits;
 +
 +                    for (int i = 0; i < predefinedBlockDataBitsTemp.length; i++) {
-+                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(chunkPacketInfoAntiXray.getPredefinedObjects(chunkSectionIndex)[i]);
++                        predefinedBlockDataBitsTemp[i] = chunkPacketInfoAntiXray.getDataPalette(chunkSectionIndex).getOrCreateIdFor(predefinedBlockDataFull[i]);
 +                    }
 +                }
 +
