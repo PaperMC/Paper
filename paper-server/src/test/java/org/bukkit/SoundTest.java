@@ -13,7 +13,7 @@ public class SoundTest extends AbstractTestingBase {
     @Test
     public void testGetSound() {
         for (Sound sound : Sound.values()) {
-            assertThat(sound.name(), CraftSound.getSound(sound), is(not(nullValue())));
+            assertThat(sound.name(), CraftSound.getSoundEffect(sound), is(not(nullValue())));
         }
     }
 
