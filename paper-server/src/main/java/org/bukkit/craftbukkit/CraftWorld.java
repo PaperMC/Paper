@@ -1283,6 +1283,7 @@ public class CraftWorld implements World {
     public void setStorm(boolean hasStorm) {
         world.worldData.setStorm(hasStorm);
         setWeatherDuration(0); // Reset weather duration (legacy behaviour)
+        setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
     }
 
     @Override
@@ -1304,6 +1305,7 @@ public class CraftWorld implements World {
     public void setThundering(boolean thundering) {
         world.worldDataServer.setThundering(thundering);
         setThunderDuration(0); // Reset weather duration (legacy behaviour)
+        setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
     }
 
     @Override
@@ -1314,6 +1316,21 @@ public class CraftWorld implements World {
     @Override
     public void setThunderDuration(int duration) {
         world.worldDataServer.setThunderDuration(duration);
+    }
+
+    @Override
+    public boolean isClearWeather() {
+        return !this.hasStorm() && !this.isThundering();
+    }
+
+    @Override
+    public void setClearWeatherDuration(int duration) {
+        world.worldDataServer.a(duration); // PAIL rename setClearWeatherDuration
+    }
+
+    @Override
+    public int getClearWeatherDuration() {
+        return world.worldDataServer.h(); // PAIL rename getClearWeatherDuration
     }
 
     @Override
