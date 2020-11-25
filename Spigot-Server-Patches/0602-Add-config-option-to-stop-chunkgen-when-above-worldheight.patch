@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chimney Swift <28179563+ChimneySwift@users.noreply.github.com>
+Date: Thu, 26 Nov 2020 03:49:58 +1000
+Subject: [PATCH] Add config option to stop chunkgen when above worldheight
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 80b0c08cef9a5326492b1faec020929fca59ff77..459733bd3d07e20b007b945ff1131d74e2ac3d1e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -699,4 +699,12 @@ public class PaperWorldConfig {
+         wanderingTraderSpawnChanceMin = getInt("wandering-trader.spawn-chance-min", wanderingTraderSpawnChanceMin);
+         wanderingTraderSpawnChanceMax = getInt("wandering-trader.spawn-chance-max", wanderingTraderSpawnChanceMax);
+     }
++
++    public boolean dontGenerateWhenAboveChunks = false;
++    private void setDontGenerateWhenAboveChunks() {
++        dontGenerateWhenAboveChunks = getBoolean("dont-generate-when-above-chunks", dontGenerateWhenAboveChunks);
++        if (dontGenerateWhenAboveChunks) {
++            log("Chunks will not be generated if players are flying above them.");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 6c399bcea03e839bf2f21e92b5d76d46b7088667..f7af013d84ee3f92b02900d94b66e35e06199b75 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1799,7 +1799,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+
+     private boolean cannotLoadChunks(EntityPlayer entityplayer) { return this.b(entityplayer); } // Paper - OBFHELPER
+     private boolean b(EntityPlayer entityplayer) {
+-        return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS);
++        return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS)
++            || (entityplayer.world.paperConfig.dontGenerateWhenAboveChunks && entityplayer.getPositionVector().y > entityplayer.world.getHeight()); // Paper - Check for generation when player is above the chunk
+     }
+
+     void a(EntityPlayer entityplayer, boolean flag) {
