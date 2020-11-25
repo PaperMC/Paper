@@ -128,6 +128,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
     /**
+     * Sound keys.
+     *
+     * @see Sound
+     */
+    Registry<Sound> SOUNDS = new SimpleRegistry<>(Sound.class);
+    /**
      * Villager profession.
      *
      * @see Villager.Profession

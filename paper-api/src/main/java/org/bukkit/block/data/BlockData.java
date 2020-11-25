@@ -2,6 +2,7 @@ package org.bukkit.block.data;
 
 import org.bukkit.Material;
 import org.bukkit.Server;
+import org.bukkit.SoundGroup;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -93,4 +94,13 @@ public interface BlockData extends Cloneable {
      */
     @NotNull
     BlockData clone();
+
+    /**
+     * Gets the block's {@link SoundGroup} which can be used to get its step
+     * sound, hit sound, and others.
+     *
+     * @return the sound effect group
+     */
+    @NotNull
+    SoundGroup getSoundGroup();
 }
