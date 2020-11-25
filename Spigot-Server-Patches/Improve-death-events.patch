@@ -324,33 +324,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
      }
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftSound.java b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
-@@ -0,0 +0,0 @@ public enum CraftSound {
-     WEATHER_RAIN_ABOVE("weather.rain.above");
-     private final String minecraftKey;
- 
-+    // Paper start - cancellable death event
-+    public static CraftSound getBySoundEffect(final SoundEffect effect) {
-+        MinecraftKey key = IRegistry.SOUND_EVENT.getKey(effect);
-+        Preconditions.checkArgument(key != null, "Key for sound effect %s not found?", effect.toString());
-+
-+        return valueOf(key.getKey().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH));
-+    }
-+
-+    public static Sound getSoundByEffect(final SoundEffect effect) {
-+        return Sound.valueOf(getBySoundEffect(effect).name());
-+    }
-+
-+    public static SoundEffect getSoundEffect(final Sound sound) {
-+        return getSoundEffect(getSound(sound));
-+    }
-+    // Paper end
-     CraftSound(String minecraftKey) {
-         this.minecraftKey = minecraftKey;
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -419,7 +392,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        event.setReviveHealth(event.getEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
 +        event.setShouldPlayDeathSound(!victim.silentDeath && !victim.isSilent());
 +        net.minecraft.server.SoundEffect soundEffect = victim.getDeathSoundEffect();
-+        event.setDeathSound(soundEffect != null ? org.bukkit.craftbukkit.CraftSound.getSoundByEffect(soundEffect) : null);
++        event.setDeathSound(soundEffect != null ? org.bukkit.craftbukkit.CraftSound.getBukkit(soundEffect) : null);
 +        event.setDeathSoundCategory(org.bukkit.SoundCategory.valueOf(victim.getSoundCategory().name()));
 +        event.setDeathSoundVolume(victim.getDeathSoundVolume());
 +        event.setDeathSoundPitch(victim.getSoundPitch());
