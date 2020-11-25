@@ -1031,7 +1031,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Set the clear weather duration.
      *
      * The clear weather ticks determine whether or not the world will be
-     * allowed to rain or storm. If clear weather ticks are > 0, the world will
+     * allowed to rain or storm. If clear weather ticks are &gt; 0, the world will
      * not naturally do either until the duration has elapsed.
      *
      * This method is equivalent to calling {@code /weather clear} with a set
