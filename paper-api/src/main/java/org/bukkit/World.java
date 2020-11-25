@@ -965,6 +965,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * Set whether there is a storm. A duration will be set for the new
      * current conditions.
      *
+     * This will implicitly call {@link #setClearWeatherDuration(int)} with 0
+     * ticks to reset the world's clear weather.
+     *
      * @param hasStorm Whether there is rain and snow
      */
     public void setStorm(boolean hasStorm);
@@ -993,6 +996,9 @@ public interface World extends PluginMessageRecipient, Metadatable {
     /**
      * Set whether it is thundering.
      *
+     * This will implicitly call {@link #setClearWeatherDuration(int)} with 0
+     * ticks to reset the world's clear weather.
+     *
      * @param thundering Whether it is thundering
      */
     public void setThundering(boolean thundering);
@@ -1010,6 +1016,37 @@ public interface World extends PluginMessageRecipient, Metadatable {
      * @param duration Duration in ticks
      */
     public void setThunderDuration(int duration);
+
+    /**
+     * Returns whether the world has clear weather.
+     *
+     * This will be true such that {@link #isThundering()} and
+     * {@link #hasStorm()} are both false.
+     *
+     * @return true if clear weather
+     */
+    public boolean isClearWeather();
+
+    /**
+     * Set the clear weather duration.
+     *
+     * The clear weather ticks determine whether or not the world will be
+     * allowed to rain or storm. If clear weather ticks are > 0, the world will
+     * not naturally do either until the duration has elapsed.
+     *
+     * This method is equivalent to calling {@code /weather clear} with a set
+     * amount of ticks.
+     *
+     * @param duration duration in ticks
+     */
+    public void setClearWeatherDuration(int duration);
+
+    /**
+     * Get the clear weather duration.
+     *
+     * @return duration in ticks
+     */
+    public int getClearWeatherDuration();
 
     /**
      * Creates explosion at given coordinates with given power
