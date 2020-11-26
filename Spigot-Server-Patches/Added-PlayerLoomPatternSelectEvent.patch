@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 25 Nov 2020 16:33:27 -0800
+Subject: [PATCH] Added PlayerLoomPatternSelectEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ContainerLoom.java b/src/main/java/net/minecraft/server/ContainerLoom.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ContainerLoom.java
++++ b/src/main/java/net/minecraft/server/ContainerLoom.java
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryLoom;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
++import io.papermc.paper.event.player.PlayerLoomPatternSelectEvent; // Paper
+ 
+ public class ContainerLoom extends Container {
+ 
+@@ -0,0 +0,0 @@ public class ContainerLoom extends Container {
+     }
+     // CraftBukkit end
+     private final ContainerAccess containerAccess;
+-    private final ContainerProperty d;
++    private final ContainerProperty d; public final ContainerProperty getSelectedBannerPattern() { return this.d; }; // Paper - OBFHELPER
+     private Runnable e;
+     private final Slot f;
+     private final Slot g;
+@@ -0,0 +0,0 @@ public class ContainerLoom extends Container {
+     @Override
+     public boolean a(EntityHuman entityhuman, int i) {
+         if (i > 0 && i <= EnumBannerPatternType.R) {
+-            this.d.set(i);
++            // Paper start
++            int enumBannerPatternTypeOrdinal = i;
++            PlayerLoomPatternSelectEvent event = new PlayerLoomPatternSelectEvent((Player) entityhuman.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.block.banner.PatternType.getByIdentifier(EnumBannerPatternType.values()[i].getIdentifier()));
++            if (!event.callEvent()) {
++                ((Player) entityhuman.getBukkitEntity()).updateInventory();
++                return false;
++            }
++            for (EnumBannerPatternType nms : EnumBannerPatternType.values()) {
++                if (event.getPatternType().getIdentifier().equals(nms.getIdentifier())) {
++                    enumBannerPatternTypeOrdinal = nms.ordinal();
++                    break;
++                }
++            }
++            ((Player) entityhuman.getBukkitEntity()).updateInventory();
++            this.getSelectedBannerPattern().set(enumBannerPatternTypeOrdinal);
++            // Paper end
+             this.j();
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/server/EnumBannerPatternType.java b/src/main/java/net/minecraft/server/EnumBannerPatternType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EnumBannerPatternType.java
++++ b/src/main/java/net/minecraft/server/EnumBannerPatternType.java
+@@ -0,0 +0,0 @@ public enum EnumBannerPatternType {
+         this.T = flag;
+     }
+ 
++    public String getIdentifier() { return this.b(); } // Paper - OBFHELPER
+     public String b() {
+         return this.V;
+     }
