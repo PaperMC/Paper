@@ -39,7 +39,7 @@
      private static final int PATTERN_NOT_SET = -1;
      private static final int INV_SLOT_START = 4;
      private static final int INV_SLOT_END = 31;
-@@ -60,28 +80,42 @@
+@@ -60,6 +80,13 @@
                  LoomMenu.this.slotsChanged(this);
                  LoomMenu.this.slotUpdateListener.run();
              }
@@ -53,16 +53,16 @@
          };
          this.outputContainer = new SimpleContainer(1) {
              @Override
-             public void setChanged() {
+@@ -67,21 +94,28 @@
                  super.setChanged();
                  LoomMenu.this.slotUpdateListener.run();
-+            }
+             }
 +
 +            // CraftBukkit start
 +            @Override
 +            public Location getLocation() {
 +                return context.getLocation();
-             }
++            }
 +            // CraftBukkit end
          };
          this.access = context;
@@ -103,7 +103,7 @@
                          LoomMenu.this.lastSoundTime = j;
                      }
  
-@@ -116,15 +150,17 @@
+@@ -116,18 +150,44 @@
          this.addStandardInventorySlots(playerInventory, 8, 84);
          this.addDataSlot(this.selectedBannerPatternIndex);
          this.patternGetter = playerInventory.player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
@@ -121,9 +121,38 @@
 -    public boolean clickMenuButton(Player player, int id) {
 +    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
          if (id >= 0 && id < this.selectablePatterns.size()) {
-             this.selectedBannerPatternIndex.set(id);
-             this.setupResultSlot((Holder) this.selectablePatterns.get(id));
-@@ -201,7 +237,8 @@
+-            this.selectedBannerPatternIndex.set(id);
+-            this.setupResultSlot((Holder) this.selectablePatterns.get(id));
++            // Paper start - Add PlayerLoomPatternSelectEvent
++            int selectablePatternIndex = id;
++            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit(this.selectablePatterns.get(selectablePatternIndex)));
++            if (!event.callEvent()) {
++                player.containerMenu.sendAllDataToRemote();
++                return false;
++            }
++            final Holder<BannerPattern> eventPattern = org.bukkit.craftbukkit.block.banner.CraftPatternType.bukkitToMinecraftHolder(event.getPatternType());
++            Holder<BannerPattern> selectedPattern = null;
++            for (int i = 0; i < this.selectablePatterns.size(); i++) {
++                final Holder<BannerPattern> holder = this.selectablePatterns.get(i);
++                if (eventPattern.equals(holder)) {
++                    selectablePatternIndex = i;
++                    selectedPattern = holder;
++                    break;
++                }
++            }
++            if (selectedPattern == null) {
++                selectedPattern = eventPattern;
++                selectablePatternIndex = -1;
++            }
++
++            player.containerMenu.sendAllDataToRemote();
++            this.selectedBannerPatternIndex.set(selectablePatternIndex);
++            this.setupResultSlot(java.util.Objects.requireNonNull(selectedPattern, "selectedPattern was null, this is unexpected"));
++            // Paper end - Add PlayerLoomPatternSelectEvent
+             return true;
+         } else {
+             return false;
+@@ -201,7 +261,8 @@
                  this.resultSlot.set(ItemStack.EMPTY);
              }
  
@@ -133,7 +162,7 @@
          } else {
              this.resultSlot.set(ItemStack.EMPTY);
              this.selectablePatterns = List.of();
-@@ -222,7 +259,7 @@
+@@ -222,7 +283,7 @@
      }
  
      @Override
@@ -142,7 +171,7 @@
          ItemStack itemstack = ItemStack.EMPTY;
          Slot slot1 = (Slot) this.slots.get(slot);
  
-@@ -277,7 +314,7 @@
+@@ -277,7 +338,7 @@
      }
  
      @Override
@@ -151,7 +180,7 @@
          super.removed(player);
          this.access.execute((world, blockposition) -> {
              this.clearContainer(player, this.inputContainer);
-@@ -294,6 +331,11 @@
+@@ -294,6 +355,11 @@
              DyeColor enumcolor = ((DyeItem) itemstack1.getItem()).getDyeColor();
  
              itemstack2.update(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY, (bannerpatternlayers) -> {
