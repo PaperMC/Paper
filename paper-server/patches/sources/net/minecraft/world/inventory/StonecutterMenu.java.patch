@@ -22,7 +22,7 @@
  public class StonecutterMenu extends AbstractContainerMenu {
  
      public static final int INPUT_SLOT = 0;
-@@ -36,7 +42,22 @@
+@@ -36,14 +42,29 @@
      Runnable slotUpdateListener;
      public final Container container;
      final ResultContainer resultContainer;
@@ -45,6 +45,14 @@
      public StonecutterMenu(int syncId, Inventory playerInventory) {
          this(syncId, playerInventory, ContainerLevelAccess.NULL);
      }
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
+         super(MenuType.STONECUTTER, syncId);
+-        this.selectedRecipeIndex = DataSlot.standalone();
++        this.selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+         this.recipesForInput = SelectableRecipe.SingleInputSet.empty();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
 @@ -55,6 +76,13 @@
                  StonecutterMenu.this.slotsChanged(this);
                  StonecutterMenu.this.slotUpdateListener.run();
@@ -85,7 +93,7 @@
      }
  
      public int getSelectedRecipeIndex() {
-@@ -113,12 +142,13 @@
+@@ -113,18 +142,45 @@
      }
  
      @Override
@@ -101,7 +109,41 @@
          if (this.selectedRecipeIndex.get() == id) {
              return false;
          } else {
-@@ -144,6 +174,7 @@
+             if (this.isValidRecipeIndex(id)) {
+-                this.selectedRecipeIndex.set(id);
+-                this.setupResultSlot(id);
++                // Paper start - Add PlayerStonecutterRecipeSelectEvent
++                int recipeIndex = id;
++                this.selectedRecipeIndex.set(recipeIndex);
++                this.selectedRecipeIndex.checkAndClearUpdateFlag(); // mark as changed
++                paperEventBlock: if (this.isValidRecipeIndex(id)) {
++                    final Optional<RecipeHolder<StonecutterRecipe>> recipe = this.recipesForInput.entries().get(id).recipe().recipe();
++                    if (recipe.isEmpty()) break paperEventBlock; // The recipe selected does not have an actual server recipe (presumably its the empty one). Cannot call the event, just break.
++
++                    io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent event = new io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent((Player) player.getBukkitEntity(), getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) recipe.get().toBukkitRecipe());
++                    if (!event.callEvent()) {
++                        player.containerMenu.sendAllDataToRemote();
++                        return false;
++                    }
++
++                    net.minecraft.resources.ResourceLocation key = org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey());
++                    if (!recipe.get().id().location().equals(key)) { // If the recipe did NOT stay the same
++                        for (int newRecipeIndex = 0; newRecipeIndex < this.recipesForInput.entries().size(); newRecipeIndex++) {
++                            if (this.recipesForInput.entries().get(newRecipeIndex).recipe().recipe().filter(r -> r.id().location().equals(key)).isPresent()) {
++                                recipeIndex = newRecipeIndex;
++                                break;
++                            }
++                        }
++                    }
++                }
++                player.containerMenu.sendAllDataToRemote();
++                this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
++                this.setupResultSlot(recipeIndex);
++                // Paper end - Add PlayerStonecutterRecipeSelectEvent
+             }
+ 
+             return true;
+@@ -144,6 +200,7 @@
              this.setupRecipeList(itemstack);
          }
  
@@ -109,7 +151,7 @@
      }
  
      private void setupRecipeList(ItemStack stack) {
-@@ -158,7 +189,7 @@
+@@ -158,7 +215,7 @@
      }
  
      void setupResultSlot(int selectedId) {
@@ -118,7 +160,7 @@
  
          if (!this.recipesForInput.isEmpty() && this.isValidRecipeIndex(selectedId)) {
              SelectableRecipe.SingleInputEntry<StonecutterRecipe> selectablerecipe_a = (SelectableRecipe.SingleInputEntry) this.recipesForInput.entries().get(selectedId);
-@@ -193,7 +224,7 @@
+@@ -193,7 +250,7 @@
      }
  
      @Override
@@ -127,7 +169,7 @@
          ItemStack itemstack = ItemStack.EMPTY;
          Slot slot1 = (Slot) this.slots.get(slot);
  
-@@ -246,7 +277,7 @@
+@@ -246,7 +303,7 @@
      }
  
      @Override
