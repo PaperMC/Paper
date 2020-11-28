@@ -1,7 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Chimney Swift <28179563+ChimneySwift@users.noreply.github.com>
 Date: Thu, 26 Nov 2020 03:49:58 +1000
-Subject: [PATCH] Add config option to stop chunkgen when above worldheight
+Subject: [PATCH] Add config option to stop chunkgen when above worldheight Fix
+ compat for prevent moving into unloaded chunks
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
@@ -26,12 +27,36 @@ index 6c399bcea03e839bf2f21e92b5d76d46b7088667..f7af013d84ee3f92b02900d94b66e35e
 --- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
 @@ -1799,7 +1799,8 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-
+ 
      private boolean cannotLoadChunks(EntityPlayer entityplayer) { return this.b(entityplayer); } // Paper - OBFHELPER
      private boolean b(EntityPlayer entityplayer) {
 -        return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS);
 +        return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS)
 +            || (entityplayer.world.paperConfig.dontGenerateWhenAboveChunks && entityplayer.getPositionVector().y > entityplayer.world.getHeight()); // Paper - Check for generation when player is above the chunk
      }
-
+ 
      void a(EntityPlayer entityplayer, boolean flag) {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index a736d676ef5e3a25c144743af559bfb46e294db7..02115fce1117cc5334c93bd86036c1e7e752ba13 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -416,7 +416,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                 speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
+ 
+                 // Paper start - Prevent moving into unloaded chunks
+-                if (player.world.paperConfig.preventMovingIntoUnloadedChunks && worldserver.getChunkIfLoadedImmediately((int) Math.floor(packetplayinvehiclemove.getX()) >> 4, (int) Math.floor(packetplayinvehiclemove.getZ()) >> 4) == null) {
++                if (player.world.paperConfig.preventMovingIntoUnloadedChunks && worldserver.getChunkIfLoadedImmediately((int) Math.floor(packetplayinvehiclemove.getX()) >> 4, (int) Math.floor(packetplayinvehiclemove.getZ()) >> 4) == null
++                    && !(player.world.paperConfig.dontGenerateWhenAboveChunks && player.getPositionVector().y > player.world.getHeight())) {
+                     this.networkManager.sendPacket(new PacketPlayOutVehicleMove(entity));
+                     return;
+                 }
+@@ -1125,7 +1126,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
+                             // Paper start - Prevent moving into unloaded chunks
+-                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && worldserver.getChunkIfLoadedImmediately((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4) == null) { // Paper - use getIfLoadedImmediately
++                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && worldserver.getChunkIfLoadedImmediately((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4) == null
++                                && !(player.world.paperConfig.dontGenerateWhenAboveChunks && player.getPositionVector().y > player.world.getHeight())) { // Paper - use getIfLoadedImmediately
+                                 this.internalTeleport(this.player.locX(), this.player.locY(), this.player.locZ(), this.player.yaw, this.player.pitch, Collections.emptySet());
+                                 return;
+                             }
