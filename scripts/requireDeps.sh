@@ -4,7 +4,7 @@ set -ue
 # Check if an application is on the PATH.
 # If it is not, return with non-zero.
 _is_dep_available() {
-	command -v "$1" >/dev/null || (echo "$1 ${2:-was not found and is a required dependency}"; return 1)
+	command -v "$1" >/dev/null || (echo "\`$1\` ${2:-command was not found in the path and is a required dependency}"; return 1)
 }
 
 if [ -z "${1:-}" ]; then
