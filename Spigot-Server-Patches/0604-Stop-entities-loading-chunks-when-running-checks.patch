@@ -21,7 +21,7 @@ Main changes in this commit:
 These changes have not been extensively ingame-tested thus I cannot confirm they do not have sideeffects, only that they resolve the issue.
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0c952fea30aa6890809d728420e4710d95e10c19..d3fceda93da592d86a68f5be192f3ced2875f9c0 100644
+index 0c952fea30aa6890809d728420e4710d95e10c19..54999577249ad19c70a6a6b409cc8d4d76c09d35 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -632,9 +632,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -97,42 +97,35 @@ index 0c952fea30aa6890809d728420e4710d95e10c19..d3fceda93da592d86a68f5be192f3ced
  
      protected float getBlockJumpFactor() {
          float f = this.world.getType(this.getChunkCoordinates()).getBlock().getJumpFactor();
-@@ -972,17 +984,24 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -972,11 +984,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
                  for (int j = blockposition.getY(); j <= blockposition1.getY(); ++j) {
                      for (int k = blockposition.getZ(); k <= blockposition1.getZ(); ++k) {
                          blockposition_mutableblockposition.d(i, j, k);
 -                        IBlockData iblockdata = this.world.getType(blockposition_mutableblockposition);
++
++                        // Paper start - Ensure checkBlockCollisions does not load chunks
++                        if (World.isOutsideWorld(blockposition_mutableblockposition) || this.noclip) return; // Note: Don't check collisions outside the world or for noclip entities
++                        IBlockData iblockdata = this.world.getTypeIfLoaded(blockposition_mutableblockposition);
  
--                        try {
+                         try {
 -                            iblockdata.a(this.world, blockposition_mutableblockposition, this);
 -                            this.a(iblockdata);
--                        } catch (Throwable throwable) {
--                            CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
--                            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
--
--                            CrashReportSystemDetails.a(crashreportsystemdetails, blockposition_mutableblockposition, iblockdata);
--                            throw new ReportedException(crashreport);
-+                        if (!(this.world.isOutsideWorld(blockposition_mutableblockposition) || this.noclip)) { // Paper - Don't check collisions outside the world or for noclip entities
-+                            // Paper start - Ensure checkBlockCollisions does not load chunks
-+                            IBlockData iblockdata = this.world.getTypeIfLoaded(blockposition_mutableblockposition);
-+
 +                            if (iblockdata != null) {
-+                                try {
-+                                    iblockdata.a(this.world, blockposition_mutableblockposition, this);
-+                                    this.a(iblockdata);
-+                                } catch (Throwable throwable) {
-+                                    CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
-+                                    CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
-+
-+                                    CrashReportSystemDetails.a(crashreportsystemdetails, blockposition_mutableblockposition, iblockdata);
-+                                    throw new ReportedException(crashreport);
-+                                }
++                                iblockdata.a(this.world, blockposition_mutableblockposition, this);
++                                this.a(iblockdata);
 +                            }
-+                            // Paper end
+                         } catch (Throwable throwable) {
+                             CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
+                             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
+@@ -984,6 +1001,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                             CrashReportSystemDetails.a(crashreportsystemdetails, blockposition_mutableblockposition, iblockdata);
+                             throw new ReportedException(crashreport);
                          }
++                        // Paper end
                      }
                  }
-@@ -1084,7 +1103,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             }
+@@ -1084,7 +1102,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
  
      public final boolean isInBubbleColumn() { return k(); } // Paper - OBFHELPER
      private boolean k() {
@@ -144,7 +137,7 @@ index 0c952fea30aa6890809d728420e4710d95e10c19..d3fceda93da592d86a68f5be192f3ced
      }
  
      public boolean isInWaterOrRain() {
-@@ -1155,7 +1177,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1155,7 +1176,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          }
  
          BlockPosition blockposition = new BlockPosition(this.locX(), d0, this.locZ());
@@ -154,7 +147,7 @@ index 0c952fea30aa6890809d728420e4710d95e10c19..d3fceda93da592d86a68f5be192f3ced
          Iterator iterator = TagsFluid.b().iterator();
  
          Tag tag;
-@@ -1302,7 +1325,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1302,7 +1324,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
          this.lastY = d1;
          this.lastZ = d4;
          this.setPosition(d3, d1, d4);
