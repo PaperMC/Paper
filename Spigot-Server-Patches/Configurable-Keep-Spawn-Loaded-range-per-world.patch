@@ -25,21 +25,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+ 
+     // CraftBukkit start
+     public void loadSpawn(WorldLoadListener worldloadlistener, WorldServer worldserver) {
+-        if (!worldserver.getWorld().getKeepSpawnInMemory()) {
+-            return;
+-        }
++        ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider(); // Paper
+ 
+         // WorldServer worldserver = this.E();
          this.forceTicks = true;
          // CraftBukkit end
++        if (worldserver.getWorld().getKeepSpawnInMemory()) { // Paper
  
-+        // Paper start - configurable spawn reason
-+        int radiusBlocks = worldserver.paperConfig.keepLoadedRange;
-+        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
-+        int totalChunks = ((radiusChunks) * 2 + 1);
-+        totalChunks *= totalChunks;
-+        worldloadlistener.setChunkRadius(radiusBlocks / 16);
-+        // Paper end
-+
          MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.getDimensionKey().a());
          BlockPosition blockposition = worldserver.getSpawn();
  
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         worldloadlistener.a(new ChunkCoordIntPair(blockposition));
+-        ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider();
++        //ChunkProviderServer chunkproviderserver = worldserver.getChunkProvider(); // Paper - move up
  
          chunkproviderserver.getLightEngine().a(500);
          this.nextTick = SystemUtils.getMonotonicMillis();
@@ -50,15 +54,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;
 -            this.executeModerately();
 -            // CraftBukkit end
-+        // Paper start - Configurable spawn radius
-+        if (worldserver.keepSpawnInMemory) {
-+            worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
-         }
-+        // Paper end
+-        }
+-
++        // Paper start - configurable spawn reason
++        int radiusBlocks = worldserver.paperConfig.keepLoadedRange;
++        int radiusChunks = radiusBlocks / 16 + ((radiusBlocks & 15) != 0 ? 1 : 0);
++        int totalChunks = ((radiusChunks) * 2 + 1);
++        totalChunks *= totalChunks;
++        worldloadlistener.setChunkRadius(radiusBlocks / 16);
++
++        worldserver.addTicketsForSpawn(radiusBlocks, blockposition);
 +        LOGGER.info("Loaded " + chunkproviderserver.b() + " spawn chunks for world " + worldserver.getWorld().getName()); // Paper
- 
++        // Paper end
          // CraftBukkit start
          // this.nextTick = SystemUtils.getMonotonicMillis() + 10L;
+         this.executeModerately();
+         // Iterator iterator = this.worldServer.values().iterator();
++        }
+ 
+         if (true) {
+             WorldServer worldserver1 = worldserver;
 diff --git a/src/main/java/net/minecraft/server/WorldLoadListener.java b/src/main/java/net/minecraft/server/WorldLoadListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldLoadListener.java
