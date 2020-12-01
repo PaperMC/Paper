@@ -1,0 +1,299 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chimney Swift <28179563+ChimneySwift@users.noreply.github.com>
+Date: Mon, 30 Nov 2020 22:22:11 +1000
+Subject: [PATCH] Stop entities loading chunks when running checks
+
+This patch resolves #4805 and should result in performance improvements when players move into unloaded chunks.
+
+Main changes in this commit:
+- Ensure EntityLiving.g (travel) doesn't load chunks
+- Ensure EntityLiving.isClimbing doesn't load chunks
+- Ensure Entity.isInBubbleColumn only checks loaded chunks
+- Don't attempt to spawn sprint particles if flying
+- Avoid loading chunks when performing movement checks
+- Avoid Entity.checkBlockCollisions loading chunks
+- Only update fluid in loaded chunks
+- Ensure chunkCheck doesn't load chunks for players that shouldn't
+- Don't perform collision check when player is spectator or outside world
+- Fix movement check causing chunk load for players who can't load chunks
+- Don't check fall damage in unloaded chunks
+
+These changes have not been extensively ingame-tested thus I cannot confirm they do not have sideeffects, only that they resolve the issue.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 0c952fea30aa6890809d728420e4710d95e10c19..d3fceda93da592d86a68f5be192f3ced2875f9c0 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -632,9 +632,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             this.v = vec3d.y != vec3d1.y;
+             this.onGround = this.v && vec3d.y < 0.0D;
+             BlockPosition blockposition = this.ap();
+-            IBlockData iblockdata = this.world.getType(blockposition);
+ 
+-            this.a(vec3d1.y, this.onGround, iblockdata, blockposition);
++            // Paper start - Avoid loading chunks when performing movement checks
++            IBlockData iblockdata = this.world.getTypeIfLoaded(blockposition);
++
++            if (iblockdata != null) this.a(vec3d1.y, this.onGround, iblockdata, blockposition);
+             Vec3D vec3d2 = this.getMot();
+ 
+             if (vec3d.x != vec3d1.x) {
+@@ -645,11 +647,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 this.setMot(vec3d2.x, vec3d2.y, 0.0D);
+             }
+ 
+-            Block block = iblockdata.getBlock();
++            Block block = null;
++            if (iblockdata != null) block = iblockdata.getBlock();
+ 
+-            if (vec3d.y != vec3d1.y) {
++            if (block != null && vec3d.y != vec3d1.y) {
+                 block.a((IBlockAccess) this.world, this);
+             }
++            // Paper end
+ 
+             // CraftBukkit start
+             if (positionChanged && getBukkitEntity() instanceof Vehicle) {
+@@ -673,11 +677,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             }
+             // CraftBukkit end
+ 
+-            if (this.onGround && !this.bv()) {
++            if (block != null && this.onGround && !this.bv()) { // Paper - Avoid loading chunks when performing movement checks
+                 block.stepOn(this.world, blockposition, this);
+             }
+ 
+-            if (this.playStepSound() && !this.isPassenger()) {
++            if (block != null && this.playStepSound() && !this.isPassenger()) { // Paper - Avoid loading chunks when performing movement checks
+                 double d0 = vec3d1.x;
+                 double d1 = vec3d1.y;
+                 double d2 = vec3d1.z;
+@@ -737,12 +741,19 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         }
+     }
+ 
+-    protected BlockPosition ap() {
++    // Paper start - Don't attempt to spawn sprint particles if flying
++    protected BlockPosition getBlockPositionUnder() {
+         int i = MathHelper.floor(this.loc.x);
+         int j = MathHelper.floor(this.loc.y - 0.20000000298023224D);
+         int k = MathHelper.floor(this.loc.z);
+         BlockPosition blockposition = new BlockPosition(i, j, k);
+ 
++        return blockposition;
++    }
++
++    protected BlockPosition ap() {
++        BlockPosition blockposition = this.getBlockPositionUnder();
++
+         if (this.world.getType(blockposition).isAir()) {
+             BlockPosition blockposition1 = blockposition.down();
+             IBlockData iblockdata = this.world.getType(blockposition1);
+@@ -755,6 +766,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+ 
+         return blockposition;
+     }
++    // Paper end
+ 
+     protected float getBlockJumpFactor() {
+         float f = this.world.getType(this.getChunkCoordinates()).getBlock().getJumpFactor();
+@@ -972,17 +984,24 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+                 for (int j = blockposition.getY(); j <= blockposition1.getY(); ++j) {
+                     for (int k = blockposition.getZ(); k <= blockposition1.getZ(); ++k) {
+                         blockposition_mutableblockposition.d(i, j, k);
+-                        IBlockData iblockdata = this.world.getType(blockposition_mutableblockposition);
+ 
+-                        try {
+-                            iblockdata.a(this.world, blockposition_mutableblockposition, this);
+-                            this.a(iblockdata);
+-                        } catch (Throwable throwable) {
+-                            CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
+-                            CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
+-
+-                            CrashReportSystemDetails.a(crashreportsystemdetails, blockposition_mutableblockposition, iblockdata);
+-                            throw new ReportedException(crashreport);
++                        if (!(this.world.isOutsideWorld(blockposition_mutableblockposition) || this.noclip)) { // Paper - Don't check collisions outside the world or for noclip entities
++                            // Paper start - Ensure checkBlockCollisions does not load chunks
++                            IBlockData iblockdata = this.world.getTypeIfLoaded(blockposition_mutableblockposition);
++
++                            if (iblockdata != null) {
++                                try {
++                                    iblockdata.a(this.world, blockposition_mutableblockposition, this);
++                                    this.a(iblockdata);
++                                } catch (Throwable throwable) {
++                                    CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
++                                    CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
++
++                                    CrashReportSystemDetails.a(crashreportsystemdetails, blockposition_mutableblockposition, iblockdata);
++                                    throw new ReportedException(crashreport);
++                                }
++                            }
++                            // Paper end
+                         }
+                     }
+                 }
+@@ -1084,7 +1103,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+ 
+     public final boolean isInBubbleColumn() { return k(); } // Paper - OBFHELPER
+     private boolean k() {
+-        return this.world.getType(this.getChunkCoordinates()).a(Blocks.BUBBLE_COLUMN);
++        // Paper start - Don't check if in bubble column in unloaded chunks
++        IBlockData block = this.world.getTypeIfLoaded(this.getChunkCoordinates());
++        return block == null ? null : block.a(Blocks.BUBBLE_COLUMN);
++        // Paper end
+     }
+ 
+     public boolean isInWaterOrRain() {
+@@ -1155,7 +1177,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         }
+ 
+         BlockPosition blockposition = new BlockPosition(this.locX(), d0, this.locZ());
+-        Fluid fluid = this.world.getFluid(blockposition);
++        Fluid fluid = this.world.getFluidIfLoaded(blockposition);
++        if (fluid == null) return; // Paper - Only update fluid in loaded chunks
+         Iterator iterator = TagsFluid.b().iterator();
+ 
+         Tag tag;
+@@ -1302,7 +1325,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.lastY = d1;
+         this.lastZ = d4;
+         this.setPosition(d3, d1, d4);
+-        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
++        if (valid && !(this instanceof EntityPlayer && ((WorldServer)world).getChunkProvider().playerChunkMap.cannotLoadChunks((EntityPlayer)this))) { // Paper - ensure this doesn't cause a chunk load for players which cannot load chunks
++            world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
++        }
+     }
+ 
+     public void d(Vec3D vec3d) {
+diff --git a/src/main/java/net/minecraft/server/EntityHuman.java b/src/main/java/net/minecraft/server/EntityHuman.java
+index caaa01b20e5b7430b809477022f8ab35f3c5bf20..cb50f073ffccb0d97350aa01536badfc39cbe01a 100644
+--- a/src/main/java/net/minecraft/server/EntityHuman.java
++++ b/src/main/java/net/minecraft/server/EntityHuman.java
+@@ -275,7 +275,7 @@ public abstract class EntityHuman extends EntityLiving {
+     }
+ 
+     protected void eu() {
+-        if (this.c(EntityPose.SWIMMING)) {
++        if (this.isSpectator() || World.isOutsideWorld(this.getBlockPositionUnder()) || this.c(EntityPose.SWIMMING)) { // Paper - Don't perform collision check when player is spectator or outside world
+             EntityPose entitypose;
+ 
+             if (this.isGliding()) {
+@@ -294,7 +294,7 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+             EntityPose entitypose1;
+ 
+-            if (!this.isSpectator() && !this.isPassenger() && !this.c(entitypose)) {
++            if (!this.isSpectator() && !World.isOutsideWorld(this.getBlockPositionUnder()) && !this.isPassenger() && !this.c(entitypose)) { // Paper - Don't perform collision check when player outside world
+                 if (this.c(EntityPose.CROUCHING)) {
+                     entitypose1 = EntityPose.CROUCHING;
+                 } else {
+@@ -2024,6 +2024,17 @@ public abstract class EntityHuman extends EntityLiving {
+         return this.bM;
+     }
+ 
++    // Paper start - Don't attempt to spawn sprint particles if flying
++    @Override
++    protected BlockPosition ap() {
++        if (!(this.abilities.isFlying || this.isGliding())) {
++            return super.ap();
++        }
++
++        return this.getBlockPositionUnder();
++    }
++    // Paper end
++
+     @Override
+     protected float getBlockSpeedFactor() {
+         return !this.abilities.isFlying && !this.isGliding() ? super.getBlockSpeedFactor() : 1.0F;
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index fe0334b505de64ae1d96c4f0b6e66313d2b40010..5be97751aa87c5c7fba41b16fd893d73c3a04715 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1616,7 +1616,7 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     public boolean isClimbing() {
+-        if (this.isSpectator()) {
++        if (this.isSpectator() || !this.world.isLoaded(this.getChunkCoordinates())) { // Paper - Skip climbing check in unloaded chunks
+             return false;
+         } else {
+             BlockPosition blockposition = this.getChunkCoordinates();
+@@ -2204,11 +2204,11 @@ public abstract class EntityLiving extends Entity {
+                 this.fallDistance = 0.0F;
+             }
+ 
+-            Fluid fluid = this.world.getFluid(this.getChunkCoordinates());
++            Fluid fluid = this.world.getFluidIfLoaded(this.getChunkCoordinates()); // Paper - Only get fluid if loaded. If it isn't loaded, isInWater() and aQ() (isInLava()) return false anyway.
+             double d1;
+             float f;
+ 
+-            if (this.isInWater() && this.cT() && !this.a(fluid.getType())) {
++            if (fluid != null && this.isInWater() && this.cT() && !this.a(fluid.getType())) { // Paper
+                 d1 = this.locY();
+                 f = this.isSprinting() ? 0.9F : this.dM();
+                 float f1 = 0.02F;
+@@ -2246,7 +2246,7 @@ public abstract class EntityLiving extends Entity {
+                 if (this.positionChanged && this.e(vec3d2.x, vec3d2.y + 0.6000000238418579D - this.locY() + d1, vec3d2.z)) {
+                     this.setMot(vec3d2.x, 0.30000001192092896D, vec3d2.z);
+                 }
+-            } else if (this.aQ() && this.cT() && !this.a(fluid.getType())) {
++            } else if (fluid != null && this.aQ() && this.cT() && !this.a(fluid.getType())) { // Paper
+                 d1 = this.locY();
+                 this.a(0.02F, vec3d);
+                 this.move(EnumMoveType.SELF, this.getMot());
+@@ -2320,7 +2320,12 @@ public abstract class EntityLiving extends Entity {
+                 }
+             } else {
+                 BlockPosition blockposition = this.as();
+-                float f5 = this.world.getType(blockposition).getBlock().getFrictionFactor();
++
++                // Paper start - Use air friction factor if current chunk is unloaded
++                IBlockData block = this.world.getTypeIfLoaded(blockposition);
++                if (block == null) block = Blocks.VOID_AIR.getBlockData();
++                float f5 = block.getBlock().getFrictionFactor();
++                // Paper end
+ 
+                 f = this.onGround ? f5 * 0.91F : 0.91F;
+                 Vec3D vec3d6 = this.a(vec3d, f5);
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 976c44c8eeecc513fa11de55b80317550f621407..55c6de86f55e26e31286897ea68cd439e8724d16 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -1232,7 +1232,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public void a(double d0, boolean flag) {
+         BlockPosition blockposition = this.ap();
+ 
+-        if (this.world.isLoaded(blockposition)) {
++        if (this.world.isLoaded(blockposition) && !this.isSpectator()) { // Paper - Don't check fall damage in unloaded chunks
+             super.a(d0, flag, this.world.getType(blockposition), blockposition);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index f7af013d84ee3f92b02900d94b66e35e06199b75..385afc41f68efc86ecfc73dc702a531119ee5a0e 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -1797,8 +1797,9 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     }
+     // Paper end - optimise isOutsideOfRange
+ 
+-    private boolean cannotLoadChunks(EntityPlayer entityplayer) { return this.b(entityplayer); } // Paper - OBFHELPER
+-    private boolean b(EntityPlayer entityplayer) {
++    // Paper - Expose cannotLoadChunks
++    public boolean cannotLoadChunks(EntityPlayer entityplayer) { return this.b(entityplayer); } // Paper - OBFHELPER
++    public boolean b(EntityPlayer entityplayer) {
+         return entityplayer.isSpectator() && !this.world.getGameRules().getBoolean(GameRules.SPECTATORS_GENERATE_CHUNKS)
+             || (entityplayer.world.paperConfig.dontGenerateWhenAboveChunks && entityplayer.getPositionVector().y > entityplayer.world.getHeight()); // Paper - Check for generation when player is above the chunk
+     }
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5b0b6edfa790918e56399ff6c83f3feb6e5aca49..820f60bf01162eba9efc2cdc1130a71e1559101f 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -939,7 +939,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                     }
+ 
+                     entity.inChunk = false;
+-                } else {
++                } else if (!(entity instanceof EntityPlayer && this.chunkProvider.playerChunkMap.cannotLoadChunks((EntityPlayer)entity))) { // Paper - Don't load chunks when player shouldn't
+                     this.getChunkAt(i, k).a(entity);
+                 }
+             }
