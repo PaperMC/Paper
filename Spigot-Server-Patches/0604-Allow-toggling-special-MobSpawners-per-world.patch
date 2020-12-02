@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jmp <jasonpenilla2@me.com>
+Date: Wed, 26 Aug 2020 11:00:52 -0700
+Subject: [PATCH] Allow toggling special MobSpawners per world
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index f8dd92a28cd18f14649adf2568e6bc77fb3c2fc2..e3d308820b397446a94ce44656094d955ef9411a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -196,6 +196,21 @@ public class PaperWorldConfig {
+         mobSpawnerTickRate = getInt("mob-spawner-tick-rate", 1);
+     }
+ 
++    public boolean catSpawning;
++    public boolean patrolSpawning;
++    public boolean phantomSpawning;
++    public boolean villagerTraderSpawning;
++    public boolean villageSiegeSpawning;
++    private void mobSpawnerSettings() {
++        // values of "default" or null will default to true only if the world environment is normal (aka overworld)
++        Predicate<Boolean> predicate = (bool) -> (bool != null && bool) || (bool == null && environment == Environment.NORMAL);
++        catSpawning = getBoolean("mob-spawning.village-cats", predicate);
++        patrolSpawning = getBoolean("mob-spawning.raid-patrols", predicate);
++        phantomSpawning = getBoolean("mob-spawning.phantoms", predicate);
++        villagerTraderSpawning = getBoolean("mob-spawning.wandering-traders", predicate);
++        villageSiegeSpawning = getBoolean("mob-spawning.village-sieges", predicate);
++    }
++
+     public int containerUpdateTickRate;
+     private void containerUpdateTickRate() {
+         containerUpdateTickRate = getInt("container-update-tick-rate", 1);
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0108a1a68572df562349688e93f8134cb14d6116..8214163c0de0cf1b5212dc6d4288b0fb2a05dcb4 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -402,7 +402,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             boolean flag = generatorsettings.isDebugWorld();
+             long i = generatorsettings.getSeed();
+             long j = BiomeManager.a(i);
+-            List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(iworlddataserver));
++            List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(iworlddataserver)); // Paper - This list is unused as we make these configurable in `Allow toggling special MobSpawners per world`. If this list changes, that patch likely needs updating.
+             RegistryMaterials<WorldDimension> registrymaterials = generatorsettings.d();
+             WorldDimension worlddimension = (WorldDimension) registrymaterials.a(dimensionKey);
+             DimensionManager dimensionmanager;
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5b0b6edfa790918e56399ff6c83f3feb6e5aca49..d173d378fb9701d1a8ad6dd4545a904677012309 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -231,7 +231,25 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         this.L = new ObjectLinkedOpenHashSet();
+         this.Q = flag1;
+         this.server = minecraftserver;
+-        this.mobSpawners = list;
++        // Paper start - enable/disable MobSpawners per world
++        final com.google.common.collect.ImmutableList.Builder<MobSpawner> mobSpawnersBuilder = com.google.common.collect.ImmutableList.builder();
++        if (this.paperConfig.phantomSpawning) {
++            mobSpawnersBuilder.add(new MobSpawnerPhantom());
++        }
++        if (this.paperConfig.patrolSpawning) {
++            mobSpawnersBuilder.add(new MobSpawnerPatrol());
++        }
++        if (this.paperConfig.catSpawning) {
++            mobSpawnersBuilder.add(new MobSpawnerCat());
++        }
++        if (this.paperConfig.villageSiegeSpawning) {
++            mobSpawnersBuilder.add(new VillageSiege());
++        }
++        if (this.paperConfig.villagerTraderSpawning) {
++            mobSpawnersBuilder.add(new MobSpawnerTrader(iworlddataserver));
++        }
++        this.mobSpawners = mobSpawnersBuilder.build();
++        // Paper end
+         // CraftBukkit start
+         this.worldDataServer = (WorldDataServer) iworlddataserver;
+         worldDataServer.world = this;
