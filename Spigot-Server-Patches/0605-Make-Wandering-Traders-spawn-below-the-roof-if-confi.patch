@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jmp <jasonpenilla2@me.com>
+Date: Wed, 26 Aug 2020 11:10:18 -0700
+Subject: [PATCH] Make Wandering Traders spawn below the roof if configured to
+ spawn in a dimension with a roof
+
+
+diff --git a/src/main/java/net/minecraft/server/MobSpawnerTrader.java b/src/main/java/net/minecraft/server/MobSpawnerTrader.java
+index 8d89f51182444852062d549d23c00a93e601eb38..f4e24e4685dd327902c3aaf360806043ed4e0e96 100644
+--- a/src/main/java/net/minecraft/server/MobSpawnerTrader.java
++++ b/src/main/java/net/minecraft/server/MobSpawnerTrader.java
+@@ -132,7 +132,17 @@ public class MobSpawnerTrader implements MobSpawner {
+             int k = blockposition.getX() + this.a.nextInt(i * 2) - i;
+             int l = blockposition.getZ() + this.a.nextInt(i * 2) - i;
+             int i1 = iworldreader.a(HeightMap.Type.WORLD_SURFACE, k, l);
+-            BlockPosition blockposition2 = new BlockPosition(k, i1, l);
++            // Paper start
++            BlockPosition.MutableBlockPosition blockposition2 = new BlockPosition.MutableBlockPosition(k, i1, l);
++            if (iworldreader.getDimensionManager().hasCeiling()) {
++                do {
++                    blockposition2.c(EnumDirection.DOWN);
++                } while (!iworldreader.getType(blockposition2).isAir());
++                do {
++                    blockposition2.c(EnumDirection.DOWN);
++                } while (iworldreader.getType(blockposition2).isAir() && blockposition2.getY() > 0);
++            }
++            // Paper end
+ 
+             if (SpawnerCreature.a(EntityPositionTypes.Surface.ON_GROUND, iworldreader, blockposition2, EntityTypes.WANDERING_TRADER)) {
+                 blockposition1 = blockposition2;
