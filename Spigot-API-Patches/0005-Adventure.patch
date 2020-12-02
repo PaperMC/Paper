@@ -1,0 +1,871 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <riley.park@meino.net>
+Date: Tue, 1 Dec 2020 18:37:09 -0800
+Subject: [PATCH] Adventure
+
+
+diff --git a/pom.xml b/pom.xml
+index 30253c7c0da5c5940fab16df0f118e1b167712e8..1a201db4a668f221270e2854a2cf95631f540fb6 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -49,6 +49,28 @@
+     </pluginRepositories>
+ 
+     <dependencies>
++        <!-- Paper start -->
++        <dependency>
++            <groupId>net.kyori</groupId>
++            <artifactId>adventure-api</artifactId>
++            <version>4.3.0</version>
++        </dependency>
++        <dependency>
++            <groupId>net.kyori</groupId>
++            <artifactId>adventure-text-serializer-gson</artifactId>
++            <version>4.3.0</version>
++        </dependency>
++        <dependency>
++            <groupId>net.kyori</groupId>
++            <artifactId>adventure-text-serializer-legacy</artifactId>
++            <version>4.3.0</version>
++        </dependency>
++        <dependency>
++            <groupId>net.kyori</groupId>
++            <artifactId>adventure-text-serializer-plain</artifactId>
++            <version>4.3.0</version>
++        </dependency>
++        <!-- Paper end -->
+         <dependency>
+             <groupId>it.unimi.dsi</groupId>
+             <artifactId>fastutil</artifactId>
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+index ef58a6c00f444bd498a2d8fc4e457236f393954f..ecd149157d4fb80444f34bf5633d74bcdb63dec5 100644
+--- a/src/main/java/co/aikar/timings/TimingsReportListener.java
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ @SuppressWarnings("WeakerAccess")
+-public class TimingsReportListener implements MessageCommandSender {
++public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender { // Paper
+     private final List<CommandSender> senders;
+     private final Runnable onDone;
+     private String timingsURL;
+@@ -74,4 +74,17 @@ public class TimingsReportListener implements MessageCommandSender {
+             this.senders.add(Bukkit.getConsoleSender());
+         }
+     }
++
++    // Paper start
++    @Override
++    public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.senders;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index f1585968b13007b0f9b8c69ac3c2eff28a0fc89e..7e73bd1726a1b52b0612b36b9de1b13440f8cc9b 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1035,6 +1035,7 @@ public final class Bukkit {
+         return server.createInventory(owner, type);
+     }
+ 
++    // Paper start
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -1060,6 +1061,38 @@ public final class Bukkit {
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title) {
++        return server.createInventory(owner, type, title);
++    }
++    // Paper end
++
++    /**
++     * Creates an empty inventory with the specified type and title. If the type
++     * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
++     * otherwise the new inventory has the normal size for its type.<br>
++     * It should be noted that some inventory types do not support titles and
++     * may not render with said titles on the Minecraft client.
++     * <br>
++     * {@link InventoryType#WORKBENCH} will not process crafting recipes if
++     * created with this method. Use
++     * {@link Player#openWorkbench(Location, boolean)} instead.
++     * <br>
++     * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
++     * for possible enchanting results. Use
++     * {@link Player#openEnchanting(Location, boolean)} instead.
++     *
++     * @param owner The holder of the inventory; can be null if there's no holder.
++     * @param type The type of inventory to create.
++     * @param title The title of the inventory, to be displayed when it is viewed.
++     * @return The new inventory.
++     * @throws IllegalArgumentException if the {@link InventoryType} cannot be
++     * viewed.
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
++     *
++     * @see InventoryType#isCreatable()
++     */
++    @Deprecated // Paper
++    @NotNull
+     public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
+         return server.createInventory(owner, type, title);
+     }
+@@ -1078,6 +1111,24 @@ public final class Bukkit {
+         return server.createInventory(owner, size);
+     }
+ 
++    // Paper start
++    /**
++     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
++     * specified size and title.
++     *
++     * @param owner the holder of the inventory, or null to indicate no holder
++     * @param size a multiple of 9 as the size of inventory to create
++     * @param title the title of the inventory, displayed when inventory is
++     *     viewed
++     * @return a new inventory
++     * @throws IllegalArgumentException if the size is not a multiple of 9
++     */
++    @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException {
++        return server.createInventory(owner, size, title);
++    }
++    // Paper end
++
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+@@ -1088,7 +1139,9 @@ public final class Bukkit {
+      *     viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     @NotNull
+     public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException {
+         return server.createInventory(owner, size, title);
+diff --git a/src/main/java/org/bukkit/Nameable.java b/src/main/java/org/bukkit/Nameable.java
+index fee814e01a653d2b53c56e8b566383ca44aa5346..2acdf2a6d3955923c721222b9da784f3278f6418 100644
+--- a/src/main/java/org/bukkit/Nameable.java
++++ b/src/main/java/org/bukkit/Nameable.java
+@@ -4,6 +4,30 @@ import org.jetbrains.annotations.Nullable;
+ 
+ public interface Nameable {
+ 
++    // Paper start
++    /**
++     * Gets the custom name.
++     *
++     * <p>This value has no effect on players, they will always use their real name.</p>
++     *
++     * @return the custom name
++     */
++    @Nullable net.kyori.adventure.text.Component customName();
++
++    /**
++     * Sets the custom name.
++     *
++     * <p>This name will be used in death messages and can be sent to the client as a nameplate over the mob.</p>
++     *
++     * <p>Setting the name to {@code null} will clear it.</p>
++     *
++     * <p>This value has no effect on players, they will always use their real name.</p>
++     *
++     * @param customName the custom name to set
++     */
++    void customName(final @Nullable net.kyori.adventure.text.Component customName);
++    // Paper end
++
+     /**
+      * Gets the custom name on a mob or block. If there is no name this method
+      * will return null.
+diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
+index 22eca2a180618ed43a4ef103bebd134897d6c71a..abb7448ee8fe1152623794d3b806eef9a9e17abc 100644
+--- a/src/main/java/org/bukkit/NamespacedKey.java
++++ b/src/main/java/org/bukkit/NamespacedKey.java
+@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
+  * underscores, hyphens, and forward slashes.
+  *
+  */
+-public final class NamespacedKey {
++public final class NamespacedKey implements net.kyori.adventure.key.Key { // Paper - implement Key
+ 
+     /**
+      * The namespace representing all inbuilt keys.
+@@ -139,4 +139,24 @@ public final class NamespacedKey {
+     public static NamespacedKey minecraft(@NotNull String key) {
+         return new NamespacedKey(MINECRAFT, key);
+     }
++
++    // Paper start
++    @NotNull
++    @Override
++    public String namespace() {
++        return this.getNamespace();
++    }
++
++    @NotNull
++    @Override
++    public String value() {
++        return this.getKey();
++    }
++
++    @NotNull
++    @Override
++    public String asString() {
++        return this.namespace + ':' + this.key;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..0325e1ea20d346f9e6d1f128dbbe0150486fbe49 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -55,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a server implementation.
+  */
+-public interface Server extends PluginMessageRecipient {
++public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
+ 
+     /**
+      * Used for all administrative messages, such as an operator using a
+@@ -862,6 +862,7 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
+ 
++    // Paper start
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -887,6 +888,36 @@ public interface Server extends PluginMessageRecipient {
+      * @see InventoryType#isCreatable()
+      */
+     @NotNull
++    Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title);
++    // Paper end
++
++    /**
++     * Creates an empty inventory with the specified type and title. If the type
++     * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
++     * otherwise the new inventory has the normal size for its type.<br>
++     * It should be noted that some inventory types do not support titles and
++     * may not render with said titles on the Minecraft client.
++     * <br>
++     * {@link InventoryType#WORKBENCH} will not process crafting recipes if
++     * created with this method. Use
++     * {@link Player#openWorkbench(Location, boolean)} instead.
++     * <br>
++     * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
++     * for possible enchanting results. Use
++     * {@link Player#openEnchanting(Location, boolean)} instead.
++     *
++     * @param owner The holder of the inventory; can be null if there's no holder.
++     * @param type The type of inventory to create.
++     * @param title The title of the inventory, to be displayed when it is viewed.
++     * @return The new inventory.
++     * @throws IllegalArgumentException if the {@link InventoryType} cannot be
++     * viewed.
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
++     *
++     * @see InventoryType#isCreatable()
++     */
++    @Deprecated // Paper
++    @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
+ 
+     /**
+@@ -901,6 +932,22 @@ public interface Server extends PluginMessageRecipient {
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
+ 
++    // Paper start
++    /**
++     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
++     * specified size and title.
++     *
++     * @param owner the holder of the inventory, or null to indicate no holder
++     * @param size a multiple of 9 as the size of inventory to create
++     * @param title the title of the inventory, displayed when inventory is
++     *     viewed
++     * @return a new inventory
++     * @throws IllegalArgumentException if the size is not a multiple of 9
++     */
++    @NotNull
++    Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException;
++    // Paper end
++
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+@@ -911,7 +958,9 @@ public interface Server extends PluginMessageRecipient {
+      *     viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     @NotNull
+     Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
+ 
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index cdcbc8b05afc412017ac0e4ed0adf227d1342336..6b5dbe4ea711807a1944cfe2aae2ce415d4f2638 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a world, which may contain entities, chunks and blocks
+  */
+-public interface World extends PluginMessageRecipient, Metadatable {
++public interface World extends PluginMessageRecipient, Metadatable, net.kyori.adventure.audience.ForwardingAudience { // Paper
+ 
+     /**
+      * Gets the {@link Block} at the given coordinates
+@@ -616,6 +616,14 @@ public interface World extends PluginMessageRecipient, Metadatable {
+     @NotNull
+     public List<Player> getPlayers();
+ 
++    // Paper start
++    @NotNull
++    @Override
++    default Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
++        return this.getPlayers();
++    }
++    // Paper end
++
+     /**
+      * Returns a list of entities within a bounding box centered around a
+      * Location.
+diff --git a/src/main/java/org/bukkit/command/CommandSender.java b/src/main/java/org/bukkit/command/CommandSender.java
+index ac772bf349e0ffe9cab1df165d9460b387f2fe69..4c7f00c3af7afacfff22ebed95941772f6e55bc6 100644
+--- a/src/main/java/org/bukkit/command/CommandSender.java
++++ b/src/main/java/org/bukkit/command/CommandSender.java
+@@ -6,20 +6,24 @@ import org.bukkit.permissions.Permissible;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public interface CommandSender extends Permissible {
++public interface CommandSender extends net.kyori.adventure.audience.Audience, Permissible { // Paper
+ 
+     /**
+      * Sends this sender a message
+      *
+      * @param message Message to be displayed
++     * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+      */
++    @Deprecated // Paper
+     public void sendMessage(@NotNull String message);
+ 
+     /**
+      * Sends this sender multiple messages
+      *
+      * @param messages An array of messages to be displayed
++     * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+      */
++    @Deprecated // Paper
+     public void sendMessage(@NotNull String[] messages);
+ 
+     /**
+@@ -27,7 +31,9 @@ public interface CommandSender extends Permissible {
+      *
+      * @param message Message to be displayed
+      * @param sender The sender of this message
++     * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+      */
++    @Deprecated // Paper
+     public void sendMessage(@Nullable UUID sender, @NotNull String message);
+ 
+     /**
+@@ -35,7 +41,9 @@ public interface CommandSender extends Permissible {
+      *
+      * @param messages An array of messages to be displayed
+      * @param sender The sender of this message
++     * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+      */
++    @Deprecated // Paper
+     public void sendMessage(@Nullable UUID sender, @NotNull String[] messages);
+ 
+     /**
+@@ -61,7 +69,9 @@ public interface CommandSender extends Permissible {
+          * Sends this sender a chat component.
+          *
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -70,7 +80,9 @@ public interface CommandSender extends Permissible {
+          * Sends an array of components as a single message to the sender.
+          *
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -80,7 +92,9 @@ public interface CommandSender extends Permissible {
+          *
+          * @param component the components to send
+          * @param sender the sender of the message
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -90,7 +104,9 @@ public interface CommandSender extends Permissible {
+          *
+          * @param components the components to send
+          * @param sender the sender of the message
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -99,4 +115,11 @@ public interface CommandSender extends Permissible {
+     @NotNull
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start
++    @Override
++    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity identity, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        this.sendMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/ProxiedCommandSender.java b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
+index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302837f1ae3 100644
+--- a/src/main/java/org/bukkit/command/ProxiedCommandSender.java
++++ b/src/main/java/org/bukkit/command/ProxiedCommandSender.java
+@@ -3,7 +3,7 @@ package org.bukkit.command;
+ 
+ import org.jetbrains.annotations.NotNull;
+ 
+-public interface ProxiedCommandSender extends CommandSender {
++public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure.audience.ForwardingAudience.Single { // Paper
+ 
+     /**
+      * Returns the CommandSender which triggered this proxied command
+@@ -21,4 +21,16 @@ public interface ProxiedCommandSender extends CommandSender {
+     @NotNull
+     CommandSender getCallee();
+ 
++    // Paper start
++    @Override
++    default void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
++        net.kyori.adventure.audience.ForwardingAudience.Single.super.sendMessage(source, message, type);
++    }
++
++    @NotNull
++    @Override
++    default net.kyori.adventure.audience.Audience audience() {
++        return this.getCaller();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 0ce26694eab5609d82c5498d1586b3dc22b4a037..622fd788bb1b5b54f12a090f429790f9d3c4d196 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a base entity in the world
+  */
+-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder {
++public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity> { // Paper
+ 
+     /**
+      * Gets the entity's current position
+@@ -595,4 +595,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+     @Override
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start
++    @NotNull
++    @Override
++    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(this.getType().getKey(), this.getUniqueId(), null);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e363dff9fd1 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -30,7 +30,28 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a player, connected or not
+  */
+-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient {
++public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified { // Paper
++
++    // Paper start
++    @Override
++    default @NotNull net.kyori.adventure.identity.Identity identity() {
++        return net.kyori.adventure.identity.Identity.identity(this.getUniqueId());
++    }
++
++    /**
++     * Gets the "friendly" name to display of this player.
++     *
++     * @return the display name
++     */
++    @NotNull net.kyori.adventure.text.Component displayName();
++
++    /**
++     * Sets the "friendly" name to display of this player.
++     *
++     * @param displayName the display name to set
++     */
++    void displayName(final @Nullable net.kyori.adventure.text.Component displayName);
++    // Paper end
+ 
+     /**
+      * Gets the "friendly" name to display of this player. This may include
+@@ -40,7 +61,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * places defined by plugins.
+      *
+      * @return the friendly name
++     * @deprecated in favour of {@link #displayName()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     public String getDisplayName();
+ 
+@@ -52,7 +75,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * places defined by plugins.
+      *
+      * @param name The new display name.
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setDisplayName(@Nullable String name);
+ 
+     /**
+@@ -70,6 +95,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param name new player list name
+      */
++    @Deprecated // Paper
+     public void setPlayerListName(@Nullable String name);
+ 
+     /**
+@@ -77,6 +103,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @return player list header or null
+      */
++    @Deprecated // Paper
+     @Nullable
+     public String getPlayerListHeader();
+ 
+@@ -85,6 +112,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @return player list header or null
+      */
++    @Deprecated // Paper
+     @Nullable
+     public String getPlayerListFooter();
+ 
+@@ -92,14 +120,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Sets the currently displayed player list header for this player.
+      *
+      * @param header player list header, null for empty
++     * @deprecated in favour of {@link #sendPlayerListHeader(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListHeader(@Nullable String header);
+ 
+     /**
+      * Sets the currently displayed player list footer for this player.
+      *
+      * @param footer player list footer, null for empty
++     * @deprecated in favour of {@link #sendPlayerListFooter(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListFooter(@Nullable String footer);
+ 
+     /**
+@@ -108,7 +140,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      *
+      * @param header player list header, null for empty
+      * @param footer player list footer, null for empty
++     * @deprecated in favour of {@link #sendPlayerListHeaderAndFooter(net.kyori.adventure.text.Component, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
+ 
+     /**
+@@ -146,9 +180,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Kicks player with custom kick message.
+      *
+      * @param message kick message
++     * @deprecated in favour of {@link #kick(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void kickPlayer(@Nullable String message);
+ 
++    // Paper start
++    /**
++     * Kicks player with custom kick message.
++     *
++     * @param message kick message
++     */
++    void kick(final @Nullable net.kyori.adventure.text.Component message);
++    // Paper end
++
+     /**
+      * Says a message (or runs a command).
+      *
+@@ -1287,6 +1332,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public void openBook(@NotNull ItemStack book);
+ 
++    // Paper start
++    @NotNull
++    @Override
++    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(this.getType().getKey(), this.getUniqueId(), this.displayName());
++    }
++    // Paper end
++
+     // Spigot start
+     public class Spigot extends Entity.Spigot {
+ 
+@@ -1341,11 +1394,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        @Deprecated // Paper
+         @Override
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+ 
++        @Deprecated // Paper
+         @Override
+         public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+@@ -1356,7 +1411,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          *
+          * @param position the screen position
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1366,7 +1423,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          *
+          * @param position the screen position
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1377,7 +1436,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          * @param position the screen position
+          * @param sender the sender of the message
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1388,7 +1449,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+          * @param position the screen position
+          * @param sender the sender of the message
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+ 
+diff --git a/src/main/java/org/bukkit/inventory/InventoryView.java b/src/main/java/org/bukkit/inventory/InventoryView.java
+index 14346d83bc99581b18e53d19af03708c0bf22cf7..b6cbf23dd40fb1cb1fec3c7d6918438ebf5bcc2e 100644
+--- a/src/main/java/org/bukkit/inventory/InventoryView.java
++++ b/src/main/java/org/bukkit/inventory/InventoryView.java
+@@ -446,11 +446,23 @@ public abstract class InventoryView {
+         return getPlayer().setWindowProperty(prop, value);
+     }
+ 
++    // Paper start
+     /**
+      * Get the title of this inventory window.
+      *
+      * @return The title.
+      */
+     @NotNull
++    public abstract net.kyori.adventure.text.Component title();
++    // Paper end
++
++    /**
++     * Get the title of this inventory window.
++     *
++     * @return The title.
++     * @deprecated in favour of {@link #title()}
++     */
++    @Deprecated // Paper
++    @NotNull
+     public abstract String getTitle();
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 4ff149fd98895dd8ba45939a37c223b1f8d7281f..603688234c1f7b3b28f0f6407769a65d942328a4 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -141,4 +141,15 @@ public interface ItemFactory {
+     @Deprecated
+     @NotNull
+     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
++
++    // Paper start
++    /**
++     * Creates a hover event for the given item.
++     *
++     * @param item The item
++     * @return A hover event
++     */
++    @NotNull
++    net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..81925276bb056da0d48bea23128ba0e4825b5f86 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
+  * use this class to encapsulate Materials for which {@link Material#isItem()}
+  * returns false.</b>
+  */
+-public class ItemStack implements Cloneable, ConfigurationSerializable {
++public class ItemStack implements Cloneable, ConfigurationSerializable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem> { // Paper
+     private Material type = Material.AIR;
+     private int amount = 0;
+     private MaterialData data = null;
+@@ -595,4 +595,12 @@ public class ItemStack implements Cloneable, ConfigurationSerializable {
+ 
+         return true;
+     }
++
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
++        return org.bukkit.Bukkit.getServer().getItemFactory().asHoverEvent(this);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c4f7cff33 100644
+--- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+@@ -31,6 +31,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      */
+     boolean hasDisplayName();
+ 
++    // Paper start
++    /**
++     * Gets the display name.
++     *
++     * <p>Plugins should check that {@link #hasDisplayName()} returns <code>true</code> before calling this method.</p>
++     *
++     * @return the display name
++     */
++    @Nullable net.kyori.adventure.text.Component displayName();
++
++    /**
++     * Sets the display name.
++     *
++     * @param displayName the display name to set
++     */
++    void displayName(final @Nullable net.kyori.adventure.text.Component displayName);
++    // Paper end
++
+     /**
+      * Gets the display name that is set.
+      * <p>
+@@ -38,7 +56,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * before calling this method.
+      *
+      * @return the display name that is set
++     * @deprecated in favour of {@link #displayName()}
+      */
++    @Deprecated // Paper
+     @NotNull
+     String getDisplayName();
+ 
+@@ -46,7 +66,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * Sets the display name.
+      *
+      * @param name the name to set
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@Nullable String name);
+ 
+     /**
+@@ -81,6 +103,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      */
+     boolean hasLore();
+ 
++    // Paper start
++    /**
++     * Gets the lore.
++     *
++     * <p>Plugins should check that {@link #hasLore()} returns <code>true</code> before calling this method.</p>
++     *
++     * @return the display name
++     */
++    @Nullable List<net.kyori.adventure.text.Component> lore();
++
++    /**
++     * Sets the lore.
++     *
++     * @param lore the lore to set
++     */
++    void lore(final @Nullable List<net.kyori.adventure.text.Component> lore);
++    // Paper end
++
+     /**
+      * Gets the lore that is set.
+      * <p>
+@@ -88,7 +128,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * calling this method.
+      *
+      * @return a list of lore that is set
++     * @deprecated in favour of {@link #lore()}
+      */
++    @Deprecated // Paper
+     @Nullable
+     List<String> getLore();
+ 
+@@ -97,7 +139,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+      * Removes lore when given null.
+      *
+      * @param lore the lore that will be set
++     * @deprecated in favour of {@link #lore(List)}
+      */
++    @Deprecated // Paper
+     void setLore(@Nullable List<String> lore);
+ 
+     /**
