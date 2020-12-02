@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 4 Apr 2015 23:17:52 -0400
+Subject: [PATCH] Complete resource pack API
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index cc9226262644c120161ca7d6dfc4484a88334acb..b6705c6390047829e4f54ca1ce9a9b7e351bdfb4 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1455,7 +1455,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     // CraftBukkit start
+     public void a(PacketPlayInResourcePackStatus packetplayinresourcepackstatus) {
+         PlayerConnectionUtils.ensureMainThread(packetplayinresourcepackstatus, this, this.player.getWorldServer());
+-        this.server.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(getPlayer(), PlayerResourcePackStatusEvent.Status.values()[packetplayinresourcepackstatus.status.ordinal()]));
++        // Paper start
++        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packetplayinresourcepackstatus.status.ordinal()];
++        player.getBukkitEntity().setResourcePackStatus(packStatus);
++        this.server.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(getPlayer(), packStatus));
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 62c8d4bf183ceebd9cb616dc8cc84c57e1b7bba1..0c610ce7f631a75821cef22a5378699806cf9780 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -137,6 +137,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private double health = 20;
+     private boolean scaledHealth = false;
+     private double healthScale = 20;
++    // Paper start
++    private org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus;
++    private String resourcePackHash;
++    // Paper end
+ 
+     public CraftPlayer(CraftServer server, EntityPlayer entity) {
+         super(server, entity);
+@@ -1888,6 +1892,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public boolean getAffectsSpawning() {
+         return this.getHandle().affectsSpawning;
+     }
++
++    @Override
++    public void setResourcePack(String url, String hash) {
++        Validate.notNull(url, "Resource pack URL cannot be null");
++        Validate.notNull(hash, "Hash cannot be null");
++        this.getHandle().setResourcePack(url, hash);
++    }
++
++    @Override
++    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
++        return this.resourcePackStatus;
++    }
++
++    @Override
++    public String getResourcePackHash() {
++        return this.resourcePackHash;
++    }
++
++    @Override
++    public boolean hasResourcePack() {
++        return this.resourcePackStatus == org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED;
++    }
++
++    public void setResourcePackStatus(org.bukkit.event.player.PlayerResourcePackStatusEvent.Status status) {
++        this.resourcePackStatus = status;
++    }
+     // Paper end
+ 
+     @Override

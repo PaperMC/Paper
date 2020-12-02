@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Mon, 6 Jul 2020 22:18:04 +0200
+Subject: [PATCH] Create HoverEvent from ItemStack Entity
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 3c56b9b2ada90f69c33dccc2d9d0f7b39fdcd1d9..c0bc4ea37391b486ce809696c42caee4f7b85b0c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -359,5 +359,40 @@ public final class CraftItemFactory implements ItemFactory {
+ 
+         return nms != null ? net.minecraft.server.LocaleLanguage.getInstance().translateKey(nms.getItem().getName()) : null;
+     }
++
++    @Override
++    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(ItemStack itemStack) {
++        net.md_5.bungee.api.chat.ItemTag itemTag = net.md_5.bungee.api.chat.ItemTag.ofNbt(CraftItemStack.asNMSCopy(itemStack).getOrCreateTag().toString());
++        return new net.md_5.bungee.api.chat.hover.content.Item(
++            itemStack.getType().getKey().toString(),
++            itemStack.getAmount(),
++            itemTag);
++    }
++
++    @Override
++    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity) {
++        return hoverContentOf(entity, org.apache.commons.lang3.StringUtils.isBlank(entity.getCustomName()) ? null : new net.md_5.bungee.api.chat.TextComponent(entity.getCustomName()));
++    }
++
++    @Override
++    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, String customName) {
++        return hoverContentOf(entity, org.apache.commons.lang3.StringUtils.isBlank(customName) ? null : new net.md_5.bungee.api.chat.TextComponent(customName));
++    }
++
++    @Override
++    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, net.md_5.bungee.api.chat.BaseComponent customName) {
++        return new net.md_5.bungee.api.chat.hover.content.Entity(
++            entity.getType().getKey().toString(),
++            entity.getUniqueId().toString(),
++            customName);
++    }
++
++    @Override
++    public net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(org.bukkit.entity.Entity entity, net.md_5.bungee.api.chat.BaseComponent[] customName) {
++        return new net.md_5.bungee.api.chat.hover.content.Entity(
++            entity.getType().getKey().toString(),
++            entity.getUniqueId().toString(),
++            new net.md_5.bungee.api.chat.TextComponent(customName));
++    }
+     // Paper end
+ }

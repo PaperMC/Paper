@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Thu, 3 Mar 2016 02:48:12 -0600
+Subject: [PATCH] Add velocity warnings
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 27a3b542c29cd07cf0adb35ec35d0fb4ce60efe2..8712c8d614b42afa7f6b014f02bdabe84b4c66bb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -263,6 +263,7 @@ public final class CraftServer implements Server {
+     public boolean ignoreVanillaPermissions = false;
+     private final List<CraftPlayer> playerView;
+     public int reloadCount;
++    public static Exception excessiveVelEx; // Paper - Velocity warnings
+ 
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 29e8ca5b25e9ae45abdfa0e3e752018a1b2d92c4..4f5d0c404b661179c05832fd6be84cdf3fb837de 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -425,10 +425,41 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     public void setVelocity(Vector velocity) {
+         Preconditions.checkArgument(velocity != null, "velocity");
+         velocity.checkFinite();
++        // Paper start - Warn server owners when plugins try to set super high velocities
++        if (!(this instanceof org.bukkit.entity.Projectile) && isUnsafeVelocity(velocity)) {
++            CraftServer.excessiveVelEx = new Exception("Excessive velocity set detected: tried to set velocity of entity " + entity.getName() + " id #" + getEntityId() + " to (" + velocity.getX() + "," + velocity.getY() + "," + velocity.getZ() + ").");
++        }
++        // Paper end
++
+         entity.setMot(CraftVector.toNMS(velocity));
+         entity.velocityChanged = true;
+     }
+ 
++    // Paper start
++    /**
++     * Checks if the given velocity is not necessarily safe in all situations.
++     * This function returning true does not mean the velocity is dangerous or to be avoided, only that it may be
++     * a detriment to performance on the server.
++     *
++     * It is not to be used as a hard rule of any sort.
++     * Paper only uses it to warn server owners in watchdog crashes.
++     *
++     * @param vel incoming velocity to check
++     * @return if the velocity has the potential to be a performance detriment
++     */
++    private static boolean isUnsafeVelocity(Vector vel) {
++        final double x = vel.getX();
++        final double y = vel.getY();
++        final double z = vel.getZ();
++
++        if (x > 4 || x < -4 || y > 4 || y < -4 || z > 4 || z < -4) {
++            return true;
++        }
++
++        return false;
++    }
++    // Paper end
++
+     @Override
+     public double getHeight() {
+         return getHandle().getHeight();
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index 73fa74e3cc0239a38cd2ba41b3e9e991a5c4ebf9..d9610006113e5f67c2feeea332b2920230822d41 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -76,7 +76,19 @@ public class WatchdogThread extends Thread
+                     log.log( Level.SEVERE, "During the run of the server, a physics stackoverflow was supressed" );
+                     log.log( Level.SEVERE, "near " + net.minecraft.server.World.lastPhysicsProblem );
+                 }
+-                //
++                // Paper start - Warn in watchdog if an excessive velocity was ever set
++                if ( org.bukkit.craftbukkit.CraftServer.excessiveVelEx != null )
++                {
++                    log.log( Level.SEVERE, "------------------------------" );
++                    log.log( Level.SEVERE, "During the run of the server, a plugin set an excessive velocity on an entity" );
++                    log.log( Level.SEVERE, "This may be the cause of the issue, or it may be entirely unrelated" );
++                    log.log( Level.SEVERE, org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getMessage());
++                    for ( StackTraceElement stack : org.bukkit.craftbukkit.CraftServer.excessiveVelEx.getStackTrace() )
++                    {
++                        log.log( Level.SEVERE, "\t\t" + stack );
++                    }
++                }
++                // Paper end
+                 log.log( Level.SEVERE, "------------------------------" );
+                 log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );

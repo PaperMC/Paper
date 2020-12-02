@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Fri, 13 Jul 2018 14:54:43 +0200
+Subject: [PATCH] Refresh player inventory when cancelling
+ PlayerInteractEntityEvent
+
+When interacting with entities with an item, the client will assume
+the interaction is successful, and update the held item on the
+client. However, if the interaction is cancelled on the server side,
+the client will still mistakenly remove/replace the item in hand.
+
+Examples for this are milking cows with a bucket or dyeing sheep.
+The bucket is replaced with milk and the dye removed from inventory.
+
+Refresh the player inventory when PlayerInteractEntityEvent is
+cancelled to avoid this problem.
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 77c5723af549aabedf6bc96c6ad0bcbd48275985..6f91d348b9ffc2b05cf5d36bae41f2d9290b5ac7 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -2077,6 +2077,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                     }
+ 
+                     if (event.isCancelled()) {
++                        this.player.updateInventory(this.player.activeContainer); // Paper - Refresh player inventory
+                         return;
+                     }
+                     // CraftBukkit end

@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 14 Nov 2020 16:19:52 +0100
+Subject: [PATCH] Add API for quit reason
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 297f30e46671624dd46d013af9502329ecab1ed1..482f9b5e7fcfdc0856a8bf47ad48efee1887116d 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -129,6 +129,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+ 
+     boolean needsChunkCenterUpdate; // Paper - no-tick view distance
++    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
+diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
+index 7a84ea4116be070ab878e55b0cd919f3f3688f30..3ec8ba17ddf376aa98e2b74979b2544922712560 100644
+--- a/src/main/java/net/minecraft/server/NetworkManager.java
++++ b/src/main/java/net/minecraft/server/NetworkManager.java
+@@ -119,12 +119,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+             this.u = true;
+             if (this.channel.isOpen()) {
++                EntityPlayer player = this.getPlayer(); // Paper
+                 if (throwable instanceof TimeoutException) {
+                     NetworkManager.LOGGER.debug("Timeout", throwable);
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper
+                     this.close(new ChatMessage("disconnect.timeout"));
+                 } else {
+                     ChatMessage chatmessage = new ChatMessage("disconnect.genericReason", new Object[]{"Internal Exception: " + throwable});
+ 
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper
+                     if (flag) {
+                         NetworkManager.LOGGER.debug("Failed to sent packet", throwable);
+                         this.sendPacket(new PacketPlayOutKickDisconnect(chatmessage), (future) -> {
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index ec2252e966cd8ea324e8df39b26859872147d578..376573a20dc3699b0f029737a8d090d925b6838d 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -300,6 +300,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         final IChatBaseComponent ichatbasecomponent = CraftChatMessage.fromString(s, true)[0];
+         // CraftBukkit end
+ 
++        this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper
+         this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
+             this.networkManager.close(ichatbasecomponent);
+         });
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 3b25e777b8eb908def1b4c53ba49648defc2c868..7977f8b7a8a7cfab100b131cc56bf3dff8cfbe5f 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -510,7 +510,7 @@ public abstract class PlayerList {
+             entityplayer.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
+         }
+ 
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game", entityplayer.quitReason); // Paper - quit reason
+         if (entityplayer.didPlayerJoinEvent) cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
