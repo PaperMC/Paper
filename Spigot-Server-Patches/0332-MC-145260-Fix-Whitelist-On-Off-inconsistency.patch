@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 2 Mar 2019 16:12:35 -0500
+Subject: [PATCH] MC-145260: Fix Whitelist On/Off inconsistency
+
+mojang stored whitelist state in 2 places (Whitelist Object, PlayerList)
+
+some things checked PlayerList, some checked object. This moves
+everything to the Whitelist object.
+
+https://github.com/PaperMC/Paper/issues/1880
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 6030a8a4d7598d03328c1e1e848a09ac1213fb2c..5ab9d6a141c7b951779a9d6841d8dcff2d4572a4 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -943,9 +943,9 @@ public abstract class PlayerList {
+     }
+     public boolean isWhitelisted(GameProfile gameprofile, org.bukkit.event.player.PlayerLoginEvent loginEvent) {
+         boolean isOp = this.operators.d(gameprofile);
+-        boolean isWhitelisted = !this.hasWhitelist || isOp || this.whitelist.d(gameprofile);
++        boolean isWhitelisted = !this.getHasWhitelist() || isOp || this.whitelist.d(gameprofile);
+         final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
+-        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(MCUtil.toBukkit(gameprofile), this.hasWhitelist, isWhitelisted, isOp, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage));
++        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(MCUtil.toBukkit(gameprofile), this.getHasWhitelist(), isWhitelisted, isOp, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage));
+         event.callEvent();
+         if (!event.isWhitelisted()) {
+             if (loginEvent != null) {

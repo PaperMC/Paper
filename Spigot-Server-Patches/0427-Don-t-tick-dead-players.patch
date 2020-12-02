@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 2 Apr 2020 17:16:48 -0400
+Subject: [PATCH] Don't tick dead players
+
+Causes sync chunk loads and who knows what all else.
+This is safe because Spectators are skipped in unloaded chunks too in vanilla.
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 9587b3eb1dd4618a15f29ad4d763f1e7ed7e4d3f..530512a23a0201daf47afdcdd55137a02071dd0f 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -479,7 +479,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     public void playerTick() {
+         try {
+-            if (!this.isSpectator() || this.world.isLoaded(this.getChunkCoordinates())) {
++            if (valid && !this.isSpectator() || this.world.isLoaded(this.getChunkCoordinates())) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
+                 super.tick();
+             }
+ 

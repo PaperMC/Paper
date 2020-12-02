@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 8 Oct 2020 00:00:25 -0400
+Subject: [PATCH] Fix "Not a string" Map Conversion spam
+
+The maps did convert successfully, but had noisy logs due to Spigot
+implementing this logic incorrectly.
+
+This stops the spam by converting the old format to new before
+requesting the world.
+
+diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
+index 7251793423e5413dacc1e031ed75d41fc35cd32e..83bb21c4e19261143c81590d0f439f265d5c3c98 100644
+--- a/src/main/java/net/minecraft/server/WorldMap.java
++++ b/src/main/java/net/minecraft/server/WorldMap.java
+@@ -74,7 +74,26 @@ public class WorldMap extends PersistentBase {
+ 
+     @Override
+     public void a(NBTTagCompound nbttagcompound) {
+-        DataResult<ResourceKey<World>> dataresult = DimensionManager.a(new Dynamic(DynamicOpsNBT.a, nbttagcompound.get("dimension"))); // CraftBukkit - decompile error
++        // Paper start - fix "Not a string" spam
++        NBTBase dimension = nbttagcompound.get("dimension");
++        if (dimension instanceof NBTNumber && ((NBTNumber) dimension).asInt() >= CraftWorld.CUSTOM_DIMENSION_OFFSET) {
++            long least = nbttagcompound.getLong("UUIDLeast");
++            long most = nbttagcompound.getLong("UUIDMost");
++
++            if (least != 0L && most != 0L) {
++                this.uniqueId = new UUID(most, least);
++                CraftWorld world = (CraftWorld) server.getWorld(this.uniqueId);
++                if (world != null) {
++                    dimension = NBTTagString.valueOf("minecaft:" + world.getName().toLowerCase(java.util.Locale.ENGLISH));
++                } else {
++                    dimension = NBTTagString.valueOf("bukkit:_invalidworld_");
++                }
++            } else {
++                dimension = NBTTagString.valueOf("bukkit:_invalidworld_");
++            }
++        }
++        DataResult<ResourceKey<World>> dataresult = DimensionManager.a(new Dynamic(DynamicOpsNBT.a, dimension)); // CraftBukkit - decompile error
++        // Paper end - fix "Not a string" spam
+         Logger logger = WorldMap.LOGGER;
+ 
+         logger.getClass();

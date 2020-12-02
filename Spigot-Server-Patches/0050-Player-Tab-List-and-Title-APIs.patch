@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Thu, 3 Mar 2016 02:32:10 -0600
+Subject: [PATCH] Player Tab List and Title APIs
+
+
+diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+index 06dc0b3d984bcbbcedb9e22659614f48faf3fa26..fb98c326755462ca8d25674aa89bb808e8cd1f58 100644
+--- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
++++ b/src/main/java/net/minecraft/server/IChatBaseComponent.java
+@@ -356,6 +356,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
+             return IChatBaseComponent.ChatSerializer.a.toJsonTree(ichatbasecomponent);
+         }
+ 
++        @Nullable public static IChatBaseComponent jsonToComponent(String json) { return a(json);} // Paper - OBFHELPER
+         @Nullable
+         public static IChatMutableComponent a(String s) {
+             return (IChatMutableComponent) ChatDeserializer.a(IChatBaseComponent.ChatSerializer.a, s, IChatMutableComponent.class, false);
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+index 772ca6256964692a2b9c12e2edc532d2a8f51f7b..0ffabbd30f9f5e8cdaa7d3e1a68f1a51c42ace91 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutTitle.java
+@@ -44,6 +44,17 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+         }
+ 
+     }
++    // Paper start
++    public net.md_5.bungee.api.chat.BaseComponent[] components;
++
++    public PacketPlayOutTitle(EnumTitleAction action, net.md_5.bungee.api.chat.BaseComponent[] components, int fadeIn, int stay, int fadeOut) {
++        this.a = action;
++        this.components = components;
++        this.c = fadeIn;
++        this.d = stay;
++        this.e = fadeOut;
++    }
++    // Paper end
+ 
+     @Override
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+@@ -53,6 +64,9 @@ public class PacketPlayOutTitle implements Packet<PacketListenerPlayOut> {
+             if (this.adventure$text != null) {
+                 packetdataserializer.writeComponent(this.adventure$text);
+             } else
++            if (this.components != null) {
++                packetdataserializer.a(net.md_5.bungee.chat.ComponentSerializer.toString(components));
++            } else
+             // Paper end
+             packetdataserializer.a(this.b);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 86ab4dbfd4231ad026a39aa9ff4b128bd64818dc..318dbc398d7acd431b1c87ce7adfddfdeaf7272c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.Title;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+ import com.google.common.io.BaseEncoding;
+@@ -237,6 +238,96 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
++         if (header != null) {
++             String headerJson = net.md_5.bungee.chat.ComponentSerializer.toString(header);
++             playerListHeader = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(headerJson);
++         } else {
++             playerListHeader = null;
++         }
++
++        if (footer != null) {
++             String footerJson = net.md_5.bungee.chat.ComponentSerializer.toString(footer);
++             playerListFooter = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(footerJson);
++         } else {
++             playerListFooter = null;
++         }
++
++         updatePlayerListHeaderFooter();
++    }
++
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent header, BaseComponent footer) {
++        this.setPlayerListHeaderFooter(header == null ? null : new BaseComponent[]{header},
++                footer == null ? null : new BaseComponent[]{footer});
++    }
++
++
++    @Override
++    public void setTitleTimes(int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TIMES, (BaseComponent[]) null, fadeInTicks, stayTicks, fadeOutTicks));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent[] subtitle) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, subtitle, 0, 0, 0));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent subtitle) {
++        setSubtitle(new BaseComponent[]{subtitle});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title) {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, title, 0, 0, 0));
++    }
++
++    @Override
++    public void showTitle(BaseComponent title) {
++        showTitle(new BaseComponent[]{title});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title, BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void showTitle(BaseComponent title, BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void hideTitle() {
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.CLEAR, (BaseComponent[]) null, 0, 0, 0));
++    }
++    // Paper end
++
+     @Override
+     public String getDisplayName() {
+         if(true) return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.getHandle().adventure$displayName); // Paper

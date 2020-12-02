@@ -1,0 +1,1062 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 5 Dec 2020 11:21:57 -0800
+Subject: [PATCH] Adventure Events
+
+
+diff --git a/src/main/java/org/bukkit/event/block/SignChangeEvent.java b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1268066e30ddb0cd3792ea4b3de894eb04196669 100644
+--- a/src/main/java/org/bukkit/event/block/SignChangeEvent.java
++++ b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+@@ -16,12 +16,25 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
+     private final Player player;
+-    private final String[] lines;
++    // Paper start
++    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
+ 
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++        super(theBlock);
++        this.player = player;
++        this.adventure$lines = adventure$lines;
++    }
++
++    @Deprecated // Paper end
+     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+         super(theBlock);
+         this.player = thePlayer;
+-        this.lines = theLines;
++        // Paper start
++        this.adventure$lines = new java.util.ArrayList<>();
++        for (String theLine : theLines) {
++            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
++        }
++        // Paper end
+     }
+ 
+     /**
+@@ -34,14 +47,52 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+         return player;
+     }
+ 
++    // Paper start
++    /**
++     * Gets all of the lines of text from the sign involved in this event.
++     *
++     * @return the String array for the sign's lines new text
++     */
++    public @NotNull java.util.List<net.kyori.adventure.text.Component> lines() {
++        return this.adventure$lines;
++    }
++
++    /**
++     * Gets a single line of text from the sign involved in this event.
++     *
++     * @param index index of the line to get
++     * @return the String containing the line of text associated with the
++     *     provided index
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public @Nullable net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException {
++        return this.adventure$lines.get(index);
++    }
++
++    /**
++     * Sets a single line for the sign involved in this event
++     *
++     * @param index index of the line to set
++     * @param line text to set
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public void line(int index, @Nullable net.kyori.adventure.text.Component line) throws IndexOutOfBoundsException {
++        this.adventure$lines.set(index, line);
++    }
++    // Paper end
++
+     /**
+      * Gets all of the lines of text from the sign involved in this event.
+      *
+      * @return the String array for the sign's lines new text
++     * @deprecated in favour of {@link #lines()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines() {
+-        return lines;
++        return adventure$lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
+     }
+ 
+     /**
+@@ -52,10 +103,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      *     provided index
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return lines[index];
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.adventure$lines.get(index)); // Paper
+     }
+ 
+     /**
+@@ -65,9 +118,11 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      * @param line text to set
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
+-        lines[index] = line;
++        adventure$lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : null); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index 07a52441a5cdd7e428a14b286d7cb5210e3efa97..46fcabf9e48907462f785a2e7ccd9fda8ece8206 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -11,26 +11,46 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerDeathEvent extends EntityDeathEvent {
+     private int newExp = 0;
+-    private String deathMessage = "";
++    private net.kyori.adventure.text.Component deathMessage; // Paper
+     private int newLevel = 0;
+     private int newTotalExp = 0;
+     private boolean keepLevel = false;
+     private boolean keepInventory = false;
++    // Paper start
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final net.kyori.adventure.text.Component deathMessage) {
++        this(player, drops, droppedExp, 0, deathMessage);
++    }
++
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final net.kyori.adventure.text.Component deathMessage) {
++        this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
++    }
+ 
++    public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final net.kyori.adventure.text.Component deathMessage) {
++        super(player, drops, droppedExp);
++        this.newExp = newExp;
++        this.newTotalExp = newTotalExp;
++        this.newLevel = newLevel;
++        this.deathMessage = deathMessage;
++    }
++    // Paper end
++
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
+         this(player, drops, droppedExp, 0, deathMessage);
+     }
+ 
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final String deathMessage) {
+         this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
+     }
+ 
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage) {
+         super(player, drops, droppedExp);
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
+-        this.deathMessage = deathMessage;
++        this.deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     @NotNull
+@@ -39,12 +59,13 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         return (Player) entity;
+     }
+ 
++    // Paper start
+     /**
+      * Set the death message that will appear to everyone on the server.
+      *
+      * @param deathMessage Message to appear to other players on the server.
+      */
+-    public void setDeathMessage(@Nullable String deathMessage) {
++    public void deathMessage(@Nullable net.kyori.adventure.text.Component deathMessage) {
+         this.deathMessage = deathMessage;
+     }
+ 
+@@ -53,9 +74,32 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+      *
+      * @return Message to appear to other players on the server.
+      */
++    public @Nullable net.kyori.adventure.text.Component deathMessage() {
++        return this.deathMessage;
++    }
++    // Paper end
++
++    /**
++     * Set the death message that will appear to everyone on the server.
++     *
++     * @param deathMessage Message to appear to other players on the server.
++     * @deprecated in favour of {@link #deathMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    public void setDeathMessage(@Nullable String deathMessage) {
++        this.deathMessage = deathMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(deathMessage) : net.kyori.adventure.text.Component.empty(); // Paper
++    }
++
++    /**
++     * Get the death message that will appear to everyone on the server.
++     *
++     * @return Message to appear to other players on the server.
++     * @deprecated in favour of {@link #deathMessage()}
++     */
+     @Nullable
++    @Deprecated // Paper
+     public String getDeathMessage() {
+-        return deathMessage;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.deathMessage); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+index c8384da69af61e1970f254a3a9c206ee81d7a989..992d1025ca02020e87a9ab5db83d249427f41d69 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
+ public class AsyncPlayerPreLoginEvent extends Event {
+     private static final HandlerList handlers = new HandlerList();
+     private Result result;
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final String name;
+     private final InetAddress ipAddress;
+     private final UUID uniqueId;
+@@ -27,7 +27,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+         super(true);
+         this.result = Result.ALLOWED;
+-        this.message = "";
++        this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         this.name = name;
+         this.ipAddress = ipAddress;
+         this.uniqueId = uniqueId;
+@@ -79,6 +79,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+         this.result = result == null ? null : Result.valueOf(result.name());
+     }
+ 
++    // Paper start
+     /**
+      * Gets the current kick message that will be used if getResult() !=
+      * Result.ALLOWED
+@@ -86,7 +87,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     @NotNull
+-    public String getKickMessage() {
++    public net.kyori.adventure.text.Component kickMessage() {
+         return message;
+     }
+ 
+@@ -95,16 +96,66 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      *
+      * @param message New kick message
+      */
+-    public void setKickMessage(@NotNull final String message) {
++    public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
++        this.message = message;
++    }
++
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result;
+         this.message = message;
+     }
+ 
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     * @deprecated This method uses a deprecated enum from {@link
++     *     PlayerPreLoginEvent}
++     * @see #disallow(Result, String)
++     */
++    @Deprecated
++    public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result == null ? null : Result.valueOf(result.name());
++        this.message = message;
++    }
++    // Paper end
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
++     */
++    @NotNull
++    @Deprecated // Paper
++    public String getKickMessage() {
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    public void setKickMessage(@NotNull final String message) {
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
++    }
++
+     /**
+      * Allows the player to log in
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -112,10 +163,12 @@ public class AsyncPlayerPreLoginEvent extends Event {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
+         this.result = result;
+-        this.message = message;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+     /**
+@@ -130,7 +183,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
+     @Deprecated
+     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
+         this.result = result == null ? null : Result.valueOf(result.name());
+-        this.message = message;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+index d06684aba7688ce06777dbd837a46856a9d7767f..b69b7509599a0d9a260d30585605c914b8e0d67c 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
+@@ -10,30 +10,60 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerJoinEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+-    private String joinMessage;
++    // Paper start
++    private net.kyori.adventure.text.Component joinMessage;
++    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final net.kyori.adventure.text.Component joinMessage) {
++        super(playerJoined);
++        this.joinMessage = joinMessage;
++    }
+ 
++    @Deprecated // Paper end
+     public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
+         super(playerJoined);
++        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : net.kyori.adventure.text.Component.empty(); // Paper end
++    }
++
++    // Paper start
++    /**
++     * Gets the join message to send to all online players
++     *
++     * @return string join message. Can be null
++     */
++    public @Nullable net.kyori.adventure.text.Component joinMessage() {
++        return this.joinMessage;
++    }
++
++    /**
++     * Sets the join message to send to all online players
++     *
++     * @param joinMessage join message. If null, no message will be sent
++     */
++    public void joinMessage(@Nullable net.kyori.adventure.text.Component joinMessage) {
+         this.joinMessage = joinMessage;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the join message to send to all online players
+      *
+      * @return string join message. Can be null
++     * @deprecated in favour of {@link #joinMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getJoinMessage() {
+-        return joinMessage;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.joinMessage); // Paper
+     }
+ 
+     /**
+      * Sets the join message to send to all online players
+      *
+      * @param joinMessage join message. If null, no message will be sent
++     * @deprecated in favour of {@link #joinMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setJoinMessage(@Nullable String joinMessage) {
+-        this.joinMessage = joinMessage;
++        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+index 14c337f15fc804f52e52cb0a185aad38d89303a8..f50d7182f3b2729ff20dd1903e7b3483b9a5fa9e 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerKickEvent.java
+@@ -10,35 +10,84 @@ import org.jetbrains.annotations.NotNull;
+  */
+ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+-    private String leaveMessage;
+-    private String kickReason;
++    private net.kyori.adventure.text.Component leaveMessage; // Paper
++    private net.kyori.adventure.text.Component kickReason; // Paper
+     private Boolean cancel;
+ 
++    @Deprecated // Paper
+     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
++        super(playerKicked);
++        this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
++        this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
++        this.cancel = false;
++    }
++    // Paper start
++    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage) {
+         super(playerKicked);
+         this.kickReason = kickReason;
+         this.leaveMessage = leaveMessage;
+         this.cancel = false;
+     }
+ 
++    /**
++     * Gets the leave message send to all online players
++     *
++     * @return string kick reason
++     */
++    public @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component leaveMessage() {
++        return this.leaveMessage;
++    }
++
++    /**
++     * Sets the leave message send to all online players
++     *
++     * @param leaveMessage leave message
++     */
++    public void leaveMessage(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component leaveMessage) {
++        this.leaveMessage = leaveMessage;
++    }
++
+     /**
+      * Gets the reason why the player is getting kicked
+      *
+      * @return string kick reason
+      */
++    public @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component reason() {
++        return this.kickReason;
++    }
++
++    /**
++     * Sets the reason why the player is getting kicked
++     *
++     * @param kickReason kick reason
++     */
++    public void reason(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component kickReason) {
++        this.kickReason = kickReason;
++    }
++    // Paper end
++
++    /**
++     * Gets the reason why the player is getting kicked
++     *
++     * @return string kick reason
++     * @deprecated in favour of {@link #reason()}
++     */
+     @NotNull
++    @Deprecated // Paper
+     public String getReason() {
+-        return kickReason;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.kickReason); // Paper
+     }
+ 
+     /**
+      * Gets the leave message send to all online players
+      *
+      * @return string kick reason
++     * @deprecated in favour of {@link #leaveMessage()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLeaveMessage() {
+-        return leaveMessage;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.leaveMessage); // Paper
+     }
+ 
+     @Override
+@@ -55,18 +104,22 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
+      * Sets the reason why the player is getting kicked
+      *
+      * @param kickReason kick reason
++     * @deprecated in favour of {@link #reason(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setReason(@NotNull String kickReason) {
+-        this.kickReason = kickReason;
++        this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
+     }
+ 
+     /**
+      * Sets the leave message send to all online players
+      *
+      * @param leaveMessage leave message
++     * @deprecated in favour of {@link #leaveMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLeaveMessage(@NotNull String leaveMessage) {
+-        this.leaveMessage = leaveMessage;
++        this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java b/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
+index 1db386bb701cb6974daedc6bb5b93a3afbc42100..84521186404b8e43c81a2f9513dce2be40d27840 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLocaleChangeEvent.java
+@@ -12,18 +12,32 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+     //
+     private final String locale;
++    // Paper start
++    private final java.util.Locale adventure$locale;
++    /**
++     * @see Player#getLocale()
++     *
++     * @return the player's new locale
++     */
++    public @NotNull java.util.Locale locale() {
++        return this.adventure$locale;
++    }
++    // Paper end
+ 
+     public PlayerLocaleChangeEvent(@NotNull Player who, @NotNull String locale) {
+         super(who);
+         this.locale = locale;
++        this.adventure$locale = net.kyori.adventure.translation.Translator.parseLocale(locale); // Paper
+     }
+ 
+     /**
+      * @see Player#getLocale()
+      *
+      * @return the player's new locale
++     * @deprecated in favour of {@link #locale()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLocale() {
+         return locale;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+index 084ca8cfcb7381bfa4fa6280748cf9b81210a9c1..95c53d934f928d25f7b20cfbf2e5faa3df31ddc4 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerLoginEvent.java
+@@ -17,7 +17,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+     private final InetAddress address;
+     private final String hostname;
+     private Result result = Result.ALLOWED;
+-    private String message = "";
++    private net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.empty();
+     private final InetAddress realAddress; // Spigot
+ 
+     /**
+@@ -53,12 +53,52 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * @param result The result status for this event
+      * @param message The message to be displayed if result denies login
+      * @param realAddress the actual, unspoofed connecting address
++     * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
+      */
++    @Deprecated // Paper
+     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) { // Spigot
+         this(player, hostname, address, realAddress); // Spigot
+         this.result = result;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
++    }
++
++    // Paper start
++    /**
++     * This constructor pre-configures the event with a result and message
++     *
++     * @param player The {@link Player} for this event
++     * @param hostname The hostname that was used to connect to the server
++     * @param address The address the player used to connect, provided for
++     *     timing issues
++     * @param result The result status for this event
++     * @param message The message to be displayed if result denies login
++     * @param realAddress the actual, unspoofed connecting address
++     */
++    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) { // Spigot
++        this(player, hostname, address, realAddress); // Spigot
++        this.result = result;
++        this.message = message;
++    }
++
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     */
++    public @NotNull net.kyori.adventure.text.Component kickMessage() {
++        return this.message;
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     */
++    public void kickMessage(@NotNull net.kyori.adventure.text.Component message) {
+         this.message = message;
+     }
++    // Paper end
+ 
+     // Spigot start
+     /**
+@@ -96,19 +136,23 @@ public class PlayerLoginEvent extends PlayerEvent {
+      * Result.ALLOWED
+      *
+      * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getKickMessage() {
+-        return message;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
+     }
+ 
+     /**
+      * Sets the kick message to display if getResult() != Result.ALLOWED
+      *
+      * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setKickMessage(@NotNull final String message) {
+-        this.message = message;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+     /**
+@@ -127,7 +171,7 @@ public class PlayerLoginEvent extends PlayerEvent {
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -135,8 +179,21 @@ public class PlayerLoginEvent extends PlayerEvent {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper start
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
++        this.result = result;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message);
++    }
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        // Paper end
+         this.result = result;
+         this.message = message;
+     }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+index fb066251f793ec3b41bfc075b9478901b15ee549..6800132c6288b4588fd02b08d26f016c38f27129 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerPreLoginEvent.java
+@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
+ public class PlayerPreLoginEvent extends Event {
+     private static final HandlerList handlers = new HandlerList();
+     private Result result;
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final String name;
+     private final InetAddress ipAddress;
+     private final UUID uniqueId;
+@@ -31,7 +31,7 @@ public class PlayerPreLoginEvent extends Event {
+ 
+     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
+         this.result = Result.ALLOWED;
+-        this.message = "";
++        this.message = net.kyori.adventure.text.Component.empty(); // Paper
+         this.name = name;
+         this.ipAddress = ipAddress;
+         this.uniqueId = uniqueId;
+@@ -56,6 +56,7 @@ public class PlayerPreLoginEvent extends Event {
+         this.result = result;
+     }
+ 
++    // Paper start
+     /**
+      * Gets the current kick message that will be used if getResult() !=
+      * Result.ALLOWED
+@@ -63,7 +64,7 @@ public class PlayerPreLoginEvent extends Event {
+      * @return Current kick message
+      */
+     @NotNull
+-    public String getKickMessage() {
++    public net.kyori.adventure.text.Component kickMessage() {
+         return message;
+     }
+ 
+@@ -72,16 +73,51 @@ public class PlayerPreLoginEvent extends Event {
+      *
+      * @param message New kick message
+      */
+-    public void setKickMessage(@NotNull final String message) {
++    public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
+         this.message = message;
+     }
+ 
++    /**
++     * Disallows the player from logging in, with the given reason
++     *
++     * @param result New result for disallowing the player
++     * @param message Kick message to display to the user
++     */
++    public void disallow(@NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message) {
++        this.result = result;
++        this.message = message;
++    }
++    // Paper end
++    /**
++     * Gets the current kick message that will be used if getResult() !=
++     * Result.ALLOWED
++     *
++     * @return Current kick message
++     * @deprecated in favour of {@link #kickMessage()}
++     */
++    @Deprecated // Paper
++    @NotNull
++    public String getKickMessage() {
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
++    }
++
++    /**
++     * Sets the kick message to display if getResult() != Result.ALLOWED
++     *
++     * @param message New kick message
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated // Paper
++    public void setKickMessage(@NotNull final String message) {
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
++    }
++
+     /**
+      * Allows the player to log in
+      */
+     public void allow() {
+         result = Result.ALLOWED;
+-        message = "";
++        message = net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     /**
+@@ -89,10 +125,12 @@ public class PlayerPreLoginEvent extends Event {
+      *
+      * @param result New result for disallowing the player
+      * @param message Kick message to display to the user
++     * @deprecated in favour of {@link #disallow(org.bukkit.event.player.PlayerPreLoginEvent.Result, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void disallow(@NotNull final Result result, @NotNull final String message) {
+         this.result = result;
+-        this.message = message;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+index d70c25f404e994766a9ebce89a917c8d0719777c..4e6dec550f81c9f4a83a1bd620d9c311bf092b91 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerQuitEvent.java
+@@ -10,30 +10,59 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerQuitEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+-    private String quitMessage;
++    private net.kyori.adventure.text.Component quitMessage; // Paper
+ 
++    @Deprecated // Paper
+     public PlayerQuitEvent(@NotNull final Player who, @Nullable final String quitMessage) {
+         super(who);
++        this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : net.kyori.adventure.text.Component.empty(); // Paper
++    }
++    // Paper start
++    public PlayerQuitEvent(@NotNull final Player who, @Nullable final net.kyori.adventure.text.Component quitMessage) {
++        super(who);
++        this.quitMessage = quitMessage;
++    }
++
++    /**
++     * Gets the quit message to send to all online players
++     *
++     * @return string quit message
++     */
++    public @Nullable net.kyori.adventure.text.Component quitMessage() {
++        return quitMessage;
++    }
++
++    /**
++     * Sets the quit message to send to all online players
++     *
++     * @param quitMessage quit message
++     */
++    public void quitMessage(@Nullable net.kyori.adventure.text.Component quitMessage) {
+         this.quitMessage = quitMessage;
+     }
++    // Paper end
+ 
+     /**
+      * Gets the quit message to send to all online players
+      *
+      * @return string quit message
++     * @deprecated in favour of {@link #quitMessage()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getQuitMessage() {
+-        return quitMessage;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.quitMessage); // Paper
+     }
+ 
+     /**
+      * Sets the quit message to send to all online players
+      *
+      * @param quitMessage quit message
++     * @deprecated in favour of {@link #quitMessage(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setQuitMessage(@Nullable String quitMessage) {
+-        this.quitMessage = quitMessage;
++        this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : net.kyori.adventure.text.Component.empty(); // Paper
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+index 03bfca9d368bbe4b7c1353d52c883e756bf69bda..943d324435350d3f16fad3e21cb472a01a3ff60b 100644
+--- a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
++++ b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
+ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+ 
+     private static final HandlerList handlers = new HandlerList();
+-    private String message;
++    private net.kyori.adventure.text.Component message; // Paper
+     private final Set<CommandSender> recipients;
+     private boolean cancelled = false;
+ 
+@@ -27,29 +27,66 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+         this(false, message, recipients);
+     }
+ 
++    @Deprecated // Paper
+     public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
++        // Paper start
++        super(isAsync);
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message);
++        this.recipients = recipients;
++    }
++
++    @Deprecated
++    public BroadcastMessageEvent(@NotNull net.kyori.adventure.text.Component message, @NotNull Set<CommandSender> recipients) {
++        this(false, message, recipients);
++    }
++
++    public BroadcastMessageEvent(boolean isAsync, @NotNull net.kyori.adventure.text.Component message, @NotNull Set<CommandSender> recipients) {
++        // Paper end
+         super(isAsync);
+         this.message = message;
+         this.recipients = recipients;
+     }
++    // Paper start
++    /**
++     * Get the broadcast message.
++     *
++     * @return Message to broadcast
++     */
++    public @NotNull net.kyori.adventure.text.Component message() {
++        return this.message;
++    }
++
++    /**
++     * Set the broadcast message.
++     *
++     * @param message New message to broadcast
++     */
++    public void message(@NotNull net.kyori.adventure.text.Component message) {
++        this.message = message;
++    }
++    // Paper end
+ 
+     /**
+      * Get the message to broadcast.
+      *
+      * @return Message to broadcast
++     * @deprecated in favour of {@link #message()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getMessage() {
+-        return message;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.message); // Paper
+     }
+ 
+     /**
+      * Set the message to broadcast.
+      *
+      * @param message New message to broadcast
++     * @deprecated in favour of {@link #message(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setMessage(@NotNull String message) {
+-        this.message = message;
++        this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+index 7a2a58bac8e721c3f0c64f69f77be07a51f76d58..f46ea9f2bd4a4d9582428325e725d9220817b254 100644
+--- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+@@ -17,15 +17,16 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
+     private static final HandlerList handlers = new HandlerList();
+     private final InetAddress address;
+-    private String motd;
++    private net.kyori.adventure.text.Component motd; // Paper
+     private final int numPlayers;
+     private int maxPlayers;
+ 
++    @Deprecated // Paper
+     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+         super(true);
+         Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
+         this.address = address;
+-        this.motd = motd;
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
+         this.numPlayers = numPlayers;
+         this.maxPlayers = maxPlayers;
+     }
+@@ -38,14 +39,58 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * @param address the address of the pinger
+      * @param motd the message of the day
+      * @param maxPlayers the max number of players
++     * @deprecated in favour of {@link #ServerListPingEvent(java.net.InetAddress, net.kyori.adventure.text.Component, int)}
+      */
++    @Deprecated // Paper
+     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
++        super(true);
++        this.numPlayers = MAGIC_PLAYER_COUNT;
++        this.address = address;
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
++        this.maxPlayers = maxPlayers;
++    }
++    // Paper start
++    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
++        super(true);
++        Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
++        this.address = address;
++        this.motd = motd;
++        this.numPlayers = numPlayers;
++        this.maxPlayers = maxPlayers;
++    }
++    /**
++     * This constructor is intended for implementations that provide the
++     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
++     * count.
++     *
++     * @param address the address of the pinger
++     * @param motd the message of the day
++     * @param maxPlayers the max number of players
++     */
++    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
+         super(true);
+         this.numPlayers = MAGIC_PLAYER_COUNT;
+         this.address = address;
+         this.motd = motd;
+         this.maxPlayers = maxPlayers;
+     }
++    /**
++     * Get the message of the day message.
++     *
++     * @return the message of the day
++     */
++    public @NotNull net.kyori.adventure.text.Component motd() {
++        return motd;
++    }
++    /**
++     * Change the message of the day message.
++     *
++     * @param motd the message of the day
++     */
++    public void motd(@NotNull net.kyori.adventure.text.Component motd) {
++        this.motd = motd;
++    }
++    // Paper end
+ 
+     /**
+      * Get the address the ping is coming from.
+@@ -61,19 +106,23 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      * Get the message of the day message.
+      *
+      * @return the message of the day
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getMotd() {
+-        return motd;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper
+     }
+ 
+     /**
+      * Change the message of the day message.
+      *
+      * @param motd the message of the day
++     * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setMotd(@NotNull String motd) {
+-        this.motd = motd;
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
+     }
+ 
+     /**
