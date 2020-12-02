@@ -138,7 +138,7 @@
              piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
          }
  
-@@ -379,7 +400,7 @@
+@@ -379,14 +400,20 @@
              return false;
          } else if (PiglinAi.isAdmiringDisabled(piglin) && piglin.getBrain().hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
              return false;
@@ -147,20 +147,28 @@
              return PiglinAi.isNotHoldingLovedItemInOffHand(piglin);
          } else {
              boolean flag = piglin.canAddToInventory(stack);
-@@ -388,6 +409,12 @@
-         }
-     }
  
+             return stack.is(Items.GOLD_NUGGET) ? flag : (PiglinAi.isFood(stack) ? !PiglinAi.hasEatenRecently(piglin) && flag : (!PiglinAi.isLovedItem(stack) ? piglin.canReplaceCurrentItem(stack) : PiglinAi.isNotHoldingLovedItemInOffHand(piglin) && flag));
+         }
++    }
++
 +    // CraftBukkit start - Added method to allow checking for custom payment items
 +    protected static boolean isLovedItem(ItemStack itemstack, Piglin piglin) {
 +        return PiglinAi.isLovedItem(itemstack) || (piglin.interestItems.contains(itemstack.getItem()) || piglin.allowedBarterItems.contains(itemstack.getItem()));
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      protected static boolean isLovedItem(ItemStack stack) {
          return stack.is(ItemTags.PIGLIN_LOVED);
+@@ -451,6 +478,7 @@
      }
-@@ -481,7 +508,7 @@
+ 
+     public static void angerNearbyPiglins(ServerLevel world, Player player, boolean blockOpen) {
++        if (!player.level().paperConfig().entities.behavior.piglinsGuardChests) return; // Paper - Config option for Piglins guarding chests
+         List<Piglin> list = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0D));
+ 
+         list.stream().filter(PiglinAi::isIdle).filter((entitypiglin) -> {
+@@ -481,7 +509,7 @@
      }
  
      protected static boolean canAdmire(Piglin piglin, ItemStack nearbyItems) {
@@ -169,7 +177,7 @@
      }
  
      protected static void wasHurtBy(ServerLevel world, Piglin piglin, LivingEntity attacker) {
-@@ -735,6 +762,12 @@
+@@ -735,6 +763,12 @@
          return entity.getBrain().hasMemoryValue(MemoryModuleType.ADMIRING_ITEM);
      }
  
@@ -182,7 +190,7 @@
      private static boolean isBarterCurrency(ItemStack stack) {
          return stack.is(PiglinAi.BARTERING_ITEM);
      }
-@@ -772,7 +805,7 @@
+@@ -772,7 +806,7 @@
      }
  
      private static boolean isNotHoldingLovedItemInOffHand(Piglin piglin) {
