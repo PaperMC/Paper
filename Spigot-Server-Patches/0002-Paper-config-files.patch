@@ -460,15 +460,18 @@ index 0000000000000000000000000000000000000000..2c0514892d3993bef57ecf677cf8bb0f
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b31109d2dadd29e8852468c19265066b773d2be0
+index 0000000000000000000000000000000000000000..f84e9feec36f623f413e6d2b8eb25edb1e1358f7
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,79 @@
 +package com.destroystokyo.paper;
 +
 +import java.util.List;
++import java.util.function.Predicate;
 +
++import org.apache.commons.lang.BooleanUtils;
 +import org.bukkit.Bukkit;
++import org.bukkit.World.Environment;
 +import org.bukkit.configuration.file.YamlConfiguration;
 +import org.spigotmc.SpigotWorldConfig;
 +
@@ -479,12 +482,14 @@ index 0000000000000000000000000000000000000000..b31109d2dadd29e8852468c19265066b
 +
 +    private final String worldName;
 +    private final SpigotWorldConfig spigotConfig;
++    private final Environment environment;
 +    private YamlConfiguration config;
 +    private boolean verbose;
 +
-+    public PaperWorldConfig(String worldName, SpigotWorldConfig spigotConfig) {
++    public PaperWorldConfig(String worldName, SpigotWorldConfig spigotConfig, Environment environment) {
 +        this.worldName = worldName;
 +        this.spigotConfig = spigotConfig;
++        this.environment = environment;
 +        this.config = PaperConfig.config;
 +        init();
 +    }
@@ -505,6 +510,12 @@ index 0000000000000000000000000000000000000000..b31109d2dadd29e8852468c19265066b
 +    private boolean getBoolean(String path, boolean def) {
 +        config.addDefault("world-settings.default." + path, def);
 +        return config.getBoolean("world-settings." + worldName + "." + path, config.getBoolean("world-settings.default." + path));
++    }
++
++    private boolean getBoolean(String path, Predicate<Boolean> predicate) {
++        String val = getString(path, "default").toLowerCase();
++        Boolean bool = BooleanUtils.toBooleanObject(val, "true", "false", "default");
++        return predicate.test(bool);
 +    }
 +
 +    private double getDouble(String path, double def) {
@@ -634,7 +645,7 @@ index 6d1012cc652780189a5d849125abe09b27b88422..49649e70ee8bfb3dacd63a88a180f0f3
          Main.LOGGER.info("Forcing world upgrade! {}", convertable_conversionsession.getLevelName()); // CraftBukkit
          WorldUpgrader worldupgrader = new WorldUpgrader(convertable_conversionsession, datafixer, immutableset, flag);
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 169822482d3e31ef4f625a82102adc6d478588a8..2ffa56f3580b524c3593505585410dc347e1780c 100644
+index 169822482d3e31ef4f625a82102adc6d478588a8..2b440b277ec51598657f85cec5bd574492c5f4eb 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -77,6 +77,8 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -650,7 +661,7 @@ index 169822482d3e31ef4f625a82102adc6d478588a8..2ffa56f3580b524c3593505585410dc3
  
      protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
-+        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((WorldDataServer) worlddatamutable).getName(), this.spigotConfig); // Paper
++        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((WorldDataServer) worlddatamutable).getName(), this.spigotConfig, env); // Paper
          this.generator = gen;
          this.world = new CraftWorld((WorldServer) this, gen, env);
          this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
