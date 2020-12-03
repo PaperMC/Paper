@@ -555,12 +555,10 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -425,32 +715,10 @@
-             }
- 
+@@ -427,30 +717,8 @@
              iworlddataserver.setInitialized(true);
--        }
--
+         }
+ 
 -        this.getPlayerList().addWorldborderListener(worldserver);
 -        if (this.worldData.getCustomBossEvents() != null) {
 -            this.getCustomBossEvents().load(this.worldData.getCustomBossEvents(), this.registryAccess());
@@ -581,8 +579,8 @@
 -                worldborder.addListener(new BorderChangeListener.DelegateBorderChangeListener(worldserver1.getWorldBorder()));
 -                this.levels.put(resourcekey1, worldserver1);
 -            }
-         }
- 
+-        }
+-
 -        worldborder.applySettings(iworlddataserver.getWorldBorder());
      }
 +    // CraftBukkit end
@@ -1196,9 +1194,17 @@
      }
  
      public boolean isReady() {
-@@ -1634,11 +2152,11 @@
+@@ -1632,13 +2150,19 @@
+         return this.functionManager;
+     }
  
++    // Paper start - Add ServerResourcesReloadedEvent
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
++        return this.reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN);
++    }
++    public CompletableFuture<Void> reloadResources(Collection<String> dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
++        // Paper end - Add ServerResourcesReloadedEvent
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
 -            Stream stream = dataPacks.stream();
 +            Stream<String> stream = dataPacks.stream(); // CraftBukkit - decompile error
@@ -1210,7 +1216,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2172,7 @@
+@@ -1654,6 +2178,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -1218,15 +1224,16 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1665,6 +2184,7 @@
+@@ -1665,6 +2190,8 @@
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
              this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
 +            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings; they can be defined by datapacks so refresh it here
++            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - Add ServerResourcesReloadedEvent; fire after everything has been reloaded
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,13 +2309,14 @@
+@@ -1789,13 +2316,14 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1242,7 +1249,7 @@
                      entityplayer.connection.disconnect((Component) Component.translatable("multiplayer.disconnect.not_whitelisted"));
                  }
              }
-@@ -1952,7 +2473,7 @@
+@@ -1952,7 +2480,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1251,7 +1258,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2579,7 @@
+@@ -2058,7 +2586,7 @@
              try {
                  label51:
                  {
@@ -1260,19 +1267,22 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2108,6 +2629,21 @@
- 
-     }
- 
+@@ -2105,9 +2633,24 @@
+         if (bufferedwriter != null) {
+             bufferedwriter.close();
+         }
++
++    }
++
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
-+
+ 
 +    public static MinecraftServer getServer() {
 +        return SERVER; // Paper
-+    }
-+
+     }
+ 
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
@@ -1282,7 +1292,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2225,18 +2761,24 @@
+@@ -2225,18 +2768,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1311,7 +1321,7 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2919,32 @@
+@@ -2377,6 +2926,32 @@
      }
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
