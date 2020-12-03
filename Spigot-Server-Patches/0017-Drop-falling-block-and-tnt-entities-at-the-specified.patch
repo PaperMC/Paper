@@ -3,6 +3,7 @@ From: Byteflux <byte@byteflux.net>
 Date: Tue, 1 Mar 2016 14:14:15 -0600
 Subject: [PATCH] Drop falling block and tnt entities at the specified height
 
+* Dec 2, 2020 Added tnt nerf for tnt minecarts - Machine_Maker
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
 index 89e76dd73811fd0f6f8c8e7e5af804d5a4bb5a75..d16ae924bcbe31c964f7fb448757c748e5c4418c 100644
@@ -57,6 +58,23 @@ index 55e6d9a94c648bac68b80a76eda041fb952db09f..6b226c04d40adff8b0f1d28c0cc79439
              if (!this.world.isClientSide) {
                  blockposition = this.getChunkCoordinates();
                  boolean flag = this.block.getBlock() instanceof BlockConcretePowder;
+diff --git a/src/main/java/net/minecraft/server/EntityMinecartTNT.java b/src/main/java/net/minecraft/server/EntityMinecartTNT.java
+index 50d7c2899deb707dbbe333242e049b963d9b549c..3dfe3d13ac713c963256a662b52f54716e397672 100644
+--- a/src/main/java/net/minecraft/server/EntityMinecartTNT.java
++++ b/src/main/java/net/minecraft/server/EntityMinecartTNT.java
+@@ -26,6 +26,12 @@ public class EntityMinecartTNT extends EntityMinecartAbstract {
+     public void tick() {
+         super.tick();
+         if (this.b > 0) {
++            // Paper start - Configurable TNT entity height nerf
++            if (this.world.paperConfig.entityTNTHeightNerf != 0 && this.locY() > this.world.paperConfig.entityTNTHeightNerf) {
++                this.die();
++                return;
++            }
++            // Paper end
+             --this.b;
+             this.world.addParticle(Particles.SMOKE, this.locX(), this.locY() + 0.5D, this.locZ(), 0.0D, 0.0D, 0.0D);
+         } else if (this.b == 0) {
 diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
 index b448467a92650e1bd3d5fac7de685550b7e891df..2b8ed9d14bd6dd9330712741859eb77ba0194153 100644
 --- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
