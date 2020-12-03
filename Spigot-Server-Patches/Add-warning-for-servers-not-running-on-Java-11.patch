@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <kyle@denwav.dev>
+Date: Wed, 2 Dec 2020 21:58:45 -0800
+Subject: [PATCH] Add warning for servers not running on Java 11
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java b/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java
+@@ -0,0 +0,0 @@
++package com.destroystokyo.paper.util;
++
++import org.apache.logging.log4j.LogManager;
++import org.apache.logging.log4j.Logger;
++
++public final class PaperJvmChecker {
++
++    private PaperJvmChecker() {}
++
++    public static void checkJvm() {
++        final Logger logger = LogManager.getLogger();
++
++        final String javaVersion = System.getProperty("java.version");
++        final int dotIndex = javaVersion.indexOf('.');
++
++        if (javaVersion.startsWith("1.")) {
++            // definitely old
++            PaperJvmChecker.printWarning(javaVersion, logger);
++            return;
++        }
++
++        final int endIndex = dotIndex == -1 ? javaVersion.length() : dotIndex;
++        final String version = javaVersion.substring(0, endIndex);
++
++        final int javaVersionNum;
++        try {
++            javaVersionNum = Integer.parseInt(version);
++        } catch (final NumberFormatException e) {
++            logger.warn("Failed to determine Java version; Could not parse {}", version, e);
++            PaperJvmChecker.printWarning(javaVersion, logger);
++            return;
++        }
++
++        if (javaVersionNum < 11) {
++            PaperJvmChecker.printWarning(javaVersion, logger);
++        }
++    }
++
++    private static void printWarning(final String version, final Logger logger) {
++        logger.warn("************************************************************");
++        logger.warn("* WARNING - YOU ARE RUNNING AN OUTDATED VERSION OF JAVA.");
++        logger.warn("* PAPER WILL STOP BEING COMPATIBLE WITH THIS VERSION OF");
++        logger.warn("* JAVA WHEN MINECRAFT 1.17 IS RELEASED.");
++        logger.warn("*");
++        logger.warn("* Please update the version of Java you use to run Paper");
++        logger.warn("* to at least Java 11. When Paper for Minecraft 1.17 is");
++        logger.warn("* released support for versions of Java before 11 will");
++        logger.warn("* be dropped.");
++        logger.warn("*");
++        logger.warn("* Current Java version: " + version);
++        logger.warn("*");
++        logger.warn("* Check this forum post for more information: ");
++        logger.warn("*   https://papermc.io/java11");
++        logger.warn("************************************************************");
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+                 LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
+                 // Paper end
+ 
++                com.destroystokyo.paper.util.PaperJvmChecker.checkJvm(); // Paper jvm version nag
++
+                 org.spigotmc.WatchdogThread.tick(); // Paper
+                 org.spigotmc.WatchdogThread.hasStarted = true; // Paper
+                 Arrays.fill( recentTps, 20 );
