@@ -61,7 +61,7 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -214,54 +226,204 @@
+@@ -214,53 +226,203 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
@@ -80,7 +80,7 @@
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
- 
++
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunk(x, z, false);
 +    }
@@ -133,7 +133,7 @@
 +
 +        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
-+
+ 
 +        int minChunkX = minBlockX >> 4;
 +        int minChunkZ = minBlockZ >> 4;
 +
@@ -278,18 +278,28 @@
              return (RandomSequences) this.getDataStorage().computeIfAbsent(RandomSequences.factory(l), "random_sequences");
          });
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
-     }
- 
++    }
++
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {
 +        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
-+    }
+     }
 +    // Paper end
-+
+ 
      /** @deprecated */
      @Deprecated
-     @VisibleForTesting
+@@ -273,8 +435,8 @@
+         this.serverLevelData.setClearWeatherTime(clearDuration);
+         this.serverLevelData.setRainTime(rainDuration);
+         this.serverLevelData.setThunderTime(rainDuration);
+-        this.serverLevelData.setRaining(raining);
+-        this.serverLevelData.setThundering(thundering);
++        this.serverLevelData.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
++        this.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
+     }
+ 
+     @Override
 @@ -305,12 +467,20 @@
          long j;
  
@@ -408,6 +418,17 @@
                  }
              }
  
+@@ -679,8 +852,8 @@
+                 this.serverLevelData.setThunderTime(j);
+                 this.serverLevelData.setRainTime(k);
+                 this.serverLevelData.setClearWeatherTime(i);
+-                this.serverLevelData.setThundering(flag1);
+-                this.serverLevelData.setRaining(flag2);
++                this.serverLevelData.setThundering(flag1, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
++                this.serverLevelData.setRaining(flag2, org.bukkit.event.weather.WeatherChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
+             }
+ 
+             this.oThunderLevel = this.thunderLevel;
 @@ -701,33 +874,67 @@
              this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
          }
@@ -464,16 +485,18 @@
      @VisibleForTesting
      public void resetWeatherCycle() {
 -        this.serverLevelData.setRainTime(0);
-+        // CraftBukkit start
-         this.serverLevelData.setRaining(false);
+-        this.serverLevelData.setRaining(false);
 -        this.serverLevelData.setThunderTime(0);
+-        this.serverLevelData.setThundering(false);
++        // CraftBukkit start
++        this.serverLevelData.setRaining(false, org.bukkit.event.weather.WeatherChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
 +        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
 +        // Not that everyone ever manages to get the whole server to sleep at the same time....
 +        if (!this.serverLevelData.isRaining()) {
 +            this.serverLevelData.setRainTime(0);
 +        }
 +        // CraftBukkit end
-         this.serverLevelData.setThundering(false);
++        this.serverLevelData.setThundering(false, org.bukkit.event.weather.ThunderChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
 +        // CraftBukkit start
 +        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
 +        // Not that everyone ever manages to get the whole server to sleep at the same time....
@@ -783,15 +806,14 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1143,17 +1480,28 @@
-                 break;
+@@ -1144,16 +1481,27 @@
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
-+                break;
+                 break;
 +            // CraftBukkit start - handle custom explosion type
 +            case STANDARD:
 +                explosion_effect = Explosion.BlockInteraction.DESTROY;
-                 break;
++                break;
 +            // CraftBukkit end
              default:
                  throw new MatchException((String) null, (Throwable) null);
@@ -838,9 +860,12 @@
  
      public <T extends ParticleOptions> int sendParticles(T parameters, boolean force, boolean important, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 -        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(parameters, force, important, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
+-        int j = 0;
 +        return this.sendParticlesSource(null, parameters, force, important, x, y, z, count, offsetX, offsetY, offsetZ, speed); // CraftBukkit - visibility api support
 +    }
-+
+ 
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
 +    // CraftBukkit start - visibility api support
 +    public <T extends ParticleOptions> int sendParticlesSource(ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
 +        // Paper start - Particle API
@@ -850,15 +875,13 @@
 +        // Paper end - Particle API
 +        // CraftBukkit end
 +        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, flag, flag1, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
-         int j = 0;
++        int j = 0;
  
--        for (int k = 0; k < this.players.size(); ++k) {
--            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
+-            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
 +        for (Player entityhuman : receivers) { // Paper - Particle API
 +            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
 +            if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
- 
--            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
++
 +            if (this.sendParticles(entityplayer, flag, d0, d1, d2, packetplayoutworldparticles)) {
                  ++j;
              }
