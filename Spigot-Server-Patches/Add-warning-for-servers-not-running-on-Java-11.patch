@@ -15,55 +15,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
 +
-+public final class PaperJvmChecker {
++public class PaperJvmChecker {
 +
-+    private PaperJvmChecker() {}
-+
-+    public static void checkJvm() {
-+        final Logger logger = LogManager.getLogger();
-+
-+        final String javaVersion = System.getProperty("java.version");
-+        final int dotIndex = javaVersion.indexOf('.');
++    private static int getJvmVersion() {
++        String javaVersion = System.getProperty("java.version");
++        int dotIndex = javaVersion.indexOf('.');
 +
 +        if (javaVersion.startsWith("1.")) {
-+            // definitely old
-+            PaperJvmChecker.printWarning(javaVersion, logger);
-+            return;
++            // For Java 8 and below, trim off the 1. prefix
++            javaVersion = javaVersion.substring(2);
++            dotIndex = javaVersion.indexOf('.');
 +        }
 +
 +        final int endIndex = dotIndex == -1 ? javaVersion.length() : dotIndex;
 +        final String version = javaVersion.substring(0, endIndex);
 +
-+        final int javaVersionNum;
 +        try {
-+            javaVersionNum = Integer.parseInt(version);
++            return Integer.parseInt(version);
 +        } catch (final NumberFormatException e) {
-+            logger.warn("Failed to determine Java version; Could not parse {}", version, e);
-+            PaperJvmChecker.printWarning(javaVersion, logger);
-+            return;
-+        }
-+
-+        if (javaVersionNum < 11) {
-+            PaperJvmChecker.printWarning(javaVersion, logger);
++            LogManager.getLogger().warn("Failed to determine Java version; Could not parse {}", version, e);
++            return -1;
 +        }
 +    }
 +
-+    private static void printWarning(final String version, final Logger logger) {
-+        logger.warn("************************************************************");
-+        logger.warn("* WARNING - YOU ARE RUNNING AN OUTDATED VERSION OF JAVA.");
-+        logger.warn("* PAPER WILL STOP BEING COMPATIBLE WITH THIS VERSION OF");
-+        logger.warn("* JAVA WHEN MINECRAFT 1.17 IS RELEASED.");
-+        logger.warn("*");
-+        logger.warn("* Please update the version of Java you use to run Paper");
-+        logger.warn("* to at least Java 11. When Paper for Minecraft 1.17 is");
-+        logger.warn("* released support for versions of Java before 11 will");
-+        logger.warn("* be dropped.");
-+        logger.warn("*");
-+        logger.warn("* Current Java version: " + version);
-+        logger.warn("*");
-+        logger.warn("* Check this forum post for more information: ");
-+        logger.warn("*   https://papermc.io/java11");
-+        logger.warn("************************************************************");
++    public static void checkJvm() {
++        if (getJvmVersion() < 11) {
++            final Logger logger = LogManager.getLogger();
++            logger.warn("************************************************************");
++            logger.warn("* WARNING - YOU ARE RUNNING AN OUTDATED VERSION OF JAVA.");
++            logger.warn("* PAPER WILL STOP BEING COMPATIBLE WITH THIS VERSION OF");
++            logger.warn("* JAVA WHEN MINECRAFT 1.17 IS RELEASED.");
++            logger.warn("*");
++            logger.warn("* Please update the version of Java you use to run Paper");
++            logger.warn("* to at least Java 11. When Paper for Minecraft 1.17 is");
++            logger.warn("* released support for versions of Java before 11 will");
++            logger.warn("* be dropped.");
++            logger.warn("*");
++            logger.warn("* Current Java version: {}", System.getProperty("java.version"));
++            logger.warn("*");
++            logger.warn("* Check this forum post for more information: ");
++            logger.warn("*   https://papermc.io/java11");
++            logger.warn("************************************************************");
++        }
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
