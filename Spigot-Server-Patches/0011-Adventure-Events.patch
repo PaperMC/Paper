@@ -70,6 +70,51 @@ index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..868fdbe7438ece00ba8a589f0c57968d
                  tileentitysign.isEditable = false;
               }
              // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..31bfd7ef956f3eff61801f4abf32b1f24e8266d8 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ // CraftBukkit start
++import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.Iterables;
+ 
+@@ -188,7 +189,7 @@ public abstract class PlayerList {
+         }
+         // CraftBukkit start
+         chatmessage.a(EnumChatFormat.YELLOW);
+-        String joinMessage = CraftChatMessage.fromComponent(chatmessage);
++        IChatBaseComponent joinMessage = chatmessage; // Paper - Adventure
+ 
+         playerconnection.a(entityplayer.locX(), entityplayer.locY(), entityplayer.locZ(), entityplayer.yaw, entityplayer.pitch);
+         this.players.add(entityplayer);
+@@ -197,19 +198,17 @@ public abstract class PlayerList {
+         // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
+ 
+         // CraftBukkit start
+-        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(entityplayer), joinMessage);
++        PlayerJoinEvent playerJoinEvent = new org.bukkit.event.player.PlayerJoinEvent(cserver.getPlayer(entityplayer), PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+         cserver.getPluginManager().callEvent(playerJoinEvent);
+ 
+         if (!entityplayer.playerConnection.networkManager.isConnected()) {
+             return;
+         }
+ 
+-        joinMessage = playerJoinEvent.getJoinMessage();
++        joinMessage = PaperAdventure.asVanilla(playerJoinEvent.joinMessage()); // Paper - Adventure
+ 
+-        if (joinMessage != null && joinMessage.length() > 0) {
+-            for (IChatBaseComponent line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
+-                server.getPlayerList().sendAll(new PacketPlayOutChat(line, ChatMessageType.SYSTEM, SystemUtils.b));
+-            }
++        if (playerJoinEvent.joinMessage() != net.kyori.adventure.text.Component.empty()) { // Paper - Adventure
++            server.getPlayerList().sendAll(new PacketPlayOutChat(joinMessage, ChatMessageType.SYSTEM, SystemUtils.b)); // Paper - Adventure
+         }
+         // CraftBukkit end
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 8c1602d786fbc67c43ba36a77150eac4e594eae9..ee36722a150a63f8921a4ede85e5d00f7efaae87 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
