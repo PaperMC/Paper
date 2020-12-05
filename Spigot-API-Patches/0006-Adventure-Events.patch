@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 5 Dec 2020 11:21:57 -0800
+Subject: [PATCH] Adventure Events
+
+
+diff --git a/src/main/java/org/bukkit/event/block/SignChangeEvent.java b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1268066e30ddb0cd3792ea4b3de894eb04196669 100644
+--- a/src/main/java/org/bukkit/event/block/SignChangeEvent.java
++++ b/src/main/java/org/bukkit/event/block/SignChangeEvent.java
+@@ -16,12 +16,25 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
+     private final Player player;
+-    private final String[] lines;
++    // Paper start
++    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
+ 
++    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
++        super(theBlock);
++        this.player = player;
++        this.adventure$lines = adventure$lines;
++    }
++
++    @Deprecated // Paper end
+     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+         super(theBlock);
+         this.player = thePlayer;
+-        this.lines = theLines;
++        // Paper start
++        this.adventure$lines = new java.util.ArrayList<>();
++        for (String theLine : theLines) {
++            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
++        }
++        // Paper end
+     }
+ 
+     /**
+@@ -34,14 +47,52 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+         return player;
+     }
+ 
++    // Paper start
++    /**
++     * Gets all of the lines of text from the sign involved in this event.
++     *
++     * @return the String array for the sign's lines new text
++     */
++    public @NotNull java.util.List<net.kyori.adventure.text.Component> lines() {
++        return this.adventure$lines;
++    }
++
++    /**
++     * Gets a single line of text from the sign involved in this event.
++     *
++     * @param index index of the line to get
++     * @return the String containing the line of text associated with the
++     *     provided index
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public @Nullable net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException {
++        return this.adventure$lines.get(index);
++    }
++
++    /**
++     * Sets a single line for the sign involved in this event
++     *
++     * @param index index of the line to set
++     * @param line text to set
++     * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
++     *     or < 0}
++     */
++    public void line(int index, @Nullable net.kyori.adventure.text.Component line) throws IndexOutOfBoundsException {
++        this.adventure$lines.set(index, line);
++    }
++    // Paper end
++
+     /**
+      * Gets all of the lines of text from the sign involved in this event.
+      *
+      * @return the String array for the sign's lines new text
++     * @deprecated in favour of {@link #lines()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String[] getLines() {
+-        return lines;
++        return adventure$lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
+     }
+ 
+     /**
+@@ -52,10 +103,12 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      *     provided index
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int)}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return lines[index];
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.adventure$lines.get(index)); // Paper
+     }
+ 
+     /**
+@@ -65,9 +118,11 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
+      * @param line text to set
+      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
+      *     or < 0}
++     * @deprecated in favour of {@link #line(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setLine(int index, @Nullable String line) throws IndexOutOfBoundsException {
+-        lines[index] = line;
++        adventure$lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : null); // Paper
+     }
+ 
+     @Override

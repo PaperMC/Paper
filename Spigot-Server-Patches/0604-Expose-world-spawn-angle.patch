@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Tue, 17 Nov 2020 19:13:09 +0200
+Subject: [PATCH] Expose world spawn angle
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 7977f8b7a8a7cfab100b131cc56bf3dff8cfbe5f..64dc471533375479e3de548251750317b29b1bd9 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -814,7 +814,7 @@ public abstract class PlayerList {
+             if (location == null) {
+                 worldserver1 = this.server.getWorldServer(World.OVERWORLD);
+                 blockposition = entityplayer1.getSpawnPoint(worldserver1);
+-                location = new Location(worldserver1.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F));
++                location = new Location(worldserver1.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F), worldserver1.worldData.getSpawnAngle(), 0.0F); // Paper - use world spawn angle
+             }
+ 
+             Player respawnPlayer = cserver.getPlayer(entityplayer1);
+diff --git a/src/main/java/net/minecraft/server/WorldData.java b/src/main/java/net/minecraft/server/WorldData.java
+index faf931785ea35df4525d4a429bdb2363e26e491b..14e1762bf8669ef9e8444f5a73952daa50b3b19e 100644
+--- a/src/main/java/net/minecraft/server/WorldData.java
++++ b/src/main/java/net/minecraft/server/WorldData.java
+@@ -8,6 +8,7 @@ public interface WorldData {
+ 
+     int c();
+ 
++    default float getSpawnAngle() { return d(); } // Paper - OBFHELPER
+     float d();
+ 
+     long getTime();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 3f84c006be361e04910437c656344170d4ff70ee..b71316cce3bdbf3485be456f0260c6b3463cff8e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -379,7 +379,7 @@ public class CraftWorld implements World {
+     @Override
+     public Location getSpawnLocation() {
+         BlockPosition spawn = world.getSpawn();
+-        return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ());
++        return new Location(this, spawn.getX(), spawn.getY(), spawn.getZ(), world.worldData.getSpawnAngle(), 0.0F); // Paper - expose world spawn angle
+     }
+ 
+     @Override

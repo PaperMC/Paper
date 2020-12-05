@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 6 Apr 2016 01:04:23 -0500
+Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
+
+This change is basically a bandaid to fix CB's complete and utter lack
+of support for vanilla scoreboard name modifications.
+
+In the future, finding a way to merge the vanilla expectations in with
+bukkit's concept of a display name would be preferable. There was a PR
+for this on CB at one point but I can't find it. We may need to do this
+ourselves at some point in the future.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index f433b1e46b1e97fa60f1bd32a1403189217d3afd..004e1cdfeef75c79889a1a7334773ab933c62086 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -248,4 +248,9 @@ public class PaperWorldConfig {
+         grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
+         log("Grass Spread Tick Rate: " + grassUpdateRate);
+     }
++
++    public boolean useVanillaScoreboardColoring;
++    private void useVanillaScoreboardColoring() {
++        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+index 39c1e750ae1270ca780a5d8624f8daa45bd27637..0b46109846663de0b8142d98d93bd45f68709081 100644
+--- a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
++++ b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+@@ -6,10 +6,14 @@ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.ComponentLike;
+ import net.kyori.adventure.text.TextComponent;
+ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.minecraft.server.ScoreboardTeam;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ 
+ public class VanillaChatMessageLogic {
+     public static Component displayNameForChat(final CraftPlayer player) {
++        if (player.getHandle().getWorld().paperConfig.useVanillaScoreboardColoring) {
++            return PaperAdventure.asAdventure(ScoreboardTeam.a(player.getHandle().getScoreboardTeam(), player.getHandle().getDisplayName()));
++        }
+         return player.displayName();
+     }
+ 
