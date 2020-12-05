@@ -37,7 +37,7 @@ index 24127f767bcf051e71f550c9635a23c26f453f53..41c9c7b7739b6fd545eb6589092682ac
              this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..44fbcda1e1265fa531ca5876dee1056ce5579c16 100644
+index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..89d363993d8850cbf7016b7f28fa7d22c2d5ffed 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -245,21 +245,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -79,7 +79,22 @@ index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..44fbcda1e1265fa531ca5876dee1056c
          // CraftBukkit end
  
          this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
-@@ -2523,21 +2521,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -1487,9 +1485,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         */
+ 
+         this.player.p();
+-        String quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
+-        if ((quitMessage != null) && (quitMessage.length() > 0)) {
+-            this.minecraftServer.getPlayerList().sendMessage(CraftChatMessage.fromString(quitMessage));
++        // Paper start - Adventure
++        net.kyori.adventure.text.Component quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
++        if ((quitMessage != null) && (quitMessage.equals(net.kyori.adventure.text.Component.empty()))) {
++            this.minecraftServer.getPlayerList().sendMessage(PaperAdventure.asVanilla(quitMessage));
++            // Paper end
+         }
+         // CraftBukkit end
+         ITextFilter itextfilter = this.player.Q();
+@@ -2523,21 +2523,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                  return;
              }
  
@@ -110,7 +125,7 @@ index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..44fbcda1e1265fa531ca5876dee1056c
               }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..535ced06a0931daab5a0c071b7b35202a6d13abc 100644
+index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..f597bd46cf54d759e53929240802a95e77048c9f 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
@@ -154,6 +169,33 @@ index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..535ced06a0931daab5a0c071b7b35202
          }
          // CraftBukkit end
  
+@@ -406,7 +405,7 @@ public abstract class PlayerList {
+ 
+     }
+ 
+-    public String disconnect(EntityPlayer entityplayer) { // CraftBukkit - return string
++    public net.kyori.adventure.text.Component disconnect(EntityPlayer entityplayer) { // Paper - return Component
+         WorldServer worldserver = entityplayer.getWorldServer();
+ 
+         entityplayer.a(StatisticList.LEAVE_GAME);
+@@ -417,7 +416,7 @@ public abstract class PlayerList {
+             entityplayer.closeInventory();
+         }
+ 
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+         cserver.getPluginManager().callEvent(playerQuitEvent);
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
+@@ -478,7 +477,7 @@ public abstract class PlayerList {
+         cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
+         // CraftBukkit end
+ 
+-        return playerQuitEvent.getQuitMessage(); // CraftBukkit
++        return playerQuitEvent.quitMessage(); // Paper - Adventure
+     }
+ 
+     // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
 @@ -524,10 +523,10 @@ public abstract class PlayerList {
              }
  
