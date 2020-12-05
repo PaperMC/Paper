@@ -110,7 +110,7 @@ index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..44fbcda1e1265fa531ca5876dee1056c
               }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..31bfd7ef956f3eff61801f4abf32b1f24e8266d8 100644
+index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..535ced06a0931daab5a0c071b7b35202a6d13abc 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
@@ -154,6 +154,40 @@ index aaa35afa8dafcfdcaebbf37585a18716b2f4ef98..31bfd7ef956f3eff61801f4abf32b1f2
          }
          // CraftBukkit end
  
+@@ -524,10 +523,10 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
++            if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Spigot // Paper - Adventure
+         } else if (!this.isWhitelisted(gameprofile)) {
+             chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted");
+-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
++            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
+         } else if (getIPBans().isBanned(socketaddress) && !getIPBans().get(socketaddress).hasExpired()) {
+             IpBanEntry ipbanentry = this.l.get(socketaddress);
+ 
+@@ -537,17 +536,17 @@ public abstract class PlayerList {
+             }
+ 
+             // return chatmessage;
+-            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage));
++            event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
+         } else {
+             // return this.players.size() >= this.maxPlayers && !this.f(gameprofile) ? new ChatMessage("multiplayer.disconnect.server_full") : null;
+             if (this.players.size() >= this.maxPlayers && !this.f(gameprofile)) {
+-                event.disallow(PlayerLoginEvent.Result.KICK_FULL, org.spigotmc.SpigotConfig.serverFullMessage); // Spigot
++                event.disallow(PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
+             }
+         }
+ 
+         cserver.getPluginManager().callEvent(event);
+         if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
+-            loginlistener.disconnect(event.getKickMessage());
++            loginlistener.disconnect(PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
+             return null;
+         }
+         return entity;
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 8c1602d786fbc67c43ba36a77150eac4e594eae9..ee36722a150a63f8921a4ede85e5d00f7efaae87 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java

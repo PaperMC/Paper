@@ -5,18 +5,18 @@ Subject: [PATCH] ProfileWhitelistVerifyEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index e597d67d24821d5264d4ba095105215343e52507..969927a715e213d4e3e2f5c6333d91ea84b08ffe 100644
+index 91e5025d47d676eac5ef5471133a4af750195340..d659e1b8515c2032553de7b463b2969e0f2f0631 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -542,9 +542,9 @@ public abstract class PlayerList {
  
              // return chatmessage;
-             if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, CraftChatMessage.fromComponent(chatmessage)); // Spigot
+             if (!gameprofilebanentry.hasExpired()) event.disallow(PlayerLoginEvent.Result.KICK_BANNED, PaperAdventure.asAdventure(chatmessage)); // Spigot // Paper - Adventure
 -        } else if (!this.isWhitelisted(gameprofile)) {
 +        } else if (!this.isWhitelisted(gameprofile, event)) { // Paper
              chatmessage = new ChatMessage("multiplayer.disconnect.not_whitelisted");
--            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot
-+            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, org.spigotmc.SpigotConfig.whitelistMessage); // Spigot // Paper - moved to isWhitelisted
+-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure
++            //event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage)); // Spigot // Paper - Adventure // Paper - moved to isWhitelisted
          } else if (getIPBans().isBanned(socketaddress) && !getIPBans().get(socketaddress).hasExpired()) {
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
@@ -37,7 +37,7 @@ index e597d67d24821d5264d4ba095105215343e52507..969927a715e213d4e3e2f5c6333d91ea
 +        event.callEvent();
 +        if (!event.isWhitelisted()) {
 +            if (loginEvent != null) {
-+                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage());
++                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage())); // Paper - Adventure
 +            }
 +            return false;
 +        }
