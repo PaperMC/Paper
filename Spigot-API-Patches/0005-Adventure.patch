@@ -69,7 +69,7 @@ index ef58a6c00f444bd498a2d8fc4e457236f393954f..ecd149157d4fb80444f34bf5633d74bc
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index f1585968b13007b0f9b8c69ac3c2eff28a0fc89e..7e73bd1726a1b52b0612b36b9de1b13440f8cc9b 100644
+index f1585968b13007b0f9b8c69ac3c2eff28a0fc89e..5b69d394199d5698797557faccd87c82105a92ea 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -1035,6 +1035,7 @@ public final class Bukkit {
@@ -154,6 +154,32 @@ index f1585968b13007b0f9b8c69ac3c2eff28a0fc89e..7e73bd1726a1b52b0612b36b9de1b134
      @NotNull
      public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException {
          return server.createInventory(owner, size, title);
+@@ -1172,12 +1225,25 @@ public final class Bukkit {
+         return server.isPrimaryThread();
+     }
+ 
++    // Paper start
++    /**
++     * Gets the message that is displayed on the server list.
++     *
++     * @return the server's MOTD
++     */
++    @NotNull public static net.kyori.adventure.text.Component motd() {
++        return server.motd();
++    }
++    // Paper end
++
+     /**
+      * Gets the message that is displayed on the server list.
+      *
+      * @return the servers MOTD
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static String getMotd() {
+         return server.getMotd();
+     }
 diff --git a/src/main/java/org/bukkit/Nameable.java b/src/main/java/org/bukkit/Nameable.java
 index fee814e01a653d2b53c56e8b566383ca44aa5346..2acdf2a6d3955923c721222b9da784f3278f6418 100644
 --- a/src/main/java/org/bukkit/Nameable.java
@@ -228,7 +254,7 @@ index 22eca2a180618ed43a4ef103bebd134897d6c71a..abb7448ee8fe1152623794d3b806eef9
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..0325e1ea20d346f9e6d1f128dbbe0150486fbe49 100644
+index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..515d76f6b512ec7bb1a9e8583cb762e925a66e66 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -55,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
@@ -318,6 +344,30 @@ index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..0325e1ea20d346f9e6d1f128dbbe0150
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
  
+@@ -979,12 +1028,23 @@ public interface Server extends PluginMessageRecipient {
+      */
+     boolean isPrimaryThread();
+ 
++    // Paper start
++    /**
++     * Gets the message that is displayed on the server list.
++     *
++     * @return the server's MOTD
++     */
++    @NotNull net.kyori.adventure.text.Component motd();
++    // Paper end
++
+     /**
+      * Gets the message that is displayed on the server list.
+      *
+      * @return the servers MOTD
++     * @deprecated in favour of {@link #motd()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getMotd();
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index cdcbc8b05afc412017ac0e4ed0adf227d1342336..6b5dbe4ea711807a1944cfe2aae2ce415d4f2638 100644
 --- a/src/main/java/org/bukkit/World.java
@@ -775,6 +825,135 @@ index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..81925276bb056da0d48bea23128ba0e4
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
+index 94852d50e88d0594b84b581cd627174043629995..98ee1d22ec33e9e2ef102fa5cb124b68a634297f 100644
+--- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
+@@ -119,6 +119,63 @@ public interface BookMeta extends ItemMeta {
+      */
+     boolean hasPages();
+ 
++    // Paper start
++    /**
++     * Gets the specified page in the book. The page must exist.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to get, in range [1, getPageCount()]
++     * @return the page from the book
++     */
++    @NotNull net.kyori.adventure.text.Component page(int page);
++
++    /**
++     * Sets the specified page in the book. Pages of the book must be
++     * contiguous.
++     * <p>
++     * The data can be up to 256 characters in length, additional characters
++     * are truncated.
++     * <p>
++     * Pages are 1-indexed.
++     *
++     * @param page the page number to set, in range [1, getPageCount()]
++     * @param data the data to set for that page
++     */
++    void page(int page, @NotNull net.kyori.adventure.text.Component data);
++
++    /**
++     * Gets all the pages in the book.
++     *
++     * @return list of all the pages in the book
++     */
++    @NotNull List<net.kyori.adventure.text.Component> pages();
++
++    /**
++     * Clears the existing book pages, and sets the book to use the provided
++     * pages. Maximum 100 pages with 256 characters per page.
++     *
++     * @param pages A list of pages to set the book to use
++     */
++    void pages(@NotNull List<net.kyori.adventure.text.Component> pages);
++
++    /**
++     * Clears the existing book pages, and sets the book to use the provided
++     * pages. Maximum 50 pages with 256 characters per page.
++     *
++     * @param pages A list of strings, each being a page
++     */
++    void pages(@NotNull net.kyori.adventure.text.Component... pages);
++
++    /**
++     * Adds new pages to the end of the book. Up to a maximum of 50 pages with
++     * 256 characters per page.
++     *
++     * @param pages A list of strings, each being a page
++     */
++    void addPages(@NotNull net.kyori.adventure.text.Component... pages);
++    // Paper end
++
+     /**
+      * Gets the specified page in the book. The given page must exist.
+      * <p>
+@@ -126,8 +183,10 @@ public interface BookMeta extends ItemMeta {
+      *
+      * @param page the page number to get, in range [1, getPageCount()]
+      * @return the page from the book
++     * @deprecated in favour of {@link #page(int)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getPage(int page);
+ 
+     /**
+@@ -141,15 +200,19 @@ public interface BookMeta extends ItemMeta {
+      *
+      * @param page the page number to set, in range [1, getPageCount()]
+      * @param data the data to set for that page
++     * @deprecated in favour of {@link #page(int, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setPage(int page, @NotNull String data);
+ 
+     /**
+      * Gets all the pages in the book.
+      *
+      * @return list of all the pages in the book
++     * @deprecated in favour of {@link #pages()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     List<String> getPages();
+ 
+     /**
+@@ -157,7 +220,9 @@ public interface BookMeta extends ItemMeta {
+      * pages. Maximum 100 pages with 256 characters per page.
+      *
+      * @param pages A list of pages to set the book to use
++     * @deprecated in favour of {@link #pages(List)}
+      */
++    @Deprecated // Paper
+     void setPages(@NotNull List<String> pages);
+ 
+     /**
+@@ -165,7 +230,9 @@ public interface BookMeta extends ItemMeta {
+      * pages. Maximum 50 pages with 256 characters per page.
+      *
+      * @param pages A list of strings, each being a page
++     * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
+      */
++    @Deprecated // Paper
+     void setPages(@NotNull String... pages);
+ 
+     /**
+@@ -173,7 +240,9 @@ public interface BookMeta extends ItemMeta {
+      * 256 characters per page.
+      *
+      * @param pages A list of strings, each being a page
++     * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
+      */
++    @Deprecated // Paper
+     void addPage(@NotNull String... pages);
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c4f7cff33 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
