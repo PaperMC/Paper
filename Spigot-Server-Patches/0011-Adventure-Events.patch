@@ -4,6 +4,38 @@ Date: Sat, 5 Dec 2020 12:49:53 -0800
 Subject: [PATCH] Adventure Events
 
 
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 24127f767bcf051e71f550c9635a23c26f453f53..41c9c7b7739b6fd545eb6589092682acec388f4b 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -569,23 +569,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+         IChatBaseComponent defaultMessage = this.getCombatTracker().getDeathMessage();
+ 
+-        String deathmessage = defaultMessage.getString();
+-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
++        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
+ 
+         // SPIGOT-943 - only call if they have an inventory open
+         if (this.activeContainer != this.defaultContainer) {
+             this.closeInventory();
+         }
+ 
+-        String deathMessage = event.getDeathMessage();
++        net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
+ 
+-        if (deathMessage != null && deathMessage.length() > 0 && flag) { // TODO: allow plugins to override?
+-            IChatBaseComponent ichatbasecomponent;
+-            if (deathMessage.equals(deathmessage)) {
+-                ichatbasecomponent = this.getCombatTracker().getDeathMessage();
+-            } else {
+-                ichatbasecomponent = org.bukkit.craftbukkit.util.CraftChatMessage.fromStringOrNull(deathMessage);
+-            }
++        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
++            IChatBaseComponent ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
+ 
+             this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
+                 if (!future.isSuccess()) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..868fdbe7438ece00ba8a589f0c57968de070e92b 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
@@ -38,3 +70,16 @@ index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..868fdbe7438ece00ba8a589f0c57968d
                  tileentitysign.isEditable = false;
               }
              // CraftBukkit end
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 8c1602d786fbc67c43ba36a77150eac4e594eae9..ee36722a150a63f8921a4ede85e5d00f7efaae87 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -774,7 +774,7 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
++    public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
+         CraftPlayer entity = victim.getBukkitEntity();
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
+         event.setKeepInventory(keepInventory);
