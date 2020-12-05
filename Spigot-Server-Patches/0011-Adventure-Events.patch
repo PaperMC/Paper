@@ -37,10 +37,49 @@ index 24127f767bcf051e71f550c9635a23c26f453f53..41c9c7b7739b6fd545eb6589092682ac
              this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..868fdbe7438ece00ba8a589f0c57968de070e92b 100644
+index 51c06ad50b9ace9f2c1fe519d39161b9b073c639..44fbcda1e1265fa531ca5876dee1056ce5579c16 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -2523,21 +2523,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -245,21 +245,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         return this.minecraftServer.a(this.player.getProfile());
+     }
+ 
+-    // CraftBukkit start
+-    @Deprecated
+-    public void disconnect(IChatBaseComponent ichatbasecomponent) {
+-        disconnect(CraftChatMessage.fromComponent(ichatbasecomponent));
++    public void disconnect(String s) {
++        // Paper start - Adventure
++        this.disconnect(CraftChatMessage.fromStringOrNull(s));
+     }
+-    // CraftBukkit end
+ 
+-    public void disconnect(String s) {
++    public void disconnect(IChatBaseComponent reason) {
++        // Paper end
+         // CraftBukkit start - fire PlayerKickEvent
+         if (this.processedDisconnect) {
+             return;
+         }
+-        String leaveMessage = EnumChatFormat.YELLOW + this.player.getName() + " left the game.";
++        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW); // Paper - Adventure
+ 
+-        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
++        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), PaperAdventure.asAdventure(reason), leaveMessage); // Paper - Adventure
+ 
+         if (this.server.getServer().isRunning()) {
+             this.server.getPluginManager().callEvent(event);
+@@ -270,8 +269,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             return;
+         }
+         // Send the possibly modified leave message
+-        s = event.getReason();
+-        final IChatBaseComponent ichatbasecomponent = CraftChatMessage.fromString(s, true)[0];
++        final IChatBaseComponent ichatbasecomponent = PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
+         // CraftBukkit end
+ 
+         this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
+@@ -2523,21 +2521,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                  return;
              }
  
