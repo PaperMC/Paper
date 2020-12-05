@@ -4,36 +4,35 @@ Date: Wed, 2 Dec 2020 21:58:45 -0800
 Subject: [PATCH] Add warning for servers not running on Java 11
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java b/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java
+diff --git a/src/main/java/io/papermc/paper/util/PaperJvmChecker.java b/src/main/java/io/papermc/paper/util/PaperJvmChecker.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/PaperJvmChecker.java
++++ b/src/main/java/io/papermc/paper/util/PaperJvmChecker.java
 @@ -0,0 +0,0 @@
-+package com.destroystokyo.paper.util;
++package io.papermc.paper.util;
 +
 +import org.apache.logging.log4j.LogManager;
 +import org.apache.logging.log4j.Logger;
++
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
 +
 +public class PaperJvmChecker {
 +
 +    private static int getJvmVersion() {
 +        String javaVersion = System.getProperty("java.version");
-+        int dotIndex = javaVersion.indexOf('.');
-+
-+        if (javaVersion.startsWith("1.")) {
-+            // For Java 8 and below, trim off the 1. prefix
-+            javaVersion = javaVersion.substring(2);
-+            dotIndex = javaVersion.indexOf('.');
++        final Matcher matcher = Pattern.compile("(?:1\\.)?(\\d+)").matcher(javaVersion);
++        if (!matcher.find()) {
++            LogManager.getLogger().warn("Failed to determine Java version; Could not parse: {}", javaVersion);
++            return -1;
 +        }
 +
-+        final int endIndex = dotIndex == -1 ? javaVersion.length() : dotIndex;
-+        final String version = javaVersion.substring(0, endIndex);
-+
++        final String version = matcher.group(1);
 +        try {
 +            return Integer.parseInt(version);
 +        } catch (final NumberFormatException e) {
-+            LogManager.getLogger().warn("Failed to determine Java version; Could not parse {}", version, e);
++            LogManager.getLogger().warn("Failed to determine Java version; Could not parse {} from {}", version, javaVersion, e);
 +            return -1;
 +        }
 +    }
@@ -63,12 +62,19 @@ diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.Main;
+ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
+ import co.aikar.timings.MinecraftTimings; // Paper
++import io.papermc.paper.util.PaperJvmChecker; // Paper
+ import org.spigotmc.SlackActivityAccountant; // Spigot
+ 
+ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
                  // Paper end
  
-+                com.destroystokyo.paper.util.PaperJvmChecker.checkJvm(); // Paper jvm version nag
-+
++                PaperJvmChecker.checkJvm(); // Paper jvm version nag
                  org.spigotmc.WatchdogThread.tick(); // Paper
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
