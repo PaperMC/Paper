@@ -6,10 +6,10 @@ Subject: [PATCH] Add warning for servers not running on Java 11
 
 diff --git a/src/main/java/io/papermc/paper/util/PaperJvmChecker.java b/src/main/java/io/papermc/paper/util/PaperJvmChecker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d761a9e0c1e71fadb981f9af4736d7e8e6fda2a9
+index 0000000000000000000000000000000000000000..c6ea429819c07e7f4bc257cad73463a030767825
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/PaperJvmChecker.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.util;
 +
 +import org.apache.logging.log4j.LogManager;
@@ -20,29 +20,19 @@ index 0000000000000000000000000000000000000000..d761a9e0c1e71fadb981f9af4736d7e8
 +
 +public class PaperJvmChecker {
 +
-+    private final static Pattern NUM_PATTERN = Pattern.compile("\\d+");
-+
 +    private static int getJvmVersion() {
 +        String javaVersion = System.getProperty("java.version");
-+        int dotIndex = javaVersion.indexOf('.');
-+
-+        if (javaVersion.startsWith("1.")) {
-+            // For Java 8 and below, trim off the 1. prefix
-+            javaVersion = javaVersion.substring(2);
-+            dotIndex = javaVersion.indexOf('.');
-+        }
-+
-+        final int endIndex = dotIndex == -1 ? javaVersion.length() : dotIndex;
-+        final String version = javaVersion.substring(0, endIndex);
-+        final Matcher versionMatcher = NUM_PATTERN.matcher(version);
-+        if (!versionMatcher.find()) {
++        final Matcher matcher = Pattern.compile("(?:1\\.)?(\\d+)").matcher(javaVersion);
++        if (!matcher.find()) {
++            LogManager.getLogger().warn("Failed to determine Java version; Could not parse: {}", javaVersion);
 +            return -1;
 +        }
 +
++        final String version = matcher.group(1);
 +        try {
-+            return Integer.parseInt(versionMatcher.group());
++            return Integer.parseInt(version);
 +        } catch (final NumberFormatException e) {
-+            LogManager.getLogger().warn("Failed to determine Java version; Could not parse {}", version, e);
++            LogManager.getLogger().warn("Failed to determine Java version; Could not parse {} from {}", version, javaVersion, e);
 +            return -1;
 +        }
 +    }
@@ -69,7 +59,7 @@ index 0000000000000000000000000000000000000000..d761a9e0c1e71fadb981f9af4736d7e8
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0108a1a68572df562349688e93f8134cb14d6116..0d3d8fde1d3ae94ec79b36ad40997c39100d252a 100644
+index 0108a1a68572df562349688e93f8134cb14d6116..172fc9ef9c0d3444eb99f750a17d42f130d94f73 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -69,6 +69,7 @@ import org.bukkit.craftbukkit.Main;
@@ -80,12 +70,11 @@ index 0108a1a68572df562349688e93f8134cb14d6116..0d3d8fde1d3ae94ec79b36ad40997c39
  import org.spigotmc.SlackActivityAccountant; // Spigot
  
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
-@@ -950,6 +951,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -950,6 +951,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
                  // Paper end
  
 +                PaperJvmChecker.checkJvm(); // Paper jvm version nag
-+
                  org.spigotmc.WatchdogThread.tick(); // Paper
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
