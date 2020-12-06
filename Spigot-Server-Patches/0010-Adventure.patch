@@ -1009,11 +1009,86 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..51c06ad50b9ace9f2c1fe519d39161b9
                      }
                  }
              }
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index 5b49047b820dbe1f326320b71445ac216bf688b5..aaa35afa8dafcfdcaebbf37585a18716b2f4ef98 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1068,7 +1068,7 @@ public abstract class PlayerList {
+     public void shutdown() {
+         // CraftBukkit start - disconnect safely
+         for (EntityPlayer player : this.players) {
+-            player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
++            player.playerConnection.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(this.server.server.shutdownMessage())); // CraftBukkit - add custom shutdown message // Paper - Adventure
+         }
+         // CraftBukkit end
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 90551257c299aaf694eb4f4063d5b1b3eee94876..7d95596e257966b11bb0f30d73cc1afbd69e95c4 100644
+index 90551257c299aaf694eb4f4063d5b1b3eee94876..53f0722477cf2aef43ac073d2977b6d7d0f5206d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1655,6 +1655,14 @@ public final class CraftServer implements Server {
+@@ -564,8 +564,11 @@ public final class CraftServer implements Server {
+     }
+ 
+     @Override
++    @Deprecated // Paper start
+     public int broadcastMessage(String message) {
+-        return broadcast(message, BROADCAST_CHANNEL_USERS);
++        this.sendMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message));
++        return this.getOnlinePlayers().size() + 1;
++        // Paper end
+     }
+ 
+     public Player getPlayer(final EntityPlayer entity) {
+@@ -1298,7 +1301,15 @@ public final class CraftServer implements Server {
+         return configuration.getInt("settings.spawn-radius", -1);
+     }
+ 
++    // Paper start
+     @Override
++    public net.kyori.adventure.text.Component shutdownMessage() {
++        String msg = getShutdownMessage();
++        return msg != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(msg) : null;
++    }
++    // Paper end
++    @Override
++    @Deprecated // Paper
+     public String getShutdownMessage() {
+         return configuration.getString("settings.shutdown-message");
+     }
+@@ -1414,7 +1425,15 @@ public final class CraftServer implements Server {
+     }
+ 
+     @Override
++    @Deprecated // Paper
+     public int broadcast(String message, String permission) {
++        // Paper start - Adventure
++        return this.broadcast(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), permission);
++    }
++
++    @Override
++    public int broadcast(net.kyori.adventure.text.Component message, String permission) {
++        // Paper end
+         Set<CommandSender> recipients = new HashSet<>();
+         for (Permissible permissible : getPluginManager().getPermissionSubscriptions(permission)) {
+             if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
+@@ -1422,14 +1441,14 @@ public final class CraftServer implements Server {
+             }
+         }
+ 
+-        BroadcastMessageEvent broadcastMessageEvent = new BroadcastMessageEvent(!Bukkit.isPrimaryThread(), message, recipients);
++        BroadcastMessageEvent broadcastMessageEvent = new BroadcastMessageEvent(!Bukkit.isPrimaryThread(), net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().serialize(message), recipients); // Paper - Adventure
+         getPluginManager().callEvent(broadcastMessageEvent);
+ 
+         if (broadcastMessageEvent.isCancelled()) {
+             return 0;
+         }
+ 
+-        message = broadcastMessageEvent.getMessage();
++        message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(broadcastMessageEvent.getMessage()); // Paper - Adventure
+ 
+         for (CommandSender recipient : recipients) {
+             recipient.sendMessage(message);
+@@ -1655,6 +1674,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1028,7 +1103,7 @@ index 90551257c299aaf694eb4f4063d5b1b3eee94876..7d95596e257966b11bb0f30d73cc1afb
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1667,6 +1675,14 @@ public final class CraftServer implements Server {
+@@ -1667,13 +1694,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1043,7 +1118,21 @@ index 90551257c299aaf694eb4f4063d5b1b3eee94876..7d95596e257966b11bb0f30d73cc1afb
      @Override
      public Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException {
          Validate.isTrue(9 <= size && size <= 54 && size % 9 == 0, "Size for custom inventory must be a multiple of 9 between 9 and 54 slots (got " + size + ")");
-@@ -1717,6 +1733,12 @@ public final class CraftServer implements Server {
+         return CraftInventoryCreator.INSTANCE.createInventory(owner, size, title);
+     }
+ 
++    // Paper start
+     @Override
++    public Merchant createMerchant(net.kyori.adventure.text.Component title) {
++        return new org.bukkit.craftbukkit.inventory.CraftMerchantCustom(title == null ? InventoryType.MERCHANT.defaultTitle() : title);
++    }
++    // Paper end
++    @Override
++    @Deprecated // Paper
+     public Merchant createMerchant(String title) {
+         return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
+     }
+@@ -1717,6 +1759,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1056,7 +1145,7 @@ index 90551257c299aaf694eb4f4063d5b1b3eee94876..7d95596e257966b11bb0f30d73cc1afb
      @Override
      public String getMotd() {
          return console.getMotd();
-@@ -2143,5 +2165,15 @@ public final class CraftServer implements Server {
+@@ -2143,5 +2191,15 @@ public final class CraftServer implements Server {
              return null;
          }
      }
@@ -1152,6 +1241,84 @@ index 3a782294c15e2c2592976858e28ec33f049cb65e..772c6b2fa50deac27e5ed112e6d9f9dd
      @Override
      public String getCustomName() {
          TileEntityEnchantTable enchant = this.getSnapshot();
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+index 15022ada0c2fd0f4302b45c55f46d0fdd3bfd57f..d70dfefe03e410843093f61b5c5205e510444223 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ 
+ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
+ 
+-    private String[] lines;
++    private java.util.List<net.kyori.adventure.text.Component> lines; // Paper
+     private boolean editable;
+ 
+     public CraftSign(final Block block) {
+@@ -27,24 +27,39 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements
+     public void load(TileEntitySign sign) {
+         super.load(sign);
+ 
+-        lines = new String[sign.lines.length];
+-        System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
++        lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(sign.lines)); // Paper
+         editable = sign.isEditable;
+     }
+ 
++    // Paper start
++    @Override
++    public java.util.List<net.kyori.adventure.text.Component> lines() {
++        return this.lines;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component line(int index) {
++        return this.lines.get(index);
++    }
++
++    @Override
++    public void line(int index, net.kyori.adventure.text.Component line) {
++        this.lines.set(index, line);
++    }
++    // Paper end
+     @Override
+     public String[] getLines() {
+-        return lines;
++        return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
+     }
+ 
+     @Override
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return lines[index];
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index)); // Paper
+     }
+ 
+     @Override
+     public void setLine(int index, String line) throws IndexOutOfBoundsException {
+-        lines[index] = line;
++        this.lines.set(index, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line)); // Paper
+     }
+ 
+     @Override
+@@ -76,6 +91,19 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements
+         sign.isEditable = editable;
+     }
+ 
++    // Paper start
++    public static IChatBaseComponent[] sanitizeLines(java.util.List<net.kyori.adventure.text.Component> lines) {
++        IChatBaseComponent[] components = new IChatBaseComponent[4];
++        for (int i = 0; i < 4; i++) {
++            if (i < lines.size() && lines.get(i) != null) {
++                components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
++            } else {
++                components[i] = new ChatComponentText("");
++            }
++        }
++        return components;
++    }
++    // Paper end
+     public static IChatBaseComponent[] sanitizeLines(String[] lines) {
+         IChatBaseComponent[] components = new IChatBaseComponent[4];
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
 index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..5bb8c38c511ec000476afde8038587ddbc7549cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
@@ -1611,6 +1778,46 @@ index 89a3617068421bb86baf4e8bfd9df2d0626adff7..29f58ae1948587956b07b732d128cc2b
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
+index 9f6e797d34e5ad21a496c89f5a45ddb0638d3adc..115ee3785b4e0ba6a235bbb31b643aa596705401 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
+@@ -14,10 +14,17 @@ import org.apache.commons.lang.Validate;
+ 
+ public class CraftMerchantCustom extends CraftMerchant {
+ 
++    @Deprecated // Paper - Adventure
+     public CraftMerchantCustom(String title) {
+         super(new MinecraftMerchant(title));
+         getMerchant().craftMerchant = this;
+     }
++    // Paper start
++    public CraftMerchantCustom(net.kyori.adventure.text.Component title) {
++        super(new MinecraftMerchant(title));
++        getMerchant().craftMerchant = this;
++    }
++    // Paper end
+ 
+     @Override
+     public String toString() {
+@@ -37,10 +44,17 @@ public class CraftMerchantCustom extends CraftMerchant {
+         private World tradingWorld;
+         protected CraftMerchant craftMerchant;
+ 
++        @Deprecated // Paper - Adventure
+         public MinecraftMerchant(String title) {
+             Validate.notNull(title, "Title cannot be null");
+             this.title = new ChatComponentText(title);
+         }
++        // Paper start
++        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
++            Validate.notNull(title, "Title cannot be null");
++            this.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
++        }
++        // Paper end
+ 
+         @Override
+         public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 index adc926f25c938fc0ba25586206d7daf89c6b7773..9cc2e18e5371dd020303764b97cb2d8635d84df8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
