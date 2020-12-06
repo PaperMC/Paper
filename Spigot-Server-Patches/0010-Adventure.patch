@@ -1241,6 +1241,84 @@ index 3a782294c15e2c2592976858e28ec33f049cb65e..772c6b2fa50deac27e5ed112e6d9f9dd
      @Override
      public String getCustomName() {
          TileEntityEnchantTable enchant = this.getSnapshot();
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+index 15022ada0c2fd0f4302b45c55f46d0fdd3bfd57f..d70dfefe03e410843093f61b5c5205e510444223 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ 
+ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
+ 
+-    private String[] lines;
++    private java.util.List<net.kyori.adventure.text.Component> lines; // Paper
+     private boolean editable;
+ 
+     public CraftSign(final Block block) {
+@@ -27,24 +27,39 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements
+     public void load(TileEntitySign sign) {
+         super.load(sign);
+ 
+-        lines = new String[sign.lines.length];
+-        System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
++        lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(sign.lines)); // Paper
+         editable = sign.isEditable;
+     }
+ 
++    // Paper start
++    @Override
++    public java.util.List<net.kyori.adventure.text.Component> lines() {
++        return this.lines;
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component line(int index) {
++        return this.lines.get(index);
++    }
++
++    @Override
++    public void line(int index, net.kyori.adventure.text.Component line) {
++        this.lines.set(index, line);
++    }
++    // Paper end
+     @Override
+     public String[] getLines() {
+-        return lines;
++        return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
+     }
+ 
+     @Override
+     public String getLine(int index) throws IndexOutOfBoundsException {
+-        return lines[index];
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index)); // Paper
+     }
+ 
+     @Override
+     public void setLine(int index, String line) throws IndexOutOfBoundsException {
+-        lines[index] = line;
++        this.lines.set(index, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line)); // Paper
+     }
+ 
+     @Override
+@@ -76,6 +91,19 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements
+         sign.isEditable = editable;
+     }
+ 
++    // Paper start
++    public static IChatBaseComponent[] sanitizeLines(java.util.List<net.kyori.adventure.text.Component> lines) {
++        IChatBaseComponent[] components = new IChatBaseComponent[4];
++        for (int i = 0; i < 4; i++) {
++            if (i < lines.size() && lines.get(i) != null) {
++                components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
++            } else {
++                components[i] = new ChatComponentText("");
++            }
++        }
++        return components;
++    }
++    // Paper end
+     public static IChatBaseComponent[] sanitizeLines(String[] lines) {
+         IChatBaseComponent[] components = new IChatBaseComponent[4];
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
 index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..5bb8c38c511ec000476afde8038587ddbc7549cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
