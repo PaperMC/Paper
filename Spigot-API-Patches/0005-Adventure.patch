@@ -783,6 +783,36 @@ index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index b833ef63fbe01271ceb2bd83a9eb4a84c9912761..1a093a30adf18572693032b78f3d2683e87d2e21 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -294,6 +294,9 @@ public abstract class Enchantment implements Keyed {
+      * @return True if the enchantment may be applied, otherwise False
+      */
+     public abstract boolean canEnchantItem(@NotNull ItemStack item);
++    // Paper start
++    public abstract @NotNull net.kyori.adventure.text.Component displayName(int level);
++    // Paper end
+ 
+     @Override
+     public boolean equals(Object obj) {
+diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13452322e0 100644
+--- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
++++ b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+@@ -63,4 +63,11 @@ public class EnchantmentWrapper extends Enchantment {
+     public boolean conflictsWith(@NotNull Enchantment other) {
+         return getEnchantment().conflictsWith(other);
+     }
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.text.Component displayName(int level) {
++        return getEnchantment().displayName(level);
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
 index 0ce26694eab5609d82c5498d1586b3dc22b4a037..622fd788bb1b5b54f12a090f429790f9d3c4d196 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
@@ -810,7 +840,7 @@ index 0ce26694eab5609d82c5498d1586b3dc22b4a037..622fd788bb1b5b54f12a090f429790f9
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146fed5c2598 100644
+index f22b21ee12496452f7b2125c131f56ecc74d439a..447de8f7c1d871ef5fb1a06bace451e1de06d972 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -30,7 +30,28 @@ import org.jetbrains.annotations.Nullable;
@@ -984,11 +1014,19 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
      /**
       * Says a message (or runs a command).
       *
-@@ -437,6 +519,23 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -437,6 +519,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      @Deprecated
      public boolean sendChunkChange(@NotNull Location loc, int sx, int sy, int sz, @NotNull byte[] data);
  
 +    // Paper start
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -452,6 +535,43 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+      */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException;
 +    /**
 +     * Send a sign change. This fakes a sign change packet for a user at
 +     * a certain location. This will not actually change the world in any way.
@@ -1001,22 +1039,11 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
 +     *
 +     * @param loc the location of the sign
 +     * @param lines the new text on the sign or null to clear it
++     * @param  dyeColor the color of the sign
 +     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
 +     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
 +     */
-+    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException;
-     /**
-      * Send a sign change. This fakes a sign change packet for a user at
-      * a certain location. This will not actually change the world in any way.
-@@ -449,9 +548,30 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-      *
-      * @param loc the location of the sign
-      * @param lines the new text on the sign or null to clear it
-+     * @param  dyeColor the color of the sign
-      * @throws IllegalArgumentException if location is null
-+     * @throws IllegalArgumentException if dyeColor is null
-      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
-      */
 +    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
 +    // Paper end
 +    /**
@@ -1049,7 +1076,33 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
      public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
  
      /**
-@@ -1287,6 +1409,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1258,6 +1380,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public int getClientViewDistance();
+ 
++    // Paper start
++    /**
++     * Gets the player's current locale.
++     *
++     * @return the player's locale
++     */
++    @NotNull java.util.Locale locale();
++    // Paper end
+     /**
+      * Gets the player's current locale.
+      *
+@@ -1268,8 +1398,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * they wish.
+      *
+      * @return the player's locale
++     * @deprecated in favour of {@link #locale()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLocale();
+ 
+     /**
+@@ -1287,6 +1419,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void openBook(@NotNull ItemStack book);
  
@@ -1064,7 +1117,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1341,11 +1471,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1341,11 +1481,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -1078,7 +1131,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1356,7 +1488,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1356,7 +1498,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -1088,7 +1141,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1366,7 +1500,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1366,7 +1510,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -1098,7 +1151,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1377,7 +1513,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1377,7 +1523,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -1108,7 +1161,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..bf75f79cfd8fcfe63c0f69aaf172146f
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1388,7 +1526,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1388,7 +1536,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
