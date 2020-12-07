@@ -184,10 +184,10 @@ index 0000000000000000000000000000000000000000..64fcc77eb2ce8979ae756696d98f1d3a
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b3d44dad6426e1582b47d601262e63c3ede7b87
+index 0000000000000000000000000000000000000000..800de5cb39766b0f5a95b1d1ec74f873257d7241
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,255 @@
+@@ -0,0 +1,270 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -203,10 +203,12 @@ index 0000000000000000000000000000000000000000..1b3d44dad6426e1582b47d601262e63c
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.sound.Sound;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.server.BossBattle;
++import net.minecraft.server.EnumChatFormat;
 +import net.minecraft.server.IChatBaseComponent;
 +import net.minecraft.server.ItemStack;
 +import net.minecraft.server.MinecraftKey;
@@ -441,6 +443,19 @@ index 0000000000000000000000000000000000000000..1b3d44dad6426e1582b47d601262e63c
 +        } catch (final IOException e) {
 +            return null;
 +        }
++    }
++
++    // Colors
++
++    public static @NonNull TextColor asAdventure(EnumChatFormat minecraftColor) {
++        if (minecraftColor.e() == null) {
++            throw new IllegalArgumentException("Not a valid color");
++        }
++        return TextColor.color(minecraftColor.e());
++    }
++
++    public static @Nullable EnumChatFormat asVanilla(TextColor color) {
++        return EnumChatFormat.getByHexValue(color.value());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
@@ -703,6 +718,18 @@ index 715c6d9f4820f700cb931f549756d2af2005667b..11cabbca2eb97f80b6c9fbc0293ea5cc
          return this.g;
      }
  
+diff --git a/src/main/java/net/minecraft/server/Enchantment.java b/src/main/java/net/minecraft/server/Enchantment.java
+index 7e2162fc78168adb96ed20651e1a3e061c29f96d..7adb06fc13115765c0f6e8a71017bef6ba858b5a 100644
+--- a/src/main/java/net/minecraft/server/Enchantment.java
++++ b/src/main/java/net/minecraft/server/Enchantment.java
+@@ -83,6 +83,7 @@ public abstract class Enchantment {
+         return this.f();
+     }
+ 
++    public IChatBaseComponent getTranslationComponentForLevel(int level) { return this.d(level); } // Paper - OBFHELPER
+     public IChatBaseComponent d(int i) {
+         ChatMessage chatmessage = new ChatMessage(this.g());
+ 
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
 index 74f5cdd4a73d33f593de86eaa0361c35e54e690d..24127f767bcf051e71f550c9635a23c26f453f53 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
@@ -750,6 +777,43 @@ index 74f5cdd4a73d33f593de86eaa0361c35e54e690d..24127f767bcf051e71f550c9635a23c2
          this.clientViewDistance = packetplayinsettings.viewDistance;
          // CraftBukkit end
          this.bY = packetplayinsettings.d();
+diff --git a/src/main/java/net/minecraft/server/EnumChatFormat.java b/src/main/java/net/minecraft/server/EnumChatFormat.java
+index 68a5a0cbe88795f59ce96035da45371a5a366f5a..0f2b239ab6a49dcd684021ad26650019487f5efa 100644
+--- a/src/main/java/net/minecraft/server/EnumChatFormat.java
++++ b/src/main/java/net/minecraft/server/EnumChatFormat.java
+@@ -27,6 +27,7 @@ public enum EnumChatFormat {
+     private final int C;
+     @Nullable
+     private final Integer D;
++    public static final EnumChatFormat[] VALUES = EnumChatFormat.values(); // Paper
+ 
+     private static String c(String s) {
+         return s.toLowerCase(Locale.ROOT).replaceAll("[^a-z]", "");
+@@ -65,6 +66,7 @@ public enum EnumChatFormat {
+     public Integer e() {
+         return this.D;
+     }
++    public @Nullable Integer getHexValue() { return this.e(); }; // Paper - OBFHELPER
+ 
+     public String f() {
+         return this.name().toLowerCase(Locale.ROOT);
+@@ -119,4 +121,16 @@ public enum EnumChatFormat {
+ 
+         return list;
+     }
++    // Paper start
++    public static EnumChatFormat getByHexValue(int hexValue) {
++        for (EnumChatFormat value : VALUES) {
++            if (value.getHexValue() != null) {
++                if (value.getHexValue() == hexValue) {
++                    return value;
++                }
++            }
++        }
++        return null;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
 index 7441beeaa4ee83467dac4d68176132efc6247337..06dc0b3d984bcbbcedb9e22659614f48faf3fa26 100644
 --- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
@@ -1021,6 +1085,27 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..aaa35afa8dafcfdcaebbf37585a18716
 +            player.playerConnection.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(this.server.server.shutdownMessage())); // CraftBukkit - add custom shutdown message // Paper - Adventure
          }
          // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
+index e6d97e7ffae3eadac586bad078123cd4aaa69916..d11725d61b888ceb08c4ea30f23d563170ce944d 100644
+--- a/src/main/java/net/minecraft/server/WorldMap.java
++++ b/src/main/java/net/minecraft/server/WorldMap.java
+@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+ // CraftBukkit start
++import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import java.util.UUID;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+@@ -453,7 +454,7 @@ public class WorldMap extends PersistentBase {
+             for ( org.bukkit.map.MapCursor cursor : render.cursors) {
+ 
+                 if (cursor.isVisible()) {
+-                    icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrNull(cursor.getCaption())));
++                    icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), PaperAdventure.asVanilla(cursor.caption()))); // Paper - Adventure
+                 }
+             }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 90551257c299aaf694eb4f4063d5b1b3eee94876..53f0722477cf2aef43ac073d2977b6d7d0f5206d 100644
@@ -1335,6 +1420,23 @@ index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..5bb8c38c511ec000476afde8038587dd
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+index 34ceee4a81ef4ed05eb9007ca17c223f75f4ff50..11acf5f725a7f2e350a05268a00906ba843c623b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
++++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
+@@ -187,6 +187,12 @@ public class CraftEnchantment extends Enchantment {
+         CraftEnchantment ench = (CraftEnchantment) other;
+         return !target.isCompatible(ench.target);
+     }
++    // Paper start
++    @Override
++    public net.kyori.adventure.text.Component displayName(int level) {
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(getHandle().getTranslationComponentForLevel(level));
++    }
++    // Paper end
+ 
+     public net.minecraft.server.Enchantment getHandle() {
+         return target;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index c20f161eb42159edcfe2c47e3749d88fba9b4747..1e2979220a0e94d63f8622a23f38327aedb7fc91 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
@@ -1401,8 +1503,25 @@ index af41d9f11c6da2609bd75e49f15f5ec129b92361..fb3378e22864335fe6b60d77a401e01a
          player.activeContainer = container;
          player.activeContainer.addSlotListener(player);
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
+index 89affac56d40ed4b20d5ddd668d0f820bad72a3f..85c6cbef5e54b861111d722f1923f1afc9cf5e85 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
+@@ -37,6 +37,12 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
+         getHandle().getDataWatcher().set(EntityMinecartCommandBlock.COMMAND, getHandle().getCommandBlock().getCommand());
+     }
+ 
++    // Paper start
++    @Override
++    public void name(net.kyori.adventure.text.Component name) {
++        getHandle().getCommandBlock().setName(io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
++    }
++    // Paper end
+     @Override
+     public void setName(String name) {
+         getHandle().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8c291c967 100644
+index 4001145980f4dabbd291336d5a464c3856144996..28368aa85e25ad5ee1e35255f093fd3f5a7a15bf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -84,7 +84,6 @@ import org.bukkit.Particle;
@@ -1413,7 +1532,7 @@ index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8
  import org.bukkit.block.data.BlockData;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  import org.bukkit.conversations.Conversation;
-@@ -240,11 +239,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -240,14 +239,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public String getDisplayName() {
@@ -1427,7 +1546,88 @@ index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8
          getHandle().displayName = name == null ? getName() : name;
      }
  
-@@ -335,6 +336,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
++    // Paper start
++    @Override
++    public void playerListName(net.kyori.adventure.text.Component name) {
++        getHandle().listName = name == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(name);
++        for (EntityPlayer player : server.getHandle().players) {
++            if (player.getBukkitEntity().canSee(this)) {
++                player.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME, getHandle()));
++            }
++        }
++    }
++    @Override
++    public net.kyori.adventure.text.Component playerListName() {
++        return getHandle().listName == null ? net.kyori.adventure.text.Component.text(getName()) : io.papermc.paper.adventure.PaperAdventure.asAdventure(getHandle().listName);
++    }
++    @Override
++    public net.kyori.adventure.text.Component playerListHeader() {
++        return playerListHeader;
++    }
++    @Override
++    public net.kyori.adventure.text.Component playerListFooter() {
++        return playerListFooter;
++    }
++    // Paper end
+     @Override
+     public String getPlayerListName() {
+         return getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(getHandle().listName);
+@@ -266,35 +290,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
+-    private IChatBaseComponent playerListHeader;
+-    private IChatBaseComponent playerListFooter;
++    private net.kyori.adventure.text.Component playerListHeader; // Paper - Adventure
++    private net.kyori.adventure.text.Component playerListFooter; // Paper - Adventure
+ 
+     @Override
+     public String getPlayerListHeader() {
+-        return (playerListHeader == null) ? null : CraftChatMessage.fromComponent(playerListHeader);
++        return (playerListHeader == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(playerListHeader); // Paper - Adventure
+     }
+ 
+     @Override
+     public String getPlayerListFooter() {
+-        return (playerListFooter == null) ? null : CraftChatMessage.fromComponent(playerListFooter);
++        return (playerListFooter == null) ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(playerListFooter); // Paper - Adventure
+     }
+ 
+     @Override
+     public void setPlayerListHeader(String header) {
+-        this.playerListHeader = CraftChatMessage.fromStringOrNull(header, true);
++        this.playerListHeader = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(header); // Paper - Adventure
+         updatePlayerListHeaderFooter();
+     }
+ 
+     @Override
+     public void setPlayerListFooter(String footer) {
+-        this.playerListFooter = CraftChatMessage.fromStringOrNull(footer, true);
++        this.playerListFooter = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(footer); // Paper - Adventure
+         updatePlayerListHeaderFooter();
+     }
+ 
+     @Override
+     public void setPlayerListHeaderFooter(String header, String footer) {
+-        this.playerListHeader = CraftChatMessage.fromStringOrNull(header, true);
+-        this.playerListFooter = CraftChatMessage.fromStringOrNull(footer, true);
++        this.playerListHeader = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(header); // Paper - Adventure
++        this.playerListFooter = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(footer); // Paper - Adventure
+         updatePlayerListHeaderFooter();
+     }
+ 
+@@ -302,8 +326,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (getHandle().playerConnection == null) return;
+ 
+         PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
+-        packet.header = (this.playerListHeader == null) ? new ChatComponentText("") : this.playerListHeader;
+-        packet.footer = (this.playerListFooter == null) ? new ChatComponentText("") : this.playerListFooter;
++        packet.header = (this.playerListHeader == null) ? new ChatComponentText("") : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListHeader); // Paper - Adventure
++        packet.footer = (this.playerListFooter == null) ? new ChatComponentText("") : io.papermc.paper.adventure.PaperAdventure.asVanilla(this.playerListFooter); // Paper - Adventure
+         getHandle().playerConnection.sendPacket(packet);
+     }
+ 
+@@ -335,6 +359,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getHandle().playerConnection.disconnect(message == null ? "" : message);
      }
  
@@ -1447,7 +1647,74 @@ index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8
      @Override
      public void setCompassTarget(Location loc) {
          if (getHandle().playerConnection == null) return;
-@@ -1729,6 +1743,140 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -549,6 +586,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         getHandle().playerConnection.sendPacket(packet);
+     }
+ 
++    // Paper start
++    @Override
++    public void sendSignChange(Location loc, List<net.kyori.adventure.text.Component> lines) {
++        this.sendSignChange(loc, lines, org.bukkit.DyeColor.BLACK);
++    }
++    @Override
++    public void sendSignChange(Location loc, List<net.kyori.adventure.text.Component> lines, DyeColor dyeColor) {
++        if (getHandle().playerConnection == null) {
++            return;
++        }
++        if (lines == null) {
++            lines = new java.util.ArrayList<>(4);
++        }
++        Validate.notNull(loc, "Location cannot be null");
++        Validate.notNull(dyeColor, "DyeColor cannot be null");
++        if (lines.size() < 4) {
++            throw new IllegalArgumentException("Must have at least 4 lines");
++        }
++        IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
++        this.sendSignChange0(components, loc, dyeColor);
++    }
++
++    private void sendSignChange0(IChatBaseComponent[] components, Location loc, DyeColor dyeColor) {
++        TileEntitySign sign = new TileEntitySign();
++        sign.setPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
++        sign.setColor(EnumColor.fromColorIndex(dyeColor.getWoolData()));
++        System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
++
++        getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
++    }
++    // Paper end
+     @Override
+     public void sendSignChange(Location loc, String[] lines) {
+        sendSignChange(loc, lines, DyeColor.BLACK);
+@@ -571,12 +639,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+ 
+         IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
+-        TileEntitySign sign = new TileEntitySign();
++        /*TileEntitySign sign = new TileEntitySign(); // Paper
+         sign.setPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+         sign.setColor(EnumColor.fromColorIndex(dyeColor.getWoolData()));
+         System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
+ 
+-        getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
++        getHandle().playerConnection.sendPacket(sign.getUpdatePacket());*/ // Paper
++        this.sendSignChange0(components, loc, dyeColor); // Paper
+     }
+ 
+     @Override
+@@ -1706,6 +1775,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return (getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : getHandle().clientViewDistance;
+     }
+ 
++    // Paper start
++    @Override
++    public java.util.Locale locale() {
++        return getHandle().adventure$locale;
++    }
++    // Paper end
+     @Override
+     public String getLocale() {
+         return getHandle().locale;
+@@ -1729,6 +1804,137 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -1476,25 +1743,22 @@ index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8
 +        this.getHandle().playerConnection.sendPacket(packet);
 +    }
 +
-+    private net.kyori.adventure.text.Component adventure$playerListHeader;
-+    private net.kyori.adventure.text.Component adventure$playerListFooter;
-+
 +    @Override
 +    public void sendPlayerListHeader(final net.kyori.adventure.text.Component header) {
-+        this.adventure$playerListHeader = header;
++        this.playerListHeader = header;
 +        this.adventure$sendPlayerListHeaderAndFooter();
 +    }
 +
 +    @Override
 +    public void sendPlayerListFooter(final net.kyori.adventure.text.Component footer) {
-+        this.adventure$playerListFooter = footer;
++        this.playerListFooter = footer;
 +        this.adventure$sendPlayerListHeaderAndFooter();
 +    }
 +
 +    @Override
 +    public void sendPlayerListHeaderAndFooter(final net.kyori.adventure.text.Component header, final net.kyori.adventure.text.Component footer) {
-+        this.adventure$playerListHeader = header;
-+        this.adventure$playerListFooter = footer;
++        this.playerListHeader = header;
++        this.playerListFooter = footer;
 +        this.adventure$sendPlayerListHeaderAndFooter();
 +    }
 +
@@ -1502,8 +1766,8 @@ index 4001145980f4dabbd291336d5a464c3856144996..c6181ed0a57d6984a8aa2276ac21c0a8
 +        final PlayerConnection connection = this.getHandle().playerConnection;
 +        if (connection == null) return;
 +        final PacketPlayOutPlayerListHeaderFooter packet = new PacketPlayOutPlayerListHeaderFooter();
-+        packet.adventure$header = (this.adventure$playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.adventure$playerListHeader;
-+        packet.adventure$footer = (this.adventure$playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.adventure$playerListFooter;
++        packet.adventure$header = (this.playerListHeader == null) ? net.kyori.adventure.text.Component.empty() : this.playerListHeader;
++        packet.adventure$footer = (this.playerListFooter == null) ? net.kyori.adventure.text.Component.empty() : this.playerListFooter;
 +        connection.sendPacket(packet);
 +    }
 +
@@ -2059,3 +2323,140 @@ index ad91eabb47511268d0cf307d941070800ce9bd3f..b99ce1217461595f5ccc8c7565ec3b65
          @Override
          public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
              // BrewingStand does not extend TileEntityLootable
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index 5eaea24d253d92078709af2a7d7fd0beda3e5520..37faafaf7136e02aa1c76d841b8f47c0f6b9a36c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -31,6 +31,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+         return objective.getName();
+     }
+ 
++    // Paper start
++    @Override
++    public net.kyori.adventure.text.Component displayName() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(objective.getDisplayName());
++    }
++    @Override
++    public void displayName(net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException {
++        if (displayName == null) {
++            displayName = net.kyori.adventure.text.Component.empty();
++        }
++        CraftScoreboard scoreboard = checkState();
++        objective.setDisplayName(io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName));
++    }
++    // Paper end
+     @Override
+     public String getDisplayName() throws IllegalStateException {
+         CraftScoreboard scoreboard = checkState();
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+index e3036fe23fa2be100044332c432d1ad5b4872823..d05959c7884d7ba19ff1a507c7d07c52bec038f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
+@@ -28,6 +28,27 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+     public CraftObjective registerNewObjective(String name, String criteria) throws IllegalArgumentException {
+         return registerNewObjective(name, criteria, name);
+     }
++    // Paper start
++    @Override
++    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName) {
++        return registerNewObjective(name, criteria, displayName, org.bukkit.scoreboard.RenderType.INTEGER);
++    }
++    @Override
++    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) {
++        if (displayName == null) {
++            displayName = net.kyori.adventure.text.Component.empty();
++        }
++        Validate.notNull(name, "Objective name cannot be null");
++        Validate.notNull(criteria, "Criteria cannot be null");
++        Validate.notNull(displayName, "Display name cannot be null");
++        Validate.notNull(renderType, "RenderType cannot be null");
++        Validate.isTrue(name.length() <= 16, "The name '" + name + "' is longer than the limit of 16 characters");
++        Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
++        CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
++        ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
++        return new CraftObjective(this, objective);
++    }
++    // Paper end
+ 
+     @Override
+     public CraftObjective registerNewObjective(String name, String criteria, String displayName) throws IllegalArgumentException {
+@@ -36,7 +57,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+ 
+     @Override
+     public CraftObjective registerNewObjective(String name, String criteria, String displayName, RenderType renderType) throws IllegalArgumentException {
+-        Validate.notNull(name, "Objective name cannot be null");
++        /*Validate.notNull(name, "Objective name cannot be null"); // Paper
+         Validate.notNull(criteria, "Criteria cannot be null");
+         Validate.notNull(displayName, "Display name cannot be null");
+         Validate.notNull(renderType, "RenderType cannot be null");
+@@ -46,7 +67,8 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+ 
+         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
+         ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, CraftChatMessage.fromStringOrNull(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+-        return new CraftObjective(this, objective);
++        return new CraftObjective(this, objective);*/ // Paper
++        return registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName)); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+index 0fba3d2a8d3bd7ec615d137e4625a7f357729d8d..c5aa30cda8e4218a1e77ff2b8f3dcb80ef5cf805 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
+@@ -27,6 +27,55 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
+ 
+         return team.getName();
+     }
++    // Paper start
++    @Override
++    public net.kyori.adventure.text.Component displayName() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getDisplayName());
++    }
++    @Override
++    public void displayName(net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException {
++        if (displayName == null) displayName = net.kyori.adventure.text.Component.empty();
++        CraftScoreboard scoreboard = checkState();
++        team.setDisplayName(io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName));
++    }
++    @Override
++    public net.kyori.adventure.text.Component prefix() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getPrefix());
++    }
++    @Override
++    public void prefix(net.kyori.adventure.text.Component prefix) throws IllegalStateException, IllegalArgumentException {
++        if (prefix == null) prefix = net.kyori.adventure.text.Component.empty();
++        CraftScoreboard scoreboard = checkState();
++        team.setPrefix(io.papermc.paper.adventure.PaperAdventure.asVanilla(prefix));
++    }
++    @Override
++    public net.kyori.adventure.text.Component suffix() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getSuffix());
++    }
++    @Override
++    public void suffix(net.kyori.adventure.text.Component suffix) throws IllegalStateException, IllegalArgumentException {
++        if (suffix == null) suffix = net.kyori.adventure.text.Component.empty();
++        CraftScoreboard scoreboard = checkState();
++        team.setSuffix(io.papermc.paper.adventure.PaperAdventure.asVanilla(suffix));
++    }
++    @Override
++    public net.kyori.adventure.text.format.NamedTextColor color() throws IllegalStateException {
++        CraftScoreboard scoreboard = checkState();
++        if (team.getColor().getHexValue() == null) throw new IllegalStateException("Team colors must have hex values");
++        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getHexValue());
++        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) throw new IllegalStateException("Team doesn't have a NamedTextColor");
++        return (net.kyori.adventure.text.format.NamedTextColor) color;
++    }
++    @Override
++    public void color(net.kyori.adventure.text.format.NamedTextColor color) {
++        if (color == null) color = net.kyori.adventure.text.format.NamedTextColor.WHITE;
++        CraftScoreboard scoreboard = checkState();
++        team.setColor(io.papermc.paper.adventure.PaperAdventure.asVanilla(color));
++    }
++    // Paper end
+ 
+     @Override
+     public String getDisplayName() throws IllegalStateException {

@@ -341,7 +341,7 @@ index 22eca2a180618ed43a4ef103bebd134897d6c71a..abb7448ee8fe1152623794d3b806eef9
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..3e5f8443dd5ea4427c46da046ef2ba980694774b 100644
+index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..975bf20f63379f6cd50d1506d88eac6a4e260129 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -55,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
@@ -357,7 +357,7 @@ index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..3e5f8443dd5ea4427c46da046ef2ba98
       *
       * @param message the message
       * @return the number of players
-+     * @deprecated in favour of {@link #broadcastMessage(net.kyori.adventure.text.Component)}
++     * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
       */
 +    @Deprecated // Paper
      public int broadcastMessage(@NotNull String message);
@@ -529,6 +529,26 @@ index 6cbc22c08ce421bcd8bf3efabc96c9cec447faee..3e5f8443dd5ea4427c46da046ef2ba98
      String getShutdownMessage();
  
      /**
+@@ -1361,7 +1459,9 @@ public interface Server extends PluginMessageRecipient {
+          * Sends the component to the player
+          *
+          * @param component the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -1370,7 +1470,9 @@ public interface Server extends PluginMessageRecipient {
+          * Sends an array of components as a single message to the player
+          *
+          * @param components the components to send
++         * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+          */
++        @Deprecated // Paper
+         public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index cdcbc8b05afc412017ac0e4ed0adf227d1342336..6b5dbe4ea711807a1944cfe2aae2ce415d4f2638 100644
 --- a/src/main/java/org/bukkit/World.java
@@ -763,6 +783,36 @@ index fcc34b640265f4dccb46b9f09466ab8e1d96043e..74599b4ee0518481c0e3a5f6ab2f5302
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index b833ef63fbe01271ceb2bd83a9eb4a84c9912761..1a093a30adf18572693032b78f3d2683e87d2e21 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -294,6 +294,9 @@ public abstract class Enchantment implements Keyed {
+      * @return True if the enchantment may be applied, otherwise False
+      */
+     public abstract boolean canEnchantItem(@NotNull ItemStack item);
++    // Paper start
++    public abstract @NotNull net.kyori.adventure.text.Component displayName(int level);
++    // Paper end
+ 
+     @Override
+     public boolean equals(Object obj) {
+diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13452322e0 100644
+--- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
++++ b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+@@ -63,4 +63,11 @@ public class EnchantmentWrapper extends Enchantment {
+     public boolean conflictsWith(@NotNull Enchantment other) {
+         return getEnchantment().conflictsWith(other);
+     }
++    // Paper start
++    @NotNull
++    @Override
++    public net.kyori.adventure.text.Component displayName(int level) {
++        return getEnchantment().displayName(level);
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
 index 0ce26694eab5609d82c5498d1586b3dc22b4a037..622fd788bb1b5b54f12a090f429790f9d3c4d196 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
@@ -790,7 +840,7 @@ index 0ce26694eab5609d82c5498d1586b3dc22b4a037..622fd788bb1b5b54f12a090f429790f9
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e363dff9fd1 100644
+index f22b21ee12496452f7b2125c131f56ecc74d439a..447de8f7c1d871ef5fb1a06bace451e1de06d972 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -30,7 +30,28 @@ import org.jetbrains.annotations.Nullable;
@@ -833,7 +883,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
      @NotNull
      public String getDisplayName();
  
-@@ -52,7 +75,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -52,15 +75,51 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * places defined by plugins.
       *
       * @param name The new display name.
@@ -842,32 +892,79 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
 +    @Deprecated // Paper
      public void setDisplayName(@Nullable String name);
  
++    // Paper start
++    /**
++     * Sets the name that is shown on the in-game player list.
++     * <p>
++     * If the value is null, the name will be identical to {@link #getName()}.
++     *
++     * @param name new player list name
++     */
++    void playerListName(@Nullable net.kyori.adventure.text.Component name);
++
++    /**
++     * Gets the currently displayed player list header for this player.
++     *
++     * @return player list header or null
++     */
++    @Nullable net.kyori.adventure.text.Component playerListName();
++
++    /**
++     * Gets the currently displayed player list header for this player.
++     *
++     * @return player list header or null
++     * @deprecated in favour of {@link #playerListName()}
++     */
++    @Nullable net.kyori.adventure.text.Component playerListHeader();
++
++    /**
++     * Gets the currently displayed player list footer for this player.
++     *
++     * @return player list header or null
++     */
++    @Nullable net.kyori.adventure.text.Component playerListFooter();
++    // Paper end
      /**
-@@ -70,6 +95,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Gets the name that is shown on the player list.
+      *
+      * @return the player list name
++     * @deprecated in favour of {@link #playerListName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getPlayerListName();
+ 
+     /**
+@@ -69,14 +128,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * If the value is null, the name will be identical to {@link #getName()}.
       *
       * @param name new player list name
++     * @deprecated in favour of {@link #playerListName(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
      public void setPlayerListName(@Nullable String name);
  
      /**
-@@ -77,6 +103,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Gets the currently displayed player list header for this player.
       *
       * @return player list header or null
++     * @deprecated in favour of {@link #playerListHeader()}
       */
 +    @Deprecated // Paper
      @Nullable
      public String getPlayerListHeader();
  
-@@ -85,6 +112,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -84,7 +147,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * Gets the currently displayed player list footer for this player.
       *
       * @return player list header or null
++     * @deprecated in favour of {@link #playerListFooter()}
       */
 +    @Deprecated // Paper
      @Nullable
      public String getPlayerListFooter();
  
-@@ -92,14 +120,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -92,14 +157,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Sets the currently displayed player list header for this player.
       *
       * @param header player list header, null for empty
@@ -886,7 +983,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
      public void setPlayerListFooter(@Nullable String footer);
  
      /**
-@@ -108,7 +140,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -108,7 +177,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       *
       * @param header player list header, null for empty
       * @param footer player list footer, null for empty
@@ -896,7 +993,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
      public void setPlayerListHeaderFooter(@Nullable String header, @Nullable String footer);
  
      /**
-@@ -146,9 +180,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -146,9 +217,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * Kicks player with custom kick message.
       *
       * @param message kick message
@@ -917,7 +1014,95 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
      /**
       * Says a message (or runs a command).
       *
-@@ -1287,6 +1332,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -437,6 +519,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     @Deprecated
+     public boolean sendChunkChange(@NotNull Location loc, int sx, int sy, int sz, @NotNull byte[] data);
+ 
++    // Paper start
+     /**
+      * Send a sign change. This fakes a sign change packet for a user at
+      * a certain location. This will not actually change the world in any way.
+@@ -452,6 +535,43 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
+      */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines) throws IllegalArgumentException;
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @param  dyeColor the color of the sign
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if dyeColor is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     */
++    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
++    // Paper end
++    /**
++     * Send a sign change. This fakes a sign change packet for a user at
++     * a certain location. This will not actually change the world in any way.
++     * This method will use a sign at the location's block or a faked sign
++     * sent via
++     * {@link #sendBlockChange(org.bukkit.Location, org.bukkit.Material, byte)}.
++     * <p>
++     * If the client does not have a sign at the given location it will
++     * display an error message to the user.
++     *
++     * @param loc the location of the sign
++     * @param lines the new text on the sign or null to clear it
++     * @throws IllegalArgumentException if location is null
++     * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List)}
++     */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+ 
+ 
+@@ -471,7 +591,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @throws IllegalArgumentException if location is null
+      * @throws IllegalArgumentException if dyeColor is null
+      * @throws IllegalArgumentException if lines is non-null and has a length less than 4
++     * @deprecated in favour of {@link #sendSignChange(org.bukkit.Location, java.util.List, org.bukkit.DyeColor)}
+      */
++    @Deprecated // Paper
+     public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
+ 
+     /**
+@@ -1258,6 +1380,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     public int getClientViewDistance();
+ 
++    // Paper start
++    /**
++     * Gets the player's current locale.
++     *
++     * @return the player's locale
++     */
++    @NotNull java.util.Locale locale();
++    // Paper end
+     /**
+      * Gets the player's current locale.
+      *
+@@ -1268,8 +1398,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * they wish.
+      *
+      * @return the player's locale
++     * @deprecated in favour of {@link #locale()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public String getLocale();
+ 
+     /**
+@@ -1287,6 +1419,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       */
      public void openBook(@NotNull ItemStack book);
  
@@ -932,7 +1117,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
      // Spigot start
      public class Spigot extends Entity.Spigot {
  
-@@ -1341,11 +1394,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1341,11 +1481,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
              throw new UnsupportedOperationException("Not supported yet.");
          }
  
@@ -946,7 +1131,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
          @Override
          public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
-@@ -1356,7 +1411,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1356,7 +1498,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param component the components to send
@@ -956,7 +1141,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1366,7 +1423,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1366,7 +1510,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           *
           * @param position the screen position
           * @param components the components to send
@@ -966,7 +1151,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1377,7 +1436,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1377,7 +1523,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param component the components to send
@@ -976,7 +1161,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1388,7 +1449,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -1388,7 +1536,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
           * @param position the screen position
           * @param sender the sender of the message
           * @param components the components to send
@@ -986,6 +1171,37 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..4569049ffac57953e91998dd28552e36
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
  
+diff --git a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
+index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..7adbc6f87771c21d374e610fcb21a2442f2d8031 100644
+--- a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
++++ b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
+@@ -25,6 +25,16 @@ public interface CommandMinecart extends Minecart {
+      *     activated.
+      */
+     public void setCommand(@Nullable String command);
++    // Paper start
++    /**
++     * Sets the name of this CommandMinecart.  The name is used with commands
++     * that this CommandMinecart executes.  Setting the name to null is the
++     * same as setting it to "@".
++     *
++     * @param name New name for this CommandMinecart.
++     */
++    void name(@Nullable net.kyori.adventure.text.Component name);
++    // Paper end
+ 
+     /**
+      * Sets the name of this CommandMinecart.  The name is used with commands
+@@ -32,7 +42,9 @@ public interface CommandMinecart extends Minecart {
+      * same as setting it to "@".
+      *
+      * @param name New name for this CommandMinecart.
++     * @deprecated in favour of {@link #name(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setName(@Nullable String name);
+ 
+ }
 diff --git a/src/main/java/org/bukkit/event/inventory/InventoryType.java b/src/main/java/org/bukkit/event/inventory/InventoryType.java
 index f1e9bc9bc797b7216336d3470e3c696a06f2b21a..090d22bd30f7947103771aaaf09a2398970ac337 100644
 --- a/src/main/java/org/bukkit/event/inventory/InventoryType.java
@@ -1100,7 +1316,7 @@ index f70a6a22b85ff0da76e67e9b223ad4e0b020b5c4..81925276bb056da0d48bea23128ba0e4
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
-index 94852d50e88d0594b84b581cd627174043629995..98ee1d22ec33e9e2ef102fa5cb124b68a634297f 100644
+index 94852d50e88d0594b84b581cd627174043629995..e143081922c2027e8ca1db6f1e7eb5b4d786ab41 100644
 --- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
 @@ -119,6 +119,63 @@ public interface BookMeta extends ItemMeta {
@@ -1228,6 +1444,68 @@ index 94852d50e88d0594b84b581cd627174043629995..98ee1d22ec33e9e2ef102fa5cb124b68
      void addPage(@NotNull String... pages);
  
      /**
+@@ -195,8 +264,10 @@ public interface BookMeta extends ItemMeta {
+          *
+          * @param page the page number to get
+          * @return the page from the book
++         * @deprecated in favour of {@link #page(int)}
+          */
+         @NotNull
++        @Deprecated // Paper
+         public BaseComponent[] getPage(int page) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -210,7 +281,9 @@ public interface BookMeta extends ItemMeta {
+          *
+          * @param page the page number to set
+          * @param data the data to set for that page
++         * @deprecated in favour of {@link #page(int, net.kyori.adventure.text.Component)}
+          */
++        @Deprecated // Paper
+         public void setPage(int page, @Nullable BaseComponent... data) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -219,8 +292,10 @@ public interface BookMeta extends ItemMeta {
+          * Gets all the pages in the book.
+          *
+          * @return list of all the pages in the book
++         * @deprecated in favour of {@link #pages()}
+          */
+         @NotNull
++        @Deprecated // Paper
+         public List<BaseComponent[]> getPages() {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -230,7 +305,9 @@ public interface BookMeta extends ItemMeta {
+          * pages. Maximum 50 pages with 256 characters per page.
+          *
+          * @param pages A list of pages to set the book to use
++         * @deprecated in favour of {@link #pages(java.util.List)}
+          */
++        @Deprecated // Paper
+         public void setPages(@NotNull List<BaseComponent[]> pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -240,7 +317,9 @@ public interface BookMeta extends ItemMeta {
+          * pages. Maximum 50 pages with 256 characters per page.
+          *
+          * @param pages A list of component arrays, each being a page
++         * @deprecated in favour of {@link #pages(net.kyori.adventure.text.Component...)}
+          */
++        @Deprecated // Paper
+         public void setPages(@NotNull BaseComponent[]... pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
+@@ -250,7 +329,9 @@ public interface BookMeta extends ItemMeta {
+          * with 256 characters per page.
+          *
+          * @param pages A list of component arrays, each being a page
++         * @deprecated in favour of {@link #addPages(net.kyori.adventure.text.Component...)}
+          */
++        @Deprecated // Paper
+         public void addPage(@NotNull BaseComponent[]... pages) {
+             throw new UnsupportedOperationException("Not supported yet.");
+         }
 diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c4f7cff33 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
@@ -1320,5 +1598,469 @@ index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c
       */
 +    @Deprecated // Paper
      void setLore(@Nullable List<String> lore);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/map/MapCursor.java b/src/main/java/org/bukkit/map/MapCursor.java
+index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..1052d5f0de6b1dbd261cd05bb6dd0714119ff539 100644
+--- a/src/main/java/org/bukkit/map/MapCursor.java
++++ b/src/main/java/org/bukkit/map/MapCursor.java
+@@ -10,7 +10,7 @@ public final class MapCursor {
+     private byte x, y;
+     private byte direction, type;
+     private boolean visible;
+-    private String caption;
++    private net.kyori.adventure.text.Component caption; // Paper
+ 
+     /**
+      * Initialize the map cursor.
+@@ -24,7 +24,7 @@ public final class MapCursor {
+      */
+     @Deprecated
+     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible) {
+-        this(x, y, direction, type, visible, null);
++        this(x, y, direction, type, visible, (String) null); // Paper
+     }
+ 
+     /**
+@@ -37,7 +37,7 @@ public final class MapCursor {
+      * @param visible Whether the cursor is visible by default.
+      */
+     public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible) {
+-        this(x, y, direction, type, visible, null);
++        this(x, y, direction, type, visible, (String) null); // Paper
+     }
+ 
+     /**
+@@ -49,7 +49,7 @@ public final class MapCursor {
+      * @param type The type (color/style) of the map cursor.
+      * @param visible Whether the cursor is visible by default.
+      * @param caption cursor caption
+-     * @deprecated Magic value
++     * @deprecated Magic value. Use {@link #MapCursor(byte, byte, byte, byte, boolean, net.kyori.adventure.text.Component)}
+      */
+     @Deprecated
+     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
+@@ -58,8 +58,40 @@ public final class MapCursor {
+         setDirection(direction);
+         setRawType(type);
+         this.visible = visible;
+-        this.caption = caption;
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
++    }
++    // Paper start
++    /**
++     * Initialize the map cursor.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible by default.
++     * @param caption cursor caption
++     * @deprecated Magic value
++     */
++    @Deprecated
++    public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++        this.x = x; this.y = y; this.visible = visible; this.caption = caption;
++        setDirection(direction);
++        setRawType(type);
++    }
++    /**
++     * Initialize the map cursor.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible by default.
++     * @param caption cursor caption
++     */
++    public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++
+     }
++    // Paper end
+ 
+     /**
+      * Initialize the map cursor.
+@@ -77,7 +109,7 @@ public final class MapCursor {
+         setDirection(direction);
+         setType(type);
+         this.visible = visible;
+-        this.caption = caption;
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
+     }
+ 
+     /**
+@@ -200,23 +232,45 @@ public final class MapCursor {
+         this.visible = visible;
+     }
+ 
++    // Paper start
++    /**
++     * Gets the caption on this cursor.
++     *
++     * @return caption
++     */
++    public @Nullable net.kyori.adventure.text.Component caption() {
++        return this.caption;
++    }
++    /**
++     * Sets the caption on this cursor.
++     *
++     * @param caption new caption
++     */
++    public void caption(@Nullable net.kyori.adventure.text.Component caption) {
++        this.caption = caption;
++    }
++    // Paper end
+     /**
+      * Gets the caption on this cursor.
+      *
+      * @return caption
++     * @deprecated in favour of {@link #caption()}
+      */
+     @Nullable
++    @Deprecated // Paper
+     public String getCaption() {
+-        return caption;
++        return this.caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.caption); // Paper
+     }
+ 
+     /**
+      * Sets the caption on this cursor.
+      *
+      * @param caption new caption
++     * @deprecated in favour of {@link #caption(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     public void setCaption(@Nullable String caption) {
+-        this.caption = caption;
++        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/map/MapCursorCollection.java b/src/main/java/org/bukkit/map/MapCursorCollection.java
+index 4dba721aefe4fc6699b3b4bfa7ecb0b19c2a2a1a..01dec2c877df58c9dc22445e8b1f9ce2e53066da 100644
+--- a/src/main/java/org/bukkit/map/MapCursorCollection.java
++++ b/src/main/java/org/bukkit/map/MapCursorCollection.java
+@@ -117,4 +117,22 @@ public final class MapCursorCollection {
+     public MapCursor addCursor(int x, int y, byte direction, byte type, boolean visible, @Nullable String caption) {
+         return addCursor(new MapCursor((byte) x, (byte) y, direction, type, visible, caption));
+     }
++    // Paper start
++    /**
++     * Add a cursor to the collection.
++     *
++     * @param x The x coordinate, from -128 to 127.
++     * @param y The y coordinate, from -128 to 127.
++     * @param direction The facing of the cursor, from 0 to 15.
++     * @param type The type (color/style) of the map cursor.
++     * @param visible Whether the cursor is visible.
++     * @param caption banner caption
++     * @return The newly added MapCursor.
++     * @deprecated Magic value
++     */
++    @Deprecated
++    public @NotNull MapCursor addCursor(int x, int y, byte direction, byte type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
++        return addCursor(new MapCursor((byte) x, (byte) y, direction, type, visible, caption));
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/scoreboard/Objective.java b/src/main/java/org/bukkit/scoreboard/Objective.java
+index f5cbf6df32ef169cf0f2266f7c6e9c4f771ccb7d..58bddb11fd534e7c33a4ffd7b72b055ba92c767a 100644
+--- a/src/main/java/org/bukkit/scoreboard/Objective.java
++++ b/src/main/java/org/bukkit/scoreboard/Objective.java
+@@ -19,14 +19,35 @@ public interface Objective {
+      */
+     @NotNull
+     String getName() throws IllegalStateException;
++    // Paper start
++    /**
++     * Gets the name displayed to players for this objective
++     *
++     * @return this objective's display name
++     * @throws IllegalStateException if this objective has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component displayName() throws IllegalStateException;
++    /**
++     * Sets the name displayed to players for this objective.
++     *
++     * @param displayName Display name to set
++     * @throws IllegalStateException if this objective has been unregistered
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     */
++    void displayName(@Nullable net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException;
++    // Paper end
+ 
+     /**
+      * Gets the name displayed to players for this objective
+      *
+      * @return this objective's display name
+      * @throws IllegalStateException if this objective has been unregistered
++     * @deprecated in favour of {@link #displayName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getDisplayName() throws IllegalStateException;
+ 
+     /**
+@@ -37,7 +58,9 @@ public interface Objective {
+      * @throws IllegalArgumentException if displayName is null
+      * @throws IllegalArgumentException if displayName is longer than 128
+      *     characters.
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/scoreboard/Scoreboard.java b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+index 4bfaaea78c9b6aa5d392629aa943d26dbe6a7d4a..f09ff32cc3ffc16af379a378b1948991435393e8 100644
+--- a/src/main/java/org/bukkit/scoreboard/Scoreboard.java
++++ b/src/main/java/org/bukkit/scoreboard/Scoreboard.java
+@@ -27,6 +27,48 @@ public interface Scoreboard {
+     @Deprecated
+     @NotNull
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria) throws IllegalArgumentException;
++    // Paper start
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName) throws IllegalArgumentException;
++    /**
++     * Registers an Objective on this Scoreboard
++     *
++     * @param name Name of the Objective
++     * @param criteria Criteria for the Objective
++     * @param displayName Name displayed to players for the Objective.
++     * @param renderType Manner of rendering the Objective
++     * @return The registered Objective
++     * @throws IllegalArgumentException if name is null
++     * @throws IllegalArgumentException if name is longer than 16
++     *     characters.
++     * @throws IllegalArgumentException if criteria is null
++     * @throws IllegalArgumentException if displayName is null
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalArgumentException if renderType is null
++     * @throws IllegalArgumentException if an objective by that name already
++     *     exists
++     */
++    @NotNull
++    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @Nullable net.kyori.adventure.text.Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
++    // Paper end
+ 
+     /**
+      * Registers an Objective on this Scoreboard
+@@ -44,8 +86,10 @@ public interface Scoreboard {
+      *     characters.
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) throws IllegalArgumentException;
+ 
+     /**
+@@ -66,8 +110,10 @@ public interface Scoreboard {
+      * @throws IllegalArgumentException if renderType is null
+      * @throws IllegalArgumentException if an objective by that name already
+      *     exists
++     * @deprecated in favour of {@link #registerNewObjective(String, String, net.kyori.adventure.text.Component, RenderType)}
+      */
+     @NotNull
++    @Deprecated // Paper
+     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/scoreboard/Team.java b/src/main/java/org/bukkit/scoreboard/Team.java
+index da01d2926cc8a2485a3349ac1ebb32cad20e287c..812b7bfb686437c97884bfdff1be25657e654daf 100644
+--- a/src/main/java/org/bukkit/scoreboard/Team.java
++++ b/src/main/java/org/bukkit/scoreboard/Team.java
+@@ -22,14 +22,95 @@ public interface Team {
+      */
+     @NotNull
+     String getName() throws IllegalStateException;
++    // Paper start
++    /**
++     * Gets the name displayed to entries for this team
++     *
++     * @return Team display name
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component displayName() throws IllegalStateException;
++
++    /**
++     * Sets the name displayed to entries for this team
++     *
++     * @param displayName New display name
++     * @throws IllegalArgumentException if displayName is longer than 128
++     *     characters.
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void displayName(@Nullable net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the prefix prepended to the display of entries on this team.
++     *
++     * @return Team prefix
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component prefix() throws IllegalStateException;
++
++    /**
++     * Sets the prefix prepended to the display of entries on this team.
++     *
++     * @param prefix New prefix
++     * @throws IllegalArgumentException if prefix is null
++     * @throws IllegalArgumentException if prefix is longer than 64
++     *     characters
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void prefix(@Nullable net.kyori.adventure.text.Component prefix) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the suffix appended to the display of entries on this team.
++     *
++     * @return the team's current suffix
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.Component suffix() throws IllegalStateException;
++
++    /**
++     * Sets the suffix appended to the display of entries on this team.
++     *
++     * @param suffix the new suffix for this team.
++     * @throws IllegalArgumentException if suffix is null
++     * @throws IllegalArgumentException if suffix is longer than 64
++     *     characters
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    void suffix(@Nullable net.kyori.adventure.text.Component suffix) throws IllegalStateException, IllegalArgumentException;
++
++    /**
++     * Gets the color of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of colors such as in
++     * names are handled by prefixes / suffixes.
++     *
++     * @return team color, defaults to {@link ChatColor#RESET}
++     * @throws IllegalStateException if this team has been unregistered
++     */
++    @NotNull net.kyori.adventure.text.format.NamedTextColor color() throws IllegalStateException;
++
++    /**
++     * Sets the color of the team.
++     * <br>
++     * This only sets the team outline, other occurrences of colors such as in
++     * names are handled by prefixes / suffixes.
++     *
++     * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
++     * no color
++     */
++    void color(@Nullable net.kyori.adventure.text.format.NamedTextColor color);
++    // Paper end
+ 
+     /**
+      * Gets the name displayed to entries for this team
+      *
+      * @return Team display name
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #displayName()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getDisplayName() throws IllegalStateException;
+ 
+     /**
+@@ -39,7 +120,9 @@ public interface Team {
+      * @throws IllegalArgumentException if displayName is longer than 128
+      *     characters.
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -47,8 +130,10 @@ public interface Team {
+      *
+      * @return Team prefix
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #prefix()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getPrefix() throws IllegalStateException;
+ 
+     /**
+@@ -59,7 +144,9 @@ public interface Team {
+      * @throws IllegalArgumentException if prefix is longer than 64
+      *     characters
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #prefix(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -67,8 +154,10 @@ public interface Team {
+      *
+      * @return the team's current suffix
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #suffix()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     String getSuffix() throws IllegalStateException;
+ 
+     /**
+@@ -79,7 +168,9 @@ public interface Team {
+      * @throws IllegalArgumentException if suffix is longer than 64
+      *     characters
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #suffix(net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
+ 
+     /**
+@@ -90,8 +181,10 @@ public interface Team {
+      *
+      * @return team color, defaults to {@link ChatColor#RESET}
+      * @throws IllegalStateException if this team has been unregistered
++     * @deprecated in favour of {@link #color()}
+      */
+     @NotNull
++    @Deprecated // Paper
+     ChatColor getColor() throws IllegalStateException;
+ 
+     /**
+@@ -102,7 +195,9 @@ public interface Team {
+      *
+      * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
+      * no color
++     * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)}
+      */
++    @Deprecated // Paper
+     void setColor(@NotNull ChatColor color);
  
      /**
