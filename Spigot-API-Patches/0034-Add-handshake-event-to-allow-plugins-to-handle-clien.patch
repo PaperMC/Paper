@@ -7,12 +7,15 @@ Subject: [PATCH] Add handshake event to allow plugins to handle client
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0bb4e31cc25eab2359fa9873bbf960346721701
+index 0000000000000000000000000000000000000000..f5f4d245e9f02a87bdd5fc3401d3e4d25f1e8613
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
-@@ -0,0 +1,222 @@
+@@ -0,0 +1,248 @@
 +package com.destroystokyo.paper.event.player;
 +
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
@@ -40,7 +43,7 @@ index 0000000000000000000000000000000000000000..f0bb4e31cc25eab2359fa9873bbf9603
 +    @Nullable private UUID uniqueId;
 +    @Nullable private String propertiesJson;
 +    private boolean failed;
-+    private String failMessage = "If you wish to use IP forwarding, please enable it in your BungeeCord config as well!";
++    private Component failMessage = Component.text("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!", NamedTextColor.YELLOW);
 +
 +    /**
 +     * Creates a new {@link PlayerHandshakeEvent}.
@@ -208,7 +211,7 @@ index 0000000000000000000000000000000000000000..f0bb4e31cc25eab2359fa9873bbf9603
 +     * @return the message to display to the client
 +     */
 +    @NotNull
-+    public String getFailMessage() {
++    public Component failMessage() {
 +        return this.failMessage;
 +    }
 +
@@ -217,9 +220,32 @@ index 0000000000000000000000000000000000000000..f0bb4e31cc25eab2359fa9873bbf9603
 +     *
 +     * @param failMessage the message to display to the client
 +     */
++    public void failMessage(@NotNull Component failMessage) {
++        this.failMessage = failMessage;
++    }
++
++    /**
++     * Gets the message to display to the client when authentication fails.
++     *
++     * @return the message to display to the client
++     * @deprecated in favour of {@link #failMessage()}
++     */
++    @NotNull
++    @Deprecated
++    public String getFailMessage() {
++        return LegacyComponentSerializer.legacySection().serialize(this.failMessage);
++    }
++
++    /**
++     * Sets the message to display to the client when authentication fails.
++     *
++     * @param failMessage the message to display to the client
++     * @deprecated in favour of {@link #failMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated
 +    public void setFailMessage(@NotNull String failMessage) {
 +        Validate.notEmpty(failMessage, "fail message cannot be null or empty");
-+        this.failMessage = failMessage;
++        this.failMessage = LegacyComponentSerializer.legacySection().deserialize(failMessage);
 +    }
 +
 +    @NotNull
