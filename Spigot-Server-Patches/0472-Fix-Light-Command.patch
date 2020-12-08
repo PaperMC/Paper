@@ -7,10 +7,10 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18cb87cc8bf 100644
+index 8e16f51b119498901eff5b32effac002dfe042f9..12615895054a5a3e0bc83e4d5467aae23fa4722e 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -20,6 +20,7 @@ import org.bukkit.command.Command;
+@@ -22,6 +22,7 @@ import org.bukkit.command.Command;
  import org.bukkit.command.CommandSender;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
@@ -18,7 +18,7 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
  import org.bukkit.entity.Player;
  
  import java.io.File;
-@@ -36,14 +37,14 @@ public class PaperCommand extends Command {
+@@ -40,14 +41,14 @@ public class PaperCommand extends Command {
      public PaperCommand(String name) {
          super(name);
          this.description = "Paper related commands";
@@ -35,7 +35,7 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
  
          switch (args[0].toLowerCase(Locale.ENGLISH))
          {
-@@ -144,6 +145,9 @@ public class PaperCommand extends Command {
+@@ -148,6 +149,9 @@ public class PaperCommand extends Command {
              case "syncloadinfo":
                  this.doSyncLoadInfo(sender, args);
                  break;
@@ -45,13 +45,13 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
              case "ver":
              case "version":
                  Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -160,6 +164,77 @@ public class PaperCommand extends Command {
+@@ -164,6 +168,77 @@ public class PaperCommand extends Command {
          return true;
      }
  
 +    private void doFixLight(CommandSender sender, String[] args) {
 +        if (!(sender instanceof Player)) {
-+            sender.sendMessage("Only players can use this command");
++            sender.sendMessage(text("Only players can use this command"));
 +            return;
 +        }
 +        int radius = 2;
@@ -59,7 +59,7 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
 +            try {
 +                radius = Math.min(5, Integer.parseInt(args[1]));
 +            } catch (Exception e) {
-+                sender.sendMessage("Not a number");
++                sender.sendMessage(text("Not a number"));
 +                return;
 +            }
 +
@@ -78,12 +78,12 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
 +    private void updateLight(CommandSender sender, WorldServer world, LightEngineThreaded lightengine, Deque<ChunkCoordIntPair> queue) {
 +        ChunkCoordIntPair coord = queue.poll();
 +        if (coord == null) {
-+            sender.sendMessage("All Chunks Light updated");
++            sender.sendMessage(text("All Chunks Light updated"));
 +            return;
 +        }
 +        world.getChunkProvider().getChunkAtAsynchronously(coord.x, coord.z, false, false).whenCompleteAsync((either, ex) -> {
 +            if (ex != null) {
-+                sender.sendMessage("Error loading chunk " + coord);
++                sender.sendMessage(text("Error loading chunk " + coord));
 +                updateLight(sender, world, lightengine, queue);
 +                return;
 +            }
@@ -93,7 +93,7 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
 +                return;
 +            }
 +            lightengine.a(world.paperConfig.lightQueueSize + 16 * 256); // ensure full chunk can fit into queue
-+            sender.sendMessage("Updating Light " + coord);
++            sender.sendMessage(text("Updating Light " + coord));
 +            int cx = chunk.getPos().x << 4;
 +            int cz = chunk.getPos().z << 4;
 +            for (int y = 0; y < world.getHeight(); y++) {
@@ -122,7 +122,7 @@ index c80af89b4ad0223577ed9513dcab0a784cc964e4..f60800c3bc06a38493e17b00b815f18c
 +
      private void doSyncLoadInfo(CommandSender sender, String[] args) {
          if (!SyncLoadFinder.ENABLED) {
-             sender.sendMessage(ChatColor.RED + "This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.");
+             sender.sendMessage(text("This command requires the server startup flag '-Dpaper.debug-sync-loads=true' to be set.", NamedTextColor.RED));
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
 index bd5643cae88b0c510a630b6166d95368c7405ae6..078cbc9f4dbd387ef1088c76b2f77ee47fff135d 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java

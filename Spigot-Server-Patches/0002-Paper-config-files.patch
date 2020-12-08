@@ -7,16 +7,17 @@ Loads each yml file for early init too so it can be used for early options
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b910d7a4fe
+index 0000000000000000000000000000000000000000..c61af82f81ca702df43c3999f4b5c9f6921068a8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,260 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Functions;
 +import com.google.common.collect.Iterables;
 +import com.google.common.collect.Lists;
 +import com.google.common.collect.Maps;
++import net.kyori.adventure.text.format.NamedTextColor;
 +import net.minecraft.server.*;
 +import org.apache.commons.lang3.tuple.MutablePair;
 +import org.apache.commons.lang3.tuple.Pair;
@@ -35,6 +36,8 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +import java.time.format.DateTimeFormatter;
 +import java.util.*;
 +import java.util.stream.Collectors;
++
++import static net.kyori.adventure.text.Component.text;
 +
 +public class PaperCommand extends Command {
 +
@@ -108,7 +111,7 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +        if (!testPermission(sender)) return true;
 +
 +        if (args.length == 0) {
-+            sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++            sender.sendMessage(text("Usage: " + usageMessage, NamedTextColor.RED));
 +            return false;
 +        }
 +
@@ -131,7 +134,7 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                }
 +                // else - fall through to default
 +            default:
-+                sender.sendMessage(ChatColor.RED + "Usage: " + usageMessage);
++                sender.sendMessage(text("Usage: " + usageMessage, NamedTextColor.RED));
 +                return false;
 +        }
 +
@@ -143,7 +146,7 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +     */
 +    private void listEntities(CommandSender sender, String[] args) {
 +        if (args.length < 2 || args[1].toLowerCase(Locale.ENGLISH).equals("help")) {
-+            sender.sendMessage(ChatColor.RED + "Use /paper entity [list] help for more information on a specific command.");
++            sender.sendMessage(text("Use /paper entity [list] help for more information on a specific command.", NamedTextColor.RED));
 +            return;
 +        }
 +
@@ -152,7 +155,7 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                String filter = "*";
 +                if (args.length > 2) {
 +                    if (args[2].toLowerCase(Locale.ENGLISH).equals("help")) {
-+                        sender.sendMessage(ChatColor.RED + "Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.");
++                        sender.sendMessage(text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", NamedTextColor.RED));
 +                        return;
 +                    }
 +                    filter = args[2];
@@ -163,7 +166,7 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                        .collect(Collectors.toSet());
 +
 +                if (names.isEmpty()) {
-+                    sender.sendMessage(ChatColor.RED + "Invalid filter, does not match any entities. Use /paper entity list for a proper list");
++                    sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", NamedTextColor.RED));
 +                    return;
 +                }
 +
@@ -173,15 +176,15 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                } else if (sender instanceof Player) {
 +                    worldName = ((Player) sender).getWorld().getName();
 +                } else {
-+                    sender.sendMessage(ChatColor.RED + "Please specify the name of a world");
-+                    sender.sendMessage(ChatColor.RED + "To do so without a filter, specify '*' as the filter");
++                    sender.sendMessage(text("Please specify the name of a world", NamedTextColor.RED));
++                    sender.sendMessage(text("To do so without a filter, specify '*' as the filter", NamedTextColor.RED));
 +                    return;
 +                }
 +
 +                Map<MinecraftKey, MutablePair<Integer, Map<ChunkCoordIntPair, Integer>>> list = Maps.newHashMap();
 +                World bukkitWorld = Bukkit.getWorld(worldName);
 +                if (bukkitWorld == null) {
-+                    sender.sendMessage(ChatColor.RED + "Could not load world for " + worldName + ". Please select a valid world.");
++                    sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", NamedTextColor.RED));
 +                    return;
 +                }
 +                WorldServer world = ((CraftWorld) Bukkit.getWorld(worldName)).getHandle();
@@ -207,13 +210,13 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                    Pair<Integer, Map<ChunkCoordIntPair, Integer>> info = list.get(name);
 +                    int nonTicking = nonEntityTicking.getOrDefault(name, Integer.valueOf(0)).intValue();
 +                    if (info == null) {
-+                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        sender.sendMessage(text("No entities found.", NamedTextColor.RED));
 +                        return;
 +                    }
-+                    sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
++                    sender.sendMessage(text("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking));
 +                    info.getRight().entrySet().stream()
 +                            .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
-+                            .limit(10).forEach(e -> sender.sendMessage("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isEntityTickingChunk(e.getKey()) ? " (Ticking)" : " (Non-Ticking)")));
++                            .limit(10).forEach(e -> sender.sendMessage(text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isEntityTickingChunk(e.getKey()) ? " (Ticking)" : " (Non-Ticking)"))));
 +                } else {
 +                    List<Pair<MinecraftKey, Integer>> info = list.entrySet().stream()
 +                            .filter(e -> names.contains(e.getKey()))
@@ -222,18 +225,19 @@ index 0000000000000000000000000000000000000000..b8868b86338ce0e89bc74eccccf714b9
 +                            .collect(Collectors.toList());
 +
 +                    if (info == null || info.size() == 0) {
-+                        sender.sendMessage(ChatColor.RED + "No entities found.");
++                        sender.sendMessage(text("No entities found.", NamedTextColor.RED));
 +                        return;
 +                    }
 +
 +                    int count = info.stream().mapToInt(Pair::getRight).sum();
 +                    int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
-+                    sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
++                    sender.sendMessage(text("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount));
 +                    info.forEach(e -> {
 +                        int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), Integer.valueOf(0)).intValue();
-+                        sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
++                        sender.sendMessage(text("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey()));
++                        sender.sendMessage();
 +                    });
-+                    sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
++                    sender.sendMessage(text("* First number is ticking entities, second number is non-ticking entities"));
 +                }
 +                break;
 +        }
@@ -719,7 +723,7 @@ index 0986d666b777b9992f8cbbffef964717cabe91df..159c0c671833a8973b543fd83d8b6b33
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 9c98589c2db92720b4ae054ee74ef7ab0dac891a..f187c7d127c356861c30141efeafcef0057878ec 100644
+index 3f52c19b6b797e26b3dcedcec2afd28c478e7091..3a6578170765a472d36b169b999e9dc57bf8070b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -129,6 +129,14 @@ public class Main {
