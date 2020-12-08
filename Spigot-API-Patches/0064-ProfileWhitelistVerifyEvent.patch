@@ -9,10 +9,10 @@ Allows you to do dynamic whitelisting and change of kick message
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1017628967f40db9766bc7cf85a488535e84b9e
+index 0000000000000000000000000000000000000000..0676ed4f11d04eaa48f1c0bbf7fc8915abf2d6a3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,147 @@
 +/*
 + * Copyright (c) 2017 - Daniel Ennis (Aikar) - MIT License
 + *
@@ -39,6 +39,8 @@ index 0000000000000000000000000000000000000000..b1017628967f40db9766bc7cf85a4885
 +package com.destroystokyo.paper.event.profile;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.jetbrains.annotations.NotNull;
@@ -57,9 +59,9 @@ index 0000000000000000000000000000000000000000..b1017628967f40db9766bc7cf85a4885
 +    private final boolean whitelistEnabled;
 +    private boolean whitelisted;
 +    private final boolean isOp;
-+    @Nullable private String kickMessage;
++    @Nullable private Component kickMessage;
 +
-+    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable String kickMessage) {
++    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @NotNull Component kickMessage) {
 +        this.profile = profile;
 +        this.whitelistEnabled = whitelistEnabled;
 +        this.whitelisted = whitelisted;
@@ -67,19 +69,47 @@ index 0000000000000000000000000000000000000000..b1017628967f40db9766bc7cf85a4885
 +        this.kickMessage = kickMessage;
 +    }
 +
++    @Deprecated
++    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable String kickMessage) {
++        this.profile = profile;
++        this.whitelistEnabled = whitelistEnabled;
++        this.whitelisted = whitelisted;
++        this.isOp = isOp;
++        this.kickMessage = LegacyComponentSerializer.legacySection().deserialize(kickMessage);
++    }
++
 +    /**
 +     * @return the currently planned message to send to the user if they are not whitelisted
 +     */
 +    @Nullable
-+    public String getKickMessage() {
-+        return kickMessage;
++    public Component kickMessage() {
++        return this.kickMessage;
 +    }
 +
 +    /**
 +     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
 +     */
-+    public void setKickMessage(@Nullable String kickMessage) {
++    public void kickMessage(@Nullable Component kickMessage) {
 +        this.kickMessage = kickMessage;
++    }
++
++    /**
++     * @return the currently planned message to send to the user if they are not whitelisted
++     * @deprecated in favour of {@link #kickMessage()}
++     */
++    @Nullable
++    @Deprecated
++    public String getKickMessage() {
++        return LegacyComponentSerializer.legacySection().serialize(this.kickMessage);
++    }
++
++    /**
++     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
++     * @deprecated in favour of {@link #kickMessage(net.kyori.adventure.text.Component)}
++     */
++    @Deprecated
++    public void setKickMessage(@Nullable String kickMessage) {
++        this.kickMessage = LegacyComponentSerializer.legacySection().deserialize(kickMessage);
 +    }
 +
 +    /**
