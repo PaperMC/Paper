@@ -4,114 +4,93 @@ Date: Sun, 17 Mar 2019 21:46:56 +0200
 Subject: [PATCH] Fire event on GS4 query
 
 
-diff --git a/src/main/java/net/minecraft/server/RemoteConnectionThread.java b/src/main/java/net/minecraft/server/RemoteConnectionThread.java
-index 66bfbcf02b5584a3abb29f5d7a32e3bb2c6abbea..d821ef9a757494d02eb3be36a619c67562faf967 100644
---- a/src/main/java/net/minecraft/server/RemoteConnectionThread.java
-+++ b/src/main/java/net/minecraft/server/RemoteConnectionThread.java
-@@ -15,7 +15,7 @@ public abstract class RemoteConnectionThread implements Runnable {
-     private static final Logger LOGGER = LogManager.getLogger();
-     private static final AtomicInteger i = new AtomicInteger(0);
-     protected boolean a;
--    protected final IMinecraftServer b;
-+    protected final IMinecraftServer b; protected IMinecraftServer getServer() { return this.b; } // Paper - OBFHELPER
-     protected final String c;
-     protected Thread d;
-     protected final int e = 5;
-@@ -94,6 +94,7 @@ public abstract class RemoteConnectionThread implements Runnable {
-         this.b.g(s);
-     }
- 
-+    protected int getPlayerCount() { return this.d(); } // Paper - OBFHELPER
-     protected int d() {
-         return this.b.getPlayerCount();
-     }
 diff --git a/src/main/java/net/minecraft/server/RemoteStatusListener.java b/src/main/java/net/minecraft/server/RemoteStatusListener.java
-index f4f4e31d3c2ee8c7ecbe441f38b518217baa4ba5..d5025938473d3585e83994e890f742cf26c8061e 100644
+index 98bca890b7cc77200f69394e2ba7e0eabf188127..abae8aefe2cf793dd1db2b478207856cdf24fdb0 100644
 --- a/src/main/java/net/minecraft/server/RemoteStatusListener.java
 +++ b/src/main/java/net/minecraft/server/RemoteStatusListener.java
-@@ -21,19 +21,19 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+@@ -22,18 +22,18 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+     private static final Logger LOGGER = LogManager.getLogger();
+     private long e;
+     private final int f;
+-    private final int g;
+-    private final int h;
+-    private final String i;
+-    private final String j;
++    private final int g; private final int getServerPort() { return this.g; } // Paper - OBFHELPER
++    private final int h; private final int getMaxPlayers() { return this.h; } // Paper - OBFHELPER
++    private final String i; private final String getMotd() { return this.i; } // Paper - OBFHELPER
++    private final String j; private final String getWorldName() { return this.j; } // Paper - OBFHELPER
+     private DatagramSocket k;
+     private final byte[] l = new byte[1460];
+-    private String m;
++    private String m; public final String getServerHost() { return this.m; } // Paper - OBFHELPER
+     private String n;
+     private final Map<SocketAddress, RemoteStatusListener.RemoteStatusChallenge> o;
+-    private final RemoteStatusReply p;
++    private final RemoteStatusReply p; private final RemoteStatusReply getCachedFullResponse() { return this.p; } // Paper - OBFHELPER
+     private long q;
+-    private final IMinecraftServer r;
++    private final IMinecraftServer r; private final IMinecraftServer getServer() { return this.r; } // Paper - OBFHELPER
  
-     private long h;
-     private final int i;
--    private final int j;
--    private final int k;
--    private final String l;
--    private final String m;
-+    private final int j; private int getServerPort() { return this.j; } // Paper - OBFHELPER
-+    private final int k; private int getMaxPlayers() { return this.k; } // Paper - OBFHELPER
-+    private final String l; private String getMotd() { return this.l; } // Paper - OBFHELPER
-+    private final String m; private String getWorldName() { return this.m; } // Paper - OBFHELPER
-     private DatagramSocket n;
-     private final byte[] o = new byte[1460];
-     private DatagramPacket p;
-     private final Map<SocketAddress, String> q;
--    private String r;
-+    private String r; private String getServerHost() { return this.r; } // Paper - OBFHELPER
-     private String s;
-     private final Map<SocketAddress, RemoteStatusListener.RemoteStatusChallenge> t;
-     private final long u;
--    private final RemoteStatusReply v;
-+    private final RemoteStatusReply v; private RemoteStatusReply getCachedFullResponse() { return this.v; } // Paper - OBFHELPER
-     private long w;
- 
-     public RemoteStatusListener(IMinecraftServer iminecraftserver) {
-@@ -91,6 +91,7 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+     private RemoteStatusListener(IMinecraftServer iminecraftserver, int i) {
+         super("Query Listener");
+@@ -103,6 +103,7 @@ public class RemoteStatusListener extends RemoteConnectionThread {
  
                          remotestatusreply.a((int) 0);
                          remotestatusreply.a(this.a(datagrampacket.getSocketAddress()));
-+                    /* Paper start - GS4 Query event
-                         remotestatusreply.a(this.l);
++                        /* Paper start - GS4 Query event
+                         remotestatusreply.a(this.i);
                          remotestatusreply.a("SMP");
+                         remotestatusreply.a(this.j);
+@@ -110,6 +111,31 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+                         remotestatusreply.a(Integer.toString(this.h));
+                         remotestatusreply.a((short) this.g);
                          remotestatusreply.a(this.m);
-@@ -98,6 +99,31 @@ public class RemoteStatusListener extends RemoteConnectionThread {
-                         remotestatusreply.a(Integer.toString(this.k));
-                         remotestatusreply.a((short) this.j);
-                         remotestatusreply.a(this.r);
-+                    */
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
-+                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
-+                        .motd(this.getMotd())
-+                        .map(this.getWorldName())
-+                        .currentPlayers(this.getPlayerCount())
-+                        .maxPlayers(this.getMaxPlayers())
-+                        .port(this.getServerPort())
-+                        .hostname(this.getServerHost())
-+                        .gameVersion(this.getServer().getVersion())
-+                        .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
-+                        .build();
-+                    com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
-+                        new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, datagrampacket.getAddress(), queryResponse);
-+                    queryEvent.callEvent();
-+                    queryResponse = queryEvent.getResponse();
-+                    remotestatusreply.writeString(queryResponse.getMotd());
-+                    remotestatusreply.writeString("SMP");
-+                    remotestatusreply.writeString(queryResponse.getMap());
-+                    remotestatusreply.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
-+                    remotestatusreply.writeString(Integer.toString(queryResponse.getMaxPlayers()));
-+                    remotestatusreply.writeShort((short) queryResponse.getPort());
-+                    remotestatusreply.writeString(queryResponse.getHostname());
-+                    // Paper end
++                        */
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
++                            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
++                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
++                            .motd(this.getMotd())
++                            .map(this.getWorldName())
++                            .currentPlayers(this.getServer().getPlayerCount())
++                            .maxPlayers(this.getMaxPlayers())
++                            .port(this.getServerPort())
++                            .hostname(this.getServerHost())
++                            .gameVersion(this.getServer().getVersion())
++                            .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
++                            .build();
++                        com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
++                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, datagrampacket.getAddress(), queryResponse);
++                        queryEvent.callEvent();
++                        queryResponse = queryEvent.getResponse();
++                        remotestatusreply.writeString(queryResponse.getMotd());
++                        remotestatusreply.writeString("SMP");
++                        remotestatusreply.writeString(queryResponse.getMap());
++                        remotestatusreply.writeString(Integer.toString(queryResponse.getCurrentPlayers()));
++                        remotestatusreply.writeString(Integer.toString(queryResponse.getMaxPlayers()));
++                        remotestatusreply.writeShort((short) queryResponse.getPort());
++                        remotestatusreply.writeString(queryResponse.getHostname());
++                        // Paper end
                          this.a(remotestatusreply.a(), datagrampacket);
-                         this.a("Status [" + socketaddress + "]");
+                         RemoteStatusListener.LOGGER.debug("Status [{}]", socketaddress);
                      }
-@@ -134,6 +160,7 @@ public class RemoteStatusListener extends RemoteConnectionThread {
-             this.v.a("splitnum");
-             this.v.a((int) 128);
-             this.v.a((int) 0);
+@@ -146,6 +172,7 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+             this.p.a("splitnum");
+             this.p.a((int) 128);
+             this.p.a((int) 0);
 +            /* Paper start - GS4 Query event
-             this.v.a("hostname");
-             this.v.a(this.l);
-             this.v.a("gametype");
-@@ -169,6 +196,79 @@ public class RemoteStatusListener extends RemoteConnectionThread {
+             this.p.a("hostname");
+             this.p.a(this.i);
+             this.p.a("gametype");
+@@ -181,6 +208,79 @@ public class RemoteStatusListener extends RemoteConnectionThread {
              }
  
-             this.v.a((int) 0);
+             this.p.a((int) 0);
 +            */
 +            // Pack plugins
 +            java.util.List<com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation> plugins = java.util.Collections.emptyList();
 +            org.bukkit.plugin.Plugin[] bukkitPlugins;
-+            if(((DedicatedServer) this.getServer()).server.getQueryPlugins() && (bukkitPlugins = org.bukkit.Bukkit.getPluginManager().getPlugins()).length > 0) {
++            if (((DedicatedServer) this.getServer()).server.getQueryPlugins() && (bukkitPlugins = org.bukkit.Bukkit.getPluginManager().getPlugins()).length > 0) {
 +                plugins = java.util.stream.Stream.of(bukkitPlugins)
 +                    .map(plugin -> com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation.of(plugin.getName(), plugin.getDescription().getVersion()))
 +                    .collect(java.util.stream.Collectors.toList());
@@ -120,7 +99,7 @@ index f4f4e31d3c2ee8c7ecbe441f38b518217baa4ba5..d5025938473d3585e83994e890f742cf
 +            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
 +                .motd(this.getMotd())
 +                .map(this.getWorldName())
-+                .currentPlayers(this.getPlayerCount())
++                .currentPlayers(this.getServer().getPlayerCount())
 +                .maxPlayers(this.getMaxPlayers())
 +                .port(this.getServerPort())
 +                .hostname(this.getServerHost())
@@ -146,14 +125,14 @@ index f4f4e31d3c2ee8c7ecbe441f38b518217baa4ba5..d5025938473d3585e83994e890f742cf
 +            this.getCachedFullResponse().writeString("plugins");
 +            java.lang.StringBuilder pluginsString = new java.lang.StringBuilder();
 +            pluginsString.append(queryResponse.getServerVersion());
-+            if(!queryResponse.getPlugins().isEmpty()) {
++            if (!queryResponse.getPlugins().isEmpty()) {
 +                pluginsString.append(": ");
-+                Iterator<com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation> iter = queryResponse.getPlugins().iterator();
-+                while(iter.hasNext()) {
++                java.util.Iterator<com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation> iter = queryResponse.getPlugins().iterator();
++                while (iter.hasNext()) {
 +                    com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.PluginInformation info = iter.next();
 +                    pluginsString.append(info.getName());
 +                    if (info.getVersion() != null) {
-+                        pluginsString.append(' ').append(info.getVersion().replaceAll(";", ","));
++                        pluginsString.append(' ').append(info.getVersion().replace(";", ","));
 +                    }
 +                    if (iter.hasNext()) {
 +                        pluginsString.append(';').append(' ');
@@ -180,7 +159,7 @@ index f4f4e31d3c2ee8c7ecbe441f38b518217baa4ba5..d5025938473d3585e83994e890f742cf
 +            queryResponse.getPlayers().forEach(this.getCachedFullResponse()::writeStringUnchecked);
 +            this.getCachedFullResponse().writeInt(0);
 +            // Paper end
-             return this.v.a();
+             return this.p.a();
          }
      }
 diff --git a/src/main/java/net/minecraft/server/RemoteStatusReply.java b/src/main/java/net/minecraft/server/RemoteStatusReply.java
