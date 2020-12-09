@@ -170,7 +170,7 @@
      private static final EntityDataAccessor<Integer> DATA_TICKS_FROZEN = SynchedEntityData.defineId(Entity.class, EntityDataSerializers.INT);
      private EntityInLevelCallback levelCallback;
      private final VecDeltaCodec packetPositionCodec;
-@@ -253,7 +386,65 @@
+@@ -253,6 +386,64 @@
      private final List<Entity.Movement> movementThisTick;
      private final Set<BlockState> blocksInside;
      private final LongSet visitedBlocks;
@@ -203,7 +203,7 @@
 +    private org.bukkit.util.Vector origin;
 +    @javax.annotation.Nullable
 +    private UUID originWorld;
- 
++
 +    public void setOrigin(@javax.annotation.Nonnull Location location) {
 +        this.origin = location.toVector();
 +        this.originWorld = location.getWorld().getUID();
@@ -232,10 +232,9 @@
 +        return this.dimensions.makeBoundingBox(x, y, z);
 +    }
 +    // Paper end
-+
+ 
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-         this.passengers = ImmutableList.of();
 @@ -261,7 +452,7 @@
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
@@ -521,10 +520,13 @@
      }
  
      public boolean isFree(double offsetX, double offsetY, double offsetZ) {
-@@ -750,6 +1053,28 @@
-                     }
-                 }
+@@ -747,8 +1050,30 @@
  
+                     if (movement.y != vec3d1.y) {
+                         block.updateEntityMovementAfterFallOn(this.level(), this);
++                    }
++                }
++
 +                // CraftBukkit start
 +                if (this.horizontalCollision && this.getBukkitEntity() instanceof Vehicle) {
 +                    Vehicle vehicle = (Vehicle) this.getBukkitEntity();
@@ -538,18 +540,17 @@
 +                        bl = bl.getRelative(BlockFace.SOUTH);
 +                    } else if (movement.z < vec3d1.z) {
 +                        bl = bl.getRelative(BlockFace.NORTH);
-+                    }
+                     }
 +
 +                    if (!bl.getType().isAir()) {
 +                        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl);
 +                        this.level.getCraftServer().getPluginManager().callEvent(event);
 +                    }
-+                }
+                 }
 +                // CraftBukkit end
-+
+ 
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission entity_movementemission = this.getMovementEmission();
- 
 @@ -1133,6 +1458,20 @@
          return SoundEvents.GENERIC_SPLASH;
      }
@@ -841,11 +842,10 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being saved");
-@@ -2079,7 +2526,69 @@
-                 }
+@@ -2080,6 +2527,68 @@
              } else {
                  throw new IllegalStateException("Entity has invalid position");
-+            }
+             }
 +
 +            // CraftBukkit start
 +            // Spigot start
@@ -868,7 +868,7 @@
 +                boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");
 +                this.setInvisible(bukkitInvisible);
 +                this.persistentInvisibility = bukkitInvisible;
-             }
++            }
 +            // CraftBukkit end
 +
 +            // Paper start
@@ -1350,10 +1350,12 @@
              leashable.removeLeash();
          }
  
-@@ -3006,11 +3700,26 @@
-         return PortalShape.getRelativePosition(portalRect, portalAxis, this.position(), this.getDimensions(this.getPose()));
-     }
+@@ -3004,13 +3698,28 @@
  
+     public Vec3 getRelativePortalPosition(Direction.Axis portalAxis, BlockUtil.FoundRectangle portalRect) {
+         return PortalShape.getRelativePosition(portalRect, portalAxis, this.position(), this.getDimensions(this.getPose()));
++    }
++
 +    // CraftBukkit start
 +    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
 +        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
@@ -1365,9 +1367,9 @@
 +            return null;
 +        }
 +        return new CraftPortalEvent(event);
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public boolean canUsePortal(boolean allowVehicles) {
          return (allowVehicles || !this.isPassenger()) && this.isAlive();
      }
@@ -1483,14 +1485,13 @@
          return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
      }
  
-@@ -3488,9 +4222,38 @@
-     public int getFireImmuneTicks() {
+@@ -3489,8 +4223,37 @@
          return 1;
      }
-+
+ 
 +    // CraftBukkit start
 +    private final CommandSource commandSource = new CommandSource() {
- 
++
 +        @Override
 +        public void sendSystemMessage(Component message) {
 +        }
@@ -1544,16 +1545,17 @@
          return this.type.getDimensions();
      }
  
-@@ -3714,7 +4482,29 @@
+@@ -3713,8 +4481,40 @@
+     public double getRandomZ(double widthScale) {
          return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
      }
- 
++
 +    // Paper start - Block invalid positions and bounding box
 +    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
 +        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
 +            return true;
 +        }
-+
+ 
 +        String entityInfo;
 +        try {
 +            entityInfo = entity.toString();
@@ -1571,10 +1573,20 @@
 +            return;
 +        }
 +        // Paper end - Block invalid positions and bounding box
++        // Paper start - Fix MC-4
++        if (this instanceof ItemEntity) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
++                // encode/decode from ClientboundMoveEntityPacket
++                x = Mth.lfloor(x * 4096.0) * (1 / 4096.0);
++                y = Mth.lfloor(y * 4096.0) * (1 / 4096.0);
++                z = Mth.lfloor(z * 4096.0) * (1 / 4096.0);
++            }
++        }
++        // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
              this.position = new Vec3(x, y, z);
              int i = Mth.floor(x);
-@@ -3732,6 +4522,12 @@
+@@ -3732,6 +4532,12 @@
              this.levelCallback.onMove();
          }
  
@@ -1587,7 +1599,7 @@
      }
  
      public void checkDespawn() {}
-@@ -3818,8 +4614,16 @@
+@@ -3818,8 +4624,16 @@
  
      @Override
      public final void setRemoved(Entity.RemovalReason reason) {
@@ -1605,7 +1617,7 @@
          }
  
          if (this.removalReason.shouldDestroy()) {
-@@ -3827,8 +4631,8 @@
+@@ -3827,8 +4641,8 @@
          }
  
          this.getPassengers().forEach(Entity::stopRiding);
@@ -1616,7 +1628,7 @@
      }
  
      public void unsetRemoved() {
-@@ -3887,7 +4691,7 @@
+@@ -3887,7 +4701,7 @@
      }
  
      public Vec3 getKnownMovement() {
@@ -1625,7 +1637,7 @@
  
          if (entityliving instanceof Player entityhuman) {
              if (this.isAlive()) {
-@@ -3962,4 +4766,14 @@
+@@ -3962,4 +4776,14 @@
  
          void accept(Entity entity, double x, double y, double z);
      }
