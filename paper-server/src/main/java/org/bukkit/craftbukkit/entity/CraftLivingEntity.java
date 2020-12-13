@@ -1024,4 +1024,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().take(((CraftItem) item).getHandle(), quantity);
     }
     // Paper end - pickup animation API
+
+    // Paper start - hurt direction API
+    @Override
+    public float getHurtDirection() {
+        return this.getHandle().getHurtDir();
+    }
+
+    @Override
+    public void setHurtDirection(final float hurtDirection) {
+        throw new UnsupportedOperationException("Cannot set the hurt direction on a non player");
+    }
+    // Paper end - hurt direction API
 }

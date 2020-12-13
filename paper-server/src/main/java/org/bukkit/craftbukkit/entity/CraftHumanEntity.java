@@ -125,6 +125,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
     }
 
+    // Paper start
+    @Override
+    public void setHurtDirection(float hurtDirection) {
+        this.getHandle().hurtDir = hurtDirection;
+    }
+    // Paper end
+
     @Override
     public int getSleepTicks() {
         return this.getHandle().sleepCounter;
