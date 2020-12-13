@@ -209,6 +209,15 @@ public final class Bukkit {
     }
 
     /**
+     * Get max world size.
+     *
+     * @return the maximum world size as specified for the server
+     */
+    public static int getMaxWorldSize() {
+        return server.getMaxWorldSize();
+    }
+
+    /**
      * Gets whether this server allows the End or not.
      *
      * @return whether this server allows the End or not

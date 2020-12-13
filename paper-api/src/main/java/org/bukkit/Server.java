@@ -174,6 +174,13 @@ public interface Server extends PluginMessageRecipient {
     public boolean getGenerateStructures();
 
     /**
+     * Get max world size.
+     *
+     * @return the maximum world size as specified for the server
+     */
+    public int getMaxWorldSize();
+
+    /**
      * Gets whether this server allows the End or not.
      *
      * @return whether this server allows the End or not
