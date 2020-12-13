@@ -1211,4 +1211,22 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     void playPickupItemAnimation(@NotNull Item item, int quantity);
     // Paper end - pickup animation API
+
+    // Paper start - hurt direction API
+    /**
+     * Gets player hurt direction
+     *
+     * @return hurt direction
+     */
+    float getHurtDirection();
+
+    /**
+     * Sets player hurt direction
+     *
+     * @param hurtDirection hurt direction
+     * @deprecated use {@link Player#setHurtDirection(float)}
+     */
+    @Deprecated
+    void setHurtDirection(float hurtDirection);
+    // Paper end - hurt direction API
 }

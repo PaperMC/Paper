@@ -356,6 +356,16 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     public void setCooldown(@NotNull Material material, int ticks);
 
+    // Paper start
+    /**
+     * Sets player hurt direction
+     *
+     * @param hurtDirection hurt direction
+     */
+    @Override
+    void setHurtDirection(float hurtDirection);
+    // Paper end
+
     /**
      * Check whether a cooldown is active on the specified item.
      *
