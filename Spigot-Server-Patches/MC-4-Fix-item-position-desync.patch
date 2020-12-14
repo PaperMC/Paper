@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Tue, 8 Dec 2020 20:24:52 -0600
+Subject: [PATCH] MC-4: Fix item position desync
+
+This fixes item position desync (MC-4) by running the item coordinates
+through the encode/decode methods of the packet that causes the precision
+loss, which forces the server to lose the same precision as the client
+keeping them in sync.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -0,0 +0,0 @@ public class PaperConfig {
+     private static void trackPluginScoreboards() {
+         trackPluginScoreboards = getBoolean("settings.track-plugin-scoreboards", false);
+     }
++
++    public static boolean fixEntityPositionDesync = true;
++    private static void fixEntityPositionDesync() {
++        fixEntityPositionDesync = getBoolean("settings.fix-entity-position-desync", fixEntityPositionDesync);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -0,0 +0,0 @@ public class EntityItem extends Entity {
+     public Packet<?> P() {
+         return new PacketPlayOutSpawnEntity(this);
+     }
++
++    // Paper start - fix MC-4
++    public void setPositionRaw(double x, double y, double z) {
++        if (com.destroystokyo.paper.PaperConfig.fixEntityPositionDesync) {
++            // encode/decode from PacketPlayOutEntity
++            x = MathHelper.floorLong(x * 4096.0D) * (1 / 4096.0D);
++            y = MathHelper.floorLong(y * 4096.0D) * (1 / 4096.0D);
++            z = MathHelper.floorLong(z * 4096.0D) * (1 / 4096.0D);
++        }
++        super.setPositionRaw(x, y, z);
++    }
++    // Paper end - fix MC-4
+ }
+diff --git a/src/main/java/net/minecraft/server/MathHelper.java b/src/main/java/net/minecraft/server/MathHelper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MathHelper.java
++++ b/src/main/java/net/minecraft/server/MathHelper.java
+@@ -0,0 +0,0 @@ import java.util.function.IntPredicate;
+ public class MathHelper {
+ 
+     public static final float a = c(2.0F);
+-    private static final float[] b = (float[]) SystemUtils.a((Object) (new float[65536]), (afloat) -> {
++    private static final float[] b = (float[]) SystemUtils.a((new float[65536]), (afloat) -> { // Paper - decompile error
+         for (int i = 0; i < afloat.length; ++i) {
+             afloat[i] = (float) Math.sin((double) i * 3.141592653589793D * 2.0D / 65536.0D);
+         }
+@@ -0,0 +0,0 @@ public class MathHelper {
+         return d0 < (double) i ? i - 1 : i;
+     }
+ 
++    public static long floorLong(double d0) { return d(d0); } // Paper - OBFHELPER
+     public static long d(double d0) {
+         long i = (long) d0;
+ 
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutEntity.java b/src/main/java/net/minecraft/server/PacketPlayOutEntity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutEntity.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutEntity.java
+@@ -0,0 +0,0 @@ public class PacketPlayOutEntity implements Packet<PacketListenerPlayOut> {
+     protected boolean i;
+ 
+     public static long a(double d0) {
+-        return MathHelper.d(d0 * 4096.0D);
++        return MathHelper.d(d0 * 4096.0D); // Paper - check EntityItem#setPositionRaw on update
+     }
+ 
+     public static Vec3D a(long i, long j, long k) {
+-        return (new Vec3D((double) i, (double) j, (double) k)).a(2.44140625E-4D);
++        return (new Vec3D((double) i, (double) j, (double) k)).a(2.44140625E-4D); // Paper - check EntityItem#setPositionRaw on update
+     }
+ 
+     public PacketPlayOutEntity() {}
