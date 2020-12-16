@@ -1,0 +1,201 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+Date: Tue, 15 Dec 2020 09:07:01 -0600
+Subject: [PATCH] Allow individual plugins to load datapacks
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/datapack/PluginDataPack.java b/src/main/java/com/destroystokyo/paper/datapack/PluginDataPack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec8d5c32ea14bc4941a318d9b8177627950ebfa3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/datapack/PluginDataPack.java
+@@ -0,0 +1,59 @@
++package com.destroystokyo.paper.datapack;
++
++import net.minecraft.server.EnumResourcePackType;
++import net.minecraft.server.MinecraftKey;
++import net.minecraft.server.ResourcePackFolder;
++import org.bukkit.plugin.Plugin;
++
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStream;
++import java.util.Collection;
++import java.util.Set;
++import java.util.function.Predicate;
++
++public class PluginDataPack extends ResourcePackFolder {
++
++    private Plugin plugin;
++    private File file;
++    private boolean enabledByDefault;
++
++    public PluginDataPack(Plugin plugin, File file, boolean enabledByDefault) {
++        super(file);
++        this.plugin = plugin;
++        this.file = file;
++        this.enabledByDefault = enabledByDefault;
++    }
++
++    @Override
++    protected InputStream a(String s) throws IOException {
++        return super.a(s);
++    }
++
++    @Override
++    protected boolean c(String s) {
++        return super.c(s);
++    }
++
++    @Override
++    public Collection<MinecraftKey> a(EnumResourcePackType enumResourcePackType, String s, String s1, int i, Predicate<String> predicate) {
++        return super.a(enumResourcePackType, s, s1, i, predicate);
++    }
++
++    @Override
++    public Set<String> a(EnumResourcePackType enumResourcePackType) {
++        return super.a(enumResourcePackType);
++    }
++
++    public Plugin getPlugin() {
++        return plugin;
++    }
++
++    public File getPath() {
++        return file;
++    }
++
++    public boolean isEnabledByDefault() {
++        return enabledByDefault;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/datapack/PluginSource.java b/src/main/java/com/destroystokyo/paper/datapack/PluginSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf44986a74db72478e5244c7c565ccd1bd6831f9
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/datapack/PluginSource.java
+@@ -0,0 +1,46 @@
++package com.destroystokyo.paper.datapack;
++
++import net.minecraft.server.EnumResourcePackType;
++import net.minecraft.server.PackSource;
++import net.minecraft.server.ResourcePackLoader;
++import net.minecraft.server.ResourcePackSource;
++import org.bukkit.plugin.Plugin;
++
++import java.io.File;
++import java.nio.file.Files;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Consumer;
++
++public class PluginSource implements ResourcePackSource {
++
++    private Plugin[] plugins;
++
++    public PluginSource(Plugin[] plugins) {
++        this.plugins = plugins;
++    }
++
++    @Override
++    public void a(Consumer<ResourcePackLoader> consumer, ResourcePackLoader.a creator) {
++        List<PluginDataPack> packs = new ArrayList<>();
++
++        for (Plugin plugin : plugins) {
++            File pack = new File(plugin.getDataFolder(), "datapack");
++            boolean enabledByDefault = Files.exists(pack.toPath());
++            PluginDataPack dataPack = new PluginDataPack(plugin, pack, enabledByDefault);
++            if (!dataPack.a(EnumResourcePackType.SERVER_DATA).isEmpty()) {
++                packs.add(dataPack);
++            }
++        }
++
++        for (PluginDataPack pack : packs) {
++            ResourcePackLoader resourcePack = ResourcePackLoader.a("plugin/" + pack.getPlugin().getName(), pack.isEnabledByDefault(),
++                () -> pack, creator, ResourcePackLoader.Position.TOP, PackSource.d);
++            if (resourcePack != null) {
++                consumer.accept(resourcePack);
++            }
++        }
++
++
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 5504facd2e453238caa71d98743be5416d4dd4fe..e95d4e0f1971c6b1c24e47e48fdd1d5cc7a990fd 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.datapack.PluginSource;
+ import com.google.common.base.Strings;
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+@@ -7,6 +8,7 @@ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+ import com.mojang.datafixers.DataFixer;
+ import java.io.BufferedReader;
++import java.io.File;
+ import java.io.IOException;
+ import java.io.InputStreamReader;
+ import java.net.InetAddress;
+@@ -16,6 +18,7 @@ import java.util.Collections;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Optional;
++import java.util.concurrent.CompletableFuture;
+ import java.util.function.BooleanSupplier;
+ import java.util.regex.Pattern;
+ import javax.annotation.Nullable;
+@@ -204,6 +207,25 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         // CraftBukkit start
+         // this.a((PlayerList) (new DedicatedPlayerList(this, this.customRegistry, this.worldNBTStorage))); // Spigot - moved up
+         server.loadPlugins();
++        // paper start - create a new repository but include the plugins this time and then reload the datapacks so they're included.
++        if (!options.has("safeMode")) {
++            ResourcePackRepository resourceRepo = new ResourcePackRepository(new ResourcePackSourceVanilla(), new ResourcePackSourceFolder(convertable.getWorldFolder(SavedFile.DATAPACKS).toFile(), PackSource.c), new PluginSource(server.getPluginManager().getPlugins()));
++
++            DataPackConfiguration newConfiguration = MinecraftServer.a(resourceRepo, datapackconfiguration == null ? DataPackConfiguration.a : datapackconfiguration, false);
++            CompletableFuture<DataPackResources> completablefuture = DataPackResources.a(resourceRepo.f(), CommandDispatcher.ServerType.DEDICATED, dedicatedserverproperties.functionPermissionLevel, SystemUtils.f(), Runnable::run);
++
++            DataPackResources datapackresources;
++
++            try {
++                datapackresources = completablefuture.get();
++                datapackresources.i();
++            } catch (Exception exception) {
++                DedicatedServer.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
++                resourceRepo.close();
++            }
++            datapackconfiguration = newConfiguration;
++            resourcePackRepository = resourceRepo;
++        } // paper end
+         server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
+         // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index ae48df4b9b78bc3a687166fdaa7b8a60bd13ec35..a484f8e24772225812d26f411f8febfcd10f41fe 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -119,7 +119,6 @@ public class Main {
+             if (flag) {
+                 Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
+-
+             ResourcePackRepository resourcepackrepository = new ResourcePackRepository(new ResourcePackSource[]{new ResourcePackSourceVanilla(), new ResourcePackSourceFolder(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACKS).toFile(), PackSource.c)});
+             // CraftBukkit start
+             File bukkitDataPackFolder = new File(convertable_conversionsession.getWorldFolder(SavedFile.DATAPACKS).toFile(), "bukkit");
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 172fc9ef9c0d3444eb99f750a17d42f130d94f73..0d94a049c1e2311ea40fbc7e13277abbc3b0e1df 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -132,7 +132,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     private long nextTick;
+     private long W; final long getTickOversleepMaxTime() { return this.W; } // Paper - OBFHELPER
+     private boolean X; final boolean hasExecutedTask() { return this.X; } // Paper - OBFHELPER
+-    private final ResourcePackRepository resourcePackRepository;
++    protected ResourcePackRepository resourcePackRepository; // paper - widen access
+     private final ScoreboardServer scoreboardServer;
+     @Nullable
+     private PersistentCommandStorage persistentCommandStorage;
