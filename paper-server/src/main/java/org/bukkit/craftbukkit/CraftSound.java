@@ -106,4 +106,10 @@ public class CraftSound implements Sound, Handleable<SoundEvent> {
     public int hashCode() {
         return this.getKey().hashCode();
     }
+
+    // Paper start
+    public static String getSound(Sound sound) {
+        return sound.getKey().getKey();
+    }
+    // Paper end
 }
