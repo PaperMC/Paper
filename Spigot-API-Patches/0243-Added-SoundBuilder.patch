@@ -1,0 +1,349 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fruxz <cedricspitzer@outlook.de>
+Date: Fri, 18 Dec 2020 01:02:39 +0100
+Subject: [PATCH] Added SoundBuilder
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/sound/SoundBuilder.java b/src/main/java/com/destroystokyo/paper/sound/SoundBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..803c51548d3ea74c6e6872908d751b42e0a420be
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/sound/SoundBuilder.java
+@@ -0,0 +1,337 @@
++package com.destroystokyo.paper.sound;
++
++import com.google.common.collect.Lists;
++import org.bukkit.Location;
++import org.bukkit.Sound;
++import org.bukkit.World;
++import org.bukkit.entity.Player;
++import org.bukkit.util.NumberConversions;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Collection;
++import java.util.List;
++
++/**
++ * Helps prepare a sound to be sent to players.
++ */
++public class SoundBuilder {
++
++    private Sound sound;
++    private Collection<Player> receivers;
++    private Location location;
++    private Float volume = 1F;
++    private Float pitch = 1F;
++
++    public SoundBuilder(Sound sound) {
++        this.sound = sound;
++    }
++
++    public SoundBuilder(Sound sound, Float volume) {
++        this.sound = sound;
++        this.volume = volume;
++    }
++
++    public SoundBuilder(Sound sound, Float volume, Float pitch) {
++        this.sound = sound;
++        this.volume = volume;
++        this.pitch = pitch;
++    }
++
++    /**
++     * Plays the sound to all receiving players (or all). This method is safe to use
++     * Asynchronously
++     *
++     * @return a reference to this object.
++     */
++    public SoundBuilder play() {
++
++        if (this.location == null) {
++            throw new IllegalStateException("Please specify location for this sound");
++        }
++
++        if (receivers == null || receivers.isEmpty()) {
++            location.getWorld().playSound(location, sound, volume, pitch);
++        } else {
++            for (Player player : receivers) {
++                player.playSound(location, sound, volume, pitch);
++            }
++        }
++
++        return this;
++    }
++
++    /**
++     * @return The sound going to be sent
++     */
++    @NotNull
++    public Sound sound() {
++        return sound;
++    }
++
++    /**
++     * Changes what sound will be sent
++     *
++     * @param sound The sound
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder sound(@NotNull Sound sound) {
++        this.sound = sound;
++        return this;
++    }
++
++    /**
++     * @return The volume level of the sound played
++     */
++    @NotNull
++    public Float volume() {
++        return volume;
++    }
++
++    /**
++     * Changes the volume level of the sound played
++     *
++     * @param volume The volume
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder volume(@NotNull Float volume) {
++        this.volume = volume;
++        return this;
++    }
++
++    /**
++     * @return The pitch of the sound played
++     */
++    @NotNull
++    public Float pitch() {
++        return pitch;
++    }
++
++    /**
++     * Changes the pitch of the sound played
++     *
++     * @param pitch The pitch
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder pitch(@NotNull Float pitch) {
++        this.pitch = pitch;
++        return this;
++    }
++
++    /**
++     * @return List of players who will receive the sound, or null for all in world
++     */
++    @Nullable
++    public List<Player> receivers() {
++        return Lists.newLinkedList(receivers);
++    }
++
++    /**
++     * Example use:
++     *
++     * builder.receivers(16)
++     *
++     * @return If this sound is going to be sent to someone
++     */
++    public boolean hasReceivers() {
++        return (receivers == null && !location.getWorld().getPlayers().isEmpty()) || (
++            receivers != null && !receivers.isEmpty());
++    }
++
++    /**
++     * Sends this sound to all players in the world. This is rather silly and you should likely not
++     * be doing this.
++     *
++     * Just be a logical person and use receivers by radius or collection.
++     *
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder allPlayers() {
++        this.receivers = null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     * @deprecated The use of list's is not appreciated
++     */
++    @NotNull
++    @Deprecated
++    public SoundBuilder receivers(@Nullable List<Player> receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(@Nullable Collection<Player> receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to be receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(@Nullable Player... receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. If you want a more spherical check, see {@link #receivers(int,
++     * boolean)}
++     *
++     * @param radius amount to add on all axis
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(int radius) {
++        return receivers(radius, radius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the sound location. If byDistance is
++     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
++     * true, radius is tested by distance in a spherical shape
++     *
++     * @param radius amount to add on each axis
++     * @param byDistance true to use a spherical radius, false to use a cuboid
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(int radius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(radius, radius, radius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            for (Player nearbyPlayer : location.getWorld()
++                .getNearbyPlayers(location, radius, radius, radius)) {
++                Location loc = nearbyPlayer.getLocation();
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double y = NumberConversions.square(location.getY() - loc.getY());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (Math.sqrt(x + y + z) > radius) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. Allows specifying a different Y size than X and Z If you want a more
++     * cylinder check, see {@link #receivers(int, int, boolean)} If you want a more spherical check,
++     * see {@link #receivers(int, boolean)}
++     *
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(int xzRadius, int yRadius) {
++        return receivers(xzRadius, yRadius, xzRadius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the sound. If byDistance is
++     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
++     * true, radius is tested by distance on the y plane and on the x/z plane, in a cylinder shape.
++     *
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     * @param byDistance true to use a cylinder shape, false to use cuboid
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(int xzRadius, int yRadius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(xzRadius, yRadius, xzRadius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            for (Player nearbyPlayer : location.getWorld()
++                .getNearbyPlayers(location, xzRadius, yRadius, xzRadius)) {
++                Location loc = nearbyPlayer.getLocation();
++                if (Math.abs(loc.getY() - this.location.getY()) > yRadius) {
++                    continue;
++                }
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (x + z > NumberConversions.square(xzRadius)) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. If you want a more cylinder check, see {@link #receivers(int, int,
++     * boolean)} If you want a more spherical check, see {@link #receivers(int, boolean)}
++     *
++     * @param xRadius amount to add on the x axis
++     * @param yRadius amount to add on the y axis
++     * @param zRadius amount to add on the z axis
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder receivers(int xRadius, int yRadius, int zRadius) {
++        if (location == null) {
++            throw new IllegalStateException("Please set location first");
++        }
++        return receivers(location.getWorld().getNearbyPlayers(location, xRadius, yRadius, zRadius));
++    }
++
++    /**
++     * @return Location of where the sound will play
++     */
++    @Nullable
++    public Location location() {
++        return location;
++    }
++
++    /**
++     * Sets the location of where to play the sound
++     *
++     * @param location The location of the sound
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder location(@NotNull Location location) {
++        this.location = location.clone();
++        return this;
++    }
++
++    /**
++     * Sets the location of where to play the sound
++     *
++     * @param world World to play sounds in
++     * @param x X location
++     * @param y Y location
++     * @param z Z location
++     * @return a reference to this object.
++     */
++    @NotNull
++    public SoundBuilder location(@NotNull World world, double x, double y, double z) {
++        this.location = new Location(world, x, y, z);
++        return this;
++    }
++
++}
