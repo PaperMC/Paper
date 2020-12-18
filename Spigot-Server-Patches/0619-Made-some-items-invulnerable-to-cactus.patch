@@ -1,0 +1,2078 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PSK1103 <prathamkatiyar11@gmail.com>
+Date: Fri, 18 Dec 2020 13:59:31 +0530
+Subject: [PATCH] Made some items invulnerable to cactus
+
+
+diff --git a/src/main/java/net/minecraft/server/DamageSource.java b/src/main/java/net/minecraft/server/DamageSource.java
+index 6fe5678cffc2487fe00c953d772f764bb37a4b11..3e4cc8b86bdd7974cb1bfab94c67312232a4d539 100644
+--- a/src/main/java/net/minecraft/server/DamageSource.java
++++ b/src/main/java/net/minecraft/server/DamageSource.java
+@@ -13,7 +13,7 @@ public class DamageSource {
+     public static final DamageSource CRAMMING = (new DamageSource("cramming")).setIgnoreArmor();
+     public static final DamageSource DROWN = (new DamageSource("drown")).setIgnoreArmor();
+     public static final DamageSource STARVE = (new DamageSource("starve")).setIgnoreArmor().setStarvation();
+-    public static final DamageSource CACTUS = new DamageSource("cactus");
++    public static final DamageSource CACTUS = new DamageSource("cactus").setCactus();
+     public static final DamageSource FALL = (new DamageSource("fall")).setIgnoreArmor();
+     public static final DamageSource FLY_INTO_WALL = (new DamageSource("flyIntoWall")).setIgnoreArmor();
+     public static final DamageSource OUT_OF_WORLD = (new DamageSource("outOfWorld")).setIgnoreArmor().setIgnoresInvulnerability();
+@@ -34,6 +34,7 @@ public class DamageSource {
+     private boolean C;
+     private boolean D;
+     private boolean E;
++    private boolean isCactus;
+     public final String translationIndex;
+     // CraftBukkit start
+     private boolean sweep;
+@@ -182,6 +183,15 @@ public class DamageSource {
+         return this;
+     }
+ 
++    protected DamageSource setCactus() {
++        this.isCactus = true;
++        return this;
++    }
++
++    public boolean isCactus() {
++        return this.isCactus;
++    }
++
+     public IChatBaseComponent getLocalizedDeathMessage(EntityLiving entityliving) {
+         EntityLiving entityliving1 = entityliving.getKillingEntity();
+         String s = "death.attack." + this.translationIndex;
+diff --git a/src/main/java/net/minecraft/server/Item.java b/src/main/java/net/minecraft/server/Item.java
+index c3b57e8d572d13ec74d6df5544072cdc55756690..fbad5ce3b7004ef9472b6a3afbe3f39847819e8f 100644
+--- a/src/main/java/net/minecraft/server/Item.java
++++ b/src/main/java/net/minecraft/server/Item.java
+@@ -19,6 +19,7 @@ public class Item implements IMaterial {
+     private final int maxStackSize;
+     private final int durability;
+     private final boolean d;
++    private final boolean isInvulnerableToCacti;
+     private final Item craftingResult;
+     @Nullable
+     private String name;
+@@ -46,6 +47,7 @@ public class Item implements IMaterial {
+         this.maxStackSize = item_info.a;
+         this.foodInfo = item_info.f;
+         this.d = item_info.g;
++        this.isInvulnerableToCacti = item_info.invulnerableToCacti;
+     }
+ 
+     public void a(World world, EntityLiving entityliving, ItemStack itemstack, int i) {}
+@@ -279,7 +281,7 @@ public class Item implements IMaterial {
+     }
+ 
+     public boolean a(DamageSource damagesource) {
+-        return !this.d || !damagesource.isFire();
++        return !(this.d && damagesource.isFire()) && !(this.isInvulnerableToCacti && damagesource.isCactus());
+     }
+ 
+     public static class Info {
+@@ -291,6 +293,7 @@ public class Item implements IMaterial {
+         private EnumItemRarity e;
+         private FoodInfo f;
+         private boolean g;
++        private boolean invulnerableToCacti;
+ 
+         public Info() {
+             this.e = EnumItemRarity.COMMON;
+@@ -339,5 +342,10 @@ public class Item implements IMaterial {
+             this.g = true;
+             return this;
+         }
++
++        public Item.Info setInvulnerableToCacti() {
++            this.invulnerableToCacti = true;
++            return this;
++        }
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/Items.java b/src/main/java/net/minecraft/server/Items.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6a6e10c1a93b91b7705868115ef4bff1bc5e9873
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/Items.java
+@@ -0,0 +1,1981 @@
++package net.minecraft.server;
++
++public class Items {
++    public static final Item AIR = a(Blocks.AIR, new ItemAir(Blocks.AIR, new Item.Info()));
++
++    public static final Item b = a(new ItemBlock(Blocks.STONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item c = a(new ItemBlock(Blocks.GRANITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item d = a(new ItemBlock(Blocks.POLISHED_GRANITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item e = a(new ItemBlock(Blocks.DIORITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item f = a(new ItemBlock(Blocks.POLISHED_DIORITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item g = a(new ItemBlock(Blocks.ANDESITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item h = a(new ItemBlock(Blocks.POLISHED_ANDESITE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item i = a(Blocks.GRASS_BLOCK, CreativeModeTab.b);
++
++    public static final Item j = a(Blocks.DIRT, CreativeModeTab.b);
++
++    public static final Item k = a(Blocks.COARSE_DIRT, CreativeModeTab.b);
++
++    public static final Item l = a(Blocks.PODZOL, CreativeModeTab.b);
++
++    public static final Item m = a(Blocks.CRIMSON_NYLIUM, CreativeModeTab.b);
++
++    public static final Item n = a(Blocks.WARPED_NYLIUM, CreativeModeTab.b);
++
++    public static final Item o = a(new ItemBlock(Blocks.COBBLESTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item p = a(Blocks.OAK_PLANKS, CreativeModeTab.b);
++
++    public static final Item q = a(Blocks.SPRUCE_PLANKS, CreativeModeTab.b);
++
++    public static final Item r = a(Blocks.BIRCH_PLANKS, CreativeModeTab.b);
++
++    public static final Item s = a(Blocks.JUNGLE_PLANKS, CreativeModeTab.b);
++
++    public static final Item t = a(Blocks.ACACIA_PLANKS, CreativeModeTab.b);
++
++    public static final Item u = a(Blocks.DARK_OAK_PLANKS, CreativeModeTab.b);
++
++    public static final Item v = a(Blocks.CRIMSON_PLANKS, CreativeModeTab.b);
++
++    public static final Item w = a(Blocks.WARPED_PLANKS, CreativeModeTab.b);
++
++    public static final Item x = a(Blocks.OAK_SAPLING, CreativeModeTab.c);
++
++    public static final Item y = a(Blocks.SPRUCE_SAPLING, CreativeModeTab.c);
++
++    public static final Item z = a(Blocks.BIRCH_SAPLING, CreativeModeTab.c);
++
++    public static final Item A = a(Blocks.JUNGLE_SAPLING, CreativeModeTab.c);
++
++    public static final Item B = a(Blocks.ACACIA_SAPLING, CreativeModeTab.c);
++
++    public static final Item C = a(Blocks.DARK_OAK_SAPLING, CreativeModeTab.c);
++
++    public static final Item D = a(new ItemBlock(Blocks.BEDROCK, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item E = a(Blocks.SAND, CreativeModeTab.b);
++
++    public static final Item F = a(Blocks.RED_SAND, CreativeModeTab.b);
++
++    public static final Item G = a(Blocks.GRAVEL, CreativeModeTab.b);
++
++    public static final Item H = a(Blocks.GOLD_ORE, CreativeModeTab.b);
++
++    public static final Item I = a(new ItemBlock(Blocks.IRON_ORE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item J = a(new ItemBlock(Blocks.COAL_ORE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item K = a(Blocks.NETHER_GOLD_ORE, CreativeModeTab.b);
++
++    public static final Item L = a(Blocks.OAK_LOG, CreativeModeTab.b);
++
++    public static final Item M = a(Blocks.SPRUCE_LOG, CreativeModeTab.b);
++
++    public static final Item N = a(Blocks.BIRCH_LOG, CreativeModeTab.b);
++
++    public static final Item O = a(Blocks.JUNGLE_LOG, CreativeModeTab.b);
++
++    public static final Item P = a(Blocks.ACACIA_LOG, CreativeModeTab.b);
++
++    public static final Item Q = a(Blocks.DARK_OAK_LOG, CreativeModeTab.b);
++
++    public static final Item R = a(Blocks.CRIMSON_STEM, CreativeModeTab.b);
++
++    public static final Item S = a(Blocks.WARPED_STEM, CreativeModeTab.b);
++
++    public static final Item T = a(Blocks.STRIPPED_OAK_LOG, CreativeModeTab.b);
++
++    public static final Item U = a(Blocks.STRIPPED_SPRUCE_LOG, CreativeModeTab.b);
++
++    public static final Item V = a(Blocks.STRIPPED_BIRCH_LOG, CreativeModeTab.b);
++
++    public static final Item W = a(Blocks.STRIPPED_JUNGLE_LOG, CreativeModeTab.b);
++
++    public static final Item X = a(Blocks.STRIPPED_ACACIA_LOG, CreativeModeTab.b);
++
++    public static final Item Y = a(Blocks.STRIPPED_DARK_OAK_LOG, CreativeModeTab.b);
++
++    public static final Item Z = a(Blocks.STRIPPED_CRIMSON_STEM, CreativeModeTab.b);
++
++    public static final Item aa = a(Blocks.STRIPPED_WARPED_STEM, CreativeModeTab.b);
++
++    public static final Item ab = a(Blocks.STRIPPED_OAK_WOOD, CreativeModeTab.b);
++
++    public static final Item ac = a(Blocks.STRIPPED_SPRUCE_WOOD, CreativeModeTab.b);
++
++    public static final Item ad = a(Blocks.STRIPPED_BIRCH_WOOD, CreativeModeTab.b);
++
++    public static final Item ae = a(Blocks.STRIPPED_JUNGLE_WOOD, CreativeModeTab.b);
++
++    public static final Item af = a(Blocks.STRIPPED_ACACIA_WOOD, CreativeModeTab.b);
++
++    public static final Item ag = a(Blocks.STRIPPED_DARK_OAK_WOOD, CreativeModeTab.b);
++
++    public static final Item ah = a(Blocks.STRIPPED_CRIMSON_HYPHAE, CreativeModeTab.b);
++
++    public static final Item ai = a(Blocks.STRIPPED_WARPED_HYPHAE, CreativeModeTab.b);
++
++    public static final Item aj = a(Blocks.OAK_WOOD, CreativeModeTab.b);
++
++    public static final Item ak = a(Blocks.SPRUCE_WOOD, CreativeModeTab.b);
++
++    public static final Item al = a(Blocks.BIRCH_WOOD, CreativeModeTab.b);
++
++    public static final Item am = a(Blocks.JUNGLE_WOOD, CreativeModeTab.b);
++
++    public static final Item an = a(Blocks.ACACIA_WOOD, CreativeModeTab.b);
++
++    public static final Item ao = a(Blocks.DARK_OAK_WOOD, CreativeModeTab.b);
++
++    public static final Item ap = a(Blocks.CRIMSON_HYPHAE, CreativeModeTab.b);
++
++    public static final Item aq = a(Blocks.WARPED_HYPHAE, CreativeModeTab.b);
++
++    public static final Item ar = a(Blocks.OAK_LEAVES, CreativeModeTab.c);
++
++    public static final Item as = a(Blocks.SPRUCE_LEAVES, CreativeModeTab.c);
++
++    public static final Item at = a(Blocks.BIRCH_LEAVES, CreativeModeTab.c);
++
++    public static final Item au = a(Blocks.JUNGLE_LEAVES, CreativeModeTab.c);
++
++    public static final Item av = a(Blocks.ACACIA_LEAVES, CreativeModeTab.c);
++
++    public static final Item aw = a(Blocks.DARK_OAK_LEAVES, CreativeModeTab.c);
++
++    public static final Item ax = a(Blocks.SPONGE, CreativeModeTab.b);
++
++    public static final Item ay = a(Blocks.WET_SPONGE, CreativeModeTab.b);
++
++    public static final Item az = a(Blocks.GLASS, CreativeModeTab.b);
++
++    public static final Item aA = a(Blocks.LAPIS_ORE, CreativeModeTab.b);
++
++    public static final Item aB = a(Blocks.LAPIS_BLOCK, CreativeModeTab.b);
++
++    public static final Item aC = a(new ItemBlock(Blocks.DISPENSER, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item aD = a(new ItemBlock(Blocks.SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item aE = a(new ItemBlock(Blocks.CHISELED_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item aF = a(new ItemBlock(Blocks.CUT_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item aG = a(new ItemBlock(Blocks.NOTE_BLOCK, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item aH = a(new ItemBlock(Blocks.POWERED_RAIL, new Item.Info().a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item aI = a(new ItemBlock(Blocks.DETECTOR_RAIL, new Item.Info().a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item aJ = a(new ItemBlock(Blocks.STICKY_PISTON, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item aK = a(Blocks.COBWEB, CreativeModeTab.c);
++
++    public static final Item aL = a(Blocks.GRASS, CreativeModeTab.c);
++
++    public static final Item aM = a(Blocks.FERN, CreativeModeTab.c);
++
++    public static final Item aN = a(Blocks.DEAD_BUSH, CreativeModeTab.c);
++
++    public static final Item aO = a(Blocks.SEAGRASS, CreativeModeTab.c);
++
++    public static final Item aP = a(Blocks.SEA_PICKLE, CreativeModeTab.c);
++
++    public static final Item aQ = a(new ItemBlock(Blocks.PISTON, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item aR = a(Blocks.WHITE_WOOL, CreativeModeTab.b);
++
++    public static final Item aS = a(Blocks.ORANGE_WOOL, CreativeModeTab.b);
++
++    public static final Item aT = a(Blocks.MAGENTA_WOOL, CreativeModeTab.b);
++
++    public static final Item aU = a(Blocks.LIGHT_BLUE_WOOL, CreativeModeTab.b);
++
++    public static final Item aV = a(Blocks.YELLOW_WOOL, CreativeModeTab.b);
++
++    public static final Item aW = a(Blocks.LIME_WOOL, CreativeModeTab.b);
++
++    public static final Item aX = a(Blocks.PINK_WOOL, CreativeModeTab.b);
++
++    public static final Item aY = a(Blocks.GRAY_WOOL, CreativeModeTab.b);
++
++    public static final Item aZ = a(Blocks.LIGHT_GRAY_WOOL, CreativeModeTab.b);
++
++    public static final Item ba = a(Blocks.CYAN_WOOL, CreativeModeTab.b);
++
++    public static final Item bb = a(Blocks.PURPLE_WOOL, CreativeModeTab.b);
++
++    public static final Item bc = a(Blocks.BLUE_WOOL, CreativeModeTab.b);
++
++    public static final Item bd = a(Blocks.BROWN_WOOL, CreativeModeTab.b);
++
++    public static final Item be = a(Blocks.GREEN_WOOL, CreativeModeTab.b);
++
++    public static final Item bf = a(Blocks.RED_WOOL, CreativeModeTab.b);
++
++    public static final Item bg = a(Blocks.BLACK_WOOL, CreativeModeTab.b);
++
++    public static final Item bh = a(Blocks.DANDELION, CreativeModeTab.c);
++
++    public static final Item bi = a(Blocks.POPPY, CreativeModeTab.c);
++
++    public static final Item bj = a(Blocks.BLUE_ORCHID, CreativeModeTab.c);
++
++    public static final Item bk = a(Blocks.ALLIUM, CreativeModeTab.c);
++
++    public static final Item bl = a(Blocks.AZURE_BLUET, CreativeModeTab.c);
++
++    public static final Item bm = a(Blocks.RED_TULIP, CreativeModeTab.c);
++
++    public static final Item bn = a(Blocks.ORANGE_TULIP, CreativeModeTab.c);
++
++    public static final Item bo = a(Blocks.WHITE_TULIP, CreativeModeTab.c);
++
++    public static final Item bp = a(Blocks.PINK_TULIP, CreativeModeTab.c);
++
++    public static final Item bq = a(Blocks.OXEYE_DAISY, CreativeModeTab.c);
++
++    public static final Item br = a(Blocks.CORNFLOWER, CreativeModeTab.c);
++
++    public static final Item bs = a(Blocks.LILY_OF_THE_VALLEY, CreativeModeTab.c);
++
++    public static final Item bt = a(Blocks.WITHER_ROSE, CreativeModeTab.c);
++
++    public static final Item bu = a(Blocks.BROWN_MUSHROOM, CreativeModeTab.c);
++
++    public static final Item bv = a(Blocks.RED_MUSHROOM, CreativeModeTab.c);
++
++    public static final Item bw = a(Blocks.CRIMSON_FUNGUS, CreativeModeTab.c);
++
++    public static final Item bx = a(Blocks.WARPED_FUNGUS, CreativeModeTab.c);
++
++    public static final Item by = a(Blocks.CRIMSON_ROOTS, CreativeModeTab.c);
++
++    public static final Item bz = a(Blocks.WARPED_ROOTS, CreativeModeTab.c);
++
++    public static final Item bA = a(Blocks.NETHER_SPROUTS, CreativeModeTab.c);
++
++    public static final Item bB = a(Blocks.WEEPING_VINES, CreativeModeTab.c);
++
++    public static final Item bC = a(Blocks.TWISTING_VINES, CreativeModeTab.c);
++
++    public static final Item bD = a(Blocks.SUGAR_CANE, CreativeModeTab.c);
++
++    public static final Item bE = a(Blocks.KELP, CreativeModeTab.c);
++
++    public static final Item bF = a(Blocks.BAMBOO, CreativeModeTab.c);
++
++    public static final Item bG = a(Blocks.GOLD_BLOCK, CreativeModeTab.b);
++
++    public static final Item bH = a(new ItemBlock(Blocks.IRON_BLOCK, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bI = a(Blocks.OAK_SLAB, CreativeModeTab.b);
++
++    public static final Item bJ = a(Blocks.SPRUCE_SLAB, CreativeModeTab.b);
++
++    public static final Item bK = a(Blocks.BIRCH_SLAB, CreativeModeTab.b);
++
++    public static final Item bL = a(Blocks.JUNGLE_SLAB, CreativeModeTab.b);
++
++    public static final Item bM = a(Blocks.ACACIA_SLAB, CreativeModeTab.b);
++
++    public static final Item bN = a(Blocks.DARK_OAK_SLAB, CreativeModeTab.b);
++
++    public static final Item bO = a(Blocks.CRIMSON_SLAB, CreativeModeTab.b);
++
++    public static final Item bP = a(Blocks.WARPED_SLAB, CreativeModeTab.b);
++
++    public static final Item bQ = a(new ItemBlock(Blocks.STONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bR = a(new ItemBlock(Blocks.SMOOTH_STONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bS = a(new ItemBlock(Blocks.SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bT = a(new ItemBlock(Blocks.CUT_SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bU = a(new ItemBlock(Blocks.PETRIFIED_OAK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bV = a(new ItemBlock(Blocks.COBBLESTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bW = a(new ItemBlock(Blocks.BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bX = a(new ItemBlock(Blocks.STONE_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bY = a(new ItemBlock(Blocks.NETHER_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item bZ = a(new ItemBlock(Blocks.QUARTZ_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ca = a(new ItemBlock(Blocks.RED_SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cb = a(new ItemBlock(Blocks.CUT_RED_SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cc = a(Blocks.PURPUR_SLAB, CreativeModeTab.b);
++
++    public static final Item cd = a(Blocks.PRISMARINE_SLAB, CreativeModeTab.b);
++
++    public static final Item ce = a(Blocks.PRISMARINE_BRICK_SLAB, CreativeModeTab.b);
++
++    public static final Item cf = a(Blocks.DARK_PRISMARINE_SLAB, CreativeModeTab.b);
++
++    public static final Item cg = a(new ItemBlock(Blocks.SMOOTH_QUARTZ, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ch = a(new ItemBlock(Blocks.SMOOTH_RED_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ci = a(new ItemBlock(Blocks.SMOOTH_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cj = a(new ItemBlock(Blocks.SMOOTH_STONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ck = a(new ItemBlock(Blocks.BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cl = a(Blocks.TNT, CreativeModeTab.d);
++
++    public static final Item cm = a(Blocks.BOOKSHELF, CreativeModeTab.b);
++
++    public static final Item cn = a(new ItemBlock(Blocks.MOSSY_COBBLESTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item co = a(new ItemBlock(Blocks.OBSIDIAN, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cp = a(new ItemBlockWallable(Blocks.TORCH, Blocks.WALL_TORCH, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item cq = a(Blocks.END_ROD, CreativeModeTab.c);
++
++    public static final Item cr = a(Blocks.CHORUS_PLANT, CreativeModeTab.c);
++
++    public static final Item cs = a(Blocks.CHORUS_FLOWER, CreativeModeTab.c);
++
++    public static final Item ct = a(Blocks.PURPUR_BLOCK, CreativeModeTab.b);
++
++    public static final Item cu = a(Blocks.PURPUR_PILLAR, CreativeModeTab.b);
++
++    public static final Item cv = a(Blocks.PURPUR_STAIRS, CreativeModeTab.b);
++
++    public static final Item cw = a(Blocks.SPAWNER);
++
++    public static final Item cx = a(Blocks.OAK_STAIRS, CreativeModeTab.b);
++
++    public static final Item cy = a(Blocks.CHEST, CreativeModeTab.c);
++
++    public static final Item cz = a(new ItemBlock(Blocks.DIAMOND_ORE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cA = a(new ItemBlock(Blocks.DIAMOND_BLOCK, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cB = a(Blocks.CRAFTING_TABLE, CreativeModeTab.c);
++
++    public static final Item cC = a(Blocks.FARMLAND, CreativeModeTab.c);
++
++    public static final Item cD = a(new ItemBlock(Blocks.FURNACE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item cE = a(Blocks.LADDER, CreativeModeTab.c);
++
++    public static final Item cF = a(Blocks.RAIL, CreativeModeTab.e);
++
++    public static final Item cG = a(new ItemBlock(Blocks.COBBLESTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item cH = a(new ItemBlock(Blocks.LEVER, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item cI = a(new ItemBlock(Blocks.STONE_PRESSURE_PLATE, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item cJ = a(Blocks.OAK_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cK = a(Blocks.SPRUCE_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cL = a(Blocks.BIRCH_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cM = a(Blocks.JUNGLE_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cN = a(Blocks.ACACIA_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cO = a(Blocks.DARK_OAK_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cP = a(Blocks.CRIMSON_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cQ = a(Blocks.WARPED_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item cR = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item cS = a(Blocks.REDSTONE_ORE, CreativeModeTab.b);
++
++    public static final Item cT = a(new ItemBlockWallable(Blocks.REDSTONE_TORCH, Blocks.REDSTONE_WALL_TORCH, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item cU = a(Blocks.SNOW, CreativeModeTab.c);
++
++    public static final Item cV = a(Blocks.ICE, CreativeModeTab.b);
++
++    public static final Item cW = a(Blocks.SNOW_BLOCK, CreativeModeTab.b);
++
++    public static final Item cX = a(Blocks.CACTUS, CreativeModeTab.c);
++
++    public static final Item cY = a(Blocks.CLAY, CreativeModeTab.b);
++
++    public static final Item cZ = a(new ItemBlock(Blocks.JUKEBOX, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item da = a(Blocks.OAK_FENCE, CreativeModeTab.c);
++
++    public static final Item db = a(Blocks.SPRUCE_FENCE, CreativeModeTab.c);
++
++    public static final Item dc = a(Blocks.BIRCH_FENCE, CreativeModeTab.c);
++
++    public static final Item dd = a(Blocks.JUNGLE_FENCE, CreativeModeTab.c);
++
++    public static final Item de = a(Blocks.ACACIA_FENCE, CreativeModeTab.c);
++
++    public static final Item df = a(Blocks.DARK_OAK_FENCE, CreativeModeTab.c);
++
++    public static final Item dg = a(Blocks.CRIMSON_FENCE, CreativeModeTab.c);
++
++    public static final Item dh = a(Blocks.WARPED_FENCE, CreativeModeTab.c);
++
++    public static final Item di = a(Blocks.PUMPKIN, CreativeModeTab.b);
++
++    public static final Item dj = a(Blocks.CARVED_PUMPKIN, CreativeModeTab.b);
++
++    public static final Item dk = a(Blocks.NETHERRACK, CreativeModeTab.b);
++
++    public static final Item dl = a(Blocks.SOUL_SAND, CreativeModeTab.b);
++
++    public static final Item dm = a(Blocks.SOUL_SOIL, CreativeModeTab.b);
++
++    public static final Item dn = a(new ItemBlock(Blocks.BASALT, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item do_ = a(Blocks.cP, CreativeModeTab.b);
++
++    public static final Item dp = a(new ItemBlockWallable(Blocks.SOUL_TORCH, Blocks.SOUL_WALL_TORCH, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item dq = a(Blocks.GLOWSTONE, CreativeModeTab.b);
++
++    public static final Item dr = a(Blocks.JACK_O_LANTERN, CreativeModeTab.b);
++
++    public static final Item ds = a(Blocks.OAK_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dt = a(Blocks.SPRUCE_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item du = a(Blocks.BIRCH_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dv = a(Blocks.JUNGLE_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dw = a(Blocks.ACACIA_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dx = a(Blocks.DARK_OAK_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dy = a(Blocks.CRIMSON_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dz = a(Blocks.WARPED_TRAPDOOR, CreativeModeTab.d);
++
++    public static final Item dA = a(Blocks.INFESTED_STONE, CreativeModeTab.c);
++
++    public static final Item dB = a(Blocks.INFESTED_COBBLESTONE, CreativeModeTab.c);
++
++    public static final Item dC = a(Blocks.INFESTED_STONE_BRICKS, CreativeModeTab.c);
++
++    public static final Item dD = a(Blocks.INFESTED_MOSSY_STONE_BRICKS, CreativeModeTab.c);
++
++    public static final Item dE = a(Blocks.INFESTED_CRACKED_STONE_BRICKS, CreativeModeTab.c);
++
++    public static final Item dF = a(Blocks.INFESTED_CHISELED_STONE_BRICKS, CreativeModeTab.c);
++
++    public static final Item dG = a(new ItemBlock(Blocks.STONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item dH = a(new ItemBlock(Blocks.MOSSY_STONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item dI = a(new ItemBlock(Blocks.CRACKED_STONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item dJ = a(new ItemBlock(Blocks.CHISELED_STONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item dK = a(Blocks.BROWN_MUSHROOM_BLOCK, CreativeModeTab.c);
++
++    public static final Item dL = a(Blocks.RED_MUSHROOM_BLOCK, CreativeModeTab.c);
++
++    public static final Item dM = a(Blocks.MUSHROOM_STEM, CreativeModeTab.c);
++
++    public static final Item dN = a(new ItemBlock(Blocks.IRON_BARS, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item dO = a(new ItemBlock(Blocks.CHAIN, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item dP = a(Blocks.GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item dQ = a(Blocks.MELON, CreativeModeTab.b);
++
++    public static final Item dR = a(Blocks.VINE, CreativeModeTab.c);
++
++    public static final Item dS = a(Blocks.OAK_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dT = a(Blocks.SPRUCE_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dU = a(Blocks.BIRCH_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dV = a(Blocks.JUNGLE_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dW = a(Blocks.ACACIA_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dX = a(Blocks.DARK_OAK_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dY = a(Blocks.CRIMSON_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item dZ = a(Blocks.WARPED_FENCE_GATE, CreativeModeTab.d);
++
++    public static final Item ea = a(new ItemBlock(Blocks.BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item eb = a(new ItemBlock(Blocks.STONE_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ec = a(Blocks.MYCELIUM, CreativeModeTab.b);
++
++    public static final Item ed = a(new ItemWaterLily(Blocks.LILY_PAD, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item ee = a(new ItemBlock(Blocks.NETHER_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ef = a(new ItemBlock(Blocks.CRACKED_NETHER_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item eg = a(new ItemBlock(Blocks.CHISELED_NETHER_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item eh = a(new ItemBlock(Blocks.NETHER_BRICK_FENCE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item ei = a(new ItemBlock(Blocks.NETHER_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ej = a(new ItemBlock(Blocks.ENCHANTING_TABLE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item ek = a(new ItemBlock(Blocks.END_PORTAL_FRAME, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item el = a(new ItemBlock(Blocks.END_STONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item em = a(new ItemBlock(Blocks.END_STONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item en = a(new ItemBlock(Blocks.DRAGON_EGG, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item eo = a(Blocks.REDSTONE_LAMP, CreativeModeTab.d);
++
++    public static final Item ep = a(Blocks.SANDSTONE_STAIRS, CreativeModeTab.b);
++
++    public static final Item eq = a(Blocks.EMERALD_ORE, CreativeModeTab.b);
++
++    public static final Item er = a(Blocks.ENDER_CHEST, CreativeModeTab.c);
++
++    public static final Item es = a(Blocks.TRIPWIRE_HOOK, CreativeModeTab.d);
++
++    public static final Item et = a(Blocks.EMERALD_BLOCK, CreativeModeTab.b);
++
++    public static final Item eu = a(Blocks.SPRUCE_STAIRS, CreativeModeTab.b);
++
++    public static final Item ev = a(Blocks.BIRCH_STAIRS, CreativeModeTab.b);
++
++    public static final Item ew = a(Blocks.JUNGLE_STAIRS, CreativeModeTab.b);
++
++    public static final Item ex = a(Blocks.CRIMSON_STAIRS, CreativeModeTab.b);
++
++    public static final Item ey = a(Blocks.WARPED_STAIRS, CreativeModeTab.b);
++
++    public static final Item ez = a(new ItemRestricted(Blocks.COMMAND_BLOCK, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item eA = a(new ItemBlock(Blocks.BEACON, (new Item.Info()).a(CreativeModeTab.f).a(EnumItemRarity.RARE).setInvulnerableToCacti()));
++
++    public static final Item eB = a(new ItemBlock(Blocks.COBBLESTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eC = a(new ItemBlock(Blocks.MOSSY_COBBLESTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eD = a(new ItemBlock(Blocks.BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eE = a(Blocks.PRISMARINE_WALL, CreativeModeTab.c);
++
++    public static final Item eF = a(new ItemBlock(Blocks.RED_SANDSTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eG = a(new ItemBlock(Blocks.MOSSY_STONE_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eH = a(new ItemBlock(Blocks.GRANITE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eI = a(new ItemBlock(Blocks.STONE_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eJ = a(new ItemBlock(Blocks.NETHER_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eK = a(new ItemBlock(Blocks.ANDESITE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eL = a(new ItemBlock(Blocks.RED_NETHER_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eM = a(new ItemBlock(Blocks.SANDSTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eN = a(new ItemBlock(Blocks.END_STONE_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eO = a(new ItemBlock(Blocks.DIORITE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eP = a(new ItemBlock(Blocks.BLACKSTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eQ = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eR = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_BRICK_WALL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item eS = a(new ItemBlock(Blocks.STONE_BUTTON, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item eT = a(Blocks.OAK_BUTTON, CreativeModeTab.d);
++
++    public static final Item eU = a(Blocks.SPRUCE_BUTTON, CreativeModeTab.d);
++
++    public static final Item eV = a(Blocks.BIRCH_BUTTON, CreativeModeTab.d);
++
++    public static final Item eW = a(Blocks.JUNGLE_BUTTON, CreativeModeTab.d);
++
++    public static final Item eX = a(Blocks.ACACIA_BUTTON, CreativeModeTab.d);
++
++    public static final Item eY = a(Blocks.DARK_OAK_BUTTON, CreativeModeTab.d);
++
++    public static final Item eZ = a(Blocks.CRIMSON_BUTTON, CreativeModeTab.d);
++
++    public static final Item fa = a(Blocks.WARPED_BUTTON, CreativeModeTab.d);
++
++    public static final Item fb = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_BUTTON, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item fc = a(new ItemBlock(Blocks.ANVIL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item fd = a(new ItemBlock(Blocks.CHIPPED_ANVIL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item fe = a(new ItemBlock(Blocks.DAMAGED_ANVIL, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item ff = a(Blocks.TRAPPED_CHEST, CreativeModeTab.d);
++
++    public static final Item fg = a(Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE, CreativeModeTab.d);
++
++    public static final Item fh = a(new ItemBlock(Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item fi = a(new ItemBlock(Blocks.DAYLIGHT_DETECTOR, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item fj = a(Blocks.REDSTONE_BLOCK, CreativeModeTab.d);
++
++    public static final Item fk = a(new ItemBlock(Blocks.NETHER_QUARTZ_ORE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fl = a(new ItemBlock(Blocks.HOPPER, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item fm = a(new ItemBlock(Blocks.CHISELED_QUARTZ_BLOCK, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fn = a(new ItemBlock(Blocks.QUARTZ_BLOCK, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fo = a(new ItemBlock(Blocks.QUARTZ_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fp = a(new ItemBlock(Blocks.QUARTZ_PILLAR, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fq = a(new ItemBlock(Blocks.QUARTZ_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item fr = a(new ItemBlock(Blocks.ACTIVATOR_RAIL, new Item.Info().a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item fs = a(new ItemBlock(Blocks.DROPPER, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item ft = a(Blocks.WHITE_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fu = a(Blocks.ORANGE_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fv = a(Blocks.MAGENTA_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fw = a(Blocks.LIGHT_BLUE_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fx = a(Blocks.YELLOW_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fy = a(Blocks.LIME_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fz = a(Blocks.PINK_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fA = a(Blocks.GRAY_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fB = a(Blocks.LIGHT_GRAY_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fC = a(Blocks.CYAN_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fD = a(Blocks.PURPLE_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fE = a(Blocks.BLUE_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fF = a(Blocks.BROWN_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fG = a(Blocks.GREEN_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fH = a(Blocks.RED_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fI = a(Blocks.BLACK_TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item fJ = a(new ItemBlock(Blocks.BARRIER, new Item.Info().setInvulnerableToCacti()));
++
++    public static final Item fK = a(new ItemBlock(Blocks.IRON_TRAPDOOR, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item fL = a(Blocks.HAY_BLOCK, CreativeModeTab.b);
++
++    public static final Item fM = a(Blocks.WHITE_CARPET, CreativeModeTab.c);
++
++    public static final Item fN = a(Blocks.ORANGE_CARPET, CreativeModeTab.c);
++
++    public static final Item fO = a(Blocks.MAGENTA_CARPET, CreativeModeTab.c);
++
++    public static final Item fP = a(Blocks.LIGHT_BLUE_CARPET, CreativeModeTab.c);
++
++    public static final Item fQ = a(Blocks.YELLOW_CARPET, CreativeModeTab.c);
++
++    public static final Item fR = a(Blocks.LIME_CARPET, CreativeModeTab.c);
++
++    public static final Item fS = a(Blocks.PINK_CARPET, CreativeModeTab.c);
++
++    public static final Item fT = a(Blocks.GRAY_CARPET, CreativeModeTab.c);
++
++    public static final Item fU = a(Blocks.LIGHT_GRAY_CARPET, CreativeModeTab.c);
++
++    public static final Item fV = a(Blocks.CYAN_CARPET, CreativeModeTab.c);
++
++    public static final Item fW = a(Blocks.PURPLE_CARPET, CreativeModeTab.c);
++
++    public static final Item fX = a(Blocks.BLUE_CARPET, CreativeModeTab.c);
++
++    public static final Item fY = a(Blocks.BROWN_CARPET, CreativeModeTab.c);
++
++    public static final Item fZ = a(Blocks.GREEN_CARPET, CreativeModeTab.c);
++
++    public static final Item ga = a(Blocks.RED_CARPET, CreativeModeTab.c);
++
++    public static final Item gb = a(Blocks.BLACK_CARPET, CreativeModeTab.c);
++
++    public static final Item gc = a(Blocks.TERRACOTTA, CreativeModeTab.b);
++
++    public static final Item gd = a(Blocks.COAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item ge = a(Blocks.PACKED_ICE, CreativeModeTab.b);
++
++    public static final Item gf = a(Blocks.ACACIA_STAIRS, CreativeModeTab.b);
++
++    public static final Item gg = a(Blocks.DARK_OAK_STAIRS, CreativeModeTab.b);
++
++    public static final Item gh = a(Blocks.SLIME_BLOCK, CreativeModeTab.c);
++
++    public static final Item gi = a(Blocks.GRASS_PATH, CreativeModeTab.c);
++
++    public static final Item gj = a(new ItemBisected(Blocks.SUNFLOWER, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item gk = a(new ItemBisected(Blocks.LILAC, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item gl = a(new ItemBisected(Blocks.ROSE_BUSH, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item gm = a(new ItemBisected(Blocks.PEONY, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item gn = a(new ItemBisected(Blocks.TALL_GRASS, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item go = a(new ItemBisected(Blocks.LARGE_FERN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item gp = a(Blocks.WHITE_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gq = a(Blocks.ORANGE_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gr = a(Blocks.MAGENTA_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gs = a(Blocks.LIGHT_BLUE_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gt = a(Blocks.YELLOW_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gu = a(Blocks.LIME_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gv = a(Blocks.PINK_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gw = a(Blocks.GRAY_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gx = a(Blocks.LIGHT_GRAY_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gy = a(Blocks.CYAN_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gz = a(Blocks.PURPLE_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gA = a(Blocks.BLUE_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gB = a(Blocks.BROWN_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gC = a(Blocks.GREEN_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gD = a(Blocks.RED_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gE = a(Blocks.BLACK_STAINED_GLASS, CreativeModeTab.b);
++
++    public static final Item gF = a(Blocks.WHITE_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gG = a(Blocks.ORANGE_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gH = a(Blocks.MAGENTA_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gI = a(Blocks.LIGHT_BLUE_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gJ = a(Blocks.YELLOW_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gK = a(Blocks.LIME_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gL = a(Blocks.PINK_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gM = a(Blocks.GRAY_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gN = a(Blocks.LIGHT_GRAY_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gO = a(Blocks.CYAN_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gP = a(Blocks.PURPLE_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gQ = a(Blocks.BLUE_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gR = a(Blocks.BROWN_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gS = a(Blocks.GREEN_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gT = a(Blocks.RED_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gU = a(Blocks.BLACK_STAINED_GLASS_PANE, CreativeModeTab.c);
++
++    public static final Item gV = a(Blocks.PRISMARINE, CreativeModeTab.b);
++
++    public static final Item gW = a(Blocks.PRISMARINE_BRICKS, CreativeModeTab.b);
++
++    public static final Item gX = a(Blocks.DARK_PRISMARINE, CreativeModeTab.b);
++
++    public static final Item gY = a(Blocks.PRISMARINE_STAIRS, CreativeModeTab.b);
++
++    public static final Item gZ = a(Blocks.PRISMARINE_BRICK_STAIRS, CreativeModeTab.b);
++
++    public static final Item ha = a(Blocks.DARK_PRISMARINE_STAIRS, CreativeModeTab.b);
++
++    public static final Item hb = a(Blocks.SEA_LANTERN, CreativeModeTab.b);
++
++    public static final Item hc = a(new ItemBlock(Blocks.RED_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hd = a(new ItemBlock(Blocks.CHISELED_RED_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item he = a(new ItemBlock(Blocks.CUT_RED_SANDSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hf = a(new ItemBlock(Blocks.RED_SANDSTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hg = a(new ItemRestricted(Blocks.REPEATING_COMMAND_BLOCK, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item hh = a(new ItemRestricted(Blocks.CHAIN_COMMAND_BLOCK, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item hi = a(Blocks.MAGMA_BLOCK, CreativeModeTab.b);
++
++    public static final Item hj = a(Blocks.NETHER_WART_BLOCK, CreativeModeTab.b);
++
++    public static final Item hk = a(Blocks.WARPED_WART_BLOCK, CreativeModeTab.b);
++
++    public static final Item hl = a(new ItemBlock(Blocks.RED_NETHER_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hm = a(Blocks.BONE_BLOCK, CreativeModeTab.b);
++
++    public static final Item hn = a(Blocks.STRUCTURE_VOID);
++
++    public static final Item ho = a(new ItemBlock(Blocks.OBSERVER, new Item.Info().a(CreativeModeTab.d).setInvulnerableToCacti()));
++
++    public static final Item hp = a(new ItemBlock(Blocks.SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hq = a(new ItemBlock(Blocks.WHITE_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hr = a(new ItemBlock(Blocks.ORANGE_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hs = a(new ItemBlock(Blocks.MAGENTA_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item ht = a(new ItemBlock(Blocks.LIGHT_BLUE_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hu = a(new ItemBlock(Blocks.YELLOW_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hv = a(new ItemBlock(Blocks.LIME_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hw = a(new ItemBlock(Blocks.PINK_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hx = a(new ItemBlock(Blocks.GRAY_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hy = a(new ItemBlock(Blocks.LIGHT_GRAY_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hz = a(new ItemBlock(Blocks.CYAN_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hA = a(new ItemBlock(Blocks.PURPLE_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hB = a(new ItemBlock(Blocks.BLUE_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hC = a(new ItemBlock(Blocks.BROWN_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hD = a(new ItemBlock(Blocks.GREEN_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hE = a(new ItemBlock(Blocks.RED_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hF = a(new ItemBlock(Blocks.BLACK_SHULKER_BOX, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item hG = a(new ItemBlock(Blocks.WHITE_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hH = a(new ItemBlock(Blocks.ORANGE_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hI = a(new ItemBlock(Blocks.MAGENTA_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hJ = a(new ItemBlock(Blocks.LIGHT_BLUE_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hK = a(new ItemBlock(Blocks.YELLOW_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hL = a(new ItemBlock(Blocks.LIME_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hM = a(new ItemBlock(Blocks.PINK_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hN = a(new ItemBlock(Blocks.GRAY_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hO = a(new ItemBlock(Blocks.LIGHT_GRAY_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hP = a(new ItemBlock(Blocks.CYAN_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hQ = a(new ItemBlock(Blocks.PURPLE_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hR = a(new ItemBlock(Blocks.BLUE_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hS = a(new ItemBlock(Blocks.BROWN_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hT = a(new ItemBlock(Blocks.GREEN_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hU = a(new ItemBlock(Blocks.RED_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hV = a(new ItemBlock(Blocks.BLACK_GLAZED_TERRACOTTA, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item hW = a(new ItemBlock(Blocks.WHITE_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hX = a(new ItemBlock(Blocks.ORANGE_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hY = a(new ItemBlock(Blocks.MAGENTA_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item hZ = a(new ItemBlock(Blocks.LIGHT_BLUE_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ia = a(new ItemBlock(Blocks.YELLOW_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ib = a(new ItemBlock(Blocks.LIME_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ic = a(new ItemBlock(Blocks.PINK_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item id = a(new ItemBlock(Blocks.GRAY_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ie = a(new ItemBlock(Blocks.LIGHT_GRAY_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item if_ = a(new ItemBlock(Blocks.CYAN_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ig = a(new ItemBlock(Blocks.PURPLE_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ih = a(new ItemBlock(Blocks.BLUE_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ii = a(new ItemBlock(Blocks.BROWN_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ij = a(new ItemBlock(Blocks.GREEN_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ik = a(new ItemBlock(Blocks.RED_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item il = a(new ItemBlock(Blocks.BLACK_CONCRETE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item im = a(Blocks.WHITE_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item in = a(Blocks.ORANGE_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item io = a(Blocks.MAGENTA_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item ip = a(Blocks.LIGHT_BLUE_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iq = a(Blocks.YELLOW_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item ir = a(Blocks.LIME_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item is = a(Blocks.PINK_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item it = a(Blocks.GRAY_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iu = a(Blocks.LIGHT_GRAY_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iv = a(Blocks.CYAN_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iw = a(Blocks.PURPLE_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item ix = a(Blocks.BLUE_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iy = a(Blocks.BROWN_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iz = a(Blocks.GREEN_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iA = a(Blocks.RED_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iB = a(Blocks.BLACK_CONCRETE_POWDER, CreativeModeTab.b);
++
++    public static final Item iC = a(Blocks.TURTLE_EGG, CreativeModeTab.f);
++
++    public static final Item iD = a(Blocks.DEAD_TUBE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iE = a(Blocks.DEAD_BRAIN_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iF = a(Blocks.DEAD_BUBBLE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iG = a(Blocks.DEAD_FIRE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iH = a(Blocks.DEAD_HORN_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iI = a(Blocks.TUBE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iJ = a(Blocks.BRAIN_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iK = a(Blocks.BUBBLE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iL = a(Blocks.FIRE_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iM = a(Blocks.HORN_CORAL_BLOCK, CreativeModeTab.b);
++
++    public static final Item iN = a(Blocks.TUBE_CORAL, CreativeModeTab.c);
++
++    public static final Item iO = a(Blocks.BRAIN_CORAL, CreativeModeTab.c);
++
++    public static final Item iP = a(Blocks.BUBBLE_CORAL, CreativeModeTab.c);
++
++    public static final Item iQ = a(Blocks.FIRE_CORAL, CreativeModeTab.c);
++
++    public static final Item iR = a(Blocks.HORN_CORAL, CreativeModeTab.c);
++
++    public static final Item iS = a(Blocks.DEAD_BRAIN_CORAL, CreativeModeTab.c);
++
++    public static final Item iT = a(Blocks.DEAD_BUBBLE_CORAL, CreativeModeTab.c);
++
++    public static final Item iU = a(Blocks.DEAD_FIRE_CORAL, CreativeModeTab.c);
++
++    public static final Item iV = a(Blocks.DEAD_HORN_CORAL, CreativeModeTab.c);
++
++    public static final Item iW = a(Blocks.DEAD_TUBE_CORAL, CreativeModeTab.c);
++
++    public static final Item iX = a(new ItemBlockWallable(Blocks.TUBE_CORAL_FAN, Blocks.TUBE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item iY = a(new ItemBlockWallable(Blocks.BRAIN_CORAL_FAN, Blocks.BRAIN_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item iZ = a(new ItemBlockWallable(Blocks.BUBBLE_CORAL_FAN, Blocks.BUBBLE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item ja = a(new ItemBlockWallable(Blocks.FIRE_CORAL_FAN, Blocks.FIRE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jb = a(new ItemBlockWallable(Blocks.HORN_CORAL_FAN, Blocks.HORN_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jc = a(new ItemBlockWallable(Blocks.DEAD_TUBE_CORAL_FAN, Blocks.DEAD_TUBE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jd = a(new ItemBlockWallable(Blocks.DEAD_BRAIN_CORAL_FAN, Blocks.DEAD_BRAIN_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item je = a(new ItemBlockWallable(Blocks.DEAD_BUBBLE_CORAL_FAN, Blocks.DEAD_BUBBLE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jf = a(new ItemBlockWallable(Blocks.DEAD_FIRE_CORAL_FAN, Blocks.DEAD_FIRE_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jg = a(new ItemBlockWallable(Blocks.DEAD_HORN_CORAL_FAN, Blocks.DEAD_HORN_CORAL_WALL_FAN, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jh = a(Blocks.BLUE_ICE, CreativeModeTab.b);
++
++    public static final Item ji = a(new ItemBlock(Blocks.CONDUIT, (new Item.Info()).a(CreativeModeTab.f).a(EnumItemRarity.RARE).setInvulnerableToCacti()));
++
++    public static final Item jj = a(new ItemBlock(Blocks.POLISHED_GRANITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jk = a(new ItemBlock(Blocks.SMOOTH_RED_SANDSTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jl = a(new ItemBlock(Blocks.MOSSY_STONE_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jm = a(new ItemBlock(Blocks.POLISHED_DIORITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jn = a(new ItemBlock(Blocks.MOSSY_COBBLESTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jo = a(new ItemBlock(Blocks.END_STONE_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jp = a(new ItemBlock(Blocks.STONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jq = a(new ItemBlock(Blocks.SMOOTH_SANDSTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jr = a(new ItemBlock(Blocks.SMOOTH_QUARTZ_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item js = a(new ItemBlock(Blocks.GRANITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jt = a(new ItemBlock(Blocks.ANDESITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item ju = a(new ItemBlock(Blocks.RED_NETHER_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jv = a(new ItemBlock(Blocks.POLISHED_ANDESITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jw = a(new ItemBlock(Blocks.DIORITE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jx = a(new ItemBlock(Blocks.POLISHED_GRANITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jy = a(new ItemBlock(Blocks.SMOOTH_RED_SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jz = a(new ItemBlock(Blocks.MOSSY_STONE_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jA = a(new ItemBlock(Blocks.POLISHED_DIORITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jB = a(new ItemBlock(Blocks.MOSSY_COBBLESTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jC = a(new ItemBlock(Blocks.END_STONE_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jD = a(new ItemBlock(Blocks.SMOOTH_SANDSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jE = a(new ItemBlock(Blocks.SMOOTH_QUARTZ_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jF = a(new ItemBlock(Blocks.GRANITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jG = a(new ItemBlock(Blocks.ANDESITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jH = a(new ItemBlock(Blocks.RED_NETHER_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jI = a(new ItemBlock(Blocks.POLISHED_ANDESITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jJ = a(new ItemBlock(Blocks.DIORITE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item jK = a(new ItemScaffolding(Blocks.SCAFFOLDING, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item jL = a(new ItemBisected(Blocks.IRON_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jM = a(new ItemBisected(Blocks.OAK_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jN = a(new ItemBisected(Blocks.SPRUCE_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jO = a(new ItemBisected(Blocks.BIRCH_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jP = a(new ItemBisected(Blocks.JUNGLE_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jQ = a(new ItemBisected(Blocks.ACACIA_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jR = a(new ItemBisected(Blocks.DARK_OAK_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jS = a(new ItemBisected(Blocks.CRIMSON_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jT = a(new ItemBisected(Blocks.WARPED_DOOR, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item jU = a(Blocks.REPEATER, CreativeModeTab.d);
++
++    public static final Item jV = a(Blocks.COMPARATOR, CreativeModeTab.d);
++
++    public static final Item jW = a(new ItemRestricted(Blocks.STRUCTURE_BLOCK, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item jX = a(new ItemRestricted(Blocks.JIGSAW, (new Item.Info()).a(EnumItemRarity.EPIC).setInvulnerableToCacti()));
++
++    public static final Item TURTLE_HELMET = a("turtle_helmet", new ItemArmor(EnumArmorMaterial.TURTLE, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item SCUTE = a("scute", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item FLINT_AND_STEEL = a("flint_and_steel", new ItemFlintAndSteel((new Item.Info()).c(64).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item APPLE = a("apple", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.a)));
++
++    public static final Item BOW = a("bow", new ItemBow((new Item.Info()).c(384).a(CreativeModeTab.j)));
++
++    public static final Item ARROW = a("arrow", new ItemArrow((new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item COAL = a("coal", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item CHARCOAL = a("charcoal", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item DIAMOND = a("diamond", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item IRON_INGOT = a("iron_ingot", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item GOLD_INGOT = a("gold_ingot", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item NETHERITE_INGOT = a("netherite_ingot", new Item((new Item.Info()).a(CreativeModeTab.l).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_SCRAP = a("netherite_scrap", new Item((new Item.Info()).a(CreativeModeTab.l).a().setInvulnerableToCacti()));
++
++    public static final Item WOODEN_SWORD = a("wooden_sword", new ItemSword(EnumToolMaterial.WOOD, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item WOODEN_SHOVEL = a("wooden_shovel", new ItemSpade(EnumToolMaterial.WOOD, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item WOODEN_PICKAXE = a("wooden_pickaxe", new ItemPickaxe(EnumToolMaterial.WOOD, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item WOODEN_AXE = a("wooden_axe", new ItemAxe(EnumToolMaterial.WOOD, 6.0F, -3.2F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item WOODEN_HOE = a("wooden_hoe", new ItemHoe(EnumToolMaterial.WOOD, 0, -3.0F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item STONE_SWORD = a("stone_sword", new ItemSword(EnumToolMaterial.STONE, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item STONE_SHOVEL = a("stone_shovel", new ItemSpade(EnumToolMaterial.STONE, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item STONE_PICKAXE = a("stone_pickaxe", new ItemPickaxe(EnumToolMaterial.STONE, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item STONE_AXE = a("stone_axe", new ItemAxe(EnumToolMaterial.STONE, 7.0F, -3.2F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item STONE_HOE = a("stone_hoe", new ItemHoe(EnumToolMaterial.STONE, -1, -2.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item GOLDEN_SWORD = a("golden_sword", new ItemSword(EnumToolMaterial.GOLD, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item GOLDEN_SHOVEL = a("golden_shovel", new ItemSpade(EnumToolMaterial.GOLD, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item GOLDEN_PICKAXE = a("golden_pickaxe", new ItemPickaxe(EnumToolMaterial.GOLD, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item GOLDEN_AXE = a("golden_axe", new ItemAxe(EnumToolMaterial.GOLD, 6.0F, -3.0F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item GOLDEN_HOE = a("golden_hoe", new ItemHoe(EnumToolMaterial.GOLD, 0, -3.0F, (new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item IRON_SWORD = a("iron_sword", new ItemSword(EnumToolMaterial.IRON, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item IRON_SHOVEL = a("iron_shovel", new ItemSpade(EnumToolMaterial.IRON, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item IRON_PICKAXE = a("iron_pickaxe", new ItemPickaxe(EnumToolMaterial.IRON, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item IRON_AXE = a("iron_axe", new ItemAxe(EnumToolMaterial.IRON, 6.0F, -3.1F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item IRON_HOE = a("iron_hoe", new ItemHoe(EnumToolMaterial.IRON, -2, -1.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_SWORD = a("diamond_sword", new ItemSword(EnumToolMaterial.DIAMOND, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_SHOVEL = a("diamond_shovel", new ItemSpade(EnumToolMaterial.DIAMOND, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_PICKAXE = a("diamond_pickaxe", new ItemPickaxe(EnumToolMaterial.DIAMOND, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_AXE = a("diamond_axe", new ItemAxe(EnumToolMaterial.DIAMOND, 5.0F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_HOE = a("diamond_hoe", new ItemHoe(EnumToolMaterial.DIAMOND, -3, 0.0F, (new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_SWORD = a("netherite_sword", new ItemSword(EnumToolMaterial.NETHERITE, 3, -2.4F, (new Item.Info()).a(CreativeModeTab.j).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_SHOVEL = a("netherite_shovel", new ItemSpade(EnumToolMaterial.NETHERITE, 1.5F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_PICKAXE = a("netherite_pickaxe", new ItemPickaxe(EnumToolMaterial.NETHERITE, 1, -2.8F, (new Item.Info()).a(CreativeModeTab.i).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_AXE = a("netherite_axe", new ItemAxe(EnumToolMaterial.NETHERITE, 5.0F, -3.0F, (new Item.Info()).a(CreativeModeTab.i).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_HOE = a("netherite_hoe", new ItemHoe(EnumToolMaterial.NETHERITE, -4, 0.0F, (new Item.Info()).a(CreativeModeTab.i).a().setInvulnerableToCacti()));
++
++    public static final Item STICK = a("stick", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BOWL = a("bowl", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item MUSHROOM_STEW = a("mushroom_stew", new ItemSoup((new Item.Info()).a(1).a(CreativeModeTab.h).a(Foods.y)));
++
++    public static final Item STRING = a("string", new ItemNamedBlock(Blocks.TRIPWIRE, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item FEATHER = a("feather", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item GUNPOWDER = a("gunpowder", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item WHEAT_SEEDS = a("wheat_seeds", new ItemNamedBlock(Blocks.WHEAT, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item WHEAT = a("wheat", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BREAD = a("bread", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.f)));
++
++    public static final Item LEATHER_HELMET = a("leather_helmet", new ItemArmorColorable(EnumArmorMaterial.LEATHER, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item LEATHER_CHESTPLATE = a("leather_chestplate", new ItemArmorColorable(EnumArmorMaterial.LEATHER, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item LEATHER_LEGGINGS = a("leather_leggings", new ItemArmorColorable(EnumArmorMaterial.LEATHER, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item LEATHER_BOOTS = a("leather_boots", new ItemArmorColorable(EnumArmorMaterial.LEATHER, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item CHAINMAIL_HELMET = a("chainmail_helmet", new ItemArmor(EnumArmorMaterial.CHAIN, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item CHAINMAIL_CHESTPLATE = a("chainmail_chestplate", new ItemArmor(EnumArmorMaterial.CHAIN, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item CHAINMAIL_LEGGINGS = a("chainmail_leggings", new ItemArmor(EnumArmorMaterial.CHAIN, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item CHAINMAIL_BOOTS = a("chainmail_boots", new ItemArmor(EnumArmorMaterial.CHAIN, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item IRON_HELMET = a("iron_helmet", new ItemArmor(EnumArmorMaterial.IRON, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item IRON_CHESTPLATE = a("iron_chestplate", new ItemArmor(EnumArmorMaterial.IRON, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item IRON_LEGGINGS = a("iron_leggings", new ItemArmor(EnumArmorMaterial.IRON, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item IRON_BOOTS = a("iron_boots", new ItemArmor(EnumArmorMaterial.IRON, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_HELMET = a("diamond_helmet", new ItemArmor(EnumArmorMaterial.DIAMOND, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_CHESTPLATE = a("diamond_chestplate", new ItemArmor(EnumArmorMaterial.DIAMOND, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_LEGGINGS = a("diamond_leggings", new ItemArmor(EnumArmorMaterial.DIAMOND, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item DIAMOND_BOOTS = a("diamond_boots", new ItemArmor(EnumArmorMaterial.DIAMOND, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item GOLDEN_HELMET = a("golden_helmet", new ItemArmor(EnumArmorMaterial.GOLD, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item GOLDEN_CHESTPLATE = a("golden_chestplate", new ItemArmor(EnumArmorMaterial.GOLD, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item GOLDEN_LEGGINGS = a("golden_leggings", new ItemArmor(EnumArmorMaterial.GOLD, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item GOLDEN_BOOTS = a("golden_boots", new ItemArmor(EnumArmorMaterial.GOLD, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item NETHERITE_HELMET = a("netherite_helmet", new ItemArmor(EnumArmorMaterial.NETHERITE, EnumItemSlot.HEAD, (new Item.Info()).a(CreativeModeTab.j).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_CHESTPLATE = a("netherite_chestplate", new ItemArmor(EnumArmorMaterial.NETHERITE, EnumItemSlot.CHEST, (new Item.Info()).a(CreativeModeTab.j).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_LEGGINGS = a("netherite_leggings", new ItemArmor(EnumArmorMaterial.NETHERITE, EnumItemSlot.LEGS, (new Item.Info()).a(CreativeModeTab.j).a().setInvulnerableToCacti()));
++
++    public static final Item NETHERITE_BOOTS = a("netherite_boots", new ItemArmor(EnumArmorMaterial.NETHERITE, EnumItemSlot.FEET, (new Item.Info()).a(CreativeModeTab.j).a().setInvulnerableToCacti()));
++
++    public static final Item FLINT = a("flint", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item PORKCHOP = a("porkchop", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.B)));
++
++    public static final Item COOKED_PORKCHOP = a("cooked_porkchop", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.o)));
++
++    public static final Item PAINTING = a("painting", new ItemHanging((EntityTypes)EntityTypes.PAINTING, (new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item GOLDEN_APPLE = a("golden_apple", new Item((new Item.Info()).a(CreativeModeTab.h).a(EnumItemRarity.RARE).a(Foods.u)));
++
++    public static final Item ENCHANTED_GOLDEN_APPLE = a("enchanted_golden_apple", new ItemGoldenAppleEnchanted((new Item.Info()).a(CreativeModeTab.h).a(EnumItemRarity.EPIC).a(Foods.t)));
++
++    public static final Item OAK_SIGN = a("oak_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.OAK_SIGN, Blocks.OAK_WALL_SIGN));
++
++    public static final Item SPRUCE_SIGN = a("spruce_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.SPRUCE_SIGN, Blocks.SPRUCE_WALL_SIGN));
++
++    public static final Item BIRCH_SIGN = a("birch_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.BIRCH_SIGN, Blocks.BIRCH_WALL_SIGN));
++
++    public static final Item JUNGLE_SIGN = a("jungle_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.JUNGLE_SIGN, Blocks.JUNGLE_WALL_SIGN));
++
++    public static final Item ACACIA_SIGN = a("acacia_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.ACACIA_SIGN, Blocks.ACACIA_WALL_SIGN));
++
++    public static final Item DARK_OAK_SIGN = a("dark_oak_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.DARK_OAK_SIGN, Blocks.DARK_OAK_WALL_SIGN));
++
++    public static final Item CRIMSON_SIGN = a("crimson_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.CRIMSON_SIGN, Blocks.CRIMSON_WALL_SIGN));
++
++    public static final Item WARPED_SIGN = a("warped_sign", new ItemSign((new Item.Info()).a(16).a(CreativeModeTab.c), Blocks.WARPED_SIGN, Blocks.WARPED_WALL_SIGN));
++
++    public static final Item BUCKET = a("bucket", new ItemBucket(FluidTypes.EMPTY, (new Item.Info()).a(16).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item WATER_BUCKET = a("water_bucket", new ItemBucket(FluidTypes.WATER, (new Item.Info()).a(BUCKET).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item LAVA_BUCKET = a("lava_bucket", new ItemBucket(FluidTypes.LAVA, (new Item.Info()).a(BUCKET).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item MINECART = a("minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.RIDEABLE, (new Item.Info()).a(1).a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item SADDLE = a("saddle", new ItemSaddle((new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item REDSTONE = a("redstone", new ItemNamedBlock(Blocks.REDSTONE_WIRE, (new Item.Info()).a(CreativeModeTab.d)));
++
++    public static final Item SNOWBALL = a("snowball", new ItemSnowball((new Item.Info()).a(16).a(CreativeModeTab.f)));
++
++    public static final Item OAK_BOAT = a("oak_boat", new ItemBoat(EntityBoat.EnumBoatType.OAK, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item LEATHER = a("leather", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item MILK_BUCKET = a("milk_bucket", new ItemMilkBucket((new Item.Info()).a(BUCKET).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item PUFFERFISH_BUCKET = a("pufferfish_bucket", new ItemFishBucket(EntityTypes.PUFFERFISH, FluidTypes.WATER, (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item SALMON_BUCKET = a("salmon_bucket", new ItemFishBucket(EntityTypes.SALMON, FluidTypes.WATER, (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item COD_BUCKET = a("cod_bucket", new ItemFishBucket(EntityTypes.COD, FluidTypes.WATER, (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item TROPICAL_FISH_BUCKET = a("tropical_fish_bucket", new ItemFishBucket(EntityTypes.TROPICAL_FISH, FluidTypes.WATER, (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item BRICK = a("brick", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item CLAY_BALL = a("clay_ball", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item ma = a(Blocks.DRIED_KELP_BLOCK, CreativeModeTab.b);
++
++    public static final Item PAPER = a("paper", new Item((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item BOOK = a("book", new ItemBook((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SLIME_BALL = a("slime_ball", new Item((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item CHEST_MINECART = a("chest_minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.CHEST, (new Item.Info()).a(1).a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item FURNACE_MINECART = a("furnace_minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.FURNACE, (new Item.Info()).a(1).a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item EGG = a("egg", new ItemEgg((new Item.Info()).a(16).a(CreativeModeTab.l)));
++
++    public static final Item COMPASS = a("compass", new ItemCompass((new Item.Info()).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item FISHING_ROD = a("fishing_rod", new ItemFishingRod((new Item.Info()).c(64).a(CreativeModeTab.i)));
++
++    public static final Item CLOCK = a("clock", new Item((new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item GLOWSTONE_DUST = a("glowstone_dust", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item COD = a("cod", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.j)));
++
++    public static final Item SALMON = a("salmon", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.I)));
++
++    public static final Item TROPICAL_FISH = a("tropical_fish", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.M)));
++
++    public static final Item PUFFERFISH = a("pufferfish", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.D)));
++
++    public static final Item COOKED_COD = a("cooked_cod", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.m)));
++
++    public static final Item COOKED_SALMON = a("cooked_salmon", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.q)));
++
++    public static final Item INK_SAC = a("ink_sac", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item COCOA_BEANS = a("cocoa_beans", new ItemNamedBlock(Blocks.COCOA, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item LAPIS_LAZULI = a("lapis_lazuli", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item WHITE_DYE = a("white_dye", new ItemDye(EnumColor.WHITE, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item ORANGE_DYE = a("orange_dye", new ItemDye(EnumColor.ORANGE, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item MAGENTA_DYE = a("magenta_dye", new ItemDye(EnumColor.MAGENTA, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item LIGHT_BLUE_DYE = a("light_blue_dye", new ItemDye(EnumColor.LIGHT_BLUE, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item YELLOW_DYE = a("yellow_dye", new ItemDye(EnumColor.YELLOW, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item LIME_DYE = a("lime_dye", new ItemDye(EnumColor.LIME, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item PINK_DYE = a("pink_dye", new ItemDye(EnumColor.PINK, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item GRAY_DYE = a("gray_dye", new ItemDye(EnumColor.GRAY, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item LIGHT_GRAY_DYE = a("light_gray_dye", new ItemDye(EnumColor.LIGHT_GRAY, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item CYAN_DYE = a("cyan_dye", new ItemDye(EnumColor.CYAN, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item PURPLE_DYE = a("purple_dye", new ItemDye(EnumColor.PURPLE, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BLUE_DYE = a("blue_dye", new ItemDye(EnumColor.BLUE, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BROWN_DYE = a("brown_dye", new ItemDye(EnumColor.BROWN, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item GREEN_DYE = a("green_dye", new ItemDye(EnumColor.GREEN, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item RED_DYE = a("red_dye", new ItemDye(EnumColor.RED, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BLACK_DYE = a("black_dye", new ItemDye(EnumColor.BLACK, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BONE_MEAL = a("bone_meal", new ItemBoneMeal((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BONE = a("bone", new Item((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SUGAR = a("sugar", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item mN = a(new ItemBlock(Blocks.CAKE, (new Item.Info()).a(1).a(CreativeModeTab.h)));
++
++    public static final Item WHITE_BED = a(new ItemBed(Blocks.WHITE_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item ORANGE_BED = a(new ItemBed(Blocks.ORANGE_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item MAGENTA_BED = a(new ItemBed(Blocks.MAGENTA_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item LIGHT_BLUE_BED = a(new ItemBed(Blocks.LIGHT_BLUE_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item YELLOW_BED = a(new ItemBed(Blocks.YELLOW_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item LIME_BED = a(new ItemBed(Blocks.LIME_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item PINK_BED = a(new ItemBed(Blocks.PINK_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item GRAY_BED = a(new ItemBed(Blocks.GRAY_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item LIGHT_GRAY_BED = a(new ItemBed(Blocks.LIGHT_GRAY_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item CYAN_BED = a(new ItemBed(Blocks.CYAN_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item PURPLE_BED = a(new ItemBed(Blocks.PURPLE_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item BLUE_BED = a(new ItemBed(Blocks.BLUE_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item BROWN_BED = a(new ItemBed(Blocks.BROWN_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item GREEN_BED = a(new ItemBed(Blocks.GREEN_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item RED_BED = a(new ItemBed(Blocks.RED_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item BLACK_BED = a(new ItemBed(Blocks.BLACK_BED, (new Item.Info()).a(1).a(CreativeModeTab.c)));
++
++    public static final Item COOKIE = a("cookie", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.r)));
++
++    public static final Item FILLED_MAP = a("filled_map", new ItemWorldMap(new Item.Info()));
++
++    public static final Item SHEARS = a("shears", new ItemShears((new Item.Info()).c(238).a(CreativeModeTab.i).setInvulnerableToCacti()));
++
++    public static final Item MELON_SLICE = a("melon_slice", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.x)));
++
++    public static final Item DRIED_KELP = a("dried_kelp", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.s)));
++
++    public static final Item PUMPKIN_SEEDS = a("pumpkin_seeds", new ItemNamedBlock(Blocks.PUMPKIN_STEM, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item MELON_SEEDS = a("melon_seeds", new ItemNamedBlock(Blocks.MELON_STEM, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BEEF = a("beef", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.c)));
++
++    public static final Item COOKED_BEEF = a("cooked_beef", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.k)));
++
++    public static final Item CHICKEN = a("chicken", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.h)));
++
++    public static final Item COOKED_CHICKEN = a("cooked_chicken", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.l)));
++
++    public static final Item ROTTEN_FLESH = a("rotten_flesh", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.H)));
++
++    public static final Item ENDER_PEARL = a("ender_pearl", new ItemEnderPearl((new Item.Info()).a(16).a(CreativeModeTab.f)));
++
++    public static final Item BLAZE_ROD = a("blaze_rod", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item GHAST_TEAR = a("ghast_tear", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item GOLD_NUGGET = a("gold_nugget", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item NETHER_WART = a("nether_wart", new ItemNamedBlock(Blocks.NETHER_WART, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item POTION = a("potion", new ItemPotion((new Item.Info()).a(1).a(CreativeModeTab.k)));
++
++    public static final Item GLASS_BOTTLE = a("glass_bottle", new ItemGlassBottle((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item SPIDER_EYE = a("spider_eye", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.J)));
++
++    public static final Item FERMENTED_SPIDER_EYE = a("fermented_spider_eye", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item BLAZE_POWDER = a("blaze_powder", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item MAGMA_CREAM = a("magma_cream", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item nB = a(new ItemBlock(Blocks.BREWING_STAND, new Item.Info().a(CreativeModeTab.k).setInvulnerableToCacti()));
++
++    public static final Item nC = a(new ItemBlock(Blocks.CAULDRON, new Item.Info().a(CreativeModeTab.k).setInvulnerableToCacti()));
++
++    public static final Item ENDER_EYE = a("ender_eye", new ItemEnderEye((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item GLISTERING_MELON_SLICE = a("glistering_melon_slice", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item BAT_SPAWN_EGG = a("bat_spawn_egg", new ItemMonsterEgg(EntityTypes.BAT, 4996656, 986895, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item BEE_SPAWN_EGG = a("bee_spawn_egg", new ItemMonsterEgg(EntityTypes.BEE, 15582019, 4400155, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item BLAZE_SPAWN_EGG = a("blaze_spawn_egg", new ItemMonsterEgg(EntityTypes.BLAZE, 16167425, 16775294, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item CAT_SPAWN_EGG = a("cat_spawn_egg", new ItemMonsterEgg(EntityTypes.CAT, 15714446, 9794134, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item CAVE_SPIDER_SPAWN_EGG = a("cave_spider_spawn_egg", new ItemMonsterEgg(EntityTypes.CAVE_SPIDER, 803406, 11013646, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item CHICKEN_SPAWN_EGG = a("chicken_spawn_egg", new ItemMonsterEgg(EntityTypes.CHICKEN, 10592673, 16711680, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item COD_SPAWN_EGG = a("cod_spawn_egg", new ItemMonsterEgg(EntityTypes.COD, 12691306, 15058059, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item COW_SPAWN_EGG = a("cow_spawn_egg", new ItemMonsterEgg(EntityTypes.COW, 4470310, 10592673, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item CREEPER_SPAWN_EGG = a("creeper_spawn_egg", new ItemMonsterEgg(EntityTypes.CREEPER, 894731, 0, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item DOLPHIN_SPAWN_EGG = a("dolphin_spawn_egg", new ItemMonsterEgg(EntityTypes.DOLPHIN, 2243405, 16382457, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item DONKEY_SPAWN_EGG = a("donkey_spawn_egg", new ItemMonsterEgg(EntityTypes.DONKEY, 5457209, 8811878, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item DROWNED_SPAWN_EGG = a("drowned_spawn_egg", new ItemMonsterEgg(EntityTypes.DROWNED, 9433559, 7969893, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ELDER_GUARDIAN_SPAWN_EGG = a("elder_guardian_spawn_egg", new ItemMonsterEgg(EntityTypes.ELDER_GUARDIAN, 13552826, 7632531, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ENDERMAN_SPAWN_EGG = a("enderman_spawn_egg", new ItemMonsterEgg(EntityTypes.ENDERMAN, 1447446, 0, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ENDERMITE_SPAWN_EGG = a("endermite_spawn_egg", new ItemMonsterEgg(EntityTypes.ENDERMITE, 1447446, 7237230, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item EVOKER_SPAWN_EGG = a("evoker_spawn_egg", new ItemMonsterEgg(EntityTypes.EVOKER, 9804699, 1973274, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item FOX_SPAWN_EGG = a("fox_spawn_egg", new ItemMonsterEgg(EntityTypes.FOX, 14005919, 13396256, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item GHAST_SPAWN_EGG = a("ghast_spawn_egg", new ItemMonsterEgg(EntityTypes.GHAST, 16382457, 12369084, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item GUARDIAN_SPAWN_EGG = a("guardian_spawn_egg", new ItemMonsterEgg(EntityTypes.GUARDIAN, 5931634, 15826224, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item HOGLIN_SPAWN_EGG = a("hoglin_spawn_egg", new ItemMonsterEgg(EntityTypes.HOGLIN, 13004373, 6251620, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item HORSE_SPAWN_EGG = a("horse_spawn_egg", new ItemMonsterEgg(EntityTypes.HORSE, 12623485, 15656192, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item HUSK_SPAWN_EGG = a("husk_spawn_egg", new ItemMonsterEgg(EntityTypes.HUSK, 7958625, 15125652, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item LLAMA_SPAWN_EGG = a("llama_spawn_egg", new ItemMonsterEgg(EntityTypes.LLAMA, 12623485, 10051392, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item MAGMA_CUBE_SPAWN_EGG = a("magma_cube_spawn_egg", new ItemMonsterEgg(EntityTypes.MAGMA_CUBE, 3407872, 16579584, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item MOOSHROOM_SPAWN_EGG = a("mooshroom_spawn_egg", new ItemMonsterEgg(EntityTypes.MOOSHROOM, 10489616, 12040119, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item MULE_SPAWN_EGG = a("mule_spawn_egg", new ItemMonsterEgg(EntityTypes.MULE, 1769984, 5321501, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item OCELOT_SPAWN_EGG = a("ocelot_spawn_egg", new ItemMonsterEgg(EntityTypes.OCELOT, 15720061, 5653556, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PANDA_SPAWN_EGG = a("panda_spawn_egg", new ItemMonsterEgg(EntityTypes.PANDA, 15198183, 1776418, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PARROT_SPAWN_EGG = a("parrot_spawn_egg", new ItemMonsterEgg(EntityTypes.PARROT, 894731, 16711680, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PHANTOM_SPAWN_EGG = a("phantom_spawn_egg", new ItemMonsterEgg(EntityTypes.PHANTOM, 4411786, 8978176, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PIG_SPAWN_EGG = a("pig_spawn_egg", new ItemMonsterEgg(EntityTypes.PIG, 15771042, 14377823, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PIGLIN_SPAWN_EGG = a("piglin_spawn_egg", new ItemMonsterEgg(EntityTypes.PIGLIN, 10051392, 16380836, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PIGLIN_BRUTE_SPAWN_EGG = a("piglin_brute_spawn_egg", new ItemMonsterEgg(EntityTypes.PIGLIN_BRUTE, 5843472, 16380836, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PILLAGER_SPAWN_EGG = a("pillager_spawn_egg", new ItemMonsterEgg(EntityTypes.PILLAGER, 5451574, 9804699, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item POLAR_BEAR_SPAWN_EGG = a("polar_bear_spawn_egg", new ItemMonsterEgg(EntityTypes.POLAR_BEAR, 15921906, 9803152, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item PUFFERFISH_SPAWN_EGG = a("pufferfish_spawn_egg", new ItemMonsterEgg(EntityTypes.PUFFERFISH, 16167425, 3654642, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item RABBIT_SPAWN_EGG = a("rabbit_spawn_egg", new ItemMonsterEgg(EntityTypes.RABBIT, 10051392, 7555121, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item RAVAGER_SPAWN_EGG = a("ravager_spawn_egg", new ItemMonsterEgg(EntityTypes.RAVAGER, 7697520, 5984329, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SALMON_SPAWN_EGG = a("salmon_spawn_egg", new ItemMonsterEgg(EntityTypes.SALMON, 10489616, 951412, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SHEEP_SPAWN_EGG = a("sheep_spawn_egg", new ItemMonsterEgg(EntityTypes.SHEEP, 15198183, 16758197, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SHULKER_SPAWN_EGG = a("shulker_spawn_egg", new ItemMonsterEgg(EntityTypes.SHULKER, 9725844, 5060690, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SILVERFISH_SPAWN_EGG = a("silverfish_spawn_egg", new ItemMonsterEgg(EntityTypes.SILVERFISH, 7237230, 3158064, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SKELETON_SPAWN_EGG = a("skeleton_spawn_egg", new ItemMonsterEgg(EntityTypes.SKELETON, 12698049, 4802889, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SKELETON_HORSE_SPAWN_EGG = a("skeleton_horse_spawn_egg", new ItemMonsterEgg(EntityTypes.SKELETON_HORSE, 6842447, 15066584, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SLIME_SPAWN_EGG = a("slime_spawn_egg", new ItemMonsterEgg(EntityTypes.SLIME, 5349438, 8306542, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SPIDER_SPAWN_EGG = a("spider_spawn_egg", new ItemMonsterEgg(EntityTypes.SPIDER, 3419431, 11013646, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item SQUID_SPAWN_EGG = a("squid_spawn_egg", new ItemMonsterEgg(EntityTypes.SQUID, 2243405, 7375001, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item STRAY_SPAWN_EGG = a("stray_spawn_egg", new ItemMonsterEgg(EntityTypes.STRAY, 6387319, 14543594, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item STRIDER_SPAWN_EGG = a("strider_spawn_egg", new ItemMonsterEgg(EntityTypes.STRIDER, 10236982, 5065037, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item TRADER_LLAMA_SPAWN_EGG = a("trader_llama_spawn_egg", new ItemMonsterEgg(EntityTypes.TRADER_LLAMA, 15377456, 4547222, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item TROPICAL_FISH_SPAWN_EGG = a("tropical_fish_spawn_egg", new ItemMonsterEgg(EntityTypes.TROPICAL_FISH, 15690005, 16775663, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item TURTLE_SPAWN_EGG = a("turtle_spawn_egg", new ItemMonsterEgg(EntityTypes.TURTLE, 15198183, 44975, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item VEX_SPAWN_EGG = a("vex_spawn_egg", new ItemMonsterEgg(EntityTypes.VEX, 8032420, 15265265, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item VILLAGER_SPAWN_EGG = a("villager_spawn_egg", new ItemMonsterEgg(EntityTypes.VILLAGER, 5651507, 12422002, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item VINDICATOR_SPAWN_EGG = a("vindicator_spawn_egg", new ItemMonsterEgg(EntityTypes.VINDICATOR, 9804699, 2580065, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item WANDERING_TRADER_SPAWN_EGG = a("wandering_trader_spawn_egg", new ItemMonsterEgg(EntityTypes.WANDERING_TRADER, 4547222, 15377456, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item WITCH_SPAWN_EGG = a("witch_spawn_egg", new ItemMonsterEgg(EntityTypes.WITCH, 3407872, 5349438, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item WITHER_SKELETON_SPAWN_EGG = a("wither_skeleton_spawn_egg", new ItemMonsterEgg(EntityTypes.WITHER_SKELETON, 1315860, 4672845, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item WOLF_SPAWN_EGG = a("wolf_spawn_egg", new ItemMonsterEgg(EntityTypes.WOLF, 14144467, 13545366, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ZOGLIN_SPAWN_EGG = a("zoglin_spawn_egg", new ItemMonsterEgg(EntityTypes.ZOGLIN, 13004373, 15132390, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ZOMBIE_SPAWN_EGG = a("zombie_spawn_egg", new ItemMonsterEgg(EntityTypes.ZOMBIE, 44975, 7969893, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ZOMBIE_HORSE_SPAWN_EGG = a("zombie_horse_spawn_egg", new ItemMonsterEgg(EntityTypes.ZOMBIE_HORSE, 3232308, 9945732, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ZOMBIE_VILLAGER_SPAWN_EGG = a("zombie_villager_spawn_egg", new ItemMonsterEgg(EntityTypes.ZOMBIE_VILLAGER, 5651507, 7969893, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ZOMBIFIED_PIGLIN_SPAWN_EGG = a("zombified_piglin_spawn_egg", new ItemMonsterEgg(EntityTypes.ZOMBIFIED_PIGLIN, 15373203, 5009705, (new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item EXPERIENCE_BOTTLE = a("experience_bottle", new ItemExpBottle((new Item.Info()).a(CreativeModeTab.f).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item FIRE_CHARGE = a("fire_charge", new ItemFireball((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item WRITABLE_BOOK = a("writable_book", new ItemBookAndQuill((new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item WRITTEN_BOOK = a("written_book", new ItemWrittenBook((new Item.Info()).a(16)));
++
++    public static final Item EMERALD = a("emerald", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item ITEM_FRAME = a("item_frame", new ItemItemFrame((new Item.Info()).a(CreativeModeTab.c)));
++
++    public static final Item oX = a(Blocks.FLOWER_POT, CreativeModeTab.c);
++
++    public static final Item CARROT = a("carrot", new ItemNamedBlock(Blocks.CARROTS, (new Item.Info()).a(CreativeModeTab.h).a(Foods.g)));
++
++    public static final Item POTATO = a("potato", new ItemNamedBlock(Blocks.POTATOES, (new Item.Info()).a(CreativeModeTab.h).a(Foods.C)));
++
++    public static final Item BAKED_POTATO = a("baked_potato", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.b)));
++
++    public static final Item POISONOUS_POTATO = a("poisonous_potato", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.A)));
++
++    public static final Item MAP = a("map", new ItemMapEmpty((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item GOLDEN_CARROT = a("golden_carrot", new Item((new Item.Info()).a(CreativeModeTab.k).a(Foods.v)));
++
++    public static final Item SKELETON_SKULL = a(new ItemBlockWallable(Blocks.SKELETON_SKULL, Blocks.SKELETON_WALL_SKULL, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item WITHER_SKELETON_SKULL = a(new ItemBlockWallable(Blocks.WITHER_SKELETON_SKULL, Blocks.WITHER_SKELETON_WALL_SKULL, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item PLAYER_HEAD = a(new ItemSkullPlayer(Blocks.PLAYER_HEAD, Blocks.PLAYER_WALL_HEAD, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item ZOMBIE_HEAD = a(new ItemBlockWallable(Blocks.ZOMBIE_HEAD, Blocks.ZOMBIE_WALL_HEAD, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item CREEPER_HEAD = a(new ItemBlockWallable(Blocks.CREEPER_HEAD, Blocks.CREEPER_WALL_HEAD, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item DRAGON_HEAD = a(new ItemBlockWallable(Blocks.DRAGON_HEAD, Blocks.DRAGON_WALL_HEAD, (new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.UNCOMMON).setInvulnerableToCacti()));
++
++    public static final Item CARROT_ON_A_STICK = a("carrot_on_a_stick", new ItemCarrotStick<>((new Item.Info()).c(25).a(CreativeModeTab.e), EntityTypes.PIG, 7));
++
++    public static final Item WARPED_FUNGUS_ON_A_STICK = a("warped_fungus_on_a_stick", new ItemCarrotStick<>((new Item.Info()).c(100).a(CreativeModeTab.e), EntityTypes.STRIDER, 1));
++
++    public static final Item NETHER_STAR = a("nether_star", new ItemNetherStar((new Item.Info()).a(CreativeModeTab.l).a(EnumItemRarity.UNCOMMON).setInvulnerableToCacti()));
++
++    public static final Item PUMPKIN_PIE = a("pumpkin_pie", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.E)));
++
++    public static final Item FIREWORK_ROCKET = a("firework_rocket", new ItemFireworks((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item FIREWORK_STAR = a("firework_star", new ItemFireworksCharge((new Item.Info()).a(CreativeModeTab.f)));
++
++    public static final Item ENCHANTED_BOOK = a("enchanted_book", new ItemEnchantedBook((new Item.Info()).a(1).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item NETHER_BRICK = a("nether_brick", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item QUARTZ = a("quartz", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item TNT_MINECART = a("tnt_minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.TNT, (new Item.Info()).a(1).a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item HOPPER_MINECART = a("hopper_minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.HOPPER, (new Item.Info()).a(1).a(CreativeModeTab.e).setInvulnerableToCacti()));
++
++    public static final Item PRISMARINE_SHARD = a("prismarine_shard", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item PRISMARINE_CRYSTALS = a("prismarine_crystals", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item RABBIT = a("rabbit", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.F)));
++
++    public static final Item COOKED_RABBIT = a("cooked_rabbit", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.p)));
++
++    public static final Item RABBIT_STEW = a("rabbit_stew", new ItemSoup((new Item.Info()).a(1).a(CreativeModeTab.h).a(Foods.G)));
++
++    public static final Item RABBIT_FOOT = a("rabbit_foot", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item RABBIT_HIDE = a("rabbit_hide", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item ARMOR_STAND = a("armor_stand", new ItemArmorStand((new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item IRON_HORSE_ARMOR = a("iron_horse_armor", new ItemHorseArmor(5, "iron", (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item GOLDEN_HORSE_ARMOR = a("golden_horse_armor", new ItemHorseArmor(7, "gold", (new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item DIAMOND_HORSE_ARMOR = a("diamond_horse_armor", new ItemHorseArmor(11, "diamond", (new Item.Info()).a(1).a(CreativeModeTab.f).setInvulnerableToCacti()));
++
++    public static final Item LEATHER_HORSE_ARMOR = a("leather_horse_armor", new ItemHorseArmorDyeable(3, "leather", (new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item LEAD = a("lead", new ItemLeash((new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item NAME_TAG = a("name_tag", new ItemNameTag((new Item.Info()).a(CreativeModeTab.i)));
++
++    public static final Item COMMAND_BLOCK_MINECART = a("command_block_minecart", new ItemMinecart(EntityMinecartAbstract.EnumMinecartType.COMMAND_BLOCK, (new Item.Info()).a(1).setInvulnerableToCacti()));
++
++    public static final Item MUTTON = a("mutton", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.z)));
++
++    public static final Item COOKED_MUTTON = a("cooked_mutton", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.n)));
++
++    public static final Item WHITE_BANNER = a("white_banner", new ItemBanner(Blocks.WHITE_BANNER, Blocks.WHITE_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item ORANGE_BANNER = a("orange_banner", new ItemBanner(Blocks.ORANGE_BANNER, Blocks.ORANGE_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item MAGENTA_BANNER = a("magenta_banner", new ItemBanner(Blocks.MAGENTA_BANNER, Blocks.MAGENTA_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item LIGHT_BLUE_BANNER = a("light_blue_banner", new ItemBanner(Blocks.LIGHT_BLUE_BANNER, Blocks.LIGHT_BLUE_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item YELLOW_BANNER = a("yellow_banner", new ItemBanner(Blocks.YELLOW_BANNER, Blocks.YELLOW_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item LIME_BANNER = a("lime_banner", new ItemBanner(Blocks.LIME_BANNER, Blocks.LIME_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item PINK_BANNER = a("pink_banner", new ItemBanner(Blocks.PINK_BANNER, Blocks.PINK_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item GRAY_BANNER = a("gray_banner", new ItemBanner(Blocks.GRAY_BANNER, Blocks.GRAY_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item LIGHT_GRAY_BANNER = a("light_gray_banner", new ItemBanner(Blocks.LIGHT_GRAY_BANNER, Blocks.LIGHT_GRAY_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item CYAN_BANNER = a("cyan_banner", new ItemBanner(Blocks.CYAN_BANNER, Blocks.CYAN_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item PURPLE_BANNER = a("purple_banner", new ItemBanner(Blocks.PURPLE_BANNER, Blocks.PURPLE_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item BLUE_BANNER = a("blue_banner", new ItemBanner(Blocks.BLUE_BANNER, Blocks.BLUE_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item BROWN_BANNER = a("brown_banner", new ItemBanner(Blocks.BROWN_BANNER, Blocks.BROWN_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item GREEN_BANNER = a("green_banner", new ItemBanner(Blocks.GREEN_BANNER, Blocks.GREEN_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item RED_BANNER = a("red_banner", new ItemBanner(Blocks.RED_BANNER, Blocks.RED_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item BLACK_BANNER = a("black_banner", new ItemBanner(Blocks.BLACK_BANNER, Blocks.BLACK_WALL_BANNER, (new Item.Info()).a(16).a(CreativeModeTab.c)));
++
++    public static final Item END_CRYSTAL = a("end_crystal", new ItemEndCrystal((new Item.Info()).a(CreativeModeTab.c).a(EnumItemRarity.RARE).setInvulnerableToCacti()));
++
++    public static final Item CHORUS_FRUIT = a("chorus_fruit", new ItemChorusFruit((new Item.Info()).a(CreativeModeTab.l).a(Foods.i)));
++
++    public static final Item POPPED_CHORUS_FRUIT = a("popped_chorus_fruit", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BEETROOT = a("beetroot", new Item((new Item.Info()).a(CreativeModeTab.h).a(Foods.d)));
++
++    public static final Item BEETROOT_SEEDS = a("beetroot_seeds", new ItemNamedBlock(Blocks.BEETROOTS, (new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item BEETROOT_SOUP = a("beetroot_soup", new ItemSoup((new Item.Info()).a(1).a(CreativeModeTab.h).a(Foods.e)));
++
++    public static final Item DRAGON_BREATH = a("dragon_breath", new Item((new Item.Info()).a(GLASS_BOTTLE).a(CreativeModeTab.k).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item SPLASH_POTION = a("splash_potion", new ItemSplashPotion((new Item.Info()).a(1).a(CreativeModeTab.k)));
++
++    public static final Item SPECTRAL_ARROW = a("spectral_arrow", new ItemSpectralArrow((new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item TIPPED_ARROW = a("tipped_arrow", new ItemTippedArrow((new Item.Info()).a(CreativeModeTab.j)));
++
++    public static final Item LINGERING_POTION = a("lingering_potion", new ItemLingeringPotion((new Item.Info()).a(1).a(CreativeModeTab.k)));
++
++    public static final Item SHIELD = a("shield", new ItemShield((new Item.Info()).c(336).a(CreativeModeTab.j)));
++
++    public static final Item ELYTRA = a("elytra", new ItemElytra((new Item.Info()).c(432).a(CreativeModeTab.e).a(EnumItemRarity.UNCOMMON).setInvulnerableToCacti()));
++
++    public static final Item SPRUCE_BOAT = a("spruce_boat", new ItemBoat(EntityBoat.EnumBoatType.SPRUCE, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item BIRCH_BOAT = a("birch_boat", new ItemBoat(EntityBoat.EnumBoatType.BIRCH, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item JUNGLE_BOAT = a("jungle_boat", new ItemBoat(EntityBoat.EnumBoatType.JUNGLE, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item ACACIA_BOAT = a("acacia_boat", new ItemBoat(EntityBoat.EnumBoatType.ACACIA, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item DARK_OAK_BOAT = a("dark_oak_boat", new ItemBoat(EntityBoat.EnumBoatType.DARK_OAK, (new Item.Info()).a(1).a(CreativeModeTab.e)));
++
++    public static final Item TOTEM_OF_UNDYING = a("totem_of_undying", new Item((new Item.Info()).a(1).a(CreativeModeTab.j).a(EnumItemRarity.UNCOMMON).setInvulnerableToCacti()));
++
++    public static final Item SHULKER_SHELL = a("shulker_shell", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item IRON_NUGGET = a("iron_nugget", new Item((new Item.Info()).a(CreativeModeTab.l).setInvulnerableToCacti()));
++
++    public static final Item KNOWLEDGE_BOOK = a("knowledge_book", new ItemKnowledgeBook((new Item.Info()).a(1)));
++
++    public static final Item DEBUG_STICK = a("debug_stick", new ItemDebugStick((new Item.Info()).a(1).setInvulnerableToCacti()));
++
++    public static final Item MUSIC_DISC_13 = a("music_disc_13", new ItemRecord(1, SoundEffects.MUSIC_DISC_13, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_CAT = a("music_disc_cat", new ItemRecord(2, SoundEffects.MUSIC_DISC_CAT, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_BLOCKS = a("music_disc_blocks", new ItemRecord(3, SoundEffects.MUSIC_DISC_BLOCKS, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_CHIRP = a("music_disc_chirp", new ItemRecord(4, SoundEffects.MUSIC_DISC_CHIRP, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_FAR = a("music_disc_far", new ItemRecord(5, SoundEffects.MUSIC_DISC_FAR, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_MALL = a("music_disc_mall", new ItemRecord(6, SoundEffects.MUSIC_DISC_MALL, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_MELLOHI = a("music_disc_mellohi", new ItemRecord(7, SoundEffects.MUSIC_DISC_MELLOHI, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_STAL = a("music_disc_stal", new ItemRecord(8, SoundEffects.MUSIC_DISC_STAL, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_STRAD = a("music_disc_strad", new ItemRecord(9, SoundEffects.MUSIC_DISC_STRAD, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_WARD = a("music_disc_ward", new ItemRecord(10, SoundEffects.MUSIC_DISC_WARD, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_11 = a("music_disc_11", new ItemRecord(11, SoundEffects.MUSIC_DISC_11, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_WAIT = a("music_disc_wait", new ItemRecord(12, SoundEffects.MUSIC_DISC_WAIT, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item MUSIC_DISC_PIGSTEP = a("music_disc_pigstep", new ItemRecord(13, SoundEffects.MUSIC_DISC_PIGSTEP, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.RARE)));
++
++    public static final Item TRIDENT = a("trident", new ItemTrident((new Item.Info()).c(250).a(CreativeModeTab.j).setInvulnerableToCacti()));
++
++    public static final Item PHANTOM_MEMBRANE = a("phantom_membrane", new Item((new Item.Info()).a(CreativeModeTab.k)));
++
++    public static final Item NAUTILUS_SHELL = a("nautilus_shell", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item HEART_OF_THE_SEA = a("heart_of_the_sea", new Item((new Item.Info()).a(CreativeModeTab.l).a(EnumItemRarity.UNCOMMON).setInvulnerableToCacti()));
++
++    public static final Item CROSSBOW = a("crossbow", new ItemCrossbow((new Item.Info()).a(1).a(CreativeModeTab.j).c(326)));
++
++    public static final Item SUSPICIOUS_STEW = a("suspicious_stew", new ItemSuspiciousStew((new Item.Info()).a(1).a(Foods.K)));
++
++    public static final Item qS = a(Blocks.LOOM, CreativeModeTab.c);
++
++    public static final Item FLOWER_BANNER_PATTERN = a("flower_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.FLOWER, (new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item CREEPER_BANNER_PATTERN = a("creeper_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.CREEPER, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item SKULL_BANNER_PATTERN = a("skull_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.SKULL, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.UNCOMMON)));
++
++    public static final Item MOJANG_BANNER_PATTERN = a("mojang_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.MOJANG, (new Item.Info()).a(1).a(CreativeModeTab.f).a(EnumItemRarity.EPIC)));
++
++    public static final Item GLOBE_BANNER_PATTERN = a("globe_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.GLOBE, (new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item PIGLIN_BANNER_PATTERN = a("piglin_banner_pattern", new ItemBannerPattern(EnumBannerPatternType.PIGLIN, (new Item.Info()).a(1).a(CreativeModeTab.f)));
++
++    public static final Item qZ = a(Blocks.COMPOSTER, CreativeModeTab.c);
++
++    public static final Item ra = a(Blocks.BARREL, CreativeModeTab.c);
++
++    public static final Item rb = a(new ItemBlock(Blocks.SMOKER, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item rc = a(new ItemBlock(Blocks.BLAST_FURNACE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item rd = a(Blocks.CARTOGRAPHY_TABLE, CreativeModeTab.c);
++
++    public static final Item re = a(Blocks.FLETCHING_TABLE, CreativeModeTab.c);
++
++    public static final Item rf = a(new ItemBlock(Blocks.GRINDSTONE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item rg = a(Blocks.LECTERN, CreativeModeTab.d);
++
++    public static final Item rh = a(new ItemBlock(Blocks.SMITHING_TABLE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item ri = a(new ItemBlock(Blocks.STONECUTTER, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item rj = a(Blocks.BELL, CreativeModeTab.c);
++
++    public static final Item rk = a(Blocks.LANTERN, CreativeModeTab.c);
++
++    public static final Item rl = a(Blocks.SOUL_LANTERN, CreativeModeTab.c);
++
++    public static final Item SWEET_BERRIES = a("sweet_berries", new ItemNamedBlock(Blocks.SWEET_BERRY_BUSH, (new Item.Info()).a(CreativeModeTab.h).a(Foods.L)));
++
++    public static final Item rn = a(Blocks.CAMPFIRE, CreativeModeTab.c);
++
++    public static final Item ro = a(Blocks.SOUL_CAMPFIRE, CreativeModeTab.c);
++
++    public static final Item rp = a(Blocks.SHROOMLIGHT, CreativeModeTab.c);
++
++    public static final Item HONEYCOMB = a("honeycomb", new Item((new Item.Info()).a(CreativeModeTab.l)));
++
++    public static final Item rr = a(Blocks.BEE_NEST, CreativeModeTab.c);
++
++    public static final Item rs = a(Blocks.BEEHIVE, CreativeModeTab.c);
++
++    public static final Item HONEY_BOTTLE = a("honey_bottle", new ItemHoneyBottle((new Item.Info()).a(GLASS_BOTTLE).a(Foods.w).a(CreativeModeTab.h).a(16)));
++
++    public static final Item ru = a(Blocks.HONEY_BLOCK, CreativeModeTab.c);
++
++    public static final Item rv = a(Blocks.HONEYCOMB_BLOCK, CreativeModeTab.c);
++
++    public static final Item rw = a(new ItemBlock(Blocks.LODESTONE, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    public static final Item rx = a(new ItemBlock(Blocks.NETHERITE_BLOCK, (new Item.Info()).a(CreativeModeTab.b).a().setInvulnerableToCacti()));
++
++    public static final Item ry = a(new ItemBlock(Blocks.ANCIENT_DEBRIS, (new Item.Info()).a(CreativeModeTab.b).a().setInvulnerableToCacti()));
++
++    public static final Item rz = a(Blocks.TARGET, CreativeModeTab.d);
++
++    public static final Item rA = a(new ItemBlock(Blocks.CRYING_OBSIDIAN, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rB = a(new ItemBlock(Blocks.BLACKSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rC = a(new ItemBlock(Blocks.BLACKSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rD = a(new ItemBlock(Blocks.BLACKSTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rE = a(new ItemBlock(Blocks.GILDED_BLACKSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rF = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rG = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rH = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rI = a(new ItemBlock(Blocks.CHISELED_POLISHED_BLACKSTONE, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rJ = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rK = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_BRICK_SLAB, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rL = a(new ItemBlock(Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rM = a(new ItemBlock(Blocks.CRACKED_POLISHED_BLACKSTONE_BRICKS, new Item.Info().a(CreativeModeTab.b).setInvulnerableToCacti()));
++
++    public static final Item rN = a(new ItemBlock(Blocks.RESPAWN_ANCHOR, new Item.Info().a(CreativeModeTab.c).setInvulnerableToCacti()));
++
++    private static Item a(Block var0) {
++        return a(new ItemBlock(var0, new Item.Info()));
++    }
++
++    private static Item a(Block var0, CreativeModeTab var1) {
++        return a(new ItemBlock(var0, (new Item.Info()).a(var1)));
++    }
++
++    private static Item a(ItemBlock var0) {
++        return a(var0.getBlock(), var0);
++    }
++
++    protected static Item a(Block var0, Item var1) {
++        return a(IRegistry.BLOCK.getKey(var0), var1);
++    }
++
++    private static Item a(String var0, Item var1) {
++        return a(new MinecraftKey(var0), var1);
++    }
++
++    private static Item a(MinecraftKey var0, Item var1) {
++        if (var1 instanceof ItemBlock)
++            ((ItemBlock)var1).a(Item.e, var1);
++        return IRegistry.<Item, Item>a(IRegistry.ITEM, var0, var1);
++    }
++}
