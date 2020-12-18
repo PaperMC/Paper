@@ -5,36 +5,57 @@ Subject: [PATCH] Fixed crossbows firing ammo when the event is cancelled
 
 
 diff --git a/src/main/java/net/minecraft/server/ItemCrossbow.java b/src/main/java/net/minecraft/server/ItemCrossbow.java
-index 14c0e7382292b3d39858d4d957df8016c301c712..d7045abfe9ec943a2209c1c4bddd95a2cf6f5957 100644
+index 14c0e7382292b3d39858d4d957df8016c301c712..dadff788ac0d0a02ceb2cd56dc215209a1b6561b 100644
 --- a/src/main/java/net/minecraft/server/ItemCrossbow.java
 +++ b/src/main/java/net/minecraft/server/ItemCrossbow.java
-@@ -30,7 +30,6 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
+@@ -30,7 +30,8 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
  
          if (d(itemstack)) {
              a(world, entityhuman, enumhand, itemstack, m(itemstack), 1.0F);
 -            a(itemstack, false);
++            // Paper - Moved
++            // a(itemstack, false);
              return InteractionResultWrapper.consume(itemstack);
          } else if (!entityhuman.f(itemstack).isEmpty()) {
              if (!d(itemstack)) {
-@@ -227,6 +226,12 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
+@@ -116,6 +117,8 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
+         return nbttagcompound != null && nbttagcompound.getBoolean("Charged");
+     }
+ 
++    public static void setCharged(ItemStack itemstack, boolean flag) { a(itemstack, flag); } // Paper - OBFHELPER
++
+     public static void a(ItemStack itemstack, boolean flag) {
+         NBTTagCompound nbttagcompound = itemstack.getOrCreateTag();
+ 
+@@ -158,6 +161,8 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
+         return list;
+     }
+ 
++    private static void clearProjectiles(ItemStack itemstack) { l(itemstack); } // Paper - OBFHELPER
++
+     private static void l(ItemStack itemstack) {
+         NBTTagCompound nbttagcompound = itemstack.getTag();
+ 
+@@ -227,6 +232,12 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
              // CraftBukkit end
              world.playSound((EntityHuman) null, entityliving.locX(), entityliving.locY(), entityliving.locZ(), SoundEffects.ITEM_CROSSBOW_SHOOT, SoundCategory.PLAYERS, 1.0F, f);
          }
 +
 +        // Paper start
-+        /* Relocated the code for removing project here so it will be affected by the event getting canceled. Previously if the event was canceled the projectile would still be removed from the crossbow. */
-+        a(itemstack, false);
-+        l(itemstack);
++        /* Relocated the code for removing projectiles here so it won't be called if the event gets canceled. Previously if the event was canceled the projectile would still be removed from the crossbow. */
++        setCharged(itemstack, false);
++        clearProjectiles(itemstack);
 +        // Paper end
      }
  
      private static EntityArrow a(World world, EntityLiving entityliving, ItemStack itemstack, ItemStack itemstack1) {
-@@ -292,8 +297,6 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
- 
+@@ -293,7 +304,8 @@ public class ItemCrossbow extends ItemProjectileWeapon implements ItemVanishable
              entityplayer.b(StatisticList.ITEM_USED.b(itemstack.getItem()));
          }
--
+ 
 -        l(itemstack);
++        // Paper - Moved
++        // l(itemstack);
      }
  
      @Override
