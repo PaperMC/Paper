@@ -8,6 +8,17 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -0,0 +0,0 @@ package org.bukkit.craftbukkit;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicates;
+ import java.lang.ref.WeakReference;
++import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.function.Predicate;
+ import net.minecraft.server.BiomeStorage;
+ import net.minecraft.server.BlockPosition;
 @@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
  
      @Override
@@ -31,6 +42,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              BlockPosition position = (BlockPosition) obj;
 -            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState();
 +            entities[index++] = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot); // Paper
++        }
++
++        return entities;
++    }
++
++    // Paper start
++    @Override
++    public Collection<BlockState> getTileEntities(Predicate<Block> blockPredicate, boolean useSnapshot) {
++        Preconditions.checkNotNull(blockPredicate, "blockPredicate");
++        if (!isLoaded()) {
++            getWorld().getChunkAt(x, z); // Transient load for this tick
++        }
++        net.minecraft.server.Chunk chunk = getHandle();
++
++        List<BlockState> entities = new ArrayList<>();
++
++        for (BlockPosition position : chunk.tileEntities.keySet()) {
++            Block block = worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
++            if (blockPredicate.test(block)) {
++                entities.add(block.getState(useSnapshot));
++            }
          }
  
          return entities;
+     }
++    // Paper end
+ 
+     @Override
+     public boolean isLoaded() {
