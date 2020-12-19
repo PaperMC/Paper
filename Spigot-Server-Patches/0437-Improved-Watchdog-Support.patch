@@ -41,19 +41,23 @@ This also moves all plugins who register "delayed init" tasks to occur just befo
 are properly accounted for and wont trip watchdog on init.
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index e4923ca371012188793b284cb0ed4280c31f50b6..03c95b30d8a0557482d39468c058e7966114f824 100644
+index 081f8d86503b4ab1a704c9fc5ec8a38fd2795427..cef9b0fa633c8b16bb5b99ff94b7b77526034b06 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
-@@ -90,6 +90,9 @@ public class Metrics {
-         timer.scheduleAtFixedRate(new TimerTask() {
-             @Override
-             public void run() {
-+                if (MinecraftServer.getServer().hasStopped()) {
-+                    return;
-+                }
-                 submitData();
-             }
-         }, 1000 * 60 * 5, 1000 * 60 * 30);
+@@ -92,7 +92,12 @@ public class Metrics {
+      * Starts the Scheduler which submits our data every 30 minutes.
+      */
+     private void startSubmitting() {
+-        final Runnable submitTask = this::submitData;
++        final Runnable submitTask = () -> {
++            if (MinecraftServer.getServer().hasStopped()) {
++                return;
++            }
++            submitData();
++        };
+ 
+         // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
+         // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
 diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
 index 95e6a6de7ccfc4445d0ac19c5f874c0d533b1712..cc6e6f245ee5e73bd570cf42381bf55ee0b364d3 100644
 --- a/src/main/java/net/minecraft/server/CrashReport.java
