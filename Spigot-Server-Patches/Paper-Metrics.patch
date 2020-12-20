@@ -24,7 +24,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.server.MinecraftServer;
 +import org.bukkit.Bukkit;
 +import org.bukkit.configuration.file.YamlConfiguration;
-+import org.bukkit.craftbukkit.util.CraftLegacy;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.plugin.Plugin;
 +
@@ -39,6 +38,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.net.URL;
 +import java.util.*;
 +import java.util.concurrent.Callable;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
 +import java.util.regex.Matcher;
@@ -51,6 +53,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * Check out https://bStats.org/ to learn more about bStats!
 + */
 +public class Metrics {
++
++    // Executor service for requests
++    // We use an executor service because the Bukkit scheduler is affected by server lags
++    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 +
 +    // The version of this bStats class
 +    public static final int B_STATS_VERSION = 1;
@@ -107,16 +113,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Starts the Scheduler which submits our data every 30 minutes.
 +     */
 +    private void startSubmitting() {
-+        final Timer timer = new Timer(true);
-+        timer.scheduleAtFixedRate(new TimerTask() {
-+            @Override
-+            public void run() {
-+                submitData();
-+            }
-+        }, 1000 * 60 * 5, 1000 * 60 * 30);
-+        // Submit the data every 30 minutes, first time after 5 minutes to give other plugins enough time to start
-+        // WARNING: Changing the frequency has no effect but your plugin WILL be blocked/deleted!
-+        // WARNING: Just don't do it!
++        final Runnable submitTask = this::submitData;
++
++        // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
++        // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
++        // WARNING: You must not modify any part of this Metrics class, including the submit delay or frequency!
++        // WARNING: Modifying this code will get your plugin banned on bStats. Just don't do it!
++        long initialDelay = (long) (1000 * 60 * (3 + Math.random() * 3));
++        long secondDelay = (long) (1000 * 60 * (Math.random() * 30));
++        scheduler.schedule(submitTask, initialDelay, TimeUnit.MILLISECONDS);
++        scheduler.scheduleAtFixedRate(submitTask, initialDelay + secondDelay, 1000 * 60 * 30, TimeUnit.MILLISECONDS);
 +    }
 +
 +    /**

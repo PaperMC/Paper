@@ -45,15 +45,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -0,0 +0,0 @@ public class Metrics {
-         timer.scheduleAtFixedRate(new TimerTask() {
-             @Override
-             public void run() {
-+                if (MinecraftServer.getServer().hasStopped()) {
-+                    return;
-+                }
-                 submitData();
-             }
-         }, 1000 * 60 * 5, 1000 * 60 * 30);
+      * Starts the Scheduler which submits our data every 30 minutes.
+      */
+     private void startSubmitting() {
+-        final Runnable submitTask = this::submitData;
++        final Runnable submitTask = () -> {
++            if (MinecraftServer.getServer().hasStopped()) {
++                return;
++            }
++            submitData();
++        };
+ 
+         // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
+         // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
 diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/CrashReport.java
