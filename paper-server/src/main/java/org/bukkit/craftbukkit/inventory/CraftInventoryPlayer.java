@@ -38,6 +38,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
+    public void setItemInMainHand(ItemStack item, boolean silent) {
+        setItemInMainHand(item); // Silence doesn't apply to players
+    }
+
+    @Override
     public ItemStack getItemInOffHand() {
         return CraftItemStack.asCraftMirror(getInventory().extraSlots.get(0));
     }
@@ -47,6 +52,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         ItemStack[] extra = getExtraContents();
         extra[0] = item;
         setExtraContents(extra);
+    }
+
+    @Override
+    public void setItemInOffHand(ItemStack item, boolean silent) {
+        setItemInOffHand(item); // Silence doesn't apply to players
     }
 
     @Override
@@ -132,6 +142,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
+    public void setItem(EquipmentSlot slot, ItemStack item, boolean silent) {
+        setItem(slot, item); // Silence doesn't apply to players
+    }
+
+    @Override
     public ItemStack getItem(EquipmentSlot slot) {
         Preconditions.checkArgument(slot != null, "slot must not be null");
 
@@ -191,8 +206,18 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
+    public void setHelmet(ItemStack helmet, boolean silent) {
+        setHelmet(helmet); // Silence doesn't apply to players
+    }
+
+    @Override
     public void setChestplate(ItemStack chestplate) {
         setItem(getSize() - 3, chestplate);
+    }
+
+    @Override
+    public void setChestplate(ItemStack chestplate, boolean silent) {
+        setChestplate(chestplate); // Silence doesn't apply to players
     }
 
     @Override
@@ -201,8 +226,18 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     }
 
     @Override
+    public void setLeggings(ItemStack leggings, boolean silent) {
+        setLeggings(leggings); // Silence doesn't apply to players
+    }
+
+    @Override
     public void setBoots(ItemStack boots) {
         setItem(getSize() - 5, boots);
+    }
+
+    @Override
+    public void setBoots(ItemStack boots, boolean silent) {
+        setBoots(boots); // Silence doesn't apply to players
     }
 
     @Override
