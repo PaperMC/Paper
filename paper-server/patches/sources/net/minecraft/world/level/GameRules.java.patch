@@ -108,11 +108,18 @@
          }
  
          public void callVisitor(GameRules.GameRuleTypeVisitor consumer, GameRules.Key<T> key) {
-@@ -326,17 +326,17 @@
+@@ -322,21 +322,21 @@
+             this.type = type;
+         }
  
-         public void setFromArgument(CommandContext<CommandSourceStack> context, String name) {
-             this.updateFromArgument(context, name);
+-        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String name);
++        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
+ 
+-        public void setFromArgument(CommandContext<CommandSourceStack> context, String name) {
+-            this.updateFromArgument(context, name);
 -            this.onChanged(((CommandSourceStack) context.getSource()).getServer());
++        public void setFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<T> gameRuleKey) { // Paper - Add WorldGameRuleChangeEvent
++            this.updateFromArgument(context, name, gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
 +            this.onChanged(((CommandSourceStack) context.getSource()).getLevel()); // CraftBukkit - per-world
          }
  
@@ -149,7 +156,20 @@
              return new GameRules.Type<>(BoolArgumentType::bool, (gamerules_gameruledefinition) -> {
                  return new GameRules.BooleanValue(gamerules_gameruledefinition, initialValue);
              }, changeCallback, GameRules.GameRuleTypeVisitor::visitBoolean, FeatureFlagSet.of());
-@@ -391,9 +391,9 @@
+@@ -383,17 +383,20 @@
+         }
+ 
+         @Override
+-        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name) {
+-            this.value = BoolArgumentType.getBool(context, name);
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<BooleanValue> gameRuleKey) { // Paper start - Add WorldGameRuleChangeEvent
++            io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Boolean>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(BoolArgumentType.getBool(context, name)));
++            if (!event.callEvent()) return;
++            this.value = Boolean.parseBoolean(event.getValue());
++            // Paper end - Add WorldGameRuleChangeEvent
+         }
+ 
+         public boolean get() {
              return this.value;
          }
  
@@ -162,7 +182,7 @@
          }
  
          @Override
-@@ -402,7 +402,7 @@
+@@ -402,7 +405,7 @@
          }
  
          @Override
@@ -171,7 +191,7 @@
              this.value = Boolean.parseBoolean(value);
          }
  
-@@ -421,9 +421,9 @@
+@@ -421,9 +424,9 @@
              return new GameRules.BooleanValue(this.type, this.value);
          }
  
@@ -184,7 +204,7 @@
          }
      }
  
-@@ -431,13 +431,13 @@
+@@ -431,13 +434,13 @@
  
          private int value;
  
@@ -200,7 +220,20 @@
              return new GameRules.Type<>(() -> {
                  return IntegerArgumentType.integer(min, max);
              }, (gamerules_gameruledefinition) -> {
-@@ -464,9 +464,9 @@
+@@ -456,17 +459,20 @@
+         }
+ 
+         @Override
+-        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name) {
+-            this.value = IntegerArgumentType.getInteger(context, name);
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String name, GameRules.Key<IntegerValue> gameRuleKey) { // Paper start - Add WorldGameRuleChangeEvent
++            io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Integer>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(IntegerArgumentType.getInteger(context, name)));
++            if (!event.callEvent()) return;
++            this.value = Integer.parseInt(event.getValue());
++            // Paper end - Add WorldGameRuleChangeEvent
+         }
+ 
+         public int get() {
              return this.value;
          }
  
@@ -213,7 +246,7 @@
          }
  
          @Override
-@@ -475,7 +475,7 @@
+@@ -475,7 +481,7 @@
          }
  
          @Override
@@ -222,7 +255,7 @@
              this.value = IntegerValue.safeParse(value);
          }
  
-@@ -517,9 +517,9 @@
+@@ -517,9 +523,9 @@
              return new GameRules.IntegerValue(this.type, this.value);
          }
  

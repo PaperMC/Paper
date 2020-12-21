@@ -1884,9 +1884,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (rule == null || value == null) return false;
 
         if (!this.isGameRule(rule)) return false;
+        // Paper start - Add WorldGameRuleChangeEvent
+        GameRule<?> gameRule = GameRule.getByName(rule);
+        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, gameRule, value);
+        if (!event.callEvent()) return false;
+        // Paper end - Add WorldGameRuleChangeEvent
 
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule));
-        handle.deserialize(value);
+        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
         handle.onChanged(this.getHandle());
         return true;
     }
@@ -1921,9 +1926,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
 
         if (!this.isGameRule(rule.getName())) return false;
+        // Paper start - Add WorldGameRuleChangeEvent
+        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, rule, String.valueOf(newValue));
+        if (!event.callEvent()) return false;
+        // Paper end - Add WorldGameRuleChangeEvent
 
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName()));
-        handle.deserialize(newValue.toString());
+        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
         handle.onChanged(this.getHandle());
         return true;
     }
