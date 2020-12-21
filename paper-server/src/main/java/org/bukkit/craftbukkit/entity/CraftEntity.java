@@ -445,6 +445,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public boolean isInWater() {
+        return entity.isInWater();
+    }
+
+    @Override
     public World getWorld() {
         return entity.world.getWorld();
     }
