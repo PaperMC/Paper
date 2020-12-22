@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 22 Dec 2020 22:41:12 +0000
+Subject: [PATCH] Do not perform neighbour updates when using debug stick
+
+CB blindly drops any update flags when recording block modifications,
+this causes the debug stick to blindly update neighbouring blocks on usage
+in order to control this, we will special case this item, however, this
+ideally should be fixed by recording the actual update flags used,
+but will induce ABI breaks...
+
+This patch also maintains the behavior of the BlockPlaceEvent, this
+behavior will NOT be guaranteed in the future, however.
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+     }
+ 
+     public EnumInteractionResult placeItem(ItemActionContext itemactioncontext, EnumHand enumhand) { // CraftBukkit - add hand
++        boolean doPhysicsUpdate = true; // Paper
+         EntityHuman entityhuman = itemactioncontext.getEntity();
+         BlockPosition blockposition = itemactioncontext.getClickPosition();
+         ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
+@@ -0,0 +0,0 @@ public final class ItemStack {
+                 // special case bonemeal
+                 if (this.getItem() == Items.BONE_MEAL) {
+                     world.captureTreeGeneration = true;
++                    // Paper start
++                } else if (this.getItem() instanceof ItemDebugStick) {
++                    doPhysicsUpdate = false;
+                 }
++                // Paper end
+             }
+             Item item = this.getItem();
+             EnumInteractionResult enuminteractionresult = item.a(itemactioncontext);
+@@ -0,0 +0,0 @@ public final class ItemStack {
+                             block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, itemactioncontext); // Paper - pass itemactioncontext
+                         }
+ 
+-                        world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
++                        world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag, 512 ^ (doPhysicsUpdate ? 0 : 16)); // send null chunk as chunk.k() returns false by this point // Paper
+                     }
+ 
+                     // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
