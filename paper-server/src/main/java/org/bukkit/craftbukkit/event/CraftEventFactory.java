@@ -312,6 +312,10 @@ public class CraftEventFactory {
                         return BedEnterResult.TOO_FAR_AWAY;
                     case NOT_SAFE:
                         return BedEnterResult.NOT_SAFE;
+                        // Paper start
+                    case OBSTRUCTED:
+                        return BedEnterResult.OBSTRUCTED;
+                        // Paper end
                     default:
                         return BedEnterResult.OTHER_PROBLEM;
                 }
