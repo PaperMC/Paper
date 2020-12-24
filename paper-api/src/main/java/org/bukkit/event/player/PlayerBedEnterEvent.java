@@ -42,6 +42,12 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
          * Entering the bed is prevented due to the player being too far away.
          */
         TOO_FAR_AWAY,
+        // Paper start
+        /**
+         * Bed was obstructed.
+         */
+        OBSTRUCTED,
+        // Paper end
         /**
          * Entering the bed is prevented due to there being monsters nearby.
          */
