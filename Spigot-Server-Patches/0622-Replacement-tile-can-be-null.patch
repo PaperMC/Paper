@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Fri, 25 Dec 2020 16:19:15 +0100
+Subject: [PATCH] Replacement tile can be null
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 5b0b6edfa790918e56399ff6c83f3feb6e5aca49..a03ded889ea70fc9576dcc7a9acc833c901b915c 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -288,8 +288,11 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         this.getServer().getLogger().log(Level.SEVERE, "Block at {0}, {1}, {2} is {3} but has {4}" + ". "
+                 + "Bukkit will attempt to fix this, but there may be additional damage that we cannot recover.", new Object[]{pos.getX(), pos.getY(), pos.getZ(), type, found});
+ 
+-        if (type instanceof ITileEntity) {
+-            TileEntity replacement = ((ITileEntity) type).createTile(this);
++        // Paper start - there may not always be a replacement tile; avoid the NPE
++        TileEntity replacement;
++        if (type instanceof ITileEntity
++            && (replacement = ((ITileEntity) type).createTile(this)) != null) {
++            // Paper end
+             replacement.world = this;
+             this.setTileEntity(pos, replacement);
+             return replacement;
