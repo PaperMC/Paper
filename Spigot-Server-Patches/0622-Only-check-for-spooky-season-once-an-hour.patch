@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Sun, 13 Dec 2020 17:53:08 -0600
+Subject: [PATCH] Only check for spooky season once an hour
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityBat.java b/src/main/java/net/minecraft/server/EntityBat.java
+index 0a59e02d762a096cb3de62e0f8105cc5a5fab8d4..e3768a834d3591ade5685c8ea638b053861ecca6 100644
+--- a/src/main/java/net/minecraft/server/EntityBat.java
++++ b/src/main/java/net/minecraft/server/EntityBat.java
+@@ -221,13 +221,22 @@ public class EntityBat extends EntityAmbient {
+         }
+     }
+ 
++    // AirplaneL start - only check for spooky season once an hour
++    private static boolean isSpookySeason = false;
++    private static final int ONE_HOUR = 20 * 60 * 60;
++    private static int lastSpookyCheck = -ONE_HOUR;
+     private static boolean eJ() {
++        if (MinecraftServer.currentTick - lastSpookyCheck > ONE_HOUR) {
+         LocalDate localdate = LocalDate.now();
+         int i = localdate.get(ChronoField.DAY_OF_MONTH);
+         int j = localdate.get(ChronoField.MONTH_OF_YEAR);
++            isSpookySeason = j == 10 && i >= 20 || j == 11 && i <= 3;
++            lastSpookyCheck = MinecraftServer.currentTick;
++        }
+ 
+-        return j == 10 && i >= 20 || j == 11 && i <= 3;
++        return isSpookySeason;
+     }
++    // AirplaneL end
+ 
+     @Override
+     protected float b(EntityPose entitypose, EntitySize entitysize) {
