@@ -34,6 +34,31 @@ public interface ItemFrame extends Hanging {
     public void setItem(@Nullable ItemStack item, boolean playSound);
 
     /**
+     * Gets the chance of the item being dropped upon this frame's destruction.
+     *
+     * <ul>
+     * <li>A drop chance of 0.0F will never drop
+     * <li>A drop chance of 1.0F will always drop
+     * </ul>
+     *
+     * @return chance of the off hand item being dropped
+     */
+    float getItemDropChance();
+
+    /**
+     * Sets the chance of the off hand item being dropped upon this frame's
+     * destruction.
+     *
+     * <ul>
+     * <li>A drop chance of 0.0F will never drop
+     * <li>A drop chance of 1.0F will always drop
+     * </ul>
+     *
+     * @param chance the chance of off hand item being dropped
+     */
+    void setItemDropChance(float chance);
+
+    /**
      * Get the rotation of the frame's item
      *
      * @return the direction
