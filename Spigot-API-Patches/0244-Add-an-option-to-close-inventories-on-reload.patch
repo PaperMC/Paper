@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Toshimichi0915 <main@toshimichi.net>
+Date: Sun, 27 Dec 2020 09:07:43 +0900
+Subject: [PATCH] Add an option to close inventories on reload
+
+
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index 0c7ba0718de2b93d013968ca0fec34ffd423990f..0c7ba35a3d3b4fd06d8e14920b023f55341b7010 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -7,9 +7,23 @@ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+ import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Player;
+ import org.jetbrains.annotations.NotNull;
+ 
+ public class ReloadCommand extends BukkitCommand {
++
++    //Paper start
++    private static boolean closeInventoryOnReload;
++
++    public static boolean isCloseInventoryOnReload() {
++        return closeInventoryOnReload;
++    }
++
++    public static void setCloseInventoryOnReload(boolean closeInventoryOnReload) {
++        ReloadCommand.closeInventoryOnReload = closeInventoryOnReload;
++    }
++    //Paper end
++
+     public ReloadCommand(@NotNull String name) {
+         super(name);
+         this.description = "Reloads the server configuration and plugins";
+@@ -47,6 +61,11 @@ public class ReloadCommand extends BukkitCommand {
+             Command.broadcastCommandMessage(sender, ChatColor.RED + "Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type " + ChatColor.YELLOW + "/reload confirm");
+             return true;
+         }
++
++        // Close all inventories opened by plugins to prevent duplication
++        if (closeInventoryOnReload)
++            Bukkit.getOnlinePlayers().forEach(Player::closeInventory);
++
+         // Paper end
+ 
+         Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");

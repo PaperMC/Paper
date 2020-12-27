@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Toshimichi0915 <main@toshimichi.net>
+Date: Sun, 27 Dec 2020 09:07:43 +0900
+Subject: [PATCH] Add an option to close inventories on reload
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index bc156a5edefe117ad45638d434fe4946fb50159d..201e3c098fb86eb3f4f71f982828751e2b2b782e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -474,4 +474,9 @@ public class PaperConfig {
+     private static void fixEntityPositionDesync() {
+         fixEntityPositionDesync = getBoolean("settings.fix-entity-position-desync", fixEntityPositionDesync);
+     }
++
++    public static boolean closeInventoryOnReload;
++    private static void closeInventoryOnReload() {
++        closeInventoryOnReload = getBoolean("settings.close-inventory-on-reload", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index 5504facd2e453238caa71d98743be5416d4dd4fe..3c3d6f1b2c475089218b23a9b7f093125f597bd4 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.server;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.base.Strings;
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+@@ -27,6 +28,7 @@ import org.apache.logging.log4j.Level;
+ import org.apache.logging.log4j.io.IoBuilder;
+ import org.bukkit.command.CommandSender;
+ import co.aikar.timings.MinecraftTimings; // Paper
++import org.bukkit.command.defaults.ReloadCommand;
+ import org.bukkit.event.server.ServerCommandEvent;
+ import org.bukkit.craftbukkit.util.Waitable;
+ import org.bukkit.event.server.RemoteServerCommandEvent;
+@@ -166,6 +168,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             DedicatedServer.LOGGER.error("Unable to load server configuration", e);
+             return false;
+         }
++        ReloadCommand.setCloseInventoryOnReload(com.destroystokyo.paper.PaperConfig.closeInventoryOnReload);
+         com.destroystokyo.paper.PaperConfig.registerCommands();
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // load version history now
+         // Paper end
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..c1efbe7be31f6d15e26636a364d8bafa195015c1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit;
+ 
++import com.destroystokyo.paper.PaperConfig;
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Function;
+ import com.google.common.base.Preconditions;
+@@ -133,6 +134,7 @@ import org.bukkit.command.CommandSender;
+ import org.bukkit.command.ConsoleCommandSender;
+ import org.bukkit.command.PluginCommand;
+ import org.bukkit.command.SimpleCommandMap;
++import org.bukkit.command.defaults.ReloadCommand;
+ import org.bukkit.configuration.ConfigurationSection;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.bukkit.configuration.serialization.ConfigurationSerialization;
+@@ -860,7 +862,10 @@ public final class CraftServer implements Server {
+         }
+ 
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
+-        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings")); // Paper
++        // Paper start
++        com.destroystokyo.paper.PaperConfig.init((File) console.options.valueOf("paper-settings"));
++        ReloadCommand.setCloseInventoryOnReload(com.destroystokyo.paper.PaperConfig.closeInventoryOnReload);
++        // Paper end
+         for (WorldServer world : console.getWorlds()) {
+             world.worldDataServer.setDifficulty(config.difficulty);
+             world.setSpawnFlags(config.spawnMonsters, config.spawnAnimals);
