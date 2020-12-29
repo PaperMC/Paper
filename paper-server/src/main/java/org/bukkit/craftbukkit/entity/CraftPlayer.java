@@ -684,6 +684,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
 
+    // Paper start - Add sendOpLevel API
+    @Override
+    public void sendOpLevel(byte level) {
+        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
+
+        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
+    }
+    // Paper end - Add sendOpLevel API
+
     @Override
     public void setCompassTarget(Location loc) {
         Preconditions.checkArgument(loc != null, "Location cannot be null");

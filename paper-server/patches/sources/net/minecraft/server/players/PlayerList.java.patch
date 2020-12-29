@@ -571,13 +571,13 @@
 +            if (this.players.size() >= this.maxPlayers && !this.canBypassPlayerLimit(gameprofile)) {
 +                event.disallow(PlayerLoginEvent.Result.KICK_FULL, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.serverFullMessage)); // Spigot // Paper - Adventure
 +            }
-+        }
+         }
 +
 +        this.cserver.getPluginManager().callEvent(event);
 +        if (event.getResult() != PlayerLoginEvent.Result.ALLOWED) {
 +            loginlistener.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.kickMessage())); // Paper - Adventure
 +            return null;
-         }
++        }
 +        return entity;
      }
  
@@ -883,12 +883,26 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,36 +1040,51 @@
+@@ -629,6 +1026,11 @@
+     }
+ 
+     private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
++        // Paper start - Add sendOpLevel API
++        this.sendPlayerPermissionLevel(player, permissionLevel, true);
++    }
++    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
++        // Paper end - Add sendOpLevel API
+         if (player.connection != null) {
+             byte b0;
+ 
+@@ -643,36 +1045,53 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
++        if (recalculatePermissions) { // Paper - Add sendOpLevel API
 +        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
          this.server.getCommands().sendCommands(player);
++        } // Paper - Add sendOpLevel API
      }
  
      public boolean isWhiteListed(GameProfile profile) {
@@ -948,7 +962,7 @@
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
                  double d5 = y - entityplayer.getY();
-@@ -687,10 +1099,12 @@
+@@ -687,10 +1106,12 @@
      }
  
      public void saveAll() {
@@ -961,7 +975,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1126,19 @@
+@@ -712,15 +1133,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -985,7 +999,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1147,16 @@
+@@ -729,8 +1154,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -1003,7 +1017,7 @@
      }
  
      public int getPlayerCount() {
-@@ -746,6 +1172,7 @@
+@@ -746,6 +1179,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -1011,7 +1025,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -786,12 +1213,36 @@
+@@ -786,12 +1220,36 @@
      }
  
      public void removeAll() {
@@ -1050,7 +1064,7 @@
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
              return message;
-@@ -819,24 +1270,43 @@
+@@ -819,24 +1277,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -1097,7 +1111,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1315,27 @@
+@@ -845,20 +1322,27 @@
  
      }
  
@@ -1130,7 +1144,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1344,7 @@
+@@ -867,7 +1351,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1139,7 +1153,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1352,13 @@
+@@ -875,13 +1359,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1155,7 +1169,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1409,28 @@
+@@ -932,15 +1416,28 @@
      }
  
      public void reloadResources() {
