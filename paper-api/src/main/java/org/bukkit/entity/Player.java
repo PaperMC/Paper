@@ -3401,6 +3401,19 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     }
     // Paper end - elytra boost API
 
+    // Paper start - sendOpLevel API
+    /**
+     * Send a packet to the player indicating its operator status level.
+     * <p>
+     * <b>Note:</b> This will not persist across more than the current connection, and setting the player's operator
+     * status as a later point <i>will</i> override the effects of this.
+     *
+     * @param level The level to send to the player. Must be in {@code [0, 4]}.
+     * @throws IllegalArgumentException If the level is negative or greater than {@code 4} (i.e. not within {@code [0, 4]}).
+     */
+    void sendOpLevel(byte level);
+    // Paper end - sendOpLevel API
+
     // Spigot start
     public class Spigot extends Entity.Spigot {
 
