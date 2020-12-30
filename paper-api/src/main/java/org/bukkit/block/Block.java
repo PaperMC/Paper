@@ -439,6 +439,42 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      */
     boolean isLiquid();
 
+    // Paper start
+    /**
+     * Check if this block is solid
+     * <p>
+     * Determined by Minecraft, typically a block a player can use to place a new block to build things.
+     * An example of a non buildable block would be liquids, flowers, or fire
+     *
+     * @return true if block is buildable
+     */
+    boolean isBuildable();
+    /**
+     * Check if this block is burnable
+     * <p>
+     * Determined by Minecraft, typically a block that fire can destroy (Wool, Wood)
+     *
+     * @return true if block is burnable
+     */
+    boolean isBurnable();
+    /**
+     * Check if this block is replaceable
+     * <p>
+     * Determined by Minecraft, representing a block that is not AIR that you can still place a new block at, such as flowers.
+     * @return true if block is replaceable
+     */
+    boolean isReplaceable();
+    /**
+     * Check if this block is solid
+     * <p>
+     * Determined by Minecraft, typically a block a player can stand on and can't be passed through.
+     *
+     * This API is faster than accessing Material#isSolid as it avoids a material lookup and switch statement.
+     * @return true if block is solid
+     */
+    boolean isSolid();
+    // Paper end
+
     /**
      * Gets the temperature of this block.
      * <p>
