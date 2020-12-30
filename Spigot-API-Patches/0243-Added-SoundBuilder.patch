@@ -6,10 +6,10 @@ Subject: [PATCH] Added SoundBuilder
 
 diff --git a/src/main/java/io/papermc/paper/sound/SoundBuilder.java b/src/main/java/io/papermc/paper/sound/SoundBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740fa51caed
+index 0000000000000000000000000000000000000000..97d2b75f1b5b3501e4bfee10ddbda22c6eaad933
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/sound/SoundBuilder.java
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,208 @@
 +package io.papermc.paper.sound;
 +
 +import org.bukkit.Location;
@@ -66,8 +66,7 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +    /**
 +     * @return The volume level of the sound played
 +     */
-+    @NotNull
-+    Float volume();
++    float volume();
 +
 +    /**
 +     * Changes the volume level of the sound played
@@ -76,13 +75,12 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +     * @return a reference to this object.
 +     */
 +    @NotNull
-+    SoundBuilder volume(@NotNull Float volume);
++    SoundBuilder volume(float volume);
 +
 +    /**
 +     * @return The pitch of the sound played
 +     */
-+    @NotNull
-+    Float pitch();
++    float pitch();
 +
 +    /**
 +     * Changes the pitch of the sound played
@@ -91,7 +89,7 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +     * @return a reference to this object.
 +     */
 +    @NotNull
-+    SoundBuilder pitch(@NotNull Float pitch);
++    SoundBuilder pitch(float pitch);
 +
 +    /**
 +     * @return List of players who will receive the sound, or null for all in world
@@ -100,34 +98,19 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +    List<Player> receivers();
 +
 +    /**
-+     * Example use:
++     * Players might be able to hear the sound even if this method returns false!
 +     *
-+     * builder.receivers(16)
-+     *
-+     * @return If this sound is going to be sent to someone
++     * @return If this sound is going to be sent to someone specific
 +     */
 +    boolean hasReceivers();
 +
 +    /**
-+     * Sends this sound to all players in the world. This is rather silly and you should likely not
-+     * be doing this.
-+     *
-+     * Just be a logical person and use receivers by radius or collection.
++     * Sends this sound to all players in the world. (they have to be near to hear it)
 +     *
 +     * @return a reference to this object.
 +     */
 +    @NotNull
 +    SoundBuilder allPlayers();
-+
-+    /**
-+     * @param receivers List of players to receive this sound, or null for all players in the
-+     * world
-+     * @return a reference to this object.
-+     * @deprecated The use of list's is not appreciated
-+     */
-+    @NotNull
-+    @Deprecated
-+    SoundBuilder receivers(@Nullable List<Player> receivers);
 +
 +    /**
 +     * @param receivers List of players to receive this sound, or null for all players in the
@@ -143,7 +126,7 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +     * @return a reference to this object.
 +     */
 +    @NotNull
-+    SoundBuilder receivers(@Nullable Player... receivers);
++    SoundBuilder receivers(Player... receivers);
 +
 +    /**
 +     * Selects all players within a cuboid selection around the sound location, within the
@@ -236,7 +219,7 @@ index 0000000000000000000000000000000000000000..d257f339694c833ed63042bd64b0b740
 +
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index fecd7b14d317f55eb1ce7b5c6af9913917971427..3f61254d0daa026e73e322e0ed126532697c26d3 100644
+index fecd7b14d317f55eb1ce7b5c6af9913917971427..9c7adbaefa8a91901922771ea5b475385e35cc95 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -13,6 +13,8 @@ import java.util.Set;
@@ -244,11 +227,11 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..3f61254d0daa026e73e322e0ed126532
  import java.util.function.Consumer;
  import java.util.logging.Logger;
 +
-+import io.papermc.paper.sound.SoundBuilder;
++import io.papermc.paper.sound.SoundBuilder; // Paper
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1193,6 +1195,42 @@ public final class Bukkit {
+@@ -1193,6 +1195,81 @@ public final class Bukkit {
          return server.createMerchant(title);
      }
  
@@ -271,7 +254,7 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..3f61254d0daa026e73e322e0ed126532
 +     * @return a new sound builder
 +     */
 +    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Float volume) {
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, float volume) {
 +        return server.createSoundBuilder(sound, volume);
 +    }
 +
@@ -284,15 +267,54 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..3f61254d0daa026e73e322e0ed126532
 +     * @return a new sound builder
 +     */
 +    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Float volume, @NotNull Float pitch) {
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, float volume, float pitch) {
 +        return server.createSoundBuilder(sound, volume, pitch);
++    }
++
++    /**
++     * Creates an empty SoundBuilder
++     *
++     * @param sound the type of the sound, which will be played
++     * @param category the category of the played sound
++     * @return a new sound builder
++     */
++    @NotNull
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category) {
++        return server.createSoundBuilder(sound, category);
++    }
++
++    /**
++     * Creates an empty SoundBuilder
++     *
++     * @param sound the type of the sound, which will be played
++     * @param category the category of the played sound
++     * @param volume the volume of the sound, which will be played
++     * @return a new sound builder
++     */
++    @NotNull
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, float volume) {
++        return server.createSoundBuilder(sound, category, volume);
++    }
++
++    /**
++     * Creates an empty SoundBuilder
++     *
++     * @param sound the type of the sound, which will be played
++     * @param category the category of the played sound
++     * @param volume the volume of the sound, which will be played
++     * @param pitch the pitch of the sound, which will be played
++     * @return a new sound builder
++     */
++    @NotNull
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch) {
++        return server.createSoundBuilder(sound, category, volume, pitch);
 +    }
 +
      /**
       * Gets user-specified limit for number of monsters that can spawn in a
       * chunk.
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..772f9741b852417dbd3861b2e6bd646a3ae2fb03 100644
+index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..5935a1261e450ec068d876ce854570823599b5df 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -13,6 +13,8 @@ import java.util.Set;
@@ -300,11 +322,11 @@ index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..772f9741b852417dbd3861b2e6bd646a
  import java.util.function.Consumer;
  import java.util.logging.Logger;
 +
-+import io.papermc.paper.sound.SoundBuilder;
++import io.papermc.paper.sound.SoundBuilder; // Paper
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1002,6 +1004,24 @@ public interface Server extends PluginMessageRecipient {
+@@ -1002,6 +1004,42 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Merchant createMerchant(@Nullable String title);
  
@@ -318,13 +340,31 @@ index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..772f9741b852417dbd3861b2e6bd646a
 +     * Creates an empty SoundBuilder.
 +     */
 +    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, Float volume);
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, float volume);
 +
 +    /**
 +     * Creates an empty SoundBuilder.
 +     */
 +    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, Float volume, Float pitch);
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, float volume, float pitch);
++
++    /**
++     * Creates an empty SoundBuilder.
++     */
++    @NotNull
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category);
++
++    /**
++     * Creates an empty SoundBuilder.
++     */
++    @NotNull
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, float volume);
++
++    /**
++     * Creates an empty SoundBuilder.
++     */
++    @NotNull
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
 +
      /**
       * Gets user-specified limit for number of monsters that can spawn in a
