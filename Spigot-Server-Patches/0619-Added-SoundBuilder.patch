@@ -1,0 +1,438 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fruxz <cedricspitzer@outlook.de>
+Date: Wed, 30 Dec 2020 02:23:06 +0100
+Subject: [PATCH] Added SoundBuilder
+
+
+diff --git a/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..236c6ca30fa8d45926900985627d24f01b808e01
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
+@@ -0,0 +1,368 @@
++package io.papermc.paper.sound;
++
++import com.google.common.collect.Lists;
++import net.minecraft.server.BaseBlockPosition;
++import net.minecraft.server.MinecraftKey;
++import net.minecraft.server.PacketPlayOutCustomSoundEffect;
++import net.minecraft.server.Vec3D;
++import org.bukkit.Location;
++import org.bukkit.Sound;
++import org.bukkit.SoundCategory;
++import org.bukkit.World;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.entity.Player;
++import org.bukkit.util.NumberConversions;
++
++import java.util.Collection;
++import java.util.List;
++
++/**
++ * Helps prepare a sound to be sent to players.
++ */
++public class PaperSoundBuilder implements SoundBuilder {
++
++    private Sound sound;
++    private SoundCategory category;
++    private Collection<Player> receivers;
++    private Location location;
++    private Float volume = 1F;
++    private Float pitch = 1F;
++
++    public PaperSoundBuilder(Sound sound) {
++        this.sound = sound;
++    }
++
++    public PaperSoundBuilder(Sound sound, Float volume) {
++        this.sound = sound;
++        this.volume = volume;
++    }
++
++    public PaperSoundBuilder(Sound sound, Float volume, Float pitch) {
++        this.sound = sound;
++        this.volume = volume;
++        this.pitch = pitch;
++    }
++
++    /**
++     * Plays the sound to all receiving players (or all). This method is safe to use
++     * Asynchronously
++     *
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder play() {
++
++        if (this.location == null) {
++            throw new IllegalStateException("Please specify location for this sound");
++        }
++
++        if (this.category == null) {
++            throw new IllegalStateException("Please specify category for this sound");
++        }
++
++        if (receivers == null || receivers.isEmpty()) {
++            location.getWorld().playSound(location, sound, volume, pitch);
++        } else {
++            PacketPlayOutCustomSoundEffect customSoundEffect = new PacketPlayOutCustomSoundEffect(MinecraftKey.a(sound.getKey().getKey()), net.minecraft.server.SoundCategory.valueOf(category.name()), Vec3D.a(new BaseBlockPosition(location.getX(), location.getY(), location.getZ())), volume, pitch);
++            for (Player player : receivers) {
++                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(customSoundEffect);
++            }
++        }
++
++        return this;
++    }
++
++    /**
++     * @return The sound going to be sent
++     */
++    @Override
++    public Sound sound() {
++        return sound;
++    }
++
++    /**
++     * Changes what sound will be sent
++     *
++     * @param sound The sound
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder sound(Sound sound) {
++        this.sound = sound;
++        return this;
++    }
++
++    /**
++     * @return The category under which the sound will be played
++     */
++    @Override
++    public SoundCategory category() {
++        return category;
++    }
++
++    /**
++     * Changes under which category the sound will be played
++     */
++    @Override
++    public PaperSoundBuilder category(SoundCategory category) {
++        this.category = category;
++        return this;
++    }
++
++    /**
++     * @return The volume level of the sound played
++     */
++    @Override
++    public Float volume() {
++        return volume;
++    }
++
++    /**
++     * Changes the volume level of the sound played
++     *
++     * @param volume The volume
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder volume(Float volume) {
++        this.volume = volume;
++        return this;
++    }
++
++    /**
++     * @return The pitch of the sound played
++     */
++    @Override
++    public Float pitch() {
++        return pitch;
++    }
++
++    /**
++     * Changes the pitch of the sound played
++     *
++     * @param pitch The pitch
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder pitch(Float pitch) {
++        this.pitch = pitch;
++        return this;
++    }
++
++    /**
++     * @return List of players who will receive the sound, or null for all in world
++     */
++    @Override
++    public List<Player> receivers() {
++        return Lists.newLinkedList(receivers);
++    }
++
++    /**
++     * Example use:
++     *
++     * builder.receivers(16)
++     *
++     * @return If this sound is going to be sent to someone
++     */
++    @Override
++    public boolean hasReceivers() {
++        return (receivers == null && !location.getWorld().getPlayers().isEmpty()) || (
++            receivers != null && !receivers.isEmpty());
++    }
++
++    /**
++     * Sends this sound to all players in the world. This is rather silly and you should likely not
++     * be doing this.
++     *
++     * Just be a logical person and use receivers by radius or collection.
++     *
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder allPlayers() {
++        this.receivers = null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     * @deprecated The use of list's is not appreciated
++     */
++    @Override
++    @Deprecated
++    public PaperSoundBuilder receivers(List<Player> receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(Collection<Player> receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * @param receivers List of players to be receive this sound, or null for all players in the
++     * world
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(Player... receivers) {
++        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
++        return this;
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. If you want a more spherical check, see {@link #receivers(int,
++     * boolean)}
++     *
++     * @param radius amount to add on all axis
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(int radius) {
++        return receivers(radius, radius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the sound location. If byDistance is
++     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
++     * true, radius is tested by distance in a spherical shape
++     *
++     * @param radius amount to add on each axis
++     * @param byDistance true to use a spherical radius, false to use a cuboid
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(int radius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(radius, radius, radius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            double radiusSquared = NumberConversions.square(radius);
++            for (Player nearbyPlayer : location.getWorld()
++                .getNearbyPlayers(location, radius, radius, radius)) {
++                Location loc = nearbyPlayer.getLocation();
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double y = NumberConversions.square(location.getY() - loc.getY());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (Math.sqrt(x + y + z) > radiusSquared) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. Allows specifying a different Y size than X and Z If you want a more
++     * cylinder check, see {@link #receivers(int, int, boolean)} If you want a more spherical check,
++     * see {@link #receivers(int, boolean)}
++     *
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(int xzRadius, int yRadius) {
++        return receivers(xzRadius, yRadius, xzRadius);
++    }
++
++    /**
++     * Selects all players within the specified radius around the sound. If byDistance is
++     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
++     * true, radius is tested by distance on the y plane and on the x/z plane, in a cylinder shape.
++     *
++     * @param xzRadius amount to add on the x/z axis
++     * @param yRadius amount to add on the y axis
++     * @param byDistance true to use a cylinder shape, false to use cuboid
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(int xzRadius, int yRadius, boolean byDistance) {
++        if (!byDistance) {
++            return receivers(xzRadius, yRadius, xzRadius);
++        } else {
++            this.receivers = Lists.newArrayList();
++            double xzRadiusSquare = NumberConversions.square(xzRadius);
++            for (Player nearbyPlayer : location.getWorld()
++                .getNearbyPlayers(location, xzRadius, yRadius, xzRadius)) {
++                Location loc = nearbyPlayer.getLocation();
++                if (Math.abs(loc.getY() - this.location.getY()) > yRadius) {
++                    continue;
++                }
++                double x = NumberConversions.square(location.getX() - loc.getX());
++                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                if (x + z > xzRadiusSquare) {
++                    continue;
++                }
++                this.receivers.add(nearbyPlayer);
++            }
++            return this;
++        }
++    }
++
++    /**
++     * Selects all players within a cuboid selection around the sound location, within the
++     * specified bounding box. If you want a more cylinder check, see {@link #receivers(int, int,
++     * boolean)} If you want a more spherical check, see {@link #receivers(int, boolean)}
++     *
++     * @param xRadius amount to add on the x axis
++     * @param yRadius amount to add on the y axis
++     * @param zRadius amount to add on the z axis
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder receivers(int xRadius, int yRadius, int zRadius) {
++        if (location == null) {
++            throw new IllegalStateException("Please set location first");
++        }
++        return receivers(location.getWorld().getNearbyPlayers(location, xRadius, yRadius, zRadius));
++    }
++
++    /**
++     * @return Location of where the sound will play
++     */
++    @Override
++    public Location location() {
++        return location;
++    }
++
++    /**
++     * Sets the location of where to play the sound
++     *
++     * @param location The location of the sound
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder location(Location location) {
++        this.location = location.clone();
++        return this;
++    }
++
++    /**
++     * Sets the location of where to play the sound
++     *
++     * @param world World to play sounds in
++     * @param x X location
++     * @param y Y location
++     * @param z Z location
++     * @return a reference to this object.
++     */
++    @Override
++    public PaperSoundBuilder location(World world, double x, double y, double z) {
++        this.location = new Location(world, x, y, z);
++        return this;
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..1887d16d8de0d690629eb1b96fd97c190a9f6f09 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -18,6 +18,8 @@ import com.mojang.serialization.Lifecycle;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
++import io.papermc.paper.sound.PaperSoundBuilder;
++import io.papermc.paper.sound.SoundBuilder;
+ import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+ import java.awt.image.BufferedImage;
+ import java.io.File;
+@@ -106,21 +108,9 @@ import net.minecraft.server.WorldServer;
+ import net.minecraft.server.WorldSettings;
+ import org.apache.commons.lang.Validate;
+ import org.apache.commons.lang3.StringUtils;
+-import org.bukkit.BanList;
+-import org.bukkit.Bukkit;
+-import org.bukkit.ChatColor;
+-import org.bukkit.GameMode;
+-import org.bukkit.Keyed;
+-import org.bukkit.Location;
+-import org.bukkit.NamespacedKey;
+-import org.bukkit.OfflinePlayer;
+-import org.bukkit.Server;
+-import org.bukkit.StructureType;
+-import org.bukkit.UnsafeValues;
++import org.bukkit.*;
+ import org.bukkit.Warning.WarningState;
+-import org.bukkit.World;
+ import org.bukkit.World.Environment;
+-import org.bukkit.WorldCreator;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.boss.BarColor;
+ import org.bukkit.boss.BarFlag;
+@@ -1821,6 +1811,21 @@ public final class CraftServer implements Server {
+         return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
+     }
+ 
++    @Override
++    public SoundBuilder createSoundBuilder(Sound sound) {
++        return new PaperSoundBuilder(sound);
++    }
++
++    @Override
++    public SoundBuilder createSoundBuilder(Sound sound, Float volume) {
++        return new PaperSoundBuilder(sound, volume);
++    }
++
++    @Override
++    public SoundBuilder createSoundBuilder(Sound sound, Float volume, Float pitch) {
++        return new PaperSoundBuilder(sound, volume, pitch);
++    }
++
+     @Override
+     public HelpMap getHelpMap() {
+         return helpMap;
