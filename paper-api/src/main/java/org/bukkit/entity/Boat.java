@@ -181,4 +181,14 @@ public interface Boat extends Vehicle {
         ON_LAND,
         IN_AIR;
     }
+
+    // Paper start
+    /**
+     * Gets the {@link Material} that represents this Boat type.
+     *
+     * @return the boat material.
+     */
+    @NotNull
+    public Material getBoatMaterial();
+    // Paper end
 }

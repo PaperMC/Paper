@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.GameRule;
+import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
@@ -148,4 +149,14 @@ public interface Minecart extends Vehicle {
      * @return the current block offset for this minecart.
      */
     public int getDisplayBlockOffset();
+
+    // Paper start
+    /**
+     * Gets the {@link Material} that represents this Minecart type.
+     *
+     * @return the minecart material.
+     */
+    @NotNull
+    public Material getMinecartMaterial();
+    // Paper end
 }
