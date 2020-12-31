@@ -1,0 +1,309 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Thu, 11 Jun 2020 18:15:12 +0200
+Subject: [PATCH] packet support
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/SkinParts.java b/src/main/java/com/destroystokyo/paper/SkinParts.java
+index 4a0c39405d4fbed457787e3c6ded4cc6591bc8c2..4cc4dbf4ad40b11b7e0ae3c844bd5a9511944dbb 100644
+--- a/src/main/java/com/destroystokyo/paper/SkinParts.java
++++ b/src/main/java/com/destroystokyo/paper/SkinParts.java
+@@ -1,5 +1,7 @@
+ package com.destroystokyo.paper;
+ 
++import org.jetbrains.annotations.NotNull;
++
+ public interface SkinParts {
+ 
+     boolean hasCapeEnabled();
+@@ -17,4 +19,23 @@ public interface SkinParts {
+     boolean hasHatsEnabled();
+ 
+     int getRaw();
++
++    interface Builder {
++        @NotNull
++        Builder withCape();
++        @NotNull
++        Builder withJacket();
++        @NotNull
++        Builder withLeftSleeve();
++        @NotNull
++        Builder withRightSleeve();
++        @NotNull
++        Builder withLeftPants();
++        @NotNull
++        Builder withRightPants();
++        @NotNull
++        Builder withHat();
++        @NotNull
++        SkinParts build();
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/packet/PacketPipeline.java b/src/main/java/io/papermc/paper/packet/PacketPipeline.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e34606ee8645e72a5a6f7f12a6e84b77490e6fbb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/PacketPipeline.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.packet;
++
++import io.papermc.paper.packet.options.EntityMetaBuilder;
++
++import org.bukkit.scoreboard.Team;
++import org.jetbrains.annotations.NotNull;
++
++import com.destroystokyo.paper.SkinParts;
++
++public interface PacketPipeline {
++
++    @NotNull
++    PacketStepBuilder create();
++
++    @NotNull
++    EntityMetaBuilder createEntityMetaBuilder();
++
++    @NotNull
++    SkinParts.Builder createSkinPartsBuilder();
++
++    @NotNull
++    Team createTeam(@NotNull String name);
++
++    @NotNull
++    String generateRandomString(int count, boolean letters, boolean numbers);
++}
+diff --git a/src/main/java/io/papermc/paper/packet/PacketStep.java b/src/main/java/io/papermc/paper/packet/PacketStep.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1967552c4caa7f0dfda96b6f7a473d0852c97617
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/PacketStep.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.packet;
++
++import org.bukkit.entity.Player;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++
++@FunctionalInterface
++public interface PacketStep {
++    void execute(@NotNull Player player);
++}
+diff --git a/src/main/java/io/papermc/paper/packet/PacketStepBuilder.java b/src/main/java/io/papermc/paper/packet/PacketStepBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5c7cf3af4e6865db3bd7358c13eb864810d55654
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/PacketStepBuilder.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.packet;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.EquipmentSlot;
++import org.bukkit.inventory.ItemStack;
++import io.papermc.paper.packet.options.Animation;
++import io.papermc.paper.packet.options.EntityMetaBuilder;
++import io.papermc.paper.packet.options.ProfileAction;
++import io.papermc.paper.packet.options.TeamMode;
++import org.bukkit.plugin.java.JavaPlugin;
++import org.bukkit.scoreboard.Team;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collection;
++import java.util.UUID;
++import java.util.concurrent.TimeUnit;
++
++public interface PacketStepBuilder {
++
++    @NotNull
++    PacketStepBuilder sendPlayerProfile(@NotNull PlayerProfile playerProfile, @NotNull ProfileAction profileAction);
++
++    @NotNull
++    PacketStepBuilder spawnPlayer(int entityId, @NotNull UUID uuid, @NotNull Location location);
++
++    @NotNull
++    PacketStepBuilder setPlayerTeam(@NotNull Team team, @NotNull TeamMode teamMode);
++
++    @NotNull
++    PacketStepBuilder teleportEntity(int entityId, @NotNull Location location, boolean onGround);
++
++    @NotNull
++    PacketStepBuilder sendBlockChange(@NotNull Location location, @NotNull BlockData blockData);
++
++    @NotNull
++    PacketStepBuilder sleepAt(int entityId, @NotNull Location location);
++
++    @NotNull
++    PacketStepBuilder rotateHead(int entityId, float yaw);
++
++    @NotNull
++    PacketStepBuilder rotateFullHead(int entityId, float yaw, float pitch, boolean onGround);
++
++    @NotNull
++    PacketStepBuilder movePositionAndRotateFullHead(int entityId, @NotNull Vector direction, byte yaw, byte pitch, boolean onGround);
++
++    @NotNull
++    PacketStepBuilder destroyEntity(int entityId);
++
++    @NotNull
++    PacketStepBuilder animateBlockBreak(int entityID, @NotNull Location location, byte destroyStage);
++
++    @NotNull
++    PacketStepBuilder setEquipmentItem(int entityId, @NotNull EquipmentSlot equipmentSlot, @NotNull ItemStack itemStack);
++
++    @NotNull
++    PacketStepBuilder delay(@NotNull JavaPlugin javaPlugin, long time, @NotNull TimeUnit timeUnit);
++
++    @NotNull
++    PacketStepBuilder custom(@NotNull PacketStep packetStep);
++
++    @NotNull
++    PacketStepBuilder removeEntity(int entityId);
++
++    @NotNull
++    PacketStepBuilder animateEntity(int entityId, @NotNull Animation animation);
++
++    @NotNull
++    PacketStepBuilder spawnEntity(int entityId, @NotNull UUID uuid, @NotNull Location location, @NotNull EntityType entityType, @NotNull Vector movementDirection);
++
++    @NotNull
++    PacketStepBuilder withMeta(int entityId, @NotNull EntityMetaBuilder metaBuilder);
++
++    default void send(){
++        send(Bukkit.getOnlinePlayers());
++    }
++
++    void send(@NotNull Collection<? extends Player> players);
++}
+diff --git a/src/main/java/io/papermc/paper/packet/options/Animation.java b/src/main/java/io/papermc/paper/packet/options/Animation.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0f27b5f9d02a7e62c091c548d8ca1668c3c09119
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/options/Animation.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.packet.options;
++
++public enum Animation {
++    SWING_MAIN_ARM,
++    TAKE_DAMAGE,
++    LEAVE_BED,
++    SWING_OFFHAND,
++    CRITICAL_EFFECT,
++    MAGIC_CRITICAL_EFFECT
++}
+diff --git a/src/main/java/io/papermc/paper/packet/options/EntityMetaBuilder.java b/src/main/java/io/papermc/paper/packet/options/EntityMetaBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..80d41ffb0a80c2b165a0155061b777cc2b0e0764
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/options/EntityMetaBuilder.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.packet.options;
++
++import net.md_5.bungee.api.chat.BaseComponent;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import java.util.Set;
++
++import com.destroystokyo.paper.SkinParts;
++
++public interface EntityMetaBuilder {
++    @NotNull
++    EntityMetaBuilder withEntityStatus(@NotNull Set<EntityStatus> entityStatus);
++
++    @NotNull
++    EntityMetaBuilder withCustomName(@Nullable BaseComponent[] baseComponents);
++
++    @NotNull
++    EntityMetaBuilder withSkinParts(@NotNull SkinParts skinParts);
++}
+diff --git a/src/main/java/io/papermc/paper/packet/options/EntityStatus.java b/src/main/java/io/papermc/paper/packet/options/EntityStatus.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..440cc8ff3a53235dd385c13df30042d793c6beed
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/options/EntityStatus.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.packet.options;
++
++public enum EntityStatus {
++    IS_ON_FIRE,
++    IS_CROUCHING,
++    IS_SPRINTING,
++    IS_SWIMMING,
++    IS_INVISIBLE,
++    HAS_GLOWING_EFFECT,
++    IS_FLYING_WITH_ELYTRA
++}
+diff --git a/src/main/java/io/papermc/paper/packet/options/ProfileAction.java b/src/main/java/io/papermc/paper/packet/options/ProfileAction.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e8ebaa236189070ec87678db5ae03bbc6cce37bd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/options/ProfileAction.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.packet.options;
++
++public enum ProfileAction {
++    ADD_PLAYER,
++    UPDATE_GAME_MODE,
++    UPDATE_LATENCY,
++    UPDATE_DISPLAY_NAME,
++    REMOVE_PLAYER;
++}
+diff --git a/src/main/java/io/papermc/paper/packet/options/TeamMode.java b/src/main/java/io/papermc/paper/packet/options/TeamMode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a533f7ffdfdd8a2b127ec224496e8e7e1e3d951f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/packet/options/TeamMode.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.packet.options;
++
++public enum TeamMode {
++    CREATE_TEAM,
++    REMOVE_TEAM,
++    UPDATE_TEAM_INFO,
++    ADD_PLAYERS_TO_TEAM,
++    REMOVE_PLAYERS_FROM_TEAM
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index fecd7b14d317f55eb1ce7b5c6af9913917971427..451760633dfd8d9f2cb571f34418f3733b65ee99 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1811,6 +1811,15 @@ public final class Bukkit {
+     public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+         return server.getMobGoals();
+     }
++
++    /**
++     * Returns the {@link io.papermc.paper.packet.PacketPipeline}
++     * @return the packet pipeline
++     */
++    @NotNull
++    public static io.papermc.paper.packet.PacketPipeline getPacketPipeline() {
++        return server.getPacketPipeline();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..02cbec3eb7f934aa0aaf845a11c77e7462a992d5 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1581,5 +1581,12 @@ public interface Server extends PluginMessageRecipient {
+      */
+     @NotNull
+     com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
++
++    /**
++     * Returns the {@link io.papermc.paper.packet.PacketPipeline}
++     * @return the packet pipeline
++     */
++    @NotNull
++    io.papermc.paper.packet.PacketPipeline getPacketPipeline();
+     // Paper end
+ }
