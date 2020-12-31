@@ -440,6 +440,25 @@ public class CraftBlock implements Block {
         return this.getNMS().liquid();
     }
 
+    // Paper start
+    @Override
+    public boolean isBuildable() {
+        return this.getNMS().isSolid(); // This is in fact isSolid, despite the fact that isSolid below returns blocksMotion
+    }
+    @Override
+    public boolean isBurnable() {
+        return this.getNMS().ignitedByLava();
+    }
+    @Override
+    public boolean isReplaceable() {
+        return this.getNMS().canBeReplaced();
+    }
+    @Override
+    public boolean isSolid() {
+        return this.getNMS().blocksMotion();
+    }
+    // Paper end
+
     @Override
     public PistonMoveReaction getPistonMoveReaction() {
         return PistonMoveReaction.getById(this.getNMS().getPistonPushReaction().ordinal());
