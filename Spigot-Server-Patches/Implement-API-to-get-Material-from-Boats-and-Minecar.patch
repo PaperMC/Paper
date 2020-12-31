@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Miller <mnmiller1@me.com>
+Date: Thu, 31 Dec 2020 12:48:19 +1000
+Subject: [PATCH] Implement API to get Material from Boats and Minecarts
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/EntityBoat.java
++++ b/src/main/java/net/minecraft/server/EntityBoat.java
+@@ -0,0 +0,0 @@ public class EntityBoat extends Entity {
+ 
+     }
+ 
++    public final Item getBoatItem() { return this.g(); } // Paper - OBFHELPER
+     public Item g() {
+         switch (this.getType()) {
+             case OAK:
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+@@ -0,0 +0,0 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import net.minecraft.server.EntityBoat;
++import org.bukkit.Material;
+ import org.bukkit.TreeSpecies;
+ import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.Boat;
+ import org.bukkit.entity.EntityType;
+ 
+@@ -0,0 +0,0 @@ public class CraftBoat extends CraftVehicle implements Boat {
+         getHandle().landBoats = workOnLand;
+     }
+ 
++    // Paper start
++    @Override
++    public Material getBoatMaterial() {
++        return CraftMagicNumbers.getMaterial(getHandle().getBoatItem());
++    }
++    // Paper end
++
+     @Override
+     public EntityBoat getHandle() {
+         return (EntityBoat) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+@@ -0,0 +0,0 @@ package org.bukkit.craftbukkit.entity;
+ import net.minecraft.server.Blocks;
+ import net.minecraft.server.EntityMinecartAbstract;
+ import net.minecraft.server.IBlockData;
++import net.minecraft.server.Item;
++import net.minecraft.server.Items;
++import org.bukkit.Material;
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+@@ -0,0 +0,0 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+         getHandle().setDerailedVelocityMod(derailed);
+     }
+ 
++    // Paper start
++    @Override
++    public Material getMinecartMaterial() {
++        Item minecartItem;
++        switch (getHandle().getMinecartType()) {
++            case CHEST:
++                minecartItem = Items.CHEST_MINECART;
++                break;
++            case FURNACE:
++                minecartItem = Items.FURNACE_MINECART;
++                break;
++            case TNT:
++                minecartItem = Items.TNT_MINECART;
++                break;
++            case HOPPER:
++                minecartItem = Items.HOPPER_MINECART;
++                break;
++            case COMMAND_BLOCK:
++                minecartItem = Items.COMMAND_BLOCK_MINECART;
++                break;
++            case RIDEABLE:
++            case SPAWNER:
++                minecartItem = Items.MINECART;
++                break;
++            default:
++                throw new IllegalStateException("Unexpected value: " + getHandle().getMinecartType());
++        }
++
++        return CraftMagicNumbers.getMaterial(minecartItem);
++    }
++    // Paper end
++
+     @Override
+     public EntityMinecartAbstract getHandle() {
+         return (EntityMinecartAbstract) entity;
