@@ -6,10 +6,10 @@ Subject: [PATCH] Added SoundBuilder
 
 diff --git a/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4ca7845d55e3e45420d941193e30b2ac9df7e5c8
+index 0000000000000000000000000000000000000000..cb6c766f12f5db253d0d09c8a973755236041bd7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,237 @@
 +package io.papermc.paper.sound;
 +
 +import com.google.common.collect.Lists;
@@ -38,34 +38,40 @@ index 0000000000000000000000000000000000000000..4ca7845d55e3e45420d941193e30b2ac
 +    private float volume = 1F;
 +    private float pitch = 1F;
 +
-+    public PaperSoundBuilder(Sound sound) {
++    public PaperSoundBuilder(Sound sound, Location location) {
 +        this.sound = sound;
++        this.location = location;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, float volume) {
++    public PaperSoundBuilder(Sound sound, Location location, float volume) {
 +        this.sound = sound;
++        this.location = location;
 +        this.volume = volume;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, Float volume, float pitch) {
++    public PaperSoundBuilder(Sound sound, Location location, Float volume, float pitch) {
 +        this.sound = sound;
++        this.location = location;
 +        this.volume = volume;
 +        this.pitch = pitch;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, SoundCategory category) {
++    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category) {
 +        this.sound = sound;
++        this.location = location;
 +        this.category = category;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, SoundCategory category, float volume) {
++    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category, float volume) {
 +        this.sound = sound;
++        this.location = location;
 +        this.category = category;
 +        this.volume = volume;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, SoundCategory category, float volume, float pitch) {
++    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category, float volume, float pitch) {
 +        this.sound = sound;
++        this.location = location;
 +        this.category = category;
 +        this.volume = volume;
 +        this.pitch = pitch;
@@ -73,14 +79,11 @@ index 0000000000000000000000000000000000000000..4ca7845d55e3e45420d941193e30b2ac
 +
 +    @Override
 +    public PaperSoundBuilder play() {
-+        if (this.location == null) {
-+            throw new IllegalStateException("Please specify location for this sound");
-+        }
 +        if (this.category == null) {
 +            throw new IllegalStateException("Please specify category for this sound");
 +        }
 +        if (receivers == null || receivers.isEmpty()) {
-+            location.getWorld().playSound(location, sound, volume, pitch);
++            location.getWorld().playSound(location, sound, category, volume, pitch);
 +        } else {
 +            PacketPlayOutCustomSoundEffect customSoundEffect = new PacketPlayOutCustomSoundEffect(MinecraftKey.a(sound.getKey().getKey()), net.minecraft.server.SoundCategory.valueOf(category.name()), Vec3D.a(new BaseBlockPosition(location.getX(), location.getY(), location.getZ())), volume, pitch);
 +            for (Player player : receivers) {
@@ -245,7 +248,7 @@ index 0000000000000000000000000000000000000000..4ca7845d55e3e45420d941193e30b2ac
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..3f64b31c1a1470ee90669b095b7329d7a74aa19c 100644
+index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..587e0cd66fc0867a4f83047e9f3cecf5c1938b55 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -18,6 +18,8 @@ import com.mojang.serialization.Lifecycle;
@@ -272,33 +275,33 @@ index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..3f64b31c1a1470ee90669b095b7329d7
  
 +    // Paper start
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound) {
-+        return new PaperSoundBuilder(sound);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location) {
++        return new PaperSoundBuilder(sound, location);
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, float volume) {
-+        return new PaperSoundBuilder(sound, volume);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location, float volume) {
++        return new PaperSoundBuilder(sound, location, volume);
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, float volume, float pitch) {
-+        return new PaperSoundBuilder(sound, volume, pitch);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location, float volume, float pitch) {
++        return new PaperSoundBuilder(sound, location, volume, pitch);
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, SoundCategory category) {
-+        return new PaperSoundBuilder(sound, category);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category) {
++        return new PaperSoundBuilder(sound, location, category);
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, SoundCategory category, float volume) {
-+        return new PaperSoundBuilder(sound, category, volume);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category, float volume) {
++        return new PaperSoundBuilder(sound, location, category, volume);
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, SoundCategory category, float volume, float pitch) {
-+        return new PaperSoundBuilder(sound, category, volume, pitch);
++    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category, float volume, float pitch) {
++        return new PaperSoundBuilder(sound, location, category, volume, pitch);
 +    }
 +    // Paper end
 +
