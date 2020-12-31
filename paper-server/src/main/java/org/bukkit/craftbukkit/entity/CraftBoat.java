@@ -78,6 +78,13 @@ public abstract class CraftBoat extends CraftVehicle implements Boat {
         this.getHandle().landBoats = workOnLand;
     }
 
+    // Paper start
+    @Override
+    public org.bukkit.Material getBoatMaterial() {
+        return org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this.getHandle().getDropItem());
+    }
+    // Paper end
+
     @Override
     public Status getStatus() {
         return CraftBoat.boatStatusFromNms(this.getHandle().status);
