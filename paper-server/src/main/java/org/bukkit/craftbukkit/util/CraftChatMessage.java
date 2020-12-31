@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.gson.JsonParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ public final class CraftChatMessage {
 
     private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
     private static final Map<Character, EnumChatFormat> formatMap;
+    private static final String COLOR_CHAR_STRING = String.valueOf(ChatColor.COLOR_CHAR);
 
     static {
         Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
@@ -55,7 +57,7 @@ public final class CraftChatMessage {
         private StringBuilder hex;
         private final String message;
 
-        private StringMessage(String message, boolean keepNewlines) {
+        private StringMessage(String message, boolean keepNewlines, boolean plain) {
             this.message = message;
             if (message == null) {
                 output = new IChatBaseComponent[]{currentChatComponent};
@@ -116,12 +118,16 @@ public final class CraftChatMessage {
                     needsAdd = true;
                     break;
                 case 2:
-                    if (!(match.startsWith("http://") || match.startsWith("https://"))) {
-                        match = "http://" + match;
+                    if (plain) {
+                        appendNewComponent(matcher.end(groupId));
+                    } else {
+                        if (!(match.startsWith("http://") || match.startsWith("https://"))) {
+                            match = "http://" + match;
+                        }
+                        modifier = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
+                        appendNewComponent(matcher.end(groupId));
+                        modifier = modifier.setChatClickable((ChatClickable) null);
                     }
-                    modifier = modifier.setChatClickable(new ChatClickable(EnumClickAction.OPEN_URL, match));
-                    appendNewComponent(matcher.end(groupId));
-                    modifier = modifier.setChatClickable((ChatClickable) null);
                     break;
                 case 3:
                     if (needsAdd) {
@@ -168,11 +174,133 @@ public final class CraftChatMessage {
     }
 
     public static IChatBaseComponent[] fromString(String message, boolean keepNewlines) {
-        return new StringMessage(message, keepNewlines).getOutput();
+        return fromString(message, keepNewlines, false);
+    }
+
+    public static IChatBaseComponent[] fromString(String message, boolean keepNewlines, boolean plain) {
+        return new StringMessage(message, keepNewlines, plain).getOutput();
     }
 
     public static String toJSON(IChatBaseComponent component) {
         return IChatBaseComponent.ChatSerializer.a(component);
+    }
+
+    public static String toJSONOrNull(IChatBaseComponent component) {
+        if (component == null) return null;
+        return toJSON(component);
+    }
+
+    public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
+        // Note: This also parses plain Strings to text components.
+        return IChatBaseComponent.ChatSerializer.a(jsonMessage);
+    }
+
+    public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {
+        // Note: An empty message is parsed to an empty text component instead of null.
+        if (jsonMessage == null) return null;
+        try {
+            return fromJSON(jsonMessage);
+        } catch (JsonParseException ex) {
+            return null;
+        }
+    }
+
+    public static IChatBaseComponent fromJSONOrString(String message) {
+        return fromJSONOrString(message, false);
+    }
+
+    public static IChatBaseComponent fromJSONOrString(String message, boolean keepNewlines) {
+        return fromJSONOrString(message, false, keepNewlines);
+    }
+
+    private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
+        if (message == null) message = "";
+        if (nullable && message.isEmpty()) return null;
+        // If the message contains color codes, we convert it ourselves:
+        if (containsColorCodes(message)) {
+            return fromString(message, keepNewlines)[0];
+        } else {
+            try {
+                return fromJSON(message);
+            } catch (JsonParseException ex) {
+                return fromString(message, keepNewlines)[0];
+            }
+        }
+    }
+
+    public static String fromJSONOrStringToJSON(String message) {
+        return fromJSONOrStringToJSON(message, false);
+    }
+
+    public static String fromJSONOrStringToJSON(String message, boolean keepNewlines) {
+        return fromJSONOrStringToJSON(message, false, keepNewlines, Integer.MAX_VALUE, false);
+    }
+
+    public static String fromJSONOrStringOrNullToJSON(String message) {
+        return fromJSONOrStringOrNullToJSON(message, false);
+    }
+
+    public static String fromJSONOrStringOrNullToJSON(String message, boolean keepNewlines) {
+        return fromJSONOrStringToJSON(message, true, keepNewlines, Integer.MAX_VALUE, false);
+    }
+
+    public static String fromJSONOrStringToJSON(String message, boolean nullable, boolean keepNewlines, int maxLength, boolean checkJsonContentLength) {
+        if (message == null) message = "";
+        if (nullable && message.isEmpty()) return null;
+        // If the message contains color codes, we convert it ourselves:
+        if (containsColorCodes(message)) {
+            message = trimMessage(message, maxLength);
+            return fromStringToJSON(message, keepNewlines);
+        } else {
+            try {
+                // If the input can be parsed as JSON, we use that:
+                IChatBaseComponent component = fromJSON(message);
+                if (checkJsonContentLength) {
+                    String content = fromComponent(component);
+                    String trimmedContent = trimMessage(content, maxLength);
+                    if (content != trimmedContent) { // identity comparison is fine here
+                        // Note: The resulting text has all non-plain text features stripped.
+                        return fromStringToJSON(trimmedContent, keepNewlines);
+                    }
+                }
+                return message;
+            } catch (JsonParseException ex) {
+                // Else we convert the input:
+                message = trimMessage(message, maxLength);
+                return fromStringToJSON(message, keepNewlines);
+            }
+        }
+    }
+
+    public static String trimMessage(String message, int maxLength) {
+        if (message != null && message.length() > maxLength) {
+            return message.substring(0, maxLength);
+        } else {
+            return message;
+        }
+    }
+
+    public static boolean containsColorCodes(String message) {
+        return message != null && message.contains(COLOR_CHAR_STRING);
+    }
+
+    public static String fromStringToJSON(String message) {
+        return fromStringToJSON(message, false);
+    }
+
+    public static String fromStringToJSON(String message, boolean keepNewlines) {
+        IChatBaseComponent component = CraftChatMessage.fromString(message, keepNewlines)[0];
+        return CraftChatMessage.toJSON(component);
+    }
+
+    public static String fromStringOrNullToJSON(String message) {
+        IChatBaseComponent component = CraftChatMessage.fromStringOrNull(message);
+        return CraftChatMessage.toJSONOrNull(component);
+    }
+
+    public static String fromJSONComponent(String jsonMessage) {
+        IChatBaseComponent component = CraftChatMessage.fromJSONOrNull(jsonMessage);
+        return CraftChatMessage.fromComponent(component);
     }
 
     public static String fromComponent(IChatBaseComponent component) {

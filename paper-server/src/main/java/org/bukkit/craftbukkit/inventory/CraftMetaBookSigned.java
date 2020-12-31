@@ -2,15 +2,11 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagString;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -21,29 +17,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
     }
 
     CraftMetaBookSigned(NBTTagCompound tag) {
-        super(tag, false);
-
-        boolean resolved = true;
-        if (tag.hasKey(RESOLVED.NBT)) {
-            resolved = tag.getBoolean(RESOLVED.NBT);
-        }
-
-        if (tag.hasKey(BOOK_PAGES.NBT)) {
-            NBTTagList pages = tag.getList(BOOK_PAGES.NBT, CraftMagicNumbers.NBT.TAG_STRING);
-
-            for (int i = 0; i < Math.min(pages.size(), MAX_PAGES); i++) {
-                String page = pages.getString(i);
-                if (resolved) {
-                    try {
-                        this.pages.add(ChatSerializer.a(page));
-                        continue;
-                    } catch (Exception e) {
-                        // Ignore and treat as an old book
-                    }
-                }
-                addPage(page);
-            }
-        }
+        super(tag);
     }
 
     CraftMetaBookSigned(Map<String, Object> map) {
@@ -51,31 +25,23 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
     }
 
     @Override
+    protected String deserializePage(String pageData) {
+        return CraftChatMessage.fromJSONOrStringToJSON(pageData, false, true, MAX_PAGE_LENGTH, false);
+    }
+
+    @Override
+    protected String convertPlainPageToData(String page) {
+        return CraftChatMessage.fromStringToJSON(page, true);
+    }
+
+    @Override
+    protected String convertDataToPlainPage(String pageData) {
+        return CraftChatMessage.fromJSONComponent(pageData);
+    }
+
+    @Override
     void applyToItem(NBTTagCompound itemData) {
-        super.applyToItem(itemData, false);
-
-        if (hasTitle()) {
-            itemData.setString(BOOK_TITLE.NBT, this.title);
-        }
-
-        if (hasAuthor()) {
-            itemData.setString(BOOK_AUTHOR.NBT, this.author);
-        }
-
-        if (hasPages()) {
-            NBTTagList list = new NBTTagList();
-            for (IChatBaseComponent page : pages) {
-                list.add(NBTTagString.a(
-                    ChatSerializer.a(page)
-                ));
-            }
-            itemData.set(BOOK_PAGES.NBT, list);
-        }
-        itemData.setBoolean(RESOLVED.NBT, true);
-
-        if (generation != null) {
-            itemData.setInt(GENERATION.NBT, generation);
-        }
+        super.applyToItem(itemData);
     }
 
     @Override

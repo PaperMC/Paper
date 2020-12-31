@@ -12,8 +12,9 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements Sign {
 
-    private String[] lines;
-    private boolean editable;
+    // Lazily initialized only if requested:
+    private String[] originalLines = null;
+    private String[] lines = null;
 
     public CraftSign(final Block block) {
         super(block, TileEntitySign.class);
@@ -24,37 +25,36 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     }
 
     @Override
-    public void load(TileEntitySign sign) {
-        super.load(sign);
-
-        lines = new String[sign.lines.length];
-        System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
-        editable = sign.isEditable;
-    }
-
-    @Override
     public String[] getLines() {
+        if (lines == null) {
+            // Lazy initialization:
+            TileEntitySign sign = this.getSnapshot();
+            lines = new String[sign.lines.length];
+            System.arraycopy(revertComponents(sign.lines), 0, lines, 0, lines.length);
+            originalLines = new String[lines.length];
+            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
+        }
         return lines;
     }
 
     @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return lines[index];
+        return getLines()[index];
     }
 
     @Override
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
-        lines[index] = line;
+        getLines()[index] = line;
     }
 
     @Override
     public boolean isEditable() {
-        return this.editable;
+        return getSnapshot().isEditable;
     }
 
     @Override
     public void setEditable(boolean editable) {
-        this.editable = editable;
+        getSnapshot().isEditable = editable;
     }
 
     @Override
@@ -71,9 +71,15 @@ public class CraftSign extends CraftBlockEntityState<TileEntitySign> implements 
     public void applyTo(TileEntitySign sign) {
         super.applyTo(sign);
 
-        IChatBaseComponent[] newLines = sanitizeLines(lines);
-        System.arraycopy(newLines, 0, sign.lines, 0, 4);
-        sign.isEditable = editable;
+        if (lines != null) {
+            for (int i = 0; i < lines.length; i++) {
+                String line = (lines[i] == null) ? "" : lines[i];
+                if (line.equals(originalLines[i])) {
+                    continue; // The line contents are still the same, skip.
+                }
+                sign.lines[i] = CraftChatMessage.fromString(line)[0];
+            }
+        }
     }
 
     public static IChatBaseComponent[] sanitizeLines(String[] lines) {

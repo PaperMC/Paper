@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BlockPropertyInstrument;
-import net.minecraft.server.ChatMessage;
-import net.minecraft.server.ChatModifier;
 import net.minecraft.server.Container;
 import net.minecraft.server.ContainerMerchant;
 import net.minecraft.server.DamageSource;
@@ -1290,40 +1288,11 @@ public class CraftEventFactory {
                     itemInHand.setItem(Items.WRITTEN_BOOK);
                 }
                 CraftMetaBook meta = (CraftMetaBook) editBookEvent.getNewBookMeta();
-                List<IChatBaseComponent> pages = meta.pages;
-                for (int i = 0; i < pages.size(); i++) {
-                    pages.set(i, stripEvents(pages.get(i)));
-                }
                 CraftItemStack.setItemMeta(itemInHand, meta);
             }
         }
 
         return itemInHand;
-    }
-
-    private static IChatBaseComponent stripEvents(IChatBaseComponent c) {
-        ChatModifier modi = c.getChatModifier();
-        if (modi != null) {
-            modi = modi.setChatClickable(null);
-            modi = modi.setChatHoverable(null);
-        }
-        if (c instanceof ChatMessage) {
-            ChatMessage cm = (ChatMessage) c;
-            Object[] oo = cm.getArgs();
-            for (int i = 0; i < oo.length; i++) {
-                Object o = oo[i];
-                if (o instanceof IChatBaseComponent) {
-                    oo[i] = stripEvents((IChatBaseComponent) o);
-                }
-            }
-        }
-        List<IChatBaseComponent> ls = c.getSiblings();
-        if (ls != null) {
-            for (int i = 0; i < ls.size(); i++) {
-                ls.set(i, stripEvents(ls.get(i)));
-            }
-        }
-        return c.mutableCopy().setChatModifier(modi);
     }
 
     public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(EntityInsentient entity, EntityHuman player) {

@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.IChatBaseComponent;
 import net.minecraft.server.IChatMutableComponent;
 import org.junit.Test;
@@ -50,6 +52,15 @@ public class CraftChatMessageTest {
         testComponent("F§foo§bBar§rBaz", create("F§foo", "§bBar", "Baz"));
     }
 
+    @Test
+    public void testPlainText() {
+        testPlainString("");
+        testPlainString("Foo§f§mBar§0");
+        testPlainString("Link to https://www.spigotmc.org/ ...");
+        testPlainString("Link to http://www.spigotmc.org/ ...");
+        testPlainString("Link to www.spigotmc.org ...");
+    }
+
     private IChatBaseComponent create(String txt, String... rest) {
         IChatMutableComponent cmp = CraftChatMessage.fromString(txt, false)[0].mutableCopy();
         for (String s : rest) {
@@ -75,6 +86,22 @@ public class CraftChatMessageTest {
         IChatBaseComponent cmp = CraftChatMessage.fromString(input, keepNewLines)[0];
         String actual = CraftChatMessage.fromComponent(cmp);
         assertEquals("\nComponent: " + cmp + "\n", expected, actual);
+    }
+
+    private void testPlainString(String expected) {
+        IChatBaseComponent component = CraftChatMessage.fromString(expected, false, true)[0];
+        String actual = CraftChatMessage.fromComponent(component);
+        assertEquals("fromComponent does not match input: " + component, expected, actual);
+        assertTrue("Non-plain component: " + component, !containsNonPlainComponent(component));
+    }
+
+    private boolean containsNonPlainComponent(IChatBaseComponent component) {
+        for (IChatBaseComponent c : component) {
+            if (!(c instanceof ChatComponentText)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void testComponent(String expected, IChatBaseComponent cmp) {
