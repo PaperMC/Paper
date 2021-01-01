@@ -21,44 +21,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         return CraftChatMessage.fromComponent(displayName);
+         return CraftChatMessage.fromJSONComponent(displayName);
      }
  
 +    // Paper start
 +    @Override
 +    public net.md_5.bungee.api.chat.BaseComponent[] getDisplayNameComponent() {
-+        return net.md_5.bungee.chat.ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.componentToJson(displayName));
++        return net.md_5.bungee.chat.ComponentSerializer.parse(displayName);
 +    }
 +    // Paper end
      @Override
      public final void setDisplayName(String name) {
-         this.displayName = CraftChatMessage.fromStringOrNull(name);
+         this.displayName = CraftChatMessage.fromStringOrNullToJSON(name);
      }
  
 +    // Paper start
 +    @Override
 +    public void setDisplayNameComponent(net.md_5.bungee.api.chat.BaseComponent[] component) {
-+        this.displayName = IChatBaseComponent.ChatSerializer.jsonToComponent(net.md_5.bungee.chat.ComponentSerializer.toString(component));
++        this.displayName = net.md_5.bungee.chat.ComponentSerializer.toString(component);
 +    }
 +    // Paper end
      @Override
      public boolean hasDisplayName() {
          return displayName != null;
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, CraftChatMessage::fromComponent));
+         return this.lore == null ? null : new ArrayList<String>(Lists.transform(this.lore, CraftChatMessage::fromJSONComponent));
      }
  
 +    // Paper start
 +    @Override
 +    public List<net.md_5.bungee.api.chat.BaseComponent[]> getLoreComponents() {
 +        return this.lore == null ? null : new ArrayList<>(this.lore.stream().map(entry ->
-+            net.md_5.bungee.chat.ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.componentToJson(entry)
-+        )).collect(java.util.stream.Collectors.toList()));
++            net.md_5.bungee.chat.ComponentSerializer.parse(entry)
++        ).collect(java.util.stream.Collectors.toList()));
 +    }
 +    // Paper end
      @Override
-     public void setLore(List<String> lore) { // too tired to think if .clone is better
-         if (lore == null) {
+     public void setLore(List<String> lore) {
+         if (lore == null || lore.isEmpty()) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
@@ -70,10 +70,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.lore = null;
 +        } else {
 +            if (this.lore == null) {
-+                safelyAdd(lore, this.lore = new ArrayList<>(lore.size()), Integer.MAX_VALUE);
++                safelyAdd(lore, this.lore = new ArrayList<>(lore.size()), false);
 +            } else {
 +                this.lore.clear();
-+                safelyAdd(lore, this.lore, Integer.MAX_VALUE);
++                safelyAdd(lore, this.lore, false);
 +            }
 +        }
 +    }
@@ -87,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          for (Object object : addFrom) {
 +            // Paper start - support components
 +            if(object instanceof net.md_5.bungee.api.chat.BaseComponent[]) {
-+                addTo.add(IChatBaseComponent.ChatSerializer.jsonToComponent(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object)));
++                addTo.add(net.md_5.bungee.chat.ComponentSerializer.toString((net.md_5.bungee.api.chat.BaseComponent[]) object));
 +            } else
 +            // Paper end
              if (!(object instanceof String)) {
