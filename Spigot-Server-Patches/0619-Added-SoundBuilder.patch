@@ -6,10 +6,10 @@ Subject: [PATCH] Added SoundBuilder
 
 diff --git a/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb6c766f12f5db253d0d09c8a973755236041bd7
+index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2caacb3dda
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
-@@ -0,0 +1,237 @@
+@@ -0,0 +1,206 @@
 +package io.papermc.paper.sound;
 +
 +import com.google.common.collect.Lists;
@@ -40,48 +40,18 @@ index 0000000000000000000000000000000000000000..cb6c766f12f5db253d0d09c8a9737552
 +
 +    public PaperSoundBuilder(Sound sound, Location location) {
 +        this.sound = sound;
++        this.category = SoundCategory.MASTER;
 +        this.location = location;
 +    }
 +
-+    public PaperSoundBuilder(Sound sound, Location location, float volume) {
++    public PaperSoundBuilder(Sound sound, SoundCategory category, Location location) {
 +        this.sound = sound;
-+        this.location = location;
-+        this.volume = volume;
-+    }
-+
-+    public PaperSoundBuilder(Sound sound, Location location, Float volume, float pitch) {
-+        this.sound = sound;
-+        this.location = location;
-+        this.volume = volume;
-+        this.pitch = pitch;
-+    }
-+
-+    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category) {
-+        this.sound = sound;
-+        this.location = location;
 +        this.category = category;
-+    }
-+
-+    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category, float volume) {
-+        this.sound = sound;
 +        this.location = location;
-+        this.category = category;
-+        this.volume = volume;
-+    }
-+
-+    public PaperSoundBuilder(Sound sound, Location location, SoundCategory category, float volume, float pitch) {
-+        this.sound = sound;
-+        this.location = location;
-+        this.category = category;
-+        this.volume = volume;
-+        this.pitch = pitch;
 +    }
 +
 +    @Override
-+    public PaperSoundBuilder play() {
-+        if (this.category == null) {
-+            throw new IllegalStateException("Please specify category for this sound");
-+        }
++    public void play() {
 +        if (receivers == null || receivers.isEmpty()) {
 +            location.getWorld().playSound(location, sound, category, volume, pitch);
 +        } else {
@@ -90,7 +60,6 @@ index 0000000000000000000000000000000000000000..cb6c766f12f5db253d0d09c8a9737552
 +                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(customSoundEffect);
 +            }
 +        }
-+        return this;
 +    }
 +
 +    @Override
@@ -248,7 +217,7 @@ index 0000000000000000000000000000000000000000..cb6c766f12f5db253d0d09c8a9737552
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..587e0cd66fc0867a4f83047e9f3cecf5c1938b55 100644
+index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..b8baab80237a663fd604b88d5dccea5bb73b86b4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -18,6 +18,8 @@ import com.mojang.serialization.Lifecycle;
@@ -269,7 +238,7 @@ index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..587e0cd66fc0867a4f83047e9f3cecf5
  import org.bukkit.StructureType;
  import org.bukkit.UnsafeValues;
  import org.bukkit.Warning.WarningState;
-@@ -1821,6 +1825,38 @@ public final class CraftServer implements Server {
+@@ -1821,6 +1825,18 @@ public final class CraftServer implements Server {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
  
@@ -280,28 +249,8 @@ index dc7de2b59ec5ca3e5fba34dbb2aa2e6aed8f95cb..587e0cd66fc0867a4f83047e9f3cecf5
 +    }
 +
 +    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, Location location, float volume) {
-+        return new PaperSoundBuilder(sound, location, volume);
-+    }
-+
-+    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, Location location, float volume, float pitch) {
-+        return new PaperSoundBuilder(sound, location, volume, pitch);
-+    }
-+
-+    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category) {
-+        return new PaperSoundBuilder(sound, location, category);
-+    }
-+
-+    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category, float volume) {
-+        return new PaperSoundBuilder(sound, location, category, volume);
-+    }
-+
-+    @Override
-+    public SoundBuilder createSoundBuilder(Sound sound, Location location, SoundCategory category, float volume, float pitch) {
-+        return new PaperSoundBuilder(sound, location, category, volume, pitch);
++    public SoundBuilder createSoundBuilder(Sound sound, SoundCategory category, Location location) {
++        return new PaperSoundBuilder(sound, category, location);
 +    }
 +    // Paper end
 +

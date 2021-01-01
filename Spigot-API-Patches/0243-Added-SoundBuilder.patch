@@ -6,10 +6,10 @@ Subject: [PATCH] Added SoundBuilder
 
 diff --git a/src/main/java/io/papermc/paper/sound/SoundBuilder.java b/src/main/java/io/papermc/paper/sound/SoundBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd98ced749a889a427c2fc960bd55fc683f6ced1
+index 0000000000000000000000000000000000000000..afcb4cc2e68c8180a3f9b4dbdd86c70e50309bfb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/sound/SoundBuilder.java
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,207 @@
 +package io.papermc.paper.sound;
 +
 +import org.bukkit.Location;
@@ -31,11 +31,9 @@ index 0000000000000000000000000000000000000000..fd98ced749a889a427c2fc960bd55fc6
 +    /**
 +     * Plays the sound to all receiving players (or all). This method is safe to use
 +     * Asynchronously
-+     *
-+     * @return a reference to this object.
 +     */
 +    @NotNull
-+    SoundBuilder play();
++    void play();
 +
 +    /**
 +     * @return The sound going to be sent
@@ -55,7 +53,7 @@ index 0000000000000000000000000000000000000000..fd98ced749a889a427c2fc960bd55fc6
 +    /**
 +     * @return The category under which the sound will be played
 +     */
-+    @Nullable
++    @NotNull
 +    SoundCategory category();
 +
 +    /**
@@ -220,7 +218,7 @@ index 0000000000000000000000000000000000000000..fd98ced749a889a427c2fc960bd55fc6
 +
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index fecd7b14d317f55eb1ce7b5c6af9913917971427..2e567eb7356c875c70e7ecde9f810af2873c394e 100644
+index fecd7b14d317f55eb1ce7b5c6af9913917971427..2c638bfab3929e359cb90384c0ac09143f445d82 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -13,6 +13,8 @@ import java.util.Set;
@@ -232,7 +230,7 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..2e567eb7356c875c70e7ecde9f810af2
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1193,6 +1195,81 @@ public final class Bukkit {
+@@ -1193,6 +1195,31 @@ public final class Bukkit {
          return server.createMerchant(title);
      }
  
@@ -240,6 +238,7 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..2e567eb7356c875c70e7ecde9f810af2
 +     * Creates an empty SoundBuilder
 +     *
 +     * @param sound the type of the sound, which will be played
++     * @param location the location fo the sound, which will be played
 +     * @return a new sound builder
 +     */
 +    @NotNull
@@ -251,71 +250,20 @@ index fecd7b14d317f55eb1ce7b5c6af9913917971427..2e567eb7356c875c70e7ecde9f810af2
 +     * Creates an empty SoundBuilder
 +     *
 +     * @param sound the type of the sound, which will be played
-+     * @param volume the volume of the sound, which will be played
-+     * @return a new sound builder
-+     */
-+    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, float volume) {
-+        return server.createSoundBuilder(sound, location, volume);
-+    }
-+
-+    /**
-+     * Creates an empty SoundBuilder
-+     *
-+     * @param sound the type of the sound, which will be played
-+     * @param volume the volume of the sound, which will be played
-+     * @param pitch the pitch of the sound, which will be played
-+     * @return a new sound builder
-+     */
-+    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, float volume, float pitch) {
-+        return server.createSoundBuilder(sound, location, volume, pitch);
-+    }
-+
-+    /**
-+     * Creates an empty SoundBuilder
-+     *
-+     * @param sound the type of the sound, which will be played
 +     * @param category the category of the played sound
++     * @param location the location fo the sound, which will be played
 +     * @return a new sound builder
 +     */
 +    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category) {
-+        return server.createSoundBuilder(sound, location, category);
-+    }
-+
-+    /**
-+     * Creates an empty SoundBuilder
-+     *
-+     * @param sound the type of the sound, which will be played
-+     * @param category the category of the played sound
-+     * @param volume the volume of the sound, which will be played
-+     * @return a new sound builder
-+     */
-+    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category, float volume) {
-+        return server.createSoundBuilder(sound, location, category, volume);
-+    }
-+
-+    /**
-+     * Creates an empty SoundBuilder
-+     *
-+     * @param sound the type of the sound, which will be played
-+     * @param category the category of the played sound
-+     * @param volume the volume of the sound, which will be played
-+     * @param pitch the pitch of the sound, which will be played
-+     * @return a new sound builder
-+     */
-+    @NotNull
-+    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category, float volume, float pitch) {
-+        return server.createSoundBuilder(sound, location, category, volume, pitch);
++    public static SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, @NotNull Location location) {
++        return server.createSoundBuilder(sound, category, location);
 +    }
 +
      /**
       * Gets user-specified limit for number of monsters that can spawn in a
       * chunk.
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..102d8f1f0c7fd8950621c3a64d9d66df716b0c85 100644
+index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..613bc94b2be656ccf21546b593d846c94cf8b9bb 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -13,6 +13,8 @@ import java.util.Set;
@@ -327,7 +275,7 @@ index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..102d8f1f0c7fd8950621c3a64d9d66df
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1002,6 +1004,42 @@ public interface Server extends PluginMessageRecipient {
+@@ -1002,6 +1004,19 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Merchant createMerchant(@Nullable String title);
  
@@ -341,31 +289,8 @@ index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..102d8f1f0c7fd8950621c3a64d9d66df
 +     * Creates an empty SoundBuilder.
 +     */
 +    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, float volume);
++    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull SoundCategory category, @NotNull Location location);
 +
-+    /**
-+     * Creates an empty SoundBuilder.
-+     */
-+    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, float volume, float pitch);
-+
-+    /**
-+     * Creates an empty SoundBuilder.
-+     */
-+    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category);
-+
-+    /**
-+     * Creates an empty SoundBuilder.
-+     */
-+    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category, float volume);
-+
-+    /**
-+     * Creates an empty SoundBuilder.
-+     */
-+    @NotNull
-+    SoundBuilder createSoundBuilder(@NotNull Sound sound, @NotNull Location location, @NotNull SoundCategory category, float volume, float pitch);
 +
      /**
       * Gets user-specified limit for number of monsters that can spawn in a
