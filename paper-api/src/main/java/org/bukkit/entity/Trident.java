@@ -3,4 +3,4 @@ package org.bukkit.entity;
 /**
  * Represents a thrown trident.
  */
-public interface Trident extends AbstractArrow { }
+public interface Trident extends AbstractArrow, ThrowableProjectile { }
