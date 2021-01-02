@@ -192,14 +192,14 @@ public final class CraftChatMessage {
 
     public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
+        // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
         return IChatBaseComponent.ChatSerializer.a(jsonMessage);
     }
 
     public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {
-        // Note: An empty message is parsed to an empty text component instead of null.
         if (jsonMessage == null) return null;
         try {
-            return fromJSON(jsonMessage);
+            return fromJSON(jsonMessage); // Can return null
         } catch (JsonParseException ex) {
             return null;
         }
@@ -216,13 +216,13 @@ public final class CraftChatMessage {
     private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
-        // If the message contains color codes, we convert it ourselves:
-        if (containsColorCodes(message)) {
+        if (isLegacy(message)) {
             return fromString(message, keepNewlines)[0];
         } else {
-            try {
-                return fromJSON(message);
-            } catch (JsonParseException ex) {
+            IChatBaseComponent component = fromJSONOrNull(message);
+            if (component != null) {
+                return component;
+            } else {
                 return fromString(message, keepNewlines)[0];
             }
         }
@@ -247,14 +247,13 @@ public final class CraftChatMessage {
     public static String fromJSONOrStringToJSON(String message, boolean nullable, boolean keepNewlines, int maxLength, boolean checkJsonContentLength) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
-        // If the message contains color codes, we convert it ourselves:
-        if (containsColorCodes(message)) {
+        if (isLegacy(message)) {
             message = trimMessage(message, maxLength);
             return fromStringToJSON(message, keepNewlines);
         } else {
-            try {
-                // If the input can be parsed as JSON, we use that:
-                IChatBaseComponent component = fromJSON(message);
+            // If the input can be parsed as JSON, we use that:
+            IChatBaseComponent component = fromJSONOrNull(message);
+            if (component != null) {
                 if (checkJsonContentLength) {
                     String content = fromComponent(component);
                     String trimmedContent = trimMessage(content, maxLength);
@@ -264,8 +263,8 @@ public final class CraftChatMessage {
                     }
                 }
                 return message;
-            } catch (JsonParseException ex) {
-                // Else we convert the input:
+            } else {
+                // Else we interpret the input as legacy text:
                 message = trimMessage(message, maxLength);
                 return fromStringToJSON(message, keepNewlines);
             }
@@ -280,8 +279,12 @@ public final class CraftChatMessage {
         }
     }
 
-    public static boolean containsColorCodes(String message) {
-        return message != null && message.contains(COLOR_CHAR_STRING);
+    // Heuristic detection of legacy (plain) text.
+    // May produce false-negatives: I.e. a return value of false does not imply that the text represents modern (JSON-based) text.
+    // We also consider empty Strings as legacy. The component deserializer cannot parse them (produces null).
+    private static boolean isLegacy(String message) {
+        // assert: message != null
+        return message.trim().isEmpty() || message.contains(COLOR_CHAR_STRING);
     }
 
     public static String fromStringToJSON(String message) {
