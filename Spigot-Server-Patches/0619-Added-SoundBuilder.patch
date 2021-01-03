@@ -6,10 +6,10 @@ Subject: [PATCH] Added SoundBuilder
 
 diff --git a/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2caacb3dda
+index 0000000000000000000000000000000000000000..e41b74113ea0b2b19c102dd2b1f4949d1079e4e5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/sound/PaperSoundBuilder.java
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,148 @@
 +package io.papermc.paper.sound;
 +
 +import com.google.common.collect.Lists;
@@ -25,9 +25,7 @@ index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2c
 +import org.bukkit.entity.Player;
 +import org.bukkit.util.NumberConversions;
 +
-+import java.util.ArrayList;
 +import java.util.Collection;
-+import java.util.List;
 +
 +public class PaperSoundBuilder implements SoundBuilder {
 +
@@ -52,13 +50,9 @@ index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2c
 +
 +    @Override
 +    public void play() {
-+        if (receivers == null || receivers.isEmpty()) {
-+            location.getWorld().playSound(location, sound, category, volume, pitch);
-+        } else {
-+            PacketPlayOutCustomSoundEffect customSoundEffect = new PacketPlayOutCustomSoundEffect(MinecraftKey.a(sound.getKey().getKey()), net.minecraft.server.SoundCategory.valueOf(category.name()), Vec3D.a(new BaseBlockPosition(location.getX(), location.getY(), location.getZ())), volume, pitch);
-+            for (Player player : receivers) {
-+                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(customSoundEffect);
-+            }
++        PacketPlayOutCustomSoundEffect customSoundEffect = new PacketPlayOutCustomSoundEffect(MinecraftKey.a(sound.getKey().getKey()), net.minecraft.server.SoundCategory.valueOf(category.name()), Vec3D.a(new BaseBlockPosition(location.getX(), location.getY(), location.getZ())), volume, pitch);
++        for (Player player : receivers) {
++            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(customSoundEffect);
 +        }
 +    }
 +
@@ -107,8 +101,8 @@ index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2c
 +    }
 +
 +    @Override
-+    public List<Player> receivers() {
-+        return new ArrayList<>(receivers);
++    public Collection<Player> receivers() {
++        return receivers;
 +    }
 +
 +    @Override
@@ -119,7 +113,7 @@ index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2c
 +
 +    @Override
 +    public PaperSoundBuilder allPlayers() {
-+        this.receivers = null;
++        this.receivers = location.getWorld().getPlayers();
 +        return this;
 +    }
 +
@@ -137,66 +131,14 @@ index 0000000000000000000000000000000000000000..34712b111ab5179937e32eed6d34dc2c
 +
 +    @Override
 +    public PaperSoundBuilder receivers(int radius) {
-+        return receivers(radius, radius);
++        receivers = location.getNearbyPlayers(radius);
++        return this;
 +    }
 +
 +    @Override
-+    public PaperSoundBuilder receivers(int radius, boolean byDistance) {
-+        if (!byDistance) {
-+            return receivers(radius, radius, radius);
-+        } else {
-+            this.receivers = Lists.newArrayList();
-+            double radiusSquared = NumberConversions.square(radius);
-+            for (Player nearbyPlayer : location.getWorld()
-+                .getNearbyPlayers(location, radius, radius, radius)) {
-+                Location loc = nearbyPlayer.getLocation();
-+                double x = NumberConversions.square(location.getX() - loc.getX());
-+                double y = NumberConversions.square(location.getY() - loc.getY());
-+                double z = NumberConversions.square(location.getZ() - loc.getZ());
-+                if (Math.sqrt(x + y + z) > radiusSquared) {
-+                    continue;
-+                }
-+                this.receivers.add(nearbyPlayer);
-+            }
-+            return this;
-+        }
-+    }
-+
-+    @Override
-+    public PaperSoundBuilder receivers(int xzRadius, int yRadius) {
-+        return receivers(xzRadius, yRadius, xzRadius);
-+    }
-+
-+    @Override
-+    public PaperSoundBuilder receivers(int xzRadius, int yRadius, boolean byDistance) {
-+        if (!byDistance) {
-+            return receivers(xzRadius, yRadius, xzRadius);
-+        } else {
-+            this.receivers = Lists.newArrayList();
-+            double xzRadiusSquare = NumberConversions.square(xzRadius);
-+            for (Player nearbyPlayer : location.getWorld()
-+                .getNearbyPlayers(location, xzRadius, yRadius, xzRadius)) {
-+                Location loc = nearbyPlayer.getLocation();
-+                if (Math.abs(loc.getY() - this.location.getY()) > yRadius) {
-+                    continue;
-+                }
-+                double x = NumberConversions.square(location.getX() - loc.getX());
-+                double z = NumberConversions.square(location.getZ() - loc.getZ());
-+                if (x + z > xzRadiusSquare) {
-+                    continue;
-+                }
-+                this.receivers.add(nearbyPlayer);
-+            }
-+            return this;
-+        }
-+    }
-+
-+    @Override
-+    public PaperSoundBuilder receivers(int xRadius, int yRadius, int zRadius) {
-+        if (location == null) {
-+            throw new IllegalStateException("Please set location first");
-+        }
-+        return receivers(location.getWorld().getNearbyPlayers(location, xRadius, yRadius, zRadius));
++    public PaperSoundBuilder receivers(int radiusxz, int radiusy) {
++        receivers = location.getNearbyPlayers(radiusxz, radiusy);
++        return this;
 +    }
 +
 +    @Override
