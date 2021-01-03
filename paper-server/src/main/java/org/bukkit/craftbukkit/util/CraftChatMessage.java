@@ -24,7 +24,6 @@ public final class CraftChatMessage {
 
     private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
     private static final Map<Character, EnumChatFormat> formatMap;
-    private static final String COLOR_CHAR_STRING = String.valueOf(ChatColor.COLOR_CHAR);
 
     static {
         Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
@@ -216,15 +215,11 @@ public final class CraftChatMessage {
     private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
-        if (isLegacy(message)) {
-            return fromString(message, keepNewlines)[0];
+        IChatBaseComponent component = fromJSONOrNull(message);
+        if (component != null) {
+            return component;
         } else {
-            IChatBaseComponent component = fromJSONOrNull(message);
-            if (component != null) {
-                return component;
-            } else {
-                return fromString(message, keepNewlines)[0];
-            }
+            return fromString(message, keepNewlines)[0];
         }
     }
 
@@ -247,27 +242,22 @@ public final class CraftChatMessage {
     public static String fromJSONOrStringToJSON(String message, boolean nullable, boolean keepNewlines, int maxLength, boolean checkJsonContentLength) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
-        if (isLegacy(message)) {
+        // If the input can be parsed as JSON, we use that:
+        IChatBaseComponent component = fromJSONOrNull(message);
+        if (component != null) {
+            if (checkJsonContentLength) {
+                String content = fromComponent(component);
+                String trimmedContent = trimMessage(content, maxLength);
+                if (content != trimmedContent) { // identity comparison is fine here
+                    // Note: The resulting text has all non-plain text features stripped.
+                    return fromStringToJSON(trimmedContent, keepNewlines);
+                }
+            }
+            return message;
+        } else {
+            // Else we interpret the input as legacy text:
             message = trimMessage(message, maxLength);
             return fromStringToJSON(message, keepNewlines);
-        } else {
-            // If the input can be parsed as JSON, we use that:
-            IChatBaseComponent component = fromJSONOrNull(message);
-            if (component != null) {
-                if (checkJsonContentLength) {
-                    String content = fromComponent(component);
-                    String trimmedContent = trimMessage(content, maxLength);
-                    if (content != trimmedContent) { // identity comparison is fine here
-                        // Note: The resulting text has all non-plain text features stripped.
-                        return fromStringToJSON(trimmedContent, keepNewlines);
-                    }
-                }
-                return message;
-            } else {
-                // Else we interpret the input as legacy text:
-                message = trimMessage(message, maxLength);
-                return fromStringToJSON(message, keepNewlines);
-            }
         }
     }
 
@@ -277,14 +267,6 @@ public final class CraftChatMessage {
         } else {
             return message;
         }
-    }
-
-    // Heuristic detection of legacy (plain) text.
-    // May produce false-negatives: I.e. a return value of false does not imply that the text represents modern (JSON-based) text.
-    // We also consider empty Strings as legacy. The component deserializer cannot parse them (produces null).
-    private static boolean isLegacy(String message) {
-        // assert: message != null
-        return message.trim().isEmpty() || message.contains(COLOR_CHAR_STRING);
     }
 
     public static String fromStringToJSON(String message) {
