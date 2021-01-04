@@ -3,6 +3,7 @@ From: Ineusia <ineusia@yahoo.com>
 Date: Mon, 26 Oct 2020 11:48:06 -0500
 Subject: [PATCH] Add Destroy Speed API
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -14,14 +15,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
 +
 +    @Override
-+    public float getDestroySpeed(ItemStack itemStack) {
++    public float getDestroySpeed(ItemStack itemStack, boolean considerEnchants) {
 +        net.minecraft.server.ItemStack nmsItemStack;
 +        if (itemStack instanceof CraftItemStack) {
 +            nmsItemStack = ((CraftItemStack) itemStack).getHandle();
 +        } else {
 +            nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
 +        }
-+        return nmsItemStack.getItem().getDestroySpeed(nmsItemStack, this.getNMSBlock().getBlockData());
++        float speed = nmsItemStack.getItem().getDestroySpeed(nmsItemStack, this.getNMSBlock().getBlockData());
++        if (speed > 1.0F && considerEnchants) {
++            int enchantLevel = net.minecraft.server.EnchantmentManager.getEnchantmentLevel(net.minecraft.server.Enchantments.DIG_SPEED, nmsItemStack);
++            if (enchantLevel > 0) {
++                speed += enchantLevel * enchantLevel + 1;
++            }
++        }
++        return speed;
 +    }
      // Paper end
  }
