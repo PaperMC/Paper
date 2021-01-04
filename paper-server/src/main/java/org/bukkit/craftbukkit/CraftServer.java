@@ -2709,6 +2709,15 @@ public final class CraftServer implements Server {
                     return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
                 }
             }
+            // Paper start
+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
+                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class, "Game Event namespace must have GameEvent type");
+                TagKey<net.minecraft.world.level.gameevent.GameEvent> gameEventTagKey = TagKey.create(net.minecraft.core.registries.Registries.GAME_EVENT, key);
+                if (net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT.get(gameEventTagKey).isPresent()) {
+                    return (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT, gameEventTagKey);
+                }
+            }
+            // Paper end
             default -> throw new IllegalArgumentException();
         }
 
@@ -2746,6 +2755,13 @@ public final class CraftServer implements Server {
                 net.minecraft.core.Registry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
                 return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
+            // Paper start
+            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
+                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class);
+                net.minecraft.core.Registry<net.minecraft.world.level.gameevent.GameEvent> gameEvents = net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT;
+                return gameEvents.getTags().map(pair -> (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(gameEvents, pair.key())).collect(ImmutableList.toImmutableList());
+            }
+            // Paper end
             default -> throw new IllegalArgumentException();
         }
     }
