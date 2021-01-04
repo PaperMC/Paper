@@ -1,6 +1,33 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -340,7 +340,13 @@
+@@ -292,8 +292,26 @@
+             });
+             state.spawnAfterBreak((ServerLevel) world, pos, ItemStack.EMPTY, true);
+         }
++
++    }
+ 
++    // Paper start - Add BlockBreakBlockEvent
++    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
++        if (levelAccessor instanceof ServerLevel serverLevel) {
++            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
++            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
++                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
++            }
++            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            event.callEvent();
++            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
++                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
++            }
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++        }
++        return true;
+     }
++    // Paper end - Add BlockBreakBlockEvent
+ 
+     public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
+         if (world instanceof ServerLevel) {
+@@ -340,7 +358,13 @@
                  ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
  
                  entityitem.setDefaultPickUpDelay();
@@ -15,7 +42,7 @@
                  return;
              }
          }
-@@ -348,8 +354,13 @@
+@@ -348,8 +372,13 @@
      }
  
      public void popExperience(ServerLevel world, BlockPos pos, int size) {
@@ -30,7 +57,7 @@
          }
  
      }
-@@ -369,7 +380,7 @@
+@@ -369,7 +398,7 @@
  
      public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
          player.awardStat(Stats.BLOCK_MINED.get(this));
@@ -39,7 +66,7 @@
          Block.dropResources(state, world, pos, blockEntity, player, tool);
      }
  
-@@ -490,15 +501,35 @@
+@@ -490,15 +519,35 @@
          return this.builtInRegistryHolder;
      }
  
