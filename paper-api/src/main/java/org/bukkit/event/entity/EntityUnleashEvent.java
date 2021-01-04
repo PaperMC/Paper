@@ -6,11 +6,20 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called immediately prior to an entity being unleashed.
+ * <p>
+ * Cancelling this event when either:
+ * <ul>
+ *     <li>the leashed entity dies,</li>
+ *     <li>the entity changes dimension, or</li>
+ *     <li>the client has disconnected the leash</li>
+ * </ul>
+ * will have no effect.
  */
-public class EntityUnleashEvent extends EntityEvent {
+public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
     private static final HandlerList handlers = new HandlerList();
     private final UnleashReason reason;
     private boolean dropLeash; // Paper
+    private boolean cancelled; // Paper
 
     // Paper start - drop leash variable
     @Deprecated
@@ -52,6 +61,16 @@ public class EntityUnleashEvent extends EntityEvent {
      */
     public void setDropLeash(boolean dropLeash) {
         this.dropLeash = dropLeash;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
     // Paper end
 
