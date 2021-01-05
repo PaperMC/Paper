@@ -35,30 +35,33 @@ diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -0,0 +0,0 @@ public class PaperCommand extends Command {
+@@ -0,0 +0,0 @@ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.Entity;
+ import net.minecraft.server.EntityTypes;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.PlayerChunk;
+ import net.minecraft.server.WorldServer;
+ import org.apache.commons.lang3.tuple.MutablePair;
+ import org.apache.commons.lang3.tuple.Pair;
+@@ -0,0 +0,0 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo").build();
+ 
      public PaperCommand(String name) {
          super(name);
-         this.description = "Paper related commands";
--        this.usageMessage = "/paper [heap | entity | reload | version]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
-         this.setPermission("bukkit.command.paper");
-     }
- 
-     @Override
-     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-         if (args.length <= 1)
--            return getListMatchingLast(args, "heap", "entity", "reload", "version");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
- 
-         switch (args[0].toLowerCase(Locale.ENGLISH))
-         {
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
                  if (args.length == 3)
-                     return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
+                     return getListMatchingLast(sender, args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
                  break;
 +            case "debug":
 +                if (args.length == 2) {
-+                    return getListMatchingLast(args, "help", "chunks");
++                    return getListMatchingLast(sender, args, "help", "chunks");
 +                }
 +                break;
 +            case "chunkinfo":
@@ -68,7 +71,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    worldNames.add(world.getName());
 +                }
 +                if (args.length == 2) {
-+                    return getListMatchingLast(args, worldNames);
++                    return getListMatchingLast(sender, args, worldNames);
 +                }
 +                break;
          }
@@ -85,8 +88,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                doChunkInfo(sender, args);
 +                break;
              case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
          return true;
      }

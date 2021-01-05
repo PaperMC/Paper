@@ -10,6 +10,25 @@ diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+@@ -0,0 +0,0 @@ import com.google.common.collect.Maps;
+ import com.google.gson.JsonObject;
+ import com.google.gson.internal.Streams;
+ import com.google.gson.stream.JsonWriter;
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.Entity;
++import net.minecraft.server.EntityPlayer;
+ import net.minecraft.server.EntityTypes;
++import net.minecraft.server.LightEngineThreaded;
+ import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.PacketPlayOutLightUpdate;
+ import net.minecraft.server.PlayerChunk;
+ import net.minecraft.server.WorldServer;
+ import org.apache.commons.lang3.tuple.MutablePair;
 @@ -0,0 +0,0 @@ import org.bukkit.command.Command;
  import org.bukkit.command.CommandSender;
  import org.bukkit.craftbukkit.CraftServer;
@@ -18,23 +37,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.entity.Player;
  
  import java.io.File;
-@@ -0,0 +0,0 @@ public class PaperCommand extends Command {
+@@ -0,0 +0,0 @@ import java.io.PrintStream;
+ import java.io.StringWriter;
+ import java.time.LocalDateTime;
+ import java.time.format.DateTimeFormatter;
++import java.util.ArrayDeque;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.Deque;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Locale;
+@@ -0,0 +0,0 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo", "fixlight").build();
+ 
      public PaperCommand(String name) {
          super(name);
-         this.description = "Paper related commands";
--        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight]";
-         this.setPermission("bukkit.command.paper");
-     }
- 
-     @Override
-     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-         if (args.length <= 1)
--            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight");
- 
-         switch (args[0].toLowerCase(Locale.ENGLISH))
-         {
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
              case "syncloadinfo":
                  this.doSyncLoadInfo(sender, args);
@@ -43,8 +67,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                this.doFixLight(sender, args);
 +                break;
              case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
 @@ -0,0 +0,0 @@ public class PaperCommand extends Command {
          return true;
      }
