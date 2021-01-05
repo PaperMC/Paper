@@ -7,10 +7,29 @@ This lets you run /paper fixlight <chunkRadius> (max 5) to automatically
 fix all light data in the chunks.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 2079bb001ea2678f6181f913262a9b7731fae778..7367781d360a8eb3a1b22de5c0b57dd98e6763d6 100644
+index ebb17a2efde002f1384b5ad8f4f4576e9a3cc675..5f25167054d58d74c13d11ef2685ed83808ff31f 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -20,6 +20,7 @@ import org.bukkit.command.Command;
+@@ -11,13 +11,18 @@ import com.google.common.collect.Maps;
+ import com.google.gson.JsonObject;
+ import com.google.gson.internal.Streams;
+ import com.google.gson.stream.JsonWriter;
++import net.minecraft.server.BlockPosition;
++import net.minecraft.server.Chunk;
+ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.Entity;
++import net.minecraft.server.EntityPlayer;
+ import net.minecraft.server.EntityTypes;
++import net.minecraft.server.LightEngineThreaded;
+ import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.PacketPlayOutLightUpdate;
+ import net.minecraft.server.PlayerChunk;
+ import net.minecraft.server.WorldServer;
+ import org.apache.commons.lang3.tuple.MutablePair;
+@@ -30,6 +35,7 @@ import org.bukkit.command.Command;
  import org.bukkit.command.CommandSender;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
@@ -18,24 +37,29 @@ index 2079bb001ea2678f6181f913262a9b7731fae778..7367781d360a8eb3a1b22de5c0b57dd9
  import org.bukkit.entity.Player;
  
  import java.io.File;
-@@ -36,14 +37,14 @@ public class PaperCommand extends Command {
+@@ -38,10 +44,12 @@ import java.io.PrintStream;
+ import java.io.StringWriter;
+ import java.time.LocalDateTime;
+ import java.time.format.DateTimeFormatter;
++import java.util.ArrayDeque;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.Deque;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Locale;
+@@ -51,7 +59,7 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo", "fixlight").build();
+ 
      public PaperCommand(String name) {
          super(name);
-         this.description = "Paper related commands";
--        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight]";
-         this.setPermission("bukkit.command.paper");
-     }
- 
-     @Override
-     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-         if (args.length <= 1)
--            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight");
- 
-         switch (args[0].toLowerCase(Locale.ENGLISH))
-         {
-@@ -144,6 +145,9 @@ public class PaperCommand extends Command {
+@@ -172,6 +180,9 @@ public class PaperCommand extends Command {
              case "syncloadinfo":
                  this.doSyncLoadInfo(sender, args);
                  break;
@@ -43,9 +67,9 @@ index 2079bb001ea2678f6181f913262a9b7731fae778..7367781d360a8eb3a1b22de5c0b57dd9
 +                this.doFixLight(sender, args);
 +                break;
              case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -160,6 +164,77 @@ public class PaperCommand extends Command {
+@@ -189,6 +200,77 @@ public class PaperCommand extends Command {
          return true;
      }
  

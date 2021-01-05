@@ -32,33 +32,36 @@ https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528273&page=com.atlass
 https://bugs.mojang.com/browse/MC-141484?focusedCommentId=528577&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-528577
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 600b1a36bb1287af4c0d91e52b7a30e7a3588ce4..2522ec624c53ca0718a8abbcb9c96d104f2f67fa 100644
+index aa606e66c874d5147074b85cc9a5ceef71175740..7dfed07e54f1f0be0c01ee161f56dc421b91baaa 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -28,14 +28,14 @@ public class PaperCommand extends Command {
+@@ -10,8 +10,10 @@ import net.minecraft.server.ChunkCoordIntPair;
+ import net.minecraft.server.ChunkProviderServer;
+ import net.minecraft.server.Entity;
+ import net.minecraft.server.EntityTypes;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.PlayerChunk;
+ import net.minecraft.server.WorldServer;
+ import org.apache.commons.lang3.tuple.MutablePair;
+ import org.apache.commons.lang3.tuple.Pair;
+@@ -41,7 +43,7 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo").build();
+ 
      public PaperCommand(String name) {
          super(name);
-         this.description = "Paper related commands";
--        this.usageMessage = "/paper [heap | entity | reload | version]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug | chunkinfo]";
-         this.setPermission("bukkit.command.paper");
-     }
- 
-     @Override
-     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-         if (args.length <= 1)
--            return getListMatchingLast(args, "heap", "entity", "reload", "version");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "chunkinfo");
- 
-         switch (args[0].toLowerCase(Locale.ENGLISH))
-         {
-@@ -45,6 +45,21 @@ public class PaperCommand extends Command {
+@@ -69,6 +71,21 @@ public class PaperCommand extends Command {
                  if (args.length == 3)
-                     return getListMatchingLast(args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
+                     return getListMatchingLast(sender, args, EntityTypes.getEntityNameList().stream().map(MinecraftKey::toString).sorted().toArray(String[]::new));
                  break;
 +            case "debug":
 +                if (args.length == 2) {
-+                    return getListMatchingLast(args, "help", "chunks");
++                    return getListMatchingLast(sender, args, "help", "chunks");
 +                }
 +                break;
 +            case "chunkinfo":
@@ -68,13 +71,13 @@ index 600b1a36bb1287af4c0d91e52b7a30e7a3588ce4..2522ec624c53ca0718a8abbcb9c96d10
 +                    worldNames.add(world.getName());
 +                }
 +                if (args.length == 2) {
-+                    return getListMatchingLast(args, worldNames);
++                    return getListMatchingLast(sender, args, worldNames);
 +                }
 +                break;
          }
          return Collections.emptyList();
      }
-@@ -109,6 +124,12 @@ public class PaperCommand extends Command {
+@@ -135,6 +152,12 @@ public class PaperCommand extends Command {
              case "reload":
                  doReload(sender);
                  break;
@@ -85,9 +88,9 @@ index 600b1a36bb1287af4c0d91e52b7a30e7a3588ce4..2522ec624c53ca0718a8abbcb9c96d10
 +                doChunkInfo(sender, args);
 +                break;
              case "ver":
+                 if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-                 Command ver = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
-@@ -125,6 +146,114 @@ public class PaperCommand extends Command {
+@@ -152,6 +175,114 @@ public class PaperCommand extends Command {
          return true;
      }
  
