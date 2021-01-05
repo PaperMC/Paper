@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 5 Jan 2021 12:48:48 +0100
+Subject: [PATCH] Cache chunks for updating map items
+
+Co-authored-by: Yive <admin@yive.me>
+
+diff --git a/src/main/java/net/minecraft/server/ItemWorldMap.java b/src/main/java/net/minecraft/server/ItemWorldMap.java
+index 910d1b3788fa713cadf2c8a56f595282ba6c1247..658d3e2c46c1ae8dd19a2b71a90d454f8475b768 100644
+--- a/src/main/java/net/minecraft/server/ItemWorldMap.java
++++ b/src/main/java/net/minecraft/server/ItemWorldMap.java
+@@ -11,8 +11,20 @@ import org.bukkit.Bukkit;
+ import org.bukkit.event.server.MapInitializeEvent;
+ // CraftBukkit end
+ 
++// Paper start
++import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++// Paper end
++
+ public class ItemWorldMap extends ItemWorldMapBase {
+ 
++    private static final Long2ObjectOpenHashMap<Chunk>[] CACHED_MAPS = new Long2ObjectOpenHashMap[]{
++        new Long2ObjectOpenHashMap<Chunk>((8 << 0) * (8 << 0)),
++        new Long2ObjectOpenHashMap<Chunk>((8 << 1) * (8 << 1)),
++        new Long2ObjectOpenHashMap<Chunk>((8 << 2) * (8 << 2)),
++        new Long2ObjectOpenHashMap<Chunk>((8 << 3) * (8 << 3)),
++        new Long2ObjectOpenHashMap<Chunk>((8 << 4) * (8 << 4))
++    };
++
+     public ItemWorldMap(Item.Info item_info) {
+         super(item_info);
+     }
+@@ -67,7 +79,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
+ 
+     public void a(World world, Entity entity, WorldMap worldmap) {
+         if (world.getDimensionKey() == worldmap.map && entity instanceof EntityHuman) {
+-            int i = 1 << worldmap.scale;
++            int i = 1 << worldmap.scale; // Paper - diff on change
+             int j = worldmap.centerX;
+             int k = worldmap.centerZ;
+             int l = MathHelper.floor(entity.locX() - (double) j) / i + 64;
+@@ -83,6 +95,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
+             ++worldmap_worldmaphumantracker.b;
+             boolean flag = false;
+ 
++            Long2ObjectOpenHashMap<Chunk> chunkCache = CACHED_MAPS[worldmap.scale]; // Paper - acquiring locks is expensive; cache the chunks
+             for (int k1 = l - j1 + 1; k1 < l + j1; ++k1) {
+                 if ((k1 & 15) == (worldmap_worldmaphumantracker.b & 15) || flag) {
+                     flag = false;
+@@ -96,7 +109,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
+                             int k2 = (j / i + k1 - 64) * i;
+                             int l2 = (k / i + l1 - 64) * i;
+                             Multiset<MaterialMapColor> multiset = LinkedHashMultiset.create();
+-                            Chunk chunk = world.getChunkIfLoaded(new BlockPosition(k2, 0, l2)); // Paper - Maps shouldn't load chunks
++                            Chunk chunk = chunkCache.computeIfAbsent(ChunkCoordIntPair.pair(k2 >> 4, l2 >> 4), ignored -> world.getChunkIfLoaded(k2 >> 4, l2 >> 4)); // Paper - Maps shouldn't load chunks // Paper - acquiring locks is expensive; cache chunks
+ 
+                             if (chunk != null && !chunk.isEmpty()) { // Paper - Maps shouldn't load chunks
+                                 ChunkCoordIntPair chunkcoordintpair = chunk.getPos();
+@@ -201,6 +214,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
+                 }
+             }
+ 
++            chunkCache.clear(); // Paper - remove all references to the cached chunks so GC can handle them
+         }
+     }
+ 
