@@ -97,7 +97,7 @@ public enum Effect {
      */
     EXTINGUISH(1009, Type.SOUND),
     /**
-     * A song from a record. Needs the record item ID as additional info
+     * A song from a record. Needs the record {@link Material} as additional info.
      */
     RECORD_PLAY(1010, Type.SOUND, Material.class),
     /**
@@ -125,20 +125,20 @@ public enum Effect {
      */
     ZOMBIE_DESTROY_DOOR(1021, Type.SOUND),
     /**
-     * A visual smoke effect. Needs direction as additional info.
+     * A visual smoke effect. Needs a {@link BlockFace} direction as additional info.
      */
     SMOKE(2000, Type.VISUAL, BlockFace.class),
     /**
-     * Sound of a block breaking. Needs block ID as additional info.
+     * Sound of a block breaking. Needs {@link org.bukkit.block.data.BlockData} as additional info.
      */
-    STEP_SOUND(2001, Type.SOUND, Material.class),
+    STEP_SOUND(2001, Type.SOUND, org.bukkit.block.data.BlockData.class, Material.class), // Paper - block data is more correct, but the impl of the mtehods will still work with Material
     /**
-     * Visual effect of a splash potion breaking. Needs potion data value as
+     * Visual effect of a splash potion breaking. Needs {@link Color} data value as
      * additional info.
      */
     POTION_BREAK(2002, Type.VISUAL, Color.class),
     /**
-     * Visual effect of an instant splash potion breaking. Needs color data
+     * Visual effect of an instant splash potion breaking. Needs {@link Color} data
      * value as additional info.
      */
     INSTANT_POTION_BREAK(2007, Type.VISUAL, Color.class),
@@ -168,7 +168,9 @@ public enum Effect {
     PORTAL_TRAVEL(1032, Type.SOUND),
     /**
      * The sound played when launching an endereye
+     * @deprecated No longer exists
      */
+    @Deprecated(forRemoval = true, since = "1.21") // Paper
     ENDEREYE_LAUNCH(1003, Type.SOUND),
     /**
      * The sound played when launching a firework
@@ -177,7 +179,9 @@ public enum Effect {
     /**
      * Particles displayed when a villager grows a plant, data
      * is the number of particles
+     * @deprecated partially replaced by {@link #BEE_GROWTH}
      */
+    @Deprecated(forRemoval = true, since = "1.20.5") // Paper
     VILLAGER_PLANT_GROW(2005, Type.VISUAL, Integer.class),
     /**
      * The sound/particles used by the enderdragon's breath
@@ -319,7 +323,7 @@ public enum Effect {
      * The particles shown when a lightning hits a lightning rod or oxidized
      * copper.
      *
-     * Data is the axis at which the particle should be shown. If no data is
+     * Data is the {@link Axis} at which the particle should be shown. If no data is
      * provided it will show the particles at the block faces.
      */
     ELECTRIC_SPARK(3002, Type.VISUAL, Axis.class),
@@ -336,21 +340,124 @@ public enum Effect {
      * block.
      */
     OXIDISED_COPPER_SCRAPE(3005, Type.VISUAL),
+    // Paper start - add missing effects
+    /**
+     * The sound of a wither spawning
+     */
+    WITHER_SPAWNED(1023, Type.SOUND),
+    /**
+     * The sound of an ender dragon dying
+     */
+    ENDER_DRAGON_DEATH(1028, Type.SOUND),
+    /**
+     * The sound of an ender portal being created in the overworld
+     */
+    END_PORTAL_CREATED_IN_OVERWORLD(1038, Type.SOUND),
+
+    SOUND_STOP_JUKEBOX_SONG(1011, Type.SOUND),
+
+    CRAFTER_CRAFT(1049, Type.SOUND),
+
+    CRAFTER_FAIL(1050, Type.SOUND),
+
+    /**
+     * {@link BlockFace} param is the direction to shoot
+     */
+    SHOOT_WHITE_SMOKE(2010, Type.VISUAL, BlockFace.class),
+
+    /**
+     * {@link Integer} param is the number of particles
+     */
+    BEE_GROWTH(2011, Type.VISUAL, Integer.class),
+
+    /**
+     * {@link Integer} param is the number of particles
+     */
+    TURTLE_EGG_PLACEMENT(2012, Type.VISUAL, Integer.class),
+
+    /**
+     * {@link Integer} param is relative to the number of particles
+     */
+    SMASH_ATTACK(2013, Type.VISUAL, Integer.class),
+
+    PARTICLES_SCULK_CHARGE(3006, Type.VISUAL, Integer.class),
+
+    PARTICLES_SCULK_SHRIEK(3007, Type.SOUND),
+
+    /**
+     * Requires a {@link org.bukkit.block.data.BlockData} param
+     */
+    PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE(3008, Type.VISUAL, org.bukkit.block.data.BlockData.class),
+
+    PARTICLES_EGG_CRACK(3009, Type.VISUAL),
+
+    @Deprecated(forRemoval = true, since = "1.20.5")
+    GUST_DUST(3010, Type.VISUAL),
+
+    /**
+     * {@link Boolean} param is true for "ominous" vaults
+     */
+    TRIAL_SPAWNER_SPAWN(3011, Type.VISUAL, Boolean.class),
+
+    /**
+     * {@link Boolean} param is true for "ominous" vaults
+     */
+    TRIAL_SPAWNER_SPAWN_MOB_AT(3012, Type.VISUAL, Boolean.class),
+
+    /**
+     * {@link Integer} param is the number of players
+     */
+    TRIAL_SPAWNER_DETECT_PLAYER(3013, Type.VISUAL, Integer.class),
+
+    TRIAL_SPAWNER_EJECT_ITEM(3014, Type.VISUAL),
+
+    /**
+     * {@link Boolean} param is true for "ominous" vaults
+     */
+    VAULT_ACTIVATE(3015, Type.VISUAL, Boolean.class),
+
+    /**
+     * {@link Boolean} param is true for "ominous" vaults
+     */
+    VAULT_DEACTIVATE(3016, Type.VISUAL, Boolean.class),
+
+    VAULT_EJECT_ITEM(3017, Type.VISUAL),
+
+    SPAWN_COBWEB(3018, Type.VISUAL),
+
+    /**
+     * {@link Integer} param is the number of players
+     */
+    TRIAL_SPAWNER_DETECT_PLAYER_OMINOUS(3019, Type.VISUAL, Integer.class),
+
+    /**
+     * {@link Boolean} param is true for changing to "ominous"
+     */
+    TRIAL_SPAWNER_BECOME_OMINOUS(3020, Type.VISUAL, Boolean.class),
+
+    /**
+     * {@link Boolean} param is true for "ominous" vaults
+     */
+    TRIAL_SPAWNER_SPAWN_ITEM(3021, Type.VISUAL, Boolean.class),
+
+    SOUND_WITH_CHARGE_SHOT(1051, Type.SOUND),
     ;
+    private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
+    // Paper end
 
     private final int id;
     private final Type type;
-    private final Class<?> data;
+    private final java.util.List<Class<?>> data; // Paper - support multiple data types
     private static final Map<Integer, Effect> BY_ID = Maps.newHashMap();
 
     Effect(int id, /*@NotNull*/ Type type) {
-        this(id, type, null);
+        this(id, type, (Class<?>[]) null); // Paper - support multiple data types
     }
 
-    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?> data) {
+    Effect(int id, /*@NotNull*/ Type type, /*@Nullable*/ Class<?>...data) { // Paper - support multiple data types
         this.id = id;
         this.type = type;
-        this.data = data;
+        this.data = data != null ? java.util.List.of(data) : null; // Paper - support multiple data types
     }
 
     /**
@@ -366,8 +473,10 @@ public enum Effect {
 
     /**
      * @return The type of the effect.
+     * @deprecated some effects can be both or neither
      */
     @NotNull
+    @Deprecated // Paper - both
     public Type getType() {
         return this.type;
     }
@@ -378,8 +487,15 @@ public enum Effect {
      */
     @Nullable
     public Class<?> getData() {
-        return this.data;
+        return this.data == null ? null : this.data.get(0); // Paper
     }
+
+    // Paper start - support deprecated data types
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public boolean isApplicable(Object obj) {
+        return this.data != null && com.google.common.collect.Iterables.any(this.data, aClass -> aClass.isAssignableFrom(obj.getClass()));
+    }
+    // Paper end - support deprecated data types
 
     /**
      * Gets the Effect associated with the given ID.
@@ -396,12 +512,26 @@ public enum Effect {
 
     static {
         for (Effect effect : values()) {
+            if (!isDeprecated(effect)) // Paper
             BY_ID.put(effect.id, effect);
         }
     }
 
+    // Paper start
+    private static boolean isDeprecated(Effect effect) {
+        try {
+            return Effect.class.getDeclaredField(effect.name()).isAnnotationPresent(Deprecated.class);
+        } catch (NoSuchFieldException e) {
+            LOGGER.error("Error getting effect enum field {}", effect.name(), e);
+            return false;
+        }
+    }
+    // Paper end
+
     /**
      * Represents the type of an effect.
+     * @deprecated not representative of what Effect does
      */
+    @Deprecated // Paper
     public enum Type { SOUND, VISUAL }
 }
