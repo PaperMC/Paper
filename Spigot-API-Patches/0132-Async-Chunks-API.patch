@@ -8,10 +8,10 @@ Adds API's to load or generate chunks asynchronously.
 Also adds utility methods to Entity to teleport asynchronously.
 
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd87418526170054047977da4 100644
+index a09cbfa277c82522be406ef079aa32d921c67799..d7367f6819fa0feb535293da301da862f0dd850e 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -221,6 +221,467 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -221,6 +221,482 @@ public interface World extends PluginMessageRecipient, Metadatable {
      public default Chunk getChunkAt(long chunkKey) {
          return getChunkAt((int) chunkKey, (int) (chunkKey >> 32));
      }
@@ -63,7 +63,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
 +     */
 +    @Deprecated
 +    public default void getChunkAtAsync(int x, int z, @NotNull ChunkLoadCallback cb) {
-+        getChunkAtAsync(x, z, true).thenAccept(cb::onLoad);
++        getChunkAtAsync(x, z, true).thenAccept(cb::onLoad).exceptionally((ex) -> {
++            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
++            return null;
++        });
 +    }
 +
 +    /**
@@ -86,7 +89,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
 +     */
 +    @Deprecated
 +    public default void getChunkAtAsync(@NotNull Location loc, @NotNull ChunkLoadCallback cb) {
-+        getChunkAtAsync(loc, true).thenAccept(cb::onLoad);
++        getChunkAtAsync(loc, true).thenAccept(cb::onLoad).exceptionally((ex) -> {
++            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
++            return null;
++        });
 +    }
 +
 +    /**
@@ -109,7 +115,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
 +     */
 +    @Deprecated
 +    public default void getChunkAtAsync(@NotNull Block block, @NotNull ChunkLoadCallback cb) {
-+        getChunkAtAsync(block, true).thenAccept(cb::onLoad);
++        getChunkAtAsync(block, true).thenAccept(cb::onLoad).exceptionally((ex) -> {
++            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
++            return null;
++        });
 +    }
 +
 +    /**
@@ -131,7 +140,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
 +     *           will be executed synchronously
 +     */
 +    public default void getChunkAtAsync(int x, int z, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(x, z, true).thenAccept(cb);
++        getChunkAtAsync(x, z, true).thenAccept(cb).exceptionally((ex) -> {
++            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
++            return null;
++        });
 +    }
 +
 +    /**
@@ -154,7 +166,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
 +     *           will be executed synchronously
 +     */
 +    public default void getChunkAtAsync(int x, int z, boolean gen, @NotNull java.util.function.Consumer<Chunk> cb) {
-+        getChunkAtAsync(x, z, gen).thenAccept(cb);
++        getChunkAtAsync(x, z, gen).thenAccept(cb).exceptionally((ex) -> {
++            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception in chunk load callback", ex);
++            return null;
++        });
 +    }
 +
 +    /**
@@ -480,10 +495,10 @@ index ff132bd7677e384debf2399ba9b1ffdb932541e9..a260f31d1bc00b6bd874185261700540
  
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 5a8f833ddd488cb1d3f817aadbd67e9850b26681..06f41958b98d9f105a9735509b4eb50ebf0fbf60 100644
+index cd46036960aac542a3ced9a8cdfcb1d35913cb76..71bda0f3be3c0b8b7fbb95e564101330d91f90c0 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -156,6 +156,33 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -163,6 +163,33 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      public boolean teleport(@NotNull Entity destination, @NotNull TeleportCause cause);
  

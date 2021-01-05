@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 20:46:14 -0400
+Subject: [PATCH] Configurable Chunk Inhabited Time
+
+Vanilla stores how long a chunk has been active on a server, and dynamically scales some
+aspects of vanilla gameplay to this factor.
+
+For people who want all chunks to be treated equally, you can chose a fixed value.
+
+This allows to fine-tune vanilla gameplay.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7ed3bcd7b1ef1a371ad1a4c38f183cef022a5363..4faedee40c731920d6fc0e032df71f8118ba9dbf 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -236,4 +236,14 @@ public class PaperWorldConfig {
+             skeleHorseSpawnChance = 0.01D; // Vanilla value
+         }
+     }
++
++    public int fixedInhabitedTime;
++    private void fixedInhabitedTime() {
++        if (PaperConfig.version < 16) {
++            if (!config.getBoolean("world-settings.default.use-chunk-inhabited-timer", true)) config.set("world-settings.default.fixed-chunk-inhabited-time", 0);
++            if (!config.getBoolean("world-settings." + worldName + ".use-chunk-inhabited-timer", true)) config.set("world-settings." + worldName + ".fixed-chunk-inhabited-time", 0);
++            set("use-chunk-inhabited-timer", null);
++        }
++        fixedInhabitedTime = getInt("fixed-chunk-inhabited-time", -1);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 7607b0e195611488f3007e91e63f6e30fb636213..bc8eb90c154a3c95f38e275058b620f4c433ac9b 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -983,7 +983,7 @@ public class Chunk implements IChunkAccess {
+ 
+     @Override
+     public long getInhabitedTime() {
+-        return this.inhabitedTime;
++        return world.paperConfig.fixedInhabitedTime < 0 ? this.inhabitedTime : world.paperConfig.fixedInhabitedTime; // Paper
+     }
+ 
+     @Override

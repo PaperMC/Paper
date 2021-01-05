@@ -4,13 +4,13 @@ gitcmd="git -c commit.gpgsign=false"
 
 color() {
     if [ $2 ]; then
-            echo -e "\e[$1;$2m"
+            printf "\e[$1;$2m"
     else
-            echo -e "\e[$1m"
+            printf "\e[$1m"
     fi
 }
 colorend() {
-    echo -e "\e[m"
+    printf "\e[m"
 }
 
 paperstash() {
