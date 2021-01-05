@@ -6,10 +6,18 @@ Subject: [PATCH] Paper dumpitem command
 Let's you quickly view the item in your hands NBT data
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f60800c3bc06a38493e17b00b815f18cb87cc8bf..0abfe19e204d20af0f8dedbeedb0ef98dfe9d3c8 100644
+index 0619e6d0901ecd656aebd66522c08379916a8b78..46b5d07be1e187129fa7f2dd62397ed34b4a9e15 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -21,7 +21,9 @@ import org.bukkit.command.CommandSender;
+@@ -22,6 +22,7 @@ import net.minecraft.server.LightEngineThreaded;
+ import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftKey;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.NBTTagCompound;
+ import net.minecraft.server.PacketPlayOutLightUpdate;
+ import net.minecraft.server.PlayerChunk;
+ import net.minecraft.server.WorldServer;
+@@ -36,7 +37,9 @@ import org.bukkit.command.CommandSender;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.CraftWorld;
  import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -19,24 +27,16 @@ index f60800c3bc06a38493e17b00b815f18cb87cc8bf..0abfe19e204d20af0f8dedbeedb0ef98
  
  import java.io.File;
  import java.io.FileOutputStream;
-@@ -37,14 +39,14 @@ public class PaperCommand extends Command {
+@@ -59,7 +62,7 @@ import java.util.stream.Collectors;
+ 
+ public class PaperCommand extends Command {
+     private static final String BASE_PERM = "bukkit.command.paper.";
+-    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo", "fixlight").build();
++    private static final ImmutableSet<String> SUBCOMMANDS = ImmutableSet.<String>builder().add("heap", "entity", "reload", "version", "debug", "chunkinfo", "dumpwaiting", "syncloadinfo", "fixlight", "dumpitem").build();
+ 
      public PaperCommand(String name) {
          super(name);
-         this.description = "Paper related commands";
--        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight]";
-+        this.usageMessage = "/paper [heap | entity | reload | version | debug | dumpwaiting | chunkinfo | syncloadinfo | fixlight | dumpitem]";
-         this.setPermission("bukkit.command.paper");
-     }
- 
-     @Override
-     public List<String> tabComplete(CommandSender sender, String alias, String[] args, Location location) throws IllegalArgumentException {
-         if (args.length <= 1)
--            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight");
-+            return getListMatchingLast(args, "heap", "entity", "reload", "version", "debug", "dumpwaiting", "chunkinfo", "syncloadinfo", "fixlight", "dumpitem");
- 
-         switch (args[0].toLowerCase(Locale.ENGLISH))
-         {
-@@ -133,6 +135,9 @@ public class PaperCommand extends Command {
+@@ -168,6 +171,9 @@ public class PaperCommand extends Command {
              case "reload":
                  doReload(sender);
                  break;
@@ -46,15 +46,11 @@ index f60800c3bc06a38493e17b00b815f18cb87cc8bf..0abfe19e204d20af0f8dedbeedb0ef98
              case "debug":
                  doDebug(sender, args);
                  break;
-@@ -164,6 +169,23 @@ public class PaperCommand extends Command {
+@@ -200,6 +206,19 @@ public class PaperCommand extends Command {
          return true;
      }
  
 +    private void doDumpItem(CommandSender sender) {
-+        if (!(sender instanceof Player)) {
-+            sender.sendMessage("Only players can use this command");
-+            return;
-+        }
 +        ItemStack itemInHand = ((CraftPlayer) sender).getItemInHand();
 +        net.minecraft.server.ItemStack itemStack = CraftItemStack.asNMSCopy(itemInHand);
 +        NBTTagCompound tag = itemStack.getTag();
