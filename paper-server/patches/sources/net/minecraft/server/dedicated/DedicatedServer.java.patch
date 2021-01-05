@@ -144,7 +144,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -126,13 +203,27 @@
+@@ -126,13 +203,33 @@
              this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
@@ -158,6 +158,12 @@
 +        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
++        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
++        if (this.convertOldUsers()) {
++            this.getProfileCache().save(false); // Paper
++        }
++        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
++        // Paper end - fix converting txt to json file
 +        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
 +        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
 +        com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
@@ -173,17 +179,16 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -155,22 +246,35 @@
-             DedicatedServer.LOGGER.warn("Perhaps a server is already running on that port?");
+@@ -156,21 +253,31 @@
              return false;
          }
-+
+ 
 +        // CraftBukkit start
 +        // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // Spigot - moved up
 +        this.server.loadPlugins();
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
 +        // CraftBukkit end
- 
++
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
@@ -199,10 +204,9 @@
              DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
          }
  
-         if (this.convertOldUsers()) {
+-        if (this.convertOldUsers()) {
 -            this.getProfileCache().save();
-+            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
-         }
+-        }
  
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
@@ -212,7 +216,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +282,13 @@
+@@ -178,13 +285,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -228,7 +232,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -197,7 +301,7 @@
+@@ -197,7 +304,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -237,7 +241,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
  
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(DedicatedServer.LOGGER));
-@@ -215,6 +319,12 @@
+@@ -215,6 +322,12 @@
          }
      }
  
@@ -250,7 +254,7 @@
      @Override
      public boolean isSpawningMonsters() {
          return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
-@@ -227,7 +337,7 @@
+@@ -227,7 +340,7 @@
  
      @Override
      public void forceDifficulty() {
@@ -259,7 +263,7 @@
      }
  
      @Override
-@@ -286,13 +396,14 @@
+@@ -286,13 +399,14 @@
          }
  
          if (this.rconThread != null) {
@@ -276,7 +280,7 @@
      }
  
      @Override
-@@ -302,19 +413,29 @@
+@@ -302,19 +416,29 @@
      }
  
      @Override
@@ -312,7 +316,7 @@
          }
  
      }
-@@ -383,7 +504,7 @@
+@@ -383,7 +507,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -321,7 +325,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -453,7 +574,11 @@
+@@ -453,7 +577,11 @@
      public boolean enforceSecureProfile() {
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
  
@@ -334,7 +338,7 @@
      }
  
      @Override
-@@ -541,16 +666,52 @@
+@@ -541,16 +669,52 @@
  
      @Override
      public String getPluginNames() {
@@ -391,7 +395,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +821,15 @@
+@@ -660,4 +824,15 @@
              }
          }
      }
