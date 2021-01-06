@@ -15,7 +15,16 @@
  public class CampfireBlockEntity extends BlockEntity implements Clearable {
  
      private static final int BURN_COOL_SPEED = 2;
-@@ -63,7 +71,28 @@
+@@ -58,12 +66,36 @@
+ 
+                 if (blockEntity.cookingProgress[i] >= blockEntity.cookingTime[i]) {
+                     SingleRecipeInput singlerecipeinput = new SingleRecipeInput(itemstack);
+-                    ItemStack itemstack1 = (ItemStack) recipeMatchGetter.getRecipeFor(singlerecipeinput, world).map((recipeholder) -> {
++                    // Paper start - add recipe to cook events
++                    final Optional<RecipeHolder<CampfireCookingRecipe>> recipeHolderOptional = recipeMatchGetter.getRecipeFor(singlerecipeinput, world);
++                    ItemStack itemstack1 = (ItemStack) recipeHolderOptional.map((recipeholder) -> {
++                    // Paper end - add recipe to cook events
+                         return ((CampfireCookingRecipe) recipeholder.value()).assemble(singlerecipeinput, world.registryAccess());
                      }).orElse(itemstack);
  
                      if (itemstack1.isItemEnabled(world.enabledFeatures())) {
@@ -24,7 +33,7 @@
 +                        CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
 +                        org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
 +
-+                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result);
++                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result, (org.bukkit.inventory.CookingRecipe<?>) recipeHolderOptional.map(RecipeHolder::toBukkitRecipe).orElse(null)); // Paper - Add recipe to cook events
 +                        world.getCraftServer().getPluginManager().callEvent(blockCookEvent);
 +
 +                        if (blockCookEvent.isCancelled()) {
@@ -45,7 +54,7 @@
                          blockEntity.items.set(i, ItemStack.EMPTY);
                          world.sendBlockUpdated(pos, state, state, 3);
                          world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
-@@ -177,7 +206,11 @@
+@@ -177,7 +209,11 @@
                      return false;
                  }
  
