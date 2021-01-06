@@ -521,5 +521,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
         return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / 24000L);
     }
+
+    @Override
+    public org.bukkit.NamespacedKey getKey() {
+        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(this.getHandle().getLevel().dimension().location());
+    }
     // Paper end
 }

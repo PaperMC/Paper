@@ -1185,9 +1185,15 @@ public final class CraftServer implements Server {
         File folder = new File(this.getWorldContainer(), name);
         World world = this.getWorld(name);
 
-        if (world != null) {
-            return world;
+        // Paper start
+        World worldByKey = this.getWorld(creator.key());
+        if (world != null || worldByKey != null) {
+            if (world == worldByKey) {
+                return world;
+            }
+            throw new IllegalArgumentException("Cannot create a world with key " + creator.key() + " and name " + name + " one (or both) already match a world that exists");
         }
+        // Paper end
 
         if (folder.exists()) {
             Preconditions.checkArgument(folder.isDirectory(), "File (%s) exists and isn't a folder", name);
@@ -1313,7 +1319,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             worldKey = net.minecraft.world.level.Level.END;
         } else {
-            worldKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace(name.toLowerCase(Locale.ROOT)));
+            worldKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
         // If set to not keep spawn in memory (changed from default) then adjust rule accordingly
@@ -1408,6 +1414,15 @@ public final class CraftServer implements Server {
         }
         return null;
     }
+
+    // Paper start
+    @Override
+    public World getWorld(net.kyori.adventure.key.Key worldKey) {
+        ServerLevel worldServer = console.getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, io.papermc.paper.adventure.PaperAdventure.asVanilla(worldKey)));
+        if (worldServer == null) return null;
+        return worldServer.getWorld();
+    }
+    // Paper end
 
     public void addWorld(World world) {
         // Check if a World already exists with the UID.

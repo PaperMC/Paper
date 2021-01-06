@@ -538,6 +538,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public int nextEntityId() {
         return net.minecraft.world.entity.Entity.nextEntityId();
     }
+
+    @Override
+    public String getMainLevelName() {
+        return ((net.minecraft.server.dedicated.DedicatedServer) net.minecraft.server.MinecraftServer.getServer()).getProperties().levelName;
+    }
     // Paper end
 
     /**
