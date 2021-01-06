@@ -2083,14 +2083,34 @@ index 9f6e797d34e5ad21a496c89f5a45ddb0638d3adc..115ee3785b4e0ba6a235bbb31b643aa5
          @Override
          public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index adc926f25c938fc0ba25586206d7daf89c6b7773..9cc2e18e5371dd020303764b97cb2d8635d84df8 100644
+index adc926f25c938fc0ba25586206d7daf89c6b7773..11e40528badd6b769c374c89a0d647f2deaab8e6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-@@ -225,6 +225,58 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -1,7 +1,8 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
+ import com.google.common.collect.ImmutableList;
+-import com.google.common.collect.ImmutableMap.Builder;
++import com.google.common.collect.ImmutableMap; // Paper
++import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Map;
+@@ -225,6 +226,118 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          this.generation = (generation == null) ? null : generation.ordinal();
      }
  
 +    // Paper start
++    @Override
++    public net.kyori.adventure.text.Component title() {
++        return this.title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.title);
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component author() {
++        return this.author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.author);
++    }
++
 +    @Override
 +    public net.kyori.adventure.text.Component page(final int page) {
 +        Validate.isTrue(isValidPage(page), "Invalid page number");
@@ -2114,17 +2134,19 @@ index adc926f25c938fc0ba25586206d7daf89c6b7773..9cc2e18e5371dd020303764b97cb2d86
 +    }
 +
 +    @Override
-+    public void pages(List<net.kyori.adventure.text.Component> pages) {
++    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
 +        this.pages.clear();
 +        for (net.kyori.adventure.text.Component page : pages) {
 +            addPages(page);
 +        }
++        return this;
 +    }
 +
 +    @Override
-+    public void pages(net.kyori.adventure.text.Component... pages) {
++    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
 +        this.pages.clear();
 +        addPages(pages);
++        return this;
 +    }
 +
 +    @Override
@@ -2141,10 +2163,88 @@ index adc926f25c938fc0ba25586206d7daf89c6b7773..9cc2e18e5371dd020303764b97cb2d86
 +            this.pages.add(io.papermc.paper.adventure.PaperAdventure.asVanilla(page));
 +        }
 +    }
++
++    private CraftMetaBook(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, List<net.kyori.adventure.text.Component> pages) {
++        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(org.bukkit.Material.WRITABLE_BOOK));
++        this.title = title == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title);
++        this.author = author == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(author);
++        this.pages = pages.subList(0, Math.min(MAX_PAGES, pages.size())).stream().map(PaperAdventure::asVanilla).collect(java.util.stream.Collectors.toList());
++    }
++
++    static final class CraftMetaBookBuilder implements BookMetaBuilder {
++        private net.kyori.adventure.text.Component title = null;
++        private net.kyori.adventure.text.Component author = null;
++        private final List<net.kyori.adventure.text.Component> pages = new java.util.ArrayList<>();
++
++        @Override
++        public BookMetaBuilder title(net.kyori.adventure.text.Component title) {
++            this.title = title;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder author(net.kyori.adventure.text.Component author) {
++            this.author = author;
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder addPage(net.kyori.adventure.text.Component page) {
++            this.pages.add(page);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(net.kyori.adventure.text.Component... pages) {
++            java.util.Collections.addAll(this.pages, pages);
++            return this;
++        }
++
++        @Override
++        public BookMetaBuilder pages(java.util.Collection<net.kyori.adventure.text.Component> pages) {
++            this.pages.addAll(pages);
++            return this;
++        }
++
++        @Override
++        public BookMeta build() {
++            return new CraftMetaBook(title, author, pages);
++        }
++    }
 +    // Paper end
      @Override
      public String getPage(final int page) {
          Validate.isTrue(isValidPage(page), "Invalid page number");
+@@ -336,7 +449,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+     }
+ 
+     @Override
+-    Builder<String, Object> serialize(Builder<String, Object> builder) {
++    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         super.serialize(builder);
+ 
+         if (hasTitle()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+index 0ea7a9606b529ed6b8fa12d4e285e0eaea2fa93d..d8780baa7018617e27e99d00402669588a56a369 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
+@@ -1,6 +1,6 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
+-import com.google.common.collect.ImmutableMap.Builder;
++import com.google.common.collect.ImmutableMap; // Paper
+ import java.util.Map;
+ import net.minecraft.server.IChatBaseComponent;
+ import net.minecraft.server.IChatBaseComponent.ChatSerializer;
+@@ -118,7 +118,7 @@ class CraftMetaBookSigned extends CraftMetaBook implements BookMeta {
+     }
+ 
+     @Override
+-    Builder<String, Object> serialize(Builder<String, Object> builder) {
++    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
+         super.serialize(builder);
+         return builder;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index dec0db24ae611736c99158ba4cb11015ad4b8575..a6873d4237a55b0bbbd13c951c18a8c4f8b445c1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
@@ -2401,7 +2501,7 @@ index e3036fe23fa2be100044332c432d1ad5b4872823..d05959c7884d7ba19ff1a507c7d07c52
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
-index 0fba3d2a8d3bd7ec615d137e4625a7f357729d8d..c5aa30cda8e4218a1e77ff2b8f3dcb80ef5cf805 100644
+index 0fba3d2a8d3bd7ec615d137e4625a7f357729d8d..b900aaf66f25e41956e7a4370b887fd4ed530570 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftTeam.java
 @@ -27,6 +27,55 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
@@ -2443,7 +2543,7 @@ index 0fba3d2a8d3bd7ec615d137e4625a7f357729d8d..c5aa30cda8e4218a1e77ff2b8f3dcb80
 +        team.setSuffix(io.papermc.paper.adventure.PaperAdventure.asVanilla(suffix));
 +    }
 +    @Override
-+    public net.kyori.adventure.text.format.NamedTextColor color() throws IllegalStateException {
++    public net.kyori.adventure.text.format.TextColor color() throws IllegalStateException {
 +        CraftScoreboard scoreboard = checkState();
 +        if (team.getColor().getHexValue() == null) throw new IllegalStateException("Team colors must have hex values");
 +        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getHexValue());
