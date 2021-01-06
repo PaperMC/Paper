@@ -175,5 +175,10 @@ public interface UnsafeValues {
      * Use this when sending custom packets, so that there are no collisions on the client or server.
      */
     public int nextEntityId();
+
+    /**
+     * Just don't use it.
+     */
+    @org.jetbrains.annotations.NotNull String getMainLevelName();
     // Paper end
 }

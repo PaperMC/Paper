@@ -726,6 +726,28 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @Nullable
     public World getWorld(@NotNull UUID uid);
 
+    // Paper start
+    /**
+     * Gets the world from the given NamespacedKey
+     *
+     * @param worldKey the NamespacedKey of the world to retrieve
+     * @return a world with the given NamespacedKey, or null if none exists
+     */
+    @Nullable
+    default World getWorld(@NotNull NamespacedKey worldKey) {
+        return getWorld((net.kyori.adventure.key.Key) worldKey);
+    }
+
+    /**
+     * Gets the world from the given Key
+     *
+     * @param worldKey the Key of the world to retrieve
+     * @return a world with the given Key, or null if none exists
+     */
+    @Nullable
+    World getWorld(@NotNull net.kyori.adventure.key.Key worldKey);
+    // Paper end
+
     /**
      * Create a new virtual {@link WorldBorder}.
      * <p>

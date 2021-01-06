@@ -865,6 +865,29 @@ public final class Bukkit {
     public static World getWorld(@NotNull UUID uid) {
         return server.getWorld(uid);
     }
+    // Paper start
+    /**
+     * Gets the world from the given NamespacedKey
+     *
+     * @param worldKey the NamespacedKey of the world to retrieve
+     * @return a world with the given NamespacedKey, or null if none exists
+     */
+    @Nullable
+    public static World getWorld(@NotNull NamespacedKey worldKey) {
+        return server.getWorld(worldKey);
+    }
+
+    /**
+     * Gets the world from the given Key
+     *
+     * @param worldKey the Key of the world to retrieve
+     * @return a world with the given Key, or null if none exists
+     */
+    @Nullable
+    public static World getWorld(@NotNull net.kyori.adventure.key.Key worldKey) {
+        return server.getWorld(worldKey);
+    }
+    // Paper end
 
     /**
      * Create a new virtual {@link WorldBorder}.
