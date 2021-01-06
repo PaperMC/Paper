@@ -12,7 +12,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class FurnaceSmeltEvent extends BlockCookEvent {
 
+    @Deprecated // Paper
     public FurnaceSmeltEvent(@NotNull final Block furnace, @NotNull final ItemStack source, @NotNull final ItemStack result) {
         super(furnace, source, result);
     }
+    // Paper start
+    public FurnaceSmeltEvent(@NotNull final Block furnace, @NotNull final ItemStack source, @NotNull final ItemStack result, @org.jetbrains.annotations.Nullable org.bukkit.inventory.CookingRecipe<?> recipe) {
+        super(furnace, source, result, recipe);
+    }
+    // Paper end
 }

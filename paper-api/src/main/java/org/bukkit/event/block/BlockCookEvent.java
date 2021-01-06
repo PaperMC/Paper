@@ -14,12 +14,21 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
     private final ItemStack source;
     private ItemStack result;
     private boolean cancelled;
+    private final org.bukkit.inventory.CookingRecipe<?> recipe; // Paper
 
+    @Deprecated // Paper
     public BlockCookEvent(@NotNull final Block block, @NotNull final ItemStack source, @NotNull final ItemStack result) {
+        // Paper start
+        this(block, source, result, null);
+    }
+
+    public BlockCookEvent(@NotNull final Block block, @NotNull final ItemStack source, @NotNull final ItemStack result, @org.jetbrains.annotations.Nullable org.bukkit.inventory.CookingRecipe<?> recipe) {
+        // Paper end
         super(block);
         this.source = source;
         this.result = result;
         this.cancelled = false;
+        this.recipe = recipe; // Paper
     }
 
     /**
@@ -60,6 +69,18 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;
     }
+
+    // Paper start
+    /**
+     * Gets the cooking recipe associated with this event.
+     *
+     * @return the recipe
+     */
+    @org.jetbrains.annotations.Nullable
+    public org.bukkit.inventory.CookingRecipe<?> getRecipe() {
+        return recipe;
+    }
+    // Paper end
 
     @NotNull
     @Override
