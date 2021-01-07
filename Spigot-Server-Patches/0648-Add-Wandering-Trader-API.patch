@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: HexedHero <6012891+HexedHero@users.noreply.github.com>
+Date: Thu, 7 Jan 2021 03:59:31 +0000
+Subject: [PATCH] Add Wandering Trader API
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityVillagerTrader.java b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
+index f1a509063c09e603140c74255a3fb901693d2cc5..ab8de393e32ef05c5be83b886fdf09a0fa017f7c 100644
+--- a/src/main/java/net/minecraft/server/EntityVillagerTrader.java
++++ b/src/main/java/net/minecraft/server/EntityVillagerTrader.java
+@@ -14,6 +14,10 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
+     @Nullable
+     private BlockPosition bp;
+     private int bq;
++    // Paper start - Add WanderingTrader API
++    public boolean canDrinkPotion = true;
++    public boolean canDrinkMilk = true;
++    // Paper end
+ 
+     public EntityVillagerTrader(EntityTypes<? extends EntityVillagerTrader> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -24,10 +28,10 @@ public class EntityVillagerTrader extends EntityVillagerAbstract {
+     protected void initPathfinder() {
+         this.goalSelector.a(0, new PathfinderGoalFloat(this));
+         this.goalSelector.a(0, new PathfinderGoalUseItem<>(this, PotionUtil.a(new ItemStack(Items.POTION), Potions.INVISIBILITY), SoundEffects.ENTITY_WANDERING_TRADER_DISAPPEARED, (entityvillagertrader) -> {
+-            return this.world.isNight() && !entityvillagertrader.isInvisible();
++            return canDrinkPotion && this.world.isNight() && !entityvillagertrader.isInvisible(); // Paper - Add WanderingTrader API
+         }));
+         this.goalSelector.a(0, new PathfinderGoalUseItem<>(this, new ItemStack(Items.MILK_BUCKET), SoundEffects.ENTITY_WANDERING_TRADER_REAPPEARED, (entityvillagertrader) -> {
+-            return this.world.isDay() && entityvillagertrader.isInvisible();
++            return canDrinkMilk && this.world.isDay() && entityvillagertrader.isInvisible(); // Paper - Add WanderingTrader API
+         }));
+         this.goalSelector.a(1, new PathfinderGoalTradeWithPlayer(this));
+         this.goalSelector.a(1, new PathfinderGoalAvoidTarget<>(this, EntityZombie.class, 8.0F, 0.5D, 0.5D));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+index 795e6afd8195897df52dbf4abecb783d41eb426f..1cec48ed8add1d73dfe311429be7c034fb6f16d1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+@@ -25,4 +25,24 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
+     public EntityType getType() {
+         return EntityType.WANDERING_TRADER;
+     }
++
++    // Paper start - Add WanderingTrader API
++    @Override
++    public void setCanDrinkPotion(boolean bool) {
++        getHandle().canDrinkPotion = bool;
++    }
++
++    public boolean getCanDrinkPotion() {
++        return getHandle().canDrinkPotion;
++    }
++
++    @Override
++    public void setCanDrinkMilk(boolean bool) {
++        getHandle().canDrinkMilk = bool;
++    }
++
++    public boolean getCanDrinkMilk() {
++        return getHandle().canDrinkMilk;
++    }
++    // Paper end
+ }
