@@ -1,18 +1,34 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: egg82 <eggys82@gmail.com>
-Date: Sun, 1 Nov 2020 01:01:35 -0700
-Subject: [PATCH] Add API for Zstd/LZ4 support for region files (1.16 edition)
+Date: Thu, 7 Jan 2021 22:34:27 -0700
+Subject: [PATCH] Add Zstd/LZ4 support for region files
 
 Zstd using zstd-jni: https://github.com/luben/zstd-jni
 LZ4 using lz4-java: https://github.com/lz4/lz4-java
 
+Added new command-line option, --forceWrite, which will forcibly write the chunk/flush to disk regardless of whether or not the chunk has actually changed in a --forceUpgrade.
+New compression only happens when a chunk is saved, so running a --forceUpgrade AND --forceWrite may be desirable.
+
+New (hidden) config option for the compression method to use.
+There's a new option in PaperConfig (compression level) for Zstd which defaults to 6.
+There's a new option in PaperConfig (compression level) for Zlib which defaults to 5.
+Added a getter to the API to retrieve the current chunk compression method being used.
+
+Since the patch hooks Mojang's versioning system for new compression methods, it
+should be internally consistent, easily-updatable, and reversible with a --forceUpgrade AND a --forceWrite.
+
+This will likely conflict with plugins and programs expecting region files to be compressed using the current standard.
+
 diff --git a/src/main/java/io/papermc/paper/region/RegionCompressionType.java b/src/main/java/io/papermc/paper/region/RegionCompressionType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9f1cdd40a5f7cdf0ee7af732709f3bcdccbf7ca
+index 0000000000000000000000000000000000000000..bd654ebcb0054245756b2e294f45787640e8f1ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/region/RegionCompressionType.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,46 @@
 +package io.papermc.paper.region;
++
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +public enum RegionCompressionType {
 +    GZIP(1, "gzip"),
@@ -23,16 +39,18 @@ index 0000000000000000000000000000000000000000..a9f1cdd40a5f7cdf0ee7af732709f3bc
 +
 +    private final int type;
 +    private final String name;
-+    RegionCompressionType(int type, String name) {
++    RegionCompressionType(int type, @NotNull String name) {
 +        this.type = type;
 +        this.name = name;
 +    }
 +
 +    public int getType() { return type; }
 +
++    @NotNull
 +    public String getName() { return name; }
 +
-+    public static RegionCompressionType getFromName(String name) {
++    @Nullable
++    public static RegionCompressionType getFromName(@NotNull String name) {
 +        for (RegionCompressionType value : values()) {
 +            if (value.name.equalsIgnoreCase(name)) {
 +                return value;
@@ -41,6 +59,7 @@ index 0000000000000000000000000000000000000000..a9f1cdd40a5f7cdf0ee7af732709f3bc
 +        return null;
 +    }
 +
++    @Nullable
 +    public static RegionCompressionType getFromType(int type) {
 +        for (RegionCompressionType value : values()) {
 +            if (value.type == type) {
@@ -53,10 +72,10 @@ index 0000000000000000000000000000000000000000..a9f1cdd40a5f7cdf0ee7af732709f3bc
 +    public String toString() { return name; }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index bfe842364ee0a4bf39dacdbb6972477d57a4ef8a..bd473b1bb5e55ec99e02ebd43ed466fc42481950 100644
+index fecd7b14d317f55eb1ce7b5c6af9913917971427..57a15874b835bceb1500ac392ac32e522fc11e08 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -1783,6 +1783,17 @@ public final class Bukkit {
+@@ -1813,6 +1813,27 @@ public final class Bukkit {
      }
      // Paper end
  
@@ -66,8 +85,18 @@ index bfe842364ee0a4bf39dacdbb6972477d57a4ef8a..bd473b1bb5e55ec99e02ebd43ed466fc
 +     *
 +     * @return the current region compression type
 +     */
++    @NotNull
 +    public static io.papermc.paper.region.RegionCompressionType getRegionCompressionType() {
 +        return server.getRegionCompressionType();
++    }
++
++    /**
++     * Returns the current Zstd dictionary version.
++     *
++     * @return the current Zstd dictionary version
++     */
++    public static short getZstdDictVersion() {
++        return server.getZstdDictVersion();
 +    }
 +    // Paper end
 +
@@ -75,10 +104,10 @@ index bfe842364ee0a4bf39dacdbb6972477d57a4ef8a..bd473b1bb5e55ec99e02ebd43ed466fc
      public static Server.Spigot spigot() {
          return server.spigot();
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 7c0a788900c93c29d14d8c45ac5ae3317cf4a94e..ce09ea5ad03041cd358945830035abe7fce879e5 100644
+index 8e01e1bbb7cfd98b47dbdb3a0e132dafd1413de6..f81b0fa3ec35665d2944653e98f9efa9f99a9280 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -1556,4 +1556,13 @@ public interface Server extends PluginMessageRecipient {
+@@ -1582,4 +1582,21 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
      // Paper end
@@ -89,6 +118,14 @@ index 7c0a788900c93c29d14d8c45ac5ae3317cf4a94e..ce09ea5ad03041cd358945830035abe7
 +     *
 +     * @return the current region compression type
 +     */
++    @NotNull
 +    io.papermc.paper.region.RegionCompressionType getRegionCompressionType();
++
++    /**
++     * Returns the current Zstd dictionary version.
++     *
++     * @return the current Zstd dictionary version
++     */
++    short getZstdDictVersion();
 +    // Paper end
  }
