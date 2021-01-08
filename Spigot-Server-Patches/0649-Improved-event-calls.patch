@@ -1,0 +1,634 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rasmus <42215949+RasmusHD@users.noreply.github.com>
+Date: Thu, 7 Jan 2021 20:32:05 +0100
+Subject: [PATCH] Improved event calls
+
+This patch improves event calls by using the Bukkit singleton to call an event, eliminating the need to create extra objects.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 4534d22aec95cf247daf7575472acd0eba91a3c9..fea534a6706855ffa0b536517110df34989e0a56 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -227,7 +228,7 @@ public class CraftEventFactory {
+
+     // helper methods
+     private static boolean canBuild(World world, Player player, int x, int z) {
+-        int spawnSize = Bukkit.getServer().getSpawnRadius();
++        int spawnSize = Bukkit.getSpawnRadius(); // Paper - use Bukkit singleton; was Bukkit.getServer().getSpawnRadius();
+
+         if (world.getDimensionKey() != World.OVERWORLD) return true;
+         if (spawnSize <= 0) return true;
+@@ -241,7 +242,7 @@ public class CraftEventFactory {
+     }
+
+     public static <T extends Event> T callEvent(T event) {
+-        Bukkit.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was Bukkit.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -272,7 +273,7 @@ public class CraftEventFactory {
+         }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
+
+         PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.world, bed), bedEnterResult);
+-        Bukkit.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was Bukkit.getServer().getPluginManager().callEvent(event);
+
+         Result result = event.useBed();
+         if (result == Result.ALLOW) {
+@@ -318,7 +319,8 @@ public class CraftEventFactory {
+      */
+     public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(WorldServer world, EntityHuman who, EnumHand hand, List<BlockState> blockStates, int clickedX, int clickedY, int clickedZ) {
+         CraftWorld craftWorld = world.getWorld();
+-        CraftServer craftServer = world.getServer();
++        // Paper start - use Bukkit singleton
++        //CraftServer craftServer = world.getServer(); // no longer needed; see below
+         Player player = (Player) who.getBukkitEntity();
+
+         Block blockClicked = craftWorld.getBlockAt(clickedX, clickedY, clickedZ);
+@@ -332,7 +334,7 @@ public class CraftEventFactory {
+         }
+
+         org.bukkit.inventory.ItemStack item;
+-        //Paper start - add hand to BlockMultiPlaceEvent
++        //add hand to BlockMultiPlaceEvent
+         EquipmentSlot equipmentSlot;
+         if (hand == EnumHand.MAIN_HAND) {
+             item = player.getInventory().getItemInMainHand();
+@@ -343,15 +345,16 @@ public class CraftEventFactory {
+         }
+
+         BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, blockClicked, item, player, canBuild, equipmentSlot);
+-        //Paper end
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+
+     public static BlockPlaceEvent callBlockPlaceEvent(WorldServer world, EntityHuman who, EnumHand hand, BlockState replacedBlockState, int clickedX, int clickedY, int clickedZ) {
+         CraftWorld craftWorld = world.getWorld();
+-        CraftServer craftServer = world.getServer();
++        // Paper - use Bukkit singleton
++        //CraftServer craftServer = world.getServer(); // no longer needed; see below
+
+         Player player = (Player) who.getBukkitEntity();
+
+@@ -371,7 +374,8 @@ public class CraftEventFactory {
+         }
+
+         BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, item, player, canBuild, equipmentSlot);
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+@@ -397,7 +401,7 @@ public class CraftEventFactory {
+         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
+
+         EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), who, blockClicked, blockFace);
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+
+         return event;
+     }
+@@ -432,7 +436,8 @@ public class CraftEventFactory {
+         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
+         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
+
+-        CraftServer craftServer = (CraftServer) player.getServer();
++        // Paper start - use Bukkit singleton
++        //CraftServer craftServer = (CraftServer) player.getServer(); // no longer needed; see below
+
+         Block block = CraftBlock.at(world, changed);
+         Block blockClicked = CraftBlock.at(world, clicked);
+@@ -447,7 +452,8 @@ public class CraftEventFactory {
+             ((PlayerBucketEmptyEvent) event).setCancelled(!canBuild(world, player, changed.getX(), changed.getZ()));
+         }
+
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+@@ -470,12 +476,14 @@ public class CraftEventFactory {
+         Player player = (who == null) ? null : (Player) who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+
+-        CraftWorld craftWorld = (CraftWorld) player.getWorld();
+-        CraftServer craftServer = (CraftServer) player.getServer();
++        // Paper start - use Bukkit singleton
++        //CraftWorld craftWorld = (CraftWorld) player.getWorld(); // moved down
++        //CraftServer craftServer = (CraftServer) player.getServer(); // no longer needed; see below
+
+         Block blockClicked = null;
+         if (position != null) {
+-            blockClicked = craftWorld.getBlockAt(position.getX(), position.getY(), position.getZ());
++            //blockClicked = craftWorld.getBlockAt(position.getX(), position.getY(), position.getZ());
++            blockClicked = player.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+         } else {
+             switch (action) {
+                 case LEFT_CLICK_BLOCK:
+@@ -496,7 +504,8 @@ public class CraftEventFactory {
+         if (cancelledBlock) {
+             event.setUseInteractedBlock(Event.Result.DENY);
+         }
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+@@ -561,12 +570,14 @@ public class CraftEventFactory {
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+
+         CraftWorld craftWorld = (CraftWorld) player.getWorld();
+-        CraftServer craftServer = (CraftServer) player.getServer();
++        // Paper start - use Bukkit singleton
++        //CraftServer craftServer = (CraftServer) player.getServer(); // no longer needed
+
+         Block blockClicked = craftWorld.getBlockAt(x, y, z);
+
+         BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+@@ -651,10 +662,13 @@ public class CraftEventFactory {
+      * EntitySpawnEvent
+      */
+     public static EntitySpawnEvent callEntitySpawnEvent(Entity entity) {
+-        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
++        // Paper start - use Bukkit singleton
++        //org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity(); // no longer needed
+
+-        EntitySpawnEvent event = new EntitySpawnEvent(bukkitEntity);
+-        bukkitEntity.getServer().getPluginManager().callEvent(event);
++        //EntitySpawnEvent event = new EntitySpawnEvent(bukkitEntity);
++        EntitySpawnEvent event = new EntitySpawnEvent(entity.getBukkitEntity());
++        Bukkit.getPluginManager().callEvent(event); // was bukkitEntity.getServer().getPluginManager().callEvent(event);
++        // Paper end
+         return event;
+     }
+
+@@ -662,11 +676,14 @@ public class CraftEventFactory {
+      * CreatureSpawnEvent
+      */
+     public static CreatureSpawnEvent callCreatureSpawnEvent(EntityLiving entityliving, SpawnReason spawnReason) {
+-        LivingEntity entity = (LivingEntity) entityliving.getBukkitEntity();
+-        CraftServer craftServer = (CraftServer) entity.getServer();
++        // Paper start - use Bukkit singleton
++        //LivingEntity entity = (LivingEntity) entityliving.getBukkitEntity();
++        //CraftServer craftServer = (CraftServer) entity.getServer(); // no longer needed; see below
+
+-        CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
+-        craftServer.getPluginManager().callEvent(event);
++        //CreatureSpawnEvent event = new CreatureSpawnEvent(entity, spawnReason);
++        CreatureSpawnEvent event = new CreatureSpawnEvent((LivingEntity) entityliving.getBukkitEntity(), spawnReason);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+         return event;
+     }
+
+@@ -674,14 +691,17 @@ public class CraftEventFactory {
+      * EntityTameEvent
+      */
+     public static EntityTameEvent callEntityTameEvent(EntityInsentient entity, EntityHuman tamer) {
+-        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
++        // Paper start - use Bukkit singleton
++        //org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+         org.bukkit.entity.AnimalTamer bukkitTamer = (tamer != null ? tamer.getBukkitEntity() : null);
+-        CraftServer craftServer = (CraftServer) bukkitEntity.getServer();
++        //CraftServer craftServer = (CraftServer) bukkitEntity.getServer(); // no longer needed; see below
+
+         entity.persistent = true;
+
+-        EntityTameEvent event = new EntityTameEvent((LivingEntity) bukkitEntity, bukkitTamer);
+-        craftServer.getPluginManager().callEvent(event);
++        //EntityTameEvent event = new EntityTameEvent((LivingEntity) bukkitEntity, bukkitTamer);
++        EntityTameEvent event = new EntityTameEvent((LivingEntity) entity.getBukkitEntity(), bukkitTamer);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+         return event;
+     }
+
+@@ -689,12 +709,15 @@ public class CraftEventFactory {
+      * ItemSpawnEvent
+      */
+     public static ItemSpawnEvent callItemSpawnEvent(EntityItem entityitem) {
+-        org.bukkit.entity.Item entity = (org.bukkit.entity.Item) entityitem.getBukkitEntity();
+-        CraftServer craftServer = (CraftServer) entity.getServer();
++        // Paper start - use Bukkit singleton
++        //org.bukkit.entity.Item entity = (org.bukkit.entity.Item) entityitem.getBukkitEntity();
++        //CraftServer craftServer = (CraftServer) entity.getServer(); // no longer needed; see below
+
+-        ItemSpawnEvent event = new ItemSpawnEvent(entity);
++        //ItemSpawnEvent event = new ItemSpawnEvent(entity);
++        ItemSpawnEvent event = new ItemSpawnEvent((org.bukkit.entity.Item) entityitem.getBukkitEntity());
+
+-        craftServer.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was craftServer.getPluginManager().callEvent(event);
++        // Paper end
+         return event;
+     }
+
+@@ -706,7 +729,7 @@ public class CraftEventFactory {
+
+         ItemDespawnEvent event = new ItemDespawnEvent(entity, entity.getLocation());
+
+-        entity.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -792,9 +815,10 @@ public class CraftEventFactory {
+     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, List<org.bukkit.inventory.ItemStack> drops) {
+         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
+         EntityDeathEvent event = new EntityDeathEvent(entity, drops, victim.getExpReward());
+-        populateFields(victim, event); // Paper - make cancellable
+-        CraftWorld world = (CraftWorld) entity.getWorld();
+-        Bukkit.getServer().getPluginManager().callEvent(event);
++        // Paper start
++        populateFields(victim, event); // make cancellable
++        //CraftWorld world = (CraftWorld) entity.getWorld(); // moved down
++        Bukkit.getPluginManager().callEvent(event); // use Bukkit singleton; was Bukkit.getServer().getPluginManager().callEvent(event);
+
+-        // Paper start - make cancellable
++        // make cancellable
+         if (event.isCancelled()) {
+@@ -807,8 +831,8 @@ public class CraftEventFactory {
+         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+             if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
+
+-            world.dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
++            entity.getWorld().dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
+             if (stack instanceof CraftItemStack) stack.setAmount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe, but don't nuke bukkit stacks of manually added items
+         }
+
+         return event;
+@@ -818,9 +842,10 @@ public class CraftEventFactory {
+         CraftPlayer entity = victim.getBukkitEntity();
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
+         event.setKeepInventory(keepInventory);
+-        populateFields(victim, event); // Paper - make cancellable
+-        org.bukkit.World world = entity.getWorld();
+-        Bukkit.getServer().getPluginManager().callEvent(event);
++        // Paper start
++        populateFields(victim, event); // make cancellable
++        //org.bukkit.World world = entity.getWorld(); // moved down
++        Bukkit.getPluginManager().callEvent(event); // use Bukkit singleton; was Bukkit.getServer().getPluginManager().callEvent(event);
+         // Paper start - make cancellable
+         if (event.isCancelled()) {
+             return event;
+@@ -837,7 +862,7 @@ public class CraftEventFactory {
+         for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
+             if (stack == null || stack.getType() == Material.AIR) continue;
+
+-            world.dropItem(entity.getLocation(), stack);
++            entity.getWorld().dropItem(entity.getLocation(), stack); // Paper - was world.dropItem(entity.getLocation(), stack);
+         }
+
+         return event;
+@@ -901,7 +926,7 @@ public class CraftEventFactory {
+             }
+             event.setCancelled(cancelled);
+
+-            callEvent(event);
++            Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+@@ -926,7 +951,7 @@ public class CraftEventFactory {
+         } else if (source == DamageSource.OUT_OF_WORLD) {
+             EntityDamageEvent event = new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.VOID, modifiers, modifierFunctions);
+             event.setCancelled(cancelled);
+-            callEvent(event);
++            Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
+@@ -934,7 +959,7 @@ public class CraftEventFactory {
+         } else if (source == DamageSource.LAVA) {
+             EntityDamageEvent event = (new EntityDamageByBlockEvent(null, entity.getBukkitEntity(), DamageCause.LAVA, modifiers, modifierFunctions));
+             event.setCancelled(cancelled);
+-            callEvent(event);
++            Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
+@@ -954,7 +979,7 @@ public class CraftEventFactory {
+             }
+             EntityDamageEvent event = new EntityDamageByBlockEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
+             event.setCancelled(cancelled);
+-            callEvent(event);
++            Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
+@@ -978,7 +1003,7 @@ public class CraftEventFactory {
+             }
+             EntityDamageEvent event = new EntityDamageByEntityEvent(damager, entity.getBukkitEntity(), cause, modifiers, modifierFunctions);
+             event.setCancelled(cancelled);
+-            callEvent(event);
++            Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+             if (!event.isCancelled()) {
+                 event.getEntity().setLastDamageCause(event);
+             }
+@@ -1035,7 +1060,7 @@ public class CraftEventFactory {
+             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, modifiers, modifierFunctions);
+         }
+         event.setCancelled(cancelled);
+-        callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was callEvent(event);
+
+         if (!event.isCancelled()) {
+             event.getEntity().setLastDamageCause(event);
+@@ -1147,7 +1172,7 @@ public class CraftEventFactory {
+
+     public static FluidLevelChangeEvent callFluidLevelChangeEvent(World world, BlockPosition block, IBlockData newData) {
+         FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(world, block), CraftBlockData.fromData(newData));
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1157,27 +1182,27 @@ public class CraftEventFactory {
+
+     public static FoodLevelChangeEvent callFoodLevelChangeEvent(EntityHuman entity, int level, ItemStack item) {
+         FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item));
+-        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity pigzombie) {
+         PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) pigzombie.getBukkitEntity());
+-        pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        pig.getBukkitEntity().getServer().getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     // Paper start
+     public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent (Entity entity, Entity lightning, Entity changedEntity) {
+         com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
+-        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+     // Paper end
+
+     public static HorseJumpEvent callHorseJumpEvent(Entity horse, float power) {
+         HorseJumpEvent event = new HorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
+-        horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        horse.getBukkitEntity().getServer().getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1190,34 +1215,37 @@ public class CraftEventFactory {
+
+         EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity.getBukkitEntity(), block, CraftBlockData.fromData(newBlock));
+         event.setCancelled(cancelled);
+-        event.getEntity().getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was event.getEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static CreeperPowerEvent callCreeperPowerEvent(Entity creeper, Entity lightning, CreeperPowerEvent.PowerCause cause) {
+         CreeperPowerEvent event = new CreeperPowerEvent((Creeper) creeper.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), cause);
+-        creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static EntityTargetEvent callEntityTargetEvent(Entity entity, Entity target, EntityTargetEvent.TargetReason reason) {
+         EntityTargetEvent event = new EntityTargetEvent(entity.getBukkitEntity(), (target == null) ? null : target.getBukkitEntity(), reason);
+-        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static EntityTargetLivingEntityEvent callEntityTargetLivingEvent(Entity entity, EntityLiving target, EntityTargetEvent.TargetReason reason) {
+         EntityTargetLivingEntityEvent event = new EntityTargetLivingEntityEvent(entity.getBukkitEntity(), (target == null) ? null : (LivingEntity) target.getBukkitEntity(), reason);
+-        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPosition pos) {
+-        org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
+-        Block block = CraftBlock.at(entity.world, pos);
++        // Paper start - use Bukkit singleton
++        //org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
++        //Block block = CraftBlock.at(entity.world, pos);
+
+-        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block);
+-        entity1.getServer().getPluginManager().callEvent(event);
++        //EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block);
++        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity.getBukkitEntity(), CraftBlock.at(entity.world, pos));
++        Bukkit.getPluginManager().callEvent(event); // was entity1.getServer().getPluginManager().callEvent(event);
++        // Paper end
+
+         return event;
+     }
+@@ -1231,13 +1259,15 @@ public class CraftEventFactory {
+             player.playerConnection.handleContainerClose(new PacketPlayInCloseWindow(player.activeContainer.windowId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper
+         }
+
+-        CraftServer server = player.world.getServer();
++        // Paper start - use Bukkit singleton
++        //CraftServer server = player.world.getServer(); // no longer needed; see below
+         CraftPlayer craftPlayer = player.getBukkitEntity();
+         player.activeContainer.transferTo(container, craftPlayer);
+
+         InventoryOpenEvent event = new InventoryOpenEvent(container.getBukkitView());
+         event.setCancelled(cancelled);
+-        server.getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // was server.getPluginManager().callEvent(event);
++        // Paper end
+
+         if (event.isCancelled()) {
+             container.transferTo(player.activeContainer, craftPlayer);
+@@ -1303,7 +1333,7 @@ public class CraftEventFactory {
+         }
+
+         ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+     }
+
+     public static ExpBottleEvent callExpBottleEvent(Entity entity, int exp) {
+@@ -1315,13 +1345,13 @@ public class CraftEventFactory {
+
+     public static BlockRedstoneEvent callRedstoneChange(World world, BlockPosition pos, int oldCurrent, int newCurrent) {
+         BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), oldCurrent, newCurrent);
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static NotePlayEvent callNotePlayEvent(World world, BlockPosition pos, BlockPropertyInstrument instrument, int note) {
+         NotePlayEvent event = new NotePlayEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), org.bukkit.Instrument.getByType((byte) instrument.ordinal()), new org.bukkit.Note(note));
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1348,7 +1378,7 @@ public class CraftEventFactory {
+         }
+
+         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(block.getX(), block.getY(), block.getZ()), cause, igniter);
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1382,7 +1412,7 @@ public class CraftEventFactory {
+         }
+
+         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, bukkitIgniter);
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1391,13 +1421,13 @@ public class CraftEventFactory {
+         org.bukkit.entity.Entity igniter = explosion.source == null ? null : explosion.source.getBukkitEntity();
+
+         BlockIgniteEvent event = new BlockIgniteEvent(bukkitWorld.getBlockAt(x, y, z), IgniteCause.EXPLOSION, igniter);
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static BlockIgniteEvent callBlockIgniteEvent(World world, BlockPosition pos, IgniteCause cause, Entity igniter) {
+         BlockIgniteEvent event = new BlockIgniteEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), cause, igniter.getBukkitEntity());
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1413,13 +1443,13 @@ public class CraftEventFactory {
+     public static void handleInventoryCloseEvent(EntityHuman human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
+         // Paper end
+         InventoryCloseEvent event = new InventoryCloseEvent(human.activeContainer.getBukkitView(), reason); // Paper
+-        human.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was human.world.getServer().getPluginManager().callEvent(event);
+         human.activeContainer.transferTo(human.defaultContainer, human.getBukkitEntity());
+     }
+
+     public static ItemStack handleEditBookEvent(EntityPlayer player, int itemInHandIndex, ItemStack itemInHand, ItemStack newBookItem) {
+         PlayerEditBookEvent editBookEvent = new PlayerEditBookEvent(player.getBukkitEntity(), itemInHandIndex, (BookMeta) CraftItemStack.getItemMeta(itemInHand), (BookMeta) CraftItemStack.getItemMeta(newBookItem), newBookItem.getItem() == Items.WRITTEN_BOOK);
+-        player.world.getServer().getPluginManager().callEvent(editBookEvent);
++        Bukkit.getPluginManager().callEvent(editBookEvent); // Paper - use Bukkit singleton; was player.world.getServer().getPluginManager().callEvent(editBookEvent);
+
+         // If they've got the same item in their hand, it'll need to be updated.
+         if (itemInHand != null && itemInHand.getItem() == Items.WRITABLE_BOOK) {
+@@ -1437,13 +1467,13 @@ public class CraftEventFactory {
+
+     public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(EntityInsentient entity, EntityHuman player) {
+         PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity());
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(EntityInsentient entity, Entity leashHolder, EntityHuman player) {
+         PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity());
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1503,13 +1533,13 @@ public class CraftEventFactory {
+                 event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, material);
+             }
+         }
+-        entityHuman.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entityHuman.world.getServer().getPluginManager().callEvent(event);
+         return (Cancellable) event;
+     }
+
+     public static FireworkExplodeEvent callFireworkExplodeEvent(EntityFireworks firework) {
+         FireworkExplodeEvent event = new FireworkExplodeEvent((Firework) firework.getBukkitEntity());
+-        firework.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was firework.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1546,7 +1576,7 @@ public class CraftEventFactory {
+         } else {
+             event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
+         }
+-        event.callEvent();
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was event.callEvent();
+         event.getInventory().setItem(resultSlot, event.getResult());
+         container.notifyListeners();
+     }
+@@ -1563,25 +1593,25 @@ public class CraftEventFactory {
+         }
+
+         SpawnerSpawnEvent event = new SpawnerSpawnEvent(entity, (org.bukkit.block.CreatureSpawner) state);
+-        entity.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static EntityToggleGlideEvent callToggleGlideEvent(EntityLiving entity, boolean gliding) {
+         EntityToggleGlideEvent event = new EntityToggleGlideEvent((LivingEntity) entity.getBukkitEntity(), gliding);
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static EntityToggleSwimEvent callToggleSwimEvent(EntityLiving entity, boolean swimming) {
+         EntityToggleSwimEvent event = new EntityToggleSwimEvent((LivingEntity) entity.getBukkitEntity(), swimming);
+-        entity.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was entity.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(EntityAreaEffectCloud cloud, List<LivingEntity> entities) {
+         AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
+-        cloud.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was cloud.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+@@ -1597,17 +1627,21 @@ public class CraftEventFactory {
+         CraftItemStack bredWithStack = bredWith == null ? null : CraftItemStack.asCraftMirror(bredWith).clone();
+
+         EntityBreedEvent event = new EntityBreedEvent((LivingEntity) child.getBukkitEntity(), (LivingEntity) mother.getBukkitEntity(), (LivingEntity) father.getBukkitEntity(), breederEntity, bredWithStack, experience);
+-        child.world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was child.world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
+
+     public static BlockPhysicsEvent callBlockPhysicsEvent(GeneratorAccess world, BlockPosition blockposition) {
+         org.bukkit.block.Block block = CraftBlock.at(world, blockposition);
+         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
++
++        /* Paper start - use Bukkit singleton
+         // Suppress during worldgen
+         if (world instanceof World) {
+             ((World) world).getMinecraftServer().server.getPluginManager().callEvent(event);
+-        }
++        }*/
++        Bukkit.getPluginManager().callEvent(event);
++        // Paper end
+         return event;
+     }
+
+@@ -1661,7 +1695,7 @@ public class CraftEventFactory {
+         blockState.setData(block);
+
+         BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
+-        world.getServer().getPluginManager().callEvent(event);
++        Bukkit.getPluginManager().callEvent(event); // Paper - use Bukkit singleton; was world.getServer().getPluginManager().callEvent(event);
+
+         if (!event.isCancelled()) {
+             blockState.update(true);
