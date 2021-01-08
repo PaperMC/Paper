@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alvinn8 <42838560+Alvinn8@users.noreply.github.com>
+Date: Fri, 8 Jan 2021 20:31:13 +0100
+Subject: [PATCH] Add Adventure message to PlayerAdvancementDoneEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
+index c405047c00d354bbc1449fd2f917b73f980ef1a5..473246e69e89e897afcb0974d5f6deece2347a76 100644
+--- a/src/main/java/net/minecraft/server/Advancement.java
++++ b/src/main/java/net/minecraft/server/Advancement.java
+@@ -63,6 +63,7 @@ public class Advancement {
+         return this.parent;
+     }
+ 
++    public final @Nullable AdvancementDisplay getAdvancementDisplay() { return this.c(); } // Paper - OBFHELPER
+     @Nullable
+     public AdvancementDisplay c() {
+         return this.display;
+diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+index c680319e4040be2b60795b22a5e65d6444cc67ed..ed883511ea24ef0b8312b36e502b2084170f06ff 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
++++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
+@@ -30,6 +30,7 @@ import java.util.Set;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -294,10 +295,18 @@ public class AdvancementDataPlayer {
+             this.j.add(advancement);
+             flag = true;
+             if (!flag1 && advancementprogress.isDone()) {
+-                this.player.world.getServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
++                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                boolean announceToChat = advancement.getAdvancementDisplay() != null && advancement.getAdvancementDisplay().i();
++                net.kyori.adventure.text.Component message = announceToChat ? PaperAdventure.asAdventure(new ChatMessage("chat.type.advancement." + advancement.getAdvancementDisplay().e().a(), this.player.getScoreboardDisplayName(), advancement.j())) : null;
++                org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit, message);
++                this.player.world.getServer().getPluginManager().callEvent(event);
++                message = event.message();
++                // Paper end
+                 advancement.d().a(this.player);
+-                if (advancement.c() != null && advancement.c().i() && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
+-                    this.e.sendMessage(new ChatMessage("chat.type.advancement." + advancement.c().e().a(), new Object[]{this.player.getScoreboardDisplayName(), advancement.j()}), ChatMessageType.SYSTEM, SystemUtils.b);
++                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                if (message != null && this.player.world.getGameRules().getBoolean(GameRules.ANNOUNCE_ADVANCEMENTS)) {
++                    this.e.sendMessage(PaperAdventure.asVanilla(message), ChatMessageType.SYSTEM, SystemUtils.b);
++                    // Paper end
+                 }
+             }
+         }
