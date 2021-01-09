@@ -5,7 +5,7 @@ Subject: [PATCH] Add Adventure message to PlayerAdvancementDoneEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/Advancement.java b/src/main/java/net/minecraft/server/Advancement.java
-index c405047c00d354bbc1449fd2f917b73f980ef1a5..473246e69e89e897afcb0974d5f6deece2347a76 100644
+index c405047c00d354bbc1449fd2f917b73f980ef1a5..9675be96e0fb9eface1f66b08c68385db73d8051 100644
 --- a/src/main/java/net/minecraft/server/Advancement.java
 +++ b/src/main/java/net/minecraft/server/Advancement.java
 @@ -63,6 +63,7 @@ public class Advancement {
@@ -16,8 +16,16 @@ index c405047c00d354bbc1449fd2f917b73f980ef1a5..473246e69e89e897afcb0974d5f6deec
      @Nullable
      public AdvancementDisplay c() {
          return this.display;
+@@ -112,6 +113,7 @@ public class Advancement {
+         return this.requirements;
+     }
+ 
++    public final IChatBaseComponent toHoverableText() { return this.j(); } // Paper - OBFHELPER
+     public IChatBaseComponent j() {
+         return this.chatComponent;
+     }
 diff --git a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
-index c680319e4040be2b60795b22a5e65d6444cc67ed..ed883511ea24ef0b8312b36e502b2084170f06ff 100644
+index c680319e4040be2b60795b22a5e65d6444cc67ed..765eee6719144689b56325ace48f97ce5ec622aa 100644
 --- a/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
 +++ b/src/main/java/net/minecraft/server/AdvancementDataPlayer.java
 @@ -30,6 +30,7 @@ import java.util.Set;
@@ -34,8 +42,8 @@ index c680319e4040be2b60795b22a5e65d6444cc67ed..ed883511ea24ef0b8312b36e502b2084
              if (!flag1 && advancementprogress.isDone()) {
 -                this.player.world.getServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit)); // CraftBukkit
 +                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
-+                boolean announceToChat = advancement.getAdvancementDisplay() != null && advancement.getAdvancementDisplay().i();
-+                net.kyori.adventure.text.Component message = announceToChat ? PaperAdventure.asAdventure(new ChatMessage("chat.type.advancement." + advancement.getAdvancementDisplay().e().a(), this.player.getScoreboardDisplayName(), advancement.j())) : null;
++                boolean announceToChat = advancement.getAdvancementDisplay() != null && advancement.getAdvancementDisplay().shouldAnnounceToChat();
++                net.kyori.adventure.text.Component message = announceToChat ? PaperAdventure.asAdventure(new ChatMessage("chat.type.advancement." + advancement.getAdvancementDisplay().getFrameType().getId(), this.player.getScoreboardDisplayName(), advancement.toHoverableText())) : null;
 +                org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.bukkit, message);
 +                this.player.world.getServer().getPluginManager().callEvent(event);
 +                message = event.message();
@@ -50,3 +58,32 @@ index c680319e4040be2b60795b22a5e65d6444cc67ed..ed883511ea24ef0b8312b36e502b2084
                  }
              }
          }
+diff --git a/src/main/java/net/minecraft/server/AdvancementDisplay.java b/src/main/java/net/minecraft/server/AdvancementDisplay.java
+index b0d4b7a67679a35fa8f88c241193c0f3814f1e7b..84d42d03823f8ed3cabbc8b600489313fd892d6b 100644
+--- a/src/main/java/net/minecraft/server/AdvancementDisplay.java
++++ b/src/main/java/net/minecraft/server/AdvancementDisplay.java
+@@ -44,10 +44,12 @@ public class AdvancementDisplay {
+         return this.b;
+     }
+ 
++    public final AdvancementFrameType getFrameType() { return this.e(); } // Paper - OBFHELPER
+     public AdvancementFrameType e() {
+         return this.e;
+     }
+ 
++    public final boolean shouldAnnounceToChat() { return this.i(); } // Paper - OBFHELPER
+     public boolean i() {
+         return this.g;
+     }
+diff --git a/src/main/java/net/minecraft/server/AdvancementFrameType.java b/src/main/java/net/minecraft/server/AdvancementFrameType.java
+index 90b78e49c0688dc2fb02df0b6784cd82fad4bc07..d5068650724d728ccbbe70eddc8cd804ea00ecb6 100644
+--- a/src/main/java/net/minecraft/server/AdvancementFrameType.java
++++ b/src/main/java/net/minecraft/server/AdvancementFrameType.java
+@@ -16,6 +16,7 @@ public enum AdvancementFrameType {
+         this.g = new ChatMessage("advancements.toast." + s);
+     }
+ 
++    public final String getId() { return this.a(); } // Paper - OBFHELPER
+     public String a() {
+         return this.d;
+     }
