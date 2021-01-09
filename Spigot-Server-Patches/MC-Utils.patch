@@ -2428,7 +2428,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      private Consumer<Chunk> v;
 -    private final ChunkCoordIntPair loc;
-+    private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
++    private final ChunkCoordIntPair loc; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
      private volatile boolean x;
  
      public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
@@ -2437,7 +2437,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.entitySlices = (List[]) (new List[16]); // Spigot
          this.world = (WorldServer) world; // CraftBukkit - type
 -        this.loc = chunkcoordintpair;
-+        this.loc = chunkcoordintpair; this.coordinateKey = MCUtil.getCoordinateKey(chunkcoordintpair); // Paper - cache coordinate key
++        this.locX = chunkcoordintpair.x; this.locZ = chunkcoordintpair.z; // Paper - reduce need for field look ups
++        this.loc = chunkcoordintpair; this.coordinateKey = ChunkCoordIntPair.pair(locX, locZ); // Paper - cache long key
          this.i = chunkconverter;
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
          int j = aheightmap_type.length;
@@ -2777,13 +2778,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
 +
 +    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
-+    private final long[] lastLoadedChunkKeys = new long[4 * 4];
 +
-+    {
-+        java.util.Arrays.fill(this.lastLoadedChunkKeys, MCUtil.INVALID_CHUNK_KEY);
-+    }
-+
-+    private static int getCacheKey(int x, int z) {
++    private static int getChunkCacheKey(int x, int z) {
 +        return x & 3 | ((z & 3) << 2);
 +    }
 +
@@ -2797,12 +2793,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
-+            this.lastLoadedChunks[cacheKey] = chunk;
-+        }
++        this.lastLoadedChunks[cacheKey] = chunk;
 +    }
 +
 +    void removeLoadedChunk(Chunk chunk) {
@@ -2815,36 +2808,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.coordinateKey == chunk.coordinateKey) {
 +            this.lastLoadedChunks[cacheKey] = null;
 +        }
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThread(int x, int z) {
-+        int cacheKey = getCacheKey(x, z);
-+        long chunkKey = MCUtil.getCoordinateKey(x, z);
++    public final Chunk getChunkAtIfLoadedMainThread(int x, int z) {
++        int cacheKey = getChunkCacheKey(x, z);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunkKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.locX == x & cachedChunk.locZ == z) {
 +            return this.lastLoadedChunks[cacheKey];
 +        }
 +
-+        Chunk ret = this.loadedChunkMap.get(chunkKey);
++        long chunkKey = ChunkCoordIntPair.pair(x, z);
 +
-+        this.lastLoadedChunkKeys[cacheKey] = chunkKey;
-+        this.lastLoadedChunks[cacheKey] = ret;
-+
-+        return ret;
++        cachedChunk = this.loadedChunkMap.get(chunkKey);
++        // Skipping a null check to avoid extra instructions to improve inline capability
++        this.lastLoadedChunks[cacheKey] = cachedChunk;
++        return cachedChunk;
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
-+        return this.loadedChunkMap.get(MCUtil.getCoordinateKey(x, z));
++    public final Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
++        return this.loadedChunkMap.get(ChunkCoordIntPair.pair(x, z));
 +    }
 +
-+    public Chunk getChunkAtMainThread(int x, int z) {
++    public final Chunk getChunkAtMainThread(int x, int z) {
 +        Chunk ret = this.getChunkAtIfLoadedMainThread(x, z);
 +        if (ret != null) {
 +            return ret;
@@ -2889,7 +2881,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            throw new IllegalStateException();
 +        }
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
-+        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
++        Long identifier = this.chunkFutureAwaitCounter++;
 +        this.chunkMapDistance.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +        this.tickDistanceManager();
 +
@@ -4487,6 +4479,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         if (isOutsideWorld(blockposition)) {
+             return Blocks.VOID_AIR.getBlockData();
+         } else {
+-            Chunk chunk = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++            Chunk chunk = (Chunk) this.getChunkProvider().getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+ 
+             return chunk.getType(blockposition);
+         }
 diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/WorldBorder.java
