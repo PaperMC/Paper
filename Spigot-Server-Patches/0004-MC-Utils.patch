@@ -2411,7 +2411,7 @@ index 1b2f415e3ed7f6dca12d13cd098cb4ec3af54020..64e8088d394ddcda59d0209883b778ab
          @Override
          public BlockPosition immutableCopy() {
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee67667511 100644
+index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..8d5598fab64ce3ac58121302dca4b528edd26563 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -26,7 +26,7 @@ public class Chunk implements IChunkAccess {
@@ -2428,20 +2428,21 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
      @Nullable
      private Consumer<Chunk> v;
 -    private final ChunkCoordIntPair loc;
-+    private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
++    private final ChunkCoordIntPair loc; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
      private volatile boolean x;
  
      public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
-@@ -66,7 +66,7 @@ public class Chunk implements IChunkAccess {
+@@ -66,7 +66,8 @@ public class Chunk implements IChunkAccess {
          this.n = new ShortList[16];
          this.entitySlices = (List[]) (new List[16]); // Spigot
          this.world = (WorldServer) world; // CraftBukkit - type
 -        this.loc = chunkcoordintpair;
-+        this.loc = chunkcoordintpair; this.coordinateKey = MCUtil.getCoordinateKey(chunkcoordintpair); // Paper - cache coordinate key
++        this.locX = chunkcoordintpair.x; this.locZ = chunkcoordintpair.z; // Paper - reduce need for field look ups
++        this.loc = chunkcoordintpair; this.coordinateKey = ChunkCoordIntPair.pair(locX, locZ); // Paper - cache long key
          this.i = chunkconverter;
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
          int j = aheightmap_type.length;
-@@ -112,6 +112,110 @@ public class Chunk implements IChunkAccess {
+@@ -112,6 +113,110 @@ public class Chunk implements IChunkAccess {
      public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
      // CraftBukkit end
  
@@ -2552,7 +2553,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
      public Chunk(World world, ProtoChunk protochunk) {
          this(world, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.p(), protochunk.n(), protochunk.o(), protochunk.getInhabitedTime(), protochunk.getSections(), (Consumer) null);
          Iterator iterator = protochunk.y().iterator();
-@@ -217,6 +321,18 @@ public class Chunk implements IChunkAccess {
+@@ -217,6 +322,18 @@ public class Chunk implements IChunkAccess {
          }
      }
  
@@ -2571,7 +2572,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
      @Override
      public Fluid getFluid(BlockPosition blockposition) {
          return this.a(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-@@ -356,6 +472,7 @@ public class Chunk implements IChunkAccess {
+@@ -356,6 +473,7 @@ public class Chunk implements IChunkAccess {
          entity.chunkX = this.loc.x;
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
@@ -2579,7 +2580,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
          this.entitySlices[k].add(entity);
      }
  
-@@ -378,6 +495,7 @@ public class Chunk implements IChunkAccess {
+@@ -378,6 +496,7 @@ public class Chunk implements IChunkAccess {
          }
  
          this.entitySlices[i].remove(entity);
@@ -2587,7 +2588,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
      }
  
      @Override
-@@ -399,6 +517,7 @@ public class Chunk implements IChunkAccess {
+@@ -399,6 +518,7 @@ public class Chunk implements IChunkAccess {
          return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
      }
  
@@ -2595,7 +2596,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
          // CraftBukkit start
-@@ -510,7 +629,25 @@ public class Chunk implements IChunkAccess {
+@@ -510,7 +630,25 @@ public class Chunk implements IChunkAccess {
  
      // CraftBukkit start
      public void loadCallback() {
@@ -2621,7 +2622,7 @@ index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..4e1e7cb088f1b5d07ace5025c486f2ee
          if (server != null) {
              /*
               * If it's a new world, the first few chunks are generated inside
-@@ -549,6 +686,22 @@ public class Chunk implements IChunkAccess {
+@@ -549,6 +687,22 @@ public class Chunk implements IChunkAccess {
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
@@ -2745,7 +2746,7 @@ index ae61d0a7676bf06c8c9aa5c68ccb8dd4baf326b6..b12e43ed13a1a9d7d418831b8988c30a
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248524a1831 100644
+index 84407dfd46138359d42ddf8fd5c462a5f494d46b..20f62f6f7704f47f86179d03b4e55a61e0149627 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -17,6 +17,10 @@ import java.util.function.Consumer;
@@ -2768,7 +2769,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
      private final LightEngineThreaded lightEngine;
      private final ChunkProviderServer.a serverThreadQueue;
      public final PlayerChunkMap playerChunkMap;
-@@ -37,6 +41,167 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -37,6 +41,158 @@ public class ChunkProviderServer extends IChunkProvider {
      private final IChunkAccess[] cacheChunk = new IChunkAccess[4];
      @Nullable
      private SpawnerCreature.d p;
@@ -2777,13 +2778,8 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
 +    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
 +
 +    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
-+    private final long[] lastLoadedChunkKeys = new long[4 * 4];
 +
-+    {
-+        java.util.Arrays.fill(this.lastLoadedChunkKeys, MCUtil.INVALID_CHUNK_KEY);
-+    }
-+
-+    private static int getCacheKey(int x, int z) {
++    private static int getChunkCacheKey(int x, int z) {
 +        return x & 3 | ((z & 3) << 2);
 +    }
 +
@@ -2797,12 +2793,9 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
-+            this.lastLoadedChunks[cacheKey] = chunk;
-+        }
++        this.lastLoadedChunks[cacheKey] = chunk;
 +    }
 +
 +    void removeLoadedChunk(Chunk chunk) {
@@ -2815,36 +2808,35 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.coordinateKey == chunk.coordinateKey) {
 +            this.lastLoadedChunks[cacheKey] = null;
 +        }
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThread(int x, int z) {
-+        int cacheKey = getCacheKey(x, z);
-+        long chunkKey = MCUtil.getCoordinateKey(x, z);
++    public final Chunk getChunkAtIfLoadedMainThread(int x, int z) {
++        int cacheKey = getChunkCacheKey(x, z);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunkKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.locX == x & cachedChunk.locZ == z) {
 +            return this.lastLoadedChunks[cacheKey];
 +        }
 +
-+        Chunk ret = this.loadedChunkMap.get(chunkKey);
++        long chunkKey = ChunkCoordIntPair.pair(x, z);
 +
-+        this.lastLoadedChunkKeys[cacheKey] = chunkKey;
-+        this.lastLoadedChunks[cacheKey] = ret;
-+
-+        return ret;
++        cachedChunk = this.loadedChunkMap.get(chunkKey);
++        // Skipping a null check to avoid extra instructions to improve inline capability
++        this.lastLoadedChunks[cacheKey] = cachedChunk;
++        return cachedChunk;
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
-+        return this.loadedChunkMap.get(MCUtil.getCoordinateKey(x, z));
++    public final Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
++        return this.loadedChunkMap.get(ChunkCoordIntPair.pair(x, z));
 +    }
 +
-+    public Chunk getChunkAtMainThread(int x, int z) {
++    public final Chunk getChunkAtMainThread(int x, int z) {
 +        Chunk ret = this.getChunkAtIfLoadedMainThread(x, z);
 +        if (ret != null) {
 +            return ret;
@@ -2889,7 +2881,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
 +            throw new IllegalStateException();
 +        }
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
-+        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
++        Long identifier = this.chunkFutureAwaitCounter++;
 +        this.chunkMapDistance.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +        this.tickDistanceManager();
 +
@@ -2936,7 +2928,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
  
      public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
-@@ -90,6 +255,49 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -90,6 +246,49 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
  
@@ -2986,7 +2978,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..6f3a0754ac2c1cbe4a4b8775a2cf9248
      @Nullable
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
-@@ -372,10 +580,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -372,10 +571,9 @@ public class ChunkProviderServer extends IChunkProvider {
  
              this.p = spawnercreature_d;
              this.world.getMethodProfiler().exit();
@@ -3109,7 +3101,7 @@ index 1e7f5d77700a1ed98c5f50ea82fb57b5e556496a..09ac187ba8ff52f6fa1f0d5d00a13851
          // CraftBukkit start - fire event
          setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index ce8d11eb47c1bf1d73eee69ba0f94d7a63cc5518..c6d3b5c8b14808e10a64d6bf1ef971f8bcdbd48f 100644
+index 61b06b81ac135734c9fe271ff87ef1d4fcb9d75b..f388ded80048a695e72dde393992d37f99df6ef9 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -138,6 +138,7 @@ public abstract class EntityLiving extends Entity {
@@ -3942,7 +3934,7 @@ index 8bdda63a2807635e8780481244251f6e35c13627..36a7e41cc5036345929ebf4d2fa160a8
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..0f82376ac386ce4dfcf2799fbd92a32ca37095e5 100644
+index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a15804502bd3579 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -21,9 +21,9 @@ public class PlayerChunk {
@@ -4400,7 +4392,7 @@ index ff41038ce6d2c1a8093bce3539070fa0ccfd61c2..ed0f9c5d29c4f88b7beee4b0ecdd7a56
          return VoxelShapes.b;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 2ffa56f3580b524c3593505585410dc347e1780c..cb09b6947080f742b15b166e96e91231fcb5e79e 100644
+index 2ffa56f3580b524c3593505585410dc347e1780c..9c6b15e70bfb7db853c8e4a8dfd7b24bae27a70c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -4487,6 +4479,15 @@ index 2ffa56f3580b524c3593505585410dc347e1780c..cb09b6947080f742b15b166e96e91231
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
+@@ -517,7 +552,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         if (isOutsideWorld(blockposition)) {
+             return Blocks.VOID_AIR.getBlockData();
+         } else {
+-            Chunk chunk = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++            Chunk chunk = (Chunk) this.getChunkProvider().getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+ 
+             return chunk.getType(blockposition);
+         }
 diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
 index 5719ef9714e9680596a08c42c33508c16c0e676a..bb0f30f182856d2701fde9b1a65eeb987462104a 100644
 --- a/src/main/java/net/minecraft/server/WorldBorder.java
