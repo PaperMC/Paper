@@ -380,7 +380,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.save();
-@@ -334,95 +508,186 @@
+@@ -334,95 +508,194 @@
  
      }
  
@@ -428,6 +428,14 @@
 +                entityplayer.stopRiding();
                  entity.getPassengersAndSelf().forEach((entity1) -> {
 -                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER);
++                    // Paper start - Fix villager boat exploit
++                    if (entity1 instanceof net.minecraft.world.entity.npc.AbstractVillager villager) {
++                        final net.minecraft.world.entity.player.Player human = villager.getTradingPlayer();
++                        if (human != null) {
++                            villager.setTradingPlayer(null);
++                        }
++                    }
++                    // Paper end - Fix villager boat exploit
 +                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
                  });
              }
@@ -605,7 +613,7 @@
  
          if (entityplayer1 != null) {
              set.add(entityplayer1);
-@@ -431,72 +696,160 @@
+@@ -431,72 +704,160 @@
          Iterator iterator1 = set.iterator();
  
          while (iterator1.hasNext()) {
@@ -787,7 +795,7 @@
          return entityplayer1;
      }
  
-@@ -516,15 +869,32 @@
+@@ -516,15 +877,32 @@
      }
  
      public void sendPlayerPermissionLevel(ServerPlayer player) {
@@ -822,14 +830,10 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -537,9 +907,28 @@
-             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+@@ -541,6 +919,25 @@
  
-             entityplayer.connection.send(packet);
-+        }
-+
-+    }
-+
+     }
+ 
 +    // CraftBukkit start - add a world/entity limited version
 +    public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
 +        for (int i = 0; i < this.players.size(); ++i) {
@@ -844,14 +848,15 @@
 +    public void broadcastAll(Packet packet, Level world) {
 +        for (int i = 0; i < world.players().size(); ++i) {
 +            ((ServerPlayer) world.players().get(i)).connection.send(packet);
-         }
- 
-     }
++        }
++
++    }
 +    // CraftBukkit end
- 
++
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
-@@ -554,7 +943,7 @@
+ 
+@@ -554,7 +951,7 @@
  
      }
  
@@ -860,7 +865,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +962,7 @@
+@@ -573,7 +970,7 @@
          }
      }
  
@@ -869,7 +874,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +1008,7 @@
+@@ -619,7 +1016,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -878,7 +883,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -643,35 +1032,50 @@
+@@ -643,36 +1040,51 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -933,16 +938,17 @@
 +    public void broadcast(@Nullable net.minecraft.world.entity.player.Player player, double x, double y, double z, double distance, ResourceKey<Level> worldKey, Packet<?> packet) {
          for (int i = 0; i < this.players.size(); ++i) {
              ServerPlayer entityplayer = (ServerPlayer) this.players.get(i);
-+
+ 
 +            // CraftBukkit start - Test if player receiving packet can see the source of the packet
 +            if (player != null && !entityplayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
 +               continue;
 +            }
 +            // CraftBukkit end
- 
++
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
-@@ -687,10 +1091,12 @@
+                 double d5 = y - entityplayer.getY();
+@@ -687,10 +1099,12 @@
      }
  
      public void saveAll() {
@@ -955,7 +961,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1118,19 @@
+@@ -712,15 +1126,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -979,7 +985,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1139,16 @@
+@@ -729,8 +1147,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -997,7 +1003,7 @@
      }
  
      public int getPlayerCount() {
-@@ -746,6 +1164,7 @@
+@@ -746,6 +1172,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -1005,7 +1011,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -786,12 +1205,36 @@
+@@ -786,12 +1213,36 @@
      }
  
      public void removeAll() {
@@ -1044,7 +1050,7 @@
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
              return message;
-@@ -819,24 +1262,43 @@
+@@ -819,24 +1270,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -1091,7 +1097,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1307,27 @@
+@@ -845,20 +1315,27 @@
  
      }
  
@@ -1124,7 +1130,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1336,7 @@
+@@ -867,7 +1344,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1133,7 +1139,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1344,13 @@
+@@ -875,13 +1352,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1149,7 +1155,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1401,28 @@
+@@ -932,15 +1409,28 @@
      }
  
      public void reloadResources() {
