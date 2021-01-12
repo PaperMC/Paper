@@ -81,7 +81,7 @@ index b830bfefd2984f012de0e3877592e5198a2a02ea..25a0873553a0ec6b2913e0cfb928f98e
  
      public static boolean bungee;
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce362c816a54 100644
+index 882cd398ee6babc3088ea0bb442d61fb46d8bf08..1827fb786338fa49d15a3ab231eb7f26a8fa93b6 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -5,6 +5,7 @@ import java.lang.management.MonitorInfo;
@@ -92,17 +92,17 @@ index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce36
  import net.minecraft.server.MinecraftServer;
  import org.bukkit.Bukkit;
  
-@@ -13,6 +14,10 @@ public class WatchdogThread extends Thread
- 
+@@ -14,6 +15,10 @@ public class WatchdogThread extends Thread
      private static WatchdogThread instance;
-     private final long timeoutTime;
+     private long timeoutTime;
+     private boolean restart;
 +    private final long earlyWarningEvery; // Paper - Timeout time for just printing a dump but not restarting
 +    private final long earlyWarningDelay; // Paper
 +    public static volatile boolean hasStarted; // Paper
 +    private long lastEarlyWarning; // Paper - Keep track of short dump times to avoid spamming console with short dumps
-     private final boolean restart;
      private volatile long lastTick;
      private volatile boolean stopping;
+ 
 @@ -22,6 +27,8 @@ public class WatchdogThread extends Thread
          super( "Paper Watchdog Thread" );
          this.timeoutTime = timeoutTime;
@@ -112,16 +112,16 @@ index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce36
      }
  
      private static long monotonicMillis()
-@@ -56,10 +63,18 @@ public class WatchdogThread extends Thread
+@@ -60,10 +67,18 @@ public class WatchdogThread extends Thread
      {
          while ( !stopping )
          {
 -            //
--            if ( lastTick != 0 && monotonicMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
+-            if ( lastTick != 0 && timeoutTime > 0 && monotonicMillis() > lastTick + timeoutTime && !Boolean.getBoolean("disable.watchdog")) // Paper - Add property to disable
 +            // Paper start
 +            Logger log = Bukkit.getServer().getLogger();
 +            long currentTime = monotonicMillis();
-+            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
++            if ( lastTick != 0 && timeoutTime > 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
              {
 -                Logger log = Bukkit.getServer().getLogger();
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
@@ -134,7 +134,7 @@ index 121c7ff60195f9904b8afb3a305e97bbcb80a738..07936eeba2a1aa68d52f4183f663ce36
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
                  log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
-@@ -89,29 +104,46 @@ public class WatchdogThread extends Thread
+@@ -93,29 +108,46 @@ public class WatchdogThread extends Thread
                      }
                  }
                  // Paper end
