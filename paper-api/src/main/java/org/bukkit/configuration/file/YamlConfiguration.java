@@ -68,13 +68,10 @@ public class YamlConfiguration extends FileConfiguration {
 
         if (input != null) {
             convertMapsToSections(input, this);
-        } else {
-            this.map.clear();
         }
     }
 
     protected void convertMapsToSections(@NotNull Map<?, ?> input, @NotNull ConfigurationSection section) {
-        this.map.clear();
         for (Map.Entry<?, ?> entry : input.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();

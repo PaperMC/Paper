@@ -206,44 +206,4 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
 
         assertEquals("", config.saveToString());
     }
-
-    @Test
-    public void testReloadClear() throws Exception {
-        // Test for SPIGOT-6274 - load does not clear values
-        FileConfiguration config = getConfig();
-
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-
-        config.set("test", true);
-        assertTrue(config.contains("test"));
-        assertTrue(config.getBoolean("test"));
-
-        config.loadFromString("");
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-    }
-
-    @Test
-    public void testReloadClear2() throws Exception {
-        // Test for SPIGOT-6274 - load does not clear values
-        FileConfiguration config = getConfig();
-
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-
-        config.set("test", true);
-        assertTrue(config.contains("test"));
-        assertTrue(config.getBoolean("test"));
-
-        config.loadFromString("other: false"); // Test both null and non-null code paths
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-
-        assertFalse(config.contains("test"));
-        assertFalse(config.getBoolean("test"));
-    }
 }
