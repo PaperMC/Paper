@@ -66,6 +66,8 @@ public class YamlConfiguration extends FileConfiguration {
             options().header(header);
         }
 
+        this.map.clear();
+
         if (input != null) {
             convertMapsToSections(input, this);
         }

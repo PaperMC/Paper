@@ -206,4 +206,69 @@ public abstract class FileConfigurationTest extends MemoryConfigurationTest {
 
         assertEquals("", config.saveToString());
     }
+
+    @Test
+    public void testReloadClear() throws Exception {
+        // Test for SPIGOT-6274 - load does not clear values
+        FileConfiguration config = getConfig();
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        config.set("test", true);
+        assertTrue(config.contains("test"));
+        assertTrue(config.getBoolean("test"));
+
+        config.loadFromString("");
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+    }
+
+    @Test
+    public void testReloadClear2() throws Exception {
+        // Test for SPIGOT-6274 - load does not clear values
+        FileConfiguration config = getConfig();
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        config.set("test", true);
+        assertTrue(config.contains("test"));
+        assertTrue(config.getBoolean("test"));
+
+        config.loadFromString("other: false"); // Test both null and non-null code paths
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+    }
+
+    @Test
+    public void testReloadClear3() throws Exception {
+        // Test for SPIGOT-6274 - load does not clear values
+        FileConfiguration config = getConfig();
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        config.set("test", true);
+        assertTrue(config.contains("test"));
+        assertTrue(config.getBoolean("test"));
+
+        config.loadFromString("other: false\nsection:\n  value: true"); // SPIGOT-6313: Test with section
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+
+        assertTrue(config.contains("other"));
+        assertTrue(config.contains("section"));
+        assertTrue(config.contains("section.value"));
+        assertTrue(config.getBoolean("section.value"));
+
+        assertFalse(config.contains("test"));
+        assertFalse(config.getBoolean("test"));
+    }
 }
