@@ -504,8 +504,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
      private static WatchdogThread instance;
-     private final long timeoutTime;
-     private final long earlyWarningEvery; // Paper - Timeout time for just printing a dump but not restarting
+     private long timeoutTime;
+     private boolean restart;
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
      {
          if ( instance == null )
@@ -513,14 +513,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (timeoutTime <= 0) timeoutTime = 300; // Paper
              instance = new WatchdogThread( timeoutTime * 1000L, restart );
              instance.start();
-         }
+         } else
 @@ -0,0 +0,0 @@ public class WatchdogThread extends Thread
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = monotonicMillis();
--            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
+-            if ( lastTick != 0 && timeoutTime > 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
 +            MinecraftServer server = MinecraftServer.getServer();
-+            if (lastTick != 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
++            if (lastTick != 0 && timeoutTime > 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
              {
 -                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
