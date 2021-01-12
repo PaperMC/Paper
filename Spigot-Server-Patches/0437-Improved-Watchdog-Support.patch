@@ -495,7 +495,7 @@ index aefea3a9a8b9b75c62bd20018be7cd166a213001..123de5ac9026508e21cdc225f0962f5c
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 5bdcdcf9e85b73086722783bff26321d03382bb9..513c1041c34ebb3ac1775674a3f4526693759c08 100644
+index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..ae8903ee1decd22e2ad6138f29fbc757b807e0a7 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
@@ -504,8 +504,8 @@ index 5bdcdcf9e85b73086722783bff26321d03382bb9..513c1041c34ebb3ac1775674a3f45266
  
 +    public static final boolean DISABLE_WATCHDOG = Boolean.getBoolean("disable.watchdog"); // Paper
      private static WatchdogThread instance;
-     private final long timeoutTime;
-     private final long earlyWarningEvery; // Paper - Timeout time for just printing a dump but not restarting
+     private long timeoutTime;
+     private boolean restart;
 @@ -41,6 +42,7 @@ public class WatchdogThread extends Thread
      {
          if ( instance == null )
@@ -513,14 +513,14 @@ index 5bdcdcf9e85b73086722783bff26321d03382bb9..513c1041c34ebb3ac1775674a3f45266
 +            if (timeoutTime <= 0) timeoutTime = 300; // Paper
              instance = new WatchdogThread( timeoutTime * 1000L, restart );
              instance.start();
-         }
-@@ -67,12 +69,13 @@ public class WatchdogThread extends Thread
+         } else
+@@ -71,12 +73,13 @@ public class WatchdogThread extends Thread
              // Paper start
              Logger log = Bukkit.getServer().getLogger();
              long currentTime = monotonicMillis();
--            if ( lastTick != 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
+-            if ( lastTick != 0 && timeoutTime > 0 && currentTime > lastTick + earlyWarningEvery && !Boolean.getBoolean("disable.watchdog") )
 +            MinecraftServer server = MinecraftServer.getServer();
-+            if (lastTick != 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
++            if (lastTick != 0 && timeoutTime > 0 && hasStarted && (!server.isRunning() || (currentTime > lastTick + earlyWarningEvery && !DISABLE_WATCHDOG) ))
              {
 -                boolean isLongTimeout = currentTime > lastTick + timeoutTime;
 +                boolean isLongTimeout = currentTime > lastTick + timeoutTime || (!server.isRunning() && !server.hasStopped() && currentTime > lastTick + 1000);
@@ -531,7 +531,7 @@ index 5bdcdcf9e85b73086722783bff26321d03382bb9..513c1041c34ebb3ac1775674a3f45266
                  lastEarlyWarning = currentTime;
                  if (isLongTimeout) {
                  // Paper end
-@@ -114,7 +117,7 @@ public class WatchdogThread extends Thread
+@@ -118,7 +121,7 @@ public class WatchdogThread extends Thread
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
                  ChunkTaskManager.dumpAllChunkLoadInfo(); // Paper
@@ -540,7 +540,7 @@ index 5bdcdcf9e85b73086722783bff26321d03382bb9..513c1041c34ebb3ac1775674a3f45266
                  log.log( Level.SEVERE, "------------------------------" );
                  //
                  // Paper start - Only print full dump on long timeouts
-@@ -135,9 +138,24 @@ public class WatchdogThread extends Thread
+@@ -139,9 +142,24 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
