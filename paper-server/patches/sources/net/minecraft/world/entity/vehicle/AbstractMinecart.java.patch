@@ -41,7 +41,20 @@
  
          if (t0 != null) {
              t0.setInitialPos(x, y, z);
-@@ -143,7 +161,7 @@
+@@ -139,11 +157,19 @@
+ 
+     @Override
+     public boolean canCollideWith(Entity other) {
+-        return AbstractBoat.canVehicleCollide(this, other);
++        // Paper start - fix VehicleEntityCollisionEvent not called when colliding with player
++        boolean collides = AbstractBoat.canVehicleCollide(this, other);
++        if (!collides) {
++            return false;
++        }
++        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) getBukkitEntity(), other.getBukkitEntity());
++
++        return collisionEvent.callEvent();
++        // Paper end - fix VehicleEntityCollisionEvent not called when colliding with player
      }
  
      @Override
@@ -50,7 +63,7 @@
          return true;
      }
  
-@@ -262,6 +280,14 @@
+@@ -262,6 +288,14 @@
  
      @Override
      public void tick() {
@@ -65,7 +78,7 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -271,8 +297,20 @@
+@@ -271,8 +305,20 @@
          }
  
          this.checkBelowWorld();
@@ -87,7 +100,7 @@
          this.updateInWaterStateAndDoFluidPushing();
          if (this.isInLava()) {
              this.lavaHurt();
-@@ -385,12 +423,16 @@
+@@ -385,12 +431,16 @@
  
          this.setDeltaMovement(Mth.clamp(vec3d.x, -d0, d0), vec3d.y, Mth.clamp(vec3d.z, -d0, d0));
          if (this.onGround()) {
@@ -106,7 +119,7 @@
          }
  
      }
-@@ -520,7 +562,16 @@
+@@ -520,7 +570,16 @@
      public void push(Entity entity) {
          if (!this.level().isClientSide) {
              if (!entity.noPhysics && !this.noPhysics) {
@@ -123,7 +136,7 @@
                      double d0 = entity.getX() - this.getX();
                      double d1 = entity.getZ() - this.getZ();
                      double d2 = d0 * d0 + d1 * d1;
-@@ -645,4 +696,27 @@
+@@ -645,4 +704,27 @@
      public boolean isFurnace() {
          return false;
      }
