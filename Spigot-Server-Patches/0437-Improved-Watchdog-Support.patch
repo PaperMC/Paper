@@ -327,6 +327,19 @@ index a6a16f72b49a8a641dbb8ab580ecd9d61e9f4b37..a50b647631eae271380728c890ad3ff6
              // Paper start - Prevent tile entity and entity crashes
              String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
              System.err.println(msg);
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 00e88ddd3d41491db2508dba2a544df807703fb0..21bffdf055e684dcd75020aead175169263dcdf2 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -65,7 +65,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
+     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
+     public final ChunkProviderServer chunkProvider; // Paper - public
+-    boolean tickingEntities;
++    public boolean tickingEntities; // Paper - expose for watchdog
+     // Paper start
+     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
+     public void doIfNotEntityTicking(java.lang.Runnable run) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index f546f7ac0484b6224b878ad39285ffccd7410b96..38cb08adf3f71ac40c70b3443b238ac1c67d2b4a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -495,7 +508,7 @@ index aefea3a9a8b9b75c62bd20018be7cd166a213001..123de5ac9026508e21cdc225f0962f5c
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..ae8903ee1decd22e2ad6138f29fbc757b807e0a7 100644
+index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..95d5b226c4289a463515e03fcc1a43458ea6b37d 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
@@ -540,7 +553,7 @@ index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..ae8903ee1decd22e2ad6138f29fbc757
                  log.log( Level.SEVERE, "------------------------------" );
                  //
                  // Paper start - Only print full dump on long timeouts
-@@ -139,9 +142,24 @@ public class WatchdogThread extends Thread
+@@ -139,9 +142,28 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
@@ -562,6 +575,10 @@ index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..ae8903ee1decd22e2ad6138f29fbc757
 +                        e.printStackTrace();
 +                    }
 +                    if (!server.hasStopped()) {
++                        // We've just obliterated the main thread, this will prevent stop from dying when removing players
++                        MinecraftServer.getServer().getWorlds().forEach(world -> {
++                            world.tickingEntities = false;
++                        });
 +                        server.close();
 +                    }
                  }
