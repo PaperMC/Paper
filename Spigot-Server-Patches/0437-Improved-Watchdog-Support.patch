@@ -113,7 +113,7 @@ index bc15da4640a4a6107c9c186a01ce76df87511b41..27db247aa40e0516302c74b9bf00c631
          }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b0e2ebbe4 100644
+index 0c469ad1fd477fdb6181c657b7b9e193c790246d..ce27c4c905d9bfcdf983dd8ca6e60de00087f607 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -159,7 +159,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -142,7 +142,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
      private final Object stopLock = new Object();
      public final boolean hasStopped() {
          synchronized (stopLock) {
-@@ -745,6 +748,19 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -745,6 +748,23 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              if (hasStopped) return;
              hasStopped = true;
          }
@@ -157,12 +157,16 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
 +                    Thread.sleep(1);
 +                } catch (InterruptedException e) {}
 +            }
++            // We've just obliterated the main thread, this will prevent stop from dying when removing players
++            MinecraftServer.getServer().getWorlds().forEach(world -> {
++                world.tickingEntities = false;
++            });
 +        }
 +        // Paper end
          // CraftBukkit end
          MinecraftServer.LOGGER.info("Stopping server");
          MinecraftTimings.stopServer(); // Paper
-@@ -810,7 +826,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -810,7 +830,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.getUserCache().b(false); // Paper
          }
          // Spigot end
@@ -181,7 +185,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
      }
  
      public String getServerIp() {
-@@ -903,6 +930,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -903,6 +934,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      protected void w() {
          try {
@@ -189,7 +193,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
              if (this.init()) {
                  this.nextTick = SystemUtils.getMonotonicMillis();
                  this.serverPing.setMOTD(new ChatComponentText(this.motd));
-@@ -910,6 +938,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -910,6 +942,18 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a(this.serverPing);
  
                  // Spigot start
@@ -208,7 +212,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
                  org.spigotmc.WatchdogThread.hasStarted = true; // Paper
                  Arrays.fill( recentTps, 20 );
                  long start = System.nanoTime(), curTime, tickSection = start; // Paper - Further improve server tick loop
-@@ -965,6 +1005,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -965,6 +1009,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  this.a((CrashReport) null);
              }
          } catch (Throwable throwable) {
@@ -221,7 +225,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              // Spigot Start
              if ( throwable.getCause() != null )
-@@ -996,14 +1042,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -996,14 +1046,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -239,7 +243,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
              }
  
          }
-@@ -1059,6 +1105,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1059,6 +1109,12 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
      protected TickTask postToMainThread(Runnable runnable) {
@@ -252,7 +256,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
          return new TickTask(this.ticks, runnable);
      }
  
-@@ -1301,6 +1353,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1301,6 +1357,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
                  try {
                      crashreport = CrashReport.a(throwable, "Exception ticking world");
                  } catch (Throwable t) {
@@ -260,7 +264,7 @@ index 0c469ad1fd477fdb6181c657b7b9e193c790246d..fe88179037f1a56cec3543910cfab67b
                      throw new RuntimeException("Error generating crash report", t);
                  }
                  // Spigot End
-@@ -1758,7 +1811,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1758,7 +1815,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              this.resourcePackRepository.a(collection);
              this.saveData.a(a(this.resourcePackRepository));
              datapackresources.i();
@@ -508,7 +512,7 @@ index aefea3a9a8b9b75c62bd20018be7cd166a213001..123de5ac9026508e21cdc225f0962f5c
          String[] split = restartScript.split( " " );
          if ( split.length > 0 && new File( split[0] ).isFile() )
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..95d5b226c4289a463515e03fcc1a43458ea6b37d 100644
+index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..ae8903ee1decd22e2ad6138f29fbc757b807e0a7 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
@@ -553,7 +557,7 @@ index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..95d5b226c4289a463515e03fcc1a4345
                  log.log( Level.SEVERE, "------------------------------" );
                  //
                  // Paper start - Only print full dump on long timeouts
-@@ -139,9 +142,28 @@ public class WatchdogThread extends Thread
+@@ -139,9 +142,24 @@ public class WatchdogThread extends Thread
  
                  if ( isLongTimeout )
                  {
@@ -575,10 +579,6 @@ index 9c1fc19851817a842779ab89bc9300e1adf3d2a2..95d5b226c4289a463515e03fcc1a4345
 +                        e.printStackTrace();
 +                    }
 +                    if (!server.hasStopped()) {
-+                        // We've just obliterated the main thread, this will prevent stop from dying when removing players
-+                        MinecraftServer.getServer().getWorlds().forEach(world -> {
-+                            world.tickingEntities = false;
-+                        });
 +                        server.close();
 +                    }
                  }
