@@ -327,6 +327,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper start - Prevent tile entity and entity crashes
              String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
              System.err.println(msg);
+diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldServer.java
++++ b/src/main/java/net/minecraft/server/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
+     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
+     public final ChunkProviderServer chunkProvider; // Paper - public
+-    boolean tickingEntities;
++    public boolean tickingEntities; // Paper - expose for watchdog
+     // Paper start
+     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
+     public void doIfNotEntityTicking(java.lang.Runnable run) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -562,6 +575,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        e.printStackTrace();
 +                    }
 +                    if (!server.hasStopped()) {
++                        // We've just obliterated the main thread, this will prevent stop from dying when removing players
++                        MinecraftServer.getServer().getWorlds().forEach(world -> {
++                            world.tickingEntities = false;
++                        });
 +                        server.close();
 +                    }
                  }
