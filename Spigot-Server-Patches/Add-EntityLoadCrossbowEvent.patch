@@ -12,6 +12,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  package net.minecraft.server;
  
  import com.google.common.collect.Lists;
++
++import org.bukkit.inventory.EquipmentSlot;
++
 +import io.papermc.paper.event.entity.EntityLoadCrossbowEvent; // Paper - EntityLoadCrossbowEvent namespace conflicts
  import java.util.List;
  import java.util.Random;
@@ -23,7 +26,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        if (f >= 1.0F && !d(itemstack) && a(entityliving, itemstack)) {
 +        // Paper start - EntityLoadCrossbowEvent
 +        if (f >= 1.0F && !d(itemstack) /*&& a(entityliving, itemstack)*/) {
-+            if (!new EntityLoadCrossbowEvent(entityliving.getBukkitLivingEntity(), itemstack.asBukkitMirror(), entityliving.getRaisedHand() == EnumHand.MAIN_HAND ? org.bukkit.inventory.EquipmentSlot.HAND : org.bukkit.inventory.EquipmentSlot.OFF_HAND).callEvent() || !attemptProjectileLoad(entityliving, itemstack)) return;
++            final EntityLoadCrossbowEvent event = new EntityLoadCrossbowEvent(entityliving.getBukkitLivingEntity(), itemstack.asBukkitMirror(), entityliving.getRaisedHand() == EnumHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND);
++            if (!event.callEvent() || !attemptProjectileLoad(entityliving, itemstack, event.shouldConsumeItem())) return;
 +        // Paper end
              a(itemstack, true);
              SoundCategory soundcategory = entityliving instanceof EntityHuman ? SoundCategory.PLAYERS : SoundCategory.HOSTILE;
@@ -32,7 +36,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
+-    private static boolean a(EntityLiving entityliving, ItemStack itemstack) {
 +    private static boolean attemptProjectileLoad(EntityLiving ent, ItemStack bow) { return a(ent, bow); } // Paper - EntityLoadCrossbowEvent - OBFHELPER
-     private static boolean a(EntityLiving entityliving, ItemStack itemstack) {
++    private static boolean attemptProjectileLoad(EntityLiving ent, ItemStack bow, boolean consume) { return a(ent, bow, consume); } // Paper - EntityLoadCrossbowEvent - OBFHELPER
++    private static boolean a(EntityLiving entityliving, ItemStack itemstack) { return a(entityliving, itemstack, true); };// Paper - add consume
++    private static boolean a(EntityLiving entityliving, ItemStack itemstack, boolean consume) { // Paper - add consume
          int i = EnchantmentManager.getEnchantmentLevel(Enchantments.MULTISHOT, itemstack);
          int j = i == 0 ? 1 : 3;
+-        boolean flag = entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.canInstantlyBuild;
++        boolean flag = !consume || entityliving instanceof EntityHuman && ((EntityHuman) entityliving).abilities.canInstantlyBuild; // Paper - add consme
+         ItemStack itemstack1 = entityliving.f(itemstack);
+         ItemStack itemstack2 = itemstack1.cloneItemStack();
+ 
