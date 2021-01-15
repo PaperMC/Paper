@@ -43,6 +43,7 @@ How To (Plugin Developers)
 
 **Or alternatively, with Gradle:**
 
+> Groovy DSL
  * Repository:
 ```groovy
 repositories {
@@ -55,6 +56,19 @@ repositories {
 ```groovy
 dependencies {
     compileOnly 'com.destroystokyo.paper:paper-api:1.16.4-R0.1-SNAPSHOT'
+}
+```
+> Kotlin DSL
+ * Repository:
+```kotlin
+repositories {
+    maven(url = "https://papermc.io/repo/repository/maven-public/")
+}
+```
+ * Artifact:
+```kotlin
+dependencies {
+    compileOnly("com.destroystokyo.paper", "paper-api", "1.16.4-R0.1-SNAPSHOT")
 }
 ```
 
