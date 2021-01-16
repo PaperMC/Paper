@@ -72,13 +72,13 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     @Override
     public float getItemDropChance() {
-        return getHandle().ag;
+        return getHandle().itemDropChance;
     }
 
     @Override
     public void setItemDropChance(float chance) {
         Preconditions.checkArgument(0.0 <= chance && chance <= 1.0, "Chance outside range [0, 1]");
-        getHandle().ag = chance;
+        getHandle().itemDropChance = chance;
     }
 
     @Override

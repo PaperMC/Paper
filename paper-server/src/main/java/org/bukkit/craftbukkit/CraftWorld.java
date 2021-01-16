@@ -1325,12 +1325,12 @@ public class CraftWorld implements World {
 
     @Override
     public void setClearWeatherDuration(int duration) {
-        world.worldDataServer.a(duration); // PAIL rename setClearWeatherDuration
+        world.worldDataServer.setClearWeatherTime(duration);
     }
 
     @Override
     public int getClearWeatherDuration() {
-        return world.worldDataServer.h(); // PAIL rename getClearWeatherDuration
+        return world.worldDataServer.getClearWeatherTime();
     }
 
     @Override
