@@ -187,10 +187,10 @@ public class VersionCommand extends BukkitCommand {
     private void obtainVersion() {
         String version = Bukkit.getVersion();
         if (version == null) version = "Custom";
-        if (version.startsWith("git-Spigot-")) {
-            String[] parts = version.substring("git-Spigot-".length()).split("-");
-            int cbVersions = getDistance("craftbukkit", parts[1].substring(0, parts[1].indexOf(' ')));
-            int spigotVersions = getDistance("spigot", parts[0]);
+        String[] parts = version.substring(0, version.indexOf(' ')).split("-");
+        if (parts.length == 4) {
+            int cbVersions = getDistance("craftbukkit", parts[3]);
+            int spigotVersions = getDistance("spigot", parts[2]);
             if (cbVersions == -1 || spigotVersions == -1) {
                 setVersionMessage("Error obtaining version information");
             } else {
@@ -201,9 +201,8 @@ public class VersionCommand extends BukkitCommand {
                 }
             }
 
-        } else if (version.startsWith("git-Bukkit-")) {
-            version = version.substring("git-Bukkit-".length());
-            int cbVersions = getDistance("craftbukkit", version.substring(0, version.indexOf(' ')));
+        } else if (parts.length == 3) {
+            int cbVersions = getDistance("craftbukkit", parts[2]);
             if (cbVersions == -1) {
                 setVersionMessage("Error obtaining version information");
             } else {
