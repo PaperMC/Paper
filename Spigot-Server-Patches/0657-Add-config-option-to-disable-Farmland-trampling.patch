@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zero <zero@cock.li>
+Date: Sun, 17 Jan 2021 13:54:17 -0500
+Subject: [PATCH] Add config option to disable Farmland trampling
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4735dcba31b556fafe9c7d7440c89e940755c81f..5f949f539201e73b287dd357f1bbddf7cb008f0d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -794,4 +794,9 @@ public class PaperWorldConfig {
+             if (value != -1) entityPerChunkSaveLimits.put(type, value);
+         });
+     }
++
++    public boolean disableFarmlandTrampling = false;
++    private void disableFarmlandTrampling() {
++        disableFarmlandTrampling = getBoolean("disable-farmland-trampling", disableFarmlandTrampling);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockSoil.java b/src/main/java/net/minecraft/server/BlockSoil.java
+index a315e2628c35ee713b68741c6e52c4b140c05f27..5dfa5a50096462acbda675bfade30a51a4a675a5 100644
+--- a/src/main/java/net/minecraft/server/BlockSoil.java
++++ b/src/main/java/net/minecraft/server/BlockSoil.java
+@@ -79,7 +79,9 @@ public class BlockSoil extends Block {
+         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) && entity.getWidth() * entity.getWidth() * entity.getHeight() > 0.512F) {
+             // CraftBukkit start - Interact soil
+             org.bukkit.event.Cancellable cancellable;
+-            if (entity instanceof EntityHuman) {
++            if (entity.world.paperConfig.disableFarmlandTrampling) { // Paper start
++                return;
++            } else if (entity instanceof EntityHuman) { // Paper end
+                 cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
+             } else {
+                 cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
