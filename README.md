@@ -62,7 +62,7 @@ dependencies {
  * Repository:
 ```kotlin
 repositories {
-    maven(url = "https://papermc.io/repo/repository/maven-public/")
+    maven("https://papermc.io/repo/repository/maven-public/")
 }
 ```
  * Artifact:
