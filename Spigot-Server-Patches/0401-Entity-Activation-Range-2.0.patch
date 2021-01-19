@@ -14,7 +14,7 @@ Adds flying monsters to control ghast and phantoms
 Adds villagers as separate config
 
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 53868afe6b8f7161a2fe30c23195e37cf00193a3..2b0b8d975504850894cd25dc907eb522b4e9830f 100644
+index e8e6e3ed5fa5aed6160e667142a244a39078c479..2b06163358827e0773969226d8f77e6e0ba0ca3d 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -163,7 +163,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
@@ -85,7 +85,7 @@ index 68f1a101174f4a2f7ab5556a5b733f75f3a7802f..4757e5a92c9cf04fa52d62bac6dae782
      protected EntityCreature(EntityTypes<? extends EntityCreature> entitytypes, World world) {
          super(entitytypes, world);
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index d91503b3e46c6ded3d77da4feeb8350df5bf924c..dcc5b098bfe36ef7ee8536b3da65c4ce1748c9d8 100644
+index 800a8dd2543f0b83eec67e780510427467649d5d..73ceb0f14610fe1d4d55542dad957b1fdf9f8e04 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -47,7 +47,7 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -118,7 +118,7 @@ index d91503b3e46c6ded3d77da4feeb8350df5bf924c..dcc5b098bfe36ef7ee8536b3da65c4ce
          if (this.isPassenger() && this.getVehicle() instanceof EntityInsentient) {
              EntityInsentient entityinsentient = (EntityInsentient) this.getVehicle();
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index 5efb7b990acc92801ee32a0a462f92f7c08ee2b1..3c16a28a8f2113ed6cf54c06421bde7b7dcf50c1 100644
+index eb712c7f4e5ef0c87a85b055a2db3b30fee8604f..0d04144d07bcba2fb4f79fbecfefb27beacba654 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -98,7 +98,7 @@ public abstract class EntityLiving extends Entity {
@@ -280,7 +280,7 @@ index 9b0511e996a5e3952c6f975e7c93299c532a8ea1..8bd75b8243590fcddd0e330a7276c03a
                          }
                      }
 diff --git a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
-index 482ce2cd8123252110508e8e03aa65afdd533e0a..b18e53220d8dbd50723c4201231091cbe4f4119a 100644
+index 482ce2cd8123252110508e8e03aa65afdd533e0a..2926c98d1f94a4879d21ba7b507755b0573fb05a 100644
 --- a/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 +++ b/src/main/java/net/minecraft/server/PathfinderGoalSelector.java
 @@ -25,10 +25,11 @@ public class PathfinderGoalSelector {
@@ -297,18 +297,14 @@ index 482ce2cd8123252110508e8e03aa65afdd533e0a..b18e53220d8dbd50723c4201231091cb
  
      public PathfinderGoalSelector(Supplier<GameProfilerFiller> supplier) {
          this.e = supplier;
-@@ -38,6 +39,25 @@ public class PathfinderGoalSelector {
+@@ -38,6 +39,21 @@ public class PathfinderGoalSelector {
          this.d.add(new PathfinderGoalWrapped(i, pathfindergoal));
      }
  
 +    // Paper start
 +    public boolean inactiveTick() {
-+        if (getCurRate() % getTickRate() != 0) {
-+            incRate();
-+            return false;
-+        } else {
-+            return true;
-+        }
++        incRate();
++        return getCurRate() % getTickRate() == 0;
 +    }
 +    public boolean hasTasks() {
 +        for (PathfinderGoalWrapped task : getTasks()) {
@@ -336,7 +332,7 @@ index 182cd7e9110408fff9909ef362d368d055a2b167..f3df10587e652d3a26d15deb09304b97
          return this.c;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 67a38ed5ec173ece6f072540b9fbb47400bb5af0..3b0b86bd33601f741850047e3fe0b6022bc1095b 100644
+index 2fa1cd43a8a7b083cd1522c32716d21dee922c46..6a067e4db344ca5fc446650722db7118fa5127a2 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -82,6 +82,12 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -353,7 +349,7 @@ index 67a38ed5ec173ece6f072540b9fbb47400bb5af0..3b0b86bd33601f741850047e3fe0b602
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
  
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index a06a9c4a50acdad951da3a95d0c46cf9766164c1..c345729675c76c5cd02a469283ed668a2df52816 100644
+index 15d68e08a51ae83ae4a8031f47d512b7c89deae0..7d17623989cb601a99195d6d1b0c6c2b29fd3c3f 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -747,17 +747,17 @@ public class WorldServer extends World implements GeneratorAccessSeed {
