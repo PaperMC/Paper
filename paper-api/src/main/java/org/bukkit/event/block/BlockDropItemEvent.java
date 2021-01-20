@@ -68,7 +68,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
      * Gets list of the Item drops caused by the block break.
      *
      * This list is mutable - removing an item from it will cause it to not
-     * drop. It is not legal however to add new items to the list.
+     * drop. Adding to the list is allowed.
      *
      * @return The Item the block caused to drop
      */
