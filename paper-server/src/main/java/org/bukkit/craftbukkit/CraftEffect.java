@@ -28,34 +28,30 @@ public class CraftEffect {
             datavalue = Item.getId(CraftMagicNumbers.getItem((Material) data));
             break;
         case SMOKE:
-            switch ((BlockFace) data) { // TODO: Verify (Where did these values come from...?)
+            switch ((BlockFace) data) {
+            case DOWN:
+            // SPIGOT-6318: Fallback value for the old directions
+            case NORTH_EAST:
+            case NORTH_WEST:
             case SOUTH_EAST:
+            case SOUTH_WEST:
+            case SELF:
                 datavalue = 0;
                 break;
-            case SOUTH:
+            case UP:
                 datavalue = 1;
                 break;
-            case SOUTH_WEST:
+            case NORTH:
                 datavalue = 2;
                 break;
-            case EAST:
+            case SOUTH:
                 datavalue = 3;
                 break;
-            case UP:
-            case SELF:
+            case WEST:
                 datavalue = 4;
                 break;
-            case WEST:
+            case EAST:
                 datavalue = 5;
-                break;
-            case NORTH_EAST:
-                datavalue = 6;
-                break;
-            case NORTH:
-                datavalue = 7;
-                break;
-            case NORTH_WEST:
-                datavalue = 8;
                 break;
             default:
                 throw new IllegalArgumentException("Bad smoke direction!");
