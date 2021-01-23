@@ -5,6 +5,7 @@ import net.minecraft.server.EntityFishingHook;
 import net.minecraft.server.MathHelper;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FishHook;
 
@@ -81,5 +82,40 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public void setBiteChance(double chance) {
         Validate.isTrue(chance >= 0 && chance <= 1, "The bite chance must be between 0 and 1.");
         this.biteChance = chance;
+    }
+
+    @Override
+    public boolean isInOpenWater() {
+        return getHandle().isInOpenWater();
+    }
+
+    @Override
+    public Entity getHookedEntity() {
+        net.minecraft.server.Entity hooked = getHandle().hooked;
+        return (hooked != null) ? hooked.getBukkitEntity() : null;
+    }
+
+    @Override
+    public void setHookedEntity(Entity entity) {
+        EntityFishingHook hook = getHandle();
+
+        hook.hooked = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
+        hook.getDataWatcher().set(EntityFishingHook.HOOKED_ENTITY, hook.hooked != null ? hook.hooked.getId() + 1 : 0);
+    }
+
+    @Override
+    public boolean pullHookedEntity() {
+        EntityFishingHook hook = getHandle();
+        if (hook.hooked == null) {
+            return false;
+        }
+
+        hook.reel();
+        return true;
+    }
+
+    @Override
+    public HookState getState() {
+        return HookState.values()[getHandle().hookState.ordinal()];
     }
 }
