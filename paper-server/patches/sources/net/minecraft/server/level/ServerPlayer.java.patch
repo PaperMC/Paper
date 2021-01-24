@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,7 +293,36 @@
+@@ -258,6 +293,35 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
- 
++
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -147,10 +147,9 @@
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
-+
+ 
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
-         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +330,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -189,8 +188,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-     }
- 
++    }
++
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    public void resendItemInHands() {
@@ -236,9 +235,9 @@
 +        }
 +
 +        return blockposition;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -910,7 +909,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,12 +1599,30 @@
+@@ -1215,12 +1599,35 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -919,6 +918,11 @@
 +                PlayerChangedWorldEvent changeEvent = new PlayerChangedWorldEvent(this.getBukkitEntity(), worldserver1.getWorld());
 +                this.level().getCraftServer().getPluginManager().callEvent(changeEvent);
 +                // CraftBukkit end
++                // Paper start - Reset shield blocking on dimension change
++                if (this.isBlocking()) {
++                    this.stopUsingItem();
++                }
++                // Paper end - Reset shield blocking on dimension change
                  return this;
              }
          }
@@ -941,7 +945,7 @@
      public void forceSetRotation(float yaw, float pitch) {
          this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
      }
-@@ -1228,13 +1630,21 @@
+@@ -1228,13 +1635,21 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
          ResourceKey<Level> resourcekey1 = this.level().dimension();
@@ -966,7 +970,7 @@
              this.enteredNetherPosition = null;
          }
  
-@@ -1251,36 +1661,63 @@
+@@ -1251,36 +1666,63 @@
          this.containerMenu.broadcastChanges();
      }
  
@@ -1045,7 +1049,7 @@
                          this.awardStat(Stats.SLEEP_IN_BED);
                          CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                      });
-@@ -1293,9 +1730,8 @@
+@@ -1293,9 +1735,8 @@
                      return either;
                  }
              }
@@ -1056,7 +1060,7 @@
      }
  
      @Override
-@@ -1322,13 +1758,31 @@
+@@ -1322,13 +1763,31 @@
  
      @Override
      public void stopSleepInBed(boolean skipSleepTimer, boolean updateSleepingPlayers) {
@@ -1089,7 +1093,7 @@
          }
  
      }
-@@ -1387,8 +1841,9 @@
+@@ -1387,8 +1846,9 @@
          this.connection.send(new ClientboundOpenSignEditorPacket(sign.getBlockPos(), front));
      }
  
@@ -1100,7 +1104,7 @@
      }
  
      @Override
-@@ -1396,13 +1851,35 @@
+@@ -1396,13 +1856,35 @@
          if (factory == null) {
              return OptionalInt.empty();
          } else {
@@ -1136,7 +1140,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1410,9 +1887,11 @@
+@@ -1410,9 +1892,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1150,7 +1154,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1425,15 +1904,26 @@
+@@ -1425,15 +1909,26 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1180,7 +1184,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1456,6 +1946,13 @@
+@@ -1456,6 +1951,13 @@
  
      @Override
      public void closeContainer() {
@@ -1194,7 +1198,7 @@
          this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
          this.doCloseContainer();
      }
-@@ -1485,19 +1982,19 @@
+@@ -1485,19 +1987,19 @@
                  i = Math.round((float) Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * 100.0F);
                  if (i > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, i);
@@ -1217,7 +1221,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (deltaY > 0.0D) {
-@@ -1508,13 +2005,13 @@
+@@ -1508,13 +2010,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, i);
@@ -1234,7 +1238,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1557,7 +2054,7 @@
+@@ -1557,7 +2059,7 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1243,7 +1247,7 @@
              scoreaccess.add(amount);
          });
      }
-@@ -1565,7 +2062,7 @@
+@@ -1565,7 +2067,7 @@
      @Override
      public void resetStat(Stat<?> stat) {
          this.stats.setValue(this, stat, 0);
@@ -1252,7 +1256,7 @@
      }
  
      @Override
-@@ -1597,9 +2094,9 @@
+@@ -1597,9 +2099,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1264,7 +1268,7 @@
          }
  
      }
-@@ -1613,6 +2110,13 @@
+@@ -1613,6 +2115,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1278,7 +1282,7 @@
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1625,6 +2129,7 @@
+@@ -1625,6 +2134,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1286,7 +1290,7 @@
      }
  
      @Override
-@@ -1661,7 +2166,7 @@
+@@ -1661,7 +2171,7 @@
          this.onUpdateAbilities();
          if (alive) {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1295,7 +1299,7 @@
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
              Iterator iterator = oldPlayer.getActiveEffects().iterator();
-@@ -1669,7 +2174,7 @@
+@@ -1669,7 +2179,7 @@
              while (iterator.hasNext()) {
                  MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -1304,7 +1308,7 @@
              }
  
              this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -1680,7 +2185,7 @@
+@@ -1680,7 +2190,7 @@
              this.portalProcess = oldPlayer.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1313,7 +1317,7 @@
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
                  this.experienceLevel = oldPlayer.experienceLevel;
-@@ -1696,7 +2201,7 @@
+@@ -1696,7 +2206,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1322,7 +1326,7 @@
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
          this.chunkTrackingView = oldPlayer.chunkTrackingView;
-@@ -1752,19 +2257,19 @@
+@@ -1752,19 +2262,19 @@
      }
  
      @Override
@@ -1346,7 +1350,7 @@
          }
  
          return flag1;
-@@ -1861,8 +2366,13 @@
+@@ -1861,8 +2371,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1361,7 +1365,7 @@
          }
  
      }
-@@ -1878,7 +2388,36 @@
+@@ -1878,7 +2393,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1398,7 +1402,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2496,27 @@
+@@ -1957,12 +2501,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1427,7 +1431,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2553,11 @@
+@@ -1999,11 +2558,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1441,7 +1445,7 @@
      }
  
      @Override
-@@ -2046,17 +2600,43 @@
+@@ -2046,17 +2605,43 @@
      }
  
      public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
@@ -1492,7 +1496,7 @@
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2088,18 +2668,44 @@
+@@ -2088,18 +2673,44 @@
      }
  
      @Override
@@ -1541,7 +1545,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2275,9 +2881,15 @@
+@@ -2275,9 +2886,15 @@
  
      @Override
      public void stopRiding() {
@@ -1558,7 +1562,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +2987,12 @@
+@@ -2375,16 +2992,161 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1574,10 +1578,11 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +3001,147 @@
+             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
+ 
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-         }
-     }
++        }
++    }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1602,7 +1607,7 @@
 +    public void setPlayerWeather(WeatherType type, boolean plugin) {
 +        if (!plugin && this.weather != null) {
 +            return;
-+        }
+         }
 +
 +        if (plugin) {
 +            this.weather = type;
@@ -1613,7 +1618,7 @@
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
 +        }
-+    }
+     }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;
