@@ -457,4 +457,15 @@ public interface BukkitScheduler {
     @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException;
+
+    // Paper start - add getMainThreadExecutor
+    /**
+     * Returns an executor that will run tasks on the next server tick.
+     *
+     * @param plugin the reference to the plugin scheduling tasks
+     * @return an executor associated with the given plugin
+     */
+    @NotNull
+    public java.util.concurrent.Executor getMainThreadExecutor(@NotNull Plugin plugin);
+    // Paper end
 }
