@@ -35,16 +35,33 @@
                  this.dragonUUID = null;
              }
          }
-@@ -404,7 +410,7 @@
+@@ -404,9 +410,23 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
 -            if (!this.previouslyKilled) {
+-                this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
++            // Paper start - Add DragonEggFormEvent
++            BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin));
++            org.bukkit.craftbukkit.block.CraftBlockState eggState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.level, eggPosition);
++            eggState.setData(Blocks.DRAGON_EGG.defaultBlockState());
++            io.papermc.paper.event.block.DragonEggFormEvent eggEvent = new io.papermc.paper.event.block.DragonEggFormEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this.level, eggPosition), eggState,
++                new org.bukkit.craftbukkit.boss.CraftDragonBattle(this));
++            // Paper end - Add DragonEggFormEvent
 +            if (this.level.paperConfig().entities.behavior.enderDragonsDeathAlwaysPlacesDragonEgg || !this.previouslyKilled) { // Paper - Add toggle for always placing the dragon egg
-                 this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
++                // Paper start - Add DragonEggFormEvent
++                // this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
++            } else {
++                eggEvent.setCancelled(true);
              }
++            if (eggEvent.callEvent()) {
++                eggEvent.getNewState().update(true);
++                // Paper end - Add DragonEggFormEvent
++            }
  
-@@ -469,6 +475,7 @@
+             this.previouslyKilled = true;
+             this.dragonKilled = true;
+@@ -469,6 +489,7 @@
              entityenderdragon.moveTo((double) this.origin.getX(), (double) (128 + this.origin.getY()), (double) this.origin.getZ(), this.level.random.nextFloat() * 360.0F, 0.0F);
              this.level.addFreshEntity(entityenderdragon);
              this.dragonUUID = entityenderdragon.getUUID();
@@ -52,7 +69,7 @@
          }
  
          return entityenderdragon;
-@@ -513,7 +520,7 @@
+@@ -513,7 +534,7 @@
          return this.previouslyKilled;
      }
  
@@ -61,7 +78,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos blockposition = this.portalLocation;
  
-@@ -540,19 +547,19 @@
+@@ -540,19 +561,19 @@
                  List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
                  if (list1.isEmpty()) {
@@ -85,7 +102,7 @@
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
                  for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +578,10 @@
+@@ -571,9 +592,10 @@
              this.respawnStage = DragonRespawnAnimation.START;
              this.respawnTime = 0;
              this.spawnExitPortal(false);
