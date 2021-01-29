@@ -3,16 +3,18 @@ package org.bukkit.event.player;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is leaving a bed.
  */
-public class PlayerBedLeaveEvent extends PlayerEvent {
+public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Block bed;
     private boolean setBedSpawn;
+    private boolean cancelled;
 
     public PlayerBedLeaveEvent(@NotNull final Player who, @NotNull final Block bed, boolean setBedSpawn) {
         super(who);
@@ -60,6 +62,16 @@ public class PlayerBedLeaveEvent extends PlayerEvent {
      */
     public void setSpawnLocation(boolean setBedSpawn) {
         this.setBedSpawn = setBedSpawn;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 
     @NotNull
