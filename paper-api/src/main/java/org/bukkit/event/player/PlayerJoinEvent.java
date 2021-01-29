@@ -10,21 +10,27 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlayerJoinEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-    private String joinMessage;
-
-    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
+    // Paper start
+    private net.kyori.adventure.text.Component joinMessage;
+    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final net.kyori.adventure.text.Component joinMessage) {
         super(playerJoined);
         this.joinMessage = joinMessage;
     }
 
+    @Deprecated // Paper end
+    public PlayerJoinEvent(@NotNull final Player playerJoined, @Nullable final String joinMessage) {
+        super(playerJoined);
+        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null; // Paper end
+    }
+
+    // Paper start
     /**
      * Gets the join message to send to all online players
      *
      * @return string join message. Can be null
      */
-    @Nullable
-    public String getJoinMessage() {
-        return joinMessage;
+    public net.kyori.adventure.text.@Nullable Component joinMessage() {
+        return this.joinMessage;
     }
 
     /**
@@ -32,8 +38,32 @@ public class PlayerJoinEvent extends PlayerEvent {
      *
      * @param joinMessage join message. If null, no message will be sent
      */
-    public void setJoinMessage(@Nullable String joinMessage) {
+    public void joinMessage(net.kyori.adventure.text.@Nullable Component joinMessage) {
         this.joinMessage = joinMessage;
+    }
+    // Paper end
+
+    /**
+     * Gets the join message to send to all online players
+     *
+     * @return string join message. Can be null
+     * @deprecated in favour of {@link #joinMessage()}
+     */
+    @Nullable
+    @Deprecated // Paper
+    public String getJoinMessage() {
+        return this.joinMessage == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.joinMessage); // Paper
+    }
+
+    /**
+     * Sets the join message to send to all online players
+     *
+     * @param joinMessage join message. If null, no message will be sent
+     * @deprecated in favour of {@link #joinMessage(net.kyori.adventure.text.Component)}
+     */
+    @Deprecated // Paper
+    public void setJoinMessage(@Nullable String joinMessage) {
+        this.joinMessage = joinMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null; // Paper
     }
 
     @NotNull

@@ -22,7 +22,11 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Care should be taken to check {@link #isAsynchronous()} and treat the event
  * appropriately.
+ *
+ * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
  */
+@Deprecated // Paper
+@org.bukkit.Warning(value = false, reason = "Don't nag on old event yet") // Paper
 public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;

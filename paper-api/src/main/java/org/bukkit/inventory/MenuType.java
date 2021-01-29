@@ -145,10 +145,44 @@ public interface MenuType extends Keyed {
          * @param player the player the view belongs to
          * @param title the title of the view
          * @return the created {@link InventoryView}
+         * @deprecated Use {@link #create(HumanEntity, net.kyori.adventure.text.Component)} instead.
          */
         @NotNull
+        @Deprecated(since = "1.21") // Paper - adventure
         V create(@NotNull HumanEntity player, @NotNull String title);
+
+        // Paper start - adventure
+        /**
+         * Creates a view of the specified menu type.
+         * <p>
+         * The player provided to create this view must be the player the view
+         * is opened for. See {@link HumanEntity#openInventory(InventoryView)}
+         * for more information.
+         *
+         * @param player the player the view belongs to
+         * @param title the title of the view
+         * @return the created {@link InventoryView}
+         */
+        @NotNull
+        V create(@NotNull HumanEntity player, @NotNull net.kyori.adventure.text.Component title);
+        // Paper end - adventure
     }
+
+    // Paper start - adventure
+    /**
+     * Creates a view of the specified menu type.
+     * <p>
+     * The player provided to create this view must be the player the view
+     * is opened for. See {@link HumanEntity#openInventory(InventoryView)}
+     * for more information.
+     *
+     * @param player the player the view belongs to
+     * @param title the title of the view
+     * @return the created {@link InventoryView}
+     */
+    @NotNull
+    InventoryView create(@NotNull HumanEntity player, @NotNull net.kyori.adventure.text.Component title);
+    // Paper end - adventure
 
     /**
      * Yields this MenuType as a typed version of itself with a plain

@@ -22,7 +22,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     private static final HandlerList handlers = new HandlerList();
     private final String hostname;
     private final InetAddress address;
-    private String motd;
+    private net.kyori.adventure.text.Component motd; // Paper
     private final int numPlayers;
     private int maxPlayers;
 
@@ -31,7 +31,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
         this.hostname = hostname;
         this.address = address;
-        this.motd = motd;
+        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
         this.numPlayers = numPlayers;
         this.maxPlayers = maxPlayers;
     }
@@ -45,15 +45,80 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @param address the address of the pinger
      * @param motd the message of the day
      * @param maxPlayers the max number of players
+     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
      */
+    @Deprecated // Paper
     protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
         super(true);
+        this.numPlayers = MAGIC_PLAYER_COUNT;
+        this.hostname = hostname;
+        this.address = address;
+        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
+        this.maxPlayers = maxPlayers;
+    }
+    // Paper start
+    @Deprecated
+    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
+        this("", address, motd, numPlayers, maxPlayers);
+    }
+    public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
+        super(true);
+        Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online (%s)", numPlayers);
+        this.hostname = hostname;
+        this.address = address;
+        this.motd = motd;
+        this.numPlayers = numPlayers;
+        this.maxPlayers = maxPlayers;
+    }
+    /**
+     * This constructor is intended for implementations that provide the
+     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
+     * count.
+     *
+     * @param address the address of the pinger
+     * @param motd the message of the day
+     * @param maxPlayers the max number of players
+     * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
+     */
+    @Deprecated
+    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
+        this("", address, motd, maxPlayers);
+    }
+
+    /**
+     * This constructor is intended for implementations that provide the
+     * {@link #iterator()} method, thus provided the {@link #getNumPlayers()}
+     * count.
+     *
+     * @param hostname The hostname that was used to connect to the server
+     * @param address the address of the pinger
+     * @param motd the message of the day
+     * @param maxPlayers the max number of players
+     */
+    protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final net.kyori.adventure.text.@NotNull Component motd, final int maxPlayers) {
         this.numPlayers = MAGIC_PLAYER_COUNT;
         this.hostname = hostname;
         this.address = address;
         this.motd = motd;
         this.maxPlayers = maxPlayers;
     }
+    /**
+     * Get the message of the day message.
+     *
+     * @return the message of the day
+     */
+    public net.kyori.adventure.text.@NotNull Component motd() {
+        return motd;
+    }
+    /**
+     * Change the message of the day message.
+     *
+     * @param motd the message of the day
+     */
+    public void motd(net.kyori.adventure.text.@NotNull Component motd) {
+        this.motd = motd;
+    }
+    // Paper end
 
     /**
      * Gets the hostname that the player used to connect to the server, or
@@ -80,19 +145,23 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * Get the message of the day message.
      *
      * @return the message of the day
+     * @deprecated in favour of {@link #motd()}
      */
     @NotNull
+    @Deprecated // Paper
     public String getMotd() {
-        return motd;
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper
     }
 
     /**
      * Change the message of the day message.
      *
      * @param motd the message of the day
+     * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
      */
+    @Deprecated // Paper
     public void setMotd(@NotNull String motd) {
-        this.motd = motd;
+        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
     }
 
     /**

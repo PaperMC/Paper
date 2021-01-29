@@ -149,27 +149,64 @@ public interface PotionMeta extends ItemMeta {
     /**
      * Checks for existence of a custom potion name translation suffix.
      *
+     * @deprecated conflicting name, use {@link #hasCustomPotionName()}
      * @return true if this has a custom potion name
      */
-    boolean hasCustomName();
+    @Deprecated(forRemoval = true, since = "1.21.4")
+    default boolean hasCustomName() {
+        return this.hasCustomPotionName();
+    }
 
     /**
      * Gets the potion name translation suffix that is set.
      * <p>
-     * Plugins should check that hasCustomName() returns <code>true</code>
+     * Plugins should check that {@link #hasCustomPotionName()} returns {@code true}
+     * before calling this method.
+     *
+     * @deprecated conflicting name, use {@link #getCustomPotionName()}
+     * @return the potion name that is set
+     */
+    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Nullable
+    default String getCustomName() {
+        return this.getCustomPotionName();
+    }
+
+    /**
+     * Sets the potion name translation suffix.
+     *
+     * @deprecated conflicting name, use {@link #setCustomPotionName(String)}
+     * @param name the name to set
+     */
+    @Deprecated(forRemoval = true, since = "1.21.4")
+    default void setCustomName(@Nullable String name) {
+        this.setCustomPotionName(name);
+    }
+
+    /**
+     * Checks for existence of a custom potion name translation suffix.
+     *
+     * @return true if this has a custom potion name
+     */
+    boolean hasCustomPotionName();
+
+    /**
+     * Gets the potion name translation suffix that is set.
+     * <p>
+     * Plugins should check that {@link #hasCustomPotionName()} returns {@code true}
      * before calling this method.
      *
      * @return the potion name that is set
      */
     @Nullable
-    String getCustomName();
+    String getCustomPotionName();
 
     /**
      * Sets the potion name translation suffix.
      *
      * @param name the name to set
      */
-    void setCustomName(@Nullable String name);
+    void setCustomPotionName(@Nullable String name);
 
     @Override
     PotionMeta clone();

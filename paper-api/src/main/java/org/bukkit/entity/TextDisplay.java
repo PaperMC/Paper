@@ -13,16 +13,36 @@ public interface TextDisplay extends Display {
      * Gets the displayed text.
      *
      * @return the displayed text.
+     * @deprecated in favour of {@link #text()}
      */
     @Nullable
+    @Deprecated // Paper
     String getText();
 
     /**
      * Sets the displayed text.
      *
      * @param text the new text
+     * @deprecated in favour of {@link #text(net.kyori.adventure.text.Component)}
      */
+    @Deprecated // Paper
     void setText(@Nullable String text);
+
+    // Paper start
+    /**
+     * Gets the displayed text.
+     *
+     * @return the displayed text
+     */
+    net.kyori.adventure.text.@NotNull Component text();
+
+    /**
+     * Sets the displayed text.
+     *
+     * @param text the new text
+     */
+    void text(net.kyori.adventure.text.@Nullable Component text);
+    // Paper end
 
     /**
      * Gets the maximum line width before wrapping.

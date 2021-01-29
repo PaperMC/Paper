@@ -10,7 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * All supported color values for chat
+ * @deprecated ChatColor has been deprecated in favor of <a href="https://docs.advntr.dev/text.html">Adventure</a> API. See {@link net.kyori.adventure.text.format.NamedTextColor} for the adventure equivalent of pre-defined text colors
  */
+@Deprecated // Paper
 public enum ChatColor {
     /**
      * Represents black

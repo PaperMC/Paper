@@ -269,11 +269,25 @@ public interface InventoryView {
      */
     public boolean setProperty(@NotNull Property prop, int value);
 
+    // Paper start
     /**
      * Get the title of this inventory window.
      *
      * @return The title.
      */
+    @NotNull
+    default net.kyori.adventure.text.Component title() {
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.getTitle());
+    }
+    // Paper end
+
+    /**
+     * Get the title of this inventory window.
+     *
+     * @return The title.
+     * @deprecated in favour of {@link #title()}
+     */
+    @Deprecated // Paper
     @NotNull
     public String getTitle();
 

@@ -200,4 +200,24 @@ public interface ItemFactory {
      */
     @NotNull
     ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
+
+    // Paper start - Adventure
+    /**
+     * Creates a hover event for the given item.
+     *
+     * @param item The item
+     * @return A hover event
+     */
+    @NotNull
+    net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
+
+    /**
+     * Get the formatted display name of the {@link ItemStack}.
+     *
+     * @param itemStack the {@link ItemStack}
+     * @return display name of the {@link ItemStack}
+     */
+    @NotNull
+    net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
+    // Paper end - Adventure
 }

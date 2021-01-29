@@ -38,12 +38,65 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface ItemMeta extends Cloneable, ConfigurationSerializable, PersistentDataHolder {
 
+    // Paper start
+    /**
+     * Checks for existence of a custom name.
+     *
+     * @return true if this has a custom name
+     */
+    boolean hasCustomName();
+
+    /**
+     * Gets the custom name.
+     *
+     * <p>Plugins should check that {@link #hasCustomName()} returns {@code true} before calling this method.</p>
+     *
+     * @return the custom name
+     */
+    net.kyori.adventure.text.@Nullable Component customName();
+
+    /**
+     * Sets the custom name.
+     *
+     * @param customName the custom name to set
+     */
+    void customName(final net.kyori.adventure.text.@Nullable Component customName);
+
     /**
      * Checks for existence of a display name.
      *
+     * @apiNote This method is obsolete, use {@link #hasCustomName()} instead.
      * @return true if this has a display name
      */
-    boolean hasDisplayName();
+    @ApiStatus.Obsolete(since = "1.21.4")
+    default boolean hasDisplayName() {
+        return this.hasCustomName();
+    }
+
+    /**
+     * Gets the display name.
+     *
+     * <p>Plugins should check that {@link #hasDisplayName()} returns <code>true</code> before calling this method.</p>
+     *
+     * @apiNote This method is obsolete, use {@link #customName()} instead.
+     * @return the display name
+     */
+    @ApiStatus.Obsolete(since = "1.21.4")
+    default net.kyori.adventure.text.@Nullable Component displayName() {
+        return this.customName();
+    }
+
+    /**
+     * Sets the display name.
+     *
+     * @param displayName the display name to set
+     * @apiNote This method is obsolete, use {@link #customName(Component)} instead.
+     */
+    @ApiStatus.Obsolete(since = "1.21.4")
+    default void displayName(final net.kyori.adventure.text.@Nullable Component displayName) {
+        this.customName(displayName);
+    }
+    // Paper end
 
     /**
      * Gets the display name that is set.
@@ -52,7 +105,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * before calling this method.
      *
      * @return the display name that is set
+     * @deprecated in favour of {@link #displayName()}
      */
+    @Deprecated // Paper
     @NotNull
     String getDisplayName();
 
@@ -60,7 +115,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the display name.
      *
      * @param name the name to set
+     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
      */
+    @Deprecated // Paper
     void setDisplayName(@Nullable String name);
 
     /**
@@ -73,6 +130,32 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      */
     boolean hasItemName();
 
+    // Paper start
+    /**
+     * Gets the item name component that is set.
+     * <br>
+     * Item name differs from display name in that it is cannot be edited by an
+     * anvil, is not styled with italics, and does not show labels.
+     * <p>
+     * Plugins should check that {@link #hasItemName()} returns <code>true</code> before
+     * calling this method.
+     *
+     * @return the item name that is set
+     * @see #hasItemName()
+     */
+    @org.jetbrains.annotations.NotNull
+    Component itemName();
+
+    /**
+     * Sets the item name.
+     * <br>
+     * Item name differs from display name in that it is cannot be edited by an
+     * anvil, is not styled with italics, and does not show labels.
+     *
+     * @param name the name to set, null to remove it
+     */
+    void itemName(@Nullable final Component name);
+    // Paper end
     /**
      * Gets the item name that is set.
      * <br>
@@ -83,7 +166,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * calling this method.
      *
      * @return the item name that is set
+     * @deprecated in favour of {@link #itemName()}
      */
+    @Deprecated // Paper
     @NotNull
     String getItemName();
 
@@ -94,7 +179,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * anvil, is not styled with italics, and does not show labels.
      *
      * @param name the name to set
+     * @deprecated in favour of {@link #itemName(Component)}
      */
+    @Deprecated // Paper
     void setItemName(@Nullable String name);
 
     /**
@@ -135,6 +222,24 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      */
     boolean hasLore();
 
+    // Paper start
+    /**
+     * Gets the lore.
+     *
+     * <p>Plugins should check that {@link #hasLore()} returns <code>true</code> before calling this method.</p>
+     *
+     * @return the lore
+     */
+    @Nullable List<net.kyori.adventure.text.Component> lore();
+
+    /**
+     * Sets the lore.
+     *
+     * @param lore the lore to set
+     */
+    void lore(final @Nullable List<? extends net.kyori.adventure.text.Component> lore);
+    // Paper end
+
     /**
      * Gets the lore that is set.
      * <p>
@@ -142,7 +247,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * calling this method.
      *
      * @return a list of lore that is set
+     * @deprecated in favour of {@link #lore()}
      */
+    @Deprecated // Paper
     @Nullable
     List<String> getLore();
 
@@ -151,7 +258,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Removes lore when given null.
      *
      * @param lore the lore that will be set
+     * @deprecated in favour of {@link #lore(List)}
      */
+    @Deprecated // Paper
     void setLore(@Nullable List<String> lore);
 
     /**

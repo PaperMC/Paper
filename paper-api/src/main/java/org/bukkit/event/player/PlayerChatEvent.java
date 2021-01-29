@@ -12,12 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Holds information for player chat and commands
  *
- * @deprecated This event will fire from the main thread and allows the use of
- *     all of the Bukkit API, unlike the {@link AsyncPlayerChatEvent}.
- *     <p>
- *     Listening to this event forces chat to wait for the main thread which
- *     causes delays for chat. {@link AsyncPlayerChatEvent} is the encouraged
- *     alternative for thread safe implementations.
+ * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link io.papermc.paper.event.player.AsyncChatEvent} instead, wherever possible.
  */
 @Deprecated(since = "1.3.1")
 @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")

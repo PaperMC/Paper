@@ -5,8 +5,14 @@ import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a book ({@link Material#WRITABLE_BOOK} or {@link
- * Material#WRITTEN_BOOK}) that can have pages.
+ * Represents a book ({@link Material#WRITABLE_BOOK}) that can have pages.
+ * <p>
+ * For {@link Material#WRITTEN_BOOK}, use {@link BookMeta}.
+ * <p>
+ * Before using this type, make sure to check the itemstack's material with
+ * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
+ * the meta instance is not sufficient due to unusual inheritance
+ * with relation to {@link BookMeta}.
  */
 public interface WritableBookMeta extends ItemMeta {
 

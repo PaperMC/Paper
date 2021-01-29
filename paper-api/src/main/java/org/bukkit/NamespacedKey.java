@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * underscores, hyphens, and forward slashes.
  *
  */
-public final class NamespacedKey {
+public final class NamespacedKey implements net.kyori.adventure.key.Key { // Paper - implement Key
 
     /**
      * The namespace representing all inbuilt keys.
@@ -130,10 +130,11 @@ public final class NamespacedKey {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 47 * hash + this.namespace.hashCode();
-        hash = 47 * hash + this.key.hashCode();
-        return hash;
+        // Paper start
+        int result = this.namespace.hashCode();
+        result = (31 * result) + this.key.hashCode();
+        return result;
+        // Paper end
     }
 
     @Override
@@ -141,11 +142,10 @@ public final class NamespacedKey {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final NamespacedKey other = (NamespacedKey) obj;
-        return this.namespace.equals(other.namespace) && this.key.equals(other.key);
+        // Paper start
+        if (!(obj instanceof net.kyori.adventure.key.Key key)) return false;
+        return this.namespace.equals(key.namespace()) && this.key.equals(key.value());
+        // Paper end
     }
 
     @Override
@@ -248,4 +248,24 @@ public final class NamespacedKey {
     public static NamespacedKey fromString(@NotNull String key) {
         return fromString(key, null);
     }
+
+    // Paper start
+    @NotNull
+    @Override
+    public String namespace() {
+        return this.getNamespace();
+    }
+
+    @NotNull
+    @Override
+    public String value() {
+        return this.getKey();
+    }
+
+    @NotNull
+    @Override
+    public String asString() {
+        return this.namespace + ':' + this.key;
+    }
+    // Paper end
 }

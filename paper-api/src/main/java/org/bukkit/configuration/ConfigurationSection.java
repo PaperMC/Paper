@@ -1058,4 +1058,98 @@ public interface ConfigurationSection {
      * one line.
      */
     public void setInlineComments(@NotNull String path, @Nullable List<String> comments);
+
+    // Paper start - add rich message component support to configuration
+    /**
+     * Gets the requested MiniMessage formatted String as Component by path.
+     * <p>
+     * If the Component does not exist but a default value has been specified,
+     * this will return the default value. If the Component does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param path Path of the Component to get.
+     * @return Requested Component.
+     */
+    default net.kyori.adventure.text.@Nullable Component getRichMessage(final @NotNull String path) {
+        return this.getRichMessage(path, null);
+    }
+
+    /**
+     * Gets the requested MiniMessage formatted String as Component by path.
+     * <p>
+     * If the Component does not exist but a default value has been specified,
+     * this will return the default value. If the Component does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param path Path of the Component to get.
+     * @param fallback component that will be used as fallback
+     * @return Requested Component.
+     */
+    @Contract("_, !null -> !null")
+    default net.kyori.adventure.text.@Nullable Component getRichMessage(final @NotNull String path, final net.kyori.adventure.text.@Nullable Component fallback) {
+        return this.getComponent(path, net.kyori.adventure.text.minimessage.MiniMessage.miniMessage(), fallback);
+    }
+
+    /**
+     * Sets the specified path to the given value.
+     * <p>
+     * If value is null, the entry will be removed. Any existing entry will be
+     * replaced, regardless of what the new value is.
+     *
+     * @param path Path of the object to set.
+     * @param value New value to set the path to.
+     */
+    default void setRichMessage(final @NotNull String path, final net.kyori.adventure.text.@Nullable Component value) {
+        this.setComponent(path, net.kyori.adventure.text.minimessage.MiniMessage.miniMessage(), value);
+    }
+
+    /**
+     * Gets the requested formatted String as Component by path deserialized by the ComponentDecoder.
+     * <p>
+     * If the Component does not exist but a default value has been specified,
+     * this will return the default value. If the Component does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param path Path of the Component to get.
+     * @param decoder ComponentDecoder instance used for deserialization
+     * @return Requested Component.
+     */
+    default <C extends net.kyori.adventure.text.Component> @Nullable C getComponent(final @NotNull String path, final net.kyori.adventure.text.serializer.@NotNull ComponentDecoder<? super String, C> decoder) {
+        return this.getComponent(path, decoder, null);
+    }
+
+    /**
+     * Gets the requested formatted String as Component by path deserialized by the ComponentDecoder.
+     * <p>
+     * If the Component does not exist but a default value has been specified,
+     * this will return the default value. If the Component does not exist and no
+     * default value was specified, this will return null.
+     *
+     * @param path Path of the Component to get.
+     * @param decoder ComponentDecoder instance used for deserialization
+     * @param fallback component that will be used as fallback
+     * @return Requested Component.
+     */
+    @Contract("_, _, !null -> !null")
+    default <C extends net.kyori.adventure.text.Component> @Nullable C getComponent(final @NotNull String path, final net.kyori.adventure.text.serializer.@NotNull ComponentDecoder<? super String, C> decoder, final @Nullable C fallback) {
+        java.util.Objects.requireNonNull(decoder, "decoder");
+        final String value = this.getString(path);
+        return decoder.deserializeOr(value, fallback);
+    }
+
+    /**
+     * Sets the specified path to the given value.
+     * <p>
+     * If value is null, the entry will be removed. Any existing entry will be
+     * replaced, regardless of what the new value is.
+     *
+     * @param path Path of the object to set.
+     * @param encoder the encoder used to transform the value
+     * @param value New value to set the path to.
+     */
+    default <C extends net.kyori.adventure.text.Component> void setComponent(final @NotNull String path, final net.kyori.adventure.text.serializer.@NotNull ComponentEncoder<C, String> encoder, final @Nullable C value) {
+        java.util.Objects.requireNonNull(encoder, "encoder");
+        this.set(path, encoder.serializeOrNull(value));
+    }
+    // Paper end - add rich message component support to configuration
 }

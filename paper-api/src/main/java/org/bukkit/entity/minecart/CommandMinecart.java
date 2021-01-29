@@ -32,7 +32,9 @@ public interface CommandMinecart extends Minecart {
      * same as setting it to "@".
      *
      * @param name New name for this CommandMinecart.
+     * @deprecated in favour of {@link #customName(net.kyori.adventure.text.Component)}
      */
+    @Deprecated // Paper
     public void setName(@Nullable String name);
 
 }

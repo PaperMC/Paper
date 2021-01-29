@@ -179,6 +179,13 @@ public interface Plugin extends TabExecutor {
     @NotNull
     public Logger getLogger();
 
+    // Paper start - Adventure component logger
+    @NotNull
+    default net.kyori.adventure.text.logger.slf4j.ComponentLogger getComponentLogger() {
+        return net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(getLogger().getName());
+    }
+    // Paper end
+
     /**
      * Returns the name of the plugin.
      * <p>

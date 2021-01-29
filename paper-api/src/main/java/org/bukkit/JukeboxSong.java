@@ -33,4 +33,14 @@ public interface JukeboxSong extends Keyed, Translatable {
     private static JukeboxSong get(@NotNull String key) {
         return Registry.JUKEBOX_SONG.getOrThrow(NamespacedKey.minecraft(key));
     }
+
+    // Paper start - adventure
+    /**
+     * @deprecated this method assumes that jukebox song description will
+     * always be a translatable component which is not guaranteed.
+     */
+    @Override
+    @Deprecated(forRemoval = true)
+    @org.jetbrains.annotations.NotNull String getTranslationKey();
+    // Paper end - adventure
 }

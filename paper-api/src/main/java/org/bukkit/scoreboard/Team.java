@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * properties. This team is only relevant to the display of the associated
  * {@link #getScoreboard() scoreboard}.
  */
-public interface Team {
+public interface Team extends net.kyori.adventure.audience.ForwardingAudience { // Paper - Make Team extend ForwardingAudience
 
     /**
      * Gets the name of this Team
@@ -23,14 +23,14 @@ public interface Team {
     @NotNull
     String getName();
 
+    // Paper start - Adventure
     /**
-     * Gets the name displayed to entries for this team
+     * Gets the display name for this team
      *
      * @return Team display name
      * @throws IllegalStateException if this team has been unregistered
      */
-    @NotNull
-    String getDisplayName();
+    net.kyori.adventure.text.@NotNull Component displayName();
 
     /**
      * Sets the name displayed to entries for this team
@@ -38,7 +38,7 @@ public interface Team {
      * @param displayName New display name
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setDisplayName(@NotNull String displayName);
+    void displayName(net.kyori.adventure.text.@Nullable Component displayName);
 
     /**
      * Gets the prefix prepended to the display of entries on this team.
@@ -46,8 +46,7 @@ public interface Team {
      * @return Team prefix
      * @throws IllegalStateException if this team has been unregistered
      */
-    @NotNull
-    String getPrefix();
+    net.kyori.adventure.text.@NotNull Component prefix();
 
     /**
      * Sets the prefix prepended to the display of entries on this team.
@@ -55,7 +54,7 @@ public interface Team {
      * @param prefix New prefix
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setPrefix(@NotNull String prefix);
+    void prefix(net.kyori.adventure.text.@Nullable Component prefix);
 
     /**
      * Gets the suffix appended to the display of entries on this team.
@@ -63,8 +62,7 @@ public interface Team {
      * @return the team's current suffix
      * @throws IllegalStateException if this team has been unregistered
      */
-    @NotNull
-    String getSuffix();
+    net.kyori.adventure.text.@NotNull Component suffix();
 
     /**
      * Sets the suffix appended to the display of entries on this team.
@@ -72,6 +70,101 @@ public interface Team {
      * @param suffix the new suffix for this team.
      * @throws IllegalStateException if this team has been unregistered
      */
+    void suffix(net.kyori.adventure.text.@Nullable Component suffix);
+
+    /**
+     * Checks if the team has a color specified
+     *
+     * @return true if it has a <b>color</b>
+     * @throws IllegalStateException if this team has been unregistered
+     */
+    boolean hasColor();
+
+    /**
+     * Gets the color of the team.
+     * <br>
+     * This only sets the team outline, other occurrences of colors such as in
+     * names are handled by prefixes / suffixes.
+     *
+     * @return team color
+     * @throws IllegalStateException if this team has been unregistered
+     * @throws IllegalStateException if the team doesn't have a color
+     * @see #hasColor()
+     */
+    net.kyori.adventure.text.format.@NotNull TextColor color();
+
+    /**
+     * Sets the color of the team.
+     * <br>
+     * This only sets the team outline, other occurrences of colors such as in
+     * names are handled by prefixes / suffixes.
+     *
+     * @param color new color, null for no color
+     */
+    void color(net.kyori.adventure.text.format.@Nullable NamedTextColor color);
+    // Paper end - Adventure
+
+    /**
+     * Gets the name displayed to entries for this team
+     *
+     * @return Team display name
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #displayName()}
+     */
+    @NotNull
+    @Deprecated // Paper
+    String getDisplayName();
+
+    /**
+     * Sets the name displayed to entries for this team
+     *
+     * @param displayName New display name
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #displayName(net.kyori.adventure.text.Component)}
+     */
+    @Deprecated // Paper
+    void setDisplayName(@NotNull String displayName);
+
+    /**
+     * Gets the prefix prepended to the display of entries on this team.
+     *
+     * @return Team prefix
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #prefix()}
+     */
+    @NotNull
+    @Deprecated // Paper
+    String getPrefix();
+
+    /**
+     * Sets the prefix prepended to the display of entries on this team.
+     *
+     * @param prefix New prefix
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #prefix(net.kyori.adventure.text.Component)}
+     */
+    @Deprecated // Paper
+    void setPrefix(@NotNull String prefix);
+
+    /**
+     * Gets the suffix appended to the display of entries on this team.
+     *
+     * @return the team's current suffix
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #suffix()}
+     */
+    @NotNull
+    @Deprecated // Paper
+    String getSuffix();
+
+    /**
+     * Sets the suffix appended to the display of entries on this team.
+     *
+     * @param suffix the new suffix for this team.
+     * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #suffix(net.kyori.adventure.text.Component)}
+     */
+    @Deprecated // Paper
     void setSuffix(@NotNull String suffix);
 
     /**
@@ -82,8 +175,10 @@ public interface Team {
      *
      * @return team color, defaults to {@link ChatColor#RESET}
      * @throws IllegalStateException if this team has been unregistered
+     * @deprecated in favour of {@link #color()}
      */
     @NotNull
+    @Deprecated // Paper
     ChatColor getColor();
 
     /**
@@ -94,7 +189,9 @@ public interface Team {
      *
      * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
      * no color
+     * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)}
      */
+    @Deprecated // Paper
     void setColor(@NotNull ChatColor color);
 
     /**

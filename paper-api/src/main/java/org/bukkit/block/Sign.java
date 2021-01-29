@@ -12,12 +12,51 @@ import org.jetbrains.annotations.Nullable;
  * Represents a captured state of either a SignPost or a WallSign.
  */
 public interface Sign extends TileState, Colorable {
+    // Paper start
+    /**
+     * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
+     *
+     * @return List of components containing each line of text
+     * @deprecated A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
+     */
+    @NotNull
+    @Deprecated
+    public java.util.List<net.kyori.adventure.text.Component> lines();
+
+    /**
+     * Gets the line of text at the specified index on the {@link Side#FRONT}.
+     * <p>
+     * For example, getLine(0) will return the first line of text.
+     *
+     * @param index Line number to get the text from, starting at 0
+     * @throws IndexOutOfBoundsException Thrown when the line does not exist
+     * @return Text on the given line
+     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
+     */
+    @NotNull
+    @Deprecated
+    public net.kyori.adventure.text.Component line(int index) throws IndexOutOfBoundsException;
+
+    /**
+     * Sets the line of text at the specified index on the {@link Side#FRONT}.
+     * <p>
+     * For example, setLine(0, "Line One") will set the first line of text to
+     * "Line One".
+     *
+     * @param index Line number to set the text at, starting from 0
+     * @param line New text to set at the specified index
+     * @throws IndexOutOfBoundsException If the index is out of the range 0..3
+     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
+     */
+    @Deprecated
+    public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
+    // Paper end
 
     /**
      * Gets all the lines of text currently on the {@link Side#FRONT} of this sign.
      *
      * @return Array of Strings containing each line of text
-     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#getLines()}.
+     * @deprecated  A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
      */
     @Deprecated(since = "1.20")
     @NotNull
@@ -31,7 +70,7 @@ public interface Sign extends TileState, Colorable {
      * @param index Line number to get the text from, starting at 0
      * @return Text on the given line
      * @throws IndexOutOfBoundsException Thrown when the line does not exist
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#getLine(int)}.
+     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
      */
     @Deprecated(since = "1.20")
     @NotNull
@@ -46,7 +85,7 @@ public interface Sign extends TileState, Colorable {
      * @param index Line number to set the text at, starting from 0
      * @param line New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
-     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setLine(int, String)}.
+     * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
      */
     @Deprecated(since = "1.20")
     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException;

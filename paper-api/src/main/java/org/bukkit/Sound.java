@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * guarantee values will not be removed from this interface. As such, you should not
  * depend on the ordinal values of this class.
  */
-public interface Sound extends OldEnum<Sound>, Keyed {
+public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
     Sound AMBIENT_BASALT_DELTAS_LOOP = getSound("ambient.basalt_deltas.loop");
@@ -1713,4 +1713,11 @@ public interface Sound extends OldEnum<Sound>, Keyed {
     static Sound[] values() {
         return Lists.newArrayList(Registry.SOUNDS).toArray(new Sound[0]);
     }
+
+    // Paper start
+    @Override
+    default net.kyori.adventure.key.@NotNull Key key() {
+        return this.getKey();
+    }
+    // Paper end
 }

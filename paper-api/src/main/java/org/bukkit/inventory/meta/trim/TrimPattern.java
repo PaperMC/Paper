@@ -89,4 +89,21 @@ public interface TrimPattern extends Keyed, Translatable {
     private static TrimPattern getTrimPattern(@NotNull String key) {
         return Registry.TRIM_PATTERN.getOrThrow(NamespacedKey.minecraft(key));
     }
+
+    // Paper start - adventure
+    /**
+     * Get the description of this {@link TrimPattern}.
+     *
+     * @return the description
+     */
+    net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component description();
+
+    /**
+     * @deprecated this method assumes that {@link #description()} will
+     * always be a translatable component which is not guaranteed.
+     */
+    @Override
+    @Deprecated(forRemoval = true)
+    @org.jetbrains.annotations.NotNull String getTranslationKey();
+    // Paper end - adventure
 }

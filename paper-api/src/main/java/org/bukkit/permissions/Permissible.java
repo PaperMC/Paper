@@ -126,4 +126,34 @@ public interface Permissible extends ServerOperator {
      */
     @NotNull
     public Set<PermissionAttachmentInfo> getEffectivePermissions();
+
+    // Paper start - add TriState permission checks
+    /**
+     * Checks if this object has a permission set and, if it is set, the value of the permission.
+     *
+     * @param permission the permission to check
+     * @return a tri-state of if the permission is set and, if it is set, it's value
+     */
+    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull Permission permission) {
+        if (this.isPermissionSet(permission)) {
+            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
+        } else {
+            return net.kyori.adventure.util.TriState.NOT_SET;
+        }
+    }
+
+    /**
+     * Checks if this object has a permission set and, if it is set, the value of the permission.
+     *
+     * @param permission the permission to check
+     * @return a tri-state of if the permission is set and, if it is set, it's value
+     */
+    default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull String permission) {
+        if (this.isPermissionSet(permission)) {
+            return net.kyori.adventure.util.TriState.byBoolean(this.hasPermission(permission));
+        } else {
+            return net.kyori.adventure.util.TriState.NOT_SET;
+        }
+    }
+    // Paper end
 }

@@ -61,4 +61,21 @@ public interface TrimMaterial extends Keyed, Translatable {
     private static TrimMaterial getTrimMaterial(@NotNull String key) {
         return Registry.TRIM_MATERIAL.getOrThrow(NamespacedKey.minecraft(key));
     }
+
+    // Paper start - adventure
+    /**
+     * Get the description of this {@link TrimMaterial}.
+     *
+     * @return the description
+     */
+    net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component description();
+
+    /**
+     * @deprecated this method assumes that {@link #description()} will
+     * always be a translatable component which is not guaranteed.
+     */
+    @Override
+    @Deprecated(forRemoval = true)
+    @org.jetbrains.annotations.NotNull String getTranslationKey();
+    // Paper end - adventure
 }

@@ -11,6 +11,18 @@ java {
 
 val annotationsVersion = "24.1.0"
 val bungeeCordChatVersion = "1.20-R0.2"
+val adventureVersion = "4.17.0"
+val apiAndDocs: Configuration by configurations.creating {
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
+        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+    }
+}
+configurations.api {
+    extendsFrom(apiAndDocs)
+}
 
 // Paper start - configure mockito agent that is needed in newer java versions
 val mockitoAgent = configurations.register("mockitoAgent")
@@ -28,7 +40,11 @@ dependencies {
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
-    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion")
+    // Paper start - adventure
+    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion-deprecated+build.19") {
+        exclude("com.google.guava", "guava")
+    }
+    // Paper - adventure
     api("org.yaml:snakeyaml:2.2")
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
@@ -38,6 +54,13 @@ dependencies {
         isTransitive = false // includes junit
     }
     api("it.unimi.dsi:fastutil:8.5.15")
+    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
+    apiAndDocs("net.kyori:adventure-api")
+    apiAndDocs("net.kyori:adventure-text-minimessage")
+    apiAndDocs("net.kyori:adventure-text-serializer-gson")
+    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
+    apiAndDocs("net.kyori:adventure-text-serializer-plain")
+    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
     // Paper end
 
     compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
@@ -115,14 +138,31 @@ tasks.withType<Javadoc> {
         "https://guava.dev/releases/33.3.1-jre/api/docs/",
         "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
         "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/", // Paper - we don't want Java 5 annotations
-        "https://javadoc.io/doc/net.md-5/bungeecord-chat/$bungeeCordChatVersion/",
+        // "https://javadoc.io/doc/net.md-5/bungeecord-chat/$bungeeCordChatVersion/", // Paper - don't link to bungee chat
         // Paper start - add missing javadoc links
         "https://javadoc.io/doc/org.joml/joml/1.10.8/index.html",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
         // Paper end
+        // Paper start
+        "https://jd.advntr.dev/api/$adventureVersion/",
+        "https://jd.advntr.dev/key/$adventureVersion/",
+        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
+        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        // Paper end
     )
     options.tags("apiNote:a:API Note:")
+
+    inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
+    doFirst {
+        options.addStringOption(
+            "sourcepath",
+            apiAndDocs.elements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
+        )
+    }
 
     // workaround for https://github.com/gradle/gradle/issues/4046
     inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
