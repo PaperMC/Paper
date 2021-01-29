@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 29 Dec 2020 15:03:03 +0100
+Subject: [PATCH] Add sendOpLevel API
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index ab1c23c12619aaea67cf3a484af3046a3e7c4872..e1ab296811081a0d1449d48d16de065c070fde23 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -1058,6 +1058,11 @@ public abstract class PlayerList {
+     }
+ 
+     private void a(EntityPlayer entityplayer, int i) {
++        // Paper start - add recalculatePermissions parameter
++        this.sendPlayerOperatorStatus(entityplayer, i, true);
++    }
++    public void sendPlayerOperatorStatus(EntityPlayer entityplayer, int i, boolean recalculatePermissions) {
++        // Paper end
+         if (entityplayer.playerConnection != null) {
+             byte b0;
+ 
+@@ -1072,8 +1077,10 @@ public abstract class PlayerList {
+             entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityStatus(entityplayer, b0));
+         }
+ 
++        if (recalculatePermissions) { // Paper
+         entityplayer.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommandDispatcher().a(entityplayer);
++        } // Paper
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index ee3e4bb122439f96ec35105521285d2c5be317e2..66522b820786649a1b82647d8ccdb086edf420f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2304,6 +2304,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             ? (org.bukkit.entity.Firework) entity.getBukkitEntity()
+             : null;
+     }
++
++    @Override
++    public void sendOpLevel(byte level) {
++        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
++
++        this.getHandle().getMinecraftServer().getPlayerList().sendPlayerOperatorStatus(this.getHandle(), level, false);
++    }
+     // Paper end
+ 
+     // Spigot start

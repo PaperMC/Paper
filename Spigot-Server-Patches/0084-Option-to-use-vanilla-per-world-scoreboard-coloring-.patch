@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Wed, 6 Apr 2016 01:04:23 -0500
+Subject: [PATCH] Option to use vanilla per-world scoreboard coloring on names
+
+This change is basically a bandaid to fix CB's complete and utter lack
+of support for vanilla scoreboard name modifications.
+
+In the future, finding a way to merge the vanilla expectations in with
+bukkit's concept of a display name would be preferable. There was a PR
+for this on CB at one point but I can't find it. We may need to do this
+ourselves at some point in the future.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index db2dddd12f54e6d15916c4cee623676541de37fb..1942f5224aaebb18adb591d6f70a419cfc1a7bdd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -254,4 +254,9 @@ public class PaperWorldConfig {
+         grassUpdateRate = Math.max(0, getInt("grass-spread-tick-rate", grassUpdateRate));
+         log("Grass Spread Tick Rate: " + grassUpdateRate);
+     }
++
++    public boolean useVanillaScoreboardColoring;
++    private void useVanillaScoreboardColoring() {
++        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+index 39c1e750ae1270ca780a5d8624f8daa45bd27637..215123a2162841fbbced5e070c1bef1981c7a380 100644
+--- a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
++++ b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+@@ -5,11 +5,21 @@ import java.util.regex.MatchResult;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.ComponentLike;
+ import net.kyori.adventure.text.TextComponent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
+ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.minecraft.server.IChatBaseComponent;
++import net.minecraft.server.ScoreboardTeam;
++import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ 
+ public class VanillaChatMessageLogic {
+     public static Component displayNameForChat(final CraftPlayer player) {
++        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
++            IChatBaseComponent nameFromTeam = ScoreboardTeam.a(player.getHandle().getScoreboardTeam(), player.getHandle().getDisplayName());
++            // Explicitly add a RESET here, vanilla uses components for this now...
++            return PaperAdventure.asAdventure(nameFromTeam);
++        }
+         return player.displayName();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 1196bafd8d02a574fea10814b6c62f514463efbc..a35097cbd19749d6df247e63862e2bfde118a5d9 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -1733,7 +1733,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
+             // Do nothing, this is coming from a plugin
+         } else {
+-            Player player = this.getPlayer();
++            CraftPlayer player = this.getPlayer(); // Paper
+             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(minecraftServer));
+             this.server.getPluginManager().callEvent(event);
+ 
+@@ -1750,7 +1750,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                             return null;
+                         }
+ 
+-                        final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat((CraftPlayer) player), queueEvent.getFormat(), queueEvent.getMessage()); // Paper
++                        final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat(player), queueEvent.getFormat(), queueEvent.getMessage()); // Paper
+                         //String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage()); // Paper - comment
+                         //PlayerConnection.this.minecraftServer.console.sendMessage(message); // Paper - comment
+                         PlayerConnection.this.minecraftServer.console.sendMessage(adventure$msg); // Paper
