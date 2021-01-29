@@ -17,8 +17,15 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
     private final Player player;
     private final EquipmentSlot hand;
 
+    // Paper start - drop leash variable
+    @Deprecated
     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand) {
-        super(entity, UnleashReason.PLAYER_UNLEASH);
+        this(entity, player, hand, false);
+    }
+
+    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand, boolean dropLeash) {
+        super(entity, UnleashReason.PLAYER_UNLEASH, dropLeash);
+        // Paper end
         this.player = player;
         this.hand = hand;
     }
