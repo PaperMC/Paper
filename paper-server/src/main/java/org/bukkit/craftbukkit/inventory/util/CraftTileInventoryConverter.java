@@ -31,6 +31,18 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         return this.getInventory(this.getTileEntity());
     }
 
+    // Paper start
+    @Override
+    public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
+        Container te = getTileEntity();
+        if (te instanceof RandomizableContainerBlockEntity) {
+            ((RandomizableContainerBlockEntity) te).name = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
+        }
+
+        return getInventory(te);
+    }
+    // Paper end
+
     @Override
     public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
         Container te = this.getTileEntity();
@@ -53,6 +65,15 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
             return furnace;
         }
 
+        // Paper start
+        @Override
+        public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
+            Container tileEntity = getTileEntity();
+            ((AbstractFurnaceBlockEntity) tileEntity).setCustomName(io.papermc.paper.adventure.PaperAdventure.asVanilla(title));
+            return getInventory(tileEntity);
+        }
+        // Paper end
+
         @Override
         public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
             Container tileEntity = this.getTileEntity();
@@ -72,6 +93,18 @@ public abstract class CraftTileInventoryConverter implements CraftInventoryCreat
         public Container getTileEntity() {
             return new BrewingStandBlockEntity(BlockPos.ZERO, Blocks.BREWING_STAND.defaultBlockState());
         }
+
+        // Paper start
+        @Override
+        public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
+            // BrewingStand does not extend TileEntityLootable
+            Container tileEntity = getTileEntity();
+            if (tileEntity instanceof BrewingStandBlockEntity) {
+                ((BrewingStandBlockEntity) tileEntity).name = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
+            }
+            return getInventory(tileEntity);
+        }
+        // Paper end
 
         @Override
         public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {

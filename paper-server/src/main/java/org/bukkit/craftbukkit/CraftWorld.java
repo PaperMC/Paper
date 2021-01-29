@@ -167,6 +167,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
+    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
 
     private static final Random rand = new Random();
 
@@ -1710,6 +1711,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             entityTracker.broadcastAndSend(packet);
         }
     }
+    // Paper start - Adventure
+    @Override
+    public void playSound(final net.kyori.adventure.sound.Sound sound) {
+        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        final long seed = sound.seed().orElseGet(this.world.getRandom()::nextLong);
+        for (ServerPlayer player : this.getHandle().players()) {
+            player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player.getX(), player.getY(), player.getZ(), seed, null));
+        }
+    }
 
     @Override
     public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -1721,6 +1731,33 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             entityTracker.broadcastAndSend(packet);
         }
     }
+
+    @Override
+    public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
+        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, x, y, z, sound.seed().orElseGet(this.world.getRandom()::nextLong), this.playSound0(x, y, z));
+    }
+
+    @Override
+    public void playSound(final net.kyori.adventure.sound.Sound sound, final net.kyori.adventure.sound.Sound.Emitter emitter) {
+        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        final long seed = sound.seed().orElseGet(this.getHandle().getRandom()::nextLong);
+        if (emitter == net.kyori.adventure.sound.Sound.Emitter.self()) {
+            for (ServerPlayer player : this.getHandle().players()) {
+                player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player, seed, null));
+            }
+        } else if (emitter instanceof CraftEntity craftEntity) {
+            final net.minecraft.world.entity.Entity entity = craftEntity.getHandle();
+            io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, entity, seed, this.playSound0(entity.getX(), entity.getY(), entity.getZ()));
+        } else {
+            throw new IllegalArgumentException("Sound emitter must be an Entity or self(), but was: " + emitter);
+        }
+    }
+
+    private java.util.function.BiConsumer<net.minecraft.network.protocol.Packet<?>, Float> playSound0(final double x, final double y, final double z) {
+        return (packet, distance) -> this.world.getServer().getPlayerList().broadcast(null, x, y, z, distance, this.world.dimension(), packet);
+    }
+    // Paper end - Adventure
 
     private Map<String, GameRules.Key<?>> gamerules;
     public synchronized Map<String, GameRules.Key<?>> getGameRulesNMS() {
@@ -2160,6 +2197,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public void setSendViewDistance(final int viewDistance) {
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    // Paper start - implement pointers
+    @Override
+    public net.kyori.adventure.pointer.Pointers pointers() {
+        if (this.adventure$pointers == null) {
+            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
+                .withDynamic(net.kyori.adventure.identity.Identity.NAME, this::getName)
+                .withDynamic(net.kyori.adventure.identity.Identity.UUID, this::getUID)
+                .build();
+        }
+
+        return this.adventure$pointers;
     }
     // Paper end
 }

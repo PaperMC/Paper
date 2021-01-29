@@ -31,6 +31,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         return this.objective.getName();
     }
 
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.Component displayName() throws IllegalStateException {
+        CraftScoreboard scoreboard = checkState();
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(objective.getDisplayName());
+    }
+    @Override
+    public void displayName(net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException {
+        if (displayName == null) {
+            displayName = net.kyori.adventure.text.Component.empty();
+        }
+        CraftScoreboard scoreboard = checkState();
+        objective.setDisplayName(io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName));
+    }
+    // Paper end
     @Override
     public String getDisplayName() {
         this.checkState();

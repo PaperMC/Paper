@@ -1103,6 +1103,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
     }
 
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.Component customName() {
+        return displayName == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(displayName);
+    }
+
+    @Override
+    public void customName(final net.kyori.adventure.text.Component customName) {
+        this.displayName = customName == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(customName);
+    }
+    // Paper end
+
     @Override
     public String getDisplayName() {
         return CraftChatMessage.fromComponent(this.displayName);
@@ -1114,7 +1126,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @Override
-    public boolean hasDisplayName() {
+    public boolean hasCustomName() {
         return this.displayName != null;
     }
 
@@ -1132,6 +1144,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     public boolean hasItemName() {
         return this.itemName != null;
     }
+
+    // Paper start - Adventure
+    @Override
+    public net.kyori.adventure.text.Component itemName() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.itemName);
+    }
+
+    @Override
+    public void itemName(final net.kyori.adventure.text.Component name) {
+        this.itemName = io.papermc.paper.adventure.PaperAdventure.asVanilla(name);
+    }
+    // Paper end - Adventure
 
     @Override
     public String getLocalizedName() {
@@ -1151,6 +1175,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     public boolean hasLore() {
         return this.lore != null && !this.lore.isEmpty();
     }
+
+    // Paper start
+    @Override
+    public List<net.kyori.adventure.text.Component> lore() {
+        return this.lore != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(this.lore) : null;
+    }
+
+    @Override
+    public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
+        this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(lore) : null;
+    }
+    // Paper end
 
     @Override
     public boolean hasRepairCost() {

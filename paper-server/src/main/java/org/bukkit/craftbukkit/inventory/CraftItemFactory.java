@@ -211,4 +211,21 @@ public final class CraftItemFactory implements ItemFactory {
         Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
     }
+
+    // Paper start - Adventure
+    @Override
+    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
+        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
+            net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
+                item.getType().getKey(),
+                item.getAmount(),
+                io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.unwrap(item).getComponentsPatch())) // unwrap is fine here because the components patch will be safely copied
+        ));
+    }
+
+    @Override
+    public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
+    }
+    // Paper end - Adventure
 }

@@ -13,6 +13,7 @@ import org.bukkit.plugin.Plugin;
 
 public abstract class ServerCommandSender implements CommandSender {
     private final PermissibleBase perm;
+    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
 
     protected ServerCommandSender() {
         this.perm = new PermissibleBase(this);
@@ -130,4 +131,18 @@ public abstract class ServerCommandSender implements CommandSender {
         return this.spigot;
     }
     // Spigot end
+
+    // Paper start - implement pointers
+    @Override
+    public net.kyori.adventure.pointer.Pointers pointers() {
+        if (this.adventure$pointers == null) {
+            this.adventure$pointers = net.kyori.adventure.pointer.Pointers.builder()
+                .withDynamic(net.kyori.adventure.identity.Identity.DISPLAY_NAME, this::name)
+                .withStatic(net.kyori.adventure.permission.PermissionChecker.POINTER, this::permissionValue)
+                .build();
+        }
+
+        return this.adventure$pointers;
+    }
+    // Paper end
 }

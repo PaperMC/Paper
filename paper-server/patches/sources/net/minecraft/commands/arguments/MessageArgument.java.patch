@@ -1,0 +1,29 @@
+--- a/net/minecraft/commands/arguments/MessageArgument.java
++++ b/net/minecraft/commands/arguments/MessageArgument.java
+@@ -54,17 +54,21 @@
+     private static void resolveSignedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
+         MinecraftServer minecraftServer = source.getServer();
+         CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
+-        Component component = minecraftServer.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
+-        source.getChatMessageChainer().append(completableFuture, filtered -> {
+-            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(component).filter(filtered.mask());
++        // Paper start - support asynchronous chat decoration
++        CompletableFuture<Component> componentFuture = minecraftServer.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
++        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), filtered -> {
++            PlayerChatMessage playerChatMessage2 = message.withUnsignedContent(componentFuture.join()).filter(completableFuture.join().mask());
++            // Paper end - support asynchronous chat decoration
+             callback.accept(playerChatMessage2);
+         });
+     }
+ 
+     private static void resolveDisguisedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
+         ChatDecorator chatDecorator = source.getServer().getChatDecorator();
+-        Component component = chatDecorator.decorate(source.getPlayer(), message.decoratedContent());
+-        callback.accept(message.withUnsignedContent(component));
++        // Paper start - support asynchronous chat decoration
++        CompletableFuture<Component> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
++        source.getChatMessageChainer().append(componentFuture, (result) -> callback.accept(message.withUnsignedContent(result)));
++        // Paper end - support asynchronous chat decoration
+     }
+ 
+     private static CompletableFuture<FilteredText> filterPlainText(CommandSourceStack source, PlayerChatMessage message) {

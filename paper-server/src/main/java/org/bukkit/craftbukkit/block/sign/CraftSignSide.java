@@ -12,37 +12,70 @@ import org.jetbrains.annotations.Nullable;
 public class CraftSignSide implements SignSide {
 
     // Lazily initialized only if requested:
-    private String[] originalLines = null;
-    private String[] lines = null;
+    // Paper start
+    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
+    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
+    // Paper end
     private SignText signText;
 
     public CraftSignSide(SignText signText) {
         this.signText = signText;
     }
 
+    // Paper start
+    @Override
+    public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
+        this.loadLines();
+        return this.lines;
+    }
+
+    @Override
+    public net.kyori.adventure.text.@NotNull Component line(final int index) throws IndexOutOfBoundsException {
+        this.loadLines();
+        return this.lines.get(index);
+    }
+
+    @Override
+    public void line(final int index, final net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException {
+        com.google.common.base.Preconditions.checkArgument(line != null, "Line cannot be null");
+        this.loadLines();
+        this.lines.set(index, line);
+    }
+
+    private void loadLines() {
+        if (this.lines != null) {
+            return;
+        }
+        // Lazy initialization:
+        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.getMessages(false)));
+        this.originalLines = new java.util.ArrayList<>(this.lines);
+    }
+    // Paper end
+
     @NotNull
     @Override
     public String[] getLines() {
-        if (this.lines == null) {
-            // Lazy initialization:
-            Component[] messages = this.signText.getMessages(false);
-            this.lines = new String[messages.length];
-            System.arraycopy(CraftSign.revertComponents(messages), 0, this.lines, 0, this.lines.length);
-            this.originalLines = new String[this.lines.length];
-            System.arraycopy(this.lines, 0, this.originalLines, 0, this.originalLines.length);
-        }
-        return this.lines;
+        // Paper start
+        this.loadLines();
+        return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
+        // Paper end
     }
 
     @NotNull
     @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return this.getLines()[index];
+        // Paper start
+        this.loadLines();
+        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index));
+        // Paper end
     }
 
     @Override
     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException {
-        this.getLines()[index] = line;
+        // Paper start
+        this.loadLines();
+        this.lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : net.kyori.adventure.text.Component.empty());
+        // Paper end
     }
 
     @Override
@@ -68,13 +101,16 @@ public class CraftSignSide implements SignSide {
 
     public SignText applyLegacyStringToSignSide() {
         if (this.lines != null) {
-            for (int i = 0; i < this.lines.length; i++) {
-                String line = (this.lines[i] == null) ? "" : this.lines[i];
-                if (line.equals(this.originalLines[i])) {
+            // Paper start
+            for (int i = 0; i < this.lines.size(); ++i) {
+                net.kyori.adventure.text.Component component = this.lines.get(i);
+                net.kyori.adventure.text.Component origComp = this.originalLines.get(i);
+                if (component.equals(origComp)) {
                     continue; // The line contents are still the same, skip.
                 }
-                this.signText = this.signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
+                this.signText = this.signText.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
             }
+            // Paper end
         }
 
         return this.signText;

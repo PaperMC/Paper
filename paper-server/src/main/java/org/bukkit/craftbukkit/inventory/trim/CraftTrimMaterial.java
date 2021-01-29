@@ -60,6 +60,14 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
     @NotNull
     @Override
     public String getTranslationKey() {
+        if (!(this.handle.description().getContents() instanceof TranslatableContents)) throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
         return ((TranslatableContents) this.handle.description().getContents()).getKey();
     }
+
+    // Paper start - adventure
+    @Override
+    public net.kyori.adventure.text.Component description() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.description());
+    }
+    // Paper end - adventure
 }

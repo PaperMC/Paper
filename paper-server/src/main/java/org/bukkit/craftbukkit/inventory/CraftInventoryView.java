@@ -73,6 +73,13 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
         return CraftItemStack.asCraftMirror(this.container.getSlot(slot).getItem());
     }
 
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.Component title() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.container.getTitle());
+    }
+    // Paper end
+
     @Override
     public String getTitle() {
         return this.title;

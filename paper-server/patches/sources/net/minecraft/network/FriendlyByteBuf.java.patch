@@ -1,6 +1,40 @@
 --- a/net/minecraft/network/FriendlyByteBuf.java
 +++ b/net/minecraft/network/FriendlyByteBuf.java
-@@ -139,7 +139,7 @@
+@@ -72,6 +72,7 @@
+ 
+     public static final int DEFAULT_NBT_QUOTA = 2097152;
+     private final ByteBuf source;
++    @Nullable public final java.util.Locale adventure$locale; // Paper - track player's locale for server-side translations
+     public static final short MAX_STRING_LENGTH = Short.MAX_VALUE;
+     public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
+     private static final int PUBLIC_KEY_SIZE = 256;
+@@ -80,6 +81,7 @@
+     private static final Gson GSON = new Gson();
+ 
+     public FriendlyByteBuf(ByteBuf parent) {
++        this.adventure$locale = PacketEncoder.ADVENTURE_LOCALE.get(); // Paper - track player's locale for server-side translations
+         this.source = parent;
+     }
+ 
+@@ -120,11 +122,16 @@
+     }
+ 
+     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
++        // Paper start - Adventure; add max length parameter
++        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
++    }
++    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
++        // Paper end - Adventure; add max length parameter
+         DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
+ 
+         this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) dataresult.getOrThrow((s) -> {
+             return new EncoderException("Failed to encode: " + s + " " + String.valueOf(value));
+-        })));
++        })), maxLength); // Paper - Adventure; add max length parameter
+     }
+ 
+     public static <T> IntFunction<T> limitValue(IntFunction<T> applier, int max) {
+@@ -139,7 +146,7 @@
  
      public <T, C extends Collection<T>> C readCollection(IntFunction<C> collectionFactory, StreamDecoder<? super FriendlyByteBuf, T> reader) {
          int i = this.readVarInt();
@@ -9,7 +43,7 @@
  
          for (int j = 0; j < i; ++j) {
              c0.add(reader.decode(this));
-@@ -150,7 +150,7 @@
+@@ -150,7 +157,7 @@
  
      public <T> void writeCollection(Collection<T> collection, StreamEncoder<? super FriendlyByteBuf, T> writer) {
          this.writeVarInt(collection.size());
@@ -18,7 +52,7 @@
  
          while (iterator.hasNext()) {
              T t0 = iterator.next();
-@@ -177,12 +177,12 @@
+@@ -177,12 +184,12 @@
  
      public void writeIntIdList(IntList list) {
          this.writeVarInt(list.size());
@@ -33,7 +67,7 @@
  
          for (int j = 0; j < i; ++j) {
              K k0 = keyReader.decode(this);
-@@ -216,7 +216,7 @@
+@@ -216,7 +223,7 @@
      }
  
      public <E extends Enum<E>> void writeEnumSet(EnumSet<E> enumSet, Class<E> type) {
@@ -42,7 +76,7 @@
          BitSet bitset = new BitSet(ae.length);
  
          for (int i = 0; i < ae.length; ++i) {
-@@ -227,7 +227,7 @@
+@@ -227,7 +234,7 @@
      }
  
      public <E extends Enum<E>> EnumSet<E> readEnumSet(Class<E> type) {
@@ -51,7 +85,7 @@
          BitSet bitset = this.readFixedBitSet(ae.length);
          EnumSet<E> enumset = EnumSet.noneOf(type);
  
-@@ -498,7 +498,7 @@
+@@ -498,7 +505,7 @@
      }
  
      public <T extends Enum<T>> T readEnum(Class<T> enumClass) {
@@ -60,7 +94,7 @@
      }
  
      public FriendlyByteBuf writeEnum(Enum<?> instance) {
-@@ -565,7 +565,7 @@
+@@ -565,7 +572,7 @@
  
          try {
              NbtIo.writeAnyTag((Tag) nbt, new ByteBufOutputStream(buf));

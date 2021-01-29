@@ -37,6 +37,12 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
 
     @Override
     public V create(final HumanEntity player, final String title) {
+    // Paper start - adventure
+        return create(player, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title));
+    }
+    @Override
+    public V create(final HumanEntity player, final net.kyori.adventure.text.Component title) {
+    // Paper end - adventure
         Preconditions.checkArgument(player != null, "The given player must not be null");
         Preconditions.checkArgument(title != null, "The given title must not be null");
         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
@@ -45,7 +51,7 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
         final ServerPlayer serverPlayer = (ServerPlayer) craftHuman.getHandle();
 
         final AbstractContainerMenu container = this.typeData.get().menuBuilder().build(serverPlayer, this.handle);
-        container.setTitle(CraftChatMessage.fromString(title)[0]);
+        container.setTitle(io.papermc.paper.adventure.PaperAdventure.asVanilla(title)); // Paper - adventure
         container.checkReachable = false;
         return (V) container.getBukkitView();
     }

@@ -1,0 +1,61 @@
+--- a/net/minecraft/network/chat/PlayerChatMessage.java
++++ b/net/minecraft/network/chat/PlayerChatMessage.java
+@@ -17,6 +17,42 @@
+ public record PlayerChatMessage(
+     SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask
+ ) {
++    // Paper start - adventure; support signed messages
++    public final class AdventureView implements net.kyori.adventure.chat.SignedMessage {
++        private AdventureView() {
++        }
++        @Override
++        public @org.jetbrains.annotations.NotNull Instant timestamp() {
++            return PlayerChatMessage.this.timeStamp();
++        }
++        @Override
++        public long salt() {
++            return PlayerChatMessage.this.salt();
++        }
++        @Override
++        public @org.jetbrains.annotations.Nullable Signature signature() {
++            return PlayerChatMessage.this.signature == null ? null : PlayerChatMessage.this.signature.adventure();
++        }
++        @Override
++        public net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component unsignedContent() {
++            return PlayerChatMessage.this.unsignedContent() == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(PlayerChatMessage.this.unsignedContent());
++        }
++        @Override
++        public @org.jetbrains.annotations.NotNull String message() {
++            return PlayerChatMessage.this.signedContent();
++        }
++        @Override
++        public @org.jetbrains.annotations.NotNull net.kyori.adventure.identity.Identity identity() {
++            return net.kyori.adventure.identity.Identity.identity(PlayerChatMessage.this.sender());
++        }
++        public PlayerChatMessage playerChatMessage() {
++            return PlayerChatMessage.this;
++        }
++    }
++    public AdventureView adventureView() {
++        return new AdventureView();
++    }
++    // Paper end - adventure; support signed messages
+     public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
+         instance -> instance.group(
+                     SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
+@@ -47,7 +83,14 @@
+     }
+ 
+     public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
+-        Component component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
++        // Paper start - adventure
++        final Component component;
++        if (unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
++            component = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : unsignedContent;
++        } else {
++            component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
++        }
++        // Paper end - adventure
+         return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
+     }
+ 

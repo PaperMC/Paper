@@ -39,6 +39,13 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
         return "Rcon";
     }
 
+    // Paper start
+    @Override
+    public net.kyori.adventure.text.Component name() {
+        return net.kyori.adventure.text.Component.text(this.getName());
+    }
+    // Paper end
+
     @Override
     public boolean isOp() {
         return true;

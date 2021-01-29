@@ -346,7 +346,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
     }
 
     @Override
-    Builder<String, Object> serialize(Builder<String, Object> builder) {
+    com.google.common.collect.ImmutableMap.Builder<String, Object> serialize(com.google.common.collect.ImmutableMap.Builder<String, Object> builder) { // Paper - adventure - fqn as it conflicts with adventure book builder
         super.serialize(builder);
 
         if (this.hasTitle()) {
@@ -459,4 +459,111 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         return this.spigot;
     }
     // Spigot end
+
+    // Paper start - adventure
+    public static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.builder()
+        .character(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.SECTION_CHAR)
+        .build();
+    private CraftMetaBookSigned(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
+        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(Material.WRITABLE_BOOK));
+        this.title = title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title);
+        this.author = author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author);
+        this.pages = io.papermc.paper.adventure.PaperAdventure.asVanilla(pages.subList(0, Math.min(MAX_PAGES, pages.size())));
+    }
+
+    static final class CraftMetaBookSignedBuilder extends CraftMetaBook.CraftMetaBookBuilder {
+        private net.kyori.adventure.text.Component title;
+        private net.kyori.adventure.text.Component author;
+
+        @Override
+        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder title(final net.kyori.adventure.text.Component title) {
+            this.title = title;
+            return this;
+        }
+
+        @Override
+        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder author(final net.kyori.adventure.text.Component author) {
+            this.author = author;
+            return this;
+        }
+
+        @Override
+        public org.bukkit.inventory.meta.BookMeta build() {
+            return new CraftMetaBookSigned(this.title, this.author, this.pages);
+        }
+    }
+
+    @Override
+    public BookMetaBuilder toBuilder() {
+        return new CraftMetaBookSignedBuilder();
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component title() {
+        return this.title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.deserialize(this.title);
+    }
+
+    @Override
+    public org.bukkit.inventory.meta.BookMeta title(net.kyori.adventure.text.Component title) {
+        this.setTitle(title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title));
+        return this;
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component author() {
+        return this.author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.deserialize(this.author);
+    }
+
+    @Override
+    public org.bukkit.inventory.meta.BookMeta author(net.kyori.adventure.text.Component author) {
+        this.setAuthor(author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author));
+        return this;
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component page(final int page) {
+        Preconditions.checkArgument(this.isValidPage(page), "Invalid page number (%s/%s)", page, this.getPageCount());
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.pages.get(page - 1));
+    }
+
+    @Override
+    public void page(final int page, net.kyori.adventure.text.Component data) {
+        Preconditions.checkArgument(this.isValidPage(page), "Invalid page number (%s/%s)", page, this.getPageCount());
+        this.pages.set(page - 1, io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(data));
+    }
+
+    @Override
+    public List<net.kyori.adventure.text.Component> pages() {
+        if (this.pages == null) return ImmutableList.of();
+        return this.pages.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
+        if (this.pages != null) this.pages.clear();
+        for (net.kyori.adventure.text.Component page : pages) {
+            this.addPages(page);
+        }
+        return this;
+    }
+
+    @Override
+    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
+        if (this.pages != null) this.pages.clear();
+        this.addPages(pages);
+        return this;
+    }
+
+    @Override
+    public void addPages(net.kyori.adventure.text.Component... pages) {
+        if (this.pages == null) this.pages = new ArrayList<>();
+        for (net.kyori.adventure.text.Component page : pages) {
+            if (this.pages.size() >= MAX_PAGES) {
+                return;
+            }
+
+            this.pages.add(io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(page));
+        }
+    }
+    // Paper end
 }

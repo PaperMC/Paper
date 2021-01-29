@@ -1,0 +1,21 @@
+--- a/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
++++ b/net/minecraft/network/protocol/login/ClientboundLoginDisconnectPacket.java
+@@ -18,11 +18,16 @@
+     }
+ 
+     private ClientboundLoginDisconnectPacket(FriendlyByteBuf buf) {
+-        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(262144), RegistryAccess.EMPTY);
++        this.reason = Component.Serializer.fromJsonLenient(buf.readUtf(FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH), RegistryAccess.EMPTY); // Paper - diff on change
+     }
+ 
+     private void write(FriendlyByteBuf buf) {
+-        buf.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
++        // Paper start - Adventure
++        // buf.writeUtf(Component.Serializer.toJson(this.reason, RegistryAccess.EMPTY));
++        // In the login phase, buf.adventure$locale field is most likely null, but plugins may use internals to set it via the channel attribute
++        java.util.Locale bufLocale = buf.adventure$locale;
++        buf.writeJsonWithCodec(net.minecraft.network.chat.ComponentSerialization.localizedCodec(bufLocale == null ? java.util.Locale.US : bufLocale), this.reason, FriendlyByteBuf.MAX_COMPONENT_STRING_LENGTH);
++        // Paper end - Adventure
+     }
+ 
+     @Override

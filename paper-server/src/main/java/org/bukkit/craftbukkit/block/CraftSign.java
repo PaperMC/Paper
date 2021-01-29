@@ -36,6 +36,23 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
 
+    // Paper start
+    @Override
+    public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
+        return this.front.lines();
+    }
+
+    @Override
+    public net.kyori.adventure.text.@NotNull Component line(int index) {
+        return this.front.line(index);
+    }
+
+    @Override
+    public void line(int index, net.kyori.adventure.text.@NotNull Component line) {
+        this.front.line(index, line);
+    }
+    // Paper end
+
     @Override
     public String[] getLines() {
         return this.front.getLines();
@@ -160,6 +177,20 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
         ((CraftPlayer) player).getHandle().openTextEdit(handle, Side.FRONT == side);
     }
+
+    // Paper start
+    public static Component[] sanitizeLines(java.util.List<? extends net.kyori.adventure.text.Component> lines) {
+        Component[] components = new Component[4];
+        for (int i = 0; i < 4; i++) {
+            if (i < lines.size() && lines.get(i) != null) {
+                components[i] = io.papermc.paper.adventure.PaperAdventure.asVanilla(lines.get(i));
+            } else {
+                components[i] = net.minecraft.network.chat.Component.literal("");
+            }
+        }
+        return components;
+    }
+    // Paper end
 
     public static Component[] sanitizeLines(String[] lines) {
         Component[] components = new Component[4];

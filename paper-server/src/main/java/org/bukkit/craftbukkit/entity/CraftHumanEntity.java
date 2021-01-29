@@ -330,9 +330,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         container = CraftEventFactory.callInventoryOpenEvent(player, container);
         if (container == null) return;
 
-        String title = container.getBukkitView().getTitle();
+        //String title = container.getBukkitView().getTitle(); // Paper - comment
+        net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
+        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
 
-        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0]));
+        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
         player.containerMenu = container;
         player.initMenu(container);
     }
@@ -402,8 +405,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // Now open the window
         MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
-        String title = inventory.getTitle();
-        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0]));
+
+        //String title = inventory.getTitle(); // Paper - comment
+        net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
+        if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
         player.containerMenu = container;
         player.initMenu(container);
     }

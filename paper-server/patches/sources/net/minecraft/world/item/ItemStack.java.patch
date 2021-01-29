@@ -89,7 +89,7 @@
              return instance.group(Item.CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
                  return itemstack.components.asPatch();
              })).apply(instance, (holder, datacomponentpatch) -> {
-@@ -132,19 +161,29 @@
+@@ -132,20 +161,38 @@
              if (i <= 0) {
                  return ItemStack.EMPTY;
              } else {
@@ -120,10 +120,19 @@
 +                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
 +                // Spigot end
 +                ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder()); // CraftBukkit - decompile error
++                // Paper start - adventure; conditionally render translatable components
++                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
++                try {
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
                  DataComponentPatch.STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.components.asPatch());
++                } finally {
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
++                }
++                // Paper end - adventure; conditionally render translatable components
              }
          }
-@@ -187,7 +226,7 @@
+     };
+@@ -187,7 +234,7 @@
  
          return dataresult.isError() ? dataresult.map((unit) -> {
              return stack;
@@ -132,7 +141,7 @@
              int i = stack.getCount();
  
              return "Item stack with stack size of " + i + " was larger than maximum: " + stack.getMaxStackSize();
-@@ -294,8 +333,9 @@
+@@ -294,8 +341,9 @@
                  j = itemstack.getMaxStackSize();
              } while (i <= j);
  
@@ -143,7 +152,7 @@
              });
          }
      }
-@@ -370,32 +410,190 @@
+@@ -370,32 +418,190 @@
      }
  
      public InteractionResult useOn(UseOnContext context) {
@@ -339,7 +348,7 @@
          ItemStack itemstack = this.copy();
          boolean flag = this.getUseDuration(user) <= 0;
          InteractionResult enuminteractionresult = this.getItem().use(world, user, hand);
-@@ -492,7 +690,22 @@
+@@ -492,7 +698,22 @@
  
      public void hurtAndBreak(int amount, ServerLevel world, @Nullable ServerPlayer player, Consumer<Item> breakCallback) {
          int j = this.processDurabilityChange(amount, world, player);
@@ -362,7 +371,7 @@
          if (j != 0) {
              this.applyDamage(this.getDamageValue() + j, player, breakCallback);
          }
-@@ -511,6 +724,11 @@
+@@ -511,6 +732,11 @@
          this.setDamageValue(damage);
          if (this.isBroken()) {
              Item item = this.getItem();
@@ -374,7 +383,7 @@
  
              this.shrink(1);
              breakCallback.accept(item);
-@@ -518,7 +736,7 @@
+@@ -518,7 +744,7 @@
  
      }
  
@@ -383,7 +392,7 @@
          if (player instanceof ServerPlayer entityplayer) {
              int j = this.processDurabilityChange(amount, entityplayer.serverLevel(), entityplayer);
  
-@@ -580,11 +798,11 @@
+@@ -580,11 +806,11 @@
          return this.getItem().getBarColor(this);
      }
  
@@ -397,7 +406,7 @@
          return this.getItem().overrideOtherStackedOnMe(this, stack, slot, clickType, player, cursorStackReference);
      }
  
-@@ -592,8 +810,8 @@
+@@ -592,8 +818,8 @@
          Item item = this.getItem();
  
          if (item.hurtEnemy(this, target, user)) {
@@ -408,7 +417,7 @@
  
                  entityhuman.awardStat(Stats.ITEM_USED.get(item));
              }
-@@ -608,7 +826,7 @@
+@@ -608,7 +834,7 @@
          this.getItem().postHurtEnemy(this, target, user);
      }
  
@@ -417,7 +426,7 @@
          Item item = this.getItem();
  
          if (item.mineBlock(this, world, state, pos, miner)) {
-@@ -617,11 +835,11 @@
+@@ -617,11 +843,11 @@
  
      }
  
@@ -431,7 +440,7 @@
          return this.getItem().interactLivingEntity(this, user, entity, hand);
      }
  
-@@ -736,7 +954,7 @@
+@@ -736,7 +962,7 @@
  
      }
  
@@ -440,7 +449,7 @@
          player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
          this.getItem().onCraftedBy(this, world, player);
      }
-@@ -768,7 +986,13 @@
+@@ -768,7 +994,13 @@
  
      public boolean useOnRelease() {
          return this.getItem().useOnRelease(this);
@@ -454,12 +463,10 @@
  
      @Nullable
      public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
-@@ -804,7 +1028,26 @@
-         } else {
-             this.getItem().verifyComponentsAfterLoad(this);
+@@ -806,6 +1038,25 @@
          }
-+    }
-+
+     }
+ 
 +    // Paper start - (this is just a good no conflict location)
 +    public org.bukkit.inventory.ItemStack asBukkitMirror() {
 +        return CraftItemStack.asCraftMirror(this);
@@ -476,12 +483,13 @@
 +            bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
 +        }
 +        return bukkitStack;
-     }
++    }
 +    // Paper end
- 
++
      public void applyComponents(DataComponentPatch changes) {
          this.components.applyPatch(changes);
-@@ -858,7 +1101,7 @@
+         this.getItem().verifyComponentsAfterLoad(this);
+@@ -858,7 +1109,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> componentType, Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type) {
@@ -490,7 +498,7 @@
  
          if (t0 != null) {
              t0.addToTooltip(context, textConsumer, type);
-@@ -866,7 +1109,7 @@
+@@ -866,7 +1117,7 @@
  
      }
  
@@ -499,7 +507,7 @@
          boolean flag = this.getItem().shouldPrintOpWarning(this, player);
  
          if (!type.isCreative() && this.has(DataComponents.HIDE_TOOLTIP)) {
-@@ -941,7 +1184,7 @@
+@@ -941,7 +1192,7 @@
          }
      }
  
@@ -508,7 +516,7 @@
          ItemAttributeModifiers itemattributemodifiers = (ItemAttributeModifiers) this.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
  
          if (itemattributemodifiers.showInTooltip()) {
-@@ -966,7 +1209,7 @@
+@@ -966,7 +1217,7 @@
          }
      }
  
@@ -517,7 +525,7 @@
          double d0 = modifier.amount();
          boolean flag = false;
  
-@@ -1091,6 +1334,14 @@
+@@ -1091,6 +1342,14 @@
          EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
      }
  
@@ -532,7 +540,7 @@
      public Component getDisplayName() {
          MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
  
-@@ -1153,7 +1404,7 @@
+@@ -1153,7 +1412,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {

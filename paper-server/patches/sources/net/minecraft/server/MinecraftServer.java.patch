@@ -26,7 +26,7 @@
  import net.minecraft.util.debugchart.RemoteDebugSampleType;
  import net.minecraft.util.debugchart.SampleLogger;
  import net.minecraft.util.debugchart.TpsDebugDimensions;
-@@ -156,37 +146,72 @@
+@@ -156,37 +146,73 @@
  import net.minecraft.world.level.biome.BiomeManager;
  import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.entity.FuelValues;
@@ -99,6 +99,7 @@
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource {
  
      public static final Logger LOGGER = LogUtils.getLogger();
++    public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
      public static final String VANILLA_BRAND = "vanilla";
      private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
      private static final int TICK_STATS_SPAN = 100;
@@ -107,10 +108,21 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -277,6 +302,26 @@
+@@ -232,8 +258,7 @@
+     private boolean preventProxyConnections;
+     private boolean pvp;
+     private boolean allowFlight;
+-    @Nullable
+-    private String motd;
++    private net.kyori.adventure.text.Component motd; // Paper - Adventure
+     private int playerIdleTimeout;
+     private final long[] tickTimesNanos;
+     private long aggregatedTickTimesNanos;
+@@ -276,6 +301,26 @@
+     private static final AtomicReference<RuntimeException> fatalException = new AtomicReference();
      private final SuppressedExceptionCollector suppressedExceptions;
      private final DiscontinuousFrame tickFrame;
- 
++
 +    // CraftBukkit start
 +    public final WorldLoader.DataLoadContext worldLoader;
 +    public org.bukkit.craftbukkit.CraftServer server;
@@ -130,10 +142,9 @@
 +    public final double[] recentTps = new double[ 3 ];
 +    // Spigot end
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
-+
+ 
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-         Thread thread = new Thread(() -> {
 @@ -290,14 +335,14 @@
              thread.setPriority(8);
          }
@@ -723,7 +734,7 @@
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
                      }
-+                }
+                 }
 +                // Spigot start
 +                if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
 +                {
@@ -733,7 +744,7 @@
 +                    this.recentTps[1] = MinecraftServer.calcTps( this.recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
 +                    this.recentTps[2] = MinecraftServer.calcTps( this.recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
 +                    tickSection = curTime;
-                 }
++                }
 +                // Spigot end
  
                  boolean flag = i == 0L;
@@ -850,13 +861,23 @@
      }
  
      private void logTickMethodTime(long tickStartTime) {
-@@ -1154,11 +1501,34 @@
+@@ -1123,7 +1470,7 @@
+     private ServerStatus buildServerStatus() {
+         ServerStatus.Players serverping_serverpingplayersample = this.buildPlayerStatus();
+ 
+-        return new ServerStatus(Component.nullToEmpty(this.motd), Optional.of(serverping_serverpingplayersample), Optional.of(ServerStatus.Version.current()), Optional.ofNullable(this.statusIcon), this.enforceSecureProfile());
++        return new ServerStatus(io.papermc.paper.adventure.PaperAdventure.asVanilla(this.motd), Optional.of(serverping_serverpingplayersample), Optional.of(ServerStatus.Version.current()), Optional.ofNullable(this.statusIcon), this.enforceSecureProfile()); // Paper - Adventure
+     }
+ 
+     private ServerStatus.Players buildPlayerStatus() {
+@@ -1154,11 +1501,35 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
 +        SpigotTimings.schedulerTimer.startTiming(); // Spigot
 +        this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
 +        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          gameprofilerfiller.push("commandFunctions");
 +        SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
          this.getFunctions().tick();
@@ -885,7 +906,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
-@@ -1167,16 +1537,20 @@
+@@ -1167,16 +1538,20 @@
  
                  return s + " " + String.valueOf(worldserver.dimension().location());
              });
@@ -906,7 +927,7 @@
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
  
-@@ -1189,18 +1563,24 @@
+@@ -1189,18 +1564,24 @@
          }
  
          gameprofilerfiller.popPush("connection");
@@ -931,12 +952,10 @@
  
          gameprofilerfiller.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
-@@ -1265,7 +1645,23 @@
-     @Nullable
-     public ServerLevel getLevel(ResourceKey<Level> key) {
+@@ -1267,6 +1648,22 @@
          return (ServerLevel) this.levels.get(key);
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public void addLevel(ServerLevel level) {
 +        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
@@ -950,12 +969,13 @@
 +        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.remove(level.dimension());
 +        this.levels = Collections.unmodifiableMap(newLevels);
-     }
++    }
 +    // CraftBukkit end
- 
++
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
-@@ -1296,7 +1692,7 @@
+     }
+@@ -1296,7 +1693,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -964,7 +984,29 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1507,7 +1903,7 @@
+@@ -1481,10 +1878,20 @@
+ 
+     @Override
+     public String getMotd() {
+-        return this.motd;
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper - Adventure
+     }
+ 
+     public void setMotd(String motd) {
++        // Paper start - Adventure
++        this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOr(motd, net.kyori.adventure.text.Component.empty());
++    }
++
++    public net.kyori.adventure.text.Component motd() {
++        return this.motd;
++    }
++
++    public void motd(net.kyori.adventure.text.Component motd) {
++        // Paper end - Adventure
+         this.motd = motd;
+     }
+ 
+@@ -1507,7 +1914,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -973,7 +1015,7 @@
      }
  
      public boolean isReady() {
-@@ -1634,11 +2030,11 @@
+@@ -1634,11 +2041,11 @@
  
      public CompletableFuture<Void> reloadResources(Collection<String> dataPacks) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -987,7 +1029,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1654,6 +2050,7 @@
+@@ -1654,6 +2061,7 @@
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
@@ -995,7 +1037,7 @@
              this.packRepository.setSelected(dataPacks);
              WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
  
-@@ -1952,7 +2349,7 @@
+@@ -1952,7 +2360,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1004,7 +1046,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2455,7 @@
+@@ -2058,7 +2466,7 @@
              try {
                  label51:
                  {
@@ -1013,40 +1055,58 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,8 +2502,24 @@
+@@ -2105,9 +2513,25 @@
          if (bufferedwriter != null) {
              bufferedwriter.close();
          }
 +
 +    }
-+
+ 
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
-+    }
-+
+     }
+ 
 +    @Deprecated
 +    public static MinecraftServer getServer() {
 +        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
 +    }
- 
++
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
-     }
-+    // CraftBukkit end
- 
-     private ProfilerFiller createProfiler() {
-         if (this.willStartRecordingMetrics) {
-@@ -2235,6 +2648,11 @@
- 
-     }
- 
-+    // CraftBukkit start
-+    public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
-+            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").build());
++    }
 +    // CraftBukkit end
 +
-     public ChatDecorator getChatDecorator() {
-         return ChatDecorator.PLAIN;
+     private ProfilerFiller createProfiler() {
+         if (this.willStartRecordingMetrics) {
+             this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
+@@ -2225,18 +2649,24 @@
      }
+ 
+     public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
+-        String s1 = params.decorate(message).getString();
++        // Paper start
++        net.kyori.adventure.text.Component s1 = io.papermc.paper.adventure.PaperAdventure.asAdventure(params.decorate(message));
+ 
+         if (prefix != null) {
+-            MinecraftServer.LOGGER.info("[{}] {}", prefix, s1);
++            MinecraftServer.COMPONENT_LOGGER.info("[{}] {}", prefix, s1);
+         } else {
+-            MinecraftServer.LOGGER.info("{}", s1);
++            MinecraftServer.COMPONENT_LOGGER.info("{}", s1);
++            // Paper end
+         }
+ 
+     }
+ 
++    public final java.util.concurrent.ExecutorService chatExecutor = java.util.concurrent.Executors.newCachedThreadPool(
++            new com.google.common.util.concurrent.ThreadFactoryBuilder().setDaemon(true).setNameFormat("Async Chat Thread - #%d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
++
++    public final ChatDecorator improvedChatDecorator = new io.papermc.paper.adventure.ImprovedChatDecorator(this); // Paper - adventure
+     public ChatDecorator getChatDecorator() {
+-        return ChatDecorator.PLAIN;
++        return this.improvedChatDecorator; // Paper - support async chat decoration events
+     }
+ 
+     public boolean logIPs() {

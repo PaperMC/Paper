@@ -15,10 +15,17 @@ public class CraftMerchantCustom implements CraftMerchant {
 
     private MinecraftMerchant merchant;
 
+    @Deprecated // Paper - Adventure
     public CraftMerchantCustom(String title) {
         this.merchant = new MinecraftMerchant(title);
         this.getMerchant().craftMerchant = this;
     }
+    // Paper start
+    public CraftMerchantCustom(net.kyori.adventure.text.Component title) {
+        this.merchant = new MinecraftMerchant(title);
+        getMerchant().craftMerchant = this;
+    }
+    // Paper end
 
     @Override
     public String toString() {
@@ -37,10 +44,17 @@ public class CraftMerchantCustom implements CraftMerchant {
         private Player tradingPlayer;
         protected CraftMerchant craftMerchant;
 
+        @Deprecated // Paper - Adventure
         public MinecraftMerchant(String title) {
             Preconditions.checkArgument(title != null, "Title cannot be null");
             this.title = CraftChatMessage.fromString(title)[0];
         }
+        // Paper start
+        public MinecraftMerchant(net.kyori.adventure.text.Component title) {
+            Preconditions.checkArgument(title != null, "Title cannot be null");
+            this.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
+        }
+        // Paper end
 
         @Override
         public CraftMerchant getCraftMerchant() {

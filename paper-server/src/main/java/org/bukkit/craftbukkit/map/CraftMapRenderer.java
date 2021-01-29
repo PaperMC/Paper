@@ -43,7 +43,7 @@ public class CraftMapRenderer extends MapRenderer {
             }
 
             MapDecoration decoration = this.worldMap.decorations.get(key);
-            cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, CraftChatMessage.fromComponent(decoration.name().orElse(null))));
+            cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, decoration.name().isEmpty() ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(decoration.name().get()))); // Paper
         }
     }
 

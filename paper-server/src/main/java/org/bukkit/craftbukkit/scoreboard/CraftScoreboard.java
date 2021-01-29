@@ -29,6 +29,33 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     public CraftObjective registerNewObjective(String name, String criteria) {
         return this.registerNewObjective(name, criteria, name);
     }
+    // Paper start - Adventure
+    @Override
+    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName) {
+        return this.registerNewObjective(name, CraftCriteria.getFromBukkit(criteria), displayName, RenderType.INTEGER);
+    }
+    @Override
+    public CraftObjective registerNewObjective(String name, String criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) {
+        return this.registerNewObjective(name, CraftCriteria.getFromBukkit(criteria), displayName, renderType);
+    }
+    @Override
+    public CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName) throws IllegalArgumentException {
+        return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+    }
+    @Override
+    public CraftObjective registerNewObjective(String name, Criteria criteria, net.kyori.adventure.text.Component displayName, RenderType renderType) throws IllegalArgumentException {
+        if (displayName == null) {
+            displayName = net.kyori.adventure.text.Component.empty();
+        }
+        Preconditions.checkArgument(name != null, "Objective name cannot be null");
+        Preconditions.checkArgument(criteria != null, "Criteria cannot be null");
+        Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
+        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
+        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
+        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
+        return new CraftObjective(this, objective);
+    }
+    // Paper end - Adventure
 
     @Override
     public CraftObjective registerNewObjective(String name, String criteria, String displayName) {
@@ -47,15 +74,7 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
 
     @Override
     public CraftObjective registerNewObjective(String name, Criteria criteria, String displayName, RenderType renderType) {
-        Preconditions.checkArgument(name != null, "Objective name cannot be null");
-        Preconditions.checkArgument(criteria != null, "Criteria cannot be null");
-        Preconditions.checkArgument(displayName != null, "Display name cannot be null");
-        Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
-        Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
-        Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
-
-        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, CraftChatMessage.fromStringOrEmpty(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
-        return new CraftObjective(this, objective);
+        return this.registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName), renderType); // Paper - Adventure
     }
 
     @Override
