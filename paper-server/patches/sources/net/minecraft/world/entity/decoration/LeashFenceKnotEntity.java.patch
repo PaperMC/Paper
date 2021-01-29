@@ -38,7 +38,7 @@
                      leashable.setLeashedTo(this, true);
                      flag = true;
                  }
-@@ -93,18 +107,38 @@
+@@ -93,18 +107,43 @@
              boolean flag1 = false;
  
              if (!flag) {
@@ -57,13 +57,18 @@
                          if (leashable1.isLeashed() && leashable1.getLeashHolder() == this) {
 -                            leashable1.removeLeash();
 +                            // CraftBukkit start
++                            boolean dropLeash = !player.hasInfiniteMaterials();
 +                            if (leashable1 instanceof Entity leashed) {
-+                                if (CraftEventFactory.callPlayerUnleashEntityEvent(leashed, player, hand).isCancelled()) {
++                                // Paper start - Expand EntityUnleashEvent
++                                org.bukkit.event.player.PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(leashed, player, hand, dropLeash);
++                                dropLeash = event.isDropLeash();
++                                if (event.isCancelled()) {
++                                    // Paper end - Expand EntityUnleashEvent
 +                                    die = false;
 +                                    continue;
 +                                }
 +                            }
-+                            if (player.getAbilities().instabuild){
++                            if (!dropLeash) { // Paper - Expand EntityUnleashEvent
 +                                leashable1.removeLeash();
 +                            } else {
 +                                leashable1.dropLeash();

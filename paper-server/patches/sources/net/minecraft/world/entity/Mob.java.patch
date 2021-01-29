@@ -35,19 +35,21 @@
      protected Mob(EntityType<? extends Mob> type, Level world) {
          super(type, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -160,6 +174,12 @@
- 
-     }
+@@ -157,8 +171,14 @@
+         if (world instanceof ServerLevel) {
+             this.registerGoals();
+         }
++
++    }
  
 +    // CraftBukkit start
 +    public void setPersistenceRequired(boolean persistenceRequired) {
 +        this.persistenceRequired = persistenceRequired;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      protected void registerGoals() {}
  
-     public static AttributeSupplier.Builder createMobAttributes() {
 @@ -264,11 +284,42 @@
  
      @Nullable
@@ -93,19 +95,20 @@
      }
  
      @Override
-@@ -399,6 +450,12 @@
+@@ -397,7 +448,13 @@
+     @Nullable
+     protected SoundEvent getAmbientSound() {
          return null;
-     }
- 
++    }
++
 +    // CraftBukkit start - Add delegate method
 +    public SoundEvent getAmbientSound0() {
 +        return this.getAmbientSound();
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
-         super.addAdditionalSaveData(nbt);
 @@ -473,13 +530,25 @@
              nbt.putBoolean("NoAI", this.isNoAi());
          }
@@ -279,19 +282,20 @@
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1011,6 +1117,12 @@
+@@ -1009,7 +1115,13 @@
+                 this.onEquipItem(slot, itemstack1, stack);
+         }
  
-     }
- 
++    }
++
 +    // Paper start
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
 +        return false;
-+    }
+     }
 +    // Paper end
-+
+ 
      @Override
      protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {
-         super.dropCustomDeathLoot(world, source, causedByPlayer);
 @@ -1018,6 +1130,7 @@
  
          while (iterator.hasNext()) {
@@ -356,13 +360,13 @@
 +                conversionparams.type().convert(this, t0, conversionparams);
 +                if (!conversionparams_a.finalizeConversionOrCancel(t0)) return null; // Paper - entity zap event - return null if conversion was cancelled
                  Level world = this.level();
-+
+ 
 +                // CraftBukkit start
 +                if (transformReason == null) {
 +                    // Special handling for slime split and pig lightning
 +                    return t0;
 +                }
- 
++
 +                if (CraftEventFactory.callEntityTransformEvent(this, t0, transformReason).isCancelled()) {
 +                    return null;
 +                }
@@ -405,15 +409,24 @@
      @Override
      public Leashable.LeashData getLeashData() {
          return this.leashData;
-@@ -1458,6 +1612,7 @@
+@@ -1458,7 +1612,15 @@
          boolean flag1 = super.startRiding(entity, force);
  
          if (flag1 && this.isLeashed()) {
-+            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
-             this.dropLeash();
+-            this.dropLeash();
++            // Paper start - Expand EntityUnleashEvent
++            EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
++            if (!event.callEvent()) { return flag1; }
++            if (event.isDropLeash()) {
++                this.dropLeash();
++            } else {
++                this.removeLeash();
++            }
++            // Paper end - Expand EntityUnleashEvent
          }
  
-@@ -1542,7 +1697,7 @@
+         return flag1;
+@@ -1542,7 +1704,7 @@
  
              if (f1 > 0.0F && target instanceof LivingEntity) {
                  entityliving = (LivingEntity) target;

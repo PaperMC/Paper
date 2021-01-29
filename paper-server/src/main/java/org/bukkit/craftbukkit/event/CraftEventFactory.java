@@ -1596,8 +1596,10 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
     }
 
-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand enumhand) {
-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand));
+    // Paper start - Expand EntityUnleashEvent
+    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand enumhand, boolean dropLeash) {
+        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand), dropLeash);
+        // Paper end - Expand EntityUnleashEvent
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
