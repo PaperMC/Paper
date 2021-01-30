@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

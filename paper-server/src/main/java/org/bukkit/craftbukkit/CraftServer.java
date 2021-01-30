@@ -73,7 +73,6 @@ import net.minecraft.server.GameRules;
 import net.minecraft.server.GeneratorSettings;
 import net.minecraft.server.IRecipe;
 import net.minecraft.server.IRegistry;
-import net.minecraft.server.IRegistryCustom;
 import net.minecraft.server.Item;
 import net.minecraft.server.ItemWorldMap;
 import net.minecraft.server.Items;

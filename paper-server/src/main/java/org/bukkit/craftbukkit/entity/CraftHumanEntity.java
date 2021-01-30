@@ -12,7 +12,6 @@ import net.minecraft.server.BlockEnchantmentTable;
 import net.minecraft.server.BlockPosition;
 import net.minecraft.server.BlockWorkbench;
 import net.minecraft.server.Blocks;
-import net.minecraft.server.ChatComponentText;
 import net.minecraft.server.Container;
 import net.minecraft.server.Containers;
 import net.minecraft.server.CraftingManager;
