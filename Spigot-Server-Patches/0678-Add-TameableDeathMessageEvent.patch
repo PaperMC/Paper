@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 29 Jan 2021 22:07:02 -0500
+Subject: [PATCH] Add TameableDeathMessageEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTameableAnimal.java b/src/main/java/net/minecraft/server/EntityTameableAnimal.java
+index 9e008d56bb88550f399008095734436a5ab768c7..0f304f5288f04b584c5e03e5f8f63c95d681d351 100644
+--- a/src/main/java/net/minecraft/server/EntityTameableAnimal.java
++++ b/src/main/java/net/minecraft/server/EntityTameableAnimal.java
+@@ -1,5 +1,8 @@
+ package net.minecraft.server;
+ 
++import io.papermc.paper.event.entity.TameableDeathMessageEvent; // Paper
++import io.papermc.paper.adventure.PaperAdventure; // Paper
++
+ import java.util.Optional;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
+@@ -171,7 +174,12 @@ public abstract class EntityTameableAnimal extends EntityAnimal {
+     @Override
+     public void die(DamageSource damagesource) {
+         if (!this.world.isClientSide && this.world.getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES) && this.getOwner() instanceof EntityPlayer) {
+-            this.getOwner().sendMessage(this.getCombatTracker().getDeathMessage(), SystemUtils.b);
++            // Paper start - TameableDeathMessageEvent
++            TameableDeathMessageEvent event = new TameableDeathMessageEvent((org.bukkit.entity.Tameable) getBukkitEntity(), PaperAdventure.asAdventure(this.getCombatTracker().getDeathMessage()));
++            if (event.callEvent()) {
++                this.getOwner().sendMessage(PaperAdventure.asVanilla(event.getDeathMessage()), SystemUtils.b);
++            }
++            // Paper end - TameableDeathMessageEvent
+         }
+ 
+         super.die(damagesource);
