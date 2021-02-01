@@ -26,7 +26,7 @@ index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..79d370abee1944defedb475584e1feee
              // CraftBukkit end
          }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f307a6361144c7e315b2e0ea45df27527cdb26ca..b799de0677054dfac8cc6a0a68bfd9a534131db3 100644
+index f307a6361144c7e315b2e0ea45df27527cdb26ca..fe6641fa504a1f5c74136d6791fb9e8c9bc6df3a 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
@@ -37,30 +37,35 @@ index f307a6361144c7e315b2e0ea45df27527cdb26ca..b799de0677054dfac8cc6a0a68bfd9a5
  import java.util.Arrays;
  import java.util.Collection;
  import java.util.Collections;
-@@ -557,7 +558,22 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -442,7 +443,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+             if (this.isFireProof()) {
+                 this.setFireTicks(this.fireTicks - 4);
+                 if (this.fireTicks < 0) {
+-                    this.extinguish();
++                    this.extinguish(EntityExtinguishEvent.Reason.BURN_OUT); // Paper
+                 }
+             } else {
+                 if (this.fireTicks % 20 == 0 && !this.aQ()) {
+@@ -557,7 +558,18 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
      }
  
      public void extinguish() {
 +        // Paper start - call EntityExtinguishEvent
-+        extinguish(EntityExtinguishEvent.Reason.UNKNOWN);
++        extinguish(EntityExtinguishEvent.Reason.PLUGIN);
 +    }
 +    public void extinguish(EntityExtinguishEvent.Reason reason) {
-+        if (EntityExtinguishEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+            EntityExtinguishEvent event = new EntityExtinguishEvent(this.getBukkitEntity(), this.fireTicks, reason);
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+            if (!event.isCancelled()) {
-+                this.setFireTicks(0);
-+            } else {
-+                this.setFireTicks(event.getFireTicks());
-+            }
-+        } else {
++        EntityExtinguishEvent event = new EntityExtinguishEvent(this.getBukkitEntity(), this.fireTicks, reason);
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (!event.isCancelled()) {
          this.setFireTicks(0);
++        } else {
++            this.setFireTicks(event.getFireTicks());
 +        }
 +        // Paper end
      }
  
      // Paper start
-@@ -1133,7 +1149,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -1133,7 +1145,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
  
              this.fallDistance = 0.0F;
              this.inWater = true;
