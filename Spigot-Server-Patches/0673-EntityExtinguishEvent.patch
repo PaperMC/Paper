@@ -5,7 +5,7 @@ Subject: [PATCH] EntityExtinguishEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockCauldron.java b/src/main/java/net/minecraft/server/BlockCauldron.java
-index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..79d370abee1944defedb475584e1feeeb3bca037 100644
+index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..7edcefc359d89739820c75eba40a1741b3d7f1d4 100644
 --- a/src/main/java/net/minecraft/server/BlockCauldron.java
 +++ b/src/main/java/net/minecraft/server/BlockCauldron.java
 @@ -1,6 +1,7 @@
@@ -21,12 +21,12 @@ index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..79d370abee1944defedb475584e1feee
                  return;
              }
 -            entity.extinguish();
-+            entity.extinguish(EntityExtinguishEvent.Reason.COLLISION); // Paper
++            entity.extinguish(EntityExtinguishEvent.Reason.IN_WATER_CAULDRON); // Paper
              // this.a(world, blockposition, iblockdata, i - 1);
              // CraftBukkit end
          }
 diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index f307a6361144c7e315b2e0ea45df27527cdb26ca..fe6641fa504a1f5c74136d6791fb9e8c9bc6df3a 100644
+index f307a6361144c7e315b2e0ea45df27527cdb26ca..481ff39ec97005691abb1fab9b369e78ded51a66 100644
 --- a/src/main/java/net/minecraft/server/Entity.java
 +++ b/src/main/java/net/minecraft/server/Entity.java
 @@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
@@ -37,7 +37,13 @@ index f307a6361144c7e315b2e0ea45df27527cdb26ca..fe6641fa504a1f5c74136d6791fb9e8c
  import java.util.Arrays;
  import java.util.Collection;
  import java.util.Collections;
-@@ -442,7 +443,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -437,12 +438,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+         this.m();
+         this.aJ();
+         if (this.world.isClientSide) {
+-            this.extinguish();
++            this.extinguish(EntityExtinguishEvent.Reason.BURN_OUT); // Paper
+         } else if (this.fireTicks > 0) {
              if (this.isFireProof()) {
                  this.setFireTicks(this.fireTicks - 4);
                  if (this.fireTicks < 0) {
@@ -117,7 +123,7 @@ index 59b00c78f8d92bcceca35d0f25e4d94b3ebdc6e2..cbe837c5925b48a132f0bd3117e3e2e9
      }
  
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index b7a362bd9c5e9dae909b863335bae3a94d404a16..3cd8bb20229d9ab1517d7b167fdb82e8d53aff7f 100644
+index b7a362bd9c5e9dae909b863335bae3a94d404a16..17fd0609149be8e49ffb5ae84818fcc53d24ffd3 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -10,6 +10,7 @@ import com.mojang.datafixers.util.Pair;
@@ -128,6 +134,15 @@ index b7a362bd9c5e9dae909b863335bae3a94d404a16..3cd8bb20229d9ab1517d7b167fdb82e8
  import io.papermc.paper.event.entity.EntityMoveEvent;
  import java.util.Collection;
  import java.util.ConcurrentModificationException;
+@@ -284,7 +285,7 @@ public abstract class EntityLiving extends Entity {
+         }
+ 
+         if (this.isFireProof() || this.world.isClientSide) {
+-            this.extinguish();
++            this.extinguish(EntityExtinguishEvent.Reason.FIRE_IMMUNITY); // Paper
+         }
+ 
+         boolean flag1 = flag && ((EntityHuman) this).abilities.isInvulnerable;
 @@ -326,9 +327,17 @@ public abstract class EntityLiving extends Entity {
              }
          }
