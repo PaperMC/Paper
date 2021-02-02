@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kieran Wallbanks <kieran.wallbanks@gmail.com>
+Date: Tue, 2 Feb 2021 11:05:36 +0000
+Subject: [PATCH] Make Event Metadatable
+
+Implements Metadatable in base Event class and adds a unit test to ensure it all works.
+
+diff --git a/src/main/java/org/bukkit/event/Event.java b/src/main/java/org/bukkit/event/Event.java
+index 8ec56cd6b8e0f5c5dd8c7c88b4671e18dcf109d0..ba457069d8170fa09886a47e4233a59fbd0deaa8 100644
+--- a/src/main/java/org/bukkit/event/Event.java
++++ b/src/main/java/org/bukkit/event/Event.java
+@@ -1,9 +1,16 @@
+ package org.bukkit.event;
+ 
++import org.apache.commons.lang.Validate;
++import org.bukkit.metadata.MetadataValue;
++import org.bukkit.metadata.Metadatable;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginManager;
+ import org.jetbrains.annotations.NotNull;
+ 
++import java.util.*;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.stream.IntStream;
++
+ /**
+  * Represents an event.
+  *
+@@ -12,9 +19,58 @@ import org.jetbrains.annotations.NotNull;
+  * @see PluginManager#callEvent(Event)
+  * @see PluginManager#registerEvents(Listener,Plugin)
+  */
+-public abstract class Event {
++public abstract class Event implements Metadatable { // Paper - implement metadatable
+     private String name;
+     private final boolean async;
++    // Paper start - implement metadatable
++    private Map<String, List<MetadataValue>> metadata = null;
++
++    @Override
++    public void setMetadata(@NotNull String metadataKey, @NotNull MetadataValue newMetadataValue) {
++        Validate.notNull(metadataKey, "Key cannot be null");
++        Validate.notNull(newMetadataValue, "Value cannot be null");
++        Validate.notNull(newMetadataValue.getOwningPlugin(), "The value's owning plugin cannot be null");
++        if (metadata == null) {
++            metadata = new ConcurrentHashMap<>(1); // keep the map as small as possible
++        } else if (hasMetadata(metadataKey)){
++            removeMetadata(metadataKey, newMetadataValue.getOwningPlugin());
++        }
++
++        List<MetadataValue> values = metadata.getOrDefault(metadataKey, new ArrayList<>());
++        values.add(newMetadataValue);
++        metadata.put(metadataKey, values);
++    }
++
++    @NotNull
++    @Override
++    public List<MetadataValue> getMetadata(@NotNull String metadataKey) {
++        Validate.notNull(metadataKey, "Key cannot be null");
++        return hasMetadata(metadataKey) ? metadata.get(metadataKey) : Collections.emptyList();
++    }
++
++    @Override
++    public boolean hasMetadata(@NotNull String metadataKey) {
++        Validate.notNull(metadataKey, "Key cannot be null");
++        return metadata != null && metadata.containsKey(metadataKey);
++    }
++
++    @Override
++    public void removeMetadata(@NotNull String metadataKey, @NotNull Plugin owningPlugin) {
++        Validate.notNull(metadataKey, "Key cannot be null");
++        Validate.notNull(owningPlugin, "Plugin cannot be null");
++        if (hasMetadata(metadataKey)) {
++            List<MetadataValue> values = metadata.get(metadataKey);
++            OptionalInt index = IntStream.range(0, values.size())
++                .filter(i -> values.get(i).getOwningPlugin().getName().equals(owningPlugin.getName()))
++                .findFirst();
++            index.ifPresent(values::remove);
++
++            if (values.isEmpty()) {
++                metadata.remove(metadataKey);
++            }
++        }
++    }
++    // Paper end
+ 
+     /**
+      * The default constructor is defined for cleaner code. This constructor
+@@ -42,6 +98,7 @@ public abstract class Event {
+      * @return false if event was cancelled, if cancellable. otherwise true.
+      */
+     public boolean callEvent() {
++        metadata = null; // clear metadata on each call
+         org.bukkit.Bukkit.getPluginManager().callEvent(this);
+         if (this instanceof Cancellable) {
+             return !((Cancellable) this).isCancelled();
+diff --git a/src/test/java/io/papermc/paper/event/EventMetadatableTest.java b/src/test/java/io/papermc/paper/event/EventMetadatableTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d91926a4b1b7295866c07d7cbfdbad6e0a846425
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/event/EventMetadatableTest.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.event;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.server.BroadcastMessageEvent;
++import org.bukkit.metadata.FixedMetadataValue;
++import org.bukkit.plugin.*;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.Test;
++
++import java.util.Collections;
++
++public class EventMetadatableTest {
++    private Event event;
++    private Plugin plugin1, plugin2;
++
++    @Before
++    public void initialize() {
++        event = new BroadcastMessageEvent(true, "a message", Collections.emptySet()); // pick a random event
++        plugin1 = new TestPlugin("test");
++        plugin2 = new TestPlugin("another plugin");
++    }
++
++    @Test
++    public void test() {
++        event.setMetadata("test", new FixedMetadataValue(plugin1, 10));
++        Assert.assertTrue("Event didn't contain metadata", event.hasMetadata("test"));
++        Assert.assertEquals("Event didn't contain correct metadata", 10, event.getMetadata("test").get(0).asInt());
++
++        event.setMetadata("test", new FixedMetadataValue(plugin2, 42));
++        Assert.assertEquals("Event didn't have enough metadata values", 2, event.getMetadata("test").size());
++
++        event.removeMetadata("test", plugin2);
++        Assert.assertEquals("Event didn't have enough metadata values after removal", 1, event.getMetadata("test").size());
++
++        event.setMetadata("test", new FixedMetadataValue(plugin1, 100));
++        Assert.assertEquals("Event didn't update metadata", 100, event.getMetadata("test").get(0).asInt());
++
++        event.removeMetadata("test", plugin1);
++        Assert.assertFalse("Event does contain metadata", event.hasMetadata("test"));
++    }
++}
