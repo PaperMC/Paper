@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dmitry Sidorov <jonmagon@gmail.com>
-Date: Tue, 2 Feb 2021 19:53:04 +0300
+Date: Tue, 2 Feb 2021 22:33:49 +0300
 Subject: [PATCH] Add PlayerGlassBottleFillEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/BlockBeehive.java b/src/main/java/net/minecraft/server/BlockBeehive.java
-index eda45e7f2f824c42653d6c545172efc7c96ef332..50956f67e9d71c5cc5c887c1fd0c580629179336 100644
+index eda45e7f2f824c42653d6c545172efc7c96ef332..e1534777f6326e8fbab26feb1324d6562becfaa4 100644
 --- a/src/main/java/net/minecraft/server/BlockBeehive.java
 +++ b/src/main/java/net/minecraft/server/BlockBeehive.java
 @@ -1,6 +1,7 @@
@@ -16,16 +16,13 @@ index eda45e7f2f824c42653d6c545172efc7c96ef332..50956f67e9d71c5cc5c887c1fd0c5806
  
  import java.util.Iterator;
  import java.util.List;
-@@ -94,13 +95,30 @@ public class BlockBeehive extends BlockTileEntity {
+@@ -94,12 +95,21 @@ public class BlockBeehive extends BlockTileEntity {
                  });
                  flag = true;
              } else if (itemstack.getItem() == Items.GLASS_BOTTLE) {
 +                // Paper start - PlayerGlassBottleFillEvent
-+                PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(new ItemStack(Items.HONEY_BOTTLE)));
++                PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), new org.bukkit.inventory.ItemStack(org.bukkit.Material.HONEY_BOTTLE));
 +                if (!event.callEvent()) {
-+                    if (entityhuman instanceof EntityPlayer) {
-+                        ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
-+                    }
 +                    return EnumInteractionResult.PASS;
 +                }
 +                ItemStack newitem = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getNewItem());
@@ -41,17 +38,11 @@ index eda45e7f2f824c42653d6c545172efc7c96ef332..50956f67e9d71c5cc5c887c1fd0c5806
 +                    entityhuman.a(enumhand, newitem);
 +                } else if (!entityhuman.inventory.pickup(newitem)) {
 +                    entityhuman.drop(newitem, false);
-+                }
-+                // Paper start - PlayerGlassBottleFillEvent, fix visual glitch
-+                else if (entityhuman instanceof EntityPlayer) {
-+                    ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
                  }
-+                // Paper end - PlayerGlassBottleFillEvent
  
                  flag = true;
-             }
 diff --git a/src/main/java/net/minecraft/server/BlockCauldron.java b/src/main/java/net/minecraft/server/BlockCauldron.java
-index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..af93a36e2129bfd8441bfa6446460ed29f90a72b 100644
+index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..fcf2e220684477c12beaf05a002752206b409cf5 100644
 --- a/src/main/java/net/minecraft/server/BlockCauldron.java
 +++ b/src/main/java/net/minecraft/server/BlockCauldron.java
 @@ -1,5 +1,6 @@
@@ -61,16 +52,13 @@ index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..af93a36e2129bfd8441bfa6446460ed2
  import org.bukkit.event.block.CauldronLevelChangeEvent; // CraftBukkit
  
  public class BlockCauldron extends Block {
-@@ -100,6 +101,16 @@ public class BlockCauldron extends Block {
+@@ -100,6 +101,13 @@ public class BlockCauldron extends Block {
                          }
                          if (!entityhuman.abilities.canInstantlyBuild) {
                              itemstack1 = PotionUtil.a(new ItemStack(Items.POTION), Potions.WATER);
 +                            // Paper start - PlayerGlassBottleFillEvent
-+                            PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack1));
++                            PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack1));
 +                            if (!event.callEvent()) {
-+                                if (entityhuman instanceof EntityPlayer) {
-+                                    ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
-+                                }
 +                                return EnumInteractionResult.PASS;
 +                            }
 +                            itemstack1 = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getNewItem());
@@ -79,7 +67,7 @@ index 9fed3883828e7d6ca917a5eca7a7a3e37582f983..af93a36e2129bfd8441bfa6446460ed2
                              itemstack.subtract(1);
                              if (itemstack.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/ItemGlassBottle.java b/src/main/java/net/minecraft/server/ItemGlassBottle.java
-index 40248f0bd91183fb85763cc08e9bc0d4a9af4bdd..6b4e25d180782e45d716ad5e2b3490409068f61c 100644
+index 40248f0bd91183fb85763cc08e9bc0d4a9af4bdd..05d62a9513032d9de525264d5d06c87c8427f6f4 100644
 --- a/src/main/java/net/minecraft/server/ItemGlassBottle.java
 +++ b/src/main/java/net/minecraft/server/ItemGlassBottle.java
 @@ -1,5 +1,7 @@
@@ -114,20 +102,17 @@ index 40248f0bd91183fb85763cc08e9bc0d4a9af4bdd..6b4e25d180782e45d716ad5e2b349040
                      }
                  }
  
-@@ -45,6 +53,21 @@ public class ItemGlassBottle extends Item {
+@@ -45,6 +53,18 @@ public class ItemGlassBottle extends Item {
          }
      }
  
 +    // Paper start - PlayerGlassBottleFillEvent
 +    protected InteractionResultWrapper<ItemStack> handleInteractedItemStack(World world, EntityHuman entityhuman, ItemStack itemstack, ItemStack newitemstack) {
-+        PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(newitemstack));
++        PlayerGlassBottleFillEvent event = new PlayerGlassBottleFillEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(newitemstack));
 +        if (event.callEvent()) {
 +            return InteractionResultWrapper.a(this.a(itemstack, entityhuman, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getNewItem())), world.s_());
 +        }
 +        else {
-+            if (entityhuman instanceof EntityPlayer) {
-+                ((EntityPlayer) entityhuman).updateInventory(entityhuman.defaultContainer);
-+            }
 +            return InteractionResultWrapper.pass(itemstack);
 +        }
 +    }
