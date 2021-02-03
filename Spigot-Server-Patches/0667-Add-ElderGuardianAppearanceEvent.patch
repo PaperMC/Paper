@@ -5,39 +5,29 @@ Subject: [PATCH] Add ElderGuardianAppearanceEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/EntityGuardianElder.java b/src/main/java/net/minecraft/server/EntityGuardianElder.java
-index b691e844953bcc2853a806a3bbf9cb7338e98266..6c094da81b86bc491d28622907e5edaecd73de0a 100644
+index b691e844953bcc2853a806a3bbf9cb7338e98266..d37c235900f90593aa6086f3b1f1d0f85bcf2336 100644
 --- a/src/main/java/net/minecraft/server/EntityGuardianElder.java
 +++ b/src/main/java/net/minecraft/server/EntityGuardianElder.java
-@@ -58,16 +58,21 @@ public class EntityGuardianElder extends EntityGuardian {
+@@ -58,6 +58,8 @@ public class EntityGuardianElder extends EntityGuardian {
              boolean flag1 = true;
              boolean flag2 = true;
              boolean flag3 = true;
--            Iterator iterator = list.iterator();
- 
--            while (iterator.hasNext()) {
--                EntityPlayer entityplayer = (EntityPlayer) iterator.next();
 +            // Paper start
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleGuardianAppearanceEvent(this, list)) {
-+                Iterator iterator = list.iterator();
+             Iterator iterator = list.iterator();
  
--                if (!entityplayer.hasEffect(mobeffectlist) || entityplayer.getEffect(mobeffectlist).getAmplifier() < 2 || entityplayer.getEffect(mobeffectlist).getDuration() < 1200) {
--                    entityplayer.playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.k, this.isSilent() ? 0.0F : 1.0F));
--                    entityplayer.addEffect(new MobEffect(mobeffectlist, 6000, 2), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
-+                while (iterator.hasNext()) {
-+                    EntityPlayer entityplayer = (EntityPlayer) iterator.next();
-+
-+                    if (!entityplayer.hasEffect(mobeffectlist) || entityplayer.getEffect(mobeffectlist).getAmplifier() < 2 || entityplayer.getEffect(mobeffectlist).getDuration() < 1200) {
-+                        entityplayer.playerConnection.sendPacket(new PacketPlayOutGameStateChange(PacketPlayOutGameStateChange.k, this.isSilent() ? 0.0F : 1.0F));
-+                        entityplayer.addEffect(new MobEffect(mobeffectlist, 6000, 2), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
-+                    }
+             while (iterator.hasNext()) {
+@@ -68,6 +70,8 @@ public class EntityGuardianElder extends EntityGuardian {
+                     entityplayer.addEffect(new MobEffect(mobeffectlist, 6000, 2), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
                  }
              }
++            }
 +            // Paper end
          }
  
          if (!this.ez()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 696ded96e6018bc5289cc20f72d6dc9395d3b6a6..ea803d6b27dec0ab6d96e6ad08071ee15c95ce13 100644
+index 696ded96e6018bc5289cc20f72d6dc9395d3b6a6..a4f8c9282aeff22d8480696a67d55ddab2c33528 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -14,6 +14,7 @@ import java.util.Map;
