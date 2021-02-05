@@ -154,7 +154,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
             CraftMetaTropicalFishBucket that = (CraftMetaTropicalFishBucket) meta;
 
             return (hasVariant() ? that.hasVariant() && this.variant.equals(that.variant) : !that.hasVariant())
-                    && entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : entityTag == null;
+                    && (entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null);
         }
         return true;
     }
