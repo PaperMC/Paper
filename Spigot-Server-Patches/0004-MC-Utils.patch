@@ -2351,7 +2351,7 @@ index eff6ebcd30b538cbaedaa031a46a59ea956253ba..30cbfc8eac20910aa55951e3dce63862
      public IBlockData getType(BlockPosition blockposition) {
          return Blocks.AIR.getBlockData();
 diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
-index 54de105a79cf199db8d97cab67ad8affe904d57c..2d3e498d5c40e573aad88fd0fce7943e930956ba 100644
+index f28b9c093140a26564aff0457e7ef14abcf5f9d5..e0ae51ede44de5c894df526c1fc6d94c46d72013 100644
 --- a/src/main/java/net/minecraft/server/BlockBase.java
 +++ b/src/main/java/net/minecraft/server/BlockBase.java
 @@ -636,6 +636,7 @@ public abstract class BlockBase {
@@ -2411,7 +2411,7 @@ index 1b2f415e3ed7f6dca12d13cd098cb4ec3af54020..64e8088d394ddcda59d0209883b778ab
          @Override
          public BlockPosition immutableCopy() {
 diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf9de2cae7 100644
+index 225e8fef6741d9bdbc8ac86cd17e54ddbf04a9e8..8d5598fab64ce3ac58121302dca4b528edd26563 100644
 --- a/src/main/java/net/minecraft/server/Chunk.java
 +++ b/src/main/java/net/minecraft/server/Chunk.java
 @@ -26,7 +26,7 @@ public class Chunk implements IChunkAccess {
@@ -2428,21 +2428,22 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
      @Nullable
      private Consumer<Chunk> v;
 -    private final ChunkCoordIntPair loc;
-+    private final ChunkCoordIntPair loc; public final long coordinateKey; // Paper - cache coordinate key
++    private final ChunkCoordIntPair loc; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
      private volatile boolean x;
  
      public Chunk(World world, ChunkCoordIntPair chunkcoordintpair, BiomeStorage biomestorage) {
-@@ -66,7 +66,7 @@ public class Chunk implements IChunkAccess {
+@@ -66,7 +66,8 @@ public class Chunk implements IChunkAccess {
          this.n = new ShortList[16];
          this.entitySlices = (List[]) (new List[16]); // Spigot
          this.world = (WorldServer) world; // CraftBukkit - type
 -        this.loc = chunkcoordintpair;
-+        this.loc = chunkcoordintpair; this.coordinateKey = MCUtil.getCoordinateKey(chunkcoordintpair); // Paper - cache coordinate key
++        this.locX = chunkcoordintpair.x; this.locZ = chunkcoordintpair.z; // Paper - reduce need for field look ups
++        this.loc = chunkcoordintpair; this.coordinateKey = ChunkCoordIntPair.pair(locX, locZ); // Paper - cache long key
          this.i = chunkconverter;
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
          int j = aheightmap_type.length;
-@@ -109,6 +109,110 @@ public class Chunk implements IChunkAccess {
-     public boolean needsDecoration;
+@@ -112,6 +113,110 @@ public class Chunk implements IChunkAccess {
+     public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
      // CraftBukkit end
  
 +    // Paper start
@@ -2552,7 +2553,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
      public Chunk(World world, ProtoChunk protochunk) {
          this(world, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.p(), protochunk.n(), protochunk.o(), protochunk.getInhabitedTime(), protochunk.getSections(), (Consumer) null);
          Iterator iterator = protochunk.y().iterator();
-@@ -214,6 +318,18 @@ public class Chunk implements IChunkAccess {
+@@ -217,6 +322,18 @@ public class Chunk implements IChunkAccess {
          }
      }
  
@@ -2571,7 +2572,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
      @Override
      public Fluid getFluid(BlockPosition blockposition) {
          return this.a(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-@@ -353,6 +469,7 @@ public class Chunk implements IChunkAccess {
+@@ -356,6 +473,7 @@ public class Chunk implements IChunkAccess {
          entity.chunkX = this.loc.x;
          entity.chunkY = k;
          entity.chunkZ = this.loc.z;
@@ -2579,7 +2580,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
          this.entitySlices[k].add(entity);
      }
  
-@@ -375,6 +492,7 @@ public class Chunk implements IChunkAccess {
+@@ -378,6 +496,7 @@ public class Chunk implements IChunkAccess {
          }
  
          this.entitySlices[i].remove(entity);
@@ -2587,7 +2588,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
      }
  
      @Override
-@@ -396,6 +514,7 @@ public class Chunk implements IChunkAccess {
+@@ -399,6 +518,7 @@ public class Chunk implements IChunkAccess {
          return this.a(blockposition, Chunk.EnumTileEntityState.CHECK);
      }
  
@@ -2595,7 +2596,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
          // CraftBukkit start
-@@ -507,7 +626,25 @@ public class Chunk implements IChunkAccess {
+@@ -510,7 +630,25 @@ public class Chunk implements IChunkAccess {
  
      // CraftBukkit start
      public void loadCallback() {
@@ -2621,7 +2622,7 @@ index ea09e7a742f8e28dfd3db3736422326aff0912f6..3b3e94cff2c6def318864bb5b7baefcf
          if (server != null) {
              /*
               * If it's a new world, the first few chunks are generated inside
-@@ -546,6 +683,22 @@ public class Chunk implements IChunkAccess {
+@@ -549,6 +687,22 @@ public class Chunk implements IChunkAccess {
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
@@ -2745,7 +2746,7 @@ index ae61d0a7676bf06c8c9aa5c68ccb8dd4baf326b6..b12e43ed13a1a9d7d418831b8988c30a
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d953765d03e36 100644
+index 84407dfd46138359d42ddf8fd5c462a5f494d46b..20f62f6f7704f47f86179d03b4e55a61e0149627 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -17,6 +17,10 @@ import java.util.function.Consumer;
@@ -2768,7 +2769,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
      private final LightEngineThreaded lightEngine;
      private final ChunkProviderServer.a serverThreadQueue;
      public final PlayerChunkMap playerChunkMap;
-@@ -37,6 +41,167 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -37,6 +41,158 @@ public class ChunkProviderServer extends IChunkProvider {
      private final IChunkAccess[] cacheChunk = new IChunkAccess[4];
      @Nullable
      private SpawnerCreature.d p;
@@ -2777,13 +2778,8 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
 +    final Long2ObjectOpenHashMap<Chunk> loadedChunkMap = new Long2ObjectOpenHashMap<>(8192, 0.5f);
 +
 +    private final Chunk[] lastLoadedChunks = new Chunk[4 * 4];
-+    private final long[] lastLoadedChunkKeys = new long[4 * 4];
 +
-+    {
-+        java.util.Arrays.fill(this.lastLoadedChunkKeys, MCUtil.INVALID_CHUNK_KEY);
-+    }
-+
-+    private static int getCacheKey(int x, int z) {
++    private static int getChunkCacheKey(int x, int z) {
 +        return x & 3 | ((z & 3) << 2);
 +    }
 +
@@ -2797,12 +2793,9 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
-+            this.lastLoadedChunks[cacheKey] = chunk;
-+        }
++        this.lastLoadedChunks[cacheKey] = chunk;
 +    }
 +
 +    void removeLoadedChunk(Chunk chunk) {
@@ -2815,36 +2808,35 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
 +
 +        // rewrite cache if we have to
 +        // we do this since we also cache null chunks
-+        int cacheKey = getCacheKey(chunk.getPos().x, chunk.getPos().z);
++        int cacheKey = getChunkCacheKey(chunk.locX, chunk.locZ);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunk.coordinateKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.coordinateKey == chunk.coordinateKey) {
 +            this.lastLoadedChunks[cacheKey] = null;
 +        }
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThread(int x, int z) {
-+        int cacheKey = getCacheKey(x, z);
-+        long chunkKey = MCUtil.getCoordinateKey(x, z);
++    public final Chunk getChunkAtIfLoadedMainThread(int x, int z) {
++        int cacheKey = getChunkCacheKey(x, z);
 +
-+        long cachedKey = this.lastLoadedChunkKeys[cacheKey];
-+        if (cachedKey == chunkKey) {
++        Chunk cachedChunk = this.lastLoadedChunks[cacheKey];
++        if (cachedChunk != null && cachedChunk.locX == x & cachedChunk.locZ == z) {
 +            return this.lastLoadedChunks[cacheKey];
 +        }
 +
-+        Chunk ret = this.loadedChunkMap.get(chunkKey);
++        long chunkKey = ChunkCoordIntPair.pair(x, z);
 +
-+        this.lastLoadedChunkKeys[cacheKey] = chunkKey;
-+        this.lastLoadedChunks[cacheKey] = ret;
-+
-+        return ret;
++        cachedChunk = this.loadedChunkMap.get(chunkKey);
++        // Skipping a null check to avoid extra instructions to improve inline capability
++        this.lastLoadedChunks[cacheKey] = cachedChunk;
++        return cachedChunk;
 +    }
 +
-+    public Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
-+        return this.loadedChunkMap.get(MCUtil.getCoordinateKey(x, z));
++    public final Chunk getChunkAtIfLoadedMainThreadNoCache(int x, int z) {
++        return this.loadedChunkMap.get(ChunkCoordIntPair.pair(x, z));
 +    }
 +
-+    public Chunk getChunkAtMainThread(int x, int z) {
++    public final Chunk getChunkAtMainThread(int x, int z) {
 +        Chunk ret = this.getChunkAtIfLoadedMainThread(x, z);
 +        if (ret != null) {
 +            return ret;
@@ -2889,7 +2881,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
 +            throw new IllegalStateException();
 +        }
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
-+        Long identifier = Long.valueOf(this.chunkFutureAwaitCounter++);
++        Long identifier = this.chunkFutureAwaitCounter++;
 +        this.chunkMapDistance.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, identifier);
 +        this.tickDistanceManager();
 +
@@ -2936,7 +2928,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
  
      public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
-@@ -90,6 +255,49 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -90,6 +246,49 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
  
@@ -2986,7 +2978,7 @@ index 94b8cda9ce78aa22c14e88f3500bb9814ff7f631..1ca6d656cd2c7bbf12df6368ad7d9537
      @Nullable
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
-@@ -372,10 +580,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -372,10 +571,9 @@ public class ChunkProviderServer extends IChunkProvider {
  
              this.p = spawnercreature_d;
              this.world.getMethodProfiler().exit();
@@ -3097,7 +3089,7 @@ index 390d79187bc822187d1ba1102c418fa588e8f121..68f1a101174f4a2f7ab5556a5b733f75
          super(entitytypes, world);
      }
 diff --git a/src/main/java/net/minecraft/server/EntityInsentient.java b/src/main/java/net/minecraft/server/EntityInsentient.java
-index b5a8b6bf8f86b99e50014cd155d50099a3f7a91c..abafe6d3ee2f2662f0c2b62cc697606b3d7b47e0 100644
+index e01bc3cdbf382cf61add297b871ba8308720508d..03bfd29c12e7dd6e359481ffb56fddad1a44492a 100644
 --- a/src/main/java/net/minecraft/server/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/server/EntityInsentient.java
 @@ -160,6 +160,7 @@ public abstract class EntityInsentient extends EntityLiving {
@@ -3109,7 +3101,7 @@ index b5a8b6bf8f86b99e50014cd155d50099a3f7a91c..abafe6d3ee2f2662f0c2b62cc697606b
          // CraftBukkit start - fire event
          setGoalTarget(entityliving, EntityTargetEvent.TargetReason.UNKNOWN, true);
 diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
-index fbd863d1bd90eebc517ea45b17ec650fd3ea2ec6..2e9f8d55ea85615f1b61efef89ccc822df6a0cfb 100644
+index c611a6e7178ec3fe3af29943b9fddc9fb154835d..8ad1256bcde950bc34aeb7f61ef9598f3b1cd2a3 100644
 --- a/src/main/java/net/minecraft/server/EntityLiving.java
 +++ b/src/main/java/net/minecraft/server/EntityLiving.java
 @@ -138,6 +138,7 @@ public abstract class EntityLiving extends Entity {
@@ -3121,7 +3113,7 @@ index fbd863d1bd90eebc517ea45b17ec650fd3ea2ec6..2e9f8d55ea85615f1b61efef89ccc822
      @Override
      public float getBukkitYaw() {
 diff --git a/src/main/java/net/minecraft/server/EntityMonster.java b/src/main/java/net/minecraft/server/EntityMonster.java
-index 07c48d777a71a979fb1f0063eef2e613e448d2eb..8a5d6869c269369d45cfe4e61853c44220885313 100644
+index efba3b772238cabd5981978bee5d7dc76115f93f..74426693c47b6437a4597ddd1b961aae79d7a866 100644
 --- a/src/main/java/net/minecraft/server/EntityMonster.java
 +++ b/src/main/java/net/minecraft/server/EntityMonster.java
 @@ -5,6 +5,7 @@ import java.util.function.Predicate;
@@ -3133,10 +3125,10 @@ index 07c48d777a71a979fb1f0063eef2e613e448d2eb..8a5d6869c269369d45cfe4e61853c442
          super(entitytypes, world);
          this.f = 5;
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 24d16bbeb8d7e971591c182149bdd8fbed7778a5..ec885c22279b237974ef461285ba59e0033800d9 100644
+index 3da86b5351dc1701d1c54848830e7bb648671978..37a84b44a46e1490f7b79839b04aef012ddc9fa3 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -93,6 +93,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -96,6 +96,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public Integer clientViewDistance;
      // CraftBukkit end
  
@@ -3145,9 +3137,9 @@ index 24d16bbeb8d7e971591c182149bdd8fbed7778a5..ec885c22279b237974ef461285ba59e0
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
          super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
          this.spawnDimension = World.OVERWORLD;
-@@ -104,6 +106,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-         this.G = 1.0F;
+@@ -108,6 +110,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.c(worldserver);
+         this.co = minecraftserver.a(this);
  
 +        this.cachedSingleHashSet = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<>(this); // Paper
 +
@@ -3155,7 +3147,7 @@ index 24d16bbeb8d7e971591c182149bdd8fbed7778a5..ec885c22279b237974ef461285ba59e0
          this.displayName = this.getName();
          this.canPickUpLoot = true;
 diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
-index 9ca142e2a841e686c5647de46f0f6992a431289e..e08ccba8134846ef11928183d118a6cce53b6d89 100644
+index a314ed0106cbf4359dd1920bb4b3c6095b2550ee..ef2a276fa2bdcac789e2f195a9d06ecce38daa45 100644
 --- a/src/main/java/net/minecraft/server/EntityTypes.java
 +++ b/src/main/java/net/minecraft/server/EntityTypes.java
 @@ -3,6 +3,7 @@ package net.minecraft.server;
@@ -3166,7 +3158,7 @@ index 9ca142e2a841e686c5647de46f0f6992a431289e..e08ccba8134846ef11928183d118a6cc
  import java.util.UUID;
  import java.util.function.Function;
  import java.util.stream.Stream;
-@@ -310,8 +311,8 @@ public class EntityTypes<T extends Entity> {
+@@ -311,8 +312,8 @@ public class EntityTypes<T extends Entity> {
          return this.br.height;
      }
  
@@ -3178,7 +3170,7 @@ index 9ca142e2a841e686c5647de46f0f6992a431289e..e08ccba8134846ef11928183d118a6cc
      }
  
 diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 1890c760f9ffd7628d6ae3db40c36f5272379227..46959b58bac01b5ff7e3eb4cbac07ddf6bfc4ebc 100644
+index ac2f4354e8c442a20b842f315a76a3abdcfec4dc..f97fb0434e80478d514a718a1e7376fd2717037d 100644
 --- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 +++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
 @@ -68,6 +68,15 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
@@ -3198,7 +3190,7 @@ index 1890c760f9ffd7628d6ae3db40c36f5272379227..46959b58bac01b5ff7e3eb4cbac07ddf
          this.d.add(r0);
          LockSupport.unpark(this.getThread());
 diff --git a/src/main/java/net/minecraft/server/IBlockAccess.java b/src/main/java/net/minecraft/server/IBlockAccess.java
-index 29cec3e7aad70c67bfefa223bad8ec607ecb2a55..a168218c6f41bb798557461a80efb785eea99b25 100644
+index cff2d0f0560fb744473d0baa4e4d6928d6559108..93946d15c08fa71c63273f6b4e096bb8b4448394 100644
 --- a/src/main/java/net/minecraft/server/IBlockAccess.java
 +++ b/src/main/java/net/minecraft/server/IBlockAccess.java
 @@ -12,6 +12,19 @@ public interface IBlockAccess {
@@ -3247,7 +3239,7 @@ index b163033a3e15a4fbfdfd8d09cae448675e61c185..eb7282c33dd4f0bb26b9ccafc42bd92e
      IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag);
  
 diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 035ee010eb0183c3c13cae8d3004960486845493..10b98ba59570ae12797fa29533a6e56701849527 100644
+index d4dcdcb2ca6a75c4927bc104e4b683e7c6ce702d..7d98fe348d6b4a3bc2972217f9a9f0c9d902edbd 100644
 --- a/src/main/java/net/minecraft/server/ItemStack.java
 +++ b/src/main/java/net/minecraft/server/ItemStack.java
 @@ -49,7 +49,7 @@ public final class ItemStack {
@@ -3810,10 +3802,10 @@ index 0000000000000000000000000000000000000000..17d73ebbe51a83f79f338bdb1b366cec
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 952f7b345f4a50ead76706765b5f95a743dbbea4..4e8d26b7e427e36dab6335855e3922865ab589cc 100644
+index cd260f0cbde31b5127bf3a73b9c946746defc348..472803c2d9292379a36fca681c2ab92ffb01184f 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -764,6 +764,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -765,6 +765,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.convertable.getLevelName(), ioexception1);
          }
          // Spigot start
@@ -3852,7 +3844,7 @@ index ef2dee1987c45a2c43188584169dd260ee80826c..c16ff6723d3fd191b990002d40dc021d
          return GameProfileSerializer.a(this.get(s));
      }
 diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index b6902ede8ca184851fdb30ff4c86549a4743bd09..5a0129d007459fbb868784f53585fd26f495358c 100644
+index cd17ad99cd1aa7c474566151025991e3f605f734..6034f0cf5a22adb8441226cd54c519e41c198f6f 100644
 --- a/src/main/java/net/minecraft/server/NetworkManager.java
 +++ b/src/main/java/net/minecraft/server/NetworkManager.java
 @@ -158,6 +158,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
@@ -3907,6 +3899,19 @@ index 90223deae3376fd6828eddf3831dab96650afef2..63c4dbd327beb7b6ab42eb44650d68ac
                      if (packet.a()) {
                          throw new SkipEncodeException(throwable);
                      } else {
+diff --git a/src/main/java/net/minecraft/server/PacketPlayInBEdit.java b/src/main/java/net/minecraft/server/PacketPlayInBEdit.java
+index d7252b044288aadb1d235dd968038ee5c13cf701..185ba3789739d06bcb58979519e1f8ff8439be9f 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayInBEdit.java
++++ b/src/main/java/net/minecraft/server/PacketPlayInBEdit.java
+@@ -4,7 +4,7 @@ import java.io.IOException;
+ 
+ public class PacketPlayInBEdit implements Packet<PacketListenerPlayIn> {
+ 
+-    private ItemStack a;
++    private ItemStack a; public ItemStack getBook() { return a; } // Paper - OBFHELPER
+     private boolean b;
+     private int c;
+ 
 diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
 index 8bdda63a2807635e8780481244251f6e35c13627..36a7e41cc5036345929ebf4d2fa160a8c16c2c0a 100644
 --- a/src/main/java/net/minecraft/server/PacketPlayOutMapChunk.java
@@ -3929,7 +3934,7 @@ index 8bdda63a2807635e8780481244251f6e35c13627..36a7e41cc5036345929ebf4d2fa160a8
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa34335fb0f 100644
+index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a15804502bd3579 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -21,9 +21,9 @@ public class PlayerChunk {
@@ -3954,7 +3959,7 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
-@@ -54,8 +56,47 @@ public class PlayerChunk {
+@@ -54,16 +56,63 @@ public class PlayerChunk {
          this.ticketLevel = this.oldTicketLevel;
          this.n = this.oldTicketLevel;
          this.a(i);
@@ -4000,14 +4005,16 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
 +    // Paper end
 +
      // CraftBukkit start
-     public Chunk getFullChunk() {
+-    public Chunk getFullChunk() {
++    public final Chunk getFullChunk() { // Paper - final for inline
          if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
-@@ -64,6 +105,14 @@ public class PlayerChunk {
+         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
+         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
          return either == null ? null : (Chunk) either.left().orElse(null);
      }
      // CraftBukkit end
 +    // Paper start - "real" get full chunk immediately
-+    public Chunk getFullChunkIfCached() {
++    public final Chunk getFullChunkIfCached() {
 +        // Note: Copied from above without ticket level check
 +        CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
 +        Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
@@ -4017,24 +4024,57 @@ index ce324c1c3ae1b7cddf962a6eb93f91000fa41d50..49686f1f39417f8c7d6e0a58fb428fa3
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
-@@ -75,14 +124,17 @@ public class PlayerChunk {
+@@ -75,20 +124,23 @@ public class PlayerChunk {
          return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getTickingFuture() { return this.a(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a() { // Paper - final for inline
          return this.tickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getEntityTickingFuture() { return this.b(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> b() { // Paper - final for inline
          return this.entityTickingFuture;
      }
  
+-    public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
 +    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> getFullChunkFuture() { return this.c(); } // Paper - OBFHELPER
-     public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() {
++    public final CompletableFuture<Either<Chunk, PlayerChunk.Failure>> c() { // Paper - final for inline
          return this.fullChunkFuture;
      }
+ 
+     @Nullable
+-    public Chunk getChunk() {
++    public final Chunk getChunk() { // Paper - final for inline
+         CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
+         Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
+ 
+@@ -113,7 +165,7 @@ public class PlayerChunk {
+         return null;
+     }
+ 
+-    public CompletableFuture<IChunkAccess> getChunkSave() {
++    public final CompletableFuture<IChunkAccess> getChunkSave() { // Paper - final for inline
+         return this.chunkSave;
+     }
+ 
+@@ -254,11 +306,11 @@ public class PlayerChunk {
+         });
+     }
+ 
+-    public ChunkCoordIntPair i() {
++    public final ChunkCoordIntPair i() { // Paper - final for inline
+         return this.location;
+     }
+ 
+-    public int getTicketLevel() {
++    public final int getTicketLevel() { // Paper - final for inline
+         return this.ticketLevel;
+     }
+ 
 @@ -329,13 +381,27 @@ public class PlayerChunk {
  
          this.hasBeenLoaded |= flag3;
@@ -4190,10 +4230,10 @@ index 43168f3836eb8823f3b2046882664ba45f1be678..127c03c321e1414e0d174c8d81a7851c
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 46d33c6f548f1cf0b863e2e67d46aa5e905103f3..c455d0b2dc806d7c26235e6c89c58311548177ec 100644
+index 2abd00975b058baca32e5de67c96dad46f266dee..b37b791cd66b2e88dd0ecf52beea1844c97cdb94 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -67,9 +67,9 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -73,9 +73,9 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private final MinecraftServer minecraftServer;
      public EntityPlayer player;
      private int e;
@@ -4267,10 +4307,10 @@ index 49387e812a50b8cda45352cf9dd6b1692b7476c1..135f38cc5d5d2fa3866aa1063df49a96
      public synchronized DataInputStream a(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          int i = this.getOffset(chunkcoordintpair);
 diff --git a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-index e804c09cc89c21351c9241f426122e28e5d08452..e9fbeaf309735ea5fcb0c53b8b2485b0c5dd43be 100644
+index adc9959932a99ff62af4f893d0f8af1130579138..34a72ba218892de337752af896fd307f91d9fc95 100644
 --- a/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
 +++ b/src/main/java/net/minecraft/server/RegionLimitedWorldAccess.java
-@@ -102,6 +102,26 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
+@@ -104,6 +104,26 @@ public class RegionLimitedWorldAccess implements GeneratorAccessSeed {
          return i >= this.n.x && i <= this.o.x && j >= this.n.z && j <= this.o.z;
      }
  
@@ -4352,7 +4392,7 @@ index ff41038ce6d2c1a8093bce3539070fa0ccfd61c2..ed0f9c5d29c4f88b7beee4b0ecdd7a56
          return VoxelShapes.b;
      }
 diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498ba0fd4e71 100644
+index 2ffa56f3580b524c3593505585410dc347e1780c..9c6b15e70bfb7db853c8e4a8dfd7b24bae27a70c 100644
 --- a/src/main/java/net/minecraft/server/World.java
 +++ b/src/main/java/net/minecraft/server/World.java
 @@ -22,6 +22,7 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
@@ -4363,28 +4403,32 @@ index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498b
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
  import org.bukkit.event.block.BlockPhysicsEvent;
  // CraftBukkit end
-@@ -99,7 +100,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
- 
-     protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, final DimensionManager dimensionmanager, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.World.Environment env) {
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((WorldDataServer) worlddatamutable).getName()); // Spigot
--        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(worlddata.getName(), this.spigotConfig); // Paper
-+        this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig((((WorldDataServer)worlddatamutable).getName()), this.spigotConfig); // Paper
-         this.generator = gen;
-         this.world = new CraftWorld((WorldServer) this, gen, env);
-         this.ticksPerAnimalSpawns = this.getServer().getTicksPerAnimalSpawns(); // CraftBukkit
-@@ -212,6 +213,39 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
+@@ -203,17 +204,50 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return i < 0 || i >= 256;
      }
  
+-    public Chunk getChunkAtWorldCoords(BlockPosition blockposition) {
++    public final Chunk getChunkAtWorldCoords(BlockPosition blockposition) { // Paper - help inline
+         return this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
+     }
+ 
+     @Override
+-    public Chunk getChunkAt(int i, int j) {
+-        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL);
++    public final Chunk getChunkAt(int i, int j) { // Paper - final to help inline
++        return (Chunk) this.getChunkAt(i, j, ChunkStatus.FULL, true); // Paper - avoid a method jump
++    }
++
 +    // Paper start - if loaded
 +    @Nullable
 +    @Override
-+    public IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++    public final IChunkAccess getChunkIfLoadedImmediately(int x, int z) {
 +        return ((WorldServer)this).chunkProvider.getChunkAtIfLoadedImmediately(x, z);
-+    }
-+
-+    @Override
-+    public IBlockData getTypeIfLoaded(BlockPosition blockposition) {
+     }
+ 
+     @Override
+-    public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    public final IBlockData getTypeIfLoaded(BlockPosition blockposition) {
 +        // CraftBukkit start - tree generation
 +        if (captureTreeGeneration) {
 +            CraftBlockState previous = capturedBlockStates.get(blockposition);
@@ -4409,9 +4453,20 @@ index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498b
 +    }
 +    // Paper end
 +
-     @Override
-     public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
++    @Override
++    public final IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) { // Paper - final for inline
          IChunkAccess ichunkaccess = this.getChunkProvider().getChunkAt(i, j, chunkstatus, flag);
+ 
+         if (ichunkaccess == null && flag) {
+@@ -224,7 +258,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     @Override
+-    public boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) {
++    public final boolean setTypeAndData(BlockPosition blockposition, IBlockData iblockdata, int i) { // Paper - final for inline
+         return this.a(blockposition, iblockdata, i, 512);
+     }
+ 
 @@ -370,8 +404,9 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
      public void a(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
@@ -4424,6 +4479,15 @@ index 3150f4a0a8f1f8256c7e296f479b632b47bc6620..f69c2055a33a9396e0df6554aa4e498b
          Fluid fluid = this.getFluid(blockposition);
  
          return this.setTypeAndData(blockposition, fluid.getBlockData(), 3 | (flag ? 64 : 0));
+@@ -517,7 +552,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         if (isOutsideWorld(blockposition)) {
+             return Blocks.VOID_AIR.getBlockData();
+         } else {
+-            Chunk chunk = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++            Chunk chunk = (Chunk) this.getChunkProvider().getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+ 
+             return chunk.getType(blockposition);
+         }
 diff --git a/src/main/java/net/minecraft/server/WorldBorder.java b/src/main/java/net/minecraft/server/WorldBorder.java
 index 5719ef9714e9680596a08c42c33508c16c0e676a..bb0f30f182856d2701fde9b1a65eeb987462104a 100644
 --- a/src/main/java/net/minecraft/server/WorldBorder.java
@@ -4437,18 +4501,18 @@ index 5719ef9714e9680596a08c42c33508c16c0e676a..bb0f30f182856d2701fde9b1a65eeb98
          return this.j.m();
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 282f4c006a3b203d3a62530c34b43259eaca55ea..4947a0aaab2dd91f3184365e64c4ad4e05132283 100644
+index 170332ce35db120b53f99a45869882236c361960..c96ad91b15920293e228f5eb7d0843beda92faec 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Object2IntMap;
  import it.unimi.dsi.fastutil.objects.ObjectIterator;
  import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
  import java.io.BufferedWriter;
-@@ -56,7 +57,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -60,7 +61,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      private final Map<UUID, Entity> entitiesByUUID = Maps.newHashMap();
      private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
      private final List<EntityPlayer> players = Lists.newArrayList();
@@ -4457,7 +4521,7 @@ index 282f4c006a3b203d3a62530c34b43259eaca55ea..4947a0aaab2dd91f3184365e64c4ad4e
      boolean tickingEntities;
      private final MinecraftServer server;
      public final WorldDataServer worldDataServer; // CraftBukkit - type
-@@ -1561,7 +1562,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -1567,7 +1568,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                  ObjectIterator objectiterator = spawnercreature_d.b().object2IntEntrySet().iterator();
  
                  while (objectiterator.hasNext()) {
@@ -4733,3 +4797,20 @@ index 1aec70a1f1a9d8fd2cd06bde4033e19e769ab331..f72c13bedaa6fa45e26f5dcad564835b
      private int size;
      private int initialCapacity;
  
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index a83e1cdbcbb6b01bee6a3f31dcac0b601a1ffc47..f08110a22646716bcdf6a8d25ec44df8d78e85a4 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -118,7 +118,11 @@ public class SpigotConfig
+                 }
+             }
+         }
+-
++        // Paper start
++        SpigotConfig.save();
++    }
++    public static void save() {
++        // Paper end
+         try
+         {
+             config.save( CONFIG_FILE );

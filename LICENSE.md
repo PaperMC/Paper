@@ -43,4 +43,7 @@ DoNotSpamPls <7570108+DoNotSpamPls@users.noreply.github.com>
 JRoy <joshroy126@gmail.com>
 Robert Norman <spottedleaf@spottedleaf.dev>, <Spottedleaf@users.noreply.github.com>
 ysl3000 <yannicklamprecht@live.de>
+KennyTV <jahnke.nassim@gmail.com>
+Machine_Maker <machine@machinemaker.me>
+Ivan Pekov <ivan@mrivanplays.com>
 ```

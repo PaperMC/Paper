@@ -1,7 +1,7 @@
 Contributing to Paper
 ==========================
 PaperMC is happy you're willing to contribute to our projects. We are usually
-very lentient with all submitted PRs, but there are still some guidelines you
+very lenient with all submitted PRs, but there are still some guidelines you
 can follow to make the approval process go more smoothly.
 
 **Table of contents:**
@@ -63,7 +63,8 @@ you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 - A Java 8 or later JDK (packages vary, use Google/DuckDuckGo/etc.).  
 If you need one, you can find them on [AdoptOpenJDK](https://adoptopenjdk.net/).
 - `maven` (often package `maven`; can be found on
-[Apache's site](https://maven.apache.org/download.cgi) too).
+[Apache's site](https://maven.apache.org/download.cgi) too);
+- `curl` (package `curl` everywhere).
 
 If you're on Windows, check
 [the section on WSL](#patching-and-building-is-really-slow-what-can-i-do).

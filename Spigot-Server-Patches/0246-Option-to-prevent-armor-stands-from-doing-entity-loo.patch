@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4813f62d1e382d5ac6971b2244df3f13c80d1950..3562950df4868b1393790b1a1ff1fe0dc589c155 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -379,4 +379,9 @@ public class PaperWorldConfig {
+     private void scanForLegacyEnderDragon() {
+         scanForLegacyEnderDragon = getBoolean("game-mechanics.scan-for-legacy-ender-dragon", true);
+     }
++
++    public boolean armorStandEntityLookups = true;
++    private void armorStandEntityLookups() {
++        armorStandEntityLookups = getBoolean("armor-stands-do-collision-entity-lookups", true);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/EntityArmorStand.java b/src/main/java/net/minecraft/server/EntityArmorStand.java
+index b0847b4e61e587a47fd209eb2ec3772d1486802d..89f6525ef1a4c41d3b662a5ad22b353064a82f36 100644
+--- a/src/main/java/net/minecraft/server/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/server/EntityArmorStand.java
+@@ -321,6 +321,7 @@ public class EntityArmorStand extends EntityLiving {
+ 
+     @Override
+     protected void collideNearby() {
++        if (!world.paperConfig.armorStandEntityLookups) return; // Paper
+         List<Entity> list = this.world.getEntities(this, this.getBoundingBox(), EntityArmorStand.br);
+ 
+         for (int i = 0; i < list.size(); ++i) {
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 3bad056cf3c9a4322dbbf3486ea4510117a8d95b..7b2df7f3538f7ee696db08f7d8be74f258ff1996 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -802,6 +802,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+             // Paper end
+         }
+     }
++    // Paper start - Prevent armor stands from doing entity lookups
++    @Override
++    public boolean getCubes(@Nullable Entity entity, AxisAlignedBB axisAlignedBB) {
++        if (entity instanceof EntityArmorStand && !entity.world.paperConfig.armorStandEntityLookups) return false;
++        return GeneratorAccess.super.getCubes(entity, axisAlignedBB);
++    }
++    // Paper end
+ 
+     public Explosion explode(@Nullable Entity entity, double d0, double d1, double d2, float f, Explosion.Effect explosion_effect) {
+         return this.createExplosion(entity, (DamageSource) null, (ExplosionDamageCalculator) null, d0, d1, d2, f, false, explosion_effect);
