@@ -30,6 +30,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
 
         CraftMetaTropicalFishBucket bucket = (CraftMetaTropicalFishBucket) meta;
         this.variant = bucket.variant;
+        this.entityTag = bucket.entityTag;
     }
 
     CraftMetaTropicalFishBucket(NBTTagCompound tag) {
