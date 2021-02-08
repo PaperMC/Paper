@@ -506,10 +506,7 @@ public enum Material implements Keyed {
      */
     TNT(7896, TNT.class),
     BOOKSHELF(10069),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    MOSSY_COBBLESTONE(21900, MultipleFacing.class),
+    MOSSY_COBBLESTONE(21900),
     OBSIDIAN(32723),
     TORCH(6063),
     /**
