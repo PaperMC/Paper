@@ -44,14 +44,14 @@ index 3c7b225edbe23dc1959002293a6f8b816287b5a8..d733ff69d44a1ee10f3d7c41b92cd031
  
          public a() {
 diff --git a/src/main/java/net/minecraft/server/MCUtil.java b/src/main/java/net/minecraft/server/MCUtil.java
-index ff74be14512a947e81b62d53e616131ca7d7f609..2a6ef7270a2f5b6195edfa646150c32476239a51 100644
+index ff74be14512a947e81b62d53e616131ca7d7f609..736d00761b42bbd982707e7dc9b1d7c77eeb99d5 100644
 --- a/src/main/java/net/minecraft/server/MCUtil.java
 +++ b/src/main/java/net/minecraft/server/MCUtil.java
 @@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
  import com.destroystokyo.paper.profile.PlayerProfile;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
  import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
-+import io.papermc.paper.TickingLevel;
++import io.papermc.paper.world.TickingLevel;
  import org.apache.commons.lang.exception.ExceptionUtils;
  import com.google.gson.JsonArray;
  import com.google.gson.JsonObject;
@@ -100,33 +100,33 @@ index 5c789b25f1df2eae8ea8ceb4ba977ba336fe6d5e..2cb8991b8d2b46478f17388a80fefde1
      public static final TicketType<Long> ASYNC_LOAD = a("async_load", Long::compareTo); // Paper
      public static final TicketType<ChunkCoordIntPair> PRIORITY = a("priority", Comparator.comparingLong(ChunkCoordIntPair::pair), 300); // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index b71316cce3bdbf3485be456f0260c6b3463cff8e..ca4d6883385c5a2f357c7caba7291b772e0a751c 100644
+index b71316cce3bdbf3485be456f0260c6b3463cff8e..88928a7c12c390c97614a467fb7478e6321129de 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -670,6 +670,7 @@ public class CraftWorld implements World {
+@@ -267,6 +267,7 @@ import org.bukkit.util.BoundingBox;
+ import org.bukkit.util.Consumer;
+ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
++import io.papermc.paper.world.TickingLevel; // Paper
  
-         ChunkMapDistance chunkDistanceManager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
-         chunkDistanceManager.removeAllTicketsFor(TicketType.PLUGIN_TICKET, 31, plugin); // keep in-line with force loading, remove at level 31
-+        removeKeyedPluginChunkTickets(plugin); // Paper
-     }
- 
-     @Override
+ public class CraftWorld implements World {
+     public static final int CUSTOM_DIMENSION_OFFSET = 10;
 @@ -717,6 +718,171 @@ public class CraftWorld implements World {
          return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
      }
  
 +    // Paper start
 +    @Override
-+    public io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key) {
-+        return addKeyedPluginChunkTicket(x, z, key, io.papermc.paper.TickingLevel.ENTITY);
++    public TickingLevel addKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key) {
++        return addKeyedPluginChunkTicket(x, z, key, TickingLevel.ENTITY);
 +    }
 +
 +    @Override
-+    public io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key, io.papermc.paper.TickingLevel level) {
++    public TickingLevel addKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key, TickingLevel level) {
 +        Preconditions.checkArgument(key != null, "null key");
 +        Preconditions.checkArgument(level != null, "null level");
 +
-+        io.papermc.paper.TickingLevel previousLevel = getKeyedPluginChunkTicketLevel(x, z, key);
++        TickingLevel previousLevel = getKeyedPluginChunkTicketLevel(x, z, key);
 +        if (previousLevel == level) {
 +            return level; //ticket already present at desired level -> do nothing
 +        }
@@ -145,13 +145,13 @@ index b71316cce3bdbf3485be456f0260c6b3463cff8e..ca4d6883385c5a2f357c7caba7291b77
 +    }
 +
 +    @Override
-+    public io.papermc.paper.TickingLevel removeKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key) {
++    public TickingLevel removeKeyedPluginChunkTicket(int x, int z, org.bukkit.NamespacedKey key) {
 +        Preconditions.checkArgument(key != null, "null key");
 +
 +        ChunkMapDistance manager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;
 +        ChunkCoordIntPair coordPair = new ChunkCoordIntPair(x, z);
 +
-+        for (io.papermc.paper.TickingLevel level : io.papermc.paper.TickingLevel.values()) {
++        for (TickingLevel level : TickingLevel.values()) {
 +            int ticketLevel = MCUtil.getTicketLevelFrom(level);
 +            if (manager.removeTicketAtLevel(TicketType.KEYED_PLUGIN_TICKET, coordPair, ticketLevel, key)) {
 +                return level;
@@ -161,7 +161,7 @@ index b71316cce3bdbf3485be456f0260c6b3463cff8e..ca4d6883385c5a2f357c7caba7291b77
 +    }
 +
 +    @Override
-+    public io.papermc.paper.TickingLevel getKeyedPluginChunkTicketLevel(int x, int z, org.bukkit.NamespacedKey key) {
++    public TickingLevel getKeyedPluginChunkTicketLevel(int x, int z, org.bukkit.NamespacedKey key) {
 +        Preconditions.checkArgument(key != null, "null key");
 +
 +        ChunkMapDistance manager = this.world.getChunkProvider().playerChunkMap.chunkDistanceManager;

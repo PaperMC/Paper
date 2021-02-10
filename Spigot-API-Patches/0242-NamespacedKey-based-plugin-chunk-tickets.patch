@@ -4,13 +4,13 @@ Date: Sat, 22 Aug 2020 14:41:43 +0200
 Subject: [PATCH] NamespacedKey based plugin chunk tickets
 
 
-diff --git a/src/main/java/io/papermc/paper/TickingLevel.java b/src/main/java/io/papermc/paper/TickingLevel.java
+diff --git a/src/main/java/io/papermc/paper/world/TickingLevel.java b/src/main/java/io/papermc/paper/world/TickingLevel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e0ffc541981caae5ca031ff7e5b2247e2af030c5
+index 0000000000000000000000000000000000000000..64b77f2c7ca920a44d6628b3edacbaeb3f727b1f
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/TickingLevel.java
-@@ -0,0 +1,57 @@
-+package io.papermc.paper;
++++ b/src/main/java/io/papermc/paper/world/TickingLevel.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.world;
 +
 +import org.apache.commons.lang.Validate;
 +import org.bukkit.Chunk;
@@ -19,8 +19,6 @@ index 0000000000000000000000000000000000000000..e0ffc541981caae5ca031ff7e5b2247e
 +
 +/**
 + * Represents what kind of ticking is done on the {@link Chunk}.
-+ * The important values have dedicated cached instances, eg. {@link #ENTITY}.
-+ * Read their own documentation for more information.
 + */
 +public enum TickingLevel {
 +
@@ -41,7 +39,7 @@ index 0000000000000000000000000000000000000000..e0ffc541981caae5ca031ff7e5b2247e
 +
 +    /**
 +     * Gets whether this ticking level does at least as much as the specified one.
-+     * Examples:
++     * Examples (all of these expressions evaluate to {@code true}):
 +     * <ul>
 +     *     <li>{@code BLOCK.includes(ENTITY) == false}</li>
 +     *     <li>{@code BLOCK.includes(BLOCK) == true}</li>
@@ -68,42 +66,50 @@ index 0000000000000000000000000000000000000000..e0ffc541981caae5ca031ff7e5b2247e
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Chunk.java b/src/main/java/org/bukkit/Chunk.java
-index b4ef6297f78d1f0c216e718024a21e6aa07cd1c6..eea7813b78b3c53f7729793730fedd9269646f2c 100644
+index b4ef6297f78d1f0c216e718024a21e6aa07cd1c6..94c36228346a1b79529e2308f4654c80db4d6614 100644
 --- a/src/main/java/org/bukkit/Chunk.java
 +++ b/src/main/java/org/bukkit/Chunk.java
-@@ -240,6 +240,78 @@ public interface Chunk extends PersistentDataHolder {
+@@ -8,6 +8,7 @@ import org.bukkit.entity.Entity;
+ import org.bukkit.persistence.PersistentDataHolder;
+ import org.bukkit.plugin.Plugin;
+ import org.jetbrains.annotations.NotNull;
++import io.papermc.paper.world.TickingLevel; // Paper
+ 
+ /**
+  * Represents a chunk of blocks
+@@ -240,6 +241,78 @@ public interface Chunk extends PersistentDataHolder {
      @NotNull
      Collection<Plugin> getPluginChunkTickets();
  
 +    // Paper start
 +    /**
 +     * Adds a {@link NamespacedKey} based plugin chunk ticket
-+     * with {@link io.papermc.paper.TickingLevel#ENTITY}.
++     * with {@link TickingLevel#ENTITY}.
 +     * If a ticket with a different level is already present, it will be removed.
 +     *
 +     * @param key the identifier of the ticket
-+     * @return the {@link io.papermc.paper.TickingLevel} that was overwritten
++     * @return the {@link TickingLevel} that was overwritten
 +     * or {@code null} if no ticket was present with the specified key
 +     * @see World#addKeyedPluginChunkTicket(int, int, NamespacedKey)
 +     */
 +    @org.jetbrains.annotations.Nullable
-+    default io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(@NotNull NamespacedKey key) {
++    default TickingLevel addKeyedPluginChunkTicket(@NotNull NamespacedKey key) {
 +        return getWorld().addKeyedPluginChunkTicket(getX(), getZ(), key);
 +    }
 +
 +    /**
 +     * Adds a {@link NamespacedKey} based plugin chunk ticket
-+     * with the specified {@link io.papermc.paper.TickingLevel}.
++     * with the specified {@link TickingLevel}.
 +     * If a ticket with a different level is already present, it will be removed.
 +     *
 +     * @param key the identifier of the ticket
 +     * @param level the level of the ticket
-+     * @return the {@link io.papermc.paper.TickingLevel} that was overwritten
++     * @return the {@link TickingLevel} that was overwritten
 +     * or {@code null} if no ticket was present with the specified key
-+     * @see World#addKeyedPluginChunkTicket(int, int, NamespacedKey, io.papermc.paper.TickingLevel)
++     * @see World#addKeyedPluginChunkTicket(int, int, NamespacedKey, TickingLevel)
 +     */
 +    @org.jetbrains.annotations.Nullable
-+    default io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(@NotNull NamespacedKey key, @NotNull io.papermc.paper.TickingLevel level) {
++    default TickingLevel addKeyedPluginChunkTicket(@NotNull NamespacedKey key, @NotNull TickingLevel level) {
 +        return getWorld().addKeyedPluginChunkTicket(getX(), getZ(), key, level);
 +    }
 +
@@ -112,12 +118,12 @@ index b4ef6297f78d1f0c216e718024a21e6aa07cd1c6..eea7813b78b3c53f7729793730fedd92
 +     * which has the specified key, if there is one.
 +     *
 +     * @param key the identifier of the tickets
-+     * @return the {@link io.papermc.paper.TickingLevel} that was removed
++     * @return the {@link TickingLevel} that was removed
 +     * or {@code null} if no ticket was present with the specified key
 +     * @see World#removeKeyedPluginChunkTicket(int, int, NamespacedKey)
 +     */
 +    @org.jetbrains.annotations.Nullable
-+    default io.papermc.paper.TickingLevel removeKeyedPluginChunkTicket(@NotNull NamespacedKey key) {
++    default TickingLevel removeKeyedPluginChunkTicket(@NotNull NamespacedKey key) {
 +        return getWorld().removeKeyedPluginChunkTicket(getX(), getZ(), key);
 +    }
 +
@@ -130,7 +136,7 @@ index b4ef6297f78d1f0c216e718024a21e6aa07cd1c6..eea7813b78b3c53f7729793730fedd92
 +     * @see #getKeyedPluginChunkTicketLevel(NamespacedKey)
 +     */
 +    @org.jetbrains.annotations.Nullable
-+    default io.papermc.paper.TickingLevel getKeyedPluginChunkTicketLevel(@NotNull NamespacedKey key) {
++    default TickingLevel getKeyedPluginChunkTicketLevel(@NotNull NamespacedKey key) {
 +        return getWorld().getKeyedPluginChunkTicketLevel(getX(), getZ(), key);
 +    }
 +
@@ -151,43 +157,53 @@ index b4ef6297f78d1f0c216e718024a21e6aa07cd1c6..eea7813b78b3c53f7729793730fedd92
       * Gets the amount of time in ticks that this chunk has been inhabited.
       *
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b039880ac95 100644
+index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..b94ea04f2ca9474e32a9cdeacd058310775ca884 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -1115,6 +1115,147 @@ public interface World extends PluginMessageRecipient, Metadatable {
+@@ -39,6 +39,7 @@ import org.bukkit.util.Vector;
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++import io.papermc.paper.world.TickingLevel; // Paper
+ 
+ /**
+  * Represents a world, which may contain entities, chunks and blocks
+@@ -1115,6 +1116,145 @@ public interface World extends PluginMessageRecipient, Metadatable {
      @NotNull
      public Map<Plugin, Collection<Chunk>> getPluginChunkTickets();
  
 +    // Paper start
 +    /**
 +     * Adds a {@link NamespacedKey} based plugin chunk ticket
-+     * to the specified chunk with {@link io.papermc.paper.TickingLevel#ENTITY}.
++     * to the specified chunk with {@link TickingLevel#ENTITY}.
 +     * If a ticket with a different level is already present, it will be removed.
++     * Asynchronously loads the specified {@link Chunk} if it isn't loaded.
 +     *
 +     * @param x X-coordinate of the chunk
 +     * @param z Z-coordinate of the chunk
 +     * @param key the identifier of the ticket
-+     * @return the {@link io.papermc.paper.TickingLevel} that was overwritten
++     * @return the {@link TickingLevel} that was overwritten
 +     * or {@code null} if no ticket was present with the specified key
-+     * @see #addKeyedPluginChunkTicket(int, int, NamespacedKey, io.papermc.paper.TickingLevel)
++     * @see #addKeyedPluginChunkTicket(int, int, NamespacedKey, TickingLevel)
 +     */
 +    @Nullable
-+    io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key);
++    TickingLevel addKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key);
 +
 +    /**
 +     * Adds a {@link NamespacedKey} based plugin chunk ticket
-+     * to the specified chunk with the specified {@link io.papermc.paper.TickingLevel}.
++     * to the specified chunk with the specified {@link TickingLevel}.
 +     * If a ticket with a different level is already present, it will be removed.
++     * Asynchronously loads the specified {@link Chunk} if it isn't loaded.
 +     *
 +     * @param x X-coordinate of the chunk
 +     * @param z Z-coordinate of the chunk
 +     * @param key the identifier of the ticket
 +     * @param level the level of the ticket
-+     * @return the {@link io.papermc.paper.TickingLevel} that was overwritten
++     * @return the {@link TickingLevel} that was overwritten
 +     * or {@code null} if no ticket was present with the specified key
 +     */
 +    @Nullable
-+    io.papermc.paper.TickingLevel addKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key, @NotNull io.papermc.paper.TickingLevel level);
++    TickingLevel addKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key, @NotNull TickingLevel level);
 +
 +    /**
 +     * Removes the {@link NamespacedKey} based plugin chunk ticket
@@ -196,11 +212,11 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +     * @param x X-coordinate of the chunk
 +     * @param z Z-coordinate of the chunk
 +     * @param key the identifier of the tickets
-+     * @return the {@link io.papermc.paper.TickingLevel} that was removed
++     * @return the {@link TickingLevel} that was removed
 +     * or {@code null} if no ticket was present with the specified key
 +     */
 +    @Nullable
-+    io.papermc.paper.TickingLevel removeKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key);
++    TickingLevel removeKeyedPluginChunkTicket(int x, int z, @NotNull NamespacedKey key);
 +
 +    /**
 +     * Gets the {@link NamespacedKey} based plugin chunk ticket level
@@ -212,7 +228,7 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +     * @return the level which is present with the specified key or {@code null} if there is none
 +     */
 +    @Nullable
-+    io.papermc.paper.TickingLevel getKeyedPluginChunkTicketLevel(int x, int z, @NotNull NamespacedKey key);
++    TickingLevel getKeyedPluginChunkTicketLevel(int x, int z, @NotNull NamespacedKey key);
 +
 +    /**
 +     * Gets the keys of the {@link NamespacedKey} based plugin chunk tickets
@@ -227,7 +243,7 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +
 +    /**
 +     * Removes all {@link NamespacedKey} based plugin chunk tickets
-+     * from each chunk which has the specified plugin
++     * (from each chunk in this world) which are owned by the specified plugin
 +     * according to {@link NamespacedKey#getNamespace()}.
 +     *
 +     * @param plugin the plugin whose tickets to remove
@@ -236,22 +252,20 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +
 +    /**
 +     * Removes all {@link NamespacedKey} based plugin chunk tickets
-+     * from each chunk which has the specified key.
++     * (from each chunk in this world) which have the specified key.
 +     *
 +     * @param key the identifier of the tickets which should be removed
 +     */
 +    void removeKeyedPluginChunkTickets(@NotNull NamespacedKey key);
 +
 +    /**
-+     * Gets all chunk keys which have a {@link NamespacedKey}
-+     * based plugin chunk ticket with the specified key.
++     * Gets all chunk keys (which can be used in eg. {@link World#getChunkAt(long)})
++     * which have a {@link NamespacedKey} based plugin chunk ticket with the specified key.
 +     * Keep in mind that these chunks might not be loaded yet:
 +     * having a chunk ticket only guarantees that chunk loading has begun,
 +     * not that the loading has already been completed.
-+     * If only loaded chunks are needed,
-+     * please refer to {@link #getKeyedPluginChunkTicketLoadedChunks(NamespacedKey)}.
-+     * More information regarding chunk keys can be found
-+     * in the documentation of {@link #getChunkAt(long)}.
++     * If only loaded chunks are needed, please use
++     * {@link #getKeyedPluginChunkTicketLoadedChunks(NamespacedKey)} instead.
 +     *
 +     * @return the chunk keys which have tickets with the specified key
 +     */
@@ -261,9 +275,9 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +    /**
 +     * Gets all loaded chunks which have a {@link NamespacedKey}
 +     * based plugin chunk ticket with the specified key.
-+     * Keep in mind that only chunks are included.
-+     * If that's not desired, or if you would like to know more,
-+     * please refer to {@link #getKeyedPluginChunkTicketChunks(NamespacedKey)}.
++     * Keep in mind that only loaded chunks are included.
++     * If that's not desired, please use
++     * {@link #getKeyedPluginChunkTicketChunks(NamespacedKey)} instead.
 +     *
 +     * @return the loaded chunks which have tickets with the specified key
 +     */
@@ -271,27 +285,25 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
 +    Collection<Chunk> getKeyedPluginChunkTicketLoadedChunks(@NotNull NamespacedKey key);
 +
 +    /**
-+     * Gets all {@link NamespacedKey} based plugin chunk tickets,
-+     * with chunk keys mapped to the ticket keys they contain.
++     * Gets all {@link NamespacedKey} based plugin chunk tickets
++     * and their chunk keys (which can be used in eg. {@link World#getChunkAt(long)}).
++     * The chunk keys point to the ticket keys they contain.
 +     * Keep in mind that these chunks might not be loaded yet:
 +     * having a chunk ticket only guarantees that chunk loading has begun,
 +     * not that the loading has already been completed.
-+     * If only loaded chunks are needed,
-+     * please refer to {@link #getAllLoadedKeyedPluginChunkTickets()}.
-+     * More information regarding chunk keys can be found
-+     * in the documentation of {@link #getChunkAt(long)}.
++     * If only loaded chunks are needed, please use
++     * {@link #getAllLoadedKeyedPluginChunkTickets()} instead.
 +     *
-+     * @return the chunks and their ticket keys
++     * @return the chunk keys and their ticket keys
 +     */
 +    @NotNull
 +    com.google.common.collect.Multimap<Long, NamespacedKey> getAllKeyedPluginChunkTickets();
 +
 +    /**
 +     * Gets all {@link NamespacedKey} based plugin chunk tickets whose chunks are loaded,
-+     * with chunks mapped to the ticket keys they contain.
++     * and their chunks. The chunks point to the ticket keys they contain.
 +     * Keep in mind that only chunks are included.
-+     * If that's not desired, or if you would like to know more,
-+     * please refer to {@link #getAllKeyedPluginChunkTickets()}.
++     * If that's not desired, please use {@link #getAllKeyedPluginChunkTickets()} instead.
 +     *
 +     * @return the chunks and their ticket keys
 +     */
@@ -302,3 +314,15 @@ index e6d2abf284c103a8bcddd8b4f9cb34d86a4f2fa6..a81a089743f0407ff7a6952d4afa8b03
      /**
       * Drops an item at the specified {@link Location}
       *
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 26685f59b235ea5b4c4fb7ae21acb5149edaa2b3..4db22c112a3e81ca5d118403f3d6e502244ace94 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -551,6 +551,7 @@ public final class SimplePluginManager implements PluginManager {
+             try {
+                 for (World world : server.getWorlds()) {
+                     world.removePluginChunkTickets(plugin);
++                    world.removeKeyedPluginChunkTickets(plugin); // Paper
+                 }
+             } catch (Throwable ex) {
+                 server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while removing chunk tickets for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
