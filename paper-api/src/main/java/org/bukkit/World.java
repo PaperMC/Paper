@@ -955,6 +955,15 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public void setFullTime(long time);
 
     /**
+     * Gets the full in-game time on this world since the world generation
+     *
+     * @return The current absolute time since the world generation
+     * @see #getTime() Returns a relative time of this world
+     * @see #getFullTime() Returns an absolute time of this world
+     */
+    public long getGameTime();
+
+    /**
      * Returns whether the world has an ongoing storm.
      *
      * @return Whether there is an ongoing storm
