@@ -2746,7 +2746,7 @@ index ae61d0a7676bf06c8c9aa5c68ccb8dd4baf326b6..b12e43ed13a1a9d7d418831b8988c30a
      }
  
 diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 84407dfd46138359d42ddf8fd5c462a5f494d46b..20f62f6f7704f47f86179d03b4e55a61e0149627 100644
+index 056e1fced00dff1d6507a90c13f2448a04ca0558..08f11f98c40221fa4ce9a4f14ee8398f8588f38a 100644
 --- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
 @@ -17,6 +17,10 @@ import java.util.function.Consumer;
@@ -2928,7 +2928,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..20f62f6f7704f47f86179d03b4e55a61
  
      public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
-@@ -90,6 +246,49 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -98,6 +254,49 @@ public class ChunkProviderServer extends IChunkProvider {
          this.cacheChunk[0] = ichunkaccess;
      }
  
@@ -2978,7 +2978,7 @@ index 84407dfd46138359d42ddf8fd5c462a5f494d46b..20f62f6f7704f47f86179d03b4e55a61
      @Nullable
      @Override
      public IChunkAccess getChunkAt(int i, int j, ChunkStatus chunkstatus, boolean flag) {
-@@ -372,10 +571,9 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -380,10 +579,9 @@ public class ChunkProviderServer extends IChunkProvider {
  
              this.p = spawnercreature_d;
              this.world.getMethodProfiler().exit();
@@ -3934,7 +3934,7 @@ index 8bdda63a2807635e8780481244251f6e35c13627..36a7e41cc5036345929ebf4d2fa160a8
          int j = 0;
          ChunkSection[] achunksection = chunk.getSections();
 diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
-index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a15804502bd3579 100644
+index f645d3dfb57e99757e233ee2bbb51be5094203cb..985fc002fa5afc71ecd242aa8101684b2c751b30 100644
 --- a/src/main/java/net/minecraft/server/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/PlayerChunk.java
 @@ -21,9 +21,9 @@ public class PlayerChunk {
@@ -3959,7 +3959,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
      public PlayerChunk(ChunkCoordIntPair chunkcoordintpair, int i, LightEngine lightengine, PlayerChunk.c playerchunk_c, PlayerChunk.d playerchunk_d) {
          this.statusFutures = new AtomicReferenceArray(PlayerChunk.CHUNK_STATUSES.size());
          this.fullChunkFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
-@@ -54,16 +56,63 @@ public class PlayerChunk {
+@@ -54,10 +56,49 @@ public class PlayerChunk {
          this.ticketLevel = this.oldTicketLevel;
          this.n = this.oldTicketLevel;
          this.a(i);
@@ -3993,24 +3993,25 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
 +
 +    public final boolean isEntityTickingReady() {
 +        return this.isEntityTickingReady;
-     }
- 
++    }
++
 +    public final boolean isTickingReady() {
 +        return this.isTickingReady;
 +    }
 +
 +    public final boolean isFullChunkReady() {
 +        return this.isFullChunkReady;
-+    }
+     }
 +    // Paper end
-+
+ 
      // CraftBukkit start
 -    public Chunk getFullChunk() {
 +    public final Chunk getFullChunk() { // Paper - final for inline
          if (!getChunkState(this.oldTicketLevel).isAtLeast(PlayerChunk.State.BORDER)) return null; // note: using oldTicketLevel for isLoaded checks
-         CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> statusFuture = this.getStatusFutureUnchecked(ChunkStatus.FULL);
-         Either<IChunkAccess, PlayerChunk.Failure> either = (Either<IChunkAccess, PlayerChunk.Failure>) statusFuture.getNow(null);
-         return either == null ? null : (Chunk) either.left().orElse(null);
+         return this.getFullChunkUnchecked();
+     }
+@@ -68,6 +109,14 @@ public class PlayerChunk {
+         return (either == null) ? null : (Chunk) either.left().orElse(null);
      }
      // CraftBukkit end
 +    // Paper start - "real" get full chunk immediately
@@ -4024,7 +4025,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
          CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> completablefuture = (CompletableFuture) this.statusFutures.get(chunkstatus.c());
-@@ -75,20 +124,23 @@ public class PlayerChunk {
+@@ -79,20 +128,23 @@ public class PlayerChunk {
          return getChunkStatus(this.ticketLevel).b(chunkstatus) ? this.getStatusFutureUnchecked(chunkstatus) : PlayerChunk.UNLOADED_CHUNK_ACCESS_FUTURE;
      }
  
@@ -4052,7 +4053,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
          CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture = this.a();
          Either<Chunk, PlayerChunk.Failure> either = (Either) completablefuture.getNow(null); // CraftBukkit - decompile error
  
-@@ -113,7 +165,7 @@ public class PlayerChunk {
+@@ -117,7 +169,7 @@ public class PlayerChunk {
          return null;
      }
  
@@ -4061,7 +4062,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
          return this.chunkSave;
      }
  
-@@ -254,11 +306,11 @@ public class PlayerChunk {
+@@ -258,11 +310,11 @@ public class PlayerChunk {
          });
      }
  
@@ -4075,7 +4076,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
          return this.ticketLevel;
      }
  
-@@ -329,13 +381,27 @@ public class PlayerChunk {
+@@ -333,13 +385,27 @@ public class PlayerChunk {
  
          this.hasBeenLoaded |= flag3;
          if (!flag2 && flag3) {
@@ -4104,7 +4105,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
              this.a(((CompletableFuture<Either<Chunk, PlayerChunk.Failure>>) completablefuture).thenApply((either1) -> { // CraftBukkit - decompile error
                  playerchunkmap.getClass();
                  return either1.ifLeft(playerchunkmap::a);
-@@ -346,12 +412,24 @@ public class PlayerChunk {
+@@ -350,12 +416,24 @@ public class PlayerChunk {
          boolean flag5 = playerchunk_state1.isAtLeast(PlayerChunk.State.TICKING);
  
          if (!flag4 && flag5) {
@@ -4131,7 +4132,7 @@ index 80118f5a347f5cc21945172b2cc94ad3f640a75e..7b4717ffc31bc406c04d98207a158045
              this.tickingFuture = PlayerChunk.UNLOADED_CHUNK_FUTURE;
          }
  
-@@ -363,12 +441,24 @@ public class PlayerChunk {
+@@ -367,12 +445,24 @@ public class PlayerChunk {
                  throw (IllegalStateException) SystemUtils.c((Throwable) (new IllegalStateException()));
              }
  
@@ -4501,7 +4502,7 @@ index 5719ef9714e9680596a08c42c33508c16c0e676a..bb0f30f182856d2701fde9b1a65eeb98
          return this.j.m();
      }
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 170332ce35db120b53f99a45869882236c361960..c96ad91b15920293e228f5eb7d0843beda92faec 100644
+index f1c206b6b506aff09c484730dd2d5ce796c3c2ab..592af06de1fc02d94273363c2ede1175a39997f0 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
@@ -4521,7 +4522,7 @@ index 170332ce35db120b53f99a45869882236c361960..c96ad91b15920293e228f5eb7d0843be
      boolean tickingEntities;
      private final MinecraftServer server;
      public final WorldDataServer worldDataServer; // CraftBukkit - type
-@@ -1567,7 +1568,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -1578,7 +1579,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
                  ObjectIterator objectiterator = spawnercreature_d.b().object2IntEntrySet().iterator();
  
                  while (objectiterator.hasNext()) {
