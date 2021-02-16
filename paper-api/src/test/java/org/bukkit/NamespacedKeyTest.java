@@ -14,6 +14,31 @@ public class NamespacedKeyTest {
         Assert.assertEquals("minecraft:foo/bar_baz-qux.quux", new NamespacedKey("minecraft", "foo/bar_baz-qux.quux").toString());
     }
 
+    @Test
+    public void testValidFromString() {
+        NamespacedKey expected = NamespacedKey.minecraft("foo");
+        Assert.assertEquals(expected, NamespacedKey.fromString("foo"));
+        Assert.assertEquals(expected, NamespacedKey.fromString(":foo"));
+        Assert.assertEquals(expected, NamespacedKey.fromString("minecraft:foo"));
+        Assert.assertEquals(new NamespacedKey("foo", "bar"), NamespacedKey.fromString("foo:bar"));
+
+        Assert.assertNull(NamespacedKey.fromString("fOO"));
+        Assert.assertNull(NamespacedKey.fromString(":Foo"));
+        Assert.assertNull(NamespacedKey.fromString("fOO:bar"));
+        Assert.assertNull(NamespacedKey.fromString("minecraft:fOO"));
+        Assert.assertNull(NamespacedKey.fromString("foo:bar:bazz"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromStringEmptyInput() {
+        NamespacedKey.fromString("");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFromStringNullInput() {
+        NamespacedKey.fromString(null);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyNamespace() {
         new NamespacedKey("", "foo").toString();

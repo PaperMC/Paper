@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a String based key which consists of two components - a namespace
@@ -138,5 +139,77 @@ public final class NamespacedKey {
     @NotNull
     public static NamespacedKey minecraft(@NotNull String key) {
         return new NamespacedKey(MINECRAFT, key);
+    }
+
+    /**
+     * Get a NamespacedKey from the supplied string with a default namespace if
+     * a namespace is not defined. This is a utility method meant to fetch a
+     * NamespacedKey from user input. Please note that casing does matter and
+     * any instance of uppercase characters will be considered invalid. The
+     * input contract is as follows:
+     * <pre>
+     * fromString("foo", plugin) -{@literal >} "plugin:foo"
+     * fromString("foo:bar", plugin) -{@literal >} "foo:bar"
+     * fromString(":foo", null) -{@literal >} "minecraft:foo"
+     * fromString("foo", null) -{@literal >} "minecraft:foo"
+     * fromString("Foo", plugin) -{@literal >} null
+     * fromString(":Foo", plugin) -{@literal >} null
+     * fromString("foo:bar:bazz", plugin) -{@literal >} null
+     * fromString("", plugin) -{@literal >} null
+     * </pre>
+     *
+     * @param string the string to convert to a NamespacedKey
+     * @param defaultNamespace the default namespace to use if none was
+     * supplied. If null, the {@code minecraft} namespace
+     * ({@link #minecraft(String)}) will be used
+     * @return the created NamespacedKey. null if invalid key
+     * @see #fromString(String)
+     */
+    @Nullable
+    public static NamespacedKey fromString(@NotNull String string, @Nullable Plugin defaultNamespace) {
+        Preconditions.checkArgument(string != null && !string.isEmpty(), "Input string must not be empty or null");
+
+        String[] components = string.split(":", 3);
+        if (components.length > 2) {
+            return null;
+        }
+
+        String key = (components.length == 2) ? components[1] : "";
+        if (components.length == 1) {
+            String value = components[0];
+            if (value.isEmpty() || !VALID_KEY.matcher(value).matches()) {
+                return null;
+            }
+
+            return (defaultNamespace != null) ? new NamespacedKey(defaultNamespace, value) : minecraft(value);
+        } else if (components.length == 2 && !VALID_KEY.matcher(key).matches()) {
+            return null;
+        }
+
+        String namespace = components[0];
+        if (namespace.isEmpty()) {
+            return (defaultNamespace != null) ? new NamespacedKey(defaultNamespace, key) : minecraft(key);
+        }
+
+        if (!VALID_KEY.matcher(namespace).matches()) {
+            return null;
+        }
+
+        return new NamespacedKey(namespace, key);
+    }
+
+    /**
+     * Get a NamespacedKey from the supplied string.
+     *
+     * The default namespace will be Minecraft's (i.e.
+     * {@link #minecraft(String)}).
+     *
+     * @param key the key to convert to a NamespacedKey
+     * @return the created NamespacedKey. null if invalid
+     * @see #fromString(String, Plugin)
+     */
+    @Nullable
+    public static NamespacedKey fromString(@NotNull String key) {
+        return fromString(key, null);
     }
 }
