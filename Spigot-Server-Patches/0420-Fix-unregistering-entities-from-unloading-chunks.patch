@@ -15,14 +15,14 @@ Combine that with a buggy detail of the previous implementation of
 the Dupe UUID patch, then this was the likely source of the "Ghost entities"
 
 diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 3c186bae67b7caeb2571046cb7e66cee83af2431..5cb27e78ec27b131ea2790bb0aceca5b27fbf5b6 100644
+index 69060be0daf3fbae2763852209c915be59caac4f..cd04994ed38c7f5d4db6b1ef1796f95ef2c490e1 100644
 --- a/src/main/java/net/minecraft/server/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/WorldServer.java
 @@ -1451,9 +1451,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      }
  
      private void removeEntityFromChunk(Entity entity) {
--        IChunkAccess ichunkaccess = this.getChunkAt(entity.chunkX, entity.chunkZ, ChunkStatus.FULL, false);
+-        IChunkAccess ichunkaccess = chunkProvider.getChunkUnchecked(entity.chunkX, entity.chunkZ); // CraftBukkit - SPIGOT-5228: getChunkAt won't find the entity's chunk if it has already been unloaded (i.e. if it switched to state INACCESSIBLE).
 +        Chunk ichunkaccess = entity.getCurrentChunk(); // Paper - getChunkAt(x,z,full,false) is broken by CraftBukkit as it won't return an unloading chunk. Use our current chunk reference as this points to what chunk they need to be removed from anyways
  
 -        if (ichunkaccess instanceof Chunk) {
