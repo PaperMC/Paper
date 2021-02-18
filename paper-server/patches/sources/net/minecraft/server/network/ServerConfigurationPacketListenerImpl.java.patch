@@ -29,7 +29,18 @@
      }
  
      @Override
-@@ -75,6 +82,12 @@
+@@ -63,6 +70,10 @@
+ 
+     @Override
+     public void onDisconnect(DisconnectionDetails info) {
++        // Paper start - Debugging
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile, info.reason().getString(), currentTask != null ? currentTask.type().id() : "null");
++        } else // Paper end
+         ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.gameProfile, info.reason().getString());
+         super.onDisconnect(info);
+     }
+@@ -75,6 +86,12 @@
      public void startConfiguration() {
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverlinks = this.server.serverLinks();
@@ -42,7 +53,7 @@
  
          if (!serverlinks.isEmpty()) {
              this.send(new ClientboundServerLinksPacket(serverlinks.untrust()));
-@@ -107,6 +120,7 @@
+@@ -107,6 +124,7 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          this.clientInformation = packet.information();
@@ -50,7 +61,7 @@
      }
  
      @Override
-@@ -143,14 +157,14 @@
+@@ -143,18 +161,23 @@
                  return;
              }
  
@@ -67,3 +78,12 @@
  
              playerlist.placeNewPlayer(this.connection, entityplayer, this.createCookie(this.clientInformation));
          } catch (Exception exception) {
+             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
++            // Paper start - Debugging
++            if (MinecraftServer.getServer().isDebugging()) {
++                exception.printStackTrace();
++            }
++            // Paper end - Debugging
+             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
+             this.connection.disconnect(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA);
+         }

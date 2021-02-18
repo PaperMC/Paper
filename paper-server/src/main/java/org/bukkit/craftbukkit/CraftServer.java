@@ -1051,6 +1051,7 @@ public final class CraftServer implements Server {
                 plugin.getDescription().getFullName(),
                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
             ));
+            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
         }
         io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
         this.loadPlugins();
