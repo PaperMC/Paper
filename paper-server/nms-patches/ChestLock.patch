@@ -1,0 +1,34 @@
+--- a/net/minecraft/server/ChestLock.java
++++ b/net/minecraft/server/ChestLock.java
+@@ -1,6 +1,10 @@
+ package net.minecraft.server;
+ 
+ import javax.annotation.concurrent.Immutable;
++// CraftBukkit start
++import org.bukkit.ChatColor;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++// CraftBukkit end
+ 
+ @Immutable
+ public class ChestLock {
+@@ -13,7 +17,19 @@
+     }
+ 
+     public boolean a(ItemStack itemstack) {
+-        return this.key.isEmpty() || !itemstack.isEmpty() && itemstack.hasName() && this.key.equals(itemstack.getName().getString());
++        // CraftBukkit start - SPIGOT-6307: Check for color codes if the lock contains color codes
++        if (this.key.isEmpty()) return true;
++        if (!itemstack.isEmpty() && itemstack.hasName()) {
++            if (this.key.indexOf(ChatColor.COLOR_CHAR) == -1) {
++                // The lock key contains no color codes, so let's ignore colors in the item display name (vanilla Minecraft behavior):
++                return this.key.equals(itemstack.getName().getString());
++            } else {
++                // The lock key contains color codes, so let's take them into account:
++                return this.key.equals(CraftChatMessage.fromComponent(itemstack.getName()));
++            }
++        }
++        return false;
++        // CraftBukkit end
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
