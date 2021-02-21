@@ -25,25 +25,51 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        useVanillaScoreboardColoring = getBoolean("use-vanilla-world-scoreboard-name-coloring", false);
 +    }
  }
+diff --git a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
++++ b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
+@@ -0,0 +0,0 @@ import java.util.regex.MatchResult;
+ import net.kyori.adventure.text.Component;
+ import net.kyori.adventure.text.ComponentLike;
+ import net.kyori.adventure.text.TextComponent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
+ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.minecraft.server.IChatBaseComponent;
++import net.minecraft.server.ScoreboardTeam;
++import org.bukkit.craftbukkit.CraftWorld;
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
+ 
+ public class VanillaChatMessageLogic {
+     public static Component displayNameForChat(final CraftPlayer player) {
++        if (((CraftWorld) player.getWorld()).getHandle().paperConfig.useVanillaScoreboardColoring) {
++            IChatBaseComponent nameFromTeam = ScoreboardTeam.a(player.getHandle().getScoreboardTeam(), player.getHandle().getDisplayName());
++            // Explicitly add a RESET here, vanilla uses components for this now...
++            return PaperAdventure.asAdventure(nameFromTeam);
++        }
+         return player.displayName();
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
-                     return;
-                 }
+         } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
+             // Do nothing, this is coming from a plugin
+         } else {
+-            Player player = this.getPlayer();
++            CraftPlayer player = this.getPlayer(); // Paper
+             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(minecraftServer));
+             this.server.getPluginManager().callEvent(event);
  
--                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
-+                // Paper Start - (Meh) Support for vanilla world scoreboard name coloring
-+                String displayName = event.getPlayer().getDisplayName();
-+                if (this.player.getWorld().paperConfig.useVanillaScoreboardColoring) {
-+                    IChatBaseComponent nameFromTeam = ScoreboardTeam.a(this.player.getScoreboardTeam(), ((CraftPlayer) player).getHandle().getDisplayName());
-+                    // Explicitly add a RESET here, vanilla uses components for this now...
-+                    displayName = new net.md_5.bungee.api.chat.TextComponent(net.md_5.bungee.chat.ComponentSerializer.parse(IChatBaseComponent.ChatSerializer.componentToJson(nameFromTeam))).toLegacyText() + org.bukkit.ChatColor.RESET;
-+                }
-+
-+                s = String.format(event.getFormat(), displayName, event.getMessage());
-+                // Paper end
-                 minecraftServer.console.sendMessage(s);
-                 if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
-                     for (Object recipient : minecraftServer.getPlayerList().players) {
+@@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                             return null;
+                         }
+ 
+-                        final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat((CraftPlayer) player), queueEvent.getFormat(), queueEvent.getMessage()); // Paper
++                        final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat(player), queueEvent.getFormat(), queueEvent.getMessage()); // Paper
+                         //String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage()); // Paper - comment
+                         //PlayerConnection.this.minecraftServer.console.sendMessage(message); // Paper - comment
+                         PlayerConnection.this.minecraftServer.console.sendMessage(adventure$msg); // Paper

@@ -39,6 +39,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package com.destroystokyo.paper.event.profile;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
 +import org.jetbrains.annotations.NotNull;
@@ -49,7 +51,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + *
 + * Plugins may override/control the servers whitelist with this event,
 + * and dynamically change the kick message.
-+ *
 + */
 +public class ProfileWhitelistVerifyEvent extends Event {
 +    private static final HandlerList handlers = new HandlerList();
@@ -57,9 +58,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final boolean whitelistEnabled;
 +    private boolean whitelisted;
 +    private final boolean isOp;
-+    @Nullable private String kickMessage;
++    @Nullable private Component kickMessage;
 +
++    @Deprecated
 +    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable String kickMessage) {
++        this(profile, whitelistEnabled, whitelisted, isOp, kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
++    }
++
++    public ProfileWhitelistVerifyEvent(@NotNull final PlayerProfile profile, boolean whitelistEnabled, boolean whitelisted, boolean isOp, @Nullable Component kickMessage) {
 +        this.profile = profile;
 +        this.whitelistEnabled = whitelistEnabled;
 +        this.whitelisted = whitelisted;
@@ -69,16 +75,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * @return the currently planned message to send to the user if they are not whitelisted
++     * @deprecated use {@link #kickMessage()}
 +     */
++    @Deprecated
 +    @Nullable
 +    public String getKickMessage() {
-+        return kickMessage;
++        return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(kickMessage);
++    }
++
++    /**
++     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
++     * @deprecated Use {@link #kickMessage(Component)}
++     */
++    @Deprecated
++    public void setKickMessage(@Nullable String kickMessage) {
++        this.kickMessage(kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
++    }
++
++    /**
++     * @return the currently planned message to send to the user if they are not whitelisted
++     */
++    @Nullable
++    public Component kickMessage() {
++        return this.kickMessage;
 +    }
 +
 +    /**
 +     * @param kickMessage The message to send to the player on kick if not whitelisted. May set to null to use the server configured default
 +     */
-+    public void setKickMessage(@Nullable String kickMessage) {
++    public void kickMessage(@Nullable Component kickMessage) {
 +        this.kickMessage = kickMessage;
 +    }
 +
