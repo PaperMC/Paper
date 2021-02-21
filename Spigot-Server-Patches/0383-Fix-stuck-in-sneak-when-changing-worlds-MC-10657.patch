@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Wed, 9 Oct 2019 21:51:43 -0500
+Subject: [PATCH] Fix stuck in sneak when changing worlds (MC-10657)
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index bf68562b08b8d8fecb25a469b4fb4dbc868b0f28..c71a2264438317d1d36ddf56813ccd1cabd32c79 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -944,6 +944,8 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 this.lastHealthSent = -1.0F;
+                 this.lastFoodSent = -1;
+ 
++            setSneaking(false); // Paper - fix MC-10657
++
+                 // CraftBukkit start
+                 PlayerChangedWorldEvent changeEvent = new PlayerChangedWorldEvent(this.getBukkitEntity(), worldserver1.getWorld());
+                 this.world.getServer().getPluginManager().callEvent(changeEvent);
+diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+index a1f71569a6a0d0b69a52092f72fef23c888e636c..a02c51c25d698594281bbe317cd91a44aaf52ebc 100644
+--- a/src/main/java/net/minecraft/server/PlayerList.java
++++ b/src/main/java/net/minecraft/server/PlayerList.java
+@@ -773,6 +773,8 @@ public abstract class PlayerList {
+             entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobEffect));
+         }
+ 
++        entityplayer.setSneaking(false); // Paper - fix MC-10657
++
+         // Fire advancement trigger
+         entityplayer.triggerDimensionAdvancements(((CraftWorld) fromWorld).getHandle());
+ 

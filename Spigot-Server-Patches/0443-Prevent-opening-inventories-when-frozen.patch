@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 13 Apr 2020 07:31:44 +0100
+Subject: [PATCH] Prevent opening inventories when frozen
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 950a16e8aafe71b54b4ba46b61b5d71f8aa3cf94..a417971c0cd6e381078d5ed41508ac102ad2472a 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -431,7 +431,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             containerUpdateDelay = world.paperConfig.containerUpdateTickRate;
+         }
+         // Paper end
+-        if (!this.world.isClientSide && !this.activeContainer.canUse(this)) {
++        if (!this.world.isClientSide && this.activeContainer != this.defaultContainer && (isFrozen() || !this.activeContainer.canUse(this))) { // Paper - auto close while frozen
+             this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper
+             this.activeContainer = this.defaultContainer;
+         }
+@@ -1270,7 +1270,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+             } else {
+                 // CraftBukkit start
+                 this.activeContainer = container;
+-                this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle()));
++                if (!isFrozen()) this.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, container.getType(), container.getTitle())); // Paper
+                 // CraftBukkit end
+                 container.addSlotListener(this);
+                 return OptionalInt.of(this.containerCounter);
+@@ -2071,7 +2071,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     @Override
+-    protected boolean isFrozen() {
++    public boolean isFrozen() { // Paper - protected > public
+         return super.isFrozen() || (this.playerConnection != null && this.playerConnection.isDisconnected()); // Paper
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 38c0d54fcb084bb102ee004cc8987c8358b5a2ac..c6564ccfd6580ac5691dd864602eb6fbaf4a34be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -322,7 +322,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
+ 
+         //player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper // Paper - comment
+-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
++        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
+         getHandle().activeContainer = container;
+         getHandle().activeContainer.addSlotListener(player);
+     }
+@@ -396,7 +396,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+         //player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+-        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
++        if (!player.isFrozen()) player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
+         player.activeContainer = container;
+         player.activeContainer.addSlotListener(player);
+     }
