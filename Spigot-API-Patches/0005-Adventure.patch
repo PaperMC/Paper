@@ -807,7 +807,7 @@ index 9566e4306ada5e82dede0f002aa06da12c44996b..4d5f0837bd0e02a30c943d8969fb6b13
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 344c14a5ed86e9ebe401bfb5ba3aedc0c0ed0b04..54597268cfbe03c5e521476d3d26e612457cf381 100644
+index 344c14a5ed86e9ebe401bfb5ba3aedc0c0ed0b04..41a1bc45cc5eb7f19374115ade7f5328c7fc1dae 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
 @@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
@@ -828,7 +828,7 @@ index 344c14a5ed86e9ebe401bfb5ba3aedc0c0ed0b04..54597268cfbe03c5e521476d3d26e612
 +    @NotNull
 +    @Override
 +    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-+        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), null)));
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.customName())));
 +    }
 +    // Paper end
  }
@@ -1165,31 +1165,14 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..447de8f7c1d871ef5fb1a06bace451e1
              throw new UnsupportedOperationException("Not supported yet.");
  
 diff --git a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
-index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..7adbc6f87771c21d374e610fcb21a2442f2d8031 100644
+index 63c80b4ee1f7adc8a9efc3b607993104b1991f90..91cab8b13d5bba34007f124838b32a1df58c5ac7 100644
 --- a/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
 +++ b/src/main/java/org/bukkit/entity/minecart/CommandMinecart.java
-@@ -25,6 +25,16 @@ public interface CommandMinecart extends Minecart {
-      *     activated.
-      */
-     public void setCommand(@Nullable String command);
-+    // Paper start
-+    /**
-+     * Sets the name of this CommandMinecart.  The name is used with commands
-+     * that this CommandMinecart executes.  Setting the name to null is the
-+     * same as setting it to "@".
-+     *
-+     * @param name New name for this CommandMinecart.
-+     */
-+    void name(@Nullable net.kyori.adventure.text.Component name);
-+    // Paper end
- 
-     /**
-      * Sets the name of this CommandMinecart.  The name is used with commands
-@@ -32,7 +42,9 @@ public interface CommandMinecart extends Minecart {
+@@ -32,7 +32,9 @@ public interface CommandMinecart extends Minecart {
       * same as setting it to "@".
       *
       * @param name New name for this CommandMinecart.
-+     * @deprecated in favour of {@link #name(net.kyori.adventure.text.Component)}
++     * @deprecated in favour of {@link #customName(net.kyori.adventure.text.Component)}
       */
 +    @Deprecated // Paper
      public void setName(@Nullable String name);
@@ -1651,7 +1634,7 @@ index f2e9f2753ec92aa4a3e3f06ca6053bd70b9091d7..1c362636c56db0e6c118171ba367c43c
  
      /**
 diff --git a/src/main/java/org/bukkit/map/MapCursor.java b/src/main/java/org/bukkit/map/MapCursor.java
-index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..1052d5f0de6b1dbd261cd05bb6dd0714119ff539 100644
+index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..ca763b231749f108b6773040a5c6109378b21b31 100644
 --- a/src/main/java/org/bukkit/map/MapCursor.java
 +++ b/src/main/java/org/bukkit/map/MapCursor.java
 @@ -10,7 +10,7 @@ public final class MapCursor {
@@ -1690,13 +1673,13 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..1052d5f0de6b1dbd261cd05bb6dd0714
       */
      @Deprecated
      public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
-@@ -58,8 +58,40 @@ public final class MapCursor {
+@@ -58,8 +58,42 @@ public final class MapCursor {
          setDirection(direction);
          setRawType(type);
          this.visible = visible;
 -        this.caption = caption;
 +        this.caption = caption == null ? null : net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(caption); // Paper
-+    }
+     }
 +    // Paper start
 +    /**
 +     * Initialize the map cursor.
@@ -1726,13 +1709,15 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..1052d5f0de6b1dbd261cd05bb6dd0714
 +     * @param caption cursor caption
 +     */
 +    public MapCursor(byte x, byte y, byte direction, @NotNull Type type, boolean visible, @Nullable net.kyori.adventure.text.Component caption) {
-+
-     }
++        this.x = x; this.y = y; this.visible = visible; this.caption = caption;
++        setDirection(direction);
++        setType(type);
++    }
 +    // Paper end
  
      /**
       * Initialize the map cursor.
-@@ -77,7 +109,7 @@ public final class MapCursor {
+@@ -77,7 +111,7 @@ public final class MapCursor {
          setDirection(direction);
          setType(type);
          this.visible = visible;
@@ -1741,7 +1726,7 @@ index 83354b2a38b6261b172b91c1008dcf3313cc4a8f..1052d5f0de6b1dbd261cd05bb6dd0714
      }
  
      /**
-@@ -200,23 +232,45 @@ public final class MapCursor {
+@@ -200,23 +234,45 @@ public final class MapCursor {
          this.visible = visible;
      }
  

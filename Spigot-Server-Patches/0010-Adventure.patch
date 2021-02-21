@@ -792,7 +792,7 @@ index 37a84b44a46e1490f7b79839b04aef012ddc9fa3..9b9ffc25c6e1c64ca22d3f6426c16ac1
          // CraftBukkit end
          this.bY = packetplayinsettings.d();
 diff --git a/src/main/java/net/minecraft/server/EnumChatFormat.java b/src/main/java/net/minecraft/server/EnumChatFormat.java
-index 68a5a0cbe88795f59ce96035da45371a5a366f5a..1577442ab0ffb5168a65500db1d5b372677b93af 100644
+index 68a5a0cbe88795f59ce96035da45371a5a366f5a..c186af518ef43e9efaf086233e1da8a1cf293c66 100644
 --- a/src/main/java/net/minecraft/server/EnumChatFormat.java
 +++ b/src/main/java/net/minecraft/server/EnumChatFormat.java
 @@ -61,6 +61,7 @@ public enum EnumChatFormat {
@@ -803,15 +803,25 @@ index 68a5a0cbe88795f59ce96035da45371a5a366f5a..1577442ab0ffb5168a65500db1d5b372
      @Nullable
      public Integer e() {
          return this.D;
-@@ -84,7 +85,7 @@ public enum EnumChatFormat {
+@@ -84,6 +85,18 @@ public enum EnumChatFormat {
          return s == null ? null : (EnumChatFormat) EnumChatFormat.w.get(c(s));
      }
  
--    @Nullable
-+    @Nullable public static EnumChatFormat getByHexValue(int i) { return a(i); } @Nullable // Paper - OBFHELPER
++    // Paper start
++    @Nullable public static EnumChatFormat getByHexValue(int i) {
++        for (EnumChatFormat value : values()) {
++            if (value.getHexValue() != null && value.getHexValue() == i) {
++                return value;
++            }
++        }
++
++        return null;
++    }
++    // Paper end
++
+     @Nullable
      public static EnumChatFormat a(int i) {
          if (i < 0) {
-             return EnumChatFormat.RESET;
 diff --git a/src/main/java/net/minecraft/server/IChatBaseComponent.java b/src/main/java/net/minecraft/server/IChatBaseComponent.java
 index 7441beeaa4ee83467dac4d68176132efc6247337..de6bfc27cd38fd6293853d55cf62699aade94212 100644
 --- a/src/main/java/net/minecraft/server/IChatBaseComponent.java
@@ -1547,23 +1557,6 @@ index af41d9f11c6da2609bd75e49f15f5ec129b92361..fb3378e22864335fe6b60d77a401e01a
          player.activeContainer = container;
          player.activeContainer.addSlotListener(player);
      }
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
-index 89affac56d40ed4b20d5ddd668d0f820bad72a3f..85c6cbef5e54b861111d722f1923f1afc9cf5e85 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartCommand.java
-@@ -37,6 +37,12 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
-         getHandle().getDataWatcher().set(EntityMinecartCommandBlock.COMMAND, getHandle().getCommandBlock().getCommand());
-     }
- 
-+    // Paper start
-+    @Override
-+    public void name(net.kyori.adventure.text.Component name) {
-+        getHandle().getCommandBlock().setName(io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
-+    }
-+    // Paper end
-     @Override
-     public void setName(String name) {
-         getHandle().getCommandBlock().setName(CraftChatMessage.fromStringOrNull(name));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 4001145980f4dabbd291336d5a464c3856144996..28368aa85e25ad5ee1e35255f093fd3f5a7a15bf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -2127,7 +2120,7 @@ index 9f6e797d34e5ad21a496c89f5a45ddb0638d3adc..115ee3785b4e0ba6a235bbb31b643aa5
          @Override
          public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f795680903fbf 100644
+index 18faf5ea801984696ba45b9784aa0afdf6971e39..fb4d39a4cf101749f74da9c48bb3a27b0188fbeb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -2,12 +2,15 @@ package org.bukkit.craftbukkit.inventory;
@@ -2147,7 +2140,7 @@ index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f7956
  import net.minecraft.server.IChatBaseComponent;
  import net.minecraft.server.NBTTagCompound;
  import net.minecraft.server.NBTTagList;
-@@ -267,6 +270,133 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -267,6 +270,135 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          this.generation = (generation == null) ? null : generation.ordinal();
      }
  
@@ -2193,6 +2186,7 @@ index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f7956
 +
 +    @Override
 +    public List<net.kyori.adventure.text.Component> pages() {
++        if (this.pages == null) return ImmutableList.of();
 +        if (this instanceof CraftMetaBookSigned)
 +            return pages.stream().map(GsonComponentSerializer.gson()::deserialize).collect(ImmutableList.toImmutableList());
 +        else
@@ -2201,7 +2195,7 @@ index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f7956
 +
 +    @Override
 +    public BookMeta pages(List<net.kyori.adventure.text.Component> pages) {
-+        this.pages.clear();
++        if (this.pages != null) this.pages.clear();
 +        for (net.kyori.adventure.text.Component page : pages) {
 +            addPages(page);
 +        }
@@ -2210,13 +2204,14 @@ index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f7956
 +
 +    @Override
 +    public BookMeta pages(net.kyori.adventure.text.Component... pages) {
-+        this.pages.clear();
++        if (this.pages != null) this.pages.clear();
 +        addPages(pages);
 +        return this;
 +    }
 +
 +    @Override
 +    public void addPages(net.kyori.adventure.text.Component... pages) {
++        if (this.pages == null) this.pages = new ArrayList<>();
 +        for (net.kyori.adventure.text.Component page : pages) {
 +            if (this.pages.size() >= MAX_PAGES) {
 +                return;
@@ -2281,7 +2276,7 @@ index 18faf5ea801984696ba45b9784aa0afdf6971e39..d9e09c1423cebf1995315faa7d0f7956
      @Override
      public String getPage(final int page) {
          Validate.isTrue(isValidPage(page), "Invalid page number");
-@@ -411,7 +541,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -411,7 +543,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      }
  
      @Override
