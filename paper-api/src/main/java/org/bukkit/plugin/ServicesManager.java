@@ -49,7 +49,7 @@ public interface ServicesManager {
     public void unregister(@NotNull Object provider);
 
     /**
-     * Queries for a provider. This may return if no provider has been
+     * Queries for a provider. This may return null if no provider has been
      * registered for a service. The highest priority provider is returned.
      *
      * @param <T> The service interface
@@ -60,7 +60,7 @@ public interface ServicesManager {
     public <T> T load(@NotNull Class<T> service);
 
     /**
-     * Queries for a provider registration. This may return if no provider
+     * Queries for a provider registration. This may return null if no provider
      * has been registered for a service.
      *
      * @param <T> The service interface
