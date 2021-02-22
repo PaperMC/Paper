@@ -2238,7 +2238,7 @@ index 8c714c7430c0a6b8fd7f4a158d9a271e1642bd7a..97c9b528f9ee8eb156a311d68d5d897f
          }
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
-index e1dfdb23f7d755b19cf14c0bf15358095406e9a0..ec8abc4b381cf6f323f92cc6d364088b55a0eaff 100644
+index e1dfdb23f7d755b19cf14c0bf15358095406e9a0..ad94839f4f8265dd1bfe26b71fbaeb3cdb1a1456 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 @@ -19,6 +19,12 @@ public class CraftInventoryCustom extends CraftInventory {
@@ -2267,13 +2267,11 @@ index e1dfdb23f7d755b19cf14c0bf15358095406e9a0..ec8abc4b381cf6f323f92cc6d364088b
      public CraftInventoryCustom(InventoryHolder owner, int size, String title) {
          super(new MinecraftInventory(owner, size, title));
      }
-@@ -35,10 +47,18 @@ public class CraftInventoryCustom extends CraftInventory {
-         private final NonNullList<ItemStack> items;
+@@ -36,9 +48,17 @@ public class CraftInventoryCustom extends CraftInventory {
          private int maxStack = MAX_STACK;
          private final List<HumanEntity> viewers;
--        private final String title;
+         private final String title;
 +        private final net.kyori.adventure.text.Component adventure$title; // Paper
-+        private String title; // Paper - remove final
          private InventoryType type;
          private final InventoryHolder owner;
  
@@ -2287,25 +2285,32 @@ index e1dfdb23f7d755b19cf14c0bf15358095406e9a0..ec8abc4b381cf6f323f92cc6d364088b
          public MinecraftInventory(InventoryHolder owner, InventoryType type) {
              this(owner, type.getDefaultSize(), type.getDefaultTitle());
              this.type = type;
-@@ -53,10 +73,16 @@ public class CraftInventoryCustom extends CraftInventory {
-             this(owner, size, "Chest");
-         }
- 
-+        // Paper start
-         public MinecraftInventory(InventoryHolder owner, int size, String title) {
-+            this(owner, size, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title));
-+        }
-+        // Paper end
-+
-+        public MinecraftInventory(InventoryHolder owner, int size, net.kyori.adventure.text.Component title) { // Paper - String -> net.kyori.adventure.text.Component
+@@ -57,11 +77,24 @@ public class CraftInventoryCustom extends CraftInventory {
              Validate.notNull(title, "Title cannot be null");
              this.items = NonNullList.a(size, ItemStack.b);
--            this.title = title;
-+            this.adventure$title = title;
+             this.title = title;
++            this.adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
              this.viewers = new ArrayList<HumanEntity>();
              this.owner = owner;
              this.type = InventoryType.CHEST;
-@@ -183,7 +209,18 @@ public class CraftInventoryCustom extends CraftInventory {
+         }
+ 
++        // Paper start
++        public MinecraftInventory(final InventoryHolder owner, final int size, final net.kyori.adventure.text.Component title) {
++            Validate.notNull(title, "Title cannot be null");
++            this.items = NonNullList.a(size, ItemStack.b);
++            this.title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title);
++            this.adventure$title = title;
++            this.viewers = new ArrayList<HumanEntity>();
++            this.owner = owner;
++            this.type = InventoryType.CHEST;
++        }
++        // Paper end
++
+         @Override
+         public int getSize() {
+             return items.size();
+@@ -183,6 +216,12 @@ public class CraftInventoryCustom extends CraftInventory {
              return null;
          }
  
@@ -2316,14 +2321,8 @@ index e1dfdb23f7d755b19cf14c0bf15358095406e9a0..ec8abc4b381cf6f323f92cc6d364088b
 +        // Paper end
 +
          public String getTitle() {
-+            // Paper start
-+            if (this.title == null) {
-+                this.title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.adventure$title);
-+            }
-+            // Paper end
              return title;
          }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
 index 4c6492a92821916fa98d6409a8ebf17f255535ad..80759d640d5af1620712aadbfb5f1ab7bc379f4b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryView.java
