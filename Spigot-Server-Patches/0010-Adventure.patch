@@ -186,10 +186,10 @@ index 0000000000000000000000000000000000000000..64fcc77eb2ce8979ae756696d98f1d3a
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7beb93a96b9eca4558131c339678cc31e9972c96
+index 0000000000000000000000000000000000000000..09b1b569893111f4a02811a5ba9d4a176ea8f6bc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,286 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -206,6 +206,7 @@ index 0000000000000000000000000000000000000000..7beb93a96b9eca4558131c339678cc31
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.server.BossBattle;
@@ -223,6 +224,7 @@ index 0000000000000000000000000000000000000000..7beb93a96b9eca4558131c339678cc31
 +
 +public final class PaperAdventure {
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale");
++    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().useUnusualXRepeatedCharacterHexFormat().build();
 +    static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .build();
@@ -1096,7 +1098,7 @@ index 055555cb5ce63d41cb9a7f4114341b0685879b9e..7875d4c08969b3adc6f95504686cc9fe
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fffa9d0fdb3 100644
+index d34e91887cd73009bf852fb849e495a8affed7a9..5fa4afb75d46a32d91402c5ca850d17d11990b8d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
@@ -1108,7 +1110,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  import org.bukkit.Location;
-@@ -243,21 +245,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -243,21 +245,24 @@ public class PlayerConnection implements PacketListenerPlayIn {
          return this.minecraftServer.a(this.player.getProfile());
      }
  
@@ -1117,13 +1119,17 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
 -    public void disconnect(IChatBaseComponent ichatbasecomponent) {
 -        disconnect(CraftChatMessage.fromComponent(ichatbasecomponent));
 +    public void disconnect(String s) {
-+        // Paper start - Adventure
-+        this.disconnect(CraftChatMessage.fromStringOrNull(s));
++        // Paper start
++        this.disconnect(PaperAdventure.LEGACY_SECTION_UXRC.deserialize(s));
      }
 -    // CraftBukkit end
  
 -    public void disconnect(String s) {
-+    public void disconnect(IChatBaseComponent reason) {
++    public void disconnect(final IChatBaseComponent reason) {
++        this.disconnect(PaperAdventure.asAdventure(reason));
++    }
++
++    public void disconnect(net.kyori.adventure.text.Component reason) {
 +        // Paper end
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
@@ -1133,11 +1139,11 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
 +        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, this.player.getBukkitEntity().displayName()); // Paper - Adventure
  
 -        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
-+        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), PaperAdventure.asAdventure(reason), leaveMessage); // Paper - Adventure
++        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), reason, leaveMessage); // Paper - Adventure
  
          if (this.server.getServer().isRunning()) {
              this.server.getPluginManager().callEvent(event);
-@@ -268,8 +269,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -268,8 +273,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
              return;
          }
          // Send the possibly modified leave message
@@ -1147,7 +1153,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
          // CraftBukkit end
  
          this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
-@@ -1485,9 +1485,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -1485,9 +1489,11 @@ public class PlayerConnection implements PacketListenerPlayIn {
          */
  
          this.player.p();
@@ -1162,7 +1168,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
          }
          // CraftBukkit end
          ITextFilter itextfilter = this.player.Q();
-@@ -1721,15 +1723,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -1721,15 +1727,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                              return null;
                          }
  
@@ -1187,7 +1193,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
                              }
                          }
                          return null;
-@@ -1751,15 +1758,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -1751,15 +1762,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                      return;
                  }
  
@@ -1212,7 +1218,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..6c759b295d1bdac25cd40713d7020fff
                      }
                  }
              }
-@@ -2511,21 +2523,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2511,21 +2527,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                  return;
              }
  
