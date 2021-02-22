@@ -206,6 +206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.server.BossBattle;
@@ -223,6 +224,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public final class PaperAdventure {
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale");
++    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().useUnusualXRepeatedCharacterHexFormat().build();
 +    static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .build();
@@ -1117,13 +1119,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public void disconnect(IChatBaseComponent ichatbasecomponent) {
 -        disconnect(CraftChatMessage.fromComponent(ichatbasecomponent));
 +    public void disconnect(String s) {
-+        // Paper start - Adventure
-+        this.disconnect(CraftChatMessage.fromStringOrNull(s));
++        // Paper start
++        this.disconnect(PaperAdventure.LEGACY_SECTION_UXRC.deserialize(s));
      }
 -    // CraftBukkit end
  
 -    public void disconnect(String s) {
-+    public void disconnect(IChatBaseComponent reason) {
++    public void disconnect(final IChatBaseComponent reason) {
++        this.disconnect(PaperAdventure.asAdventure(reason));
++    }
++
++    public void disconnect(net.kyori.adventure.text.Component reason) {
 +        // Paper end
          // CraftBukkit start - fire PlayerKickEvent
          if (this.processedDisconnect) {
@@ -1133,7 +1139,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, this.player.getBukkitEntity().displayName()); // Paper - Adventure
  
 -        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), s, leaveMessage);
-+        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), PaperAdventure.asAdventure(reason), leaveMessage); // Paper - Adventure
++        PlayerKickEvent event = new PlayerKickEvent(this.server.getPlayer(this.player), reason, leaveMessage); // Paper - Adventure
  
          if (this.server.getServer().isRunning()) {
              this.server.getPluginManager().callEvent(event);
