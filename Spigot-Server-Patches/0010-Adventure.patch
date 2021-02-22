@@ -1096,7 +1096,7 @@ index 055555cb5ce63d41cb9a7f4114341b0685879b9e..7875d4c08969b3adc6f95504686cc9fe
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index d34e91887cd73009bf852fb849e495a8affed7a9..287d1c6abd407dc8f1e5b29a95579ff9875bdaec 100644
+index d34e91887cd73009bf852fb849e495a8affed7a9..b7346242ab1df88d33f33109aff6d21ebae052c6 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
@@ -1156,7 +1156,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..287d1c6abd407dc8f1e5b29a95579ff9
 -            this.minecraftServer.getPlayerList().sendMessage(CraftChatMessage.fromString(quitMessage));
 +        // Paper start - Adventure
 +        net.kyori.adventure.text.Component quitMessage = this.minecraftServer.getPlayerList().disconnect(this.player);
-+        if ((quitMessage != null) && (quitMessage.equals(net.kyori.adventure.text.Component.empty()))) {
++        if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
 +            this.minecraftServer.getPlayerList().sendMessage(PaperAdventure.asVanilla(quitMessage));
 +            // Paper end
          }
@@ -1243,7 +1243,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..287d1c6abd407dc8f1e5b29a95579ff9
               }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65b11e1ab8 100644
+index 5b49047b820dbe1f326320b71445ac216bf688b5..04d0749287803063c3cb3e92e44da873ceb044c0 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
@@ -1271,7 +1271,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
  
          playerconnection.a(entityplayer.locX(), entityplayer.locY(), entityplayer.locZ(), entityplayer.yaw, entityplayer.pitch);
          this.players.add(entityplayer);
-@@ -197,19 +199,17 @@ public abstract class PlayerList {
+@@ -197,19 +199,18 @@ public abstract class PlayerList {
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
  
          // CraftBukkit start
@@ -1284,18 +1284,19 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
          }
  
 -        joinMessage = playerJoinEvent.getJoinMessage();
-+        joinMessage = PaperAdventure.asVanilla(playerJoinEvent.joinMessage()); // Paper - Adventure
++        final net.kyori.adventure.text.Component jm = playerJoinEvent.joinMessage();
  
 -        if (joinMessage != null && joinMessage.length() > 0) {
 -            for (IChatBaseComponent line : org.bukkit.craftbukkit.util.CraftChatMessage.fromString(joinMessage)) {
 -                server.getPlayerList().sendAll(new PacketPlayOutChat(line, ChatMessageType.SYSTEM, SystemUtils.b));
 -            }
-+        if (playerJoinEvent.joinMessage() != net.kyori.adventure.text.Component.empty()) { // Paper - Adventure
++        if (jm != null && !jm.equals(net.kyori.adventure.text.Component.empty())) { // Paper - Adventure
++            joinMessage = PaperAdventure.asVanilla(playerJoinEvent.joinMessage()); // Paper - Adventure
 +            server.getPlayerList().sendAll(new PacketPlayOutChat(joinMessage, ChatMessageType.SYSTEM, SystemUtils.b)); // Paper - Adventure
          }
          // CraftBukkit end
  
-@@ -406,7 +406,7 @@ public abstract class PlayerList {
+@@ -406,7 +407,7 @@ public abstract class PlayerList {
  
      }
  
@@ -1304,7 +1305,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
          WorldServer worldserver = entityplayer.getWorldServer();
  
          entityplayer.a(StatisticList.LEAVE_GAME);
-@@ -417,7 +417,7 @@ public abstract class PlayerList {
+@@ -417,7 +418,7 @@ public abstract class PlayerList {
              entityplayer.closeInventory();
          }
  
@@ -1313,7 +1314,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
          cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
-@@ -478,7 +478,7 @@ public abstract class PlayerList {
+@@ -478,7 +479,7 @@ public abstract class PlayerList {
          cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -1322,7 +1323,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -524,10 +524,10 @@ public abstract class PlayerList {
+@@ -524,10 +525,10 @@ public abstract class PlayerList {
              }
  
              // return chatmessage;
@@ -1335,7 +1336,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
          } else if (getIPBans().isBanned(socketaddress) && !getIPBans().get(socketaddress).hasExpired()) {
              IpBanEntry ipbanentry = this.l.get(socketaddress);
  
-@@ -537,17 +537,17 @@ public abstract class PlayerList {
+@@ -537,17 +538,17 @@ public abstract class PlayerList {
              }
  
              // return chatmessage;
@@ -1356,7 +1357,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..1b0fe4f27a7346a1466db97e796c4a65
              return null;
          }
          return entity;
-@@ -1068,7 +1068,7 @@ public abstract class PlayerList {
+@@ -1068,7 +1069,7 @@ public abstract class PlayerList {
      public void shutdown() {
          // CraftBukkit start - disconnect safely
          for (EntityPlayer player : this.players) {
