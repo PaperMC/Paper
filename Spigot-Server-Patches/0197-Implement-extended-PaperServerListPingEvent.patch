@@ -60,10 +60,10 @@ index 0000000000000000000000000000000000000000..a2a409e635dde08f7c53e67164b967a0
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..26ddf92f86fccc2b2562f7abf4788d1ed6b73205
+index 0000000000000000000000000000000000000000..39b236a6319b1f44fbe28bbe43f064be3073e725
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,110 @@
 +package com.destroystokyo.paper.network;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -71,16 +71,14 @@ index 0000000000000000000000000000000000000000..26ddf92f86fccc2b2562f7abf4788d1e
 +import com.google.common.base.MoreObjects;
 +import com.google.common.base.Strings;
 +import com.mojang.authlib.GameProfile;
++import io.papermc.paper.adventure.AdventureComponent;
++import java.util.List;
++import java.util.UUID;
++import javax.annotation.Nonnull;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NetworkManager;
 +import net.minecraft.server.PacketStatusOutServerInfo;
 +import net.minecraft.server.ServerPing;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
-+
-+import java.util.List;
-+import java.util.UUID;
-+
-+import javax.annotation.Nonnull;
 +
 +public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
 +
@@ -155,7 +153,7 @@ index 0000000000000000000000000000000000000000..26ddf92f86fccc2b2562f7abf4788d1e
 +        ServerPing ping = new ServerPing();
 +
 +        // Description
-+        ping.setMOTD(CraftChatMessage.fromString(event.getMotd(), true)[0]);
++        ping.setMOTD(new AdventureComponent(event.motd()));
 +
 +        // Players
 +        if (!event.shouldHidePlayers()) {
@@ -222,6 +220,26 @@ index 7875d4c08969b3adc6f95504686cc9fe99e3f29a..d0fad346dd4511722f958a8c0bda6749
          }
          // CraftBukkit end
      }
+diff --git a/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java b/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
+index 50d5fb62efa7c89c7a73ccf072a0e7e433bcc650..f81ed6cd2029bbd8bbf1ddac10851da31273e8dd 100644
+--- a/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
++++ b/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
+@@ -2,11 +2,14 @@ package net.minecraft.server;
+ 
+ import com.google.gson.Gson;
+ import com.google.gson.GsonBuilder;
++import io.papermc.paper.adventure.AdventureComponent; // Paper
+ import java.io.IOException;
+ 
+ public class PacketStatusOutServerInfo implements Packet<PacketStatusOutListener> {
+ 
+-    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory()).create();
++    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory())
++        .registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer())
++        .create();
+     private ServerPing b;
+ 
+     public PacketStatusOutServerInfo() {}
 diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
 index aa125a52dcdf4f137cfe17c5dc808b17d5e9de0b..ea52e89bd965afbd74f15b0e2974657319c28e4a 100644
 --- a/src/main/java/net/minecraft/server/ServerPing.java
