@@ -7,10 +7,10 @@ Subject: [PATCH] Add handshake event to allow plugins to handle client
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d67dade3af3fb0f8b7e5c267087abf6320b433e7
+index 0000000000000000000000000000000000000000..2f9412e0ba177f1e23befd64681a4a5a1994563d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerHandshakeEvent.java
-@@ -0,0 +1,248 @@
+@@ -0,0 +1,277 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
@@ -37,6 +37,7 @@ index 0000000000000000000000000000000000000000..d67dade3af3fb0f8b7e5c267087abf63
 +
 +    private static final HandlerList HANDLERS = new HandlerList();
 +    @NotNull private final String originalHandshake;
++    @NotNull private final String originalSocketAddressHostname;
 +    private boolean cancelled;
 +    @Nullable private String serverHostname;
 +    @Nullable private String socketAddressHostname;
@@ -50,10 +51,25 @@ index 0000000000000000000000000000000000000000..d67dade3af3fb0f8b7e5c267087abf63
 +     *
 +     * @param originalHandshake the original handshake string
 +     * @param cancelled if this event is enabled
++     *
++     * @deprecated in favour of {@link PlayerHandshakeEvent(String, String, boolean)}
 +     */
++    @Deprecated
 +    public PlayerHandshakeEvent(@NotNull String originalHandshake, boolean cancelled) {
++        this(originalHandshake, "127.0.0.1", cancelled);
++    }
++
++    /**
++     * Creates a new {@link PlayerHandshakeEvent}.
++     *
++     * @param originalHandshake the original handshake string
++     * @param originalSocketAddressHostname the original socket address hostname
++     * @param cancelled if this event is enabled
++     */
++    public PlayerHandshakeEvent(@NotNull String originalHandshake, @NotNull String originalSocketAddressHostname, boolean cancelled) {
 +        super(true);
 +        this.originalHandshake = originalHandshake;
++        this.originalSocketAddressHostname = originalSocketAddressHostname;
 +        this.cancelled = cancelled;
 +    }
 +
@@ -91,6 +107,19 @@ index 0000000000000000000000000000000000000000..d67dade3af3fb0f8b7e5c267087abf63
 +    @NotNull
 +    public String getOriginalHandshake() {
 +        return this.originalHandshake;
++    }
++
++    /**
++     * Gets the original socket address hostname.
++     *
++     * <p>This does not include the port.</p>
++     * <p>In cases where this event is manually fired and the plugin wasn't updated yet, the default is {@code "127.0.0.1"}.</p>
++     *
++     * @return the original socket address hostname
++     */
++    @NotNull
++    public String getOriginalSocketAddressHostname() {
++        return this.originalSocketAddressHostname;
 +    }
 +
 +    /**
