@@ -25,7 +25,7 @@ index 0000000000000000000000000000000000000000..d5e5c6153675855bb8798b11d905b5f2
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccf2d0b090f0c360dfc7886bb0726e099acec42c..94d41605df60fc7e87f28c723d4b0319d35fa0ff 100644
+index ccf2d0b090f0c360dfc7886bb0726e099acec42c..e658ce4dce7a687cc6ea6d46378b831ca50c291e 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
@@ -36,14 +36,31 @@ index ccf2d0b090f0c360dfc7886bb0726e099acec42c..94d41605df60fc7e87f28c723d4b0319
  import it.unimi.dsi.fastutil.longs.LongIterator;
  import java.awt.image.BufferedImage;
  import java.io.BufferedWriter;
-@@ -859,6 +860,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         this.safeShutdown(flag, false);
-     }
+@@ -731,6 +732,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+     // CraftBukkit start
+     private boolean hasStopped = false;
+     public volatile boolean hasFullyShutdown = false; // Paper
++    private boolean hasLoggedStop = false; // Paper
+     private final Object stopLock = new Object();
+     public final boolean hasStopped() {
+         synchronized (stopLock) {
+@@ -745,6 +747,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             if (hasStopped) return;
+             hasStopped = true;
+         }
++        if (!hasLoggedStop && isDebugging()) TraceUtil.dumpTraceForThread(this.getThread(), "Server stopped"); // Paper
+         // Paper start - kill main thread, and kill it hard
+         shutdownThread = Thread.currentThread();
+         org.spigotmc.WatchdogThread.doStop(); // Paper
+@@ -861,6 +864,8 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public void safeShutdown(boolean flag, boolean isRestarting) {
-+        if (isDebugging()) TraceUtil.dumpTraceForThread(this.getThread(), "Server stopped"); // Paper
          this.isRunning = false;
          this.isRestarting = isRestarting;
++        this.hasLoggedStop = true;
++        if (isDebugging()) TraceUtil.dumpTraceForThread(this.getThread(), "Server stopped"); // Paper
          if (flag) {
+             try {
+                 this.serverThread.join();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 85023c68a9c85802383cfcf52ec21392abdf3d85..ea1c47ff81d88e1b8d003b66e992727b943b7186 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
