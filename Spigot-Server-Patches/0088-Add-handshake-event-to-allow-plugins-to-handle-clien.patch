@@ -6,7 +6,7 @@ Subject: [PATCH] Add handshake event to allow plugins to handle client
 
 
 diff --git a/src/main/java/net/minecraft/server/HandshakeListener.java b/src/main/java/net/minecraft/server/HandshakeListener.java
-index 69fd0a7b230c6f6eb46a43477465f77b265cc3c9..4de8646811f25b6217cffcd31fc14bcf79151b1a 100644
+index 69fd0a7b230c6f6eb46a43477465f77b265cc3c9..bad5d4f165d1e469ed583b036f78e467b94691fd 100644
 --- a/src/main/java/net/minecraft/server/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/HandshakeListener.java
 @@ -14,7 +14,7 @@ public class HandshakeListener implements PacketHandshakingInListener {
@@ -18,7 +18,7 @@ index 69fd0a7b230c6f6eb46a43477465f77b265cc3c9..4de8646811f25b6217cffcd31fc14bcf
  
      public HandshakeListener(MinecraftServer minecraftserver, NetworkManager networkmanager) {
          this.b = minecraftserver;
-@@ -73,8 +73,33 @@ public class HandshakeListener implements PacketHandshakingInListener {
+@@ -73,8 +73,34 @@ public class HandshakeListener implements PacketHandshakingInListener {
                      this.c.close(chatmessage);
                  } else {
                      this.c.setPacketListener(new LoginListener(this.b, this.c));
@@ -27,7 +27,8 @@ index 69fd0a7b230c6f6eb46a43477465f77b265cc3c9..4de8646811f25b6217cffcd31fc14bcf
 +                boolean handledByEvent = false;
 +                // Try and handle the handshake through the event
 +                if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
-+                    com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packethandshakinginsetprotocol.hostname, !proxyLogicEnabled);
++                    java.net.InetSocketAddress socketAddress = (java.net.InetSocketAddress) this.getNetworkManager().socketAddress;
++                    com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packethandshakinginsetprotocol.hostname, socketAddress.getAddress().getHostAddress(), !proxyLogicEnabled);
 +                    if (event.callEvent()) {
 +                        // If we've failed somehow, let the client know so and go no further.
 +                        if (event.isFailed()) {
@@ -38,7 +39,7 @@ index 69fd0a7b230c6f6eb46a43477465f77b265cc3c9..4de8646811f25b6217cffcd31fc14bcf
 +                        }
 +
 +                        if (event.getServerHostname() != null) packethandshakinginsetprotocol.hostname = event.getServerHostname();
-+                        if (event.getSocketAddressHostname() != null) this.getNetworkManager().socketAddress = new java.net.InetSocketAddress(event.getSocketAddressHostname(), ((java.net.InetSocketAddress) this.getNetworkManager().getSocketAddress()).getPort());
++                        if (event.getSocketAddressHostname() != null) this.getNetworkManager().socketAddress = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress.getPort());
 +                        this.getNetworkManager().spoofedUUID = event.getUniqueId();
 +                        this.getNetworkManager().spoofedProfile = gson.fromJson(event.getPropertiesJson(), com.mojang.authlib.properties.Property[].class);
 +                        handledByEvent = true; // Hooray, we did it!
