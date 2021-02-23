@@ -13,6 +13,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.console;
 +
++import net.kyori.adventure.text.format.TextColor;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
@@ -22,7 +23,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.apache.logging.log4j.util.PerformanceSensitive;
 +import org.apache.logging.log4j.util.PropertiesUtil;
 +
-+import java.awt.*;
 +import java.util.List;
 +import java.util.regex.Matcher;
 +import java.util.regex.Pattern;
@@ -102,7 +102,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +
 +        boolean useAnsi = ansi && TerminalConsoleAppender.isAnsiSupported();
-+        String content = useAnsi ? convertRGBColors(toAppendTo.substring(start)) : stripRGBColors(toAppendTo.substring(start));
++        String content = toAppendTo.substring(start);
++        content = useAnsi ? convertRGBColors(content) : stripRGBColors(content);
 +        format(content, toAppendTo, start, useAnsi);
 +    }
 +
@@ -111,10 +112,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        StringBuffer buffer = new StringBuffer();
 +        while (matcher.find()) {
 +            String s = matcher.group().replace(String.valueOf(COLOR_CHAR), "").replace('x', '#');
-+            Color color = Color.decode(s);
-+            int red = color.getRed();
-+            int blue = color.getBlue();
-+            int green = color.getGreen();
++            TextColor color = TextColor.fromHexString(s);
++            int red = color.red();
++            int blue = color.blue();
++            int green = color.green();
 +            String replacement = String.format(RGB_ANSI, red, green, blue);
 +            matcher.appendReplacement(buffer, replacement);
 +        }
@@ -136,6 +137,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int next = s.indexOf(COLOR_CHAR);
 +        int last = s.length() - 1;
 +        if (next == -1 || next == last) {
++            result.setLength(start);
++            result.append(s);
++            if (ansi) {
++                result.append(ANSI_RESET);
++            }
 +            return;
 +        }
 +
