@@ -575,6 +575,31 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
+diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
+index 768f35c19c4557236bded5f4a85f48a2b2b2a9e6..541610054ab13cafcd7fe34e02e1143544ac2511 100644
+--- a/src/main/java/org/bukkit/Sound.java
++++ b/src/main/java/org/bukkit/Sound.java
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
+  * guarantee values will not be removed from this Enum. As such, you should not
+  * depend on the ordinal values of this class.
+  */
+-public enum Sound implements Keyed {
++public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
+ 
+     AMBIENT_BASALT_DELTAS_ADDITIONS("ambient.basalt_deltas.additions"),
+     AMBIENT_BASALT_DELTAS_LOOP("ambient.basalt_deltas.loop"),
+@@ -1016,4 +1016,11 @@ public enum Sound implements Keyed {
+     public NamespacedKey getKey() {
+         return key;
+     }
++
++    // Paper start
++    @Override
++    public net.kyori.adventure.key.@org.checkerframework.checker.nullness.qual.NonNull Key key() {
++        return this.key;
++    }
++    // Paper end
+ }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index b8a33ac504da73ec990550bdd23e4548f6ccba95..27faaf8d1101f8522b728e3d73833e4dddbf1715 100644
 --- a/src/main/java/org/bukkit/World.java
@@ -869,7 +894,7 @@ index 344c14a5ed86e9ebe401bfb5ba3aedc0c0ed0b04..41a1bc45cc5eb7f19374115ade7f5328
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index f22b21ee12496452f7b2125c131f56ecc74d439a..27d3f303fcd0d5a85e1ef3de7f0e1e819360e0f8 100644
+index f22b21ee12496452f7b2125c131f56ecc74d439a..4ff2800d4439c0179e94820c96955b291b0a6dec 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
 @@ -30,7 +30,28 @@ import org.jetbrains.annotations.Nullable;
@@ -1138,7 +1163,7 @@ index f22b21ee12496452f7b2125c131f56ecc74d439a..27d3f303fcd0d5a85e1ef3de7f0e1e81
 +    @NotNull
 +    @Override
 +    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-+        return net.kyori.adventure.text.event.HoverEvent.showEntity(this.getType().getKey(), this.getUniqueId(), this.displayName());
++        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
 +    }
 +    // Paper end
 +
@@ -1327,7 +1352,7 @@ index 7190db11eff7d48df8a99f405a9dbaefdfa76e3d..1268066e30ddb0cd3792ea4b3de894eb
  
      @Override
 diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
-index 07a52441a5cdd7e428a14b286d7cb5210e3efa97..d9eddc34a66a77dbd4b18a2cd5d8d218c312bfae 100644
+index 3c2ea8fec3a748cab7f5ad9100d12bd8213ec6c9..7941c60b0e1840785ba2b250071591bd75bc6e35 100644
 --- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
 @@ -12,25 +12,48 @@ import org.jetbrains.annotations.Nullable;
