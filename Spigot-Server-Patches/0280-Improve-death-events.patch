@@ -274,7 +274,7 @@ index 858db1505aa06d85f4e0b522d221f6543ff40f56..352049363d4b7a0302610f7d7cd54c9c
          return this.isBaby() ? (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.5F : (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F;
      }
 diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index d606e3faaf7c58d89539b6bd997978c066218b9a..273fd5a83790f76f089c2b1308a1e02ac6828683 100644
+index c0b1643dfb4701f0d790bcfae75ede417d5a3522..03d062f9cdf19df32dcc57a247555e5fa21d38b9 100644
 --- a/src/main/java/net/minecraft/server/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/EntityPlayer.java
 @@ -86,6 +86,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
@@ -291,7 +291,7 @@ index d606e3faaf7c58d89539b6bd997978c066218b9a..273fd5a83790f76f089c2b1308a1e02a
 @@ -589,6 +593,15 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          IChatBaseComponent defaultMessage = this.getCombatTracker().getDeathMessage();
  
-         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
+         org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), defaultMessage.getString(), keepInventory); // Paper - Adventure
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
@@ -346,7 +346,7 @@ index 17ca2f9fbd9f43a9b39637d81e26c92ec00ed4d2..bb88a4a035dc7f56c9b0e81e5c613235
  
      public void injectScaledMaxHealth(Collection<AttributeModifiable> collection, boolean force) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 10e967e15048d4040005a6b6b31cc27c0397e1b9..126f403c18b0ee4af727f325fae307086f289ced 100644
+index a7e427415299a84ec3e134fa430bbbac7cba816b..0f83a95220f30e684b9873c84498d63e95050efe 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -783,9 +783,16 @@ public class CraftEventFactory {
@@ -368,7 +368,7 @@ index 10e967e15048d4040005a6b6b31cc27c0397e1b9..126f403c18b0ee4af727f325fae30708
          for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
 @@ -801,8 +808,15 @@ public class CraftEventFactory {
          CraftPlayer entity = victim.getBukkitEntity();
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage, stringDeathMessage); // Paper - Adventure
          event.setKeepInventory(keepInventory);
 +        populateFields(victim, event); // Paper - make cancellable
          org.bukkit.World world = entity.getWorld();
