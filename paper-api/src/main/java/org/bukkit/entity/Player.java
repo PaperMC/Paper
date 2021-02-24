@@ -417,6 +417,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void sendBlockChange(@NotNull Location loc, @NotNull BlockData block);
 
     /**
+     * Send block damage. This fakes block break progress for a user at a
+     * certain location. This will not actually change the block's break
+     * progress in any way.
+     *
+     * @param loc the location of the damaged block
+     * @param progress the progress from 0.0 - 1.0 where 0 is no damage and
+     * 1.0 is the most damaged
+     */
+    public void sendBlockDamage(@NotNull Location loc, float progress);
+
+    /**
      * Send a chunk change. This fakes a chunk change packet for a user at a
      * certain location. The updated cuboid must be entirely within a single
      * chunk. This will not actually change the world in any way.
