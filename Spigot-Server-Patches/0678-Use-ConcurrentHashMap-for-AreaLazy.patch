@@ -3,13 +3,16 @@ From: Techcable <Techcable@techcable.net>
 Date: Sun, 14 Jun 2020 12:23:43 -0700
 Subject: [PATCH] Use ConcurrentHashMap for AreaLazy
 
-AreaLazy internally caches its computations using
+In vanilla, AreaLazy internally caches its computations using
 a synchronized Long2IntLinkedOpenHashMap.
 
-In order to create treasure maps the main thread
+In order to create treasure maps, the main thread
 uses this inside ItemWorldMap.applySepiaFilter.
-This can cause contention with async world generation/chunk loading
+This can cause extreme contention with async world generation/chunk loading
 that is happening at the same time.
+
+In this implementation, we make AreaLazy properly concurrent
+so threads can actually work together to achieve results.
 
 See PaperMC/Paper#3536
 The server owner didn't pregenerate his world so there was often
@@ -19,23 +22,76 @@ maps caused severe lag by contending with world generation.
 
 Since the AreaTransformer should be a thread-safe,
 we don't really need to synchronize - we can use a concurrent map instead.
-Caching is done with ConcurrentHashMap.computeIfAbsent
+Caching is done with a ConcurrentHashMap and a LazyInt.
 
-The cache is LRU (which is why its a linked hashmap). We assume
+To avoid deadlock, we can't use ConcurrentHashMap.computeIfAbsent.
+We need to synchronize *per-value* (see comment for more info).
+
+The cache is LRU in vanilla (which is why its a linked hashmap). We assume
 the actual cache eviction strategy shouldn't really matter so we
 can blindly evict using ConcurrentHashMap.keySet().iterator().remove()
+NOTE: Using a linked map in our own implementation wouldn't help match
+vanilla behavior anyways, since concurrency would already make the
+removals completely random.
 
+diff --git a/src/main/java/io/papermc/paper/util/LazyInt.java b/src/main/java/io/papermc/paper/util/LazyInt.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d7c8b0cc51265e6553a898062b92742c0f11b7bf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/LazyInt.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.util;
++
++import java.util.OptionalInt;
++import java.util.function.IntSupplier;
++
++/**
++ * A lazily loaded integer.
++ *
++ * This is thread safe and implicitly synchronizes.
++ * Once initialized to a specific value, it will never change.
++ */
++public final class LazyInt {
++    private volatile boolean present = false;
++    private volatile int value = 0;
++
++    /**
++     * Create a new, empty, lazy-loaded integer.
++     */
++    public LazyInt() {}
++
++    public OptionalInt get() {
++        return this.present ? OptionalInt.of(this.value) : OptionalInt.empty();
++    }
++
++    public int getOrLoad(IntSupplier load) {
++        if (this.present) return this.value;
++        synchronized (this) {
++            if (this.present) return this.value;
++            int result = load.getAsInt();
++            this.value = result;
++            this.present = true;
++            return result;
++        }
++    }
++}
 diff --git a/src/main/java/net/minecraft/server/AreaLazy.java b/src/main/java/net/minecraft/server/AreaLazy.java
-index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa68137eaea7f0 100644
+index c274b9c560afbae75aab7c201559e54400c98a5f..60ca8b68a0891d3bbaeb3e2009a60dc7ca14b2cc 100644
 --- a/src/main/java/net/minecraft/server/AreaLazy.java
 +++ b/src/main/java/net/minecraft/server/AreaLazy.java
-@@ -1,9 +1,44 @@
+@@ -1,9 +1,69 @@
  package net.minecraft.server;
  
 -import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 +import com.google.common.base.Preconditions;
++import com.google.common.base.Verify;
++import io.papermc.paper.util.LazyInt;
++import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
++import it.unimi.dsi.fastutil.longs.LongIterator;
 +
 +import java.util.Iterator;
++import java.util.LinkedList;
++import java.util.Map;
 +import java.util.concurrent.ConcurrentHashMap;
 +import java.util.concurrent.locks.Lock;
 +import java.util.concurrent.locks.ReentrantLock;
@@ -44,24 +100,43 @@ index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa6813
  
 +    // Paper start
 +    /*
-+     * Use ConcurrentHashMap for cache instead of synchronizing.
++     * Use ConcurrentHashMap to synchronize per-value instead of synchronizing globaly.
 +     *
-+     * The main thread uses this inside `ItemWorldMap.applySepiaFilter`
++     * While lazy loading values, the main thread synchronizes on the entire map,
++     * preventing any other computations.
++     * In the main thread, inside `ItemWorldMap.applySepiaFilter`
 +     * in order to create treasure maps. This can cause contention
 +     * with async world generation/chunk loading.
-+     * Since the ArenaTransformer should be a thread-safe and pure function,
-+     * we don't really need to synchronize - we can use a concurrent map instead.
 +     *
-+     * This a LRU cache. Since the ArenaTransformer should be lazy,
-+     * we assume eviction order doesn't really matter. We just
-+     * evict blindly from ConcurrentHashMap.
++     * We have to use `LazyInt`, to synchronize seperately on each value.
++     * Implicitly synchronizing by using `ConcurrentHashMap::computeIfAbsent` doesn't work,
++     * since it is coarse and blocks a large portion of the map (about 1/16th) while lazy-loading.
++     * As the AreaTransformer implementation recurses back into `ArenaLazy` for computing other keys,
++     * a ConcurrentHashMap's very coarse blocking doesn't work.
++     * For example, blocking while loading (1, 2) may end up blocking (1, 3) as a side effect
++     * and prevent us from loading that as a side-effect (resulting in deadlock).
++     *
++     * As a result, we synchronize separately on each value by locking on a `LazyInt`
++     * using a per-object monitor. The utility class ensures we never initialize more than once.
++     *
++     * This is LRU cache in vanilla.
++     * We assume eviction order doesn't really matter. Instead, we just
++     * evict blindly from ConcurrentHashMap in our implementation.
++     * Technically this will result in different eviction behavior from vanilla's LRU map.
++     * However our change in synchronization behavior means this was going to happen anyways
++     * even if we also used a linked-list for our eviction policy.
 +     */
 +    private final AreaTransformer8 transformer;
-+    private final ConcurrentHashMap<Long, Integer> cache;
++    private final ConcurrentHashMap<Long, LazyInt> cache;
 +    private final int sizeLimit;
-+    private final Lock removeLock = new ReentrantLock();
++    /**
++     * The set of keys that are potentially ready to be evicted from the cache.
++     *
++     * This is evicted FIFO. The first key we compute is the first one we evict.
++     */
++    private final LongArrayFIFOQueue removalQueue = new LongArrayFIFOQueue();
 +
-+    public AreaLazy(ConcurrentHashMap<Long, Integer> cache, int sizeLimit, AreaTransformer8 transformer) {
++    public AreaLazy(ConcurrentHashMap<Long, LazyInt> cache, int sizeLimit, AreaTransformer8 transformer) {
 +        Preconditions.checkArgument(
 +            sizeLimit > 0,
 +            "Invalid sizeLimit: %s",
@@ -75,7 +150,7 @@ index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa6813
      private final AreaTransformer8 a;
      private final Long2IntLinkedOpenHashMap b;
      private final int c;
-@@ -13,10 +48,42 @@ public final class AreaLazy implements Area {
+@@ -13,10 +73,51 @@ public final class AreaLazy implements Area {
          this.c = i;
          this.a = areatransformer8;
      }
@@ -86,30 +161,39 @@ index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa6813
      public int a(int i, int j) {
          long k = ChunkCoordIntPair.pair(i, j);
 +        // Paper start - rewrite
-+        int computedResult = this.cache.computeIfAbsent(
-+            k, (k2) -> this.transformer.apply(i, j)
-+        );
++        LazyInt lazyInt = this.cache.computeIfAbsent(k, (k2) -> new LazyInt());
++        /*
++         * NOTE: We implicitly lock per each individual `LazyInt`,
++         * instead of globally (vanilla) synchronized(this)
++         * or coarsely in
++         *
++         * See above for description of why we need this locking strategy.
++         */
++        int computedResult = lazyInt.getOrLoad(() -> this.transformer.apply(i, j));
++        // Now that the lazy integer is loaded, it is a potential candidate for removal
++        this.removalQueue.enqueue(k);
 +        /*
 +         * Check cache size.
 +         *
-+         * The original cache was LRU, we don't have a specific eviction ordering
++         * We only consider entries that have already been loaded. Those that are in
++         * progress are ignored.
 +         */
-+        if (this.cache.size() > this.sizeLimit) {
++        if (this.removalQueue.size() > this.sizeLimit) {
 +            /*
 +             * NOTE: We only want one thread clearing the cache at a time!
 +             * If another thread is removing we don't need to do any work....
 +             */
-+            if (this.removeLock.tryLock()) {
-+                try {
++            synchronized (this.removalQueue) {
++                // double checked locking
++                if (this.removalQueue.size() > this.sizeLimit) {
 +                    int toRemove = this.sizeLimit / 16;
-+                    Iterator<Long> iter = this.cache.keySet().iterator();
 +                    for (int r = 0; r < toRemove; r++) {
-+                        if (!iter.hasNext()) break;
-+                        iter.next();
-+                        iter.remove();
++                        if (this.removalQueue.isEmpty()) break;
++                        long key = this.removalQueue.dequeueLong();
++                        LazyInt value = this.cache.get(key);
++                        // We should only be removing values we already loaded...
++                        if (!value.get().isPresent()) throw new IllegalStateException();
 +                    }
-+                } finally {
-+                    this.removeLock.unlock();
 +                }
 +            }
 +        }
@@ -118,7 +202,7 @@ index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa6813
          Long2IntLinkedOpenHashMap long2intlinkedopenhashmap = this.b;
  
          synchronized (this.b) {
-@@ -37,9 +104,11 @@ public final class AreaLazy implements Area {
+@@ -37,9 +138,11 @@ public final class AreaLazy implements Area {
                  return i1;
              }
          }
@@ -132,19 +216,21 @@ index c274b9c560afbae75aab7c201559e54400c98a5f..9d9d627973aaa5ace2684524a0fa6813
      }
  }
 diff --git a/src/main/java/net/minecraft/server/WorldGenContextArea.java b/src/main/java/net/minecraft/server/WorldGenContextArea.java
-index b67d88d32a73b3a51809b91db11d54bc99169fe1..00e712c3f2c255afa813a2bcc21719a0c5699711 100644
+index b67d88d32a73b3a51809b91db11d54bc99169fe1..23e97b4b0ba484eb13c100ed2290b847a49ac96b 100644
 --- a/src/main/java/net/minecraft/server/WorldGenContextArea.java
 +++ b/src/main/java/net/minecraft/server/WorldGenContextArea.java
-@@ -2,10 +2,11 @@ package net.minecraft.server;
+@@ -1,11 +1,12 @@
+ package net.minecraft.server;
  
- import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+-import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
++import io.papermc.paper.util.LazyInt; // Paper
  import java.util.Random;
 +import java.util.concurrent.ConcurrentHashMap;
  
  public class WorldGenContextArea implements AreaContextTransformed<AreaLazy> {
  
 -    private final Long2IntLinkedOpenHashMap a;
-+    private final ConcurrentHashMap<Long, Integer> a; // Paper - ConcurrentHashMap
++    private final ConcurrentHashMap<Long, LazyInt> a; // Paper - ConcurrentHashMap
      private final int b;
      private final NoiseGeneratorPerlin c;
      private final long d;
