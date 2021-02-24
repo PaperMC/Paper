@@ -44,6 +44,7 @@ import net.minecraft.server.MapIcon;
 import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.NBTTagCompound;
 import net.minecraft.server.PacketDataSerializer;
+import net.minecraft.server.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.PacketPlayOutBlockChange;
 import net.minecraft.server.PacketPlayOutChat;
 import net.minecraft.server.PacketPlayOutCustomPayload;
@@ -542,6 +543,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().playerConnection == null) return;
 
         PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), ((CraftBlockData) block).getState());
+        getHandle().playerConnection.sendPacket(packet);
+    }
+
+    @Override
+    public void sendBlockDamage(Location loc, float progress) {
+        Preconditions.checkArgument(loc != null, "loc must not be null");
+        Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "progress must be between 0.0 and 1.0 (inclusive)");
+
+        if (getHandle().playerConnection == null) return;
+
+        int stage = (int) (9 * progress); // There are 0 - 9 damage states
+        PacketPlayOutBlockBreakAnimation packet = new PacketPlayOutBlockBreakAnimation(getHandle().getId(), new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), stage);
         getHandle().playerConnection.sendPacket(packet);
     }
 
