@@ -6,10 +6,10 @@ Subject: [PATCH] misc debugging dumps
 
 diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5e5c6153675855bb8798b11d905b5f2d6ea158e
+index 0000000000000000000000000000000000000000..2d5494d2813b773e60ddba6790b750a9a08f21f8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,18 @@
 +package io.papermc.paper.util;
 +
 +import org.bukkit.Bukkit;
@@ -23,9 +23,13 @@ index 0000000000000000000000000000000000000000..d5e5c6153675855bb8798b11d905b5f2
 +            Bukkit.getLogger().warning("\tat " + traceElement);
 +        }
 +    }
++
++    public static void dumpTraceForThread(String reason) {
++        new Throwable(reason).printStackTrace();
++    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccf2d0b090f0c360dfc7886bb0726e099acec42c..ccac3589820f244f36dac310d08091f218d5935e 100644
+index ccf2d0b090f0c360dfc7886bb0726e099acec42c..d6ca2ac9a5047b8d6840c8b4985ab75f35bea919 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
@@ -48,7 +52,7 @@ index ccf2d0b090f0c360dfc7886bb0726e099acec42c..ccac3589820f244f36dac310d08091f2
              if (hasStopped) return;
              hasStopped = true;
          }
-+        if (!hasLoggedStop && isDebugging()) TraceUtil.dumpTraceForThread(this.getThread(), "Server stopped"); // Paper
++        if (!hasLoggedStop && isDebugging()) TraceUtil.dumpTraceForThread("Server stopped"); // Paper
          // Paper start - kill main thread, and kill it hard
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -57,7 +61,7 @@ index ccf2d0b090f0c360dfc7886bb0726e099acec42c..ccac3589820f244f36dac310d08091f2
          this.isRunning = false;
          this.isRestarting = isRestarting;
 +        this.hasLoggedStop = true; // Paper
-+        if (isDebugging()) TraceUtil.dumpTraceForThread(this.getThread(), "Server stopped"); // Paper
++        if (isDebugging()) TraceUtil.dumpTraceForThread("Server stopped"); // Paper
          if (flag) {
              try {
                  this.serverThread.join();
