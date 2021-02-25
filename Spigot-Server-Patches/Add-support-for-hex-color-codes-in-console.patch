@@ -13,7 +13,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.console;
 +
-+import net.kyori.adventure.text.format.TextColor;
 +import net.minecrell.terminalconsole.TerminalConsoleAppender;
 +import org.apache.logging.log4j.core.LogEvent;
 +import org.apache.logging.log4j.core.config.Configuration;
@@ -46,6 +45,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static final String LOOKUP = "0123456789abcdefklmnor";
 +
 +    private static final String RGB_ANSI = "\u001B[38;2;%d;%d;%dm";
++    private static final Pattern NAMED_PATTERN = Pattern.compile(COLOR_CHAR + "[0-9a-fk-orA-FK-OR]");
 +    private static final Pattern RGB_PATTERN = Pattern.compile(COLOR_CHAR + "x(" + COLOR_CHAR + "[0-9a-fA-F]){6}");
 +
 +    private static final String[] ansiCodes = new String[] {
@@ -83,7 +83,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param strip      If true, the converter will strip all formatting codes
 +     */
 +    protected HexFormattingConverter(List<PatternFormatter> formatters, boolean strip) {
-+        super("minecraftFormatting", null);
++        super("paperMinecraftFormatting", null);
 +        this.formatters = formatters;
 +        this.ansi = !strip;
 +    }
@@ -112,10 +112,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        StringBuffer buffer = new StringBuffer();
 +        while (matcher.find()) {
 +            String s = matcher.group().replace(String.valueOf(COLOR_CHAR), "").replace('x', '#');
-+            TextColor color = TextColor.fromHexString(s);
-+            int red = color.red();
-+            int blue = color.blue();
-+            int green = color.green();
++            int hex = Integer.decode(s);
++            int red = (hex >> 16) & 0xFF;
++            int green = (hex >> 8) & 0xFF;
++            int blue = hex & 0xFF;
 +            String replacement = String.format(RGB_ANSI, red, green, blue);
 +            matcher.appendReplacement(buffer, replacement);
 +        }
@@ -133,39 +133,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return buffer.toString();
 +    }
 +
-+    static void format(String s, StringBuilder result, int start, boolean ansi) {
-+        int next = s.indexOf(COLOR_CHAR);
-+        int last = s.length() - 1;
++    static void format(String content, StringBuilder result, int start, boolean ansi) {
++        int next = content.indexOf(COLOR_CHAR);
++        int last = content.length() - 1;
 +        if (next == -1 || next == last) {
 +            result.setLength(start);
-+            result.append(s);
++            result.append(content);
 +            if (ansi) {
 +                result.append(ANSI_RESET);
 +            }
 +            return;
 +        }
 +
-+        result.setLength(start + next);
-+
-+        int pos = next;
-+        do {
-+            int format = LOOKUP.indexOf(Character.toLowerCase(s.charAt(next + 1)));
++        Matcher matcher = NAMED_PATTERN.matcher(content);
++        StringBuffer buffer = new StringBuffer();
++        while (matcher.find()) {
++            int format = LOOKUP.indexOf(Character.toLowerCase(matcher.group().charAt(1)));
 +            if (format != -1) {
-+                if (pos != next) {
-+                    result.append(s, pos, next);
-+                }
-+                if (ansi) {
-+                    result.append(ansiCodes[format]);
-+                }
-+                pos = next += 2;
-+            } else {
-+                next++;
++                matcher.appendReplacement(buffer, ansi ? ansiCodes[format] : "");
 +            }
++        }
++        matcher.appendTail(buffer);
 +
-+            next = s.indexOf(COLOR_CHAR, next);
-+        } while (next != -1 && next < last);
-+
-+        result.append(s, pos, s.length());
++        result.setLength(start);
++        result.append(buffer.toString());
 +        if (ansi) {
 +            result.append(ANSI_RESET);
 +        }
