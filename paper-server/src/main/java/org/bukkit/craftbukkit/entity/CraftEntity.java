@@ -1065,4 +1065,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return getHandle().isTicking();
     }
     // Paper end - isTicking API
+
+    // Paper start - tracked players API
+    @Override
+    public Set<org.bukkit.entity.Player> getTrackedPlayers() {
+        ServerLevel world = (net.minecraft.server.level.ServerLevel)this.entity.level();
+        ChunkMap.TrackedEntity tracker = world == null ? null : world.getChunkSource().chunkMap.entityMap.get(this.entity.getId());
+        if (tracker == null) {
+            return java.util.Collections.emptySet();
+        }
+
+        Set<org.bukkit.entity.Player> set = new java.util.HashSet<>(tracker.seenBy.size());
+        for (net.minecraft.server.network.ServerPlayerConnection connection : tracker.seenBy) {
+            set.add(connection.getPlayer().getBukkitEntity().getPlayer());
+        }
+        return set;
+    }
+    // Paper end - tracked players API
 }
