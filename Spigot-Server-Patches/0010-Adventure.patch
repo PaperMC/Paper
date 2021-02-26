@@ -6,6 +6,20 @@ Subject: [PATCH] Adventure
 Co-authored-by: zml <zml@stellardrift.ca>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index 1d03a79e9010bc514b72a81ba0ad4a62aeff1bb7..429b74474ced04d8dd8f038b8590b8dfe178bf4d 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -217,4 +217,9 @@ public class PaperConfig {
+                 " - Length: " + timeSummary(Timings.getHistoryLength() / 20) +
+                 " - Server Name: " + timingsServerName);
+     }
++
++    public static boolean useDisplayNameInQuit = false;
++    private static void useDisplayNameInQuit() {
++        useDisplayNameInQuit = getBoolean("use-display-name-in-quit-message", useDisplayNameInQuit);
++    }
+ }
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..a2acd31dce4461338a8baa96e03df36a4b4281b8
@@ -1248,7 +1262,7 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..5fa4afb75d46a32d91402c5ca850d17d
               }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 5b49047b820dbe1f326320b71445ac216bf688b5..7a9901e7ce45dea4e0d61e82de6d8f5de1f836e7 100644
+index 5b49047b820dbe1f326320b71445ac216bf688b5..005ea84b8ebaa66c6a3db428efb0a002d5faf807 100644
 --- a/src/main/java/net/minecraft/server/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
@@ -1315,7 +1329,7 @@ index 5b49047b820dbe1f326320b71445ac216bf688b5..7a9901e7ce45dea4e0d61e82de6d8f5d
          }
  
 -        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), "\u00A7e" + entityplayer.getName() + " left the game");
-+        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, entityplayer.getBukkitEntity().displayName()));
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getName())));
          cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
