@@ -46,4 +46,5 @@ ysl3000 <yannicklamprecht@live.de>
 KennyTV <jahnke.nassim@gmail.com>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
+Camotoy <20743703+Camotoy@users.noreply.github.com>
 ```
