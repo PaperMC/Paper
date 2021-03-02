@@ -104,6 +104,221 @@ index 0000000000000000000000000000000000000000..a2acd31dce4461338a8baa96e03df36a
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d7945e7340f406fbf21a1bd67f9c167a309d0fb7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
+@@ -0,0 +1,209 @@
++package io.papermc.paper.adventure;
++
++import io.papermc.paper.chat.ChatFormatter;
++import io.papermc.paper.event.player.AbstractChatEvent;
++import io.papermc.paper.event.player.AsyncChatEvent;
++import io.papermc.paper.event.player.ChatEvent;
++import java.util.concurrent.ExecutionException;
++import java.util.function.Consumer;
++import java.util.regex.Pattern;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.TextReplacementConfig;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.minecraft.server.EntityPlayer;
++import net.minecraft.server.IChatBaseComponent;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.util.LazyPlayerSet;
++import org.bukkit.craftbukkit.util.Waitable;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.AsyncPlayerChatEvent;
++import org.bukkit.event.player.PlayerChatEvent;
++
++public final class ChatProcessor {
++    // <-- copied from adventure-text-serializer-legacy
++    private static final Pattern DEFAULT_URL_PATTERN = Pattern.compile("(?:(https?)://)?([-\\w_.]+\\.\\w{2,})(/\\S*)?");
++    private static final Pattern URL_SCHEME_PATTERN = Pattern.compile("^[a-z][a-z0-9+\\-.]*:");
++    private static final TextReplacementConfig URL_REPLACEMENT_CONFIG = TextReplacementConfig.builder()
++        .match(DEFAULT_URL_PATTERN)
++        .replacement(url -> {
++            String clickUrl = url.content();
++            if (!URL_SCHEME_PATTERN.matcher(clickUrl).find()) {
++                clickUrl = "http://" + clickUrl;
++            }
++            return url.clickEvent(ClickEvent.openUrl(clickUrl));
++        })
++        .build();
++    // copied from adventure-text-serializer-legacy -->
++    final MinecraftServer server;
++    final EntityPlayer player;
++    final String message;
++    final boolean async;
++
++    public ChatProcessor(final MinecraftServer server, final EntityPlayer player, final String message, final boolean async) {
++        this.server = server;
++        this.player = player;
++        this.message = message;
++        this.async = async;
++    }
++
++    @SuppressWarnings("deprecation")
++    public void process() {
++        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
++
++        this.processLegacy(
++            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
++            event -> {
++                final AsyncChatEvent ae = this.createAsync(
++                    legacyFormatter(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()),
++                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
++                );
++                ae.setCancelled(event.isCancelled()); // propagate cancelled state
++                post(ae);
++                if (listenersOnSyncEvent) {
++                    this.continueWithSyncFromWhereAsyncLeftOff(ae);
++                } else {
++                    this.complete(ae);
++                }
++            },
++            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
++            event -> {
++                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
++                    @Override
++                    protected Void evaluate() {
++                        final ChatEvent se = ChatProcessor.this.createSync(
++                            legacyFormatter(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()),
++                            PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
++                        );
++                        se.setCancelled(event.isCancelled()); // propagate cancelled state
++                        post(se);
++                        ChatProcessor.this.complete(se);
++                        return null;
++                    }
++                });
++            },
++            // no legacy events called, all nice and fresh!
++            () -> {
++                final AsyncChatEvent ae = this.createAsync(ChatFormatter.DEFAULT, Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG));
++                post(ae);
++                if (listenersOnSyncEvent) {
++                    this.continueWithSyncFromWhereAsyncLeftOff(ae);
++                } else {
++                    this.complete(ae);
++                }
++            }
++        );
++    }
++
++    private static Component displayName(final CraftPlayer player) {
++        return player.displayName();
++    }
++
++    private static ChatFormatter legacyFormatter(final String format, final String legacyDisplayName, final String legacyMessage) {
++        return (displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName, legacyMessage)).replaceText(URL_REPLACEMENT_CONFIG);
++    }
++
++    private void continueWithSyncFromWhereAsyncLeftOff(final AsyncChatEvent ae) {
++        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
++            @Override
++            protected Void evaluate() {
++                final ChatEvent se = ChatProcessor.this.createSync(ae.formatter(), ae.message());
++                se.setCancelled(ae.isCancelled()); // propagate cancelled state
++                post(se);
++                ChatProcessor.this.complete(se);
++                return null;
++            }
++        });
++    }
++
++    private void complete(final AbstractChatEvent event) {
++        if (event.isCancelled()) {
++            return;
++        }
++
++        final CraftPlayer player = this.player.getBukkitEntity();
++
++        final Component message = event.formatter().chat(
++            displayName(player),
++            event.message()
++        );
++
++        this.server.console.sendMessage(message);
++
++        if (((LazyPlayerSet) event.recipients()).isLazy()) {
++            final IChatBaseComponent vanilla = PaperAdventure.asVanilla(message);
++            for(final EntityPlayer recipient : this.server.getPlayerList().players) {
++                recipient.sendMessage(vanilla, this.player.getUniqueID());
++            }
++        } else {
++            for(final Player recipient : event.recipients()) {
++                recipient.sendMessage(player, message);
++            }
++        }
++    }
++
++    private AsyncChatEvent createAsync(final ChatFormatter formatter, final Component message) {
++        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), new LazyPlayerSet(this.server), formatter, message);
++    }
++
++    private ChatEvent createSync(final ChatFormatter formatter, final Component message) {
++        return new ChatEvent(this.player.getBukkitEntity(), new LazyPlayerSet(this.server), formatter, message);
++    }
++
++    @SuppressWarnings("deprecation")
++    public void processLegacy(
++        final Consumer<AsyncPlayerChatEvent> continueAfterAsync,
++        final Consumer<PlayerChatEvent> continueAfterAsyncAndSync,
++        final Runnable modernOnly
++    ) {
++        final boolean listenersOnAsyncEvent = anyListeners(AsyncPlayerChatEvent.getHandlerList());
++        final boolean listenersOnSyncEvent = anyListeners(PlayerChatEvent.getHandlerList());
++        if (listenersOnAsyncEvent || listenersOnSyncEvent) {
++            final CraftPlayer player = this.player.getBukkitEntity();
++            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.message, new LazyPlayerSet(this.server));
++            post(ae);
++            if (listenersOnSyncEvent) {
++                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
++                se.setCancelled(ae.isCancelled()); // propagate cancelled state
++                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
++                    @Override
++                    protected Void evaluate() {
++                        post(se);
++                        return null;
++                    }
++                });
++                continueAfterAsyncAndSync.accept(se);
++            } else if (!ae.isCancelled()) {
++                continueAfterAsync.accept(ae);
++            }
++        } else {
++            modernOnly.run();
++        }
++    }
++
++    private void queueIfAsyncOrRunImmediately(final Waitable<Void> waitable) {
++        if (this.async) {
++            this.server.processQueue.add(waitable);
++        } else {
++            waitable.run();
++        }
++        try {
++            waitable.get();
++        } catch (final InterruptedException e) {
++            Thread.currentThread().interrupt(); // tag, you're it
++        } catch (final ExecutionException e) {
++            throw new RuntimeException("Exception processing chat", e.getCause());
++        }
++    }
++
++    private static void post(final Event event) {
++        Bukkit.getPluginManager().callEvent(event);
++    }
++
++    private static boolean anyListeners(final HandlerList handlers) {
++        return handlers.getRegisteredListeners().length > 0;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java b/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..64fcc77eb2ce8979ae756696d98f1d3a91326ba6
@@ -535,73 +750,6 @@ index 0000000000000000000000000000000000000000..59dd2a453dbfc538431a3414ab35d183
 +    @Override
 +    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
 +        this.action.accept(PacketPlayOutBoss.Action.UPDATE_PROPERTIES);
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..5f1f839da11058cffae8b29ad2820dc4cc1b1e10
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/adventure/VanillaChatMessageLogic.java
-@@ -0,0 +1,61 @@
-+package io.papermc.paper.adventure;
-+
-+import java.util.function.BiFunction;
-+import java.util.regex.MatchResult;
-+import java.util.regex.Pattern;
-+import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.ComponentLike;
-+import net.kyori.adventure.text.TextComponent;
-+import net.kyori.adventure.text.TextReplacementConfig;
-+import net.kyori.adventure.text.event.ClickEvent;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+
-+public class VanillaChatMessageLogic {
-+    // <-- copied from adventure-text-serializer-legacy
-+    private static final Pattern DEFAULT_URL_PATTERN = Pattern.compile("(?:(https?)://)?([-\\w_.]+\\.\\w{2,})(/\\S*)?");
-+    private static final Pattern URL_SCHEME_PATTERN = Pattern.compile("^[a-z][a-z0-9+\\-.]*:");
-+    private static final TextReplacementConfig URL_REPLACEMENT_CONFIG = TextReplacementConfig.builder()
-+        .match(DEFAULT_URL_PATTERN)
-+        .replacement(url -> {
-+            String clickUrl = url.content();
-+            if (!URL_SCHEME_PATTERN.matcher(clickUrl).find()) {
-+                clickUrl = "http://" + clickUrl;
-+            }
-+            return url.clickEvent(ClickEvent.openUrl(clickUrl));
-+        })
-+        .build();
-+    // copied from adventure-text-serializer-legacy -->
-+
-+    public static Component displayNameForChat(final CraftPlayer player) {
-+        return player.displayName();
-+    }
-+
-+    public static Component formatChat(final Component displayName, final String format, final String message) {
-+        final class Replacement implements BiFunction<MatchResult, TextComponent.Builder, ComponentLike> {
-+            private int index = 0;
-+
-+            @Override
-+            public ComponentLike apply(final MatchResult result, final TextComponent.Builder builder) {
-+                if (this.index == 0) {
-+                    this.index++;
-+                    return displayName;
-+                } else if (this.index == 1) {
-+                    this.index++;
-+                    return PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message).mergeStyle(builder.asComponent()).replaceText(URL_REPLACEMENT_CONFIG);
-+                } else {
-+                    return builder;
-+                }
-+            }
-+        }
-+        final Replacement replacement = new Replacement();
-+        if (format.contains("%2$s") && !format.contains("%1$s")) {
-+            replacement.index = 1;
-+        }
-+        return PaperAdventure.LEGACY_SECTION_UXRC.deserialize(format)
-+            .replaceText(config -> {
-+                config.times(2);
-+                config.match("%(\\d+\\$)?s");
-+                config.replacement(replacement);
-+            });
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
@@ -1129,15 +1277,15 @@ index 055555cb5ce63d41cb9a7f4114341b0685879b9e..7875d4c08969b3adc6f95504686cc9fe
  
                  @Override
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index d34e91887cd73009bf852fb849e495a8affed7a9..5fa4afb75d46a32d91402c5ca850d17d11990b8d 100644
+index d34e91887cd73009bf852fb849e495a8affed7a9..5636a76f1a893dc0609f16a240ae559396a4b46d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
  // CraftBukkit start
++import io.papermc.paper.adventure.ChatProcessor; // Paper
 +import io.papermc.paper.adventure.PaperAdventure; // Paper
-+import io.papermc.paper.adventure.VanillaChatMessageLogic; // Paper
  import java.util.concurrent.ExecutionException;
  import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  import org.bukkit.Location;
@@ -1199,57 +1347,23 @@ index d34e91887cd73009bf852fb849e495a8affed7a9..5fa4afb75d46a32d91402c5ca850d17d
          }
          // CraftBukkit end
          ITextFilter itextfilter = this.player.Q();
-@@ -1721,15 +1727,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
-                             return null;
-                         }
+@@ -1703,8 +1709,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             this.handleCommand(s);
+         } else if (this.player.getChatFlags() == EnumChatVisibility.SYSTEM) {
+             // Do nothing, this is coming from a plugin
+-        } else {
+-            Player player = this.getPlayer();
++        // Paper start
++        } else if (true) {
++            final ChatProcessor cp = new ChatProcessor(this.minecraftServer, this.player, s, async);
++            cp.process();
++        // Paper end
++        } else if (false) { // Paper
++            Player player = this.getPlayer(); // Paper
+             AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(minecraftServer));
+             this.server.getPluginManager().callEvent(event);
  
--                        String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage());
--                        PlayerConnection.this.minecraftServer.console.sendMessage(message);
-+                        final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat((CraftPlayer) player), queueEvent.getFormat(), queueEvent.getMessage()); // Paper
-+                        //String message = String.format(queueEvent.getFormat(), queueEvent.getPlayer().getDisplayName(), queueEvent.getMessage()); // Paper - comment
-+                        //PlayerConnection.this.minecraftServer.console.sendMessage(message); // Paper - comment
-+                        PlayerConnection.this.minecraftServer.console.sendMessage(adventure$msg); // Paper
-                         if (((LazyPlayerSet) queueEvent.getRecipients()).isLazy()) {
-+                            final IChatBaseComponent vanilla$msg = PaperAdventure.asVanilla(adventure$msg); // Paper
-                             for (Object player : PlayerConnection.this.minecraftServer.getPlayerList().players) {
--                                ((EntityPlayer) player).sendMessage(PlayerConnection.this.player.getUniqueID(), CraftChatMessage.fromString(message));
-+                                //((EntityPlayer) player).sendMessage(PlayerConnection.this.player.getUniqueID(), CraftChatMessage.fromString(message)); // Paper - comment
-+                                ((EntityPlayer) player).sendMessage(vanilla$msg, PlayerConnection.this.player.getUniqueID());
-                             }
-                         } else {
-                             for (Player player : queueEvent.getRecipients()) {
--                                player.sendMessage(PlayerConnection.this.player.getUniqueID(), message);
-+                                //player.sendMessage(PlayerConnection.this.player.getUniqueID(), message); // Paper - comment
-+                                player.sendMessage(PlayerConnection.this.player.getBukkitEntity(), adventure$msg); // Paper
-                             }
-                         }
-                         return null;
-@@ -1751,15 +1762,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
-                     return;
-                 }
- 
--                s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
--                minecraftServer.console.sendMessage(s);
-+                final net.kyori.adventure.text.Component adventure$msg = VanillaChatMessageLogic.formatChat(VanillaChatMessageLogic.displayNameForChat((CraftPlayer) player), event.getFormat(), event.getMessage()); // Paper
-+                //s = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()); // Paper - comment
-+                //minecraftServer.console.sendMessage(s); // Paper - comment
-+                minecraftServer.console.sendMessage(adventure$msg); // Paper
-                 if (((LazyPlayerSet) event.getRecipients()).isLazy()) {
-+                    final IChatBaseComponent vanilla$msg = PaperAdventure.asVanilla(adventure$msg); // Paper
-                     for (Object recipient : minecraftServer.getPlayerList().players) {
--                        ((EntityPlayer) recipient).sendMessage(PlayerConnection.this.player.getUniqueID(), CraftChatMessage.fromString(s));
-+                        //((EntityPlayer) recipient).sendMessage(PlayerConnection.this.player.getUniqueID(), CraftChatMessage.fromString(s)); // Paper - comment
-+                        ((EntityPlayer) recipient).sendMessage(vanilla$msg, PlayerConnection.this.player.getUniqueID()); // Paper
-                     }
-                 } else {
-                     for (Player recipient : event.getRecipients()) {
--                        recipient.sendMessage(PlayerConnection.this.player.getUniqueID(), s);
-+                        //recipient.sendMessage(PlayerConnection.this.player.getUniqueID(), s); // Paper - comment
-+                        recipient.sendMessage(PlayerConnection.this.player.getBukkitEntity(), adventure$msg); // Paper
-                     }
-                 }
-             }
-@@ -2511,21 +2527,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2511,21 +2522,20 @@ public class PlayerConnection implements PacketListenerPlayIn {
                  return;
              }
  
@@ -1762,7 +1876,7 @@ index 81f6bf5533288ed90e2f1f4d421d54195d9650c7..d742f72215f6a9a2b562182fd57fd9ac
          IChatBaseComponent[] components = new IChatBaseComponent[4];
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
-index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..8495632d99137b89e4dd4543c2ea721dacfc9ee2 100644
+index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..af986adfdb547cb61fbd52f0f89858f1a9e52cc3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/CraftConsoleCommandSender.java
 @@ -80,4 +80,11 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
@@ -1773,7 +1887,7 @@ index 089fe4a3458ed3106fa214f89a7004a5d3c6bb95..8495632d99137b89e4dd4543c2ea721d
 +    // Paper start
 +    @Override
 +    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
-+        this.sendRawMessage(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(message));
++        this.sendRawMessage(org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(io.papermc.paper.adventure.PaperAdventure.asVanilla(message)));
 +    }
 +    // Paper end
  }
