@@ -116,6 +116,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.event.player.AbstractChatEvent;
 +import io.papermc.paper.event.player.AsyncChatEvent;
 +import io.papermc.paper.event.player.ChatEvent;
++import java.util.Set;
 +import java.util.concurrent.ExecutionException;
 +import java.util.function.Consumer;
 +import java.util.regex.Pattern;
@@ -171,6 +172,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            event -> {
 +                final AsyncChatEvent ae = this.createAsync(
 +                    legacyFormatter(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()),
++                    event.getRecipients(),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
 +                );
 +                ae.setCancelled(event.isCancelled()); // propagate cancelled state
@@ -188,6 +190,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    protected Void evaluate() {
 +                        final ChatEvent se = ChatProcessor.this.createSync(
 +                            legacyFormatter(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage()),
++                            event.getRecipients(),
 +                            PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
 +                        );
 +                        se.setCancelled(event.isCancelled()); // propagate cancelled state
@@ -199,7 +202,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            },
 +            // no legacy events called, all nice and fresh!
 +            () -> {
-+                final AsyncChatEvent ae = this.createAsync(ChatFormatter.DEFAULT, Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG));
++                final AsyncChatEvent ae = this.createAsync(ChatFormatter.DEFAULT, new LazyPlayerSet(this.server), Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG));
 +                post(ae);
 +                if (listenersOnSyncEvent) {
 +                    this.continueWithSyncFromWhereAsyncLeftOff(ae);
@@ -222,7 +225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
 +            @Override
 +            protected Void evaluate() {
-+                final ChatEvent se = ChatProcessor.this.createSync(ae.formatter(), ae.message());
++                final ChatEvent se = ChatProcessor.this.createSync(ae.formatter(), ae.recipients(), ae.message());
 +                se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                post(se);
 +                ChatProcessor.this.complete(se);
@@ -257,12 +260,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    private AsyncChatEvent createAsync(final ChatFormatter formatter, final Component message) {
-+        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), new LazyPlayerSet(this.server), formatter, message);
++    private AsyncChatEvent createAsync(final ChatFormatter formatter, final Set<Player> recipients, final Component message) {
++        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, formatter, message);
 +    }
 +
-+    private ChatEvent createSync(final ChatFormatter formatter, final Component message) {
-+        return new ChatEvent(this.player.getBukkitEntity(), new LazyPlayerSet(this.server), formatter, message);
++    private ChatEvent createSync(final ChatFormatter formatter, final Set<Player> recipients, final Component message) {
++        return new ChatEvent(this.player.getBukkitEntity(), recipients, formatter, message);
 +    }
 +
 +    @SuppressWarnings("deprecation")
