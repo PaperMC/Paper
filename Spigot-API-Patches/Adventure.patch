@@ -20,7 +20,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            <dependency>
 +                <groupId>net.kyori</groupId>
 +                <artifactId>adventure-bom</artifactId>
-+                <version>4.5.1</version> <!-- keep this version in synch with javadoc section below! -->
++                <version>4.6.0</version> <!-- keep this version in synch with javadoc section below! -->
 +                <type>pom</type>
 +                <scope>import</scope>
 +            </dependency>
@@ -55,10 +55,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          <link>https://javadoc.io/doc/org.jetbrains/annotations-java5/20.1.0/</link>
                          <link>https://javadoc.io/doc/net.md-5/bungeecord-chat/1.16-R0.4/</link>
 +                        <!-- Paper start -->
-+                        <link>https://jd.adventure.kyori.net/api/4.5.1/</link>
-+                        <link>https://jd.adventure.kyori.net/text-serializer-gson/4.5.1/</link>
-+                        <link>https://jd.adventure.kyori.net/text-serializer-legacy/4.5.1/</link>
-+                        <link>https://jd.adventure.kyori.net/text-serializer-plain/4.5.1/</link>
++                        <link>https://jd.adventure.kyori.net/api/4.6.0/</link>
++                        <link>https://jd.adventure.kyori.net/text-serializer-gson/4.6.0/</link>
++                        <link>https://jd.adventure.kyori.net/text-serializer-legacy/4.6.0/</link>
++                        <link>https://jd.adventure.kyori.net/text-serializer-plain/4.6.0/</link>
 +                        <!-- Paper end -->
                      </links>
                  </configuration>
@@ -94,6 +94,214 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/io/papermc/paper/chat/ChatFormatter.java b/src/main/java/io/papermc/paper/chat/ChatFormatter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/chat/ChatFormatter.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.chat;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * A chat formatter is responsible for the formatting of chat messages sent by {@link Player}s to the server.
++ */
++@FunctionalInterface
++public interface ChatFormatter {
++    // This format might be different than the CraftBukkit one?
++    ChatFormatter DEFAULT = (displayName, message) -> Component.translatable("chat.type.text", displayName, message);
++
++    /**
++     * Formats a chat message.
++     *
++     * @param displayName the display name of the {@link Player} sending the message
++     * @param message the chat message
++     * @return a formatted chat message
++     */
++    @NotNull
++    Component chat(final @NotNull Component displayName, final @NotNull Component message);
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.chat.ChatFormatter;
++import java.util.Objects;
++import java.util.Set;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * An abstract implementation of a chat event, handling shared logic.
++ */
++public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
++    private final Set<Player> recipients;
++    private boolean cancelled = false;
++    private ChatFormatter formatter;
++    private Component message;
++
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
++        super(player, async);
++        this.recipients = recipients;
++        this.formatter = formatter;
++        this.message = message;
++    }
++
++    /**
++     * Gets a set of recipients that this chat message will be displayed to.
++     *
++     * <p>The set returned is not guaranteed to be mutable and may auto-populate
++     * on access. Any listener accessing the returned set should be aware that
++     * it may reduce performance for a lazy set implementation.</p>
++     *
++     * <p>Listeners should be aware that modifying the list may throw {@link
++     * UnsupportedOperationException} if the event caller provides an
++     * unmodifiable set.</p>
++     *
++     * @return a set of players who will receive the chat message
++     */
++    @NotNull
++    public final Set<Player> recipients() {
++        return this.recipients;
++    }
++
++    /**
++     * Gets the chat formatter.
++     *
++     * @return the chat formatter
++     */
++    @NotNull
++    public final ChatFormatter formatter() {
++        return this.formatter;
++    }
++
++    /**
++     * Sets the chat formatter.
++     *
++     * @param formatter the chat formatter
++     * @throws NullPointerException if {@code formatter} is {@code null}
++     */
++    public final void formatter(final @NotNull ChatFormatter formatter) {
++        this.formatter = Objects.requireNonNull(formatter, "formatter");
++    }
++
++    /**
++     * Gets the user-supplied message.
++     *
++     * @return the user-supplied message
++     */
++    @NotNull
++    public final Component message() {
++        return this.message;
++    }
++
++    /**
++     * Sets the user-supplied message.
++     *
++     * @param message the user-supplied message
++     * @throws NullPointerException if {@code message} is {@code null}
++     */
++    public final void message(final @NotNull Component message) {
++        this.message = Objects.requireNonNull(message, "message");
++    }
++
++    @Override
++    public final boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public final void setCancelled(final boolean cancelled) {
++        this.cancelled = cancelled;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.chat.ChatFormatter;
++import java.util.Set;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * An event fired when a {@link Player} sends a chat message to the server.
++ */
++public final class AsyncChatEvent extends AbstractChatEvent {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
++        super(async, player, recipients, formatter, message);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.chat.ChatFormatter;
++import java.util.Set;
++import net.kyori.adventure.text.Component;
++import org.bukkit.Warning;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * An event fired when a {@link Player} sends a chat message to the server.
++ *
++ * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
++ */
++@Deprecated
++@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
++public final class ChatEvent extends AbstractChatEvent {
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
++        super(false, player, recipients, formatter, message);
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
@@ -601,6 +809,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/Warning.java b/src/main/java/org/bukkit/Warning.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/Warning.java
++++ b/src/main/java/org/bukkit/Warning.java
+@@ -0,0 +0,0 @@ public @interface Warning {
+          *     </ul>
+          */
+         public boolean printFor(@Nullable Warning warning) {
++            if (Boolean.getBoolean("paper.alwaysPrintWarningState")) return true; // Paper
+             if (this == DEFAULT) {
+                 return warning == null || warning.value();
+             }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/World.java
@@ -1502,6 +1722,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String getDefaultTitle() {
          return title;
      }
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+  * <p>
+  * Care should be taken to check {@link #isAsynchronous()} and treat the event
+  * appropriately.
++ *
++ * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
+  */
++@Deprecated // Paper
++@org.bukkit.Warning(value = false, reason = "Don't nag on old event yet") // Paper
+ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancel = false;
 diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/player/AsyncPlayerPreLoginEvent.java
@@ -1633,6 +1869,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+  *     Listening to this event forces chat to wait for the main thread which
+  *     causes delays for chat. {@link AsyncPlayerChatEvent} is the encouraged
+  *     alternative for thread safe implementations.
++ * @deprecated use {@link io.papermc.paper.event.player.ChatEvent} instead
+  */
+ @Deprecated
+ @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
+diff --git a/src/main/java/org/bukkit/event/player/PlayerEvent.java b/src/main/java/org/bukkit/event/player/PlayerEvent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerEvent.java
+@@ -0,0 +0,0 @@ public abstract class PlayerEvent extends Event {
+         player = who;
+     }
+ 
+-    PlayerEvent(@NotNull final Player who, boolean async) {
++    public PlayerEvent(@NotNull final Player who, boolean async) { // Paper - public
+         super(async);
+         player = who;
+ 
 diff --git a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java b/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerJoinEvent.java
