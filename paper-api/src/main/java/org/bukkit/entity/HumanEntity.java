@@ -452,4 +452,107 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return True if item was dropped successfully
      */
     public boolean dropItem(boolean dropAll);
+
+    /**
+     * Gets the players current exhaustion level.
+     * <p>
+     * Exhaustion controls how fast the food level drops. While you have a
+     * certain amount of exhaustion, your saturation will drop to zero, and
+     * then your food will drop to zero.
+     *
+     * @return Exhaustion level
+     */
+    public float getExhaustion();
+
+    /**
+     * Sets the players current exhaustion level
+     *
+     * @param value Exhaustion level
+     */
+    public void setExhaustion(float value);
+
+    /**
+     * Gets the players current saturation level.
+     * <p>
+     * Saturation is a buffer for food level. Your food level will not drop if
+     * you are saturated {@literal >} 0.
+     *
+     * @return Saturation level
+     */
+    public float getSaturation();
+
+    /**
+     * Sets the players current saturation level
+     *
+     * @param value Saturation level
+     */
+    public void setSaturation(float value);
+
+    /**
+     * Gets the players current food level
+     *
+     * @return Food level
+     */
+    public int getFoodLevel();
+
+    /**
+     * Sets the players current food level
+     *
+     * @param value New food level
+     */
+    public void setFoodLevel(int value);
+
+    /**
+     * Get the regeneration rate (1 health per x ticks) of
+     * the HumanEntity when they have saturation and
+     * their food level is >= 20. Default is 10.
+     *
+     * @return the regeneration rate
+     */
+    public int getSaturatedRegenRate();
+
+    /**
+     * Set the regeneration rate (1 health per x ticks) of
+     * the HumanEntity when they have saturation and
+     * their food level is >= 20. Default is 10.
+     * Not affected if the world's difficulty is peaceful.
+     *
+     * @param ticks the amount of ticks to gain 1 health.
+     */
+    public void setSaturatedRegenRate(int ticks);
+
+    /**
+     * Get the regeneration rate (1 health per x ticks) of
+     * the HumanEntity when they have no saturation and
+     * their food level is >= 18. Default is 80.
+     *
+     * @return the regeneration rate
+     */
+    public int getUnsaturatedRegenRate();
+
+    /**
+     * Get the regeneration rate (1 health per x ticks) of
+     * the HumanEntity when they have no saturation and
+     * their food level is >= 18. Default is 80.
+     * Not affected if the world's difficulty is peaceful.
+     *
+     * @param ticks the amount of ticks to gain 1 health.
+     */
+    public void setUnsaturatedRegenRate(int ticks);
+
+    /**
+     * Get the starvation rate (1 health per x ticks) of
+     * the HumanEntity. Default is 80.
+     *
+     * @return the starvation rate
+     */
+    public int getStarvationRate();
+
+    /**
+     * Get the starvation rate (1 health per x ticks) of
+     * the HumanEntity. Default is 80.
+     *
+     * @param ticks the amount of ticks to lose 1 health
+     */
+    public void setStarvationRate(int ticks);
 }
