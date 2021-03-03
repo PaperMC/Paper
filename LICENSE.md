@@ -47,4 +47,5 @@ Nassim Jahnke <nassim@njahnke.dev>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
+Bjarne Koll <git@lynxplay.dev>
 ```
