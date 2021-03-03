@@ -505,7 +505,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the regeneration rate (1 health per x ticks) of
      * the HumanEntity when they have saturation and
-     * their food level is >= 20. Default is 10.
+     * their food level is {@literal >=} 20. Default is 10.
      *
      * @return the regeneration rate
      */
@@ -514,7 +514,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Set the regeneration rate (1 health per x ticks) of
      * the HumanEntity when they have saturation and
-     * their food level is >= 20. Default is 10.
+     * their food level is {@literal >=} 20. Default is 10.
      * Not affected if the world's difficulty is peaceful.
      *
      * @param ticks the amount of ticks to gain 1 health.
@@ -524,7 +524,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the regeneration rate (1 health per x ticks) of
      * the HumanEntity when they have no saturation and
-     * their food level is >= 18. Default is 80.
+     * their food level is {@literal >=} 18. Default is 80.
      *
      * @return the regeneration rate
      */
@@ -533,7 +533,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the regeneration rate (1 health per x ticks) of
      * the HumanEntity when they have no saturation and
-     * their food level is >= 18. Default is 80.
+     * their food level is {@literal >=} 18. Default is 80.
      * Not affected if the world's difficulty is peaceful.
      *
      * @param ticks the amount of ticks to gain 1 health.
