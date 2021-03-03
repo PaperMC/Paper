@@ -574,4 +574,64 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public boolean dropItem(boolean dropAll) {
         return getHandle().dropItem(dropAll);
     }
+
+    @Override
+    public float getExhaustion() {
+        return getHandle().getFoodData().exhaustionLevel;
+    }
+
+    @Override
+    public void setExhaustion(float value) {
+        getHandle().getFoodData().exhaustionLevel = value;
+    }
+
+    @Override
+    public float getSaturation() {
+        return getHandle().getFoodData().saturationLevel;
+    }
+
+    @Override
+    public void setSaturation(float value) {
+        getHandle().getFoodData().saturationLevel = value;
+    }
+
+    @Override
+    public int getFoodLevel() {
+        return getHandle().getFoodData().foodLevel;
+    }
+
+    @Override
+    public void setFoodLevel(int value) {
+        getHandle().getFoodData().foodLevel = value;
+    }
+
+    @Override
+    public int getSaturatedRegenRate() {
+        return getHandle().getFoodData().saturatedRegenRate;
+    }
+
+    @Override
+    public void setSaturatedRegenRate(int i) {
+        getHandle().getFoodData().saturatedRegenRate = i;
+    }
+
+    @Override
+    public int getUnsaturatedRegenRate() {
+        return getHandle().getFoodData().unsaturatedRegenRate;
+    }
+
+    @Override
+    public void setUnsaturatedRegenRate(int i) {
+        getHandle().getFoodData().unsaturatedRegenRate = i;
+    }
+
+    @Override
+    public int getStarvationRate() {
+        return getHandle().getFoodData().starvationRate;
+    }
+
+    @Override
+    public void setStarvationRate(int i) {
+        getHandle().getFoodData().starvationRate = i;
+    }
 }
