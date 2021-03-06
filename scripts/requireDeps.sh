@@ -14,11 +14,8 @@ if [ -z "${1:-}" ]; then
     _is_dep_available mvn
     _is_dep_available curl
 
-    # Ensure we don't have a JAVA_HOME set first.
-    # Maven should work fine without the JAVA_HOME var as long as the JDK is on the PATH.
-    if [ -z "${JAVA_HOME:-}" ]; then
-        _is_dep_available javac "was not found; you can download the JDK from https://adoptopenjdk.net/ or via your package manager"
-    fi
+    _is_dep_available javac "was not found; you can download the JDK from https://adoptopenjdk.net/ or via your package manager"
+    _is_dep_available jar "was not found; you can download the JDK from https://adoptopenjdk.net/ or via your package manager"
 else
     # Require all dependencies provided.
     for dep in $@; do
