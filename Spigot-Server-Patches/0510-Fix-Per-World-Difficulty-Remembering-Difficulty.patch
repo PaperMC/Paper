@@ -39,29 +39,32 @@ index f5792b999ce42acb13ae9a62ceb2ddec39abe209..5504facd2e453238caa71d98743be541
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d0ce4b96174f85c545a457fe864c7ebadc727ade..ca417825eb0827caad817f65b5132f1de37e3679 100644
+index d0ce4b96174f85c545a457fe864c7ebadc727ade..fc4561e970dfed4ffe5792b7b739e290ae3cadee 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1524,11 +1524,14 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1524,11 +1524,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          }
      }
  
 -    public void a(EnumDifficulty enumdifficulty, boolean flag) {
-+    // Paper start - fix per world difficulty
-+    public void a(WorldServer world, EnumDifficulty enumdifficulty, boolean flag) {
-+        WorldDataServer worldData = world.worldDataServer;
-         if (flag || !this.saveData.isDifficultyLocked()) {
-             this.saveData.setDifficulty(this.saveData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
+-        if (flag || !this.saveData.isDifficultyLocked()) {
+-            this.saveData.setDifficulty(this.saveData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
 -            this.updateSpawnFlags();
 -            this.getPlayerList().getPlayers().forEach(this::b);
-+            world.setSpawnFlags(worldData.getDifficulty() != EnumDifficulty.PEACEFUL && ((DedicatedServer)this).propertyManager.getProperties().spawnMonsters, this.getSpawnAnimals());
-+            //this.getPlayerList().getPlayers().forEach(this::b);
++    // Paper start - fix per world difficulty
++    public void setWorldDifficulty(WorldServer world, EnumDifficulty enumdifficulty, boolean forcefullySet) { this.a(world, enumdifficulty, forcefullySet); }
++    public void a(WorldServer world, EnumDifficulty enumdifficulty, boolean flag) {
++        WorldDataServer worldData = world.worldDataServer;
++        if (flag || !worldData.isDifficultyLocked()) {
++            worldData.setDifficulty(worldData.isHardcore() ? EnumDifficulty.HARD : enumdifficulty);
++            world.setSpawnFlags(worldData.getDifficulty() != EnumDifficulty.PEACEFUL && ((DedicatedServer) this).propertyManager.getProperties().spawnMonsters, this.getSpawnAnimals());
++            //this.getPlayerList().getPlayers().forEach(this::b); // Commented: WorldDataServer#setDifficulty handles updating players' difficulties
 +            // Paper end
          }
      }
  
 diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 3bce154babc74a63b5b9b3009c5b96aa4bdd9bd0..e4787193d9d18ba32e60f4507aa7f138e068e0a6 100644
+index 439b460216c90ff4e269240217d94e52d73d5132..61e6fc80fba8dbd0216ddcc25a5f287f7fad068d 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 @@ -2883,7 +2883,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
