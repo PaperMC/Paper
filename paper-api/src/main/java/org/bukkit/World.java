@@ -472,6 +472,18 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public Item dropItem(@NotNull Location location, @NotNull ItemStack item);
 
     /**
+     * Drops an item at the specified {@link Location}
+     * Note that functions will run before the entity is spawned
+     *
+     * @param location Location to drop the item
+     * @param item ItemStack to drop
+     * @param function the function to be run before the entity is spawned.
+     * @return ItemDrop entity created as a result of this method
+     */
+    @NotNull
+    public Item dropItem(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<Item> function);
+
+    /**
      * Drops an item at the specified {@link Location} with a random offset
      *
      * @param location Location to drop the item
@@ -480,6 +492,18 @@ public interface World extends PluginMessageRecipient, Metadatable {
      */
     @NotNull
     public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item);
+
+    /**
+     * Drops an item at the specified {@link Location} with a random offset
+     * Note that functions will run before the entity is spawned
+     *
+     * @param location Location to drop the item
+     * @param item ItemStack to drop
+     * @param function the function to be run before the entity is spawned.
+     * @return ItemDrop entity created as a result of this method
+     */
+    @NotNull
+    public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<Item> function);
 
     /**
      * Creates an {@link Arrow} entity at the given {@link Location}
