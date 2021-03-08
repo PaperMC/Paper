@@ -21,12 +21,12 @@ public abstract class CraftWall extends CraftBlockData implements Wall {
     }
 
     @Override
-    public Height getHeight(org.bukkit.block.BlockFace face) {
-        return get(HEIGHTS[face.ordinal()], Height.class);
+    public org.bukkit.block.data.type.Wall.Height getHeight(org.bukkit.block.BlockFace face) {
+        return get(HEIGHTS[face.ordinal()], org.bukkit.block.data.type.Wall.Height.class);
     }
 
     @Override
-    public void setHeight(org.bukkit.block.BlockFace face, Height height) {
+    public void setHeight(org.bukkit.block.BlockFace face, org.bukkit.block.data.type.Wall.Height height) {
         set(HEIGHTS[face.ordinal()], height);
     }
 }

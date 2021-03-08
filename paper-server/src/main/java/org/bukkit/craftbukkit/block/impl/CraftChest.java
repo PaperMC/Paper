@@ -18,12 +18,12 @@ public final class CraftChest extends org.bukkit.craftbukkit.block.data.CraftBlo
     private static final net.minecraft.server.BlockStateEnum<?> TYPE = getEnum(net.minecraft.server.BlockChest.class, "type");
 
     @Override
-    public Type getType() {
-        return get(TYPE, Type.class);
+    public org.bukkit.block.data.type.Chest.Type getType() {
+        return get(TYPE, org.bukkit.block.data.type.Chest.Type.class);
     }
 
     @Override
-    public void setType(Type type) {
+    public void setType(org.bukkit.block.data.type.Chest.Type type) {
         set(TYPE, type);
     }
 

@@ -15,7 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 
-
 public class CompositeSerialization extends AbstractTestingBase {
 
     public YamlConfiguration getConfig() {

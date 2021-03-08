@@ -18,12 +18,12 @@ public final class CraftBamboo extends org.bukkit.craftbukkit.block.data.CraftBl
     private static final net.minecraft.server.BlockStateEnum<?> LEAVES = getEnum(net.minecraft.server.BlockBamboo.class, "leaves");
 
     @Override
-    public Leaves getLeaves() {
-        return get(LEAVES, Leaves.class);
+    public org.bukkit.block.data.type.Bamboo.Leaves getLeaves() {
+        return get(LEAVES, org.bukkit.block.data.type.Bamboo.Leaves.class);
     }
 
     @Override
-    public void setLeaves(Leaves leaves) {
+    public void setLeaves(org.bukkit.block.data.type.Bamboo.Leaves leaves) {
         set(LEAVES, leaves);
     }
 

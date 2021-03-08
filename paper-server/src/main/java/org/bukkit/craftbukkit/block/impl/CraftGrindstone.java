@@ -37,12 +37,12 @@ public final class CraftGrindstone extends org.bukkit.craftbukkit.block.data.Cra
     private static final net.minecraft.server.BlockStateEnum<?> ATTACH_FACE = getEnum(net.minecraft.server.BlockGrindstone.class, "face");
 
     @Override
-    public AttachedFace getAttachedFace() {
-        return get(ATTACH_FACE, AttachedFace.class);
+    public org.bukkit.block.data.FaceAttachable.AttachedFace getAttachedFace() {
+        return get(ATTACH_FACE, org.bukkit.block.data.FaceAttachable.AttachedFace.class);
     }
 
     @Override
-    public void setAttachedFace(AttachedFace face) {
+    public void setAttachedFace(org.bukkit.block.data.FaceAttachable.AttachedFace face) {
         set(ATTACH_FACE, face);
     }
 }

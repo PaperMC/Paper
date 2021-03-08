@@ -1,4 +1,3 @@
-
 package org.bukkit.map;
 
 import java.awt.Color;

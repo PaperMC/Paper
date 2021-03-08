@@ -8,12 +8,12 @@ public abstract class CraftStructureBlock extends CraftBlockData implements Stru
     private static final net.minecraft.server.BlockStateEnum<?> MODE = getEnum("mode");
 
     @Override
-    public Mode getMode() {
-        return get(MODE, Mode.class);
+    public org.bukkit.block.data.type.StructureBlock.Mode getMode() {
+        return get(MODE, org.bukkit.block.data.type.StructureBlock.Mode.class);
     }
 
     @Override
-    public void setMode(Mode mode) {
+    public void setMode(org.bukkit.block.data.type.StructureBlock.Mode mode) {
         set(MODE, mode);
     }
 }

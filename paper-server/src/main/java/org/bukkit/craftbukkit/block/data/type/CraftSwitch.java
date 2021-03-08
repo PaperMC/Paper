@@ -8,12 +8,12 @@ public abstract class CraftSwitch extends CraftBlockData implements Switch {
     private static final net.minecraft.server.BlockStateEnum<?> FACE = getEnum("face");
 
     @Override
-    public Face getFace() {
-        return get(FACE, Face.class);
+    public org.bukkit.block.data.type.Switch.Face getFace() {
+        return get(FACE, org.bukkit.block.data.type.Switch.Face.class);
     }
 
     @Override
-    public void setFace(Face face) {
+    public void setFace(org.bukkit.block.data.type.Switch.Face face) {
         set(FACE, face);
     }
 }

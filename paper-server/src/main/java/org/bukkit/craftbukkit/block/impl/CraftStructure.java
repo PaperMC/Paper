@@ -18,12 +18,12 @@ public final class CraftStructure extends org.bukkit.craftbukkit.block.data.Craf
     private static final net.minecraft.server.BlockStateEnum<?> MODE = getEnum(net.minecraft.server.BlockStructure.class, "mode");
 
     @Override
-    public Mode getMode() {
-        return get(MODE, Mode.class);
+    public org.bukkit.block.data.type.StructureBlock.Mode getMode() {
+        return get(MODE, org.bukkit.block.data.type.StructureBlock.Mode.class);
     }
 
     @Override
-    public void setMode(Mode mode) {
+    public void setMode(org.bukkit.block.data.type.StructureBlock.Mode mode) {
         set(MODE, mode);
     }
 }

@@ -7,6 +7,7 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.AbstractArrow.PickupStatus;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.projectiles.ProjectileSource;

@@ -18,12 +18,12 @@ public final class CraftStairs extends org.bukkit.craftbukkit.block.data.CraftBl
     private static final net.minecraft.server.BlockStateEnum<?> SHAPE = getEnum(net.minecraft.server.BlockStairs.class, "shape");
 
     @Override
-    public Shape getShape() {
-        return get(SHAPE, Shape.class);
+    public org.bukkit.block.data.type.Stairs.Shape getShape() {
+        return get(SHAPE, org.bukkit.block.data.type.Stairs.Shape.class);
     }
 
     @Override
-    public void setShape(Shape shape) {
+    public void setShape(org.bukkit.block.data.type.Stairs.Shape shape) {
         set(SHAPE, shape);
     }
 
@@ -32,12 +32,12 @@ public final class CraftStairs extends org.bukkit.craftbukkit.block.data.CraftBl
     private static final net.minecraft.server.BlockStateEnum<?> HALF = getEnum(net.minecraft.server.BlockStairs.class, "half");
 
     @Override
-    public Half getHalf() {
-        return get(HALF, Half.class);
+    public org.bukkit.block.data.Bisected.Half getHalf() {
+        return get(HALF, org.bukkit.block.data.Bisected.Half.class);
     }
 
     @Override
-    public void setHalf(Half half) {
+    public void setHalf(org.bukkit.block.data.Bisected.Half half) {
         set(HALF, half);
     }
 

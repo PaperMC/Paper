@@ -18,12 +18,12 @@ public final class CraftPistonMoving extends org.bukkit.craftbukkit.block.data.C
     private static final net.minecraft.server.BlockStateEnum<?> TYPE = getEnum(net.minecraft.server.BlockPistonMoving.class, "type");
 
     @Override
-    public Type getType() {
-        return get(TYPE, Type.class);
+    public org.bukkit.block.data.type.TechnicalPiston.Type getType() {
+        return get(TYPE, org.bukkit.block.data.type.TechnicalPiston.Type.class);
     }
 
     @Override
-    public void setType(Type type) {
+    public void setType(org.bukkit.block.data.type.TechnicalPiston.Type type) {
         set(TYPE, type);
     }
 

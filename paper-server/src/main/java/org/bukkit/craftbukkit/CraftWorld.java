@@ -106,6 +106,7 @@ import org.bukkit.Sound;
 import org.bukkit.StructureType;
 import org.bukkit.TreeType;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;

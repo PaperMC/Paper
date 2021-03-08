@@ -18,12 +18,12 @@ public final class CraftJigsaw extends org.bukkit.craftbukkit.block.data.CraftBl
     private static final net.minecraft.server.BlockStateEnum<?> ORIENTATION = getEnum(net.minecraft.server.BlockJigsaw.class, "orientation");
 
     @Override
-    public Orientation getOrientation() {
-        return get(ORIENTATION, Orientation.class);
+    public org.bukkit.block.data.type.Jigsaw.Orientation getOrientation() {
+        return get(ORIENTATION, org.bukkit.block.data.type.Jigsaw.Orientation.class);
     }
 
     @Override
-    public void setOrientation(Orientation orientation) {
+    public void setOrientation(org.bukkit.block.data.type.Jigsaw.Orientation orientation) {
         set(ORIENTATION, orientation);
     }
 }

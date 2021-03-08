@@ -5,6 +5,7 @@ import net.minecraft.server.EntityPanda;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Panda;
+import org.bukkit.entity.Panda.Gene;
 
 public class CraftPanda extends CraftAnimals implements Panda {
 

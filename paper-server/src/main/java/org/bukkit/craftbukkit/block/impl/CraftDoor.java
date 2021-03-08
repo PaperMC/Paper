@@ -18,12 +18,12 @@ public final class CraftDoor extends org.bukkit.craftbukkit.block.data.CraftBloc
     private static final net.minecraft.server.BlockStateEnum<?> HINGE = getEnum(net.minecraft.server.BlockDoor.class, "hinge");
 
     @Override
-    public Hinge getHinge() {
-        return get(HINGE, Hinge.class);
+    public org.bukkit.block.data.type.Door.Hinge getHinge() {
+        return get(HINGE, org.bukkit.block.data.type.Door.Hinge.class);
     }
 
     @Override
-    public void setHinge(Hinge hinge) {
+    public void setHinge(org.bukkit.block.data.type.Door.Hinge hinge) {
         set(HINGE, hinge);
     }
 
@@ -32,12 +32,12 @@ public final class CraftDoor extends org.bukkit.craftbukkit.block.data.CraftBloc
     private static final net.minecraft.server.BlockStateEnum<?> HALF = getEnum(net.minecraft.server.BlockDoor.class, "half");
 
     @Override
-    public Half getHalf() {
-        return get(HALF, Half.class);
+    public org.bukkit.block.data.Bisected.Half getHalf() {
+        return get(HALF, org.bukkit.block.data.Bisected.Half.class);
     }
 
     @Override
-    public void setHalf(Half half) {
+    public void setHalf(org.bukkit.block.data.Bisected.Half half) {
         set(HALF, half);
     }
 

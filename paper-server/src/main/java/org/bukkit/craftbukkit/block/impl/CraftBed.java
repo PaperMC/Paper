@@ -19,12 +19,12 @@ public final class CraftBed extends org.bukkit.craftbukkit.block.data.CraftBlock
     private static final net.minecraft.server.BlockStateBoolean OCCUPIED = getBoolean(net.minecraft.server.BlockBed.class, "occupied");
 
     @Override
-    public Part getPart() {
-        return get(PART, Part.class);
+    public org.bukkit.block.data.type.Bed.Part getPart() {
+        return get(PART, org.bukkit.block.data.type.Bed.Part.class);
     }
 
     @Override
-    public void setPart(Part part) {
+    public void setPart(org.bukkit.block.data.type.Bed.Part part) {
         set(PART, part);
     }
 

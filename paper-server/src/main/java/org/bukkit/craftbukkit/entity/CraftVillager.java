@@ -14,6 +14,8 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Villager.Profession;
+import org.bukkit.entity.Villager.Type;
 
 public class CraftVillager extends CraftAbstractVillager implements Villager {
 

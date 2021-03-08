@@ -12,6 +12,7 @@ import net.minecraft.server.EntityRaider;
 import net.minecraft.server.World;
 import org.bukkit.Location;
 import org.bukkit.Raid;
+import org.bukkit.Raid.RaidStatus;
 import org.bukkit.entity.Raider;
 
 public final class CraftRaid implements Raid {

@@ -5,6 +5,7 @@ import net.minecraft.server.EntityParrot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Parrot;
+import org.bukkit.entity.Parrot.Variant;
 
 public class CraftParrot extends CraftTameableAnimal implements Parrot {
 

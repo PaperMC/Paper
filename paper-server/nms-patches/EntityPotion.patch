@@ -1,9 +1,9 @@
 --- a/net/minecraft/server/EntityPotion.java
 +++ b/net/minecraft/server/EntityPotion.java
-@@ -4,6 +4,13 @@
- import java.util.List;
+@@ -5,6 +5,14 @@
  import java.util.function.Predicate;
  import javax.annotation.Nullable;
+ 
 +// CraftBukkit start
 +import java.util.HashMap;
 +import java.util.Map;
@@ -11,10 +11,11 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.entity.LivingEntity;
 +// CraftBukkit end
- 
++
  public class EntityPotion extends EntityProjectileThrowable {
  
-@@ -69,7 +76,7 @@
+     public static final Predicate<EntityLiving> b = EntityLiving::dO;
+@@ -69,7 +77,7 @@
  
              if (flag) {
                  this.splash();
@@ -23,7 +24,7 @@
                  if (this.isLingering()) {
                      this.a(itemstack, potionregistry);
                  } else {
-@@ -106,6 +113,7 @@
+@@ -106,6 +114,7 @@
      private void a(List<MobEffect> list, @Nullable Entity entity) {
          AxisAlignedBB axisalignedbb = this.getBoundingBox().grow(4.0D, 2.0D, 4.0D);
          List<EntityLiving> list1 = this.world.a(EntityLiving.class, axisalignedbb);
@@ -31,7 +32,7 @@
  
          if (!list1.isEmpty()) {
              Iterator iterator = list1.iterator();
-@@ -123,21 +131,46 @@
+@@ -123,21 +132,46 @@
                              d1 = 1.0D;
                          }
  
@@ -42,20 +43,7 @@
 +                }
 +            }
 +        }
- 
--                        while (iterator1.hasNext()) {
--                            MobEffect mobeffect = (MobEffect) iterator1.next();
--                            MobEffectList mobeffectlist = mobeffect.getMobEffect();
--
--                            if (mobeffectlist.isInstant()) {
--                                mobeffectlist.applyInstantEffect(this, this.getShooter(), entityliving, mobeffect.getAmplifier(), d1);
--                            } else {
--                                int i = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
--
--                                if (i > 20) {
--                                    entityliving.addEffect(new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isShowParticles()));
--                                }
--                            }
++
 +        org.bukkit.event.entity.PotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPotionSplashEvent(this, affected);
 +        if (!event.isCancelled() && list != null && !list.isEmpty()) { // do not process effects if there are no effects to process
 +            for (LivingEntity victim : event.getAffectedEntities()) {
@@ -86,13 +74,26 @@
 +                        mobeffectlist.applyInstantEffect(this, this.getShooter(), entityliving, mobeffect.getAmplifier(), d1);
 +                    } else {
 +                        int i = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
-+
+ 
+-                        while (iterator1.hasNext()) {
+-                            MobEffect mobeffect = (MobEffect) iterator1.next();
+-                            MobEffectList mobeffectlist = mobeffect.getMobEffect();
+-
+-                            if (mobeffectlist.isInstant()) {
+-                                mobeffectlist.applyInstantEffect(this, this.getShooter(), entityliving, mobeffect.getAmplifier(), d1);
+-                            } else {
+-                                int i = (int) (d1 * (double) mobeffect.getDuration() + 0.5D);
+-
+-                                if (i > 20) {
+-                                    entityliving.addEffect(new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isShowParticles()));
+-                                }
+-                            }
 +                        if (i > 20) {
 +                            entityliving.addEffect(new MobEffect(mobeffectlist, i, mobeffect.getAmplifier(), mobeffect.isAmbient(), mobeffect.isShowParticles()), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH); // CraftBukkit
                          }
                      }
                  }
-@@ -173,7 +206,14 @@
+@@ -173,7 +207,14 @@
              entityareaeffectcloud.setColor(nbttagcompound.getInt("CustomPotionColor"));
          }
  
@@ -108,7 +109,7 @@
      }
  
      public boolean isLingering() {
-@@ -184,11 +224,19 @@
+@@ -184,11 +225,19 @@
          IBlockData iblockdata = this.world.getType(blockposition);
  
          if (iblockdata.a((Tag) TagsBlock.FIRE)) {

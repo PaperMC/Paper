@@ -32,17 +32,17 @@ public final class CraftMinecartDetector extends org.bukkit.craftbukkit.block.da
     private static final net.minecraft.server.BlockStateEnum<?> SHAPE = getEnum(net.minecraft.server.BlockMinecartDetector.class, "shape");
 
     @Override
-    public Shape getShape() {
-        return get(SHAPE, Shape.class);
+    public org.bukkit.block.data.Rail.Shape getShape() {
+        return get(SHAPE, org.bukkit.block.data.Rail.Shape.class);
     }
 
     @Override
-    public void setShape(Shape shape) {
+    public void setShape(org.bukkit.block.data.Rail.Shape shape) {
         set(SHAPE, shape);
     }
 
     @Override
-    public java.util.Set<Shape> getShapes() {
-        return getValues(SHAPE, Shape.class);
+    public java.util.Set<org.bukkit.block.data.Rail.Shape> getShapes() {
+        return getValues(SHAPE, org.bukkit.block.data.Rail.Shape.class);
     }
 }

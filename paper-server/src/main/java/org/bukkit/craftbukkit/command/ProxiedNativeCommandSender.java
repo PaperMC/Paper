@@ -1,4 +1,3 @@
-
 package org.bukkit.craftbukkit.command;
 
 import java.util.Set;

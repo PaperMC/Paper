@@ -8,12 +8,12 @@ public abstract class CraftChest extends CraftBlockData implements Chest {
     private static final net.minecraft.server.BlockStateEnum<?> TYPE = getEnum("type");
 
     @Override
-    public Type getType() {
-        return get(TYPE, Type.class);
+    public org.bukkit.block.data.type.Chest.Type getType() {
+        return get(TYPE, org.bukkit.block.data.type.Chest.Type.class);
     }
 
     @Override
-    public void setType(Type type) {
+    public void setType(org.bukkit.block.data.type.Chest.Type type) {
         set(TYPE, type);
     }
 }

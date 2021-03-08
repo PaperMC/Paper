@@ -7,6 +7,7 @@ import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TropicalFish;
+import org.bukkit.entity.TropicalFish.Pattern;
 
 public class CraftTropicalFish extends CraftFish implements TropicalFish {
 

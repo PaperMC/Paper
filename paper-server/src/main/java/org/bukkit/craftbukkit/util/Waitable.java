@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.util;
 
 import java.util.concurrent.ExecutionException;
 
-
 public abstract class Waitable<T> implements Runnable {
     private enum Status {
         WAITING,

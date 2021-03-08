@@ -18,12 +18,12 @@ public final class CraftRedstoneComparator extends org.bukkit.craftbukkit.block.
     private static final net.minecraft.server.BlockStateEnum<?> MODE = getEnum(net.minecraft.server.BlockRedstoneComparator.class, "mode");
 
     @Override
-    public Mode getMode() {
-        return get(MODE, Mode.class);
+    public org.bukkit.block.data.type.Comparator.Mode getMode() {
+        return get(MODE, org.bukkit.block.data.type.Comparator.Mode.class);
     }
 
     @Override
-    public void setMode(Mode mode) {
+    public void setMode(org.bukkit.block.data.type.Comparator.Mode mode) {
         set(MODE, mode);
     }
 

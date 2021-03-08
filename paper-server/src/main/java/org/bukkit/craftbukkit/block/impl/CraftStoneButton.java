@@ -18,12 +18,12 @@ public final class CraftStoneButton extends org.bukkit.craftbukkit.block.data.Cr
     private static final net.minecraft.server.BlockStateEnum<?> FACE = getEnum(net.minecraft.server.BlockStoneButton.class, "face");
 
     @Override
-    public Face getFace() {
-        return get(FACE, Face.class);
+    public org.bukkit.block.data.type.Switch.Face getFace() {
+        return get(FACE, org.bukkit.block.data.type.Switch.Face.class);
     }
 
     @Override
-    public void setFace(Face face) {
+    public void setFace(org.bukkit.block.data.type.Switch.Face face) {
         set(FACE, face);
     }
 
@@ -51,12 +51,12 @@ public final class CraftStoneButton extends org.bukkit.craftbukkit.block.data.Cr
     private static final net.minecraft.server.BlockStateEnum<?> ATTACH_FACE = getEnum(net.minecraft.server.BlockStoneButton.class, "face");
 
     @Override
-    public AttachedFace getAttachedFace() {
-        return get(ATTACH_FACE, AttachedFace.class);
+    public org.bukkit.block.data.FaceAttachable.AttachedFace getAttachedFace() {
+        return get(ATTACH_FACE, org.bukkit.block.data.FaceAttachable.AttachedFace.class);
     }
 
     @Override
-    public void setAttachedFace(AttachedFace face) {
+    public void setAttachedFace(org.bukkit.block.data.FaceAttachable.AttachedFace face) {
         set(ATTACH_FACE, face);
     }
 

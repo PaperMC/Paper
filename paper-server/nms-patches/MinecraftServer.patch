@@ -1,19 +1,12 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -9,6 +9,8 @@
- import com.mojang.authlib.GameProfileRepository;
- import com.mojang.authlib.minecraft.MinecraftSessionService;
- import com.mojang.datafixers.DataFixer;
-+import com.mojang.serialization.DynamicOps;
-+import com.mojang.serialization.Lifecycle;
- import io.netty.buffer.ByteBuf;
- import io.netty.buffer.ByteBufOutputStream;
- import io.netty.buffer.Unpooled;
-@@ -54,6 +56,15 @@
- import org.apache.commons.lang3.Validate;
+@@ -55,6 +55,18 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
+ 
 +// CraftBukkit start
++import com.mojang.serialization.DynamicOps;
++import com.mojang.serialization.Lifecycle;
 +import com.google.common.collect.ImmutableSet;
 +import jline.console.ConsoleReader;
 +import joptsimple.OptionSet;
@@ -22,10 +15,11 @@
 +import org.bukkit.craftbukkit.Main;
 +import org.bukkit.event.server.ServerLoadEvent;
 +// CraftBukkit end
- 
++
  public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTask> implements IMojangStatistics, ICommandListener, AutoCloseable {
  
-@@ -124,6 +135,20 @@
+     public static final Logger LOGGER = LogManager.getLogger();
+@@ -124,6 +136,20 @@
      private final DefinedStructureManager ak;
      protected SaveData saveData;
  
@@ -46,7 +40,7 @@
      public static <S extends MinecraftServer> S a(Function<Thread, S> function) {
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new Thread(() -> {
-@@ -133,21 +158,21 @@
+@@ -133,21 +159,21 @@
          thread.setUncaughtExceptionHandler((thread1, throwable) -> {
              MinecraftServer.LOGGER.error(throwable);
          });
@@ -71,7 +65,7 @@
          this.isRunning = true;
          this.h = new long[100];
          this.K = "";
-@@ -173,7 +198,34 @@
+@@ -173,7 +199,34 @@
          this.ak = new DefinedStructureManager(datapackresources.h(), convertable_conversionsession, datafixer);
          this.serverThread = thread;
          this.executorService = SystemUtils.f();
@@ -106,7 +100,7 @@
  
      private void initializeScoreboards(WorldPersistentData worldpersistentdata) {
          PersistentScoreboard persistentscoreboard = (PersistentScoreboard) worldpersistentdata.a(PersistentScoreboard::new, "scoreboard");
-@@ -186,7 +238,7 @@
+@@ -186,7 +239,7 @@
  
      public static void convertWorld(Convertable.ConversionSession convertable_conversionsession) {
          if (convertable_conversionsession.isConvertable()) {
@@ -115,7 +109,7 @@
              convertable_conversionsession.convert(new IProgressUpdate() {
                  private long a = SystemUtils.getMonotonicMillis();
  
-@@ -209,45 +261,184 @@
+@@ -209,45 +262,184 @@
  
      }
  
@@ -199,7 +193,8 @@
 +                }
 +                MinecraftServer.convertWorld(worldSession); // Run conversion now
 +            }
-+
+ 
+-        this.a(worldloadlistener);
 +            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
 +
 +            IRegistryCustom.Dimension iregistrycustom_dimension = this.customRegistry;
@@ -251,8 +246,7 @@
 +            }
 +
 +            ResourceKey<World> worldKey = ResourceKey.a(IRegistry.L, dimensionKey.a());
- 
--        this.a(worldloadlistener);
++
 +            if (worldId == 0) {
 +                this.saveData = worlddata;
 +                this.saveData.setGameType(((DedicatedServer) this).getDedicatedServerProperties().gamemode); // From DedicatedServer.init
@@ -331,7 +325,7 @@
          WorldBorder worldborder = worldserver.getWorldBorder();
  
          worldborder.a(iworlddataserver.r());
-@@ -272,31 +463,8 @@
+@@ -272,31 +464,8 @@
  
              iworlddataserver.c(true);
          }
@@ -364,7 +358,7 @@
  
      private static void a(WorldServer worldserver, IWorldDataServer iworlddataserver, boolean flag, boolean flag1, boolean flag2) {
          ChunkGenerator chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
-@@ -312,6 +480,21 @@
+@@ -312,6 +481,21 @@
                  return biomebase.b().b();
              }, random);
              ChunkCoordIntPair chunkcoordintpair = blockposition == null ? new ChunkCoordIntPair(0, 0) : new ChunkCoordIntPair(blockposition);
@@ -386,7 +380,7 @@
  
              if (blockposition == null) {
                  MinecraftServer.LOGGER.warn("Unable to find spawn biome");
-@@ -378,8 +561,15 @@
+@@ -378,8 +562,15 @@
          iworlddataserver.setGameType(EnumGamemode.SPECTATOR);
      }
  
@@ -404,7 +398,7 @@
  
          MinecraftServer.LOGGER.info("Preparing start region for dimension {}", worldserver.getDimensionKey().a());
          BlockPosition blockposition = worldserver.getSpawn();
-@@ -392,17 +582,21 @@
+@@ -392,17 +583,21 @@
          chunkproviderserver.addTicket(TicketType.START, new ChunkCoordIntPair(blockposition), 11, Unit.INSTANCE);
  
          while (chunkproviderserver.b() != 441) {
@@ -435,7 +429,7 @@
  
              if (forcedchunk != null) {
                  LongIterator longiterator = forcedchunk.a().iterator();
-@@ -416,11 +610,18 @@
+@@ -416,11 +611,18 @@
              }
          }
  
@@ -457,7 +451,7 @@
      }
  
      protected void loadResourcesZip() {
-@@ -465,12 +666,16 @@
+@@ -465,12 +667,16 @@
              worldserver.save((IProgressUpdate) null, flag1, worldserver.savingDisabled && !flag2);
          }
  
@@ -474,7 +468,7 @@
          return flag3;
      }
  
-@@ -479,8 +684,29 @@
+@@ -479,8 +685,29 @@
          this.stop();
      }
  
@@ -504,7 +498,7 @@
          if (this.getServerConnection() != null) {
              this.getServerConnection().b();
          }
-@@ -489,6 +715,7 @@
+@@ -489,6 +716,7 @@
              MinecraftServer.LOGGER.info("Saving players");
              this.playerList.savePlayers();
              this.playerList.shutdown();
@@ -512,7 +506,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -566,14 +793,16 @@
+@@ -566,14 +794,16 @@
                  while (this.isRunning) {
                      long i = SystemUtils.getMonotonicMillis() - this.nextTick;
  
@@ -530,7 +524,7 @@
                      this.nextTick += 50L;
                      GameProfilerTick gameprofilertick = GameProfilerTick.a("Server");
  
-@@ -619,6 +848,12 @@
+@@ -619,6 +849,12 @@
              } catch (Throwable throwable1) {
                  MinecraftServer.LOGGER.error("Exception stopping the server", throwable1);
              } finally {
@@ -543,7 +537,7 @@
                  this.exit();
              }
  
-@@ -627,8 +862,15 @@
+@@ -627,8 +863,15 @@
      }
  
      private boolean canSleepForTick() {
@@ -560,7 +554,7 @@
  
      protected void sleepForTick() {
          this.executeAll();
-@@ -734,7 +976,7 @@
+@@ -734,7 +977,7 @@
              this.serverPing.b().a(agameprofile);
          }
  
@@ -569,7 +563,7 @@
              MinecraftServer.LOGGER.debug("Autosave started");
              this.methodProfiler.enter("save");
              this.playerList.savePlayers();
-@@ -764,22 +1006,39 @@
+@@ -764,22 +1007,39 @@
      }
  
      protected void b(BooleanSupplier booleansupplier) {
@@ -609,7 +603,7 @@
  
              this.methodProfiler.enter("tick");
  
-@@ -863,7 +1122,7 @@
+@@ -863,7 +1123,7 @@
      }
  
      public String getServerModName() {
@@ -618,7 +612,7 @@
      }
  
      public CrashReport b(CrashReport crashreport) {
-@@ -1220,16 +1479,17 @@
+@@ -1220,16 +1480,17 @@
  
      public CompletableFuture<Void> a(Collection<String> collection) {
          CompletableFuture<Void> completablefuture = CompletableFuture.supplyAsync(() -> {
@@ -638,7 +632,7 @@
              this.resourcePackRepository.a(collection);
              this.saveData.a(a(this.resourcePackRepository));
              datapackresources.i();
-@@ -1595,6 +1855,22 @@
+@@ -1595,6 +1856,22 @@
  
      }
  

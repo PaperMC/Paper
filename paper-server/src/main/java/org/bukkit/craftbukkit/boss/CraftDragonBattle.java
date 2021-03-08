@@ -7,6 +7,7 @@ import net.minecraft.server.EnumDragonRespawn;
 import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
+import org.bukkit.boss.DragonBattle.RespawnPhase;
 import org.bukkit.entity.EnderDragon;
 
 public class CraftDragonBattle implements DragonBattle {

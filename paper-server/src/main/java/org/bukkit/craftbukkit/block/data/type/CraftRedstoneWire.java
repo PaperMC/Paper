@@ -11,23 +11,23 @@ public abstract class CraftRedstoneWire extends CraftBlockData implements Redsto
     private static final net.minecraft.server.BlockStateEnum<?> WEST = getEnum("west");
 
     @Override
-    public Connection getFace(org.bukkit.block.BlockFace face) {
+    public org.bukkit.block.data.type.RedstoneWire.Connection getFace(org.bukkit.block.BlockFace face) {
         switch (face) {
             case NORTH:
-                return get(NORTH, Connection.class);
+                return get(NORTH, org.bukkit.block.data.type.RedstoneWire.Connection.class);
             case EAST:
-                return get(EAST, Connection.class);
+                return get(EAST, org.bukkit.block.data.type.RedstoneWire.Connection.class);
             case SOUTH:
-                return get(SOUTH, Connection.class);
+                return get(SOUTH, org.bukkit.block.data.type.RedstoneWire.Connection.class);
             case WEST:
-                return get(WEST, Connection.class);
+                return get(WEST, org.bukkit.block.data.type.RedstoneWire.Connection.class);
             default:
                 throw new IllegalArgumentException("Cannot have face " + face);
         }
     }
 
     @Override
-    public void setFace(org.bukkit.block.BlockFace face, Connection connection) {
+    public void setFace(org.bukkit.block.BlockFace face, org.bukkit.block.data.type.RedstoneWire.Connection connection) {
         switch (face) {
             case NORTH:
                 set(NORTH, connection);

@@ -68,6 +68,8 @@ import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.craftbukkit.block.CraftSkull;
 import org.bukkit.craftbukkit.block.CraftSmoker;
 import org.bukkit.craftbukkit.block.CraftStructureBlock;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
