@@ -596,15 +596,28 @@ public class CraftWorld implements World {
 
     @Override
     public org.bukkit.entity.Item dropItem(Location loc, ItemStack item) {
+        return dropItem(loc, item, null);
+    }
+
+    @Override
+    public org.bukkit.entity.Item dropItem(Location loc, ItemStack item, Consumer<org.bukkit.entity.Item> function) {
         Validate.notNull(item, "Cannot drop a Null item.");
         EntityItem entity = new EntityItem(world, loc.getX(), loc.getY(), loc.getZ(), CraftItemStack.asNMSCopy(item));
         entity.pickupDelay = 10;
+        if (function != null) {
+            function.accept((org.bukkit.entity.Item) entity.getBukkitEntity());
+        }
         world.addEntity(entity, SpawnReason.CUSTOM);
         return (org.bukkit.entity.Item) entity.getBukkitEntity();
     }
 
     @Override
     public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item) {
+        return dropItemNaturally(loc, item, null);
+    }
+
+    @Override
+    public org.bukkit.entity.Item dropItemNaturally(Location loc, ItemStack item, Consumer<org.bukkit.entity.Item> function) {
         double xs = (world.random.nextFloat() * 0.5F) + 0.25D;
         double ys = (world.random.nextFloat() * 0.5F) + 0.25D;
         double zs = (world.random.nextFloat() * 0.5F) + 0.25D;
@@ -612,7 +625,7 @@ public class CraftWorld implements World {
         loc.setX(loc.getX() + xs);
         loc.setY(loc.getY() + ys);
         loc.setZ(loc.getZ() + zs);
-        return dropItem(loc, item);
+        return dropItem(loc, item, function);
     }
 
     @Override
