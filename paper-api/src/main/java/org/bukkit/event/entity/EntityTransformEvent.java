@@ -89,7 +89,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
          */
         INFECTION,
         /**
-         * When a entity drowns in water and a new entity spawns.
+         * When an entity drowns in water and a new entity spawns.
          */
         DROWNED,
         /**
@@ -104,6 +104,10 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
          * When a slime splits into multiple smaller slimes.
          */
         SPLIT,
+        /**
+         * When a piglin converts to a zombified piglin.
+         */
+        PIGLIN_ZOMBIFIED,
         /**
          * When reason is unknown.
          */
