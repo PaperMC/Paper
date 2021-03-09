@@ -436,21 +436,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Locale;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
 +import net.kyori.adventure.bossbar.BossBar;
 +import net.kyori.adventure.inventory.Book;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.nbt.api.BinaryTagHolder;
 +import net.kyori.adventure.sound.Sound;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.TranslatableComponent;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 +import net.kyori.adventure.translation.GlobalTranslator;
 +import net.kyori.adventure.util.Codec;
 +import net.minecraft.server.BossBattle;
 +import net.minecraft.server.EnumChatFormat;
 +import net.minecraft.server.IChatBaseComponent;
 +import net.minecraft.server.ItemStack;
++import net.minecraft.server.LocaleLanguage;
 +import net.minecraft.server.MinecraftKey;
 +import net.minecraft.server.MojangsonParser;
 +import net.minecraft.server.NBTTagCompound;
@@ -462,7 +468,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +public final class PaperAdventure {
 +    public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale");
-+    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().hexColors().useUnusualXRepeatedCharacterHexFormat().build();
++    private static final Pattern LOCALIZATION_PATTERN = Pattern.compile("%(?:(\\d+)\\$)?s");
++    public static final ComponentFlattener FLATTENER = ComponentFlattener.basic().toBuilder()
++        .complexMapper(TranslatableComponent.class, (translatable, consumer) -> {
++            final @NonNull String translated = LocaleLanguage.a().a(translatable.key());
++
++            final Matcher matcher = LOCALIZATION_PATTERN.matcher(translated);
++            final List<Component> args = translatable.args();
++            int argPosition = 0;
++            int lastIdx = 0;
++            while (matcher.find()) {
++                // append prior
++                if (lastIdx < matcher.start()) {
++                    consumer.accept(Component.text(translated.substring(lastIdx, matcher.start())));
++                }
++                lastIdx = matcher.end();
++
++                final @Nullable String argIdx = matcher.group(1);
++                // calculate argument position
++                if (argIdx != null) {
++                    try {
++                        final int idx = Integer.parseInt(argIdx);
++                        if (idx < args.size()) {
++                            consumer.accept(args.get(idx));
++                        }
++                    } catch (final NumberFormatException ex) {
++                        // ignore, drop the format placeholder
++                    }
++                } else {
++                    final int idx = argPosition++;
++                    if (idx < args.size()) {
++                        consumer.accept(args.get(idx));
++                    }
++                }
++            }
++
++            // append tail
++            if (lastIdx < translated.length()) {
++                consumer.accept(Component.text(translated.substring(lastIdx)));
++            }
++        })
++        .build();
++    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().flattener(FLATTENER).hexColors().useUnusualXRepeatedCharacterHexFormat().build();
++    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
 +    static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .build();
