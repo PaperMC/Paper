@@ -216,7 +216,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private static String legacyDisplayName(final CraftPlayer player) {
-+        return PaperAdventure.LEGACY_SECTION_UXRC.serialize(Component.empty().append(displayName(player)));
++        return player.getDisplayName();
 +    }
 +
 +    private static Component displayName(final CraftPlayer player) {
@@ -326,6 +326,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static boolean anyListeners(final HandlerList handlers) {
 +        return handlers.getRegisteredListeners().length > 0;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/DisplayNames.java b/src/main/java/io/papermc/paper/adventure/DisplayNames.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/DisplayNames.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.adventure;
++
++import net.minecraft.server.EntityPlayer;
++import org.bukkit.ChatColor;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++
++public final class DisplayNames {
++    private DisplayNames() {
++    }
++
++    public static String getLegacy(final CraftPlayer player) {
++        return getLegacy(player.getHandle());
++    }
++
++    public static String getLegacy(final EntityPlayer player) {
++        final String legacy = player.displayName;
++        if (legacy != null) {
++            return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName) + ChatColor.getLastColors(player.displayName);
++        }
++        return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java b/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java
@@ -2045,7 +2073,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public String getDisplayName() {
-+        if(true) return io.papermc.paper.adventure.PaperAdventure.superHackyLegacyRepresentationOfComponent(this.getHandle().adventure$displayName, this.getHandle().displayName); // Paper
++        if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
          return getHandle().displayName;
      }
  
@@ -2236,6 +2264,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void displayName(final net.kyori.adventure.text.Component displayName) {
 +        this.getHandle().adventure$displayName = displayName != null ? displayName : net.kyori.adventure.text.Component.text(this.getName());
++        this.getHandle().displayName = null;
 +    }
 +
 +    @Override
