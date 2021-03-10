@@ -5,28 +5,38 @@ Subject: [PATCH] Add version history to version command
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index 5deed3e25ff41ab0a4015a5fd0c1e952cdb16402..49a38c6608b652ff48ef4eaca0dd3ccb1ba570e3 100644
+index c8b911e5d013525ffc5d2911ee0e421dd916cb00..dc0ea65ab87255fad0d54dfb509300098a0b4864 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-@@ -25,7 +25,10 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -5,7 +5,9 @@ import com.google.common.base.Charsets;
+ import com.google.common.io.Resources;
+ import com.google.gson.*;
+ import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.TextComponent;
+ import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextDecoration;
+ 
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+@@ -27,7 +29,10 @@ public class PaperVersionFetcher implements VersionFetcher {
      @Override
-     public String getVersionMessage(@Nonnull String serverVersion) {
+     public Component getVersionMessage(@Nonnull String serverVersion) {
          String[] parts = serverVersion.substring("git-Paper-".length()).split("[-\\s]");
 -        return getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
-+        String updateMessage = getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
-+        String history = getHistory();
++        final Component updateMessage = getUpdateStatusMessage("PaperMC/Paper", GITHUB_BRANCH_NAME, parts[0]);
++        final Component history = getHistory();
 +
-+        return history != null ? history + "\n" + updateMessage : updateMessage;
++        return history != null ? TextComponent.ofChildren(updateMessage, Component.newline(), history) : updateMessage;
      }
  
      private static @Nullable String getMinecraftVersion() {
-@@ -112,4 +115,19 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -114,4 +119,19 @@ public class PaperVersionFetcher implements VersionFetcher {
              return -1;
          }
      }
 +
 +    @Nullable
-+    private String getHistory() {
++    private Component getHistory() {
 +        final VersionHistoryManager.VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
 +        if (data == null) {
 +            return null;
@@ -37,7 +47,7 @@ index 5deed3e25ff41ab0a4015a5fd0c1e952cdb16402..49a38c6608b652ff48ef4eaca0dd3ccb
 +            return null;
 +        }
 +
-+        return "Previous version: " + oldVersion;
++        return Component.text("Previous version: " + oldVersion, NamedTextColor.GRAY, TextDecoration.ITALIC);
 +    }
  }
 diff --git a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
