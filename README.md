@@ -1,4 +1,4 @@
-Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master)
+Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master) ![Read the Docs (version)](https://img.shields.io/readthedocs/paper/latest) [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/PaperMC/Paper/LICENSE)
 ===========
 
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
@@ -60,7 +60,7 @@ dependencies {
 
 How To (Compiling Jar From Source)
 ------
-To compile Paper, you need JDK 8, maven, and an internet connection.
+To compile Paper, we recommend use JDK 11, maven, and an internet connection.
 
 Clone this repo, run `./paper jar` from *bash*, get files.
 
