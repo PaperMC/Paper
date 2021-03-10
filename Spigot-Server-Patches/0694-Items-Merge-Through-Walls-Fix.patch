@@ -4,6 +4,20 @@ Date: Tue, 9 Mar 2021 20:33:43 -0800
 Subject: [PATCH] Items Merge Through Walls Fix
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index fd675585c61387156892b179af593ad640873d45..f92494c159989b900e7d2f250796d4566f913ef3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -815,4 +815,9 @@ public class PaperWorldConfig {
+     private void allowUsingSignsInsideSpawnProtection() {
+         allowUsingSignsInsideSpawnProtection = getBoolean("allow-using-signs-inside-spawn-protection", allowUsingSignsInsideSpawnProtection);
+     }
++
++    public boolean mergeItemsThroughWalls = false;
++    private void MergeItemsThroughWalls() {
++        mergeItemsThroughWalls = getBoolean("merge-items-through-walls", mergeItemsThroughWalls);
++    }
+ }
 diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
 index 5dfb54e17fcfe6bd30e6b2a449944606e1a0ef17..19fb8a23a8cc0af8ffb8fbfdaaeb928bf3545399 100644
 --- a/src/main/java/net/minecraft/server/EntityItem.java
@@ -12,13 +26,13 @@ index 5dfb54e17fcfe6bd30e6b2a449944606e1a0ef17..19fb8a23a8cc0af8ffb8fbfdaaeb928b
                  EntityItem entityitem = (EntityItem) iterator.next();
  
                  if (entityitem.z()) {
-+                    // Paper Start
-+                    RayTrace rayTrace = new RayTrace(this.getPositionVector(), entityitem.getPositionVector(), RayTrace.BlockCollisionOption.COLLIDER, RayTrace.FluidCollisionOption.NONE, this);
-+                    MovingObjectPositionBlock rayTraceResult = world.rayTrace(rayTrace);
-+
-+                    if (rayTraceResult.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) continue;
-+                    // Paper End
-+
++                    // Paper Start - Fix item merging through walls
++                    if (!this.world.paperConfig.mergeItemsThroughWalls) {
++                        RayTrace rayTrace = new RayTrace(this.getPositionVector(), entityitem.getPositionVector(), RayTrace.BlockCollisionOption.COLLIDER, RayTrace.FluidCollisionOption.NONE, this);
++                        MovingObjectPositionBlock rayTraceResult = world.rayTrace(rayTrace);
+ 
++                        if (rayTraceResult.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK) continue;
++                    }
                      this.a(entityitem);
                      if (this.dead) {
                          break;
