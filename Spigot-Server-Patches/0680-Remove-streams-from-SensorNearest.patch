@@ -73,10 +73,10 @@ index f6568a54ab85bc3a682f6fbb19dda7a783625bbe..b3388d4a665e8f91083a2e746482a9f0
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/SensorNearestPlayers.java b/src/main/java/net/minecraft/server/SensorNearestPlayers.java
-index 904a6d5ac61d2ac81f1057068383e9ab432852db..ee7b7a9fe393137171bbe2af5c7e3b864cb3aa99 100644
+index 904a6d5ac61d2ac81f1057068383e9ab432852db..ae946619f10a757171e4217e414d6a5248a45494 100644
 --- a/src/main/java/net/minecraft/server/SensorNearestPlayers.java
 +++ b/src/main/java/net/minecraft/server/SensorNearestPlayers.java
-@@ -19,22 +19,24 @@ public class SensorNearestPlayers extends Sensor<EntityLiving> {
+@@ -19,22 +19,26 @@ public class SensorNearestPlayers extends Sensor<EntityLiving> {
  
      @Override
      protected void a(WorldServer worldserver, EntityLiving entityliving) {
@@ -85,7 +85,7 @@ index 904a6d5ac61d2ac81f1057068383e9ab432852db..ee7b7a9fe393137171bbe2af5c7e3b86
 -        });
 +        // Paper start - remove streams in favour of lists
 +        List<EntityHuman> players = new java.util.ArrayList<>(worldserver.getPlayers());
-+        players.removeIf(player -> IEntitySelector.notSpectator().test(player) || entityliving.a(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
++        players.removeIf(player -> !IEntitySelector.notSpectator().test(player) || !entityliving.a(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
 +        players.sort(Comparator.comparingDouble(entityliving::h));
  
 -        entityliving.getClass();
@@ -105,14 +105,16 @@ index 904a6d5ac61d2ac81f1057068383e9ab432852db..ee7b7a9fe393137171bbe2af5c7e3b86
 +
 +        EntityHuman nearest = null, nearestTargetable = null;
 +        for (EntityHuman player : players) {
-+            if (!Sensor.a(entityliving, player)) {
++            if (Sensor.a(entityliving, player)) {
 +                if (nearest == null) nearest = player;
-+                if (IEntitySelector.canAITarget().test(player)) nearestTargetable = player; // Paper - after setting nearestTargetable the loop will definitely break, we do not need a null check.
++                if (IEntitySelector.canAITarget().test(player)) {
++                    nearestTargetable = player;
++                    break; // Both variables are assigned, no reason to loop further
++                }
 +            }
-+            if (nearest != null && nearestTargetable != null) break;
 +        }
 +        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, nearest);
-+        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, nearest != null && IEntitySelector.canAITarget().test(nearest) ? Optional.of(nearest) : Optional.empty());
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, nearestTargetable);
 +        // Paper end
      }
  }
