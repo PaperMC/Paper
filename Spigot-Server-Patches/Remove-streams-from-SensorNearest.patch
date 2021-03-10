@@ -85,7 +85,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        });
 +        // Paper start - remove streams in favour of lists
 +        List<EntityHuman> players = new java.util.ArrayList<>(worldserver.getPlayers());
-+        players.removeIf(player -> IEntitySelector.notSpectator().test(player) || entityliving.a(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
++        players.removeIf(player -> !IEntitySelector.notSpectator().test(player) || !entityliving.a(player, 16.0D)); // Paper - removeIf only re-allocates once compared to iterator
 +        players.sort(Comparator.comparingDouble(entityliving::h));
  
 -        entityliving.getClass();
@@ -105,14 +105,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        EntityHuman nearest = null, nearestTargetable = null;
 +        for (EntityHuman player : players) {
-+            if (!Sensor.a(entityliving, player)) {
++            if (Sensor.a(entityliving, player)) {
 +                if (nearest == null) nearest = player;
-+                if (IEntitySelector.canAITarget().test(player)) nearestTargetable = player; // Paper - after setting nearestTargetable the loop will definitely break, we do not need a null check.
++                if (IEntitySelector.canAITarget().test(player)) {
++                    nearestTargetable = player;
++                    break; // Both variables are assigned, no reason to loop further
++                }
 +            }
-+            if (nearest != null && nearestTargetable != null) break;
 +        }
 +        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, nearest);
-+        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, nearest != null && IEntitySelector.canAITarget().test(nearest) ? Optional.of(nearest) : Optional.empty());
++        behaviorcontroller.setMemory(MemoryModuleType.NEAREST_VISIBLE_TARGETABLE_PLAYER, nearestTargetable);
 +        // Paper end
      }
  }
