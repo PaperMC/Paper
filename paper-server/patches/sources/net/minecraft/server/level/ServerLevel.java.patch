@@ -61,7 +61,7 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -214,53 +226,203 @@
+@@ -214,54 +226,204 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
@@ -278,17 +278,18 @@
              return (RandomSequences) this.getDataStorage().computeIfAbsent(RandomSequences.factory(l), "random_sequences");
          });
 +        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
-+    }
-+
+     }
+ 
 +    // Paper start
 +    @Override
 +    public boolean hasChunk(int chunkX, int chunkZ) {
 +        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
-     }
++    }
 +    // Paper end
- 
++
      /** @deprecated */
      @Deprecated
+     @VisibleForTesting
 @@ -273,8 +435,8 @@
          this.serverLevelData.setClearWeatherTime(clearDuration);
          this.serverLevelData.setRainTime(rainDuration);
@@ -630,7 +631,7 @@
          }
  
      }
-@@ -939,41 +1192,99 @@
+@@ -939,41 +1192,103 @@
          this.entityManager.addNewEntity(player);
      }
  
@@ -691,9 +692,13 @@
 +        // Spigot Start
 +        for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
 +            if (tileentity instanceof net.minecraft.world.Container) {
++                // Paper start - this area looks like it can load chunks, change the behavior
++                // chests for example can apply physics to the world
++                // so instead we just change the active container and call the event
 +                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
-+                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
++                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
 +                }
++                // Paper end - this area looks like it can load chunks, change the behavior
 +            }
 +        }
 +        // Spigot End
@@ -735,7 +740,7 @@
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
-@@ -982,6 +1293,12 @@
+@@ -982,6 +1297,12 @@
                  double d1 = (double) pos.getY() - entityplayer.getY();
                  double d2 = (double) pos.getZ() - entityplayer.getZ();
  
@@ -748,7 +753,7 @@
                  if (d0 * d0 + d1 * d1 + d2 * d2 < 1024.0D) {
                      entityplayer.connection.send(new ClientboundBlockDestructionPacket(entityId, pos, progress));
                  }
-@@ -1030,7 +1347,7 @@
+@@ -1030,7 +1351,7 @@
  
      @Override
      public void levelEvent(@Nullable Player player, int eventId, BlockPos pos, int data) {
@@ -757,7 +762,7 @@
      }
  
      public int getLogicalHeight() {
-@@ -1052,6 +1369,7 @@
+@@ -1052,6 +1373,7 @@
  
          this.getChunkSource().blockChanged(pos);
          this.pathTypesByPosCache.invalidate(pos);
@@ -765,7 +770,7 @@
          VoxelShape voxelshape = oldState.getCollisionShape(this, pos);
          VoxelShape voxelshape1 = newState.getCollisionShape(this, pos);
  
-@@ -1060,7 +1378,18 @@
+@@ -1060,7 +1382,18 @@
              Iterator iterator = this.navigatingMobs.iterator();
  
              while (iterator.hasNext()) {
@@ -785,7 +790,7 @@
                  PathNavigation navigationabstract = entityinsentient.getNavigation();
  
                  if (navigationabstract.shouldRecomputePath(pos)) {
-@@ -1082,15 +1411,18 @@
+@@ -1082,15 +1415,18 @@
              }
  
          }
@@ -804,7 +809,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, sourceBlock, (Direction) null, orientation);
      }
  
-@@ -1126,9 +1458,20 @@
+@@ -1126,9 +1462,20 @@
  
      @Override
      public void explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions smallParticle, ParticleOptions largeParticle, Holder<SoundEvent> soundEvent) {
@@ -826,7 +831,7 @@
              case NONE:
                  explosion_effect = Explosion.BlockInteraction.KEEP;
                  break;
-@@ -1144,16 +1487,27 @@
+@@ -1144,16 +1491,27 @@
              case TRIGGER:
                  explosion_effect = Explosion.BlockInteraction.TRIGGER_BLOCK;
                  break;
@@ -857,7 +862,7 @@
          Iterator iterator = this.players.iterator();
  
          while (iterator.hasNext()) {
-@@ -1162,10 +1516,11 @@
+@@ -1162,10 +1520,11 @@
              if (entityplayer.distanceToSqr(vec3d) < 4096.0D) {
                  Optional<Vec3> optional = Optional.ofNullable((Vec3) serverexplosion.getHitPlayers().get(entityplayer));
  
@@ -870,7 +875,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayRule) {
-@@ -1226,17 +1581,29 @@
+@@ -1226,17 +1585,29 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(T parameters, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
@@ -906,7 +911,7 @@
                  ++j;
              }
          }
-@@ -1292,7 +1659,7 @@
+@@ -1292,7 +1663,7 @@
  
      @Nullable
      public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipReferencedStructures) {
@@ -915,7 +920,7 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1334,11 +1701,22 @@
+@@ -1334,11 +1705,22 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId id) {
@@ -939,7 +944,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1352,7 +1730,9 @@
+@@ -1352,7 +1734,9 @@
          float f1 = this.levelData.getSpawnAngle();
  
          if (!blockposition1.equals(pos) || f1 != angle) {
@@ -949,7 +954,7 @@
              this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
          }
  
-@@ -1419,6 +1799,11 @@
+@@ -1419,6 +1803,11 @@
              });
              optional1.ifPresent((holder) -> {
                  this.getServer().execute(() -> {
@@ -961,7 +966,7 @@
                      this.getPoiManager().add(blockposition1, holder);
                      DebugPackets.sendPoiAddedPacket(this, blockposition1);
                  });
-@@ -1649,6 +2034,11 @@
+@@ -1649,6 +2038,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -973,7 +978,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2058,12 @@
+@@ -1668,12 +2062,12 @@
      }
  
      public boolean isFlat() {
@@ -988,7 +993,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2086,7 @@
+@@ -1696,7 +2090,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -997,7 +1002,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2095,7 @@
+@@ -1705,7 +2099,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -1006,7 +1011,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2107,7 @@
+@@ -1717,6 +2111,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1014,7 +1019,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2193,17 @@
+@@ -1802,6 +2197,17 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1032,7 +1037,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1836,7 +2238,8 @@
+@@ -1836,7 +2242,8 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1042,7 +1047,7 @@
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.add(entityplayer);
                  ServerLevel.this.updateSleepingPlayerList();
-@@ -1864,9 +2267,53 @@
+@@ -1864,9 +2271,53 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1096,7 +1101,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1895,6 +2342,15 @@
+@@ -1895,6 +2346,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
