@@ -994,5 +994,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public @NotNull String translationKey() {
         return Bukkit.getUnsafe().getTranslationKey(this);
     }
+
+    /**
+     * Gets the item rarity of the itemstack. The rarity can change based on enchantments.
+     *
+     * @return the itemstack rarity
+     * @deprecated Use {@link ItemMeta#hasRarity()} and {@link ItemMeta#getRarity()}
+     */
+    @NotNull
+    @Deprecated(forRemoval = true, since = "1.20.5")
+    public io.papermc.paper.inventory.ItemRarity getRarity() {
+        return io.papermc.paper.inventory.ItemRarity.valueOf(this.getItemMeta().getRarity().name());
+    }
     // Paper end
 }

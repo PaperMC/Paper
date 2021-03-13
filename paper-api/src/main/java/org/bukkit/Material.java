@@ -4845,6 +4845,21 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     }
     // Paper end - add Translatable
 
+    // Paper start - item rarity API
+    /**
+     * Returns the item rarity for the item. The Material <b>MUST</b> be an Item not a block.
+     * Use {@link #isItem()} before this.
+     *
+     * @return the item rarity
+     * @deprecated use {@link org.bukkit.inventory.meta.ItemMeta#hasRarity()} and {@link org.bukkit.inventory.meta.ItemMeta#getRarity()}
+     */
+    @NotNull
+    @Deprecated(forRemoval = true, since = "1.20.5")
+    public io.papermc.paper.inventory.ItemRarity getItemRarity() {
+        return new org.bukkit.inventory.ItemStack(this).getRarity();
+    }
+    // Paper end - item rarity API
+
     /**
      * Do not use for any reason.
      *

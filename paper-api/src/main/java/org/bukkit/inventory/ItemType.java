@@ -2418,4 +2418,13 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     @Override
     @NotNull String getTranslationKey();
     // Paper end - add Translatable
+
+    // Paper start - expand ItemRarity API
+    /**
+     * Returns the item rarity for the item.
+     *
+     * @return the item rarity (or null if none is set)
+     */
+    @Nullable ItemRarity getItemRarity();
+    // Paper end - expand ItemRarity API
 }
