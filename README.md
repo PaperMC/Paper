@@ -60,7 +60,7 @@ dependencies {
 
 How To (Compiling Jar From Source)
 ------
-To compile Paper, we recommend use of JDK 11, maven, and an internet connection.
+To compile Paper, you need JDK 11, maven, and an internet connection.
 
 Clone this repo, run `./paper jar` from *bash*, get files.
 
