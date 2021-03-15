@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.BlockLectern;
-import net.minecraft.server.TileEntityLectern;
+import net.minecraft.world.level.block.BlockLectern;
+import net.minecraft.world.level.block.entity.TileEntityLectern;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Lectern;

@@ -4,7 +4,7 @@ import org.bukkit.block.data.Orientable;
 
 public class CraftOrientable extends CraftBlockData implements Orientable {
 
-    private static final net.minecraft.server.BlockStateEnum<?> AXIS = getEnum("axis");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> AXIS = getEnum("axis");
 
     @Override
     public org.bukkit.Axis getAxis() {

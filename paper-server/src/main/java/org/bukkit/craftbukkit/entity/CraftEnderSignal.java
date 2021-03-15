@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityEnderSignal;
-import net.minecraft.server.Items;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.entity.projectile.EntityEnderSignal;
+import net.minecraft.world.item.Items;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;

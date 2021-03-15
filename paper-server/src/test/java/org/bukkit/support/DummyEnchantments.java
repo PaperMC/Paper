@@ -1,6 +1,6 @@
 package org.bukkit.support;
 
-import net.minecraft.server.Enchantments;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 public class DummyEnchantments {
     static {

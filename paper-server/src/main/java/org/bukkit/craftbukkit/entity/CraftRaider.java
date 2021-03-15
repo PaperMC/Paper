@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityRaider;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.entity.raid.EntityRaider;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBlock;

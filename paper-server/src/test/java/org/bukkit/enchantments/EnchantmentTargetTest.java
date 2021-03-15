@@ -1,8 +1,8 @@
 package org.bukkit.enchantments;
 
-import net.minecraft.server.EnchantmentSlotType;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.Item;
+import net.minecraft.core.IRegistry;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.EnchantmentSlotType;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.junit.Assert;

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.IMerchant;
-import net.minecraft.server.InventoryMerchant;
+import net.minecraft.world.inventory.InventoryMerchant;
+import net.minecraft.world.item.trading.IMerchant;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
 import org.bukkit.inventory.MerchantRecipe;
@@ -22,7 +22,7 @@ public class CraftInventoryMerchant extends CraftInventory implements MerchantIn
 
     @Override
     public MerchantRecipe getSelectedRecipe() {
-        net.minecraft.server.MerchantRecipe nmsRecipe = getInventory().getRecipe();
+        net.minecraft.world.item.trading.MerchantRecipe nmsRecipe = getInventory().getRecipe();
         return (nmsRecipe == null) ? null : nmsRecipe.asBukkit();
     }
 

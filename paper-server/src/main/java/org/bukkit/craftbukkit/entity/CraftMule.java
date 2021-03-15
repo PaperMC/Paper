@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityHorseMule;
+import net.minecraft.world.entity.animal.horse.EntityHorseMule;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse.Variant;

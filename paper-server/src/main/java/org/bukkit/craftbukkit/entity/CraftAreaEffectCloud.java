@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import net.minecraft.server.EntityAreaEffectCloud;
-import net.minecraft.server.EntityLiving;
-import net.minecraft.server.MobEffect;
-import net.minecraft.server.MobEffectList;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.entity.EntityAreaEffectCloud;
+import net.minecraft.world.entity.EntityLiving;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Particle;

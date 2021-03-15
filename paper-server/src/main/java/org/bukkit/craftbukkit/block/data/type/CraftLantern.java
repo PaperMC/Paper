@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftLantern extends CraftBlockData implements Lantern {
 
-    private static final net.minecraft.server.BlockStateBoolean HANGING = getBoolean("hanging");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HANGING = getBoolean("hanging");
 
     @Override
     public boolean isHanging() {

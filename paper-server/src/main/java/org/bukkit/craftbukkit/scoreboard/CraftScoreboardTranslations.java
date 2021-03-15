@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.collect.ImmutableBiMap;
-import net.minecraft.server.IScoreboardCriteria;
-import net.minecraft.server.Scoreboard;
+import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.criteria.IScoreboardCriteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.RenderType;
 

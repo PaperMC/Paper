@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityComplexPart;
-import net.minecraft.server.EntityEnderDragon;
+import net.minecraft.world.entity.boss.EntityComplexPart;
+import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;

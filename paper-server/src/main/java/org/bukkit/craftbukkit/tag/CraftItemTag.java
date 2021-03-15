@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.tag;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.minecraft.server.Item;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.Tags;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.tags.Tags;
+import net.minecraft.world.item.Item;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 

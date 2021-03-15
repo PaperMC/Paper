@@ -3,9 +3,9 @@ package org.bukkit;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import com.google.common.collect.HashMultiset;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.StatisticWrapper;
+import net.minecraft.core.IRegistry;
+import net.minecraft.stats.StatisticWrapper;
+import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.support.AbstractTestingBase;
@@ -33,7 +33,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
         HashMultiset<Statistic> statistics = HashMultiset.create();
         for (StatisticWrapper wrapper : IRegistry.STATS) {
             for (Object child : wrapper.getRegistry()) {
-                net.minecraft.server.Statistic<?> statistic = wrapper.b(child);
+                net.minecraft.stats.Statistic<?> statistic = wrapper.b(child);
                 String message = String.format("org.bukkit.Statistic is missing: '%s'", statistic);
 
                 Statistic subject = CraftStatistic.getBukkitStatistic(statistic);
@@ -42,7 +42,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
                 if (wrapper.getRegistry() == IRegistry.BLOCK || wrapper.getRegistry() == IRegistry.ITEM) {
                     assertNotNull("Material type map missing for " + wrapper.getRegistry().getKey(child), CraftStatistic.getMaterialFromStatistic(statistic));
                 } else if (wrapper.getRegistry() == IRegistry.ENTITY_TYPE) {
-                    assertNotNull("Entity type map missing for " + EntityTypes.getName((EntityTypes<?>) child), CraftStatistic.getEntityTypeFromStatistic((net.minecraft.server.Statistic<EntityTypes<?>>) statistic));
+                    assertNotNull("Entity type map missing for " + EntityTypes.getName((EntityTypes<?>) child), CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Statistic<EntityTypes<?>>) statistic));
                 }
 
                 statistics.add(subject);

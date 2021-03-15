@@ -1,7 +1,7 @@
 package org.bukkit;
 
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.RegistryGeneration;
+import net.minecraft.data.RegistryGeneration;
+import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.support.AbstractTestingBase;

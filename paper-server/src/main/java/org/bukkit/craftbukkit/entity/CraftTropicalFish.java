@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.server.EntityTropicalFish;
+import net.minecraft.world.entity.animal.EntityTropicalFish;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;

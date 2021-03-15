@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftChest extends CraftBlockData implements Chest {
 
-    private static final net.minecraft.server.BlockStateEnum<?> TYPE = getEnum("type");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> TYPE = getEnum("type");
 
     @Override
     public org.bukkit.block.data.type.Chest.Type getType() {

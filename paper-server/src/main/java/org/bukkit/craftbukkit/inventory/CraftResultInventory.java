@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.IInventory;
+import net.minecraft.world.IInventory;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftResultInventory extends CraftInventory {
@@ -23,10 +23,10 @@ public class CraftResultInventory extends CraftInventory {
     @Override
     public ItemStack getItem(int slot) {
         if (slot < getIngredientsInventory().getSize()) {
-            net.minecraft.server.ItemStack item = getIngredientsInventory().getItem(slot);
+            net.minecraft.world.item.ItemStack item = getIngredientsInventory().getItem(slot);
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
-            net.minecraft.server.ItemStack item = getResultInventory().getItem(slot - getIngredientsInventory().getSize());
+            net.minecraft.world.item.ItemStack item = getResultInventory().getItem(slot - getIngredientsInventory().getSize());
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }

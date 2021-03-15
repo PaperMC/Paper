@@ -1,10 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.PacketPlayOutHeldItemSlot;
-import net.minecraft.server.PacketPlayOutSetSlot;
-import net.minecraft.server.PlayerInventory;
+import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
+import net.minecraft.network.protocol.game.PacketPlayOutSetSlot;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.world.entity.player.PlayerInventory;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.HumanEntity;
@@ -13,7 +13,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory, EntityEquipment {
-    public CraftInventoryPlayer(net.minecraft.server.PlayerInventory inventory) {
+    public CraftInventoryPlayer(net.minecraft.world.entity.player.PlayerInventory inventory) {
         super(inventory);
     }
 

@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityMinecartAbstract;
-import net.minecraft.server.EntityMinecartContainer;
-import net.minecraft.server.MinecraftKey;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
+import net.minecraft.world.entity.vehicle.EntityMinecartContainer;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftServer;

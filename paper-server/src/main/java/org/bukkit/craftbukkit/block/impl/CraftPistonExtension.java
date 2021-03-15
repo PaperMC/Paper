@@ -9,13 +9,13 @@ public final class CraftPistonExtension extends org.bukkit.craftbukkit.block.dat
         super();
     }
 
-    public CraftPistonExtension(net.minecraft.server.IBlockData state) {
+    public CraftPistonExtension(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftPistonHead
 
-    private static final net.minecraft.server.BlockStateBoolean SHORT = getBoolean(net.minecraft.server.BlockPistonExtension.class, "short");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean SHORT = getBoolean(net.minecraft.world.level.block.piston.BlockPistonExtension.class, "short");
 
     @Override
     public boolean isShort() {
@@ -29,7 +29,7 @@ public final class CraftPistonExtension extends org.bukkit.craftbukkit.block.dat
 
     // org.bukkit.craftbukkit.block.data.type.CraftTechnicalPiston
 
-    private static final net.minecraft.server.BlockStateEnum<?> TYPE = getEnum(net.minecraft.server.BlockPistonExtension.class, "type");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> TYPE = getEnum(net.minecraft.world.level.block.piston.BlockPistonExtension.class, "type");
 
     @Override
     public org.bukkit.block.data.type.TechnicalPiston.Type getType() {
@@ -43,7 +43,7 @@ public final class CraftPistonExtension extends org.bukkit.craftbukkit.block.dat
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockPistonExtension.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.piston.BlockPistonExtension.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {

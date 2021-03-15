@@ -9,13 +9,13 @@ public final class CraftWitherSkullWall extends org.bukkit.craftbukkit.block.dat
         super();
     }
 
-    public CraftWitherSkullWall(net.minecraft.server.IBlockData state) {
+    public CraftWitherSkullWall(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockWitherSkullWall.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockWitherSkullWall.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {

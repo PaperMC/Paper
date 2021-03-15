@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.attribute;
 
-import net.minecraft.server.AttributeBase;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.MinecraftKey;
+import net.minecraft.core.IRegistry;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;

@@ -5,10 +5,10 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftRedstoneWire extends CraftBlockData implements RedstoneWire {
 
-    private static final net.minecraft.server.BlockStateEnum<?> NORTH = getEnum("north");
-    private static final net.minecraft.server.BlockStateEnum<?> EAST = getEnum("east");
-    private static final net.minecraft.server.BlockStateEnum<?> SOUTH = getEnum("south");
-    private static final net.minecraft.server.BlockStateEnum<?> WEST = getEnum("west");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> NORTH = getEnum("north");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> EAST = getEnum("east");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> SOUTH = getEnum("south");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> WEST = getEnum("west");
 
     @Override
     public org.bukkit.block.data.type.RedstoneWire.Connection getFace(org.bukkit.block.BlockFace face) {

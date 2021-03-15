@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity.memory;
 
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.MemoryModuleType;
+import net.minecraft.core.IRegistry;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.memory.MemoryKey;
 

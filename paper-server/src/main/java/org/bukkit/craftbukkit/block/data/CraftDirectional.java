@@ -4,7 +4,7 @@ import org.bukkit.block.data.Directional;
 
 public abstract class CraftDirectional extends CraftBlockData implements Directional {
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum("facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum("facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {

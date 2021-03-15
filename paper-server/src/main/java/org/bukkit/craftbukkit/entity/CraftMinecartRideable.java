@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityMinecartAbstract;
+import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.RideableMinecart;

@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import net.minecraft.server.DragonControllerPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonControllerPhase;
 import org.bukkit.craftbukkit.entity.CraftEnderDragon;
 import org.junit.Assert;
 import org.junit.Test;

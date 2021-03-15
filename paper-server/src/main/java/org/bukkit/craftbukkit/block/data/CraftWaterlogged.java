@@ -4,7 +4,7 @@ import org.bukkit.block.data.Waterlogged;
 
 public abstract class CraftWaterlogged extends CraftBlockData implements Waterlogged {
 
-    private static final net.minecraft.server.BlockStateBoolean WATERLOGGED = getBoolean("waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean("waterlogged");
 
     @Override
     public boolean isWaterlogged() {

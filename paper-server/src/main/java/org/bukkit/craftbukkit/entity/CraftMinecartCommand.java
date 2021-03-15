@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
-import net.minecraft.server.EntityMinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;

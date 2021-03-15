@@ -1,15 +1,15 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.ChatComponentText;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.IMerchant;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.MerchantRecipe;
-import net.minecraft.server.MerchantRecipeList;
-import net.minecraft.server.SoundEffect;
-import net.minecraft.server.SoundEffects;
-import net.minecraft.server.World;
+import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.sounds.SoundEffect;
+import net.minecraft.sounds.SoundEffects;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.IMerchant;
+import net.minecraft.world.item.trading.MerchantRecipe;
+import net.minecraft.world.item.trading.MerchantRecipeList;
+import net.minecraft.world.level.World;
 import org.apache.commons.lang.Validate;
 
 public class CraftMerchantCustom extends CraftMerchant {

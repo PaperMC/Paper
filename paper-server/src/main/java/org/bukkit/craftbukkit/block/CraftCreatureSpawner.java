@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.TileEntityMobSpawner;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.block.entity.TileEntityMobSpawner;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;

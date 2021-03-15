@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityRabbit;
-import net.minecraft.server.PathfinderGoalSelector;
-import net.minecraft.server.World;
+import net.minecraft.world.entity.ai.goal.PathfinderGoalSelector;
+import net.minecraft.world.entity.animal.EntityRabbit;
+import net.minecraft.world.level.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.EntityType;

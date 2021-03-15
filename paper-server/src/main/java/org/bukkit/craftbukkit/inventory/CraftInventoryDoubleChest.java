@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.BlockChest;
-import net.minecraft.server.ITileInventory;
-import net.minecraft.server.InventoryLargeChest;
+import net.minecraft.world.ITileInventory;
+import net.minecraft.world.InventoryLargeChest;
+import net.minecraft.world.level.block.BlockChest;
 import org.bukkit.Location;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.DoubleChestInventory;

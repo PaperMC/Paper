@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftCommandBlock extends CraftBlockData implements CommandBlock {
 
-    private static final net.minecraft.server.BlockStateBoolean CONDITIONAL = getBoolean("conditional");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean CONDITIONAL = getBoolean("conditional");
 
     @Override
     public boolean isConditional() {

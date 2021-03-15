@@ -1,6 +1,17 @@
---- a/net/minecraft/server/FoodMetaData.java
-+++ b/net/minecraft/server/FoodMetaData.java
-@@ -6,9 +6,22 @@
+--- a/net/minecraft/world/food/FoodMetaData.java
++++ b/net/minecraft/world/food/FoodMetaData.java
+@@ -8,15 +8,33 @@
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.GameRules;
+ 
++// CraftBukkit start
++import net.minecraft.network.protocol.game.PacketPlayOutUpdateHealth;
++import net.minecraft.server.level.EntityPlayer;
++// CraftBukkit end
++
+ public class FoodMetaData {
+ 
+     public int foodLevel = 20;
      public float saturationLevel = 5.0F;
      public float exhaustionLevel;
      private int foodTickTimer;
@@ -24,26 +35,26 @@
  
      public void eat(int i, float f) {
          this.foodLevel = Math.min(i + this.foodLevel, 20);
-@@ -18,8 +31,17 @@
+@@ -26,8 +44,17 @@
      public void a(Item item, ItemStack itemstack) {
          if (item.isFood()) {
              FoodInfo foodinfo = item.getFoodInfo();
 +            // CraftBukkit start
 +            int oldFoodLevel = foodLevel;
-+
+ 
+-            this.eat(foodinfo.getNutrition(), foodinfo.getSaturationModifier());
 +            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel, itemstack);
 +
 +            if (!event.isCancelled()) {
 +                this.eat(event.getFoodLevel() - oldFoodLevel, foodinfo.getSaturationModifier());
 +            }
- 
--            this.eat(foodinfo.getNutrition(), foodinfo.getSaturationModifier());
++
 +            ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
 +            // CraftBukkit end
          }
  
      }
-@@ -33,7 +55,15 @@
+@@ -41,7 +68,15 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
              } else if (enumdifficulty != EnumDifficulty.PEACEFUL) {
@@ -60,7 +71,7 @@
              }
          }
  
-@@ -41,23 +71,25 @@
+@@ -49,23 +84,25 @@
  
          if (flag && this.saturationLevel > 0.0F && entityhuman.eJ() && this.foodLevel >= 20) {
              ++this.foodTickTimer;

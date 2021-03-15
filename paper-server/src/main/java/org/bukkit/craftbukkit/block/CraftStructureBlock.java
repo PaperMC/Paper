@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.BlockPropertyStructureMode;
-import net.minecraft.server.EnumBlockMirror;
-import net.minecraft.server.EnumBlockRotation;
-import net.minecraft.server.TileEntityStructure;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.level.block.EnumBlockMirror;
+import net.minecraft.world.level.block.EnumBlockRotation;
+import net.minecraft.world.level.block.entity.TileEntityStructure;
+import net.minecraft.world.level.block.state.properties.BlockPropertyStructureMode;
 import org.apache.commons.lang3.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.Block;

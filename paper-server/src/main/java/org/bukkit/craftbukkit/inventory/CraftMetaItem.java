@@ -36,14 +36,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import net.minecraft.server.ChatComponentText;
-import net.minecraft.server.EnumItemSlot;
-import net.minecraft.server.ItemBlock;
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTCompressedStreamTools;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagString;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTCompressedStreamTools;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
+import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.item.ItemBlock;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.EnumUtils;
@@ -417,7 +417,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 // entry is not an actual NBTTagCompound. getCompound returns empty NBTTagCompound in that case
                 continue;
             }
-            net.minecraft.server.AttributeModifier nmsModifier = net.minecraft.server.AttributeModifier.a(entry);
+            net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = net.minecraft.world.entity.ai.attributes.AttributeModifier.a(entry);
             if (nmsModifier == null) {
                 continue;
             }
@@ -698,7 +698,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             if (entry.getKey() == null || entry.getValue() == null) {
                 continue;
             }
-            net.minecraft.server.AttributeModifier nmsModifier = CraftAttributeInstance.convert(entry.getValue());
+            net.minecraft.world.entity.ai.attributes.AttributeModifier nmsModifier = CraftAttributeInstance.convert(entry.getValue());
             NBTTagCompound sub = nmsModifier.save();
             if (sub.isEmpty()) {
                 continue;

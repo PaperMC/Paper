@@ -1,10 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.BlockJukeBox;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.TileEntity;
-import net.minecraft.server.TileEntityJukeBox;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.BlockJukeBox;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.entity.TileEntityJukeBox;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;

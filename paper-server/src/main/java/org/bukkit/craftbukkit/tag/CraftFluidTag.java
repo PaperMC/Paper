@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.tag;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.minecraft.server.FluidType;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.Tags;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.tags.Tags;
+import net.minecraft.world.level.material.FluidType;
 import org.bukkit.Fluid;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 

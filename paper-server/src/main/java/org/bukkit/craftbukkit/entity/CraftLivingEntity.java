@@ -8,37 +8,37 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.server.DamageSource;
-import net.minecraft.server.EntityArmorStand;
-import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityDragonFireball;
-import net.minecraft.server.EntityEgg;
-import net.minecraft.server.EntityEnderPearl;
-import net.minecraft.server.EntityFireball;
-import net.minecraft.server.EntityFireworks;
-import net.minecraft.server.EntityFishingHook;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EntityInsentient;
-import net.minecraft.server.EntityLargeFireball;
-import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityLlamaSpit;
-import net.minecraft.server.EntityPotion;
-import net.minecraft.server.EntityProjectile;
-import net.minecraft.server.EntityShulkerBullet;
-import net.minecraft.server.EntitySmallFireball;
-import net.minecraft.server.EntitySnowball;
-import net.minecraft.server.EntitySpectralArrow;
-import net.minecraft.server.EntityThrownExpBottle;
-import net.minecraft.server.EntityThrownTrident;
-import net.minecraft.server.EntityTippedArrow;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.EntityWither;
-import net.minecraft.server.EntityWitherSkull;
-import net.minecraft.server.EnumHand;
-import net.minecraft.server.EnumMonsterType;
-import net.minecraft.server.GenericAttributes;
-import net.minecraft.server.MobEffect;
-import net.minecraft.server.MobEffectList;
+import net.minecraft.world.EnumHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.entity.EntityInsentient;
+import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EnumMonsterType;
+import net.minecraft.world.entity.ai.attributes.GenericAttributes;
+import net.minecraft.world.entity.boss.wither.EntityWither;
+import net.minecraft.world.entity.decoration.EntityArmorStand;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.entity.projectile.EntityArrow;
+import net.minecraft.world.entity.projectile.EntityDragonFireball;
+import net.minecraft.world.entity.projectile.EntityEgg;
+import net.minecraft.world.entity.projectile.EntityEnderPearl;
+import net.minecraft.world.entity.projectile.EntityFireball;
+import net.minecraft.world.entity.projectile.EntityFireworks;
+import net.minecraft.world.entity.projectile.EntityFishingHook;
+import net.minecraft.world.entity.projectile.EntityLargeFireball;
+import net.minecraft.world.entity.projectile.EntityLlamaSpit;
+import net.minecraft.world.entity.projectile.EntityPotion;
+import net.minecraft.world.entity.projectile.EntityProjectile;
+import net.minecraft.world.entity.projectile.EntityShulkerBullet;
+import net.minecraft.world.entity.projectile.EntitySmallFireball;
+import net.minecraft.world.entity.projectile.EntitySnowball;
+import net.minecraft.world.entity.projectile.EntitySpectralArrow;
+import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
+import net.minecraft.world.entity.projectile.EntityThrownTrident;
+import net.minecraft.world.entity.projectile.EntityTippedArrow;
+import net.minecraft.world.entity.projectile.EntityWitherSkull;
 import org.apache.commons.lang.Validate;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -394,8 +394,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-        net.minecraft.server.World world = ((CraftWorld) getWorld()).getHandle();
-        net.minecraft.server.Entity launch = null;
+        net.minecraft.world.level.World world = ((CraftWorld) getWorld()).getHandle();
+        net.minecraft.world.entity.Entity launch = null;
 
         if (Snowball.class.isAssignableFrom(projectile)) {
             launch = new EntitySnowball(world, getHandle());
@@ -413,7 +413,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
                 launch = new EntitySpectralArrow(world, getHandle());
             } else if (Trident.class.isAssignableFrom(projectile)) {
-                launch = new EntityThrownTrident(world, getHandle(), new net.minecraft.server.ItemStack(net.minecraft.server.Items.TRIDENT));
+                launch = new EntityThrownTrident(world, getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.TRIDENT));
             } else {
                 launch = new EntityTippedArrow(world, getHandle());
             }
@@ -465,7 +465,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         } else if (Firework.class.isAssignableFrom(projectile)) {
             Location location = getEyeLocation();
 
-            launch = new EntityFireworks(world, net.minecraft.server.ItemStack.b, getHandle());
+            launch = new EntityFireworks(world, net.minecraft.world.item.ItemStack.b, getHandle());
             launch.setPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         }
 

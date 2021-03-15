@@ -1,26 +1,26 @@
 package org.bukkit.craftbukkit.projectiles;
 
 import java.util.Random;
-import net.minecraft.server.BlockDispenser;
-import net.minecraft.server.EntityArrow;
-import net.minecraft.server.EntityEgg;
-import net.minecraft.server.EntityEnderPearl;
-import net.minecraft.server.EntityFireball;
-import net.minecraft.server.EntityPotion;
-import net.minecraft.server.EntityProjectile;
-import net.minecraft.server.EntitySmallFireball;
-import net.minecraft.server.EntitySnowball;
-import net.minecraft.server.EntitySpectralArrow;
-import net.minecraft.server.EntityThrownExpBottle;
-import net.minecraft.server.EntityTippedArrow;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.EnumDirection;
-import net.minecraft.server.IPosition;
-import net.minecraft.server.IProjectile;
-import net.minecraft.server.MathHelper;
-import net.minecraft.server.SourceBlock;
-import net.minecraft.server.TileEntityDispenser;
-import net.minecraft.server.WorldServer;
+import net.minecraft.core.EnumDirection;
+import net.minecraft.core.IPosition;
+import net.minecraft.core.SourceBlock;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.util.MathHelper;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.projectile.EntityArrow;
+import net.minecraft.world.entity.projectile.EntityEgg;
+import net.minecraft.world.entity.projectile.EntityEnderPearl;
+import net.minecraft.world.entity.projectile.EntityFireball;
+import net.minecraft.world.entity.projectile.EntityPotion;
+import net.minecraft.world.entity.projectile.EntityProjectile;
+import net.minecraft.world.entity.projectile.EntitySmallFireball;
+import net.minecraft.world.entity.projectile.EntitySnowball;
+import net.minecraft.world.entity.projectile.EntitySpectralArrow;
+import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
+import net.minecraft.world.entity.projectile.EntityTippedArrow;
+import net.minecraft.world.entity.projectile.IProjectile;
+import net.minecraft.world.level.block.BlockDispenser;
+import net.minecraft.world.level.block.entity.TileEntityDispenser;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -70,8 +70,8 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         // Copied from DispenseBehaviorProjectile
         IPosition iposition = BlockDispenser.a(isourceblock);
         EnumDirection enumdirection = (EnumDirection) isourceblock.getBlockData().get(BlockDispenser.FACING);
-        net.minecraft.server.World world = dispenserBlock.getWorld();
-        net.minecraft.server.Entity launch = null;
+        net.minecraft.world.level.World world = dispenserBlock.getWorld();
+        net.minecraft.world.entity.Entity launch = null;
 
         if (Snowball.class.isAssignableFrom(projectile)) {
             launch = new EntitySnowball(world, iposition.getX(), iposition.getY(), iposition.getZ());

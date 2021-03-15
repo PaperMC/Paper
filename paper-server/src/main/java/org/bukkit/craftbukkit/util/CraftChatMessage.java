@@ -9,15 +9,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.minecraft.server.ChatClickable;
-import net.minecraft.server.ChatClickable.EnumClickAction;
-import net.minecraft.server.ChatComponentText;
-import net.minecraft.server.ChatHexColor;
-import net.minecraft.server.ChatMessage;
-import net.minecraft.server.ChatModifier;
-import net.minecraft.server.EnumChatFormat;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.IChatMutableComponent;
+import net.minecraft.EnumChatFormat;
+import net.minecraft.network.chat.ChatClickable;
+import net.minecraft.network.chat.ChatClickable.EnumClickAction;
+import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.ChatHexColor;
+import net.minecraft.network.chat.ChatMessage;
+import net.minecraft.network.chat.ChatModifier;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.chat.IChatMutableComponent;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {

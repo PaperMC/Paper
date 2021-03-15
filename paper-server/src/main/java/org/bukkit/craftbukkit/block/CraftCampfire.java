@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.TileEntityCampfire;
+import net.minecraft.world.level.block.entity.TileEntityCampfire;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Campfire;
@@ -24,7 +24,7 @@ public class CraftCampfire extends CraftBlockEntityState<TileEntityCampfire> imp
 
     @Override
     public ItemStack getItem(int index) {
-        net.minecraft.server.ItemStack item = getSnapshot().getItems().get(index);
+        net.minecraft.world.item.ItemStack item = getSnapshot().getItems().get(index);
         return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 

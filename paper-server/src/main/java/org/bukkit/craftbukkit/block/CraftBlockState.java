@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.GeneratorAccess;
-import net.minecraft.server.IBlockData;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -44,11 +44,11 @@ public class CraftBlockState implements BlockState {
         position = BlockPosition.ZERO;
     }
 
-    public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.server.BlockPosition pos) {
+    public static CraftBlockState getBlockState(GeneratorAccess world, net.minecraft.core.BlockPosition pos) {
         return new CraftBlockState(CraftBlock.at(world, pos));
     }
 
-    public static CraftBlockState getBlockState(net.minecraft.server.World world, net.minecraft.server.BlockPosition pos, int flag) {
+    public static CraftBlockState getBlockState(net.minecraft.world.level.World world, net.minecraft.core.BlockPosition pos, int flag) {
         return new CraftBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag);
     }
 

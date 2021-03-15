@@ -4,7 +4,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.server.EnumColor;
+import net.minecraft.world.item.EnumColor;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;

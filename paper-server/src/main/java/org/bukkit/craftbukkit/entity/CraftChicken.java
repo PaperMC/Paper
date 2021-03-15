@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityChicken;
+import net.minecraft.world.entity.animal.EntityChicken;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.EntityType;

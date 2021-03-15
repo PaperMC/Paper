@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.TileEntitySmoker;
+import net.minecraft.world.level.block.entity.TileEntitySmoker;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Smoker;

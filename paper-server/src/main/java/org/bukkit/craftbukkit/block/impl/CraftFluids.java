@@ -9,13 +9,13 @@ public final class CraftFluids extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftFluids(net.minecraft.server.IBlockData state) {
+    public CraftFluids(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftLevelled
 
-    private static final net.minecraft.server.BlockStateInteger LEVEL = getInteger(net.minecraft.server.BlockFluids.class, "level");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger LEVEL = getInteger(net.minecraft.world.level.block.BlockFluids.class, "level");
 
     @Override
     public int getLevel() {

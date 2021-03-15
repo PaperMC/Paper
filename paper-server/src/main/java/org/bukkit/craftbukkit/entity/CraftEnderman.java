@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityEnderman;
-import net.minecraft.server.IBlockData;
+import net.minecraft.world.entity.monster.EntityEnderman;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;

@@ -9,13 +9,13 @@ public final class CraftBanner extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftBanner(net.minecraft.server.IBlockData state) {
+    public CraftBanner(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRotatable
 
-    private static final net.minecraft.server.BlockStateInteger ROTATION = getInteger(net.minecraft.server.BlockBanner.class, "rotation");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger ROTATION = getInteger(net.minecraft.world.level.block.BlockBanner.class, "rotation");
 
     @Override
     public org.bukkit.block.BlockFace getRotation() {

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 if [ -z "$1" ]
 then
     echo "Please run this script again with the clean decompile sources as an argument. In most cases this will be ../work/decompile-XXXX"
@@ -18,19 +20,19 @@ else
   }
 fi
 
-nms=$1/net/minecraft/server
-cb=src/main/java/net/minecraft/server
+nms=$1
+cb=src/main/java
 #clean up and rebuild
-rm -rf $cb
-mkdir -p $cb
-for file in $(/bin/ls nms-patches)
+rm -rf $cb/net
+for file in $(find nms-patches -type f -printf '%P\n')
 do
-    patchFile="nms-patches/$file"
+    patchFile="$file"
     file="$(echo $file | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
     strip_cr "$nms/$file" > /dev/null
 
+    mkdir -p $(dirname $cb/$file)
     cp "$nms/$file" "$cb/$file"
-    patch -d src/main/java/ "net/minecraft/server/$file" < "$patchFile"
+    patch -d src/main/java -p 1 < "nms-patches/$patchFile"
 done

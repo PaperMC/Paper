@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.TileEntityEnderChest;
+import net.minecraft.world.level.block.entity.TileEntityEnderChest;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.EnderChest;

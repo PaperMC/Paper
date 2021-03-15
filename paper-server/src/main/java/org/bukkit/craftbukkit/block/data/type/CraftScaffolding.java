@@ -5,8 +5,8 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftScaffolding extends CraftBlockData implements Scaffolding {
 
-    private static final net.minecraft.server.BlockStateBoolean BOTTOM = getBoolean("bottom");
-    private static final net.minecraft.server.BlockStateInteger DISTANCE = getInteger("distance");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean BOTTOM = getBoolean("bottom");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger("distance");
 
     @Override
     public boolean isBottom() {

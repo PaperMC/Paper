@@ -9,13 +9,13 @@ public final class CraftSoil extends org.bukkit.craftbukkit.block.data.CraftBloc
         super();
     }
 
-    public CraftSoil(net.minecraft.server.IBlockData state) {
+    public CraftSoil(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftFarmland
 
-    private static final net.minecraft.server.BlockStateInteger MOISTURE = getInteger(net.minecraft.server.BlockSoil.class, "moisture");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger MOISTURE = getInteger(net.minecraft.world.level.block.BlockSoil.class, "moisture");
 
     @Override
     public int getMoisture() {

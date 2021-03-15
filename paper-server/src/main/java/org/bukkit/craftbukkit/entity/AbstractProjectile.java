@@ -7,7 +7,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     private boolean doesBounce;
 
-    public AbstractProjectile(CraftServer server, net.minecraft.server.Entity entity) {
+    public AbstractProjectile(CraftServer server, net.minecraft.world.entity.Entity entity) {
         super(server, entity);
         doesBounce = false;
     }

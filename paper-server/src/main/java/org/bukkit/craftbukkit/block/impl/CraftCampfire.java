@@ -9,13 +9,13 @@ public final class CraftCampfire extends org.bukkit.craftbukkit.block.data.Craft
         super();
     }
 
-    public CraftCampfire(net.minecraft.server.IBlockData state) {
+    public CraftCampfire(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftCampfire
 
-    private static final net.minecraft.server.BlockStateBoolean SIGNAL_FIRE = getBoolean(net.minecraft.server.BlockCampfire.class, "signal_fire");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean SIGNAL_FIRE = getBoolean(net.minecraft.world.level.block.BlockCampfire.class, "signal_fire");
 
     @Override
     public boolean isSignalFire() {
@@ -29,7 +29,7 @@ public final class CraftCampfire extends org.bukkit.craftbukkit.block.data.Craft
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockCampfire.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockCampfire.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
@@ -48,7 +48,7 @@ public final class CraftCampfire extends org.bukkit.craftbukkit.block.data.Craft
 
     // org.bukkit.craftbukkit.block.data.CraftLightable
 
-    private static final net.minecraft.server.BlockStateBoolean LIT = getBoolean(net.minecraft.server.BlockCampfire.class, "lit");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean LIT = getBoolean(net.minecraft.world.level.block.BlockCampfire.class, "lit");
 
     @Override
     public boolean isLit() {
@@ -62,7 +62,7 @@ public final class CraftCampfire extends org.bukkit.craftbukkit.block.data.Craft
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.server.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.server.BlockCampfire.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockCampfire.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {

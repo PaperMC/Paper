@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityRaider;
-import net.minecraft.server.World;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.entity.raid.EntityRaider;
+import net.minecraft.world.level.World;
 import org.bukkit.Location;
 import org.bukkit.Raid;
 import org.bukkit.Raid.RaidStatus;
@@ -17,9 +17,9 @@ import org.bukkit.entity.Raider;
 
 public final class CraftRaid implements Raid {
 
-    private final net.minecraft.server.Raid handle;
+    private final net.minecraft.world.entity.raid.Raid handle;
 
-    public CraftRaid(net.minecraft.server.Raid handle) {
+    public CraftRaid(net.minecraft.world.entity.raid.Raid handle) {
         this.handle = handle;
     }
 

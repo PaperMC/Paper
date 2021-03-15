@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.block;
 
 import java.util.Random;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityBee;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.GeneratorAccessSeed;
-import net.minecraft.server.TileEntity;
-import net.minecraft.server.TileEntityBeehive;
-import net.minecraft.server.World;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.EntityBee;
+import net.minecraft.world.level.GeneratorAccessSeed;
+import net.minecraft.world.level.World;
+import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.entity.TileEntityBeehive;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 

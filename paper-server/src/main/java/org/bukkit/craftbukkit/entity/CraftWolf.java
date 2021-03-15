@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityWolf;
-import net.minecraft.server.EnumColor;
+import net.minecraft.world.entity.animal.EntityWolf;
+import net.minecraft.world.item.EnumColor;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;

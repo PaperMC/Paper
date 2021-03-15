@@ -4,7 +4,7 @@ import org.bukkit.block.data.Lightable;
 
 public abstract class CraftLightable extends CraftBlockData implements Lightable {
 
-    private static final net.minecraft.server.BlockStateBoolean LIT = getBoolean("lit");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean LIT = getBoolean("lit");
 
     @Override
     public boolean isLit() {

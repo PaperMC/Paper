@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.command;
 
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.server.CommandListenerWrapper;
+import net.minecraft.commands.CommandListenerWrapper;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;

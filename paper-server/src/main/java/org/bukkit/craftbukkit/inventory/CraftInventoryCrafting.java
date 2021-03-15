@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.Arrays;
 import java.util.List;
-import net.minecraft.server.IInventory;
-import net.minecraft.server.IRecipe;
+import net.minecraft.world.IInventory;
+import net.minecraft.world.item.crafting.IRecipe;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -40,14 +40,14 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     @Override
     public ItemStack[] getContents() {
         ItemStack[] items = new ItemStack[getSize()];
-        List<net.minecraft.server.ItemStack> mcResultItems = getResultInventory().getContents();
+        List<net.minecraft.world.item.ItemStack> mcResultItems = getResultInventory().getContents();
 
         int i = 0;
         for (i = 0; i < mcResultItems.size(); i++) {
             items[i] = CraftItemStack.asCraftMirror(mcResultItems.get(i));
         }
 
-        List<net.minecraft.server.ItemStack> mcItems = getMatrixInventory().getContents();
+        List<net.minecraft.world.item.ItemStack> mcItems = getMatrixInventory().getContents();
 
         for (int j = 0; j < mcItems.size(); j++) {
             items[i + j] = CraftItemStack.asCraftMirror(mcItems.get(j));
@@ -64,10 +64,10 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
     @Override
     public CraftItemStack getItem(int index) {
         if (index < getResultInventory().getSize()) {
-            net.minecraft.server.ItemStack item = getResultInventory().getItem(index);
+            net.minecraft.world.item.ItemStack item = getResultInventory().getItem(index);
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         } else {
-            net.minecraft.server.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getSize());
+            net.minecraft.world.item.ItemStack item = getMatrixInventory().getItem(index - getResultInventory().getSize());
             return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
         }
     }
@@ -83,14 +83,14 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public ItemStack[] getMatrix() {
-        List<net.minecraft.server.ItemStack> matrix = getMatrixInventory().getContents();
+        List<net.minecraft.world.item.ItemStack> matrix = getMatrixInventory().getContents();
 
         return asCraftMirror(matrix);
     }
 
     @Override
     public ItemStack getResult() {
-        net.minecraft.server.ItemStack item = getResultInventory().getItem(0);
+        net.minecraft.world.item.ItemStack item = getResultInventory().getItem(0);
         if (!item.isEmpty()) return CraftItemStack.asCraftMirror(item);
         return null;
     }
@@ -105,14 +105,14 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
             if (i < contents.length) {
                 getMatrixInventory().setItem(i, CraftItemStack.asNMSCopy(contents[i]));
             } else {
-                getMatrixInventory().setItem(i, net.minecraft.server.ItemStack.b);
+                getMatrixInventory().setItem(i, net.minecraft.world.item.ItemStack.b);
             }
         }
     }
 
     @Override
     public void setResult(ItemStack item) {
-        List<net.minecraft.server.ItemStack> contents = getResultInventory().getContents();
+        List<net.minecraft.world.item.ItemStack> contents = getResultInventory().getContents();
         contents.set(0, CraftItemStack.asNMSCopy(item));
     }
 

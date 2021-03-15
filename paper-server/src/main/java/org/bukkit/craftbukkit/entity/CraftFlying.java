@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityFlying;
+import net.minecraft.world.entity.EntityFlying;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Flying;
 

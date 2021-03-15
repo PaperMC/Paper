@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTTagCompound;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;

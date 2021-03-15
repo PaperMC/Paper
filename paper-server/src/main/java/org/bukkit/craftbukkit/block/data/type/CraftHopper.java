@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftHopper extends CraftBlockData implements Hopper {
 
-    private static final net.minecraft.server.BlockStateBoolean ENABLED = getBoolean("enabled");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean ENABLED = getBoolean("enabled");
 
     @Override
     public boolean isEnabled() {

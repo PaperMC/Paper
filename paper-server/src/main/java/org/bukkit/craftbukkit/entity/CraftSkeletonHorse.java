@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityHorseSkeleton;
+import net.minecraft.world.entity.animal.horse.EntityHorseSkeleton;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse.Variant;

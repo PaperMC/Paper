@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.boss;
 
-import net.minecraft.server.BossBattleCustom;
+import net.minecraft.server.bossevents.BossBattleCustom;
 import org.bukkit.NamespacedKey;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;

@@ -7,14 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import net.minecraft.server.MojangsonParser;
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTList;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagDouble;
-import net.minecraft.server.NBTTagInt;
-import net.minecraft.server.NBTTagList;
-import net.minecraft.server.NBTTagString;
+import net.minecraft.nbt.MojangsonParser;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTList;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagDouble;
+import net.minecraft.nbt.NBTTagInt;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 
 public class CraftNBTTagConfigSerializer {
 

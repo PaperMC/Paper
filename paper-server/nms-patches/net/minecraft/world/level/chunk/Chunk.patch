@@ -1,6 +1,6 @@
---- a/net/minecraft/server/Chunk.java
-+++ b/net/minecraft/server/Chunk.java
-@@ -31,7 +31,7 @@
+--- a/net/minecraft/world/level/chunk/Chunk.java
++++ b/net/minecraft/world/level/chunk/Chunk.java
+@@ -65,7 +65,7 @@
      private BiomeStorage d;
      private final Map<BlockPosition, NBTTagCompound> e;
      public boolean loaded;
@@ -9,7 +9,7 @@
      public final Map<HeightMap.Type, HeightMap> heightMap;
      private final ChunkConverter i;
      public final Map<BlockPosition, TileEntity> tileEntities;
-@@ -65,7 +65,7 @@
+@@ -99,7 +99,7 @@
          this.m = Maps.newHashMap();
          this.n = new ShortList[16];
          this.entitySlices = (EntitySlice[]) (new EntitySlice[16]);
@@ -18,7 +18,7 @@
          this.loc = chunkcoordintpair;
          this.i = chunkconverter;
          HeightMap.Type[] aheightmap_type = HeightMap.Type.values();
-@@ -96,8 +96,22 @@
+@@ -130,8 +130,22 @@
              }
          }
  
@@ -41,7 +41,7 @@
      public Chunk(World world, ProtoChunk protochunk) {
          this(world, protochunk.getPos(), protochunk.getBiomeIndex(), protochunk.p(), protochunk.n(), protochunk.o(), protochunk.getInhabitedTime(), protochunk.getSections(), (Consumer) null);
          Iterator iterator = protochunk.y().iterator();
-@@ -139,6 +153,7 @@
+@@ -173,6 +187,7 @@
  
          this.b(protochunk.r());
          this.s = true;
@@ -49,7 +49,7 @@
      }
  
      @Override
-@@ -229,9 +244,16 @@
+@@ -263,9 +278,16 @@
          }
      }
  
@@ -66,17 +66,17 @@
          int i = blockposition.getX() & 15;
          int j = blockposition.getY();
          int k = blockposition.getZ() & 15;
-@@ -283,7 +305,8 @@
+@@ -317,7 +339,8 @@
                      }
                  }
  
 -                if (!this.world.isClientSide) {
 +                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-+                if (!this.world.isClientSide && doPlace && (!this.world.captureBlockStates || block instanceof BlockTileEntity)) {
++                if (!this.world.isClientSide && doPlace && (!this.world.captureBlockStates || block instanceof net.minecraft.world.level.block.BlockTileEntity)) {
                      iblockdata.onPlace(this.world, blockposition, iblockdata1, flag);
                  }
  
-@@ -378,7 +401,12 @@
+@@ -412,7 +435,12 @@
  
      @Nullable
      public TileEntity a(BlockPosition blockposition, Chunk.EnumTileEntityState chunk_enumtileentitystate) {
@@ -90,13 +90,13 @@
  
          if (tileentity == null) {
              NBTTagCompound nbttagcompound = (NBTTagCompound) this.e.remove(blockposition);
-@@ -424,6 +452,13 @@
+@@ -458,6 +486,13 @@
                  tileentity1.al_();
              }
  
 +            // CraftBukkit start
 +        } else {
-+            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.position.getX() + "," + tileentity.position.getY() + "," + tileentity.position.getZ()
++            System.out.println("Attempted to place a tile entity (" + tileentity + ") at " + tileentity.getPosition().getX() + "," + tileentity.getPosition().getY() + "," + tileentity.getPosition().getZ()
 +                + " (" + getType(blockposition) + ") where there was no entity tile!");
 +            System.out.println("Chunk coordinates: " + (this.loc.x * 16) + "," + (this.loc.z * 16));
 +            new Exception().printStackTrace();
@@ -104,7 +104,7 @@
          }
      }
  
-@@ -473,6 +508,50 @@
+@@ -507,6 +542,50 @@
  
      }
  
@@ -155,7 +155,7 @@
      public void markDirty() {
          this.s = true;
      }
-@@ -526,7 +605,7 @@
+@@ -560,7 +639,7 @@
              Iterator iterator = this.entitySlices[k].a(Entity.class).iterator();
  
              while (iterator.hasNext()) {
@@ -164,7 +164,7 @@
  
                  if ((entitytypes == null || entity.getEntityType() == entitytypes) && entity.getBoundingBox().c(axisalignedbb) && predicate.test(entity)) {
                      list.add(entity);
-@@ -547,7 +626,7 @@
+@@ -581,7 +660,7 @@
              Iterator iterator = this.entitySlices[k].a(oclass).iterator();
  
              while (iterator.hasNext()) {
@@ -173,7 +173,7 @@
  
                  if (t0.getBoundingBox().c(axisalignedbb) && (predicate == null || predicate.test(t0))) {
                      list.add(t0);
-@@ -621,7 +700,7 @@
+@@ -655,7 +734,7 @@
  
      @Override
      public boolean isNeedsSaving() {
@@ -182,7 +182,7 @@
      }
  
      public void d(boolean flag) {
-@@ -763,7 +842,7 @@
+@@ -797,7 +876,7 @@
  
      public void B() {
          if (this.o instanceof ProtoChunkTickList) {
@@ -191,7 +191,7 @@
                  return this.getType(blockposition).getBlock();
              });
              this.o = TickListEmpty.b();
-@@ -773,7 +852,7 @@
+@@ -807,7 +886,7 @@
          }
  
          if (this.p instanceof ProtoChunkTickList) {
@@ -200,7 +200,7 @@
                  return this.getFluid(blockposition).getType();
              });
              this.p = TickListEmpty.b();
-@@ -785,12 +864,12 @@
+@@ -819,12 +898,12 @@
      }
  
      public void a(WorldServer worldserver) {

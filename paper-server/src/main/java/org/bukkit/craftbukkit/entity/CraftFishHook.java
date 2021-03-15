@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityFishingHook;
-import net.minecraft.server.MathHelper;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.util.MathHelper;
+import net.minecraft.world.entity.projectile.EntityFishingHook;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
@@ -92,7 +92,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
     @Override
     public Entity getHookedEntity() {
-        net.minecraft.server.Entity hooked = getHandle().hooked;
+        net.minecraft.world.entity.Entity hooked = getHandle().hooked;
         return (hooked != null) ? hooked.getBukkitEntity() : null;
     }
 

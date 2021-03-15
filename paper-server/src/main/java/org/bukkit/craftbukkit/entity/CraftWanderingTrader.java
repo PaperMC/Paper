@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityVillagerTrader;
+import net.minecraft.world.entity.npc.EntityVillagerTrader;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.WanderingTrader;
@@ -28,11 +28,11 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
 
     @Override
     public int getDespawnDelay() {
-        return getHandle().eX();
+        return getHandle().getDespawnDelay();
     }
 
     @Override
     public void setDespawnDelay(int despawnDelay) {
-        getHandle().u(despawnDelay);
+        getHandle().setDespawnDelay(despawnDelay);
     }
 }

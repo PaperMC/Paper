@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.command;
 
-import net.minecraft.server.CommandListenerWrapper;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.SystemUtils;
-import net.minecraft.server.TileEntity;
+import net.minecraft.SystemUtils;
+import net.minecraft.commands.CommandListenerWrapper;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.craftbukkit.block.CraftBlock;

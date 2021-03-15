@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityThrownExpBottle;
+import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ThrownExpBottle;

@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftSeaPickle extends CraftBlockData implements SeaPickle {
 
-    private static final net.minecraft.server.BlockStateInteger PICKLES = getInteger("pickles");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger PICKLES = getInteger("pickles");
 
     @Override
     public int getPickles() {

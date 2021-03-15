@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.generator;
 
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.ChunkSection;
-import net.minecraft.server.IBlockData;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.chunk.ChunkSection;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;

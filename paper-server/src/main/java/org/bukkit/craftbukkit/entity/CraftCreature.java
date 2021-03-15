@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityCreature;
+import net.minecraft.world.entity.EntityCreature;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Creature;
 

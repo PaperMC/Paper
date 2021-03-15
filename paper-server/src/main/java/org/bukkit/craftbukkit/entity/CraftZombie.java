@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.EntityZombie;
-import net.minecraft.server.EntityZombieVillager;
+import net.minecraft.world.entity.monster.EntityZombie;
+import net.minecraft.world.entity.monster.EntityZombieVillager;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;

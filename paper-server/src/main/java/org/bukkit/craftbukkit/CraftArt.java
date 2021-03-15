@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.Paintings;
+import net.minecraft.core.IRegistry;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.entity.decoration.Paintings;
 import org.bukkit.Art;
 
 public class CraftArt {

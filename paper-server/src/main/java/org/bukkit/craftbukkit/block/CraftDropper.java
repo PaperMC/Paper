@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.BlockDropper;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.TileEntityDropper;
+import net.minecraft.world.level.block.BlockDropper;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.TileEntityDropper;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Dropper;

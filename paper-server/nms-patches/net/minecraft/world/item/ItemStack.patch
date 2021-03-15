@@ -1,6 +1,6 @@
---- a/net/minecraft/server/ItemStack.java
-+++ b/net/minecraft/server/ItemStack.java
-@@ -19,6 +19,24 @@
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -58,6 +58,39 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -8,7 +8,22 @@
 +import com.mojang.serialization.Dynamic;
 +import java.util.List;
 +import java.util.Map;
-+
++import net.minecraft.core.EnumDirection;
++import net.minecraft.nbt.DynamicOpsNBT;
++import net.minecraft.network.protocol.game.PacketPlayOutBlockChange;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.sounds.SoundCategory;
++import net.minecraft.util.datafix.fixes.DataConverterTypes;
++import net.minecraft.world.level.block.BlockJukeBox;
++import net.minecraft.world.level.block.BlockSapling;
++import net.minecraft.world.level.block.BlockTileEntity;
++import net.minecraft.world.level.block.BlockWitherSkull;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.SoundEffectType;
++import net.minecraft.world.level.block.entity.TileEntity;
++import net.minecraft.world.level.block.entity.TileEntitySign;
++import net.minecraft.world.level.block.entity.TileEntitySkull;
 +import org.bukkit.Location;
 +import org.bukkit.TreeType;
 +import org.bukkit.block.BlockState;
@@ -25,7 +40,7 @@
  public final class ItemStack {
  
      public static final Codec<ItemStack> a = RecordCodecBuilder.create((instance) -> {
-@@ -32,7 +50,7 @@
+@@ -71,7 +104,7 @@
      });
      private static final Logger LOGGER = LogManager.getLogger();
      public static final ItemStack b = new ItemStack((Item) null);
@@ -34,7 +49,7 @@
          decimalformat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.ROOT));
      });
      private static final ChatModifier e = ChatModifier.a.setColor(EnumChatFormat.DARK_PURPLE).setItalic(true);
-@@ -67,23 +85,42 @@
+@@ -106,23 +139,42 @@
          this.checkEmpty();
      }
  
@@ -80,7 +95,7 @@
          this.checkEmpty();
      }
  
-@@ -113,7 +150,7 @@
+@@ -152,7 +204,7 @@
          return this.j ? Items.AIR : this.item;
      }
  
@@ -89,7 +104,7 @@
          EntityHuman entityhuman = itemactioncontext.getEntity();
          BlockPosition blockposition = itemactioncontext.getClickPosition();
          ShapeDetectorBlock shapedetectorblock = new ShapeDetectorBlock(itemactioncontext.getWorld(), blockposition, false);
-@@ -121,12 +158,153 @@
+@@ -160,12 +212,153 @@
          if (entityhuman != null && !entityhuman.abilities.mayBuild && !this.b(itemactioncontext.getWorld().p(), shapedetectorblock)) {
              return EnumInteractionResult.PASS;
          } else {
@@ -231,7 +246,7 @@
 +
 +                    // SPIGOT-1288 - play sound stripped from ItemBlock
 +                    if (this.item instanceof ItemBlock) {
-+                        SoundEffectType soundeffecttype = ((ItemBlock) this.item).getBlock().stepSound;
++                        SoundEffectType soundeffecttype = ((ItemBlock) this.item).getBlock().getStepSound(null);
 +                        world.playSound(entityhuman, blockposition, soundeffecttype.getPlaceSound(), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
 +                    }
 +
@@ -244,7 +259,7 @@
  
              return enuminteractionresult;
          }
-@@ -207,6 +385,21 @@
+@@ -246,6 +439,21 @@
                  }
  
                  i -= k;
@@ -266,7 +281,7 @@
                  if (i <= 0) {
                      return false;
                  }
-@@ -228,6 +421,11 @@
+@@ -267,6 +475,11 @@
                  if (this.isDamaged(i, t0.getRandom(), t0 instanceof EntityPlayer ? (EntityPlayer) t0 : null)) {
                      consumer.accept(t0);
                      Item item = this.getItem();
@@ -278,7 +293,7 @@
  
                      this.subtract(1);
                      if (t0 instanceof EntityHuman) {
-@@ -359,6 +557,17 @@
+@@ -398,6 +611,17 @@
          return this.tag;
      }
  
@@ -296,7 +311,7 @@
      public NBTTagCompound getOrCreateTag() {
          if (this.tag == null) {
              this.setTag(new NBTTagCompound());
-@@ -522,6 +731,12 @@
+@@ -561,6 +785,12 @@
      }
  
      public void setRepairCost(int i) {
@@ -309,7 +324,7 @@
          this.getOrCreateTag().setInt("RepairCost", i);
      }
  
-@@ -571,6 +786,13 @@
+@@ -610,6 +840,13 @@
          nbttaglist.add(nbttagcompound);
      }
  

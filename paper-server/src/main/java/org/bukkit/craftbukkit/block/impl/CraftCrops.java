@@ -9,13 +9,13 @@ public final class CraftCrops extends org.bukkit.craftbukkit.block.data.CraftBlo
         super();
     }
 
-    public CraftCrops(net.minecraft.server.IBlockData state) {
+    public CraftCrops(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.server.BlockStateInteger AGE = getInteger(net.minecraft.server.BlockCrops.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockCrops.class, "age");
 
     @Override
     public int getAge() {

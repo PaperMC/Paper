@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
-import net.minecraft.server.EntityTameableAnimal;
+import net.minecraft.world.entity.EntityTameableAnimal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Creature;

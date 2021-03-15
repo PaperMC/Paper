@@ -4,7 +4,7 @@ import org.bukkit.block.data.Rotatable;
 
 public abstract class CraftRotatable extends CraftBlockData implements Rotatable {
 
-    private static final net.minecraft.server.BlockStateInteger ROTATION = getInteger("rotation");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger ROTATION = getInteger("rotation");
 
     @Override
     public org.bukkit.block.BlockFace getRotation() {

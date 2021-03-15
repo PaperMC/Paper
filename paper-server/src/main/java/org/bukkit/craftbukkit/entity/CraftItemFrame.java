@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.EntityHanging;
-import net.minecraft.server.EntityItemFrame;
-import net.minecraft.server.EnumDirection;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.WorldServer;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.EnumDirection;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.entity.decoration.EntityHanging;
+import net.minecraft.world.entity.decoration.EntityItemFrame;
+import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;

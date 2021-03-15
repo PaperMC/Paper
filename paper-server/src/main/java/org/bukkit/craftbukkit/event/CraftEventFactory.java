@@ -12,59 +12,59 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.BlockPropertyInstrument;
-import net.minecraft.server.Container;
-import net.minecraft.server.ContainerMerchant;
-import net.minecraft.server.DamageSource;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntityAnimal;
-import net.minecraft.server.EntityAreaEffectCloud;
-import net.minecraft.server.EntityDamageSource;
-import net.minecraft.server.EntityDamageSourceIndirect;
-import net.minecraft.server.EntityEnderDragon;
-import net.minecraft.server.EntityExperienceOrb;
-import net.minecraft.server.EntityFireworks;
-import net.minecraft.server.EntityGhast;
-import net.minecraft.server.EntityGolem;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EntityIllagerWizard;
-import net.minecraft.server.EntityInsentient;
-import net.minecraft.server.EntityItem;
-import net.minecraft.server.EntityLiving;
-import net.minecraft.server.EntityMonster;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EntityPotion;
-import net.minecraft.server.EntityRaider;
-import net.minecraft.server.EntitySlime;
-import net.minecraft.server.EntityStrider;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.EntityVillager;
-import net.minecraft.server.EntityWaterAnimal;
-import net.minecraft.server.EnumDirection;
-import net.minecraft.server.EnumHand;
-import net.minecraft.server.Explosion;
-import net.minecraft.server.GeneratorAccess;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IInventory;
-import net.minecraft.server.IProjectile;
-import net.minecraft.server.ItemActionContext;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.Items;
-import net.minecraft.server.LootContextParameters;
-import net.minecraft.server.LootTable;
-import net.minecraft.server.LootTableInfo;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.MobEffect;
-import net.minecraft.server.MovingObjectPosition;
-import net.minecraft.server.MovingObjectPositionBlock;
-import net.minecraft.server.MovingObjectPositionEntity;
-import net.minecraft.server.NPC;
-import net.minecraft.server.PacketPlayInCloseWindow;
-import net.minecraft.server.Raid;
-import net.minecraft.server.Unit;
-import net.minecraft.server.World;
-import net.minecraft.server.WorldServer;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.EnumDirection;
+import net.minecraft.network.protocol.game.PacketPlayInCloseWindow;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.util.Unit;
+import net.minecraft.world.EnumHand;
+import net.minecraft.world.IInventory;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.EntityDamageSource;
+import net.minecraft.world.damagesource.EntityDamageSourceIndirect;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityAreaEffectCloud;
+import net.minecraft.world.entity.EntityExperienceOrb;
+import net.minecraft.world.entity.EntityInsentient;
+import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.EntityAnimal;
+import net.minecraft.world.entity.animal.EntityGolem;
+import net.minecraft.world.entity.animal.EntityWaterAnimal;
+import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
+import net.minecraft.world.entity.item.EntityItem;
+import net.minecraft.world.entity.monster.EntityGhast;
+import net.minecraft.world.entity.monster.EntityIllagerWizard;
+import net.minecraft.world.entity.monster.EntityMonster;
+import net.minecraft.world.entity.monster.EntitySlime;
+import net.minecraft.world.entity.monster.EntityStrider;
+import net.minecraft.world.entity.npc.EntityVillager;
+import net.minecraft.world.entity.npc.NPC;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.entity.projectile.EntityFireworks;
+import net.minecraft.world.entity.projectile.EntityPotion;
+import net.minecraft.world.entity.projectile.IProjectile;
+import net.minecraft.world.entity.raid.EntityRaider;
+import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.inventory.Container;
+import net.minecraft.world.inventory.ContainerMerchant;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.ItemActionContext;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.World;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.block.state.properties.BlockPropertyInstrument;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.LootTableInfo;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
+import net.minecraft.world.phys.MovingObjectPosition;
+import net.minecraft.world.phys.MovingObjectPositionBlock;
+import net.minecraft.world.phys.MovingObjectPositionEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -398,11 +398,11 @@ public class CraftEventFactory {
         return (PlayerBucketEmptyEvent) getPlayerBucketEvent(false, world, who, changed, clicked, clickedFace, itemInHand, Items.BUCKET);
     }
 
-    public static PlayerBucketFillEvent callPlayerBucketFillEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.server.Item bucket) {
+    public static PlayerBucketFillEvent callPlayerBucketFillEvent(WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket) {
         return (PlayerBucketFillEvent) getPlayerBucketEvent(true, world, who, clicked, changed, clickedFace, itemInHand, bucket);
     }
 
-    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.server.Item item) {
+    private static PlayerEvent getPlayerBucketEvent(boolean isFilling, WorldServer world, EntityHuman who, BlockPosition changed, BlockPosition clicked, EnumDirection clickedFace, ItemStack itemstack, net.minecraft.world.item.Item item) {
         Player player = (Player) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asNewCraftStack(item);
         Material bucket = CraftMagicNumbers.getMaterial(itemstack.getItem());
@@ -1009,7 +1009,7 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PlayerItemMendEvent callPlayerItemMendEvent(EntityHuman entity, EntityExperienceOrb orb, net.minecraft.server.ItemStack nmsMendedItem, int repairAmount) {
+    public static PlayerItemMendEvent callPlayerItemMendEvent(EntityHuman entity, EntityExperienceOrb orb, net.minecraft.world.item.ItemStack nmsMendedItem, int repairAmount) {
         Player player = (Player) entity.getBukkitEntity();
         org.bukkit.inventory.ItemStack bukkitStack = CraftItemStack.asCraftMirror(nmsMendedItem);
         PlayerItemMendEvent event = new PlayerItemMendEvent(player, bukkitStack, (ExperienceOrb) orb.getBukkitEntity(), repairAmount);
@@ -1318,7 +1318,7 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static Cancellable handleStatisticsIncrease(EntityHuman entityHuman, net.minecraft.server.Statistic<?> statistic, int current, int newValue) {
+    public static Cancellable handleStatisticsIncrease(EntityHuman entityHuman, net.minecraft.stats.Statistic<?> statistic, int current, int newValue) {
         Player player = ((EntityPlayer) entityHuman).getBukkitEntity();
         Event event;
         if (true) {
@@ -1351,7 +1351,7 @@ public class CraftEventFactory {
             if (stat.getType() == Type.UNTYPED) {
                 event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
             } else if (stat.getType() == Type.ENTITY) {
-                EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.server.Statistic<EntityTypes<?>>) statistic);
+                EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Statistic<EntityTypes<?>>) statistic);
                 event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
             } else {
                 Material material = CraftStatistic.getMaterialFromStatistic(statistic);

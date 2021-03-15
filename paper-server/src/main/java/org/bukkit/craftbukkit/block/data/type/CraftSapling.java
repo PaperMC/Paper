@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftSapling extends CraftBlockData implements Sapling {
 
-    private static final net.minecraft.server.BlockStateInteger STAGE = getInteger("stage");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger STAGE = getInteger("stage");
 
     @Override
     public int getStage() {

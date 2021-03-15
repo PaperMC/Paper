@@ -18,25 +18,25 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.minecraft.SharedConstants;
+import net.minecraft.advancements.critereon.LootDeserializationContext;
+import net.minecraft.core.IRegistry;
+import net.minecraft.nbt.DynamicOpsNBT;
+import net.minecraft.nbt.MojangsonParser;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagString;
+import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.AdvancementDataWorld;
-import net.minecraft.server.Block;
-import net.minecraft.server.ChatDeserializer;
-import net.minecraft.server.DataConverterRegistry;
-import net.minecraft.server.DataConverterTypes;
-import net.minecraft.server.DynamicOpsNBT;
-import net.minecraft.server.FluidType;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.Item;
-import net.minecraft.server.LootDeserializationContext;
-import net.minecraft.server.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.MojangsonParser;
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagString;
-import net.minecraft.server.SavedFile;
-import net.minecraft.server.SharedConstants;
+import net.minecraft.util.ChatDeserializer;
+import net.minecraft.util.datafix.DataConverterRegistry;
+import net.minecraft.util.datafix.fixes.DataConverterTypes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.material.FluidType;
+import net.minecraft.world.level.storage.SavedFile;
 import org.bukkit.Bukkit;
 import org.bukkit.Fluid;
 import org.bukkit.Material;
@@ -224,7 +224,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "54e89c47309b53737f894f1bf1b0edbe";
+        return "d4b392244df170796f8779ef0fc1f2e9";
     }
 
     @Override
@@ -234,7 +234,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public ItemStack modifyItemStack(ItemStack stack, String arguments) {
-        net.minecraft.server.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
+        net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
         try {
             nmsStack.setTag((NBTTagCompound) MojangsonParser.parse(arguments));
@@ -260,7 +260,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         JsonElement jsonelement = AdvancementDataWorld.DESERIALIZER.fromJson(advancement, JsonElement.class);
         JsonObject jsonobject = ChatDeserializer.m(jsonelement, "advancement");
-        net.minecraft.server.Advancement.SerializedAdvancement nms = net.minecraft.server.Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, MinecraftServer.getServer().getLootPredicateManager()));
+        net.minecraft.advancements.Advancement.SerializedAdvancement nms = net.minecraft.advancements.Advancement.SerializedAdvancement.a(jsonobject, new LootDeserializationContext(minecraftkey, MinecraftServer.getServer().getLootPredicateManager()));
         if (nms != null) {
             MinecraftServer.getServer().getAdvancementData().REGISTRY.a(Maps.newHashMap(Collections.singletonMap(minecraftkey, nms)));
             Advancement bukkit = Bukkit.getAdvancement(key);

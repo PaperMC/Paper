@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
-import net.minecraft.server.EntityHorseAbstract;
-import net.minecraft.server.GenericAttributes;
+import net.minecraft.world.entity.ai.attributes.GenericAttributes;
+import net.minecraft.world.entity.animal.horse.EntityHorseAbstract;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;

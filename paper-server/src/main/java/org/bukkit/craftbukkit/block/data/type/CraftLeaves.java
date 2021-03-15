@@ -5,8 +5,8 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public class CraftLeaves extends CraftBlockData implements Leaves {
 
-    private static final net.minecraft.server.BlockStateInteger DISTANCE = getInteger("distance");
-    private static final net.minecraft.server.BlockStateBoolean PERSISTENT = getBoolean("persistent");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger("distance");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean PERSISTENT = getBoolean("persistent");
 
     @Override
     public boolean isPersistent() {

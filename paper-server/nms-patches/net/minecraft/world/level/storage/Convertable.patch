@@ -1,6 +1,17 @@
---- a/net/minecraft/server/Convertable.java
-+++ b/net/minecraft/server/Convertable.java
-@@ -73,21 +73,21 @@
+--- a/net/minecraft/world/level/storage/Convertable.java
++++ b/net/minecraft/world/level/storage/Convertable.java
+@@ -47,6 +47,10 @@
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
++// CraftBukkit start
++import net.minecraft.world.level.dimension.WorldDimension;
++// CraftBukkit end
++
+ public class Convertable {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+@@ -96,21 +100,21 @@
              Logger logger1 = Convertable.LOGGER;
  
              logger1.getClass();
@@ -25,7 +36,7 @@
                  return new IllegalStateException("Failed to get noise settings registry");
              });
  
-@@ -195,8 +195,10 @@
+@@ -218,8 +222,10 @@
          };
      }
  
@@ -38,10 +49,10 @@
      }
  
      public class ConversionSession implements AutoCloseable {
-@@ -205,8 +207,12 @@
-         public final java.nio.file.Path folder;
+@@ -228,8 +234,12 @@
+         public final Path folder;
          private final String levelName;
-         private final Map<SavedFile, java.nio.file.Path> e = Maps.newHashMap();
+         private final Map<SavedFile, Path> e = Maps.newHashMap();
 +        // CraftBukkit start
 +        private final ResourceKey<WorldDimension> dimensionType;
  
@@ -52,15 +63,15 @@
              this.levelName = s;
              this.folder = Convertable.this.universe.resolve(s);
              this.lock = SessionLock.a(this.folder);
-@@ -223,9 +229,23 @@
+@@ -246,8 +256,22 @@
          }
  
          public File a(ResourceKey<World> resourcekey) {
 -            return DimensionManager.a(resourcekey, this.folder.toFile());
 +            // CraftBukkit start
 +            return this.getFolder(this.folder.toFile());
-         }
- 
++        }
++
 +        private File getFolder(File file) {
 +            if (dimensionType == WorldDimension.OVERWORLD) {
 +                return file;
@@ -71,9 +82,8 @@
 +            } else {
 +                throw new IllegalArgumentException("Unknwon dimension " + this.dimensionType);
 +            }
-+        }
+         }
 +        // CraftBukkit end
-+
+ 
          private void checkSession() {
              if (!this.lock.a()) {
-                 throw new IllegalStateException("Lock is no longer valid");

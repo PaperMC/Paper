@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
 import java.util.UUID;
-import net.minecraft.server.EntityFox;
+import net.minecraft.world.entity.animal.EntityFox;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.EntityType;

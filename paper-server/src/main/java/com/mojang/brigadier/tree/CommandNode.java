@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import net.minecraft.server.CommandListenerWrapper; // CraftBukkit
+import net.minecraft.commands.CommandListenerWrapper; // CraftBukkit
 
 public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
     private Map<String, CommandNode<S>> children = Maps.newLinkedHashMap();

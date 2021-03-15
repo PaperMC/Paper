@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityPainting;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.Paintings;
-import net.minecraft.server.WorldServer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.decoration.EntityPainting;
+import net.minecraft.world.entity.decoration.Paintings;
 import org.bukkit.Art;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftArt;

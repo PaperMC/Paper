@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityWither;
+import net.minecraft.world.entity.boss.wither.EntityWither;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftBossBar;

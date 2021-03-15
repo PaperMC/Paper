@@ -9,13 +9,13 @@ public final class CraftCoralDead extends org.bukkit.craftbukkit.block.data.Craf
         super();
     }
 
-    public CraftCoralDead(net.minecraft.server.IBlockData state) {
+    public CraftCoralDead(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.server.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.server.BlockCoralDead.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockCoralDead.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {

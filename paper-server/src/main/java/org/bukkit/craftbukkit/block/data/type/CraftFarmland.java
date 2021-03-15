@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftFarmland extends CraftBlockData implements Farmland {
 
-    private static final net.minecraft.server.BlockStateInteger MOISTURE = getInteger("moisture");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger MOISTURE = getInteger("moisture");
 
     @Override
     public int getMoisture() {

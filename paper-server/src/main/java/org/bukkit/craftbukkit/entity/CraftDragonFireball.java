@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityDragonFireball;
+import net.minecraft.world.entity.projectile.EntityDragonFireball;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.EntityType;

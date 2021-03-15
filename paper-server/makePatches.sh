@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 if [ -z "$1" ]
 then
     echo "Please run this script again with the clean decompile sources as an argument. In most cases this will be ../work/decompile-XXXX"
@@ -18,8 +20,8 @@ else
   }
 fi
 
-cb=src/main/java/net/minecraft/server
-nms="$1/net/minecraft/server"
+cb=src/main/java
+nms="$1"
 show_diff_msg=true
 
 if [ $# -ge 2 ]
@@ -31,7 +33,7 @@ then
     fi
 fi
 
-for file in $(/bin/ls $cb)
+for file in $(find src/main/java/net -type f -printf 'net/%P\n')
 do
     if [ "$show_diff_msg" = true ]
     then
@@ -40,7 +42,7 @@ do
     strip_cr "$nms/$file" > /dev/null
 	strip_cr "$cb/$file" > /dev/null
     outName=$(echo nms-patches/"$(echo $file | cut -d. -f1)".patch)
-    patchNew=$(diff -u --label a/net/minecraft/server/$file "$nms/$file" --label b/net/minecraft/server/$file "$cb/$file")
+    patchNew=$(diff -u --label a/$file "$nms/$file" --label b/$file "$cb/$file" || true)
     if [ -f "$outName" ]
     then
         patchCut=$(echo "$patchNew" | tail -n +3)
@@ -51,6 +53,7 @@ do
         fi
     else
         echo "New patch $outName"
+        mkdir -p $(dirname $outName)
         echo "$patchNew" > "$outName"
     fi
 done

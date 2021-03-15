@@ -1,7 +1,7 @@
---- a/net/minecraft/server/EntityLiving.java
-+++ b/net/minecraft/server/EntityLiving.java
-@@ -21,6 +21,27 @@
- import javax.annotation.Nullable;
+--- a/net/minecraft/world/entity/EntityLiving.java
++++ b/net/minecraft/world/entity/EntityLiving.java
+@@ -111,6 +111,30 @@
+ import net.minecraft.world.scores.ScoreboardTeam;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
@@ -9,6 +9,9 @@
 +import java.util.HashSet;
 +import java.util.Set;
 +import com.google.common.base.Function;
++import net.minecraft.nbt.NBTTagFloat;
++import net.minecraft.nbt.NBTTagInt;
++import net.minecraft.world.entity.animal.EntityAnimal;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -28,15 +31,15 @@
  public abstract class EntityLiving extends Entity {
  
      private static final UUID b = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
-@@ -106,6 +127,21 @@
+@@ -196,6 +220,21 @@
      private float bB;
      private float bC;
      protected BehaviorController<?> bg;
 +    // CraftBukkit start
 +    public int expToDrop;
 +    public int maxAirTicks = 300;
-+    boolean forceDrops;
-+    ArrayList<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
++    public boolean forceDrops;
++    public ArrayList<org.bukkit.inventory.ItemStack> drops = new ArrayList<org.bukkit.inventory.ItemStack>();
 +    public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
 +    public boolean collides = true;
 +    public Set<UUID> collidableExemptions = new HashSet<>();
@@ -50,7 +53,7 @@
  
      protected EntityLiving(EntityTypes<? extends EntityLiving> entitytypes, World world) {
          super(entitytypes, world);
-@@ -117,7 +153,9 @@
+@@ -207,7 +246,9 @@
          this.activeItem = ItemStack.b;
          this.by = Optional.empty();
          this.attributeMap = new AttributeMapBase(AttributeDefaults.a(entitytypes));
@@ -61,7 +64,7 @@
          this.i = true;
          this.az = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
          this.af();
-@@ -184,7 +222,13 @@
+@@ -274,7 +315,13 @@
                  double d1 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
                  int i = (int) (150.0D * d1);
  
@@ -76,7 +79,7 @@
              }
          }
  
-@@ -406,7 +450,7 @@
+@@ -496,7 +543,7 @@
  
      protected void cU() {
          ++this.deathTicks;
@@ -85,7 +88,7 @@
              this.die();
  
              for (int i = 0; i < 20; ++i) {
-@@ -497,7 +541,13 @@
+@@ -587,7 +634,13 @@
      }
  
      protected void playEquipSound(ItemStack itemstack) {
@@ -100,7 +103,7 @@
              SoundEffect soundeffect = SoundEffects.ITEM_ARMOR_EQUIP_GENERIC;
              Item item = itemstack.getItem();
  
-@@ -567,6 +617,17 @@
+@@ -657,6 +710,17 @@
              }
          }
  
@@ -118,7 +121,7 @@
          if (nbttagcompound.hasKeyOfType("Health", 99)) {
              this.setHealth(nbttagcompound.getFloat("Health"));
          }
-@@ -604,9 +665,32 @@
+@@ -694,9 +758,32 @@
  
      }
  
@@ -151,7 +154,7 @@
          try {
              while (iterator.hasNext()) {
                  MobEffectList mobeffectlist = (MobEffectList) iterator.next();
-@@ -616,6 +700,12 @@
+@@ -706,6 +793,12 @@
                      this.a(mobeffect, true);
                  })) {
                      if (!this.world.isClientSide) {
@@ -164,7 +167,7 @@
                          iterator.remove();
                          this.b(mobeffect);
                      }
-@@ -626,6 +716,17 @@
+@@ -716,6 +809,17 @@
          } catch (ConcurrentModificationException concurrentmodificationexception) {
              ;
          }
@@ -182,7 +185,7 @@
  
          if (this.updateEffects) {
              if (!this.world.isClientSide) {
-@@ -735,7 +836,13 @@
+@@ -825,7 +929,13 @@
          this.datawatcher.set(EntityLiving.f, 0);
      }
  
@@ -196,7 +199,7 @@
          if (this.world.isClientSide) {
              return false;
          } else {
-@@ -744,7 +851,14 @@
+@@ -834,7 +944,14 @@
              boolean flag;
  
              for (flag = false; iterator.hasNext(); flag = true) {
@@ -212,7 +215,7 @@
                  iterator.remove();
              }
  
-@@ -769,18 +883,44 @@
+@@ -859,18 +976,44 @@
          return (MobEffect) this.effects.get(mobeffectlist);
      }
  
@@ -258,7 +261,7 @@
                  return true;
              } else {
                  return false;
-@@ -804,13 +944,39 @@
+@@ -894,13 +1037,39 @@
          return this.getMonsterType() == EnumMonsterType.UNDEAD;
      }
  
@@ -299,7 +302,7 @@
  
          if (mobeffect != null) {
              this.b(mobeffect);
-@@ -847,20 +1013,55 @@
+@@ -937,20 +1106,55 @@
  
      }
  
@@ -356,7 +359,7 @@
          this.datawatcher.set(EntityLiving.HEALTH, MathHelper.a(f, 0.0F, this.getMaxHealth()));
      }
  
-@@ -874,7 +1075,7 @@
+@@ -964,7 +1168,7 @@
              return false;
          } else if (this.world.isClientSide) {
              return false;
@@ -365,7 +368,7 @@
              return false;
          } else if (damagesource.isFire() && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -886,17 +1087,19 @@
+@@ -976,17 +1180,19 @@
              this.ticksFarFromPlayer = 0;
              float f1 = f;
  
@@ -388,7 +391,7 @@
                  this.damageShield(f);
                  f2 = f;
                  f = 0.0F;
-@@ -914,22 +1117,41 @@
+@@ -1004,22 +1210,41 @@
              this.av = 1.5F;
              boolean flag1 = true;
  
@@ -434,7 +437,7 @@
              this.ap = 0.0F;
              Entity entity1 = damagesource.getEntity();
  
-@@ -1050,19 +1272,29 @@
+@@ -1140,19 +1365,29 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -468,7 +471,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.b(StatisticList.ITEM_USED.b(Items.TOTEM_OF_UNDYING));
-@@ -1070,14 +1302,16 @@
+@@ -1160,14 +1395,16 @@
                  }
  
                  this.setHealth(1.0F);
@@ -490,7 +493,7 @@
          }
      }
  
-@@ -1175,6 +1409,13 @@
+@@ -1265,6 +1502,13 @@
                  if (!flag) {
                      EntityItem entityitem = new EntityItem(this.world, this.locX(), this.locY(), this.locZ(), new ItemStack(Items.bt));
  
@@ -504,7 +507,7 @@
                      this.world.addEntity(entityitem);
                  }
              }
-@@ -1194,28 +1435,46 @@
+@@ -1284,28 +1528,46 @@
  
          boolean flag = this.lastDamageByPlayerTime > 0;
  
@@ -553,7 +556,7 @@
  
      }
  
-@@ -1336,9 +1595,14 @@
+@@ -1426,9 +1688,14 @@
          int i = this.e(f, f1);
  
          if (i > 0) {
@@ -569,7 +572,7 @@
              return true;
          } else {
              return flag;
-@@ -1378,7 +1642,7 @@
+@@ -1468,7 +1735,7 @@
  
      protected float applyArmorModifier(DamageSource damagesource, float f) {
          if (!damagesource.ignoresArmor()) {
@@ -578,7 +581,7 @@
              f = CombatMath.a(f, (float) this.getArmorStrength(), (float) this.b(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1391,7 +1655,8 @@
+@@ -1481,7 +1748,8 @@
          } else {
              int i;
  
@@ -588,7 +591,7 @@
                  i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1422,28 +1687,173 @@
+@@ -1512,28 +1780,173 @@
          }
      }
  
@@ -772,7 +775,7 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1464,9 +1874,19 @@
+@@ -1554,9 +1967,19 @@
      }
  
      public final void setArrowCount(int i) {
@@ -793,7 +796,7 @@
      public final int dz() {
          return (Integer) this.datawatcher.get(EntityLiving.bi);
      }
-@@ -1594,6 +2014,12 @@
+@@ -1684,6 +2107,12 @@
  
      public abstract ItemStack getEquipment(EnumItemSlot enumitemslot);
  
@@ -806,7 +809,7 @@
      @Override
      public abstract void setSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
-@@ -1816,6 +2242,7 @@
+@@ -1906,6 +2335,7 @@
                  }
  
                  if (this.onGround && !this.world.isClientSide) {
@@ -814,25 +817,25 @@
                      this.setFlag(7, false);
                  }
              } else {
-@@ -1957,7 +2384,7 @@
+@@ -2047,7 +2477,7 @@
                  }
              }
  
--            this.p();
+-            this.updateEquipment();
 +            this.updateEquipment(); // PAIL rename
              if (this.ticksLived % 20 == 0) {
                  this.getCombatTracker().g();
              }
-@@ -2058,7 +2485,7 @@
+@@ -2148,7 +2578,7 @@
  
      }
  
--    private void p() {
+-    public void updateEquipment() {
 +    public void updateEquipment() { // PAIL private->public; updateEquipment
          Map<EnumItemSlot, ItemStack> map = this.q();
  
          if (map != null) {
-@@ -2321,6 +2748,7 @@
+@@ -2411,6 +2841,7 @@
          }
  
          if (!this.world.isClientSide) {
@@ -840,7 +843,7 @@
              this.setFlag(7, flag);
          }
  
-@@ -2441,6 +2869,7 @@
+@@ -2531,6 +2962,7 @@
      }
  
      public boolean hasLineOfSight(Entity entity) {
@@ -848,7 +851,7 @@
          Vec3D vec3d = new Vec3D(this.locX(), this.getHeadY(), this.locZ());
          Vec3D vec3d1 = new Vec3D(entity.locX(), entity.getHeadY(), entity.locZ());
  
-@@ -2458,14 +2887,21 @@
+@@ -2548,14 +2980,21 @@
  
      @Override
      public boolean isInteractable() {
@@ -872,7 +875,7 @@
      @Override
      protected void velocityChanged() {
          this.velocityChanged = this.random.nextDouble() >= this.b(GenericAttributes.KNOCKBACK_RESISTANCE);
-@@ -2658,7 +3094,25 @@
+@@ -2748,7 +3187,25 @@
          } else {
              if (!this.activeItem.isEmpty() && this.isHandRaised()) {
                  this.b(this.activeItem, 16);
@@ -899,7 +902,7 @@
  
                  if (itemstack != this.activeItem) {
                      this.a(enumhand, itemstack);
-@@ -2750,10 +3204,18 @@
+@@ -2840,10 +3297,18 @@
              }
  
              if (flag2) {
@@ -921,7 +924,7 @@
              }
          }
  
-@@ -2850,7 +3312,7 @@
+@@ -2940,7 +3405,7 @@
      }
  
      public void entityWakeup() {
@@ -930,7 +933,7 @@
          World world = this.world;
  
          this.world.getClass();
-@@ -2921,7 +3383,7 @@
+@@ -3011,7 +3476,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

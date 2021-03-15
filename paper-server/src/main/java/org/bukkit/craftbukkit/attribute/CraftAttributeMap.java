@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.attribute;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.AttributeBase;
-import net.minecraft.server.AttributeMapBase;
-import net.minecraft.server.IRegistry;
+import net.minecraft.core.IRegistry;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.world.entity.ai.attributes.AttributeMapBase;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
@@ -21,7 +21,7 @@ public class CraftAttributeMap implements Attributable {
     @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         Preconditions.checkArgument(attribute != null, "attribute");
-        net.minecraft.server.AttributeModifiable nms = handle.a(toMinecraft(attribute));
+        net.minecraft.world.entity.ai.attributes.AttributeModifiable nms = handle.a(toMinecraft(attribute));
 
         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
     }

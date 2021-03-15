@@ -9,14 +9,14 @@ public final class CraftScaffolding extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftScaffolding(net.minecraft.server.IBlockData state) {
+    public CraftScaffolding(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftScaffolding
 
-    private static final net.minecraft.server.BlockStateBoolean BOTTOM = getBoolean(net.minecraft.server.BlockScaffolding.class, "bottom");
-    private static final net.minecraft.server.BlockStateInteger DISTANCE = getInteger(net.minecraft.server.BlockScaffolding.class, "distance");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean BOTTOM = getBoolean(net.minecraft.world.level.block.BlockScaffolding.class, "bottom");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger(net.minecraft.world.level.block.BlockScaffolding.class, "distance");
 
     @Override
     public boolean isBottom() {
@@ -45,7 +45,7 @@ public final class CraftScaffolding extends org.bukkit.craftbukkit.block.data.Cr
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.server.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.server.BlockScaffolding.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockScaffolding.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {

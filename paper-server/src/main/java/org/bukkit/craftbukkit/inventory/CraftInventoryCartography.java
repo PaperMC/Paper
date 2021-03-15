@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.IInventory;
+import net.minecraft.world.IInventory;
 import org.bukkit.inventory.CartographyInventory;
 
 public class CraftInventoryCartography extends CraftResultInventory implements CartographyInventory {

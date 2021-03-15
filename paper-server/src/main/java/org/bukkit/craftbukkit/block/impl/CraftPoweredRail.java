@@ -9,13 +9,13 @@ public final class CraftPoweredRail extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftPoweredRail(net.minecraft.server.IBlockData state) {
+    public CraftPoweredRail(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftPowerable
 
-    private static final net.minecraft.server.BlockStateBoolean POWERED = getBoolean(net.minecraft.server.BlockPoweredRail.class, "powered");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockPoweredRail.class, "powered");
 
     @Override
     public boolean isPowered() {
@@ -29,7 +29,7 @@ public final class CraftPoweredRail extends org.bukkit.craftbukkit.block.data.Cr
 
     // org.bukkit.craftbukkit.block.data.CraftRail
 
-    private static final net.minecraft.server.BlockStateEnum<?> SHAPE = getEnum(net.minecraft.server.BlockPoweredRail.class, "shape");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> SHAPE = getEnum(net.minecraft.world.level.block.BlockPoweredRail.class, "shape");
 
     @Override
     public org.bukkit.block.data.Rail.Shape getShape() {

@@ -9,13 +9,13 @@ public final class CraftSkull extends org.bukkit.craftbukkit.block.data.CraftBlo
         super();
     }
 
-    public CraftSkull(net.minecraft.server.IBlockData state) {
+    public CraftSkull(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRotatable
 
-    private static final net.minecraft.server.BlockStateInteger ROTATION = getInteger(net.minecraft.server.BlockSkull.class, "rotation");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger ROTATION = getInteger(net.minecraft.world.level.block.BlockSkull.class, "rotation");
 
     @Override
     public org.bukkit.block.BlockFace getRotation() {

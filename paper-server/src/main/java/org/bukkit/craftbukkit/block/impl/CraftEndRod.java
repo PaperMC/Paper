@@ -9,13 +9,13 @@ public final class CraftEndRod extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftEndRod(net.minecraft.server.IBlockData state) {
+    public CraftEndRod(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockEndRod.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockEndRod.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {

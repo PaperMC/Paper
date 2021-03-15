@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.Fluid;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.World;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.level.World;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.material.Fluid;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 

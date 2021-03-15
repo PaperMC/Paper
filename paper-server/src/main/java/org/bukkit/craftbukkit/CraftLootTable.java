@@ -4,17 +4,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.server.DamageSource;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.IInventory;
-import net.minecraft.server.LootContextParameter;
-import net.minecraft.server.LootContextParameterSet;
-import net.minecraft.server.LootContextParameters;
-import net.minecraft.server.LootTable;
-import net.minecraft.server.LootTableInfo;
-import net.minecraft.server.Vec3D;
-import net.minecraft.server.WorldServer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.IInventory;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.LootTableInfo;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParameter;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSet;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
+import net.minecraft.world.phys.Vec3D;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -42,10 +42,10 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         LootTableInfo nmsContext = convertContext(context);
-        List<net.minecraft.server.ItemStack> nmsItems = handle.populateLoot(nmsContext);
+        List<net.minecraft.world.item.ItemStack> nmsItems = handle.populateLoot(nmsContext);
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
-        for (net.minecraft.server.ItemStack item : nmsItems) {
+        for (net.minecraft.world.item.ItemStack item : nmsItems) {
             if (item.isEmpty()) {
                 continue;
             }

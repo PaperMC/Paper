@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.GeneratorAccess;
-import net.minecraft.server.IInventory;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.IInventory;
+import net.minecraft.world.level.GeneratorAccess;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.inventory.BlockInventoryHolder;

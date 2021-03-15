@@ -5,29 +5,29 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import net.minecraft.server.AxisAlignedBB;
-import net.minecraft.server.BiomeBase;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.BlockRedstoneWire;
-import net.minecraft.server.BlockTileEntity;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.EnumDirection;
-import net.minecraft.server.EnumHand;
-import net.minecraft.server.EnumInteractionResult;
-import net.minecraft.server.EnumSkyBlock;
-import net.minecraft.server.GeneratorAccess;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.ItemActionContext;
-import net.minecraft.server.ItemBoneMeal;
-import net.minecraft.server.Items;
-import net.minecraft.server.MovingObjectPosition;
-import net.minecraft.server.MovingObjectPositionBlock;
-import net.minecraft.server.RayTrace;
-import net.minecraft.server.TileEntity;
-import net.minecraft.server.Vec3D;
-import net.minecraft.server.VoxelShape;
-import net.minecraft.server.WorldServer;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.EnumDirection;
+import net.minecraft.core.IRegistry;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.EnumHand;
+import net.minecraft.world.EnumInteractionResult;
+import net.minecraft.world.item.ItemBoneMeal;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.ItemActionContext;
+import net.minecraft.world.level.EnumSkyBlock;
+import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.RayTrace;
+import net.minecraft.world.level.biome.BiomeBase;
+import net.minecraft.world.level.block.BlockRedstoneWire;
+import net.minecraft.world.level.block.BlockTileEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.phys.AxisAlignedBB;
+import net.minecraft.world.phys.MovingObjectPosition;
+import net.minecraft.world.phys.MovingObjectPositionBlock;
+import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
@@ -59,7 +59,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 public class CraftBlock implements Block {
-    private final net.minecraft.server.GeneratorAccess world;
+    private final net.minecraft.world.level.GeneratorAccess world;
     private final BlockPosition position;
 
     public CraftBlock(GeneratorAccess world, BlockPosition position) {
@@ -71,11 +71,11 @@ public class CraftBlock implements Block {
         return new CraftBlock(world, position);
     }
 
-    private net.minecraft.server.Block getNMSBlock() {
+    private net.minecraft.world.level.block.Block getNMSBlock() {
         return getNMS().getBlock();
     }
 
-    public net.minecraft.server.IBlockData getNMS() {
+    public net.minecraft.world.level.block.state.IBlockData getNMS() {
         return world.getType(position);
     }
 
@@ -188,8 +188,8 @@ public class CraftBlock implements Block {
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
         if (!blockData.isAir() && blockData.getBlock() instanceof BlockTileEntity && blockData.getBlock() != getNMSBlock()) {
             // SPIGOT-4612: faster - just clear tile
-            if (world instanceof net.minecraft.server.World) {
-                ((net.minecraft.server.World) world).removeTileEntity(position);
+            if (world instanceof net.minecraft.world.level.World) {
+                ((net.minecraft.world.level.World) world).removeTileEntity(position);
             } else {
                 world.setTypeAndData(position, Blocks.AIR.getBlockData(), 0);
             }
@@ -568,7 +568,7 @@ public class CraftBlock implements Block {
     @Override
     public int getBlockPower(BlockFace face) {
         int power = 0;
-        net.minecraft.server.World world = this.world.getMinecraftWorld();
+        net.minecraft.world.level.World world = this.world.getMinecraftWorld();
         int x = getX();
         int y = getY();
         int z = getZ();
@@ -619,14 +619,14 @@ public class CraftBlock implements Block {
     @Override
     public boolean breakNaturally(ItemStack item) {
         // Order matters here, need to drop before setting to air so skulls can get their data
-        net.minecraft.server.IBlockData iblockdata = this.getNMS();
-        net.minecraft.server.Block block = iblockdata.getBlock();
-        net.minecraft.server.ItemStack nmsItem = CraftItemStack.asNMSCopy(item);
+        net.minecraft.world.level.block.state.IBlockData iblockdata = this.getNMS();
+        net.minecraft.world.level.block.Block block = iblockdata.getBlock();
+        net.minecraft.world.item.ItemStack nmsItem = CraftItemStack.asNMSCopy(item);
         boolean result = false;
 
         // Modelled off EntityHuman#hasBlock
         if (block != Blocks.AIR && (item == null || !iblockdata.isRequiresSpecialTool() || nmsItem.canDestroySpecialBlock(iblockdata))) {
-            net.minecraft.server.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
+            net.minecraft.world.level.block.Block.dropItems(iblockdata, world.getMinecraftWorld(), position, world.getTileEntity(position), null, nmsItem);
             result = true;
         }
 
@@ -654,11 +654,11 @@ public class CraftBlock implements Block {
     @Override
     public Collection<ItemStack> getDrops(ItemStack item, Entity entity) {
         IBlockData iblockdata = getNMS();
-        net.minecraft.server.ItemStack nms = CraftItemStack.asNMSCopy(item);
+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
         // Modelled off EntityHuman#hasBlock
         if (item == null || !iblockdata.isRequiresSpecialTool() || nms.canDestroySpecialBlock(iblockdata)) {
-            return net.minecraft.server.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
+            return net.minecraft.world.level.block.Block.getDrops(iblockdata, (WorldServer) world.getMinecraftWorld(), position, world.getTileEntity(position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         } else {
             return Collections.emptyList();

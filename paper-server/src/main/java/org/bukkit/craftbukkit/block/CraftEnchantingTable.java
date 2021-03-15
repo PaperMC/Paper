@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.TileEntityEnchantTable;
+import net.minecraft.world.level.block.entity.TileEntityEnchantTable;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.EnchantingTable;

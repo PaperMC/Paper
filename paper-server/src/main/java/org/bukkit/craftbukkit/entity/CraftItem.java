@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntityItem;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.EntityItem;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;

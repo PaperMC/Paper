@@ -9,13 +9,13 @@ public final class CraftTarget extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftTarget(net.minecraft.server.IBlockData state) {
+    public CraftTarget(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAnaloguePowerable
 
-    private static final net.minecraft.server.BlockStateInteger POWER = getInteger(net.minecraft.server.BlockTarget.class, "power");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger POWER = getInteger(net.minecraft.world.level.block.BlockTarget.class, "power");
 
     @Override
     public int getPower() {

@@ -6,16 +6,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.IScoreboardCriteria;
+import net.minecraft.network.protocol.game.PacketPlayOutScoreboardObjective;
+import net.minecraft.network.protocol.game.PacketPlayOutScoreboardTeam;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PacketPlayOutScoreboardObjective;
-import net.minecraft.server.PacketPlayOutScoreboardTeam;
-import net.minecraft.server.Scoreboard;
-import net.minecraft.server.ScoreboardObjective;
-import net.minecraft.server.ScoreboardScore;
 import net.minecraft.server.ScoreboardServer;
-import net.minecraft.server.ScoreboardTeam;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.ScoreboardObjective;
+import net.minecraft.world.scores.ScoreboardScore;
+import net.minecraft.world.scores.ScoreboardTeam;
+import net.minecraft.world.scores.criteria.IScoreboardCriteria;
 import org.apache.commons.lang.Validate;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.util.WeakCollection;
@@ -28,7 +28,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
     private final Collection<CraftScoreboard> scoreboards = new WeakCollection<CraftScoreboard>();
     private final Map<CraftPlayer, CraftScoreboard> playerBoards = new HashMap<CraftPlayer, CraftScoreboard>();
 
-    public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.server.Scoreboard scoreboardServer) {
+    public CraftScoreboardManager(MinecraftServer minecraftserver, net.minecraft.world.scores.Scoreboard scoreboardServer) {
         mainScoreboard = new CraftScoreboard(scoreboardServer);
         server = minecraftserver;
         scoreboards.add(mainScoreboard);
@@ -57,8 +57,8 @@ public final class CraftScoreboardManager implements ScoreboardManager {
         Validate.isTrue(bukkitScoreboard instanceof CraftScoreboard, "Cannot set player scoreboard to an unregistered Scoreboard");
 
         CraftScoreboard scoreboard = (CraftScoreboard) bukkitScoreboard;
-        net.minecraft.server.Scoreboard oldboard = getPlayerBoard(player).getHandle();
-        net.minecraft.server.Scoreboard newboard = scoreboard.getHandle();
+        net.minecraft.world.scores.Scoreboard oldboard = getPlayerBoard(player).getHandle();
+        net.minecraft.world.scores.Scoreboard newboard = scoreboard.getHandle();
         EntityPlayer entityplayer = player.getHandle();
 
         if (oldboard == newboard) {

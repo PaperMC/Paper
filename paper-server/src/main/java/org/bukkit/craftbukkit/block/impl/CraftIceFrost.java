@@ -9,13 +9,13 @@ public final class CraftIceFrost extends org.bukkit.craftbukkit.block.data.Craft
         super();
     }
 
-    public CraftIceFrost(net.minecraft.server.IBlockData state) {
+    public CraftIceFrost(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.server.BlockStateInteger AGE = getInteger(net.minecraft.server.BlockIceFrost.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockIceFrost.class, "age");
 
     @Override
     public int getAge() {

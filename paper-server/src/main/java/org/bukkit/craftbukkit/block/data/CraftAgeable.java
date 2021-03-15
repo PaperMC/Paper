@@ -4,7 +4,7 @@ import org.bukkit.block.data.Ageable;
 
 public abstract class CraftAgeable extends CraftBlockData implements Ageable {
 
-    private static final net.minecraft.server.BlockStateInteger AGE = getInteger("age");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger("age");
 
     @Override
     public int getAge() {

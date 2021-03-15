@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.IInventory;
+import net.minecraft.world.IInventory;
 import org.bukkit.inventory.StonecutterInventory;
 
 public class CraftInventoryStonecutter extends CraftResultInventory implements StonecutterInventory {

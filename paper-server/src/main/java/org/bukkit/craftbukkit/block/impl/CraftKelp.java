@@ -9,13 +9,13 @@ public final class CraftKelp extends org.bukkit.craftbukkit.block.data.CraftBloc
         super();
     }
 
-    public CraftKelp(net.minecraft.server.IBlockData state) {
+    public CraftKelp(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.server.BlockStateInteger AGE = getInteger(net.minecraft.server.BlockKelp.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockKelp.class, "age");
 
     @Override
     public int getAge() {

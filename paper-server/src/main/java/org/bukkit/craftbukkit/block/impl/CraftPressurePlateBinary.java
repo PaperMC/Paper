@@ -9,13 +9,13 @@ public final class CraftPressurePlateBinary extends org.bukkit.craftbukkit.block
         super();
     }
 
-    public CraftPressurePlateBinary(net.minecraft.server.IBlockData state) {
+    public CraftPressurePlateBinary(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftPowerable
 
-    private static final net.minecraft.server.BlockStateBoolean POWERED = getBoolean(net.minecraft.server.BlockPressurePlateBinary.class, "powered");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockPressurePlateBinary.class, "powered");
 
     @Override
     public boolean isPowered() {

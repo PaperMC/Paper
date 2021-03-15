@@ -5,13 +5,13 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.serialization.DataResult;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.server.DynamicOpsNBT;
+import net.minecraft.nbt.DynamicOpsNBT;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagString;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.NBTBase;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NBTTagString;
-import net.minecraft.server.ResourceKey;
-import net.minecraft.server.WorldServer;
+import net.minecraft.server.level.WorldServer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -131,7 +131,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         if (lodestoneWorld == null) {
             return null;
         }
-        Optional<ResourceKey<net.minecraft.server.World>> key = net.minecraft.server.World.f.parse(DynamicOpsNBT.a, lodestoneWorld).result();
+        Optional<ResourceKey<net.minecraft.world.level.World>> key = net.minecraft.world.level.World.f.parse(DynamicOpsNBT.a, lodestoneWorld).result();
         WorldServer worldServer = key.isPresent() ? MinecraftServer.getServer().getWorldServer(key.get()) : null;
         World world = worldServer != null ? worldServer.getWorld() : null;
         return new Location(world, lodestoneX, lodestoneY, lodestoneZ); // world may be null here, if the referenced world is not loaded
@@ -143,8 +143,8 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         if (lodestone == null) {
             this.lodestoneWorld = null;
         } else {
-            ResourceKey<net.minecraft.server.World> key = ((CraftWorld) lodestone.getWorld()).getHandle().getDimensionKey();
-            DataResult<NBTBase> dataresult = net.minecraft.server.World.f.encodeStart(DynamicOpsNBT.a, key);
+            ResourceKey<net.minecraft.world.level.World> key = ((CraftWorld) lodestone.getWorld()).getHandle().getDimensionKey();
+            DataResult<NBTBase> dataresult = net.minecraft.world.level.World.f.encodeStart(DynamicOpsNBT.a, key);
             this.lodestoneWorld = (NBTTagString) dataresult.get().orThrow();
             this.lodestoneX = lodestone.getBlockX();
             this.lodestoneY = lodestone.getBlockY();

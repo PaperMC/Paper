@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityAmbient;
+import net.minecraft.world.entity.ambient.EntityAmbient;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.EntityType;

@@ -4,7 +4,7 @@ import org.bukkit.block.data.FaceAttachable;
 
 public abstract class CraftFaceAttachable extends CraftBlockData implements FaceAttachable {
 
-    private static final net.minecraft.server.BlockStateEnum<?> ATTACH_FACE = getEnum("face");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> ATTACH_FACE = getEnum("face");
 
     @Override
     public org.bukkit.block.data.FaceAttachable.AttachedFace getAttachedFace() {

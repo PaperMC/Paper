@@ -4,7 +4,7 @@ import org.bukkit.block.data.Levelled;
 
 public abstract class CraftLevelled extends CraftBlockData implements Levelled {
 
-    private static final net.minecraft.server.BlockStateInteger LEVEL = getInteger("level");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger LEVEL = getInteger("level");
 
     @Override
     public int getLevel() {

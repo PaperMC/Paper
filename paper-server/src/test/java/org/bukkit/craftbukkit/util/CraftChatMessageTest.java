@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.util;
 
 import static org.junit.Assert.*;
-import net.minecraft.server.ChatComponentText;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.IChatMutableComponent;
+import net.minecraft.network.chat.ChatComponentText;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.chat.IChatMutableComponent;
 import org.junit.Test;
 
 public class CraftChatMessageTest {

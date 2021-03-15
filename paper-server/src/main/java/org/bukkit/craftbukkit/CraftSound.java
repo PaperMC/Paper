@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.SoundEffect;
+import net.minecraft.core.IRegistry;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.sounds.SoundEffect;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;

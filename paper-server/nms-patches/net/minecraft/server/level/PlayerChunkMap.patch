@@ -1,6 +1,6 @@
---- a/net/minecraft/server/PlayerChunkMap.java
-+++ b/net/minecraft/server/PlayerChunkMap.java
-@@ -45,6 +45,8 @@
+--- a/net/minecraft/server/level/PlayerChunkMap.java
++++ b/net/minecraft/server/level/PlayerChunkMap.java
+@@ -89,6 +89,8 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
@@ -9,7 +9,7 @@
  public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -75,6 +77,31 @@
+@@ -119,6 +121,31 @@
      private final Queue<Runnable> A;
      private int viewDistance;
  
@@ -41,7 +41,7 @@
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(new File(convertable_conversionsession.a(worldserver.getDimensionKey()), "region"), datafixer, flag);
          this.visibleChunks = this.updatingChunks.clone();
-@@ -195,9 +222,12 @@
+@@ -239,9 +266,12 @@
  
          return completablefuture1.thenApply((list1) -> {
              List<IChunkAccess> list2 = Lists.newArrayList();
@@ -56,7 +56,7 @@
                  final Either<IChunkAccess, PlayerChunk.Failure> either = (Either) iterator.next();
                  Optional<IChunkAccess> optional = either.left();
  
-@@ -300,7 +330,7 @@
+@@ -344,7 +374,7 @@
              PlayerChunkMap.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", this.w.getName());
          } else {
              this.visibleChunks.values().stream().filter(PlayerChunk::hasBeenLoaded).forEach((playerchunk) -> {
@@ -65,7 +65,7 @@
  
                  if (ichunkaccess instanceof ProtoChunkExtension || ichunkaccess instanceof Chunk) {
                      this.saveChunk(ichunkaccess);
-@@ -311,7 +341,6 @@
+@@ -355,7 +385,6 @@
          }
  
      }
@@ -73,7 +73,7 @@
      protected void unloadChunks(BooleanSupplier booleansupplier) {
          GameProfilerFiller gameprofilerfiller = this.world.getMethodProfiler();
  
-@@ -350,7 +379,7 @@
+@@ -394,7 +423,7 @@
  
      private void a(long i, PlayerChunk playerchunk) {
          CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkSave();
@@ -82,13 +82,13 @@
              CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkSave();
  
              if (completablefuture1 != completablefuture) {
-@@ -572,8 +601,15 @@
+@@ -616,8 +645,15 @@
  
                          while (iterator.hasNext()) {
                              Entity entity = (Entity) iterator.next();
 +                            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
 +                            boolean needsRemoval = false;
-+                            if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
++                            if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
 +                                entity.die();
 +                                needsRemoval = true;
 +                            }
@@ -99,7 +99,7 @@
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -784,7 +820,8 @@
+@@ -828,7 +864,8 @@
                  return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
              });
  
@@ -109,7 +109,7 @@
                  return Stream.of(chunk.getEntitySlices()).mapToInt(EntitySlice::size).sum();
              }).orElse(0), optional1.map((chunk) -> {
                  return chunk.getTileEntities().size();
-@@ -795,7 +832,7 @@
+@@ -839,7 +876,7 @@
  
      private static String a(CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture) {
          try {
@@ -118,7 +118,7 @@
  
              return either != null ? (String) either.map((chunk) -> {
                  return "done";
-@@ -813,7 +850,7 @@
+@@ -857,7 +894,7 @@
      private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -127,7 +127,7 @@
      }
  
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1145,7 +1182,7 @@
+@@ -1189,7 +1226,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -136,7 +136,7 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1198,7 +1235,7 @@
+@@ -1242,7 +1279,7 @@
  
          public void updatePlayer(EntityPlayer entityplayer) {
              if (entityplayer != this.tracker) {
@@ -145,7 +145,7 @@
                  int i = Math.min(this.b(), (PlayerChunkMap.this.viewDistance - 1) * 16);
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
  
-@@ -1214,6 +1251,17 @@
+@@ -1258,6 +1295,17 @@
                          }
                      }
  

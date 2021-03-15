@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
 import java.util.Objects;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.TileEntityEndGateway;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.level.block.entity.TileEntityEndGateway;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;

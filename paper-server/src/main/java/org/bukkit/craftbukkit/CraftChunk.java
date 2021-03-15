@@ -6,24 +6,24 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Predicate;
-import net.minecraft.server.BiomeStorage;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.ChunkCoordIntPair;
-import net.minecraft.server.ChunkSection;
-import net.minecraft.server.DataPaletteBlock;
-import net.minecraft.server.EnumSkyBlock;
-import net.minecraft.server.GameProfileSerializer;
-import net.minecraft.server.HeightMap;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.LightEngine;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.NibbleArray;
-import net.minecraft.server.SectionPosition;
-import net.minecraft.server.SeededRandom;
-import net.minecraft.server.WorldChunkManager;
-import net.minecraft.server.WorldServer;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.SectionPosition;
+import net.minecraft.nbt.GameProfileSerializer;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.world.level.ChunkCoordIntPair;
+import net.minecraft.world.level.EnumSkyBlock;
+import net.minecraft.world.level.biome.WorldChunkManager;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.chunk.BiomeStorage;
+import net.minecraft.world.level.chunk.ChunkSection;
+import net.minecraft.world.level.chunk.DataPaletteBlock;
+import net.minecraft.world.level.chunk.NibbleArray;
+import net.minecraft.world.level.levelgen.HeightMap;
+import net.minecraft.world.level.levelgen.SeededRandom;
+import net.minecraft.world.level.lighting.LightEngine;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.World;
@@ -38,15 +38,15 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 
 public class CraftChunk implements Chunk {
-    private WeakReference<net.minecraft.server.Chunk> weakChunk;
+    private WeakReference<net.minecraft.world.level.chunk.Chunk> weakChunk;
     private final WorldServer worldServer;
     private final int x;
     private final int z;
     private static final DataPaletteBlock<IBlockData> emptyBlockIDs = new ChunkSection(0).getBlocks();
     private static final byte[] emptyLight = new byte[2048];
 
-    public CraftChunk(net.minecraft.server.Chunk chunk) {
-        this.weakChunk = new WeakReference<net.minecraft.server.Chunk>(chunk);
+    public CraftChunk(net.minecraft.world.level.chunk.Chunk chunk) {
+        this.weakChunk = new WeakReference<net.minecraft.world.level.chunk.Chunk>(chunk);
 
         worldServer = (WorldServer) getHandle().world;
         x = getHandle().getPos().x;
@@ -62,13 +62,13 @@ public class CraftChunk implements Chunk {
         return (CraftWorld) getWorld();
     }
 
-    public net.minecraft.server.Chunk getHandle() {
-        net.minecraft.server.Chunk c = weakChunk.get();
+    public net.minecraft.world.level.chunk.Chunk getHandle() {
+        net.minecraft.world.level.chunk.Chunk c = weakChunk.get();
 
         if (c == null) {
             c = worldServer.getChunkAt(x, z);
 
-            weakChunk = new WeakReference<net.minecraft.server.Chunk>(c);
+            weakChunk = new WeakReference<net.minecraft.world.level.chunk.Chunk>(c);
         }
 
         return c;
@@ -106,7 +106,7 @@ public class CraftChunk implements Chunk {
             getWorld().getChunkAt(x, z); // Transient load for this tick
         }
         int count = 0, index = 0;
-        net.minecraft.server.Chunk chunk = getHandle();
+        net.minecraft.world.level.chunk.Chunk chunk = getHandle();
 
         for (int i = 0; i < 16; i++) {
             count += chunk.entitySlices[i].size();
@@ -117,11 +117,11 @@ public class CraftChunk implements Chunk {
         for (int i = 0; i < 16; i++) {
 
             for (Object obj : chunk.entitySlices[i].toArray()) {
-                if (!(obj instanceof net.minecraft.server.Entity)) {
+                if (!(obj instanceof net.minecraft.world.entity.Entity)) {
                     continue;
                 }
 
-                entities[index++] = ((net.minecraft.server.Entity) obj).getBukkitEntity();
+                entities[index++] = ((net.minecraft.world.entity.Entity) obj).getBukkitEntity();
             }
         }
 
@@ -134,7 +134,7 @@ public class CraftChunk implements Chunk {
             getWorld().getChunkAt(x, z); // Transient load for this tick
         }
         int index = 0;
-        net.minecraft.server.Chunk chunk = getHandle();
+        net.minecraft.world.level.chunk.Chunk chunk = getHandle();
 
         BlockState[] entities = new BlockState[chunk.tileEntities.size()];
 
@@ -239,7 +239,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
-        net.minecraft.server.Chunk chunk = getHandle();
+        net.minecraft.world.level.chunk.Chunk chunk = getHandle();
 
         ChunkSection[] cs = chunk.getSections();
         DataPaletteBlock[] sectionBlockIDs = new DataPaletteBlock[cs.length];
@@ -257,7 +257,7 @@ public class CraftChunk implements Chunk {
                 NBTTagCompound data = new NBTTagCompound();
                 cs[i].getBlocks().a(data, "Palette", "BlockStates");
 
-                DataPaletteBlock blockids = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, net.minecraft.server.Block.REGISTRY_ID, GameProfileSerializer::c, GameProfileSerializer::a, Blocks.AIR.getBlockData()); // TODO: snapshot whole ChunkSection
+                DataPaletteBlock blockids = new DataPaletteBlock<>(ChunkSection.GLOBAL_PALETTE, net.minecraft.world.level.block.Block.REGISTRY_ID, GameProfileSerializer::c, GameProfileSerializer::a, Blocks.AIR.getBlockData()); // TODO: snapshot whole ChunkSection
                 blockids.a(data.getList("Palette", CraftMagicNumbers.NBT.TAG_COMPOUND), data.getLongArray("BlockStates"));
 
                 sectionBlockIDs[i] = blockids;

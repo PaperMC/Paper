@@ -1,8 +1,8 @@
 package org.bukkit;
 
 import java.util.Map;
-import net.minecraft.server.IRegistry;
-import net.minecraft.server.MinecraftKey;
+import net.minecraft.core.IRegistry;
+import net.minecraft.resources.MinecraftKey;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;
 import org.junit.BeforeClass;

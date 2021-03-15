@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftStructureBlock extends CraftBlockData implements StructureBlock {
 
-    private static final net.minecraft.server.BlockStateEnum<?> MODE = getEnum("mode");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> MODE = getEnum("mode");
 
     @Override
     public org.bukkit.block.data.type.StructureBlock.Mode getMode() {

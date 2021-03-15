@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityPiglinBrute;
+import net.minecraft.world.entity.monster.piglin.EntityPiglinBrute;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.PiglinBrute;

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.map;
 
-import net.minecraft.server.MapIcon;
-import net.minecraft.server.WorldMap;
+import net.minecraft.world.level.saveddata.maps.MapIcon;
+import net.minecraft.world.level.saveddata.maps.WorldMap;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;

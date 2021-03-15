@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.boss;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.EnderDragonBattle;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EnumDragonRespawn;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.dimension.end.EnderDragonBattle;
+import net.minecraft.world.level.dimension.end.EnumDragonRespawn;
 import org.bukkit.Location;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;

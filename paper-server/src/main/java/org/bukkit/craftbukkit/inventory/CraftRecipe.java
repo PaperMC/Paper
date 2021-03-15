@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.server.RecipeItemStack;
+import net.minecraft.world.item.crafting.RecipeItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -18,9 +18,9 @@ public interface CraftRecipe extends Recipe {
         if (bukkit == null) {
             stack = RecipeItemStack.a;
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
-            stack = new RecipeItemStack(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(new ItemStack(mat)))));
+            stack = new RecipeItemStack(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.world.item.crafting.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(new ItemStack(mat)))));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
-            stack = new RecipeItemStack(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.server.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(mat))));
+            stack = new RecipeItemStack(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.world.item.crafting.RecipeItemStack.StackProvider(CraftItemStack.asNMSCopy(mat))));
             stack.exact = true;
         } else {
             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
@@ -43,7 +43,7 @@ public interface CraftRecipe extends Recipe {
 
         if (list.exact) {
             List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(list.choices.length);
-            for (net.minecraft.server.ItemStack i : list.choices) {
+            for (net.minecraft.world.item.ItemStack i : list.choices) {
                 choices.add(CraftItemStack.asBukkitCopy(i));
             }
 
@@ -51,7 +51,7 @@ public interface CraftRecipe extends Recipe {
         } else {
 
             List<org.bukkit.Material> choices = new ArrayList<>(list.choices.length);
-            for (net.minecraft.server.ItemStack i : list.choices) {
+            for (net.minecraft.world.item.ItemStack i : list.choices) {
                 choices.add(CraftMagicNumbers.getMaterial(i.getItem()));
             }
 

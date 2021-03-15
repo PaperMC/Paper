@@ -5,7 +5,7 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import net.minecraft.server.CrashReportCallable;
+import net.minecraft.CrashReportCallable;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;

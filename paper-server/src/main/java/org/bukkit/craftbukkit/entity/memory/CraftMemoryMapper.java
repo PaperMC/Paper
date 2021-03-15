@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity.memory;
 
 import java.util.UUID;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.GlobalPos;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.core.GlobalPos;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;

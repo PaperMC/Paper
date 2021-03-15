@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import static org.junit.Assert.*;
-import net.minecraft.server.ItemStack;
-import net.minecraft.server.Items;
-import net.minecraft.server.PlayerInventory;
+import net.minecraft.world.entity.player.PlayerInventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 

@@ -13,7 +13,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import net.minecraft.server.CommandListenerWrapper;
+import net.minecraft.commands.CommandListenerWrapper;
 import org.bukkit.command.Command;
 import org.bukkit.craftbukkit.CraftServer;
 

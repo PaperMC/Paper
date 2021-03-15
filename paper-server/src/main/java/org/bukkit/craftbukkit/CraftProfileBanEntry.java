@@ -4,8 +4,8 @@ import com.mojang.authlib.GameProfile;
 import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
-import net.minecraft.server.GameProfileBanEntry;
-import net.minecraft.server.GameProfileBanList;
+import net.minecraft.server.players.GameProfileBanEntry;
+import net.minecraft.server.players.GameProfileBanList;
 import org.bukkit.Bukkit;
 
 public final class CraftProfileBanEntry implements org.bukkit.BanEntry {

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.MinecraftKey;
-import net.minecraft.server.TileEntityLootable;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.level.block.entity.TileEntityLootable;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Nameable;

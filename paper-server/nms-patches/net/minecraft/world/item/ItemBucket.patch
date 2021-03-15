@@ -1,10 +1,12 @@
---- a/net/minecraft/server/ItemBucket.java
-+++ b/net/minecraft/server/ItemBucket.java
-@@ -2,6 +2,14 @@
- 
- import javax.annotation.Nullable;
+--- a/net/minecraft/world/item/ItemBucket.java
++++ b/net/minecraft/world/item/ItemBucket.java
+@@ -29,6 +29,16 @@
+ import net.minecraft.world.phys.MovingObjectPosition;
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
  
 +// CraftBukkit start
++import net.minecraft.network.protocol.game.PacketPlayOutBlockChange;
++import net.minecraft.server.level.WorldServer;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.DummyGeneratorAccess;
@@ -15,7 +17,7 @@
  public class ItemBucket extends Item {
  
      public final FluidType fluidType;
-@@ -32,12 +40,22 @@
+@@ -59,12 +69,22 @@
                  if (this.fluidType == FluidTypes.EMPTY) {
                      iblockdata = world.getType(blockposition);
                      if (iblockdata.getBlock() instanceof IFluidSource) {
@@ -26,7 +28,7 @@
 +                        if (event.isCancelled()) {
 +                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
 +                            ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
-+                            return new InteractionResultWrapper(EnumInteractionResult.FAIL, itemstack);
++                            return InteractionResultWrapper.fail(itemstack);
 +                        }
 +                        // CraftBukkit end
                          FluidType fluidtype = ((IFluidSource) iblockdata.getBlock()).removeFluid(world, blockposition, iblockdata);
@@ -39,7 +41,7 @@
  
                              if (!world.isClientSide) {
                                  CriterionTriggers.j.a((EntityPlayer) entityhuman, new ItemStack(fluidtype.a()));
-@@ -52,7 +70,7 @@
+@@ -79,7 +99,7 @@
                      iblockdata = world.getType(blockposition);
                      BlockPosition blockposition2 = iblockdata.getBlock() instanceof IFluidContainer && this.fluidType == FluidTypes.WATER ? blockposition : blockposition1;
  
@@ -48,7 +50,7 @@
                          this.a(world, itemstack, blockposition2);
                          if (entityhuman instanceof EntityPlayer) {
                              CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition2, itemstack);
-@@ -77,6 +95,11 @@
+@@ -104,6 +124,11 @@
      public void a(World world, ItemStack itemstack, BlockPosition blockposition) {}
  
      public boolean a(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock) {
@@ -60,7 +62,7 @@
          if (!(this.fluidType instanceof FluidTypeFlowing)) {
              return false;
          } else {
-@@ -86,8 +109,18 @@
+@@ -113,8 +138,18 @@
              boolean flag = iblockdata.a(this.fluidType);
              boolean flag1 = iblockdata.isAir() || flag || block instanceof IFluidContainer && ((IFluidContainer) block).canPlace(world, blockposition, iblockdata, this.fluidType);
  

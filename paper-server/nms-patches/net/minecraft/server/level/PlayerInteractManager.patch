@@ -1,11 +1,19 @@
---- a/net/minecraft/server/PlayerInteractManager.java
-+++ b/net/minecraft/server/PlayerInteractManager.java
-@@ -4,6 +4,16 @@
+--- a/net/minecraft/server/level/PlayerInteractManager.java
++++ b/net/minecraft/server/level/PlayerInteractManager.java
+@@ -26,6 +26,24 @@
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
  
 +// CraftBukkit start
 +import java.util.ArrayList;
++import net.minecraft.network.protocol.game.PacketPlayOutBlockChange;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.entity.EnumItemSlot;
++import net.minecraft.world.level.block.BlockCake;
++import net.minecraft.world.level.block.BlockDoor;
++import net.minecraft.world.level.block.BlockTrapdoor;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.properties.BlockPropertyDoubleBlockHalf;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.event.block.BlockBreakEvent;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -17,7 +25,7 @@
  public class PlayerInteractManager {
  
      private static final Logger LOGGER = LogManager.getLogger();
-@@ -38,7 +48,7 @@
+@@ -60,7 +78,7 @@
          this.gamemode = enumgamemode;
          enumgamemode.a(this.player.abilities);
          this.player.updateAbilities();
@@ -26,7 +34,7 @@
          this.world.everyoneSleeping();
      }
  
-@@ -67,7 +77,7 @@
+@@ -89,7 +107,7 @@
      }
  
      public void a() {
@@ -35,7 +43,7 @@
          IBlockData iblockdata;
  
          if (this.j) {
-@@ -123,9 +133,31 @@
+@@ -145,9 +163,31 @@
  
              if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.START_DESTROY_BLOCK) {
                  if (!this.world.a((EntityHuman) this.player, blockposition)) {
@@ -67,7 +75,7 @@
  
                  if (this.isCreative()) {
                      this.a(blockposition, packetplayinblockdig_enumplayerdigtype, "creative destroy");
-@@ -141,11 +173,43 @@
+@@ -163,11 +203,43 @@
                  float f = 1.0F;
  
                  iblockdata = this.world.getType(blockposition);
@@ -112,7 +120,7 @@
                  if (!iblockdata.isAir() && f >= 1.0F) {
                      this.a(blockposition, packetplayinblockdig_enumplayerdigtype, "insta mine");
                  } else {
-@@ -189,7 +253,7 @@
+@@ -211,7 +283,7 @@
              } else if (packetplayinblockdig_enumplayerdigtype == PacketPlayInBlockDig.EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
                  this.f = false;
                  if (!Objects.equals(this.h, blockposition)) {
@@ -121,7 +129,7 @@
                      this.world.a(this.player.getId(), this.h, -1);
                      this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(this.h, this.world.getType(this.h), packetplayinblockdig_enumplayerdigtype, true, "aborted mismatched destroying"));
                  }
-@@ -205,17 +269,73 @@
+@@ -227,17 +299,73 @@
          if (this.breakBlock(blockposition)) {
              this.player.playerConnection.sendPacket(new PacketPlayOutBlockBreak(blockposition, this.world.getType(blockposition), packetplayinblockdig_enumplayerdigtype, true, s));
          } else {
@@ -197,7 +205,7 @@
              TileEntity tileentity = this.world.getTileEntity(blockposition);
              Block block = iblockdata.getBlock();
  
-@@ -225,6 +345,10 @@
+@@ -247,6 +375,10 @@
              } else if (this.player.a((World) this.world, blockposition, this.gamemode)) {
                  return false;
              } else {
@@ -208,7 +216,7 @@
                  block.a((World) this.world, blockposition, iblockdata, (EntityHuman) this.player);
                  boolean flag = this.world.a(blockposition, false);
  
-@@ -233,19 +357,32 @@
+@@ -255,19 +387,32 @@
                  }
  
                  if (this.isCreative()) {
@@ -244,7 +252,7 @@
              }
          }
      }
-@@ -287,12 +424,46 @@
+@@ -309,12 +454,46 @@
          }
      }
  
@@ -291,7 +299,7 @@
  
              if (itileinventory != null) {
                  entityplayer.openContainer(itileinventory);
-@@ -306,7 +477,7 @@
+@@ -328,7 +507,7 @@
              ItemStack itemstack1 = itemstack.cloneItemStack();
  
              if (!flag1) {
@@ -300,7 +308,7 @@
  
                  if (enuminteractionresult.a()) {
                      CriterionTriggers.M.a(entityplayer, blockposition, itemstack1);
-@@ -314,17 +485,17 @@
+@@ -336,17 +515,17 @@
                  }
              }
  
@@ -321,7 +329,7 @@
                  }
  
                  if (enuminteractionresult1.a()) {
-@@ -332,10 +503,10 @@
+@@ -354,10 +533,10 @@
                  }
  
                  return enuminteractionresult1;

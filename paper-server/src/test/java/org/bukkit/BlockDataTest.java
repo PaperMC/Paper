@@ -1,10 +1,10 @@
 package org.bukkit;
 
 import static org.hamcrest.Matchers.*;
-import net.minecraft.server.BlockCake;
-import net.minecraft.server.BlockChest;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.EnumDirection;
+import net.minecraft.core.EnumDirection;
+import net.minecraft.world.level.block.BlockCake;
+import net.minecraft.world.level.block.BlockChest;
+import net.minecraft.world.level.block.Blocks;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Cake;

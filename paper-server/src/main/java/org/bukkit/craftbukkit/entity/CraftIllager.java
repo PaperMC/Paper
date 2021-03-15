@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.server.EntityIllagerAbstract;
+import net.minecraft.world.entity.monster.EntityIllagerAbstract;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Illager;
 

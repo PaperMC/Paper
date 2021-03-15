@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import net.minecraft.server.EntityPanda;
+import net.minecraft.world.entity.animal.EntityPanda;
 import org.bukkit.craftbukkit.entity.CraftPanda;
 import org.junit.Assert;
 import org.junit.Test;

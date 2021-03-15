@@ -9,19 +9,19 @@ public final class CraftHugeMushroom extends org.bukkit.craftbukkit.block.data.C
         super();
     }
 
-    public CraftHugeMushroom(net.minecraft.server.IBlockData state) {
+    public CraftHugeMushroom(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftMultipleFacing
 
-    private static final net.minecraft.server.BlockStateBoolean[] FACES = new net.minecraft.server.BlockStateBoolean[]{
-        getBoolean(net.minecraft.server.BlockHugeMushroom.class, "north", true), getBoolean(net.minecraft.server.BlockHugeMushroom.class, "east", true), getBoolean(net.minecraft.server.BlockHugeMushroom.class, "south", true), getBoolean(net.minecraft.server.BlockHugeMushroom.class, "west", true), getBoolean(net.minecraft.server.BlockHugeMushroom.class, "up", true), getBoolean(net.minecraft.server.BlockHugeMushroom.class, "down", true)
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean[] FACES = new net.minecraft.world.level.block.state.properties.BlockStateBoolean[]{
+        getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "north", true), getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "east", true), getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "south", true), getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "west", true), getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "up", true), getBoolean(net.minecraft.world.level.block.BlockHugeMushroom.class, "down", true)
     };
 
     @Override
     public boolean hasFace(org.bukkit.block.BlockFace face) {
-        net.minecraft.server.BlockStateBoolean state = FACES[face.ordinal()];
+        net.minecraft.world.level.block.state.properties.BlockStateBoolean state = FACES[face.ordinal()];
         if (state == null) {
             throw new IllegalArgumentException("Non-allowed face " + face + ". Check MultipleFacing.getAllowedFaces.");
         }
@@ -30,7 +30,7 @@ public final class CraftHugeMushroom extends org.bukkit.craftbukkit.block.data.C
 
     @Override
     public void setFace(org.bukkit.block.BlockFace face, boolean has) {
-        net.minecraft.server.BlockStateBoolean state = FACES[face.ordinal()];
+        net.minecraft.world.level.block.state.properties.BlockStateBoolean state = FACES[face.ordinal()];
         if (state == null) {
             throw new IllegalArgumentException("Non-allowed face " + face + ". Check MultipleFacing.getAllowedFaces.");
         }

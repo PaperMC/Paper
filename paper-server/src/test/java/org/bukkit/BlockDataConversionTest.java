@@ -2,9 +2,9 @@ package org.bukkit;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.server.Block;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IRegistry;
+import net.minecraft.core.IRegistry;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Assert;

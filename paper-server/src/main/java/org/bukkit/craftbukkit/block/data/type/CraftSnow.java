@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public class CraftSnow extends CraftBlockData implements Snow {
 
-    private static final net.minecraft.server.BlockStateInteger LAYERS = getInteger("layers");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger LAYERS = getInteger("layers");
 
     @Override
     public int getLayers() {

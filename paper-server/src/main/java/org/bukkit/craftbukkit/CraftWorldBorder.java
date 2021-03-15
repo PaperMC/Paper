@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.BlockPosition;
+import net.minecraft.core.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -9,7 +9,7 @@ import org.bukkit.WorldBorder;
 public class CraftWorldBorder implements WorldBorder {
 
     private final World world;
-    private final net.minecraft.server.WorldBorder handle;
+    private final net.minecraft.world.level.border.WorldBorder handle;
 
     public CraftWorldBorder(CraftWorld world) {
         this.world = world;

@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.server.BlockBarrel;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.SoundEffects;
-import net.minecraft.server.TileEntityBarrel;
+import net.minecraft.sounds.SoundEffects;
+import net.minecraft.world.level.block.BlockBarrel;
+import net.minecraft.world.level.block.entity.TileEntityBarrel;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.Material;
 import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;

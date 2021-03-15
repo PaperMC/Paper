@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftBeehive extends CraftBlockData implements Beehive {
 
-    private static final net.minecraft.server.BlockStateInteger HONEY_LEVEL = getInteger("honey_level");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger HONEY_LEVEL = getInteger("honey_level");
 
     @Override
     public int getHoneyLevel() {

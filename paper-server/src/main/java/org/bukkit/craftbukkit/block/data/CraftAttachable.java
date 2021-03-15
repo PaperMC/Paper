@@ -4,7 +4,7 @@ import org.bukkit.block.data.Attachable;
 
 public abstract class CraftAttachable extends CraftBlockData implements Attachable {
 
-    private static final net.minecraft.server.BlockStateBoolean ATTACHED = getBoolean("attached");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean ATTACHED = getBoolean("attached");
 
     @Override
     public boolean isAttached() {

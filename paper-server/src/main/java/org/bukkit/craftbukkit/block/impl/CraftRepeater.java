@@ -9,14 +9,14 @@ public final class CraftRepeater extends org.bukkit.craftbukkit.block.data.Craft
         super();
     }
 
-    public CraftRepeater(net.minecraft.server.IBlockData state) {
+    public CraftRepeater(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftRepeater
 
-    private static final net.minecraft.server.BlockStateInteger DELAY = getInteger(net.minecraft.server.BlockRepeater.class, "delay");
-    private static final net.minecraft.server.BlockStateBoolean LOCKED = getBoolean(net.minecraft.server.BlockRepeater.class, "locked");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DELAY = getInteger(net.minecraft.world.level.block.BlockRepeater.class, "delay");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean LOCKED = getBoolean(net.minecraft.world.level.block.BlockRepeater.class, "locked");
 
     @Override
     public int getDelay() {
@@ -50,7 +50,7 @@ public final class CraftRepeater extends org.bukkit.craftbukkit.block.data.Craft
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.server.BlockStateEnum<?> FACING = getEnum(net.minecraft.server.BlockRepeater.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockRepeater.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
@@ -69,7 +69,7 @@ public final class CraftRepeater extends org.bukkit.craftbukkit.block.data.Craft
 
     // org.bukkit.craftbukkit.block.data.CraftPowerable
 
-    private static final net.minecraft.server.BlockStateBoolean POWERED = getBoolean(net.minecraft.server.BlockRepeater.class, "powered");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockRepeater.class, "powered");
 
     @Override
     public boolean isPowered() {

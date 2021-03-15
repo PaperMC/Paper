@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.Block;
-import net.minecraft.server.Item;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Color;
 import org.bukkit.Effect;

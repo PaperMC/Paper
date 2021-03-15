@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftJukebox extends CraftBlockData implements Jukebox {
 
-    private static final net.minecraft.server.BlockStateBoolean HAS_RECORD = getBoolean("has_record");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HAS_RECORD = getBoolean("has_record");
 
     @Override
     public boolean hasRecord() {

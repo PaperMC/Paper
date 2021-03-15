@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.MovingObjectPosition;
-import net.minecraft.server.MovingObjectPosition.EnumMovingObjectType;
-import net.minecraft.server.MovingObjectPositionBlock;
-import net.minecraft.server.MovingObjectPositionEntity;
-import net.minecraft.server.Vec3D;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.world.phys.MovingObjectPosition;
+import net.minecraft.world.phys.MovingObjectPosition.EnumMovingObjectType;
+import net.minecraft.world.phys.MovingObjectPositionBlock;
+import net.minecraft.world.phys.MovingObjectPositionEntity;
+import net.minecraft.world.phys.Vec3D;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;

@@ -1,7 +1,7 @@
 package org.bukkit;
 
 import java.util.Map;
-import net.minecraft.server.GameRules;
+import net.minecraft.world.level.GameRules;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.junit.Assert;
 import org.junit.Test;

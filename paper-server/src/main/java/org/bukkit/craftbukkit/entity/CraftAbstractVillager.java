@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.List;
-import net.minecraft.server.EntityVillager;
-import net.minecraft.server.EntityVillagerAbstract;
+import net.minecraft.world.entity.npc.EntityVillager;
+import net.minecraft.world.entity.npc.EntityVillagerAbstract;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftMerchant;

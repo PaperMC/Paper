@@ -1,7 +1,7 @@
 package org.bukkit.block.banner;
 
 import junit.framework.Assert;
-import net.minecraft.server.EnumBannerPatternType;
+import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.Test;
 

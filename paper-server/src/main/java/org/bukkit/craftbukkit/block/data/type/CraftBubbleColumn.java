@@ -5,7 +5,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftBubbleColumn extends CraftBlockData implements BubbleColumn {
 
-    private static final net.minecraft.server.BlockStateBoolean DRAG = getBoolean("drag");
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean DRAG = getBoolean("drag");
 
     @Override
     public boolean isDrag() {

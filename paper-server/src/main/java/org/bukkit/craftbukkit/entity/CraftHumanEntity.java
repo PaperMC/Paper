@@ -7,30 +7,30 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.server.BlockBed;
-import net.minecraft.server.BlockEnchantmentTable;
-import net.minecraft.server.BlockPosition;
-import net.minecraft.server.BlockWorkbench;
-import net.minecraft.server.Blocks;
-import net.minecraft.server.Container;
-import net.minecraft.server.Containers;
-import net.minecraft.server.CraftingManager;
-import net.minecraft.server.Entity;
-import net.minecraft.server.EntityHuman;
-import net.minecraft.server.EntityPlayer;
-import net.minecraft.server.EntityTypes;
-import net.minecraft.server.EnumMainHand;
-import net.minecraft.server.IBlockData;
-import net.minecraft.server.IChatBaseComponent;
-import net.minecraft.server.IMerchant;
-import net.minecraft.server.IRecipe;
-import net.minecraft.server.ITileInventory;
-import net.minecraft.server.ItemCooldown;
-import net.minecraft.server.NBTTagCompound;
-import net.minecraft.server.PacketPlayInCloseWindow;
-import net.minecraft.server.PacketPlayOutOpenWindow;
-import net.minecraft.server.TileEntity;
-import net.minecraft.server.TileEntityContainer;
+import net.minecraft.core.BlockPosition;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.network.protocol.game.PacketPlayInCloseWindow;
+import net.minecraft.network.protocol.game.PacketPlayOutOpenWindow;
+import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.world.ITileInventory;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EnumMainHand;
+import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.inventory.Container;
+import net.minecraft.world.inventory.Containers;
+import net.minecraft.world.item.ItemCooldown;
+import net.minecraft.world.item.crafting.CraftingManager;
+import net.minecraft.world.item.crafting.IRecipe;
+import net.minecraft.world.item.trading.IMerchant;
+import net.minecraft.world.level.block.BlockBed;
+import net.minecraft.world.level.block.BlockEnchantmentTable;
+import net.minecraft.world.level.block.BlockWorkbench;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.entity.TileEntityContainer;
+import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -114,7 +114,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setItemOnCursor(ItemStack item) {
-        net.minecraft.server.ItemStack stack = CraftItemStack.asNMSCopy(item);
+        net.minecraft.world.item.ItemStack stack = CraftItemStack.asNMSCopy(item);
         getHandle().inventory.setCarried(stack);
         if (this instanceof CraftPlayer) {
             ((EntityPlayer) getHandle()).broadcastCarriedItem(); // Send set slot for cursor

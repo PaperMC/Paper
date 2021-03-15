@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.server.IRecipeComplex;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.crafting.IRecipeComplex;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ComplexRecipe;

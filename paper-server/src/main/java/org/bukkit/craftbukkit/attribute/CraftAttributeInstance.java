@@ -10,10 +10,10 @@ import org.bukkit.attribute.AttributeModifier;
 
 public class CraftAttributeInstance implements AttributeInstance {
 
-    private final net.minecraft.server.AttributeModifiable handle;
+    private final net.minecraft.world.entity.ai.attributes.AttributeModifiable handle;
     private final Attribute attribute;
 
-    public CraftAttributeInstance(net.minecraft.server.AttributeModifiable handle, Attribute attribute) {
+    public CraftAttributeInstance(net.minecraft.world.entity.ai.attributes.AttributeModifiable handle, Attribute attribute) {
         this.handle = handle;
         this.attribute = attribute;
     }
@@ -36,7 +36,7 @@ public class CraftAttributeInstance implements AttributeInstance {
     @Override
     public Collection<AttributeModifier> getModifiers() {
         List<AttributeModifier> result = new ArrayList<AttributeModifier>();
-        for (net.minecraft.server.AttributeModifier nms : handle.getModifiers()) {
+        for (net.minecraft.world.entity.ai.attributes.AttributeModifier nms : handle.getModifiers()) {
             result.add(convert(nms));
         }
 
@@ -65,11 +65,11 @@ public class CraftAttributeInstance implements AttributeInstance {
        return handle.getAttribute().getDefault();
     }
 
-    public static net.minecraft.server.AttributeModifier convert(AttributeModifier bukkit) {
-        return new net.minecraft.server.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), net.minecraft.server.AttributeModifier.Operation.values()[bukkit.getOperation().ordinal()]);
+    public static net.minecraft.world.entity.ai.attributes.AttributeModifier convert(AttributeModifier bukkit) {
+        return new net.minecraft.world.entity.ai.attributes.AttributeModifier(bukkit.getUniqueId(), bukkit.getName(), bukkit.getAmount(), net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.values()[bukkit.getOperation().ordinal()]);
     }
 
-    public static AttributeModifier convert(net.minecraft.server.AttributeModifier nms) {
+    public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms) {
         return new AttributeModifier(nms.getUniqueId(), nms.getName(), nms.getAmount(), AttributeModifier.Operation.values()[nms.getOperation().ordinal()]);
     }
 }
