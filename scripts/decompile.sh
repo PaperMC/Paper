@@ -5,10 +5,9 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
-decompiledir="$workdir/Minecraft/$minecraftversion-$revision"
+decompiledir="$workdir/Minecraft/$minecraftversion"
 spigotdecompiledir="$decompiledir/spigot"
 forgedecompiledir="$decompiledir/forge"
 forgeflowerversion="1.5.380.19"
@@ -21,7 +20,7 @@ forgefloweroptions="-dgs=1 -hdc=0 -asc=1 -udv=1 -jvn=1"
 forgeflowercachefile="$decompiledir/forgeflowercache"
 forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptions";
 classdir="$decompiledir/classes"
-versionjson="$workdir/Minecraft/$minecraftversion-$revision/$minecraftversion.json"
+versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
 
 if [[ ! -f "$versionjson" ]]; then
     echo "Downloading $minecraftversion JSON Data"
@@ -139,9 +138,9 @@ fi
 currentlink="$workdir/Minecraft/current"
 if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "$windows" == "false" ]; then
 	set +e
-	echo "Pointing $currentlink to $minecraftversion-$revision"
+	echo "Pointing $currentlink to $minecraftversion"
 	rm -rf "$currentlink" || true
-	ln -sfn "$minecraftversion-$revision" "$currentlink" || echo "Failed to set current symlink"
+	ln -sfn "$minecraftversion" "$currentlink" || echo "Failed to set current symlink"
 fi
 
 )

@@ -5,7 +5,6 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
 minecraftversion="$(cat "${workdir}/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)"
 minecraftserverurl=$(cat "${workdir}/BuildData/info.json" | grep serverUrl | cut -d '"' -f 4)
 minecrafthash=$(cat "${workdir}/BuildData/info.json" | grep minecraftHash | cut -d '"' -f 4)
@@ -13,7 +12,7 @@ accesstransforms="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.
 classmappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep classMappings | cut -d '"' -f 4)
 membermappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep memberMappings | cut -d '"' -f 4)
 packagemappings="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep packageMappings | cut -d '"' -f 4)
-decompiledir="$workdir/Minecraft/$minecraftversion-$revision"
+decompiledir="$workdir/Minecraft/$minecraftversion"
 jarpath="$decompiledir/$minecraftversion"
 mkdir -p "$decompiledir"
 
