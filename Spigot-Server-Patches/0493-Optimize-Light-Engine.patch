@@ -25,10 +25,10 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 0905aa93425a9c85f77ac2f4ffe28ec4ddb9f8b4..3a7b7df4080c04b618dfaf0b47cc54293332c41d 100644
+index 9a3f552789b6972982ab28e7edb16ca302e9ff7b..f7e684e550ac531a978113c6f5861fd912d3cfd1 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-@@ -1067,7 +1067,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -1070,7 +1070,7 @@ public class ChunkProviderServer extends IChunkProvider {
              if (ChunkProviderServer.this.tickDistanceManager()) {
                  return true;
              } else {
@@ -379,10 +379,18 @@ index 48b87ed945a71b97d8a88cbaf4099dc966a8ab88..b19c3bdbf64dc44f01487a3d17236a03
          if (getCurrentPriority() != priority) {
              this.u.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index 4441af38184adefdf686429d1d147b9bbb76b5a6..f3f906d8ffa195b100d5bd2d232ae8489d48d60d 100644
+index 488a7f6849036310d5831ab9cb29ec79bc226e2b..033dee28da5b788b90b6c6651b2ab92efd1d2f21 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-@@ -322,6 +322,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -99,6 +99,7 @@ import net.minecraft.world.level.chunk.storage.RegionFile;
+ import net.minecraft.world.level.levelgen.structure.StructureStart;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureManager;
+ import net.minecraft.world.level.storage.Convertable;
++import net.minecraft.world.level.storage.WorldDataServer;
+ import net.minecraft.world.level.storage.WorldPersistentData;
+ import net.minecraft.world.phys.Vec3D;
+ import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet; // Paper
+@@ -331,6 +332,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
      // Paper end
  
@@ -390,7 +398,7 @@ index 4441af38184adefdf686429d1d147b9bbb76b5a6..f3f906d8ffa195b100d5bd2d232ae848
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(new File(convertable_conversionsession.a(worldserver.getDimensionKey()), "region"), datafixer, flag);
          //this.visibleChunks = this.updatingChunks.clone(); // Paper - no more cloning
-@@ -353,7 +354,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -362,7 +364,15 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          Mailbox<Runnable> mailbox = Mailbox.a("main", iasynctaskhandler::a);
  
          this.worldLoadListener = worldloadlistener;
@@ -407,7 +415,7 @@ index 4441af38184adefdf686429d1d147b9bbb76b5a6..f3f906d8ffa195b100d5bd2d232ae848
  
          this.p = new ChunkTaskQueueSorter(ImmutableList.of(threadedmailbox, mailbox, threadedmailbox1), executor, Integer.MAX_VALUE);
          this.mailboxWorldGen = this.p.a(threadedmailbox, false);
-@@ -699,6 +708,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -708,6 +718,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          // Paper end
      }
  
@@ -415,7 +423,7 @@ index 4441af38184adefdf686429d1d147b9bbb76b5a6..f3f906d8ffa195b100d5bd2d232ae848
      protected IntSupplier c(long i) {
          return () -> {
              PlayerChunk playerchunk = this.getVisibleChunk(i);
-@@ -826,6 +836,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -835,6 +846,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      @Override
      public void close() throws IOException {
          try {
@@ -424,10 +432,10 @@ index 4441af38184adefdf686429d1d147b9bbb76b5a6..f3f906d8ffa195b100d5bd2d232ae848
              this.world.asyncChunkTaskManager.close(true); // Paper - Required since we're closing regionfiles in the next line
              this.m.close();
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 117772867eede63646d80bb7af4792a2db16d815..2181fbc31e96c74679185a49abbb3d7a2d5b6e9f 100644
+index e7cebe1277cb8fc54a080b93b34a66a2e962119b..0e738ace7d37011547378954aae91f79c7ebd544 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
-@@ -823,6 +823,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -826,6 +826,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
              }
              gameprofilerfiller.exit();
              timings.chunkTicksBlocks.stopTiming(); // Paper
@@ -596,10 +604,18 @@ index f6198069e3ca421b4f551939263c7cf8bd5b754e..e8d2415033c5db3c27e10a38e1ea75e6
                      if (l > k2) {
                          l = k2;
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineLayer.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineLayer.java
-index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..896020d7d680a2456c190cc2463248a908046ddc 100644
+index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..64dad8ed7c16011d9cb3e9d22ac6f892c638e3b2 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LightEngineLayer.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineLayer.java
-@@ -23,10 +23,37 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
+@@ -10,6 +10,7 @@ import net.minecraft.world.level.EnumSkyBlock;
+ import net.minecraft.world.level.IBlockAccess;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.IBlockData;
++import net.minecraft.world.level.chunk.IChunkAccess;
+ import net.minecraft.world.level.chunk.ILightAccess;
+ import net.minecraft.world.level.chunk.NibbleArray;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+@@ -23,10 +24,37 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
      protected final EnumSkyBlock b;
      protected final S c;
      private boolean f;
@@ -639,7 +655,7 @@ index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..896020d7d680a2456c190cc2463248a9
      public LightEngineLayer(ILightAccess ilightaccess, EnumSkyBlock enumskyblock, S s0) {
          super(16, 256, 8192);
          this.a = ilightaccess;
-@@ -45,7 +72,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
+@@ -45,7 +73,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
      }
  
      @Nullable
@@ -648,7 +664,7 @@ index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..896020d7d680a2456c190cc2463248a9
          long k = ChunkCoordIntPair.pair(i, j);
  
          for (int l = 0; l < 2; ++l) {
-@@ -54,7 +81,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
+@@ -54,7 +82,7 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
              }
          }
  
@@ -657,7 +673,7 @@ index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..896020d7d680a2456c190cc2463248a9
  
          for (int i1 = 1; i1 > 0; --i1) {
              this.g[i1] = this.g[i1 - 1];
-@@ -71,37 +98,39 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
+@@ -71,37 +99,39 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
          Arrays.fill(this.h, (Object) null);
      }
  
@@ -728,7 +744,7 @@ index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..896020d7d680a2456c190cc2463248a9
  
      protected VoxelShape a(IBlockData iblockdata, long i, EnumDirection enumdirection) {
          return iblockdata.l() ? iblockdata.a(this.a.getWorld(), this.d.g(i), enumdirection) : VoxelShapes.a();
-@@ -136,8 +165,9 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
+@@ -136,8 +166,9 @@ public abstract class LightEngineLayer<M extends LightEngineStorageArray<M>, S e
          return i == Long.MAX_VALUE ? 0 : 15 - this.c.i(i);
      }
  

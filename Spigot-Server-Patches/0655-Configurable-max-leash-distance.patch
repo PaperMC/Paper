@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 21:04:03 -0800
+Subject: [PATCH] Configurable max leash distance
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 5801fe872aff240dc8209069b978d6a4dba30f06..849603de7c918788f1f80d7effb93658a69b0fd6 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -167,6 +167,12 @@ public class PaperWorldConfig {
+         }
+     }
+ 
++    public float maxLeashDistance = 10f;
++    private void maxLeashDistance() {
++        maxLeashDistance = getFloat("max-leash-distance", maxLeashDistance);
++        log("Max leash distance: " + maxLeashDistance);
++    }
++
+     public boolean disableEndCredits;
+     private void disableEndCredits() {
+         disableEndCredits = getBoolean("game-mechanics.disable-end-credits", false);
+diff --git a/src/main/java/net/minecraft/world/entity/EntityCreature.java b/src/main/java/net/minecraft/world/entity/EntityCreature.java
+index bbf0f345bfdd8a3a1f7fe902a42b2b18cdcf07a5..20570580367697e37e6c45147168c3beb6c8d31b 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityCreature.java
++++ b/src/main/java/net/minecraft/world/entity/EntityCreature.java
+@@ -47,7 +47,7 @@ public abstract class EntityCreature extends EntityInsentient {
+             float f = this.g(entity);
+ 
+             if (this instanceof EntityTameableAnimal && ((EntityTameableAnimal) this).isSitting()) {
+-                if (f > 10.0F) {
++                if (f > entity.world.paperConfig.maxLeashDistance) { // Paper
+                     this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
+                     this.unleash(true, true);
+                 }
+@@ -56,7 +56,7 @@ public abstract class EntityCreature extends EntityInsentient {
+             }
+ 
+             this.x(f);
+-            if (f > 10.0F) {
++            if (f > entity.world.paperConfig.maxLeashDistance) { // Paper
+                 this.world.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE)); // CraftBukkit
+                 this.unleash(true, true);
+                 this.goalSelector.a(PathfinderGoal.Type.MOVE);

@@ -28,10 +28,26 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf
 
 diff --git a/src/main/java/net/minecraft/network/NetworkManager.java b/src/main/java/net/minecraft/network/NetworkManager.java
-index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc11d3ffbc 100644
+index 6d40ade5a52383ed86d28d272c3dc83dbdcbd218..8e591f75b2c80fdb7e012574e9d7c348f1ffc90d 100644
 --- a/src/main/java/net/minecraft/network/NetworkManager.java
 +++ b/src/main/java/net/minecraft/network/NetworkManager.java
-@@ -75,6 +75,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -25,8 +25,15 @@ import net.minecraft.network.chat.ChatMessage;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.network.protocol.EnumProtocolDirection;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.PacketPlayOutBoss;
++import net.minecraft.network.protocol.game.PacketPlayOutChat;
++import net.minecraft.network.protocol.game.PacketPlayOutKeepAlive;
+ import net.minecraft.network.protocol.game.PacketPlayOutKickDisconnect;
++import net.minecraft.network.protocol.game.PacketPlayOutTabComplete;
++import net.minecraft.network.protocol.game.PacketPlayOutTitle;
+ import net.minecraft.server.CancelledPacketHandleException;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.server.network.LoginListener;
+ import net.minecraft.server.network.PlayerConnection;
+ import net.minecraft.util.LazyInitVar;
+@@ -75,6 +82,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      public int protocolVersion;
      public java.net.InetSocketAddress virtualHost;
      private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush");
@@ -42,7 +58,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
      // Paper end
  
      public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
-@@ -98,6 +102,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -98,6 +109,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void setProtocol(EnumProtocol enumprotocol) {
@@ -50,7 +66,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
          this.channel.attr(NetworkManager.c).set(enumprotocol);
          this.channel.config().setAutoRead(true);
          NetworkManager.LOGGER.debug("Enabled auto read");
-@@ -168,19 +173,84 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -168,19 +180,84 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
          Validate.notNull(packetlistener, "packetListener", new Object[0]);
          this.packetListener = packetlistener;
      }
@@ -140,7 +156,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
      }
  
      private void dispatchPacket(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> genericFutureListener) { this.b(packet, genericFutureListener); } // Paper - OBFHELPER
-@@ -194,51 +264,116 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -194,51 +271,116 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
              this.channel.config().setAutoRead(false);
          }
  
@@ -267,7 +283,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
  
      public void a() {
          this.p();
-@@ -271,9 +406,21 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -271,9 +413,21 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
          return this.socketAddress;
      }
  
@@ -289,7 +305,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
          // Spigot End
          if (this.channel.isOpen()) {
              this.channel.close(); // We can't wait as this may be called from an event loop.
-@@ -341,7 +488,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -341,7 +495,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.o) {
@@ -298,7 +314,7 @@ index 2eefa21531c991ae76bf026087eb07280fbc939e..54a90c51f3090d0d2d6ea72b152829bc
              } else {
                  this.o = true;
                  if (this.k() != null) {
-@@ -349,7 +496,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -349,7 +503,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
                  } else if (this.j() != null) {
                      this.j().a(new ChatMessage("multiplayer.disconnect.generic"));
                  }

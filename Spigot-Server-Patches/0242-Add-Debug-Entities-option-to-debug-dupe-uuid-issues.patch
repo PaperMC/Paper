@@ -6,10 +6,10 @@ Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
 Add -Ddebug.entities=true to your JVM flags to gain more information
 
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index 88e7fe1d50e644a107aa76c84b7fd1b9b43cd94b..f0347a71b5937f9b68a4024fd0595a2d3e98eef5 100644
+index c6b9b02e6d31bebb3f8c0cadd68e4b5c47fab090..c4dd2bac48bb93117925b35dcd753d0fbb22e3cf 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-@@ -1138,6 +1138,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1139,6 +1139,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              } else {
                  PlayerChunkMap.EntityTracker playerchunkmap_entitytracker = new PlayerChunkMap.EntityTracker(entity, i, j, entitytypes.isDeltaTracking());
  
@@ -17,7 +17,7 @@ index 88e7fe1d50e644a107aa76c84b7fd1b9b43cd94b..f0347a71b5937f9b68a4024fd0595a2d
                  this.trackedEntities.put(entity.getId(), playerchunkmap_entitytracker);
                  playerchunkmap_entitytracker.track(this.world.getPlayers());
                  if (entity instanceof EntityPlayer) {
-@@ -1179,7 +1180,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1180,7 +1181,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          if (playerchunkmap_entitytracker1 != null) {
              playerchunkmap_entitytracker1.a();
          }
@@ -27,13 +27,13 @@ index 88e7fe1d50e644a107aa76c84b7fd1b9b43cd94b..f0347a71b5937f9b68a4024fd0595a2d
  
      protected void g() {
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 4d3e3a4496ab28e0865f2ad871915fcb2ae57e36..70b837ef82dfe46eb24625b96f9bdbe2e7f2cc2d 100644
+index 24563d21ce2a77b47300cca00e07658a014be96c..04b708e776f277985340f329dc8cb3c16a6100a7 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -197,6 +197,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      public final Convertable.ConversionSession convertable;
      public final UUID uuid;
-     boolean hasPhysicsEvent = true; // Paper
+     public boolean hasPhysicsEvent = true; // Paper
 +    private static Throwable getAddToWorldStackTrace(Entity entity) {
 +        return new Throwable(entity + " Added to world at " + new java.util.Date());
 +    }
@@ -97,23 +97,31 @@ index 4d3e3a4496ab28e0865f2ad871915fcb2ae57e36..70b837ef82dfe46eb24625b96f9bdbe2
              // CraftBukkit start - SPIGOT-5278
              if (entity instanceof EntityDrowned) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a4915d330d9df8773ce2643a17f353045fff7965..94c77ea291b13206c726725def2ecf4e6441bf3f 100644
+index a4915d330d9df8773ce2643a17f353045fff7965..36ac9ba19b3bbcab40b5d4339ba9c297d4b5a65b 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -161,6 +161,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -48,6 +48,7 @@ import net.minecraft.resources.MinecraftKey;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.EntityPlayer;
++import net.minecraft.server.level.PlayerChunkMap;
+ import net.minecraft.server.level.TicketType;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.sounds.SoundCategory;
+@@ -161,6 +162,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
      private CraftEntity bukkitEntity;
  
 +    PlayerChunkMap.EntityTracker tracker; // Paper
-+    Throwable addedToWorldStack; // Paper - entity debug
++    public Throwable addedToWorldStack; // Paper - entity debug
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
              bukkitEntity = CraftEntity.getEntity(world.getServer(), this);
 diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
-index f7df55cf3da909c253bab106cdb7149ee9c297d9..6b81392010c216a1c478cae170388d6836e4206e 100644
+index a9e7da1c848a6fe08fc112e445ceec1b7715d682..0d375af209e9768f430e08bd7a4bde1863b14da5 100644
 --- a/src/main/java/net/minecraft/world/level/World.java
 +++ b/src/main/java/net/minecraft/world/level/World.java
-@@ -120,6 +120,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -121,6 +121,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
      public boolean pvpMode;
      public boolean keepSpawnInMemory = true;
      public org.bukkit.generator.ChunkGenerator generator;
