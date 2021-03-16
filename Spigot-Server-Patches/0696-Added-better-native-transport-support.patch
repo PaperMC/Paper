@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Callum Seabrook <yutubebroz@gmail.com>
+Date: Tue, 16 Mar 2021 20:10:13 +0000
+Subject: [PATCH] Added better native transport support
+
+
+diff --git a/pom.xml b/pom.xml
+index 11b4d56922cae5ba3f76c21a76a8ae40b3719afa..b664aae156e049554ce914f057b75437c235fe4a 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -149,6 +149,16 @@
+             <version>4.8.47</version>
+             <scope>test</scope>
+         </dependency>
++        <dependency>
++            <groupId>io.netty</groupId>
++            <artifactId>netty-transport-native-kqueue</artifactId>
++            <version>4.1.60.Final</version>
++        </dependency>
++        <dependency>
++            <groupId>io.netty.incubator</groupId>
++            <artifactId>netty-incubator-transport-native-io_uring</artifactId>
++            <version>0.0.4.Final</version>
++        </dependency>
+     </dependencies>
+ 
+     <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
+@@ -403,4 +413,4 @@
+             </build>
+         </profile>
+     </profiles>
+-</project>
++</project>
+\ No newline at end of file
+diff --git a/src/main/java/net/minecraft/server/ServerConnection.java b/src/main/java/net/minecraft/server/ServerConnection.java
+index 5f4dacf9c93c2495a07df2647fe0411f796da6af..e406f2ab15030f4f9a74f0dcafaf0d82dcf997a1 100644
+--- a/src/main/java/net/minecraft/server/ServerConnection.java
++++ b/src/main/java/net/minecraft/server/ServerConnection.java
+@@ -13,6 +13,9 @@ import io.netty.channel.EventLoopGroup;
+ import io.netty.channel.epoll.Epoll;
+ import io.netty.channel.epoll.EpollEventLoopGroup;
+ import io.netty.channel.epoll.EpollServerSocketChannel;
++import io.netty.channel.kqueue.KQueue;
++import io.netty.channel.kqueue.KQueueEventLoopGroup;
++import io.netty.channel.kqueue.KQueueServerSocketChannel;
+ import io.netty.channel.nio.NioEventLoopGroup;
+ import io.netty.channel.socket.ServerSocketChannel;
+ import io.netty.channel.socket.nio.NioServerSocketChannel;
+@@ -24,6 +27,10 @@ import java.util.Collections;
+ import java.util.Iterator;
+ import java.util.List;
+ import javax.annotation.Nullable;
++
++import io.netty.incubator.channel.uring.IOUring;
++import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
++import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -36,6 +43,14 @@ public class ServerConnection {
+     public static final LazyInitVar<EpollEventLoopGroup> b = new LazyInitVar<>(() -> {
+         return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build());
+     });
++    // Paper start - better native transport
++    public static final LazyInitVar<IOUringEventLoopGroup> IO_URING_EVENT_LOOP_GROUP = new LazyInitVar<>(() ->
++        new IOUringEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty IO Uring Server IO #%d").setDaemon(true).build())
++    );
++    public static final LazyInitVar<KQueueEventLoopGroup> KQUEUE_EVENT_LOOP_GROUP = new LazyInitVar<>(() ->
++        new KQueueEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty KQueue Server IO #%d").setDaemon(true).build())
++    );
++    // Paper end
+     private final MinecraftServer e;
+     public volatile boolean c;
+     private final List<ChannelFuture> listeningChannels = Collections.synchronizedList(Lists.newArrayList());
+@@ -64,10 +79,30 @@ public class ServerConnection {
+             Class oclass;
+             LazyInitVar lazyinitvar;
+ 
+-            if (Epoll.isAvailable() && this.e.l()) {
+-                oclass = EpollServerSocketChannel.class;
+-                lazyinitvar = ServerConnection.b;
+-                ServerConnection.LOGGER.info("Using epoll channel type");
++            // Paper start - better native transport
++            if (this.e.l()) {
++                if (IOUring.isAvailable()) {
++                    oclass = IOUringServerSocketChannel.class;
++                    lazyinitvar = ServerConnection.IO_URING_EVENT_LOOP_GROUP;
++                    ServerConnection.LOGGER.info("Using io uring channel type");
++                } else if (Epoll.isAvailable()) {
++                    oclass = EpollServerSocketChannel.class;
++                    lazyinitvar = ServerConnection.b;
++                    ServerConnection.LOGGER.info("Using epoll channel type");
++                } else if (KQueue.isAvailable()) {
++                    oclass = KQueueServerSocketChannel.class;
++                    lazyinitvar = ServerConnection.KQUEUE_EVENT_LOOP_GROUP;
++                    ServerConnection.LOGGER.info("Using kqueue channel type");
++                } else {
++                    oclass = NioServerSocketChannel.class;
++                    lazyinitvar = ServerConnection.a;
++                    ServerConnection.LOGGER.info("Using default channel type");
++                }
++//            if (Epoll.isAvailable() && this.e.l()) {
++//                oclass = EpollServerSocketChannel.class;
++//                lazyinitvar = ServerConnection.b;
++//                ServerConnection.LOGGER.info("Using epoll channel type");
++            // Paper end
+             } else {
+                 oclass = NioServerSocketChannel.class;
+                 lazyinitvar = ServerConnection.a;
