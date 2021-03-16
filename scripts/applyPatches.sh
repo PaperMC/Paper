@@ -97,10 +97,9 @@ echo "Importing MC Dev"
     applyPatch "work/Spigot/Spigot-API" Paper-API HEAD &&
     applyPatch "work/Spigot/Spigot-Server" Paper-Server HEAD
     cd "$basedir"
-    revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
 
     # if we have previously ran ./paper mcdev, update it
-    if [ -d "$workdir/Minecraft/$minecraftversion-$revision/src" ]; then
+    if [ -d "$workdir/Minecraft/$minecraftversion/src" ]; then
         ./scripts/makemcdevsrc.sh "$basedir"
     fi
 ) || (
