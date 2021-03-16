@@ -11,10 +11,10 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index 12f5e4b8b5d231b54405339518536aebf6a9d8fc..ebb17a2efde002f1384b5ad8f4f4576e9a3cc675 100644
+index f657e9b6bb3d24a6c77ef584711a003d1eea0341..eb1e86e8bb0f421e3686ffa02a4015a588107863 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-@@ -1,12 +1,16 @@
+@@ -1,6 +1,7 @@
  package com.destroystokyo.paper;
  
  import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
@@ -22,16 +22,18 @@ index 12f5e4b8b5d231b54405339518536aebf6a9d8fc..ebb17a2efde002f1384b5ad8f4f4576e
  import com.google.common.base.Functions;
  import com.google.common.base.Joiner;
  import com.google.common.collect.ImmutableSet;
- import com.google.common.collect.Iterables;
+@@ -8,6 +9,10 @@ import com.google.common.collect.Iterables;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
+ import net.minecraft.resources.MinecraftKey;
 +import com.google.gson.JsonObject;
 +import com.google.gson.internal.Streams;
 +import com.google.gson.stream.JsonWriter;
- import net.minecraft.server.ChunkCoordIntPair;
- import net.minecraft.server.ChunkProviderServer;
- import net.minecraft.server.Entity;
-@@ -29,6 +33,9 @@ import org.bukkit.craftbukkit.CraftWorld;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.ChunkProviderServer;
+ import net.minecraft.server.level.PlayerChunk;
+@@ -29,6 +34,9 @@ import org.bukkit.craftbukkit.CraftWorld;
  import org.bukkit.entity.Player;
  
  import java.io.File;
@@ -41,7 +43,7 @@ index 12f5e4b8b5d231b54405339518536aebf6a9d8fc..ebb17a2efde002f1384b5ad8f4f4576e
  import java.time.LocalDateTime;
  import java.time.format.DateTimeFormatter;
  import java.util.ArrayList;
-@@ -44,7 +51,7 @@ import java.util.stream.Collectors;
+@@ -44,7 +52,7 @@ import java.util.stream.Collectors;
  
  public class PaperCommand extends Command {
      private static final String BASE_PERM = "bukkit.command.paper.";
@@ -50,7 +52,7 @@ index 12f5e4b8b5d231b54405339518536aebf6a9d8fc..ebb17a2efde002f1384b5ad8f4f4576e
  
      public PaperCommand(String name) {
          super(name);
-@@ -162,6 +169,9 @@ public class PaperCommand extends Command {
+@@ -162,6 +170,9 @@ public class PaperCommand extends Command {
              case "chunkinfo":
                  doChunkInfo(sender, args);
                  break;
@@ -60,7 +62,7 @@ index 12f5e4b8b5d231b54405339518536aebf6a9d8fc..ebb17a2efde002f1384b5ad8f4f4576e
              case "ver":
                  if (!testPermission(sender, "version")) break; // "ver" needs a special check because it's an alias. All other commands are checked up before the switch statement (because they are present in the SUBCOMMANDS set)
              case "version":
-@@ -179,6 +189,40 @@ public class PaperCommand extends Command {
+@@ -179,6 +190,40 @@ public class PaperCommand extends Command {
          return true;
      }
  
@@ -279,11 +281,11 @@ index 0000000000000000000000000000000000000000..1a68a8012f83bab9e814159c76b8c371
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 03e59fd8dc339f3479243acb5d1c89883b280b68..070c3a842ebd9fa03e5daaee8355775718df6fb2 100644
---- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
-+++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -471,6 +471,7 @@ public class ChunkProviderServer extends IChunkProvider {
+diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
+index 32ef8b2e52b47c2fdeb13d00df5107fa7c3b540e..3d3c58cef3a92355caa6dad7053d129f2e8e0732 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
+@@ -493,6 +493,7 @@ public class ChunkProviderServer extends IChunkProvider {
                  this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                  // Paper end
@@ -291,42 +293,11 @@ index 03e59fd8dc339f3479243acb5d1c89883b280b68..070c3a842ebd9fa03e5daaee83557757
                  this.world.timings.syncChunkLoad.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index c922f4d5c3a5e7af7237361cb95a5ba8bb3ce715..dcca5257a03b6fe32ffcd6528e505762b7b4a3e7 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -1070,7 +1070,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
- 
-         for (int i1 = i; i1 <= j; ++i1) {
-             for (int j1 = k; j1 <= l; ++j1) {
--                Chunk chunk = ichunkprovider.getChunkAt(i1, j1, false);
-+                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
- 
-                 if (chunk != null) {
-                     chunk.a(entity, axisalignedbb, list, predicate);
-@@ -1091,7 +1091,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
- 
-         for (int i1 = i; i1 < j; ++i1) {
-             for (int j1 = k; j1 < l; ++j1) {
--                Chunk chunk = this.getChunkProvider().getChunkAt(i1, j1, false);
-+                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
- 
-                 if (chunk != null) {
-                     chunk.a(entitytypes, axisalignedbb, list, predicate);
-@@ -1114,7 +1114,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
- 
-         for (int i1 = i; i1 < j; ++i1) {
-             for (int j1 = k; j1 < l; ++j1) {
--                Chunk chunk = ichunkprovider.getChunkAt(i1, j1, false);
-+                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
- 
-                 if (chunk != null) {
-                     chunk.a(oclass, axisalignedbb, list, predicate);
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index f599d607afd73e30008e54757502077d783636a1..6646b8e83c8658fa6cd4838ccd669fd4a280e2e8 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -170,6 +170,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index cc24b2fa12ba998fa7c41376ec442c05eb754375..04cbcb6a872c0b595a691f705131100341e0ec63 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -279,6 +279,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      };
      public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
      // Paper end
@@ -339,3 +310,34 @@ index f599d607afd73e30008e54757502077d783636a1..6646b8e83c8658fa6cd4838ccd669fd4
  
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index dbe1de86ea8d638f90adaf8ff78a34c2e95d0691..3c66c1920119fdf6208e0d545f6b8bbd4e5d9a6d 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -1122,7 +1122,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         for (int i1 = i; i1 <= j; ++i1) {
+             for (int j1 = k; j1 <= l; ++j1) {
+-                Chunk chunk = ichunkprovider.getChunkAt(i1, j1, false);
++                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
+ 
+                 if (chunk != null) {
+                     chunk.a(entity, axisalignedbb, list, predicate);
+@@ -1143,7 +1143,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         for (int i1 = i; i1 < j; ++i1) {
+             for (int j1 = k; j1 < l; ++j1) {
+-                Chunk chunk = this.getChunkProvider().getChunkAt(i1, j1, false);
++                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
+ 
+                 if (chunk != null) {
+                     chunk.a(entitytypes, axisalignedbb, list, predicate);
+@@ -1166,7 +1166,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         for (int i1 = i; i1 < j; ++i1) {
+             for (int j1 = k; j1 < l; ++j1) {
+-                Chunk chunk = ichunkprovider.getChunkAt(i1, j1, false);
++                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
+ 
+                 if (chunk != null) {
+                     chunk.a(oclass, axisalignedbb, list, predicate);
