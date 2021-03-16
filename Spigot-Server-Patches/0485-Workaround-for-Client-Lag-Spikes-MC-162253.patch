@@ -11,36 +11,11 @@ This patch basically serves as a workaround by sending light maps
 to the client, so that it doesn't attempt to calculate them.
 This mitigates the frametime impact to a minimum (but it's still there).
 
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 0347dca5d2e40ba078d3f256e17f69ee7f0265cc..3bcd63a754538ccfc5965207a8fc79faa31925c0 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -234,7 +234,7 @@ public class Chunk implements IChunkAccess {
- 
-                     // broadcast
-                     Object[] backingSet = inRange.getBackingSet();
--                    Packet[] chunkPackets = new Packet[2];
-+                    Packet[] chunkPackets = new Packet[10];
-                     for (int index = 0, len = backingSet.length; index < len; ++index) {
-                         Object temp = backingSet[index];
-                         if (!(temp instanceof EntityPlayer)) {
-diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
-index 39572cdce691a459cb9df0cc064fbf7bde83a99e..e52df8096e399c84ff8a2637fdd65ea57d9001d0 100644
---- a/src/main/java/net/minecraft/server/ChunkSection.java
-+++ b/src/main/java/net/minecraft/server/ChunkSection.java
-@@ -100,6 +100,7 @@ public class ChunkSection {
-         return this.nonEmptyBlockCount == 0;
-     }
- 
-+    public static boolean isEmpty(@Nullable ChunkSection chunksection) { return a(chunksection) ; } // Paper - OBFHELPER
-     public static boolean a(@Nullable ChunkSection chunksection) {
-         return chunksection == Chunk.a || chunksection.c();
-     }
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 2654afa43b8322752267ca71447567e91323922e..126f94eaf8b328e5ca0133c61f92c52197c498dd 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -1960,12 +1960,112 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 406331bf57182355c6d7428b0986baad4248cf9d..76a5310ea35dc6fe482ecfdea8866df0598444c8 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+@@ -2004,12 +2004,112 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      }
  
@@ -153,3 +128,28 @@ index 2654afa43b8322752267ca71447567e91323922e..126f94eaf8b328e5ca0133c61f92c521
  
          entityplayer.a(chunk.getPos(), apacket[0], apacket[1]);
          PacketDebug.a(this.world, chunk.getPos());
+diff --git a/src/main/java/net/minecraft/world/level/chunk/Chunk.java b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
+index 92f40f759f625a46288388a3853cf996a0685b18..e056d198a530a830aeebf7ebb51ac9273675f2f0 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/Chunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
+@@ -268,7 +268,7 @@ public class Chunk implements IChunkAccess {
+ 
+                     // broadcast
+                     Object[] backingSet = inRange.getBackingSet();
+-                    Packet[] chunkPackets = new Packet[2];
++                    Packet[] chunkPackets = new Packet[10];
+                     for (int index = 0, len = backingSet.length; index < len; ++index) {
+                         Object temp = backingSet[index];
+                         if (!(temp instanceof EntityPlayer)) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
+index 506b79c67454e41d32ad18003f066681d47e50f5..e81a6b9538f5c770cbfb4d71439db31f8e97face 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
+@@ -106,6 +106,7 @@ public class ChunkSection {
+         return this.nonEmptyBlockCount == 0;
+     }
+ 
++    public static boolean isEmpty(@Nullable ChunkSection chunksection) { return a(chunksection) ; } // Paper - OBFHELPER
+     public static boolean a(@Nullable ChunkSection chunksection) {
+         return chunksection == Chunk.a || chunksection.c();
+     }
