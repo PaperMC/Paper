@@ -635,6 +635,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import it.unimi.dsi.fastutil.shorts.ShortArraySet;
  import it.unimi.dsi.fastutil.shorts.ShortSet;
  import java.util.List;
+@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.game.PacketPlayOutBlockChange;
+ import net.minecraft.network.protocol.game.PacketPlayOutLightUpdate;
+ import net.minecraft.network.protocol.game.PacketPlayOutMultiBlockChange;
+ import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.util.MathHelper;
+ import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.EnumSkyBlock;
 @@ -0,0 +0,0 @@ public class PlayerChunk {
      private CompletableFuture<IChunkAccess> chunkSave;
      public int oldTicketLevel;
@@ -1201,7 +1209,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
          PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
-         playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
+         playerChunkMap.getChunkDistanceManager().addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
 -        worldserver1.getChunkProvider().tickDistanceManager();
 -        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +        worldserver1.getChunkProvider().markAreaHighPriority(pos, 28, 3);
@@ -1256,6 +1264,22 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -0,0 +0,0 @@ import net.minecraft.server.level.PlayerChunkMap;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.server.network.PlayerConnection;
+ import net.minecraft.server.players.WhiteListEntry;
++import net.minecraft.util.MathHelper;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityExperienceOrb;
+ import net.minecraft.world.entity.EntityLiving;
+@@ -0,0 +0,0 @@ import net.minecraft.world.inventory.Container;
+ import net.minecraft.world.item.EnumColor;
+ import net.minecraft.world.item.enchantment.EnchantmentManager;
+ import net.minecraft.world.item.enchantment.Enchantments;
++import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.EnumGamemode;
+ import net.minecraft.world.level.biome.BiomeManager;
+ import net.minecraft.world.level.block.entity.TileEntitySign;
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
      }
@@ -1263,7 +1287,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start
 +    @Override
 +    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, @javax.annotation.Nonnull PlayerTeleportEvent.TeleportCause cause) {
-+        ((CraftWorld)loc.getWorld()).getHandle().getChunkProvider().markAreaHighPriority(new net.minecraft.server.ChunkCoordIntPair(net.minecraft.server.MathHelper.floor(loc.getX()) >> 4, net.minecraft.server.MathHelper.floor(loc.getZ()) >> 4), 28, 3); // Paper - load area high priority
++        ((CraftWorld)loc.getWorld()).getHandle().getChunkProvider().markAreaHighPriority(new ChunkCoordIntPair(MathHelper.floor(loc.getX()) >> 4, MathHelper.floor(loc.getZ()) >> 4), 28, 3); // Paper - load area high priority
 +        return super.teleportAsync(loc, cause);
 +    }
 +    // Paper end

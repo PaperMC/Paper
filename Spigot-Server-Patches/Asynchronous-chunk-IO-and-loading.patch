@@ -4126,19 +4126,37 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -0,0 +0,0 @@ import net.minecraft.nbt.NBTBase;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.server.level.EntityPlayer;
++import net.minecraft.server.level.PlayerChunk;
++import net.minecraft.server.level.PlayerChunkMap;
++import net.minecraft.server.level.TicketType;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityAreaEffectCloud;
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.vehicle.EntityMinecartHopper;
+ import net.minecraft.world.entity.vehicle.EntityMinecartMobSpawner;
+ import net.minecraft.world.entity.vehicle.EntityMinecartRideable;
+ import net.minecraft.world.entity.vehicle.EntityMinecartTNT;
++import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.phys.AxisAlignedBB;
+ import org.bukkit.Chunk; // Paper
+ import org.bukkit.EntityEffect;
 @@ -0,0 +0,0 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          entity.setHeadRotation(yaw);
      }
  
 +    @Override// Paper start
 +    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(Location loc, @javax.annotation.Nonnull org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
-+        net.minecraft.server.PlayerChunkMap playerChunkMap = ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().playerChunkMap;
++        PlayerChunkMap playerChunkMap = ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().playerChunkMap;
 +        java.util.concurrent.CompletableFuture<Boolean> future = new java.util.concurrent.CompletableFuture<>();
 +
 +        loc.getWorld().getChunkAtAsyncUrgently(loc).thenCompose(chunk -> {
-+            net.minecraft.server.ChunkCoordIntPair pair = new net.minecraft.server.ChunkCoordIntPair(chunk.getX(), chunk.getZ());
-+            ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().addTicketAtLevel(net.minecraft.server.TicketType.POST_TELEPORT, pair, 31, 0);
-+            net.minecraft.server.PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pair.pair());
++            ChunkCoordIntPair pair = new ChunkCoordIntPair(chunk.getX(), chunk.getZ());
++            ((CraftWorld) loc.getWorld()).getHandle().getChunkProvider().addTicketAtLevel(TicketType.POST_TELEPORT, pair, 31, 0);
++            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pair.pair());
 +            if (updatingChunk != null) {
 +                return updatingChunk.getEntityTickingFuture();
 +            } else {
