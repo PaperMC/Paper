@@ -51,10 +51,10 @@ index f792ac1639e16522695082caed754b1c2cb333b9..9da608c9dde183ad813fa5b7643314ce
          a((NBTBase) nbttagcompound, dataoutput);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 6efbb8a3502f86e105d4dfb9cef114a790966e95..7491c09b3d8fdd27fa83d850ff097e44e1bb0eee 100644
+index 6efbb8a3502f86e105d4dfb9cef114a790966e95..a9cbe17f6ccf0ce4ace97ba4b951b3fd7415d71b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -19,6 +19,8 @@ import java.nio.file.LinkOption;
+@@ -19,8 +19,12 @@ import java.nio.file.LinkOption;
  import java.nio.file.Path;
  import java.nio.file.StandardCopyOption;
  import java.nio.file.StandardOpenOption;
@@ -62,8 +62,12 @@ index 6efbb8a3502f86e105d4dfb9cef114a790966e95..7491c09b3d8fdd27fa83d850ff097e44
 +
  import javax.annotation.Nullable;
  import net.minecraft.SystemUtils;
++import net.minecraft.nbt.NBTCompressedStreamTools;
++import net.minecraft.nbt.NBTTagCompound;
  import net.minecraft.world.level.ChunkCoordIntPair;
-@@ -37,6 +39,7 @@ public class RegionFile implements AutoCloseable {
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+@@ -37,6 +41,7 @@ public class RegionFile implements AutoCloseable {
      private final IntBuffer i;
      @VisibleForTesting
      protected final RegionFileBitSet freeSectors;
@@ -71,16 +75,16 @@ index 6efbb8a3502f86e105d4dfb9cef114a790966e95..7491c09b3d8fdd27fa83d850ff097e44
  
      public RegionFile(File file, File file1, boolean flag) throws IOException {
          this(file.toPath(), file1.toPath(), RegionFileCompression.b, flag);
-@@ -44,6 +47,8 @@ public class RegionFile implements AutoCloseable {
+@@ -44,6 +49,8 @@ public class RegionFile implements AutoCloseable {
  
      public RegionFile(Path path, Path path1, RegionFileCompression regionfilecompression, boolean flag) throws IOException {
          this.g = ByteBuffer.allocateDirect(8192);
-+        this.file = java_nio_file_path.toFile(); // Paper
++        this.file = path.toFile(); // Paper
 +        initOversizedState(); // Paper
          this.freeSectors = new RegionFileBitSet();
          this.f = regionfilecompression;
          if (!Files.isDirectory(path1, new LinkOption[0])) {
-@@ -407,6 +412,74 @@ public class RegionFile implements AutoCloseable {
+@@ -407,6 +414,74 @@ public class RegionFile implements AutoCloseable {
          void run() throws IOException;
      }
  
@@ -156,10 +160,21 @@ index 6efbb8a3502f86e105d4dfb9cef114a790966e95..7491c09b3d8fdd27fa83d850ff097e44
  
          private final ChunkCoordIntPair b;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-index 13d0d6e7e03322f20ef5666d5299d26d51d1714c..571b34cd30bb76dcfac928e29a1cafd5824d4772 100644
+index 75b10a3755392870d8f5b51239a09a0e7fd75a42..ab9f4d40fd1126a3d7ba5b16fdc6ab09de4a7fdb 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-@@ -49,6 +49,74 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -9,8 +9,10 @@ import java.io.DataOutputStream;
+ import java.io.File;
+ import java.io.IOException;
+ import javax.annotation.Nullable;
++import net.minecraft.nbt.NBTBase;
+ import net.minecraft.nbt.NBTCompressedStreamTools;
+ import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.nbt.NBTTagList;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.util.ExceptionSuppressor;
+ import net.minecraft.world.level.ChunkCoordIntPair;
+@@ -50,6 +52,74 @@ public final class RegionFileCache implements AutoCloseable {
          }
      }
  
@@ -234,7 +249,7 @@ index 13d0d6e7e03322f20ef5666d5299d26d51d1714c..571b34cd30bb76dcfac928e29a1cafd5
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -58,6 +126,12 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -59,6 +129,12 @@ public final class RegionFileCache implements AutoCloseable {
          }
          // CraftBukkit end
          DataInputStream datainputstream = regionfile.a(chunkcoordintpair);
@@ -247,7 +262,7 @@ index 13d0d6e7e03322f20ef5666d5299d26d51d1714c..571b34cd30bb76dcfac928e29a1cafd5
          Throwable throwable = null;
  
          NBTTagCompound nbttagcompound;
-@@ -98,6 +172,7 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -99,6 +175,7 @@ public final class RegionFileCache implements AutoCloseable {
  
          try {
              NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);

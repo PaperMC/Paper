@@ -105,10 +105,10 @@ index f657e9b6bb3d24a6c77ef584711a003d1eea0341..eb1e86e8bb0f421e3686ffa02a4015a5
          if (args.length < 2 || args[1].equals("*")) {
 diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a68a8012f83bab9e814159c76b8c3710c7b1112
+index 0000000000000000000000000000000000000000..d381f91cf105bfc01846ada90da8971a3618e784
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,171 @@
 +package com.destroystokyo.paper.io;
 +
 +import com.google.gson.JsonArray;
@@ -116,14 +116,13 @@ index 0000000000000000000000000000000000000000..1a68a8012f83bab9e814159c76b8c371
 +import com.mojang.datafixers.util.Pair;
 +import it.unimi.dsi.fastutil.longs.Long2IntMap;
 +import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-+import net.minecraft.server.World;
 +
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.WeakHashMap;
++import net.minecraft.world.level.World;
 +
 +public class SyncLoadFinder {
 +
@@ -282,10 +281,10 @@ index 0000000000000000000000000000000000000000..1a68a8012f83bab9e814159c76b8c371
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 32ef8b2e52b47c2fdeb13d00df5107fa7c3b540e..3d3c58cef3a92355caa6dad7053d129f2e8e0732 100644
+index df71f8c42ac488153257614b58202bb5d7083251..2530c5ddfc8469329b411ad5c98ed718a3771890 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-@@ -493,6 +493,7 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -494,6 +494,7 @@ public class ChunkProviderServer extends IChunkProvider {
                  this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                  // Paper end
@@ -294,10 +293,10 @@ index 32ef8b2e52b47c2fdeb13d00df5107fa7c3b540e..3d3c58cef3a92355caa6dad7053d129f
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
                  com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index cc24b2fa12ba998fa7c41376ec442c05eb754375..04cbcb6a872c0b595a691f705131100341e0ec63 100644
+index a67462e10c6f8cb0eecb9a81fdc55f353c258368..23f88bd794b2c738463e1aa1180b6826d33f3b77 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
-@@ -279,6 +279,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -282,6 +282,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      };
      public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
      // Paper end
@@ -311,10 +310,10 @@ index cc24b2fa12ba998fa7c41376ec442c05eb754375..04cbcb6a872c0b595a691f7051311003
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
-index dbe1de86ea8d638f90adaf8ff78a34c2e95d0691..3c66c1920119fdf6208e0d545f6b8bbd4e5d9a6d 100644
+index b620d7e0d824c8d0758a66a8fbe872c3e45103d2..6781b25cc8e15be2556bb1bb8dc8c18c106b40ec 100644
 --- a/src/main/java/net/minecraft/world/level/World.java
 +++ b/src/main/java/net/minecraft/world/level/World.java
-@@ -1122,7 +1122,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -1130,7 +1130,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 <= j; ++i1) {
              for (int j1 = k; j1 <= l; ++j1) {
@@ -323,7 +322,7 @@ index dbe1de86ea8d638f90adaf8ff78a34c2e95d0691..3c66c1920119fdf6208e0d545f6b8bbd
  
                  if (chunk != null) {
                      chunk.a(entity, axisalignedbb, list, predicate);
-@@ -1143,7 +1143,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -1151,7 +1151,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 < j; ++i1) {
              for (int j1 = k; j1 < l; ++j1) {
@@ -332,7 +331,7 @@ index dbe1de86ea8d638f90adaf8ff78a34c2e95d0691..3c66c1920119fdf6208e0d545f6b8bbd
  
                  if (chunk != null) {
                      chunk.a(entitytypes, axisalignedbb, list, predicate);
-@@ -1166,7 +1166,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+@@ -1174,7 +1174,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
          for (int i1 = i; i1 < j; ++i1) {
              for (int j1 = k; j1 < l; ++j1) {

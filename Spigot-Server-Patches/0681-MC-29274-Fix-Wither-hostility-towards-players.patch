@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheShermanTanker <tanksherman27@gmail.com>
+Date: Thu, 1 Oct 2020 01:11:03 +0800
+Subject: [PATCH] MC-29274: Fix Wither hostility towards players
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index d2f6e1308a4dfec663770e2c7f4de0cf22402a97..3e6132211912d29e34c94042b0819f11a3bd123e 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -804,4 +804,10 @@ public class PaperWorldConfig {
+     private void setUpdatePathfindingOnBlockUpdate() {
+         updatePathfindingOnBlockUpdate = getBoolean("update-pathfinding-on-block-update", this.updatePathfindingOnBlockUpdate);
+     }
++
++    public boolean fixWitherTargetingBug = false;
++    private void witherSettings() {
++        fixWitherTargetingBug = getBoolean("fix-wither-targeting-bug", false);
++        log("Withers properly target players: " + fixWitherTargetingBug);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java b/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
+index 891905712903bf3ba241187791cfa995375430d5..229eabe0510e6c3660236ed0fb3e80d41074642c 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
+@@ -104,6 +104,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
+         this.goalSelector.a(6, new PathfinderGoalLookAtPlayer(this, EntityHuman.class, 8.0F));
+         this.goalSelector.a(7, new PathfinderGoalRandomLookaround(this));
+         this.targetSelector.a(1, new PathfinderGoalHurtByTarget(this, new Class[0]));
++        if(this.world.paperConfig.fixWitherTargetingBug) this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityHuman.class, 0, false, false, null)); // Paper - Fix MC-29274
+         this.targetSelector.a(2, new PathfinderGoalNearestAttackableTarget<>(this, EntityInsentient.class, 0, false, false, EntityWither.by));
+     }
+ 

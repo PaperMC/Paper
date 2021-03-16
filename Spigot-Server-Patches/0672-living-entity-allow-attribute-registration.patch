@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Sat, 24 Oct 2020 16:37:44 +0200
+Subject: [PATCH] living entity allow attribute registration
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMapBase.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMapBase.java
+index 8f6b78c68da555f96033df567da581af52195e6c..e4cd1848e8700de4ab64f3037bb0c41d99e7c97d 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMapBase.java
++++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMapBase.java
+@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
+ public class AttributeMapBase {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+-    private final Map<AttributeBase, AttributeModifiable> b = Maps.newHashMap();
++    private final Map<AttributeBase, AttributeModifiable> b = Maps.newHashMap(); private final Map<AttributeBase, AttributeModifiable> attributeMap = b; // Paper - OBFHELPER
+     private final Set<AttributeModifiable> c = Sets.newHashSet();
+     private final AttributeProvider d;
+ 
+@@ -135,4 +135,12 @@ public class AttributeMapBase {
+         }
+ 
+     }
++
++    // Paper - start
++    public void registerAttribute(AttributeBase attributeBase) {
++        AttributeModifiable attributeModifiable = new AttributeModifiable(attributeBase, AttributeModifiable::getAttribute);
++        attributeMap.put(attributeBase, attributeModifiable);
++    }
++    // Paper - end
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+index 673948947bd918c1dbb6c4c99486b4200e3c09fe..2e83b8855070077e90e5ab2c4beae819c620e480 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+@@ -40,6 +40,14 @@ public class CraftAttributeMap implements Attributable {
+         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
+     }
+ 
++    // Paper start
++    @Override
++    public void registerAttribute(Attribute attribute) {
++        Preconditions.checkArgument(attribute != null, "attribute");
++        handle.registerAttribute(CraftAttributeMap.toMinecraft(attribute));
++    }
++    // Paper end
++
+     public static AttributeBase toMinecraft(Attribute attribute) {
+         return IRegistry.ATTRIBUTE.get(CraftNamespacedKey.toMinecraft(attribute.getKey()));
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index e574e2453c7bc848168ff24372d6772bd423b672..3d497f69f89455b88fba423de8effb3db83e7af4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -675,6 +675,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return getHandle().craftAttributes.getAttribute(attribute);
+     }
+ 
++    // Paper start
++    @Override
++    public void registerAttribute(Attribute attribute) {
++        getHandle().craftAttributes.registerAttribute(attribute);
++    }
++    // Paper end
++
+     @Override
+     public void setAI(boolean ai) {
+         if (this.getHandle() instanceof EntityInsentient) {

@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Mon, 5 Oct 2020 21:25:16 +0200
+Subject: [PATCH] Player Chunk Load/Unload Events
+
+
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index a8873609744b617a55098a818a9d3b7e679edd4a..ae78a491da09945b8e51dc5a0e70eadea66f6873 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -138,6 +138,8 @@ import net.minecraft.world.scores.ScoreboardScore;
+ import net.minecraft.world.scores.ScoreboardTeam;
+ import net.minecraft.world.scores.ScoreboardTeamBase;
+ import net.minecraft.world.scores.criteria.IScoreboardCriteria;
++import io.papermc.paper.event.packet.PlayerChunkLoadEvent; // Paper
++import io.papermc.paper.event.packet.PlayerChunkUnloadEvent; // Paper
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -2087,11 +2089,21 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     public void a(ChunkCoordIntPair chunkcoordintpair, Packet<?> packet, Packet<?> packet1) {
+         this.playerConnection.sendPacket(packet1);
+         this.playerConnection.sendPacket(packet);
++        // Paper start
++        if(PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0){
++            new PlayerChunkLoadEvent(this.getBukkitEntity().getWorld().getChunkAt(chunkcoordintpair.longKey), this.getBukkitEntity()).callEvent();
++        }
++        // Paper end
+     }
+ 
+     public void a(ChunkCoordIntPair chunkcoordintpair) {
+         if (this.isAlive()) {
+             this.playerConnection.sendPacket(new PacketPlayOutUnloadChunk(chunkcoordintpair.x, chunkcoordintpair.z));
++            // Paper start
++            if(PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0){
++                new PlayerChunkUnloadEvent(this.getBukkitEntity().getWorld().getChunkAt(chunkcoordintpair.longKey), this.getBukkitEntity()).callEvent();
++            }
++            // Paper end
+         }
+ 
+     }
