@@ -25,7 +25,7 @@ Massive update to light to improve performance and chunk loading/generation.
 8) Fix NPE risk that crashes server in getting nibble data
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 9a3f552789b6972982ab28e7edb16ca302e9ff7b..f7e684e550ac531a978113c6f5861fd912d3cfd1 100644
+index 19e02d12bb0c5a73066f7c57da40277918276210..f46f3ca87badefd668e70d792de5b3d3c0172a68 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -1070,7 +1070,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -83,7 +83,7 @@ index c8bb040e7ed848877ec9c2f9b30dcda137cadf35..4ee7070364a8989eece4fa4237b52992
                      if (l1 == i) {
                          l1 = Long.MAX_VALUE;
 diff --git a/src/main/java/net/minecraft/server/level/LightEngineThreaded.java b/src/main/java/net/minecraft/server/level/LightEngineThreaded.java
-index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c493c555c 100644
+index e066848127cb9a42e8c39422691cc65132cac6bb..0b80569648c1df01aab52d0b8d47028cda925d86 100644
 --- a/src/main/java/net/minecraft/server/level/LightEngineThreaded.java
 +++ b/src/main/java/net/minecraft/server/level/LightEngineThreaded.java
 @@ -1,6 +1,7 @@
@@ -94,7 +94,15 @@ index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c
  import it.unimi.dsi.fastutil.objects.ObjectArrayList;
  import it.unimi.dsi.fastutil.objects.ObjectList;
  import it.unimi.dsi.fastutil.objects.ObjectListIterator;
-@@ -27,15 +28,149 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -16,6 +17,7 @@ import net.minecraft.util.thread.ThreadedMailbox;
+ import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.EnumSkyBlock;
+ import net.minecraft.world.level.chunk.ChunkSection;
++import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.IChunkAccess;
+ import net.minecraft.world.level.chunk.ILightAccess;
+ import net.minecraft.world.level.chunk.NibbleArray;
+@@ -27,15 +29,149 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
  
      private static final Logger LOGGER = LogManager.getLogger();
      private final ThreadedMailbox<Runnable> b;
@@ -247,7 +255,7 @@ index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c
          this.e = mailbox;
          this.b = threadedmailbox;
      }
-@@ -122,13 +257,9 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -122,13 +258,9 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
      }
  
      private void a(int i, int j, IntSupplier intsupplier, LightEngineThreaded.Update lightenginethreaded_update, Runnable runnable) {
@@ -264,7 +272,7 @@ index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c
      }
  
      @Override
-@@ -145,8 +276,19 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -145,8 +277,19 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
      public CompletableFuture<IChunkAccess> a(IChunkAccess ichunkaccess, boolean flag) {
          ChunkCoordIntPair chunkcoordintpair = ichunkaccess.getPos();
  
@@ -286,7 +294,7 @@ index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c
              ChunkSection[] achunksection = ichunkaccess.getSections();
  
              for (int i = 0; i < 16; ++i) {
-@@ -164,55 +306,48 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
+@@ -164,55 +307,48 @@ public class LightEngineThreaded extends LightEngine implements AutoCloseable {
                  });
              }
  
@@ -367,10 +375,10 @@ index e066848127cb9a42e8c39422691cc65132cac6bb..8a70286c017450dcc1926f471673933c
  
      public void a(int i) {
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunk.java b/src/main/java/net/minecraft/server/level/PlayerChunk.java
-index 48b87ed945a71b97d8a88cbaf4099dc966a8ab88..b19c3bdbf64dc44f01487a3d17236a03a95708b5 100644
+index 88022e3ccd04f9c041ced68be66a95247c1017e9..d6a5a0b17308913a5efd97cd27fabd0825ef68c6 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunk.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunk.java
-@@ -753,6 +753,7 @@ public class PlayerChunk {
+@@ -754,6 +754,7 @@ public class PlayerChunk {
                  ioPriority = com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGH_PRIORITY;
              }
              chunkMap.world.asyncChunkTaskManager.raisePriority(location.x, location.z, ioPriority);
@@ -379,7 +387,7 @@ index 48b87ed945a71b97d8a88cbaf4099dc966a8ab88..b19c3bdbf64dc44f01487a3d17236a03
          if (getCurrentPriority() != priority) {
              this.u.a(this.location, this::getCurrentPriority, priority, this::setPriority); // use preferred priority
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index 488a7f6849036310d5831ab9cb29ec79bc226e2b..033dee28da5b788b90b6c6651b2ab92efd1d2f21 100644
+index 7318103feafd12ed631f907a450c9dc3d665a9a3..b47cd2a8fb4920531d80acfcfe40f8211fedc9ae 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -99,6 +99,7 @@ import net.minecraft.world.level.chunk.storage.RegionFile;
@@ -458,20 +466,20 @@ index 2efca1fe92b2e93dcbf5337eea8855b1b2b9a564..72bfda620f073fd3c3e4c43d78583386
          this.a.a(t0);
          this.f();
 diff --git a/src/main/java/net/minecraft/world/level/chunk/NibbleArray.java b/src/main/java/net/minecraft/world/level/chunk/NibbleArray.java
-index 50fc6316bfd42a532f792ba7557783eea3988a55..c01284e6221b69f8fac3c74a7f9726a188f1f843 100644
+index 064d49a36dc1603c92a6bb8e9540ba9cc41a3335..3a85a89be2a736e5b6b7f08032f4becd6bb39ed1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/NibbleArray.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/NibbleArray.java
-@@ -9,6 +9,13 @@ import net.minecraft.SystemUtils;
+@@ -10,6 +10,13 @@ import net.minecraft.server.MCUtil;
  public class NibbleArray {
  
      // Paper start
-+    static final NibbleArray EMPTY_NIBBLE_ARRAY = new NibbleArray() {
++    public static final NibbleArray EMPTY_NIBBLE_ARRAY = new NibbleArray() {
 +        @Override
 +        public byte[] asBytes() {
 +            throw new IllegalStateException();
 +        }
 +    };
-+    long lightCacheKey = Long.MIN_VALUE;
++    public long lightCacheKey = Long.MIN_VALUE;
      public static byte[] EMPTY_NIBBLE = new byte[2048];
      private static final int nibbleBucketSizeMultiplier = Integer.getInteger("Paper.nibbleBucketSize", 3072);
      private static final int maxPoolSize = Integer.getInteger("Paper.maxNibblePoolSize", (int) Math.min(6, Math.max(1, Runtime.getRuntime().maxMemory() / 1024 / 1024 / 1024)) * (nibbleBucketSizeMultiplier * 8));
@@ -756,10 +764,18 @@ index 944a8c295ff9df0d96800ddc4f6763598cf61d0d..64dad8ed7c16011d9cb3e9d22ac6f892
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineSky.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineSky.java
-index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba2df76e77 100644
+index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..9cd2dfbfa216fdc58297fd25066d31bb92e13ec2 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LightEngineSky.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineSky.java
-@@ -38,21 +38,25 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.EnumDirection;
+ import net.minecraft.core.SectionPosition;
+ import net.minecraft.world.level.EnumSkyBlock;
++import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.level.chunk.ILightAccess;
+ import net.minecraft.world.level.chunk.NibbleArray;
+@@ -38,21 +39,25 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                  return k;
              } else {
                  //MutableInt mutableint = new MutableInt(); // Paper - share mutableint, single threaded
@@ -798,7 +814,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
                      EnumDirection enumdirection;
  
                      if (i == Long.MAX_VALUE) {
-@@ -61,7 +65,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -61,7 +66,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                          enumdirection = EnumDirection.a(j2, k2, l2);
                      }
  
@@ -807,7 +823,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
                      VoxelShape voxelshape;
  
                      if (enumdirection != null) {
-@@ -91,9 +95,9 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -91,9 +96,9 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                          }
                      }
  
@@ -819,7 +835,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
                  }
              }
          }
-@@ -101,10 +105,14 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -101,10 +106,14 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
  
      @Override
      protected void a(long i, int j, boolean flag) {
@@ -838,7 +854,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
          int k1;
  
          if (i1 != 0) {
-@@ -119,15 +127,16 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -119,15 +128,16 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
              k1 = l1;
          }
  
@@ -859,7 +875,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
  
          if (k == l2 || ((LightEngineStorageSky) this.c).g(l2)) {
              this.b(i, k2, j, flag);
-@@ -142,8 +151,8 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -142,8 +152,8 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
              int k3 = 0;
  
              while (true) {
@@ -870,7 +886,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
  
                  if (k == i4) {
                      this.b(i, l3, j, flag);
-@@ -181,26 +190,36 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -181,26 +191,36 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
              }
          }
  
@@ -913,7 +929,7 @@ index 37fa5faea6e2972e3eb8a3cbd1913ef38dc9456f..fa8d84ce6819b2f41ff7448dec5662ba
  
                      if (l > k2) {
                          l = k2;
-@@ -215,7 +234,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
+@@ -215,7 +235,7 @@ public final class LightEngineSky extends LightEngineLayer<LightEngineStorageSky
                      j2 = SectionPosition.a(j2, EnumDirection.UP);
                  }
  
@@ -1169,10 +1185,10 @@ index 9ba9efb181b9607f25b7c921e69e4c59b182d429..fc0162e7f543d230277457638f208a66
                  if (!this.i.containsKey(k1) && this.g(k1)) {
                      for (int l1 = 0; l1 < 16; ++l1) {
 diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
-index 0ab4917053c090c874e8bb59e750fd909636f89d..a994e7e93814796d1a5d86f8863d1d21bae51022 100644
+index da78d4c4b5f8af4648ac82d63c21f6a2a5b73ecb..2ce5cf2e5b6e1dae463439fbfde519fa54677714 100644
 --- a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
 +++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
-@@ -6,13 +6,18 @@ import net.minecraft.world.level.chunk.NibbleArray;
+@@ -7,13 +7,18 @@ import net.minecraft.world.level.chunk.NibbleArray;
  
  public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<M>> {
  
@@ -1194,7 +1210,7 @@ index 0ab4917053c090c874e8bb59e750fd909636f89d..a994e7e93814796d1a5d86f8863d1d21
      // Paper start - avoid copying light data
      protected LightEngineStorageArray(com.destroystokyo.paper.util.map.QueuedChangesMapLong2Object<NibbleArray> data, boolean isVisible) {
          if (isVisible) {
-@@ -20,12 +25,14 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -21,12 +26,14 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
          }
          this.data = data;
          this.isVisible = isVisible;
@@ -1211,7 +1227,7 @@ index 0ab4917053c090c874e8bb59e750fd909636f89d..a994e7e93814796d1a5d86f8863d1d21
          this.c();
          this.d = true;
      }
-@@ -35,7 +42,9 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -36,7 +43,9 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      public void a(long i) {
          if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data
          NibbleArray updating = this.data.getUpdating(i); // Paper - pool nibbles
@@ -1222,7 +1238,7 @@ index 0ab4917053c090c874e8bb59e750fd909636f89d..a994e7e93814796d1a5d86f8863d1d21
          if (updating.cleaner != null) MCUtil.scheduleTask(2, updating.cleaner, "Light Engine Release"); // Paper - delay clean incase anything holding ref was still using it
          this.c();
      }
-@@ -44,34 +53,34 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -45,34 +54,34 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
          return lookup.apply(i) != null; // Paper - avoid copying light data
      }
  
@@ -1278,7 +1294,7 @@ index 0ab4917053c090c874e8bb59e750fd909636f89d..a994e7e93814796d1a5d86f8863d1d21
  
      @Nullable
      public NibbleArray d(long i) {
-@@ -81,13 +90,14 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -82,13 +91,14 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
  
      public void a(long i, NibbleArray nibblearray) {
          if (this.isVisible) { throw new IllegalStateException("writing to visible data"); } // Paper - avoid copying light data

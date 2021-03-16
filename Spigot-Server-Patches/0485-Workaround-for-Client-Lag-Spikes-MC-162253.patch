@@ -12,7 +12,7 @@ to the client, so that it doesn't attempt to calculate them.
 This mitigates the frametime impact to a minimum (but it's still there).
 
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index a6e794a77110b670ace4003b7d1156801cf35b6e..6db110aaa2c1e08808eb80c333ceb8ab0377ca39 100644
+index ede47aaaace80280756fe4463def1ea26792c9e4..d5c939281df21683efc63937a9146b0dfeb22e2c 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -85,6 +85,7 @@ import net.minecraft.world.level.World;
@@ -23,52 +23,8 @@ index a6e794a77110b670ace4003b7d1156801cf35b6e..6db110aaa2c1e08808eb80c333ceb8ab
  import net.minecraft.world.level.chunk.ChunkStatus;
  import net.minecraft.world.level.chunk.IChunkAccess;
  import net.minecraft.world.level.chunk.ILightAccess;
-@@ -2011,12 +2012,112 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
- 
-     }
- 
-+    // Paper start
-+    private static int getLightMask(final Chunk chunk) {
-+        final ChunkSection[] chunkSections = chunk.getSections();
-+        int mask = 0;
-+
-+        for (int i = 0; i < chunkSections.length; ++i) {
-+            /*
-+
-+
-+Lightmasks have 18 bits, from the -1 (void) section until the 17th (air) section.
-+Sections go from 0..16. Now whenever a section is not empty, it can potentially change lighting for the section itself, the section below and the section above, hence the bitmask 111b, which is 7d.
-+
-+             */
-+            mask |= (ChunkSection.isEmpty(chunkSections[i]) ? 0 : 7) << i;
-+        }
-+
-+        return mask;
-+    }
-+
-+    private static int getCeilingLightMask(final Chunk chunk) {
-+        int mask = getLightMask(chunk);
-+
-+        /*
-+         It is similar to get highest bit, it would turn an 001010 into an 001111 so basically the highest bit and all below.
-+         We then invert this, so we'd have 110000 and compare that to the "main" chunk.
-+         This is because the bug only appears when the current chunks lightmaps are higher than those of the neighbors, thus we can omit sending neighbors which are lower than the current chunks lights.
-+
-+         so TLDR is that getCeilingLightMask returns a light mask with all bits set below the highest affected section. We could also count the number of leading zeros and invert them, somehow.
-+         @TODO: Implement Leafs suggestion
-+         either use Integer#numberOfLeadingZeros or document what this bithack is supposed to be doing then
-+         */
-+        mask |= mask >> 1;
-+        mask |= mask >> 2;
-+        mask |= mask >> 4;
-+        mask |= mask >> 8;
-+        mask |= mask >> 16;
-+
-+        return mask;
-+    }
-+    // Paper end
-+
-     final void sendChunk(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) { this.a(entityplayer, apacket, chunk); } // Paper - OBFHELPER
+@@ -2055,9 +2056,68 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+     public final void sendChunk(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) { this.a(entityplayer, apacket, chunk); } // Paper - OBFHELPER
      private void a(EntityPlayer entityplayer, Packet<?>[] apacket, Chunk chunk) {
          if (apacket[0] == null) {
 +            // Paper start - add 8 for light fix workaround
@@ -137,10 +93,10 @@ index a6e794a77110b670ace4003b7d1156801cf35b6e..6db110aaa2c1e08808eb80c333ceb8ab
          entityplayer.a(chunk.getPos(), apacket[0], apacket[1]);
          PacketDebug.a(this.world, chunk.getPos());
 diff --git a/src/main/java/net/minecraft/world/level/chunk/Chunk.java b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
-index 92f40f759f625a46288388a3853cf996a0685b18..e056d198a530a830aeebf7ebb51ac9273675f2f0 100644
+index 90e895e9eac6158a28de4a30589bf7538e5ec9cc..34a9f7b2f998f77b1279516cd09397ab6c2ac1cc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/Chunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
-@@ -268,7 +268,7 @@ public class Chunk implements IChunkAccess {
+@@ -280,7 +280,7 @@ public class Chunk implements IChunkAccess {
  
                      // broadcast
                      Object[] backingSet = inRange.getBackingSet();

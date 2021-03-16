@@ -44,16 +44,24 @@ index 32e68e403950be62bd0330b268738225c2e70edd..d0c951878600a4227e558bc68d68098c
          printSaveWarning = false;
          console.autosavePeriod = configuration.getInt("ticks-per.autosave");
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d8a197191 100644
+index e463dd48593becd701d8e087b8a058b8a4a50ee5..c538e075904382de72a74f518223c6b9daaf0625 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -406,8 +406,21 @@ public class CraftWorld implements World {
+@@ -30,6 +30,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutCustomSoundEffect;
+ import net.minecraft.network.protocol.game.PacketPlayOutUpdateTime;
+ import net.minecraft.network.protocol.game.PacketPlayOutWorldEvent;
+ import net.minecraft.resources.MinecraftKey;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.ChunkMapDistance;
+ import net.minecraft.server.level.PlayerChunk;
+ import net.minecraft.server.level.PlayerChunkMap;
+@@ -407,8 +408,21 @@ public class CraftWorld implements World {
  
      @Override
      public Chunk getChunkAt(int x, int z) {
 -        return this.world.getChunkProvider().getChunkAt(x, z, true).bukkitChunk;
 +        // Paper start - add ticket to hold chunk for a little while longer if plugin accesses it
-+        net.minecraft.server.Chunk chunk = world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
++        net.minecraft.world.level.chunk.Chunk chunk = world.getChunkProvider().getChunkAtIfLoadedImmediately(x, z);
 +        if (chunk == null) {
 +            addTicket(x, z);
 +            chunk = this.world.getChunkProvider().getChunkAt(x, z, true);
@@ -70,7 +78,7 @@ index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d
  
      @Override
      public Chunk getChunkAt(Block block) {
-@@ -482,7 +495,7 @@ public class CraftWorld implements World {
+@@ -483,7 +497,7 @@ public class CraftWorld implements World {
      public boolean unloadChunkRequest(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
          if (isChunkLoaded(x, z)) {
@@ -79,7 +87,7 @@ index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d
          }
  
          return true;
-@@ -559,9 +572,12 @@ public class CraftWorld implements World {
+@@ -560,9 +574,12 @@ public class CraftWorld implements World {
          org.spigotmc.AsyncCatcher.catchOp("chunk load"); // Spigot
          // Paper start - Optimize this method
          ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
@@ -93,7 +101,7 @@ index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d
              if (immediate == null) {
                  immediate = world.getChunkProvider().playerChunkMap.getUnloadingChunk(x, z);
              }
-@@ -569,7 +585,7 @@ public class CraftWorld implements World {
+@@ -570,7 +587,7 @@ public class CraftWorld implements World {
                  if (!(immediate instanceof ProtoChunkExtension) && !(immediate instanceof net.minecraft.world.level.chunk.Chunk)) {
                      return false; // not full status
                  }
@@ -102,7 +110,7 @@ index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d
                  world.getChunkAt(x, z); // make sure we're at ticket level 32 or lower
                  return true;
              }
-@@ -596,7 +612,7 @@ public class CraftWorld implements World {
+@@ -597,7 +614,7 @@ public class CraftWorld implements World {
              // we do this so we do not re-read the chunk data on disk
          }
  
@@ -111,7 +119,7 @@ index fa2f6f737b41157b90f455b65d41b1e51fcb4eb5..0a9bdf5e2665aa379cd6c887c534189d
          world.getChunkProvider().getChunkAt(x, z, ChunkStatus.FULL, true);
          return true;
          // Paper end
-@@ -2547,6 +2563,7 @@ public class CraftWorld implements World {
+@@ -2548,6 +2565,7 @@ public class CraftWorld implements World {
          }
          return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
              net.minecraft.world.level.chunk.Chunk chunk = (net.minecraft.world.level.chunk.Chunk) either.left().orElse(null);

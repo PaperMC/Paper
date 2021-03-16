@@ -182,10 +182,41 @@ index 35cca76fb7c7aa736e64185b44016e65cfaef6cd..4f6f6f51f9807bafa88482c0fe776c8b
      private byte type;
  
 diff --git a/src/main/java/net/minecraft/network/EnumProtocol.java b/src/main/java/net/minecraft/network/EnumProtocol.java
-index ab08336043d4f558434ed1f38d25cc555ace1ac0..539084d087bc6bd38d333066d3f8238cf2b08900 100644
+index ab08336043d4f558434ed1f38d25cc555ace1ac0..a892521db1197369bf6363bd2f5da24bf53643ab 100644
 --- a/src/main/java/net/minecraft/network/EnumProtocol.java
 +++ b/src/main/java/net/minecraft/network/EnumProtocol.java
-@@ -163,7 +163,8 @@ import org.apache.logging.log4j.LogManager;
+@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
+ import net.minecraft.SystemUtils;
+ import net.minecraft.network.protocol.EnumProtocolDirection;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.PacketListenerPlayIn;
++import net.minecraft.network.protocol.game.PacketListenerPlayOut;
+ import net.minecraft.network.protocol.game.PacketPlayInAbilities;
+ import net.minecraft.network.protocol.game.PacketPlayInAdvancements;
+ import net.minecraft.network.protocol.game.PacketPlayInArmAnimation;
+@@ -146,24 +148,30 @@ import net.minecraft.network.protocol.game.PacketPlayOutWindowItems;
+ import net.minecraft.network.protocol.game.PacketPlayOutWorldBorder;
+ import net.minecraft.network.protocol.game.PacketPlayOutWorldEvent;
+ import net.minecraft.network.protocol.game.PacketPlayOutWorldParticles;
++import net.minecraft.network.protocol.handshake.PacketHandshakingInListener;
+ import net.minecraft.network.protocol.handshake.PacketHandshakingInSetProtocol;
+ import net.minecraft.network.protocol.login.PacketLoginInCustomPayload;
+ import net.minecraft.network.protocol.login.PacketLoginInEncryptionBegin;
++import net.minecraft.network.protocol.login.PacketLoginInListener;
+ import net.minecraft.network.protocol.login.PacketLoginInStart;
+ import net.minecraft.network.protocol.login.PacketLoginOutCustomPayload;
+ import net.minecraft.network.protocol.login.PacketLoginOutDisconnect;
+ import net.minecraft.network.protocol.login.PacketLoginOutEncryptionBegin;
++import net.minecraft.network.protocol.login.PacketLoginOutListener;
+ import net.minecraft.network.protocol.login.PacketLoginOutSetCompression;
+ import net.minecraft.network.protocol.login.PacketLoginOutSuccess;
++import net.minecraft.network.protocol.status.PacketStatusInListener;
+ import net.minecraft.network.protocol.status.PacketStatusInPing;
+ import net.minecraft.network.protocol.status.PacketStatusInStart;
++import net.minecraft.network.protocol.status.PacketStatusOutListener;
+ import net.minecraft.network.protocol.status.PacketStatusOutPong;
+ import net.minecraft.network.protocol.status.PacketStatusOutServerInfo;
+ import org.apache.logging.log4j.LogManager;
  
  public enum EnumProtocol {
  
@@ -195,7 +226,7 @@ index ab08336043d4f558434ed1f38d25cc555ace1ac0..539084d087bc6bd38d333066d3f8238c
  
      private static final EnumProtocol[] e = new EnumProtocol[4];
      private static final Map<Class<? extends Packet<?>>, EnumProtocol> f = Maps.newHashMap();
-@@ -248,7 +249,7 @@ public enum EnumProtocol {
+@@ -248,7 +256,7 @@ public enum EnumProtocol {
          private final List<Supplier<? extends Packet<T>>> b;
  
          private a() {
@@ -205,7 +236,7 @@ index ab08336043d4f558434ed1f38d25cc555ace1ac0..539084d087bc6bd38d333066d3f8238c
              });
              this.b = Lists.newArrayList();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e4fae57da4ee232a818e608912f021694bcea0f2..76d880e05bbc1534343a105dd7121bddd729b8a2 100644
+index e4fae57da4ee232a818e608912f021694bcea0f2..078631631616874741b0e0662e51b3faadcddcec 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1665,9 +1665,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -216,7 +247,7 @@ index e4fae57da4ee232a818e608912f021694bcea0f2..76d880e05bbc1534343a105dd7121bdd
 +            return stream.<ResourcePackLoader>map(resourcepackrepository::a).filter(Objects::nonNull).map(ResourcePackLoader::d).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error
          }, this).thenCompose((immutablelist) -> {
 -            return DataPackResources.a(immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this);
-+            return DataPackResources.a((List<IResourcePack>) immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this); // Paper - decompile error
++            return DataPackResources.a(immutablelist, this.j() ? CommandDispatcher.ServerType.DEDICATED : CommandDispatcher.ServerType.INTEGRATED, this.h(), this.executorService, this); // Paper - decompile error
          }).thenAcceptAsync((datapackresources) -> {
              this.dataPackResources.close();
              this.dataPackResources = datapackresources;
