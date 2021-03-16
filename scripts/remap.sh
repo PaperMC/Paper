@@ -47,7 +47,7 @@ fi
 # These specialsource commands are from https://hub.spigotmc.org/stash/projects/SPIGOT/repos/builddata/browse/info.json
 echo "Applying class mappings..."
 if [ ! -f "$jarpath-$revision-cl.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --only com/minecraft/math --auto-lvt BASIC --auto-member SYNTHETIC -i "$jarpath.jar" -m "$classmappings" -o "$jarpath-$revision-cl.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --only com/mojang/math --auto-lvt BASIC --auto-member SYNTHETIC -i "$jarpath.jar" -m "$classmappings" -o "$jarpath-$revision-cl.jar" 1>/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to apply class mappings."
         exit 1
@@ -56,7 +56,7 @@ fi
 
 echo "Applying member mappings..."
 if [ ! -f "$jarpath-$revision-m.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --only com/minecraft/math --auto-member LOGGER --auto-member TOKENS -i "$jarpath-$revision-cl.jar" -m "$membermappings" -o "$jarpath-$revision-m.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource-2.jar" map --only . --only net/minecraft --only com/mojang/math --auto-member LOGGER --auto-member TOKENS -i "$jarpath-$revision-cl.jar" -m "$membermappings" -o "$jarpath-$revision-m.jar" 1>/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to apply member mappings."
         exit 1
@@ -65,7 +65,7 @@ fi
 
 echo "Creating remapped jar..."
 if [ ! -f "$jarpath-$revision-mapped.jar" ]; then
-    java -jar "$workdir/BuildData/bin/SpecialSource.jar" --only . --only net/minecraft --only com/minecraft/math -i "$jarpath-$revision-m.jar" --access-transformer "$accesstransforms" -m "$packagemappings" -o "$jarpath-$revision-mapped.jar" 1>/dev/null
+    java -jar "$workdir/BuildData/bin/SpecialSource.jar" --only . --only net/minecraft --only com/mojang/math -i "$jarpath-$revision-m.jar" --access-transformer "$accesstransforms" -m "$packagemappings" -o "$jarpath-$revision-mapped.jar" 1>/dev/null
     if [ "$?" != "0" ]; then
         echo "Failed to create remapped jar."
         exit 1
