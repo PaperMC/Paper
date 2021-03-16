@@ -28,6 +28,14 @@ diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSet
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
+ import net.minecraft.world.phys.AxisAlignedBB;
+ import net.minecraft.world.phys.MovingObjectPosition;
++import net.minecraft.world.phys.MovingObjectPositionEntity;
+ import net.minecraft.world.phys.Vec3D;
+ import net.minecraft.world.scores.ScoreboardTeam;
+ import org.apache.logging.log4j.Logger;
 @@ -0,0 +0,0 @@ public abstract class EntityLiving extends Entity {
          return world.rayTrace(raytrace);
      }
@@ -123,30 +131,50 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java 
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -0,0 +0,0 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import com.destroystokyo.paper.block.TargetBlockInfo;
++import com.destroystokyo.paper.entity.TargetEntityInfo;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Sets;
+ import java.util.ArrayList;
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
+ import net.minecraft.world.entity.projectile.EntityThrownTrident;
+ import net.minecraft.world.entity.projectile.EntityTippedArrow;
+ import net.minecraft.world.entity.projectile.EntityWitherSkull;
++import net.minecraft.world.level.RayTrace;
+ import net.minecraft.world.phys.MovingObjectPosition;
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
++import net.minecraft.world.phys.MovingObjectPositionEntity;
++import net.minecraft.world.phys.Vec3D;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.Location;
 @@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
-             new com.destroystokyo.paper.block.TargetBlockInfo(org.bukkit.craftbukkit.block.CraftBlock.at(getHandle().world, ((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getBlockPosition()),
-                 net.minecraft.server.MCUtil.toBukkitBlockFace(((net.minecraft.server.MovingObjectPositionBlock)rayTrace).getDirection()));
+             new TargetBlockInfo(CraftBlock.at(getHandle().world, ((MovingObjectPositionBlock)rayTrace).getBlockPosition()),
+                 MCUtil.toBukkitBlockFace(((MovingObjectPositionBlock)rayTrace).getDirection()));
      }
 +
 +    public Entity getTargetEntity(int maxDistance, boolean ignoreBlocks) {
-+        net.minecraft.server.MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
++        MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
 +        return rayTrace == null ? null : rayTrace.getEntity().getBukkitEntity();
 +    }
 +
-+    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
-+        net.minecraft.server.MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
-+        return rayTrace == null ? null : new com.destroystokyo.paper.entity.TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getPos().x, rayTrace.getPos().y, rayTrace.getPos().z));
++    public TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
++        MovingObjectPositionEntity rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
++        return rayTrace == null ? null : new TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getPos().x, rayTrace.getPos().y, rayTrace.getPos().z));
 +    }
 +
-+    public net.minecraft.server.MovingObjectPositionEntity rayTraceEntity(int maxDistance, boolean ignoreBlocks) {
-+        net.minecraft.server.MovingObjectPositionEntity rayTrace = getHandle().getTargetEntity(maxDistance);
++    public MovingObjectPositionEntity rayTraceEntity(int maxDistance, boolean ignoreBlocks) {
++        MovingObjectPositionEntity rayTrace = getHandle().getTargetEntity(maxDistance);
 +        if (rayTrace == null) {
 +            return null;
 +        }
 +        if (!ignoreBlocks) {
-+            net.minecraft.server.MovingObjectPosition rayTraceBlocks = getHandle().getRayTrace(maxDistance, net.minecraft.server.RayTrace.FluidCollisionOption.NONE);
++            MovingObjectPosition rayTraceBlocks = getHandle().getRayTrace(maxDistance, RayTrace.FluidCollisionOption.NONE);
 +            if (rayTraceBlocks != null) {
-+                net.minecraft.server.Vec3D eye = getHandle().getEyePosition(1.0F);
++                Vec3D eye = getHandle().getEyePosition(1.0F);
 +                if (eye.distanceSquared(rayTraceBlocks.getPos()) <= eye.distanceSquared(rayTrace.getPos())) {
 +                    return null;
 +                }

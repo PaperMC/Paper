@@ -332,11 +332,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package com.destroystokyo.paper.io;
 +
-+import net.minecraft.server.ChunkCoordIntPair;
++import net.minecraft.nbt.NBTTagCompound;
 +import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.NBTTagCompound;
-+import net.minecraft.server.RegionFile;
-+import net.minecraft.server.WorldServer;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.world.level.ChunkCoordIntPair;
++import net.minecraft.world.level.chunk.storage.RegionFile;
 +import org.apache.logging.log4j.Logger;
 +
 +import java.io.IOException;
@@ -1477,10 +1477,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import co.aikar.timings.Timing;
 +import com.destroystokyo.paper.io.PaperFileIOThread;
 +import com.destroystokyo.paper.io.IOUtil;
-+import net.minecraft.server.ChunkCoordIntPair;
-+import net.minecraft.server.ChunkRegionLoader;
-+import net.minecraft.server.PlayerChunkMap;
-+import net.minecraft.server.WorldServer;
++import net.minecraft.server.level.PlayerChunkMap;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.world.level.ChunkCoordIntPair;
++import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 +
 +import java.util.ArrayDeque;
 +import java.util.function.Consumer;
@@ -1630,14 +1630,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.io.PaperFileIOThread;
 +import com.destroystokyo.paper.io.IOUtil;
 +import com.destroystokyo.paper.io.PrioritizedTaskQueue;
-+import net.minecraft.server.ChunkRegionLoader;
-+import net.minecraft.server.IAsyncTaskHandler;
-+import net.minecraft.server.IChunkAccess;
-+import net.minecraft.server.NBTTagCompound;
-+import net.minecraft.server.WorldServer;
 +
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.world.level.chunk.IChunkAccess;
++import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 +
 +public final class ChunkSaveTask extends ChunkTask {
 +
@@ -1746,7 +1745,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.destroystokyo.paper.io.PaperFileIOThread;
 +import com.destroystokyo.paper.io.PrioritizedTaskQueue;
-+import net.minecraft.server.WorldServer;
++import net.minecraft.server.level.WorldServer;
 +
 +abstract class ChunkTask extends PrioritizedTaskQueue.PrioritizedTask implements Runnable {
 +
@@ -1794,13 +1793,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.destroystokyo.paper.io.IOUtil;
 +import com.destroystokyo.paper.io.PrioritizedTaskQueue;
 +import com.destroystokyo.paper.io.QueueExecutorThread;
-+import net.minecraft.server.ChunkRegionLoader;
-+import net.minecraft.server.IAsyncTaskHandler;
-+import net.minecraft.server.IChunkAccess;
++import net.minecraft.nbt.NBTTagCompound;
 +import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.NBTTagCompound;
-+import net.minecraft.server.PlayerChunk;
-+import net.minecraft.server.WorldServer;
++import net.minecraft.server.level.ChunkProviderServer;
++import net.minecraft.server.level.PlayerChunk;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.util.thread.IAsyncTaskHandler;
++import net.minecraft.world.level.chunk.ChunkStatus;
++import net.minecraft.world.level.chunk.IChunkAccess;
++import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 +import org.apache.commons.lang.StringUtils;
 +import org.apache.logging.log4j.Level;
 +import org.bukkit.Bukkit;
@@ -1888,7 +1889,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, "Load Task - " + (loadTask == null ? "none" : loadTask.toString()));
 +                PaperFileIOThread.LOGGER.log(Level.ERROR, "Save Task - " + (saveTask == null ? "none" : saveTask.toString()));
 +                // log current status of chunk to indicate whether we're waiting on generation or loading
-+                net.minecraft.server.PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
++                PlayerChunk chunkHolder = chunkInfo.world.getChunkProvider().playerChunkMap.getVisibleChunk(key);
 +
 +                dumpChunkInfo(new HashSet<>(), chunkHolder, chunkInfo.chunkX, chunkInfo.chunkZ);
 +            }
@@ -1912,7 +1913,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - null for (" + x +"," + z +")");
 +        } else {
 +            IChunkAccess chunk = chunkHolder.getAvailableChunkNow();
-+            net.minecraft.server.ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
++            ChunkStatus holderStatus = chunkHolder.getChunkHolderStatus();
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Holder - non-null");
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Status - " + ((chunk == null) ? "null chunk" : chunk.getChunkStatus().toString()));
 +            PaperFileIOThread.LOGGER.log(Level.ERROR, indentStr + "Chunk Ticket Status - "  + PlayerChunk.getChunkStatus(chunkHolder.getTicketLevel()));
@@ -1955,7 +1956,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * less-than or equal to 0, then this chunk task manager will operate off of the world's chunk task queue.
 +     * @param world Specified world.
 +     * @param threads Specified number of threads.
-+     * @see net.minecraft.server.ChunkProviderServer#serverThreadQueue
++     * @see ChunkProviderServer#serverThreadQueue
 +     */
 +    public ChunkTaskManager(final WorldServer world, final int threads) {
 +        this.world = world;
@@ -1980,7 +1981,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * the global queue is not shutdown. If the global workers is configured to be disabled or use 0 threads, then
 +     * this chunk task manager will operate off of the world's chunk task queue.
 +     * @param world The world that this task manager is responsible for
-+     * @see net.minecraft.server.ChunkProviderServer#serverThreadQueue
++     * @see ChunkProviderServer#serverThreadQueue
 +     */
 +    public ChunkTaskManager(final WorldServer world) {
 +        this.world = world;
@@ -2088,7 +2089,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param chunkX Chunk's x coordinate
 +     * @param chunkZ Chunk's z coordinate
 +     * @param priority Priority for this task
-+     * @param onComplete The consumer to invoke with the {@link net.minecraft.server.ChunkRegionLoader.InProgressChunkHolder} object once this task is complete
++     * @param onComplete The consumer to invoke with the {@link ChunkRegionLoader.InProgressChunkHolder} object once this task is complete
 +     * @param intendingToBlock Whether the caller is intending to block on this task completing (this is a performance tune, and has no adverse side-effects)
 +     * @return The {@link ChunkLoadTask} associated with
 +     */
@@ -2355,6 +2356,14 @@ diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
+ import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.IChunkAccess;
+ import net.minecraft.world.level.chunk.IChunkProvider;
++import net.minecraft.world.level.chunk.ProtoChunkExtension;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureManager;
+ import net.minecraft.world.level.storage.Convertable;
+ import net.minecraft.world.level.storage.WorldData;
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
          return playerChunk.getAvailableChunkNow();
  
@@ -2417,7 +2426,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        IChunkAccess current = this.getChunkAtImmediately(x, z); // we want to bypass ticket restrictions
 +        if (current != null) {
-+            if (!(current instanceof ProtoChunkExtension) && !(current instanceof net.minecraft.server.Chunk)) {
++            if (!(current instanceof ProtoChunkExtension) && !(current instanceof Chunk)) {
 +                return CompletableFuture.completedFuture(PlayerChunk.UNLOADED_CHUNK_ACCESS);
 +            }
 +            // we know the chunk is at full status here (either in read-only mode or the real thing)
@@ -2587,6 +2596,14 @@ diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.chunk.ProtoChunk;
+ import net.minecraft.world.level.chunk.ProtoChunkExtension;
+ import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
+ import net.minecraft.world.level.chunk.storage.IChunkLoader;
++import net.minecraft.world.level.chunk.storage.RegionFile;
+ import net.minecraft.world.level.levelgen.structure.StructureStart;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureManager;
+ import net.minecraft.world.level.storage.Convertable;
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      private final LightEngineThreaded lightEngine;
      private final IAsyncTaskHandler<Runnable> executor;
@@ -3001,17 +3018,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end
 +        // Paper start - async io
-+        net.minecraft.server.NBTTagCompound inProgressWrite = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
++        NBTTagCompound inProgressWrite = com.destroystokyo.paper.io.PaperFileIOThread.Holder.INSTANCE
 +            .getPendingWrite(this.world, x, z, false);
 +
 +        if (inProgressWrite != null) {
-+            return net.minecraft.server.ChunkRegionLoader.getStatus(inProgressWrite);
++            return ChunkRegionLoader.getStatus(inProgressWrite);
 +        }
 +        // Paper end
 +        // variant of PlayerChunkMap#getChunkStatusOnDisk that does not load data off disk, but loads the region file
 +        ChunkCoordIntPair chunkPos = new ChunkCoordIntPair(x, z);
 +        synchronized (world.getChunkProvider().playerChunkMap) {
-+            net.minecraft.server.RegionFile file;
++            RegionFile file;
 +            try {
 +                file = world.getChunkProvider().playerChunkMap.regionFileCache.getFile(chunkPos, false);
 +            } catch (IOException ex) {
@@ -3049,6 +3066,22 @@ diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ import net.minecraft.core.IRegistry;
+ import net.minecraft.core.IRegistryCustom;
+ import net.minecraft.core.SectionPosition;
+ import net.minecraft.core.particles.ParticleParam;
++import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.network.chat.ChatMessage;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.network.protocol.Packet;
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
+ import net.minecraft.world.level.chunk.ChunkSection;
+ import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.IChunkAccess;
++import net.minecraft.world.level.chunk.storage.RegionFile;
+ import net.minecraft.world.level.dimension.DimensionManager;
+ import net.minecraft.world.level.dimension.end.EnderDragonBattle;
+ import net.minecraft.world.level.levelgen.HeightMap;
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          return this.chunkProvider.getChunkAt(x, z, false);
      }
@@ -3185,6 +3218,16 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/VillagePlac
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/VillagePlace.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/VillagePlace.java
+@@ -0,0 +0,0 @@ import java.util.stream.Stream;
+ import net.minecraft.SystemUtils;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.SectionPosition;
++import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.server.level.LightEngineGraphSection;
++import net.minecraft.server.level.WorldServer;
+ import net.minecraft.util.datafix.DataFixTypes;
+ import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.IWorldReader;
 @@ -0,0 +0,0 @@ public class VillagePlace extends RegionFileSection<VillagePlaceSection> {
      private final VillagePlace.a a = new VillagePlace.a();
      private final LongSet b = new LongOpenHashSet();
@@ -3630,7 +3673,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private volatile PersistentStructureLegacy c; // Paper - async chunk loading
 +
 +    private final Object persistentDataLock = new Object(); // Paper
-+    protected final RegionFileCache regionFileCache;
++    public final RegionFileCache regionFileCache;
  
      public IChunkLoader(File file, DataFixer datafixer, boolean flag) {
 +        this.regionFileCache = new RegionFileCache(file, flag); // Paper - nuke IOWorker
@@ -3764,7 +3807,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCac
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-@@ -0,0 +0,0 @@ import net.minecraft.nbt.NBTTagCompound;
+@@ -0,0 +0,0 @@ import net.minecraft.server.MinecraftServer;
  import net.minecraft.util.ExceptionSuppressor;
  import net.minecraft.world.level.ChunkCoordIntPair;
  
@@ -3889,7 +3932,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper - nuke IOWorker
      private final Long2ObjectMap<Optional<R>> c = new Long2ObjectOpenHashMap();
 -    private final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet();
-+    protected final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet(); // Paper - private -> protected
++    public final LongLinkedOpenHashSet d = new LongLinkedOpenHashSet(); // Paper - private -> public
      private final Function<Runnable, Codec<R>> e;
      private final Function<Runnable, R> f;
      private final DataFixer g;
