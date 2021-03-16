@@ -77,7 +77,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import javax.annotation.Nonnull;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.NetworkManager;
-+import net.minecraft.server.PacketStatusOutServerInfo;
++import net.minecraft.network.protocol.game.PacketStatusOutServerInfo;
 +import net.minecraft.server.ServerPing;
 +
 +public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
@@ -174,6 +174,54 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +}
+diff --git a/src/main/java/net/minecraft/network/protocol/status/PacketStatusOutServerInfo.java b/src/main/java/net/minecraft/network/protocol/status/PacketStatusOutServerInfo.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/status/PacketStatusOutServerInfo.java
++++ b/src/main/java/net/minecraft/network/protocol/status/PacketStatusOutServerInfo.java
+@@ -0,0 +0,0 @@ package net.minecraft.network.protocol.status;
+ 
+ import com.google.gson.Gson;
+ import com.google.gson.GsonBuilder;
++import io.papermc.paper.adventure.AdventureComponent; // Paper
+ import java.io.IOException;
+ import net.minecraft.network.PacketDataSerializer;
+ import net.minecraft.network.chat.ChatModifier;
+@@ -0,0 +0,0 @@ import net.minecraft.util.ChatTypeAdapterFactory;
+ 
+ public class PacketStatusOutServerInfo implements Packet<PacketStatusOutListener> {
+ 
+-    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory()).create();
++    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory())
++        .registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer())
++        .create();
+     private ServerPing b;
+ 
+     public PacketStatusOutServerInfo() {}
+diff --git a/src/main/java/net/minecraft/network/protocol/status/ServerPing.java b/src/main/java/net/minecraft/network/protocol/status/ServerPing.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/status/ServerPing.java
++++ b/src/main/java/net/minecraft/network/protocol/status/ServerPing.java
+@@ -0,0 +0,0 @@ public class ServerPing {
+         this.a = ichatbasecomponent;
+     }
+ 
++    public ServerPingPlayerSample getPlayers() { return b(); } // Paper - OBFHELPER
+     public ServerPing.ServerPingPlayerSample b() {
+         return this.b;
+     }
+@@ -0,0 +0,0 @@ public class ServerPing {
+             return this.b;
+         }
+ 
++        public GameProfile[] getSample() { return c(); } // Paper - OBFHELPER
+         public GameProfile[] c() {
+             return this.c;
+         }
+ 
++        public void setSample(GameProfile[] sample) { a(sample); } // Paper - OBFHELPER
+         public void a(GameProfile[] agameprofile) {
+             this.c = agameprofile;
+         }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -197,10 +245,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              int j = MathHelper.nextInt(this.r, 0, this.getPlayerCount() - agameprofile.length);
  
              for (int k = 0; k < agameprofile.length; ++k) {
-diff --git a/src/main/java/net/minecraft/server/PacketStatusListener.java b/src/main/java/net/minecraft/server/PacketStatusListener.java
+diff --git a/src/main/java/net/minecraft/server/network/PacketStatusListener.java b/src/main/java/net/minecraft/server/network/PacketStatusListener.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketStatusListener.java
-+++ b/src/main/java/net/minecraft/server/PacketStatusListener.java
+--- a/src/main/java/net/minecraft/server/network/PacketStatusListener.java
++++ b/src/main/java/net/minecraft/server/network/PacketStatusListener.java
 @@ -0,0 +0,0 @@ public class PacketStatusListener implements PacketStatusInListener {
              this.networkManager.close(PacketStatusListener.a);
          } else {
@@ -220,51 +268,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          // CraftBukkit end
      }
-diff --git a/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java b/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
-+++ b/src/main/java/net/minecraft/server/PacketStatusOutServerInfo.java
-@@ -0,0 +0,0 @@ package net.minecraft.server;
- 
- import com.google.gson.Gson;
- import com.google.gson.GsonBuilder;
-+import io.papermc.paper.adventure.AdventureComponent; // Paper
- import java.io.IOException;
- 
- public class PacketStatusOutServerInfo implements Packet<PacketStatusOutListener> {
- 
--    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory()).create();
-+    private static final Gson a = (new GsonBuilder()).registerTypeAdapter(ServerPing.ServerData.class, new ServerPing.ServerData.Serializer()).registerTypeAdapter(ServerPing.ServerPingPlayerSample.class, new ServerPing.ServerPingPlayerSample.Serializer()).registerTypeAdapter(ServerPing.class, new ServerPing.Serializer()).registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer()).registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer()).registerTypeAdapterFactory(new ChatTypeAdapterFactory())
-+        .registerTypeAdapter(AdventureComponent.class, new AdventureComponent.Serializer())
-+        .create();
-     private ServerPing b;
- 
-     public PacketStatusOutServerInfo() {}
-diff --git a/src/main/java/net/minecraft/server/ServerPing.java b/src/main/java/net/minecraft/server/ServerPing.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ServerPing.java
-+++ b/src/main/java/net/minecraft/server/ServerPing.java
-@@ -0,0 +0,0 @@ public class ServerPing {
-         this.a = ichatbasecomponent;
-     }
- 
-+    public ServerPingPlayerSample getPlayers() { return b(); } // Paper - OBFHELPER
-     public ServerPing.ServerPingPlayerSample b() {
-         return this.b;
-     }
-@@ -0,0 +0,0 @@ public class ServerPing {
-             return this.b;
-         }
- 
-+        public GameProfile[] getSample() { return c(); } // Paper - OBFHELPER
-         public GameProfile[] c() {
-             return this.c;
-         }
- 
-+        public void setSample(GameProfile[] sample) { a(sample); } // Paper - OBFHELPER
-         public void a(GameProfile[] agameprofile) {
-             this.c = agameprofile;
-         }
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java

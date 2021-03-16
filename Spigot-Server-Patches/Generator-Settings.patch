@@ -18,10 +18,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        generateFlatBedrock = getBoolean("generator-settings.flat-bedrock", false);
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-+++ b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
+--- a/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
+ 
+ public interface IChunkAccess extends IBlockAccess, IStructureAccess {
+ 
++    // Paper start
++    default boolean generateFlatBedrock() {
++        if (this instanceof ProtoChunk) {
++            return ((ProtoChunk)this).world.paperConfig.generateFlatBedrock;
++        } else if (this instanceof Chunk) {
++            return ((Chunk)this).world.paperConfig.generateFlatBedrock;
++        } else {
++            return false;
++        }
++    }
++    // Paper end
++
+     IBlockData getType(final int x, final int y, final int z); // Paper
+     @Nullable
+     IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+@@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
+     private long s;
+     private final Map<WorldGenStage.Features, BitSet> t;
+     private volatile boolean u;
+-    private final World world; // Paper - Anti-Xray - Add world
++    final World world; // Paper - Anti-Xray - Add world // Paper - private -> default
+ 
+     // Paper start - Anti-Xray - Add world
+     @Deprecated public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) { this(chunkcoordintpair, chunkconverter, null); } // Notice for updates: Please make sure this constructor isn't used anywhere
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
 @@ -0,0 +0,0 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
          int i = ichunkaccess.getPos().d();
          int j = ichunkaccess.getPos().e();
@@ -51,39 +87,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              ichunkaccess.setType(blockposition_mutableblockposition.d(blockposition.getX(), k + i1, blockposition.getZ()), Blocks.BEDROCK.getBlockData(), false);
                          }
                      }
-diff --git a/src/main/java/net/minecraft/server/IChunkAccess.java b/src/main/java/net/minecraft/server/IChunkAccess.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IChunkAccess.java
-+++ b/src/main/java/net/minecraft/server/IChunkAccess.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
- 
- public interface IChunkAccess extends IBlockAccess, IStructureAccess {
- 
-+    // Paper start
-+    default boolean generateFlatBedrock() {
-+        if (this instanceof ProtoChunk) {
-+            return ((ProtoChunk)this).world.paperConfig.generateFlatBedrock;
-+        } else if (this instanceof Chunk) {
-+            return ((Chunk)this).world.paperConfig.generateFlatBedrock;
-+        } else {
-+            return false;
-+        }
-+    }
-+    // Paper end
-+
-     IBlockData getType(final int x, final int y, final int z); // Paper
-     @Nullable
-     IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag);
-diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ProtoChunk.java
-+++ b/src/main/java/net/minecraft/server/ProtoChunk.java
-@@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
-     private long s;
-     private final Map<WorldGenStage.Features, BitSet> t;
-     private volatile boolean u;
--    private final World world; // Paper - Anti-Xray - Add world
-+    final World world; // Paper - Anti-Xray - Add world // Paper - private -> default
- 
-     // Paper start - Anti-Xray - Add world
-     @Deprecated public ProtoChunk(ChunkCoordIntPair chunkcoordintpair, ChunkConverter chunkconverter) { this(chunkcoordintpair, chunkconverter, null); } // Notice for updates: Please make sure this constructor isn't used anywhere

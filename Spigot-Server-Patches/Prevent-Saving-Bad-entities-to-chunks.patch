@@ -17,10 +17,48 @@ an invalid entity.
 
 This should reduce log occurrences of dupe uuid messages.
 
-diff --git a/src/main/java/net/minecraft/server/ChunkRegionLoader.java b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkRegionLoader.java
-+++ b/src/main/java/net/minecraft/server/ChunkRegionLoader.java
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         List[] aentityslice = chunk.getEntitySlices(); // Spigot
+         int i = aentityslice.length;
+ 
++        java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
+         for (int j = 0; j < i; ++j) {
+             List<Entity> entityslice = aentityslice[j]; // Spigot
+             Iterator iterator = entityslice.iterator();
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                         throw (IllegalStateException) SystemUtils.c((Throwable) (new IllegalStateException("Removing entity while ticking!")));
+                     }
+ 
++                    // Paper start - move out entities that shouldn't be in this chunk before it unloads
++                    if (!entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
++                        toMoveChunks.add(entity);
++                        continue;
++                    }
++                    // Paper end
++
+                     this.entitiesById.remove(entity.getId());
+                     this.unregisterEntity(entity);
++
++                    if (entity.dead) iterator.remove(); // Paper - don't save dead entities during unload
+                 }
+             }
+         }
++        // Paper start - move out entities that shouldn't be in this chunk before it unloads
++        for (Entity entity : toMoveChunks) {
++            this.chunkCheck(entity);
++        }
++        // Paper end
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
 @@ -0,0 +0,0 @@ public class ChunkRegionLoader {
          nbttagcompound1.set("TileEntities", nbttaglist1);
          NBTTagList nbttaglist2 = new NBTTagList();
@@ -79,41 +117,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public static ChunkStatus.Type a(@Nullable NBTTagCompound nbttagcompound) {
          if (nbttagcompound != null) {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-         List[] aentityslice = chunk.getEntitySlices(); // Spigot
-         int i = aentityslice.length;
- 
-+        java.util.List<Entity> toMoveChunks = new java.util.ArrayList<>(); // Paper
-         for (int j = 0; j < i; ++j) {
-             List<Entity> entityslice = aentityslice[j]; // Spigot
-             Iterator iterator = entityslice.iterator();
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-                         throw (IllegalStateException) SystemUtils.c((Throwable) (new IllegalStateException("Removing entity while ticking!")));
-                     }
- 
-+                    // Paper start - move out entities that shouldn't be in this chunk before it unloads
-+                    if (!entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
-+                        toMoveChunks.add(entity);
-+                        continue;
-+                    }
-+                    // Paper end
-+
-                     this.entitiesById.remove(entity.getId());
-                     this.unregisterEntity(entity);
-+
-+                    if (entity.dead) iterator.remove(); // Paper - don't save dead entities during unload
-                 }
-             }
-         }
-+        // Paper start - move out entities that shouldn't be in this chunk before it unloads
-+        for (Entity entity : toMoveChunks) {
-+            this.chunkCheck(entity);
-+        }
-+        // Paper end
- 
-     }
- 

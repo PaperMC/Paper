@@ -60,17 +60,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return chunk.bukkitChunk;
 +        // Paper end
-     }
- 
++    }
++
 +    // Paper start
 +    private void addTicket(int x, int z) {
 +        MCUtil.MAIN_EXECUTOR.execute(() -> world.getChunkProvider().addTicket(TicketType.PLUGIN, new ChunkCoordIntPair(x, z), 0, Unit.INSTANCE)); // Paper
-+    }
+     }
 +    // Paper end
-+
+ 
      @Override
      public Chunk getChunkAt(Block block) {
-         Preconditions.checkArgument(block != null, "null block");
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
      public boolean unloadChunkRequest(int x, int z) {
          org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
@@ -88,14 +87,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (immediate != null) return true; // Paper
  
          if (!generate) {
- 
 -            IChunkAccess immediate = world.getChunkProvider().getChunkAtImmediately(x, z);
++
 +            //IChunkAccess immediate = world.getChunkProvider().getChunkAtImmediately(x, z); // Paper
              if (immediate == null) {
                  immediate = world.getChunkProvider().playerChunkMap.getUnloadingChunk(x, z);
              }
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
-                 if (!(immediate instanceof ProtoChunkExtension) && !(immediate instanceof net.minecraft.server.Chunk)) {
+                 if (!(immediate instanceof ProtoChunkExtension) && !(immediate instanceof net.minecraft.world.level.chunk.Chunk)) {
                      return false; // not full status
                  }
 -                world.getChunkProvider().addTicket(TicketType.PLUGIN, chunkPos, 1, Unit.INSTANCE);
@@ -115,8 +114,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftWorld implements World {
          }
          return this.world.getChunkProvider().getChunkAtAsynchronously(x, z, gen, urgent).thenComposeAsync((either) -> {
-             net.minecraft.server.Chunk chunk = (net.minecraft.server.Chunk) either.left().orElse(null);
+             net.minecraft.world.level.chunk.Chunk chunk = (net.minecraft.world.level.chunk.Chunk) either.left().orElse(null);
 +            if (chunk != null) addTicket(x, z); // Paper
              return CompletableFuture.completedFuture(chunk == null ? null : chunk.getBukkitChunk());
-         }, MinecraftServer.getServer());
+         }, net.minecraft.server.MinecraftServer.getServer());
      }

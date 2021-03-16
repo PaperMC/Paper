@@ -58,10 +58,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
          // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
-diff --git a/src/main/java/net/minecraft/server/CrashReport.java b/src/main/java/net/minecraft/server/CrashReport.java
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/CrashReport.java
-+++ b/src/main/java/net/minecraft/server/CrashReport.java
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -0,0 +0,0 @@ public class CrashReport {
      }
  
@@ -70,48 +70,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          while (throwable instanceof CompletionException && throwable.getCause() != null) {
              throwable = throwable.getCause();
          }
-diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+diff --git a/src/main/java/net/minecraft/SystemUtils.java b/src/main/java/net/minecraft/SystemUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/DedicatedServer.java
-+++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             long j = SystemUtils.getMonotonicNanos() - i;
-             String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
- 
--            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
-+            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
-             if (dedicatedserverproperties.announcePlayerAchievements != null) {
-                 ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
-             }
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-             //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
-         }
- 
-+        hasFullyShutdown = true; // Paper
-         System.exit(0); // CraftBukkit
+--- a/src/main/java/net/minecraft/SystemUtils.java
++++ b/src/main/java/net/minecraft/SystemUtils.java
+@@ -0,0 +0,0 @@ public class SystemUtils {
+         return SystemUtils.f;
      }
  
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-     @Override
-     public void stop() {
-         super.stop();
--        SystemUtils.h();
-+        //SystemUtils.h(); // Paper - moved into super
-     }
- 
-     @Override
-diff --git a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-+++ b/src/main/java/net/minecraft/server/IAsyncTaskHandler.java
-@@ -0,0 +0,0 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
-         try {
-             r0.run();
-         } catch (Exception exception) {
-+            if (exception.getCause() instanceof ThreadDeath) throw exception; // Paper
-             IAsyncTaskHandler.LOGGER.fatal("Error executing task on {}", this.bj(), exception);
-         }
- 
++    public static void shutdownServerThreadPool() { h(); } // Paper - OBFHELPER
+     public static void h() {
+         a(SystemUtils.e);
+         a(SystemUtils.f);
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -246,7 +216,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
  
      @Override
-     protected TickTask postToMainThread(Runnable runnable) {
+     public TickTask postToMainThread(Runnable runnable) {
 +        // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
 +        if (this.hasStopped && Thread.currentThread().equals(shutdownThread)) {
 +            runnable.run();
@@ -274,10 +244,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.getPlayerList().reload();
              this.customFunctionData.a(this.dataPackResources.a());
              this.ak.a(this.dataPackResources.h());
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             long j = SystemUtils.getMonotonicNanos() - i;
+             String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
+ 
+-            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
++            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
+             if (dedicatedserverproperties.announcePlayerAchievements != null) {
+                 ((GameRules.GameRuleBoolean) this.getGameRules().get(GameRules.ANNOUNCE_ADVANCEMENTS)).a(dedicatedserverproperties.announcePlayerAchievements, (MinecraftServer) this);
+             }
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
+         }
+ 
++        hasFullyShutdown = true; // Paper
+         System.exit(0); // CraftBukkit
+     }
+ 
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+     @Override
+     public void stop() {
+         super.stop();
+-        SystemUtils.h();
++        //SystemUtils.h(); // Paper - moved into super
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              MutableBoolean mutableboolean = new MutableBoolean();
  
@@ -286,10 +286,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  mutableboolean.setFalse();
                  list.stream().map((playerchunk) -> {
                      CompletableFuture completablefuture;
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
+     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
+     public final ChunkProviderServer chunkProvider; // Paper - public
+-    boolean tickingEntities;
++    public boolean tickingEntities; // Paper - expose for watchdog
+     // Paper start
+     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
+     public void doIfNotEntityTicking(java.lang.Runnable run) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
          cserver.getPluginManager().callEvent(playerQuitEvent);
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
@@ -299,22 +312,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
  
          // Paper start - Remove from collideRule team if needed
-diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
+diff --git a/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java b/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/SystemUtils.java
-+++ b/src/main/java/net/minecraft/server/SystemUtils.java
-@@ -0,0 +0,0 @@ public class SystemUtils {
-         return SystemUtils.f;
-     }
+--- a/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java
++++ b/src/main/java/net/minecraft/util/thread/IAsyncTaskHandler.java
+@@ -0,0 +0,0 @@ public abstract class IAsyncTaskHandler<R extends Runnable> implements Mailbox<R
+         try {
+             r0.run();
+         } catch (Exception exception) {
++            if (exception.getCause() instanceof ThreadDeath) throw exception; // Paper
+             IAsyncTaskHandler.LOGGER.fatal("Error executing task on {}", this.bj(), exception);
+         }
  
-+    public static void shutdownServerThreadPool() { h(); } // Paper - OBFHELPER
-     public static void h() {
-         a(SystemUtils.e);
-         a(SystemUtils.f);
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
  
                          gameprofilerfiller.exit();
@@ -331,19 +344,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper start - Prevent tile entity and entity crashes
              String msg = "Entity threw exception at " + entity.world.getWorld().getName() + ":" + entity.locX() + "," + entity.locY() + "," + entity.locZ();
              System.err.println(msg);
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-     private final Queue<Entity> entitiesToAdd = Queues.newArrayDeque();
-     public final List<EntityPlayer> players = Lists.newArrayList(); // Paper - private -> public
-     public final ChunkProviderServer chunkProvider; // Paper - public
--    boolean tickingEntities;
-+    public boolean tickingEntities; // Paper - expose for watchdog
-     // Paper start
-     List<java.lang.Runnable> afterEntityTickingTasks = Lists.newArrayList();
-     public void doIfNotEntityTicking(java.lang.Runnable run) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java

@@ -11,41 +11,10 @@ server threads
 
 Allow usage of a single thread executor by not using ForkJoin so single core CPU's.
 
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+diff --git a/src/main/java/net/minecraft/SystemUtils.java b/src/main/java/net/minecraft/SystemUtils.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         S s0 = function.apply(thread); // CraftBukkit - decompile error
- 
-         atomicreference.set(s0);
-+        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
-         thread.start();
-         return s0;
-     }
-diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
-@@ -0,0 +0,0 @@
-+package net.minecraft.server;
-+
-+import java.util.concurrent.atomic.AtomicInteger;
-+
-+public class ServerWorkerThread extends Thread {
-+    private static final AtomicInteger threadId = new AtomicInteger(1);
-+    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
-+        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
-+        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
-+        this.setDaemon(true);
-+        this.setUncaughtExceptionHandler(SystemUtils::onThreadError);
-+    }
-+}
-diff --git a/src/main/java/net/minecraft/server/SystemUtils.java b/src/main/java/net/minecraft/server/SystemUtils.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/SystemUtils.java
-+++ b/src/main/java/net/minecraft/server/SystemUtils.java
+--- a/src/main/java/net/minecraft/SystemUtils.java
++++ b/src/main/java/net/minecraft/SystemUtils.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
  public class SystemUtils {
  
@@ -97,3 +66,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static void a(Thread thread, Throwable throwable) {
          c(throwable);
          if (throwable instanceof CompletionException) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         S s0 = function.apply(thread); // CraftBukkit - decompile error
+ 
+         atomicreference.set(s0);
++        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - boost priority
+         thread.start();
+         return s0;
+     }
+diff --git a/src/main/java/net/minecraft/server/ServerWorkerThread.java b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/net/minecraft/server/ServerWorkerThread.java
+@@ -0,0 +0,0 @@
++package net.minecraft.server;
++
++import net.minecraft.SystemUtils;
++import java.util.concurrent.atomic.AtomicInteger;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
++        this.setDaemon(true);
++        this.setUncaughtExceptionHandler(SystemUtils::onThreadError);
++    }
++}

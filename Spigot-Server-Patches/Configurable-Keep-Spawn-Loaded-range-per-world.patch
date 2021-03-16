@@ -74,52 +74,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (true) {
              WorldServer worldserver1 = worldserver;
-diff --git a/src/main/java/net/minecraft/server/WorldLoadListener.java b/src/main/java/net/minecraft/server/WorldLoadListener.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldLoadListener.java
-+++ b/src/main/java/net/minecraft/server/WorldLoadListener.java
-@@ -0,0 +0,0 @@ public interface WorldLoadListener {
-     void a(ChunkCoordIntPair chunkcoordintpair, @Nullable ChunkStatus chunkstatus);
- 
-     void b();
-+
-+    void setChunkRadius(int radius); // Paper - allow changing chunk radius
- }
-diff --git a/src/main/java/net/minecraft/server/WorldLoadListenerLogger.java b/src/main/java/net/minecraft/server/WorldLoadListenerLogger.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldLoadListenerLogger.java
-+++ b/src/main/java/net/minecraft/server/WorldLoadListenerLogger.java
-@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
- public class WorldLoadListenerLogger implements WorldLoadListener {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
--    private final int b;
-+    private int b; // Paper - remove final
-     private int c;
-     private long d;
-     private long e = Long.MAX_VALUE;
- 
-     public WorldLoadListenerLogger(int i) {
--        int j = i * 2 + 1;
-+        // Paper start - Allow changing radius later for configurable spawn patch
-+        this.setChunkRadius(i); // Move to method
-+    }
-+
-+    @Override
-+    public void setChunkRadius(int radius) {
-+        // Paper - copied from above
-+        int j = radius * 2 + 1;
- 
-         this.b = j * j;
-     }
-+    // Paper end
- 
-     @Override
-     public void a(ChunkCoordIntPair chunkcoordintpair) {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          return ((PersistentIdCounts) this.getMinecraftServer().E().getWorldPersistentData().a(PersistentIdCounts::new, "idcounts")).a();
      }
@@ -212,6 +170,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.getMinecraftServer().getPlayerList().sendAll(new PacketPlayOutSpawnPosition(blockposition, f));
      }
  
+diff --git a/src/main/java/net/minecraft/server/level/progress/WorldLoadListener.java b/src/main/java/net/minecraft/server/level/progress/WorldLoadListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/progress/WorldLoadListener.java
++++ b/src/main/java/net/minecraft/server/level/progress/WorldLoadListener.java
+@@ -0,0 +0,0 @@ public interface WorldLoadListener {
+     void a(ChunkCoordIntPair chunkcoordintpair, @Nullable ChunkStatus chunkstatus);
+ 
+     void b();
++
++    void setChunkRadius(int radius); // Paper - allow changing chunk radius
+ }
+diff --git a/src/main/java/net/minecraft/server/level/progress/WorldLoadListenerLogger.java b/src/main/java/net/minecraft/server/level/progress/WorldLoadListenerLogger.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/progress/WorldLoadListenerLogger.java
++++ b/src/main/java/net/minecraft/server/level/progress/WorldLoadListenerLogger.java
+@@ -0,0 +0,0 @@ import org.apache.logging.log4j.Logger;
+ public class WorldLoadListenerLogger implements WorldLoadListener {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+-    private final int b;
++    private int b; // Paper - remove final
+     private int c;
+     private long d;
+     private long e = Long.MAX_VALUE;
+ 
+     public WorldLoadListenerLogger(int i) {
+-        int j = i * 2 + 1;
++        // Paper start - Allow changing radius later for configurable spawn patch
++        this.setChunkRadius(i); // Move to method
++    }
++
++    @Override
++    public void setChunkRadius(int radius) {
++        // Paper - copied from above
++        int j = radius * 2 + 1;
+ 
+         this.b = j * j;
+     }
++    // Paper end
+ 
+     @Override
+     public void a(ChunkCoordIntPair chunkcoordintpair) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java

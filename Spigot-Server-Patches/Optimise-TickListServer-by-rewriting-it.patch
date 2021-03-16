@@ -888,10 +888,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
+diff --git a/src/main/java/net/minecraft/core/BlockPosition.java b/src/main/java/net/minecraft/core/BlockPosition.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BlockPosition.java
+--- a/src/main/java/net/minecraft/core/BlockPosition.java
++++ b/src/main/java/net/minecraft/core/BlockPosition.java
 @@ -0,0 +0,0 @@ public class BlockPosition extends BaseBlockPosition {
          return i == 0 && j == 0 && k == 0 ? this : new BlockPosition(this.getX() + i, this.getY() + j, this.getZ() + k);
      }
@@ -900,10 +900,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public BlockPosition a(BaseBlockPosition baseblockposition) {
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
-diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
-+++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+--- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
      }
      // Paper end
@@ -918,11 +918,85 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public ChunkProviderServer(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, DefinedStructureManager definedstructuremanager, Executor executor, ChunkGenerator chunkgenerator, int i, boolean flag, WorldLoadListener worldloadlistener, Supplier<WorldPersistentData> supplier) {
          this.world = worldserver;
          this.serverThreadQueue = new ChunkProviderServer.a(worldserver);
-diff --git a/src/main/java/net/minecraft/server/NextTickListEntry.java b/src/main/java/net/minecraft/server/NextTickListEntry.java
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunk.java b/src/main/java/net/minecraft/server/level/PlayerChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/NextTickListEntry.java
-+++ b/src/main/java/net/minecraft/server/NextTickListEntry.java
-@@ -0,0 +0,0 @@ import java.util.Comparator;
+--- a/src/main/java/net/minecraft/server/level/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunk.java
+@@ -0,0 +0,0 @@ public class PlayerChunk {
+                     PlayerChunk.this.isTickingReady = true;
+ 
+ 
+-
++                    // Paper start - rewrite ticklistserver
++                    PlayerChunk.this.chunkMap.world.onChunkSetTicking(PlayerChunk.this.location.x, PlayerChunk.this.location.z);
++                    // Paper end - rewrite ticklistserver
+ 
+                 }
+             });
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     }
+     // Paper end
+ 
++    // Paper start - rewrite ticklistserver
++    void onChunkSetTicking(int chunkX, int chunkZ) {
++        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
++            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListBlock).onChunkSetTicking(chunkX, chunkZ);
++            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListFluid).onChunkSetTicking(chunkX, chunkZ);
++        }
++    }
++    // Paper end - rewrite ticklistserver
++
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         convertable = convertable_conversionsession;
+         uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());
+         // CraftBukkit end
+-        this.nextTickListBlock = new TickListServer<>(this, (block) -> {
+-            return block == null || block.getBlockData().isAir();
+-        }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
+-        this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
+-            return fluidtype == null || fluidtype == FluidTypes.EMPTY;
+-        }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
++        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
++            this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> {
++                return block == null || block.getBlockData().isAir();
++            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
++            this.nextTickListFluid = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> {
++                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
++            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
++        } else {
++            this.nextTickListBlock = new TickListServer<>(this, (block) -> {
++                return block == null || block.getBlockData().isAir();
++            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
++            this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
++                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
++            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
++        }
+         this.navigators = Sets.newHashSet();
+         this.L = new ObjectLinkedOpenHashSet();
+         this.Q = flag1;
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+         if (this.Q) {
+             long i = this.worldData.getTime() + 1L;
+ 
+-            this.worldDataServer.setTime(i);
++            this.worldDataServer.setTime(i); // Paper - diff on change, we want the below to be ran right after this
++            this.nextTickListBlock.nextTick(); // Paper
++            this.nextTickListFluid.nextTick(); // Paper
+             this.worldDataServer.u().a(this.server, i);
+             if (this.worldData.q().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
+                 this.setDayTime(this.worldData.getDayTime() + 1L);
+diff --git a/src/main/java/net/minecraft/world/level/NextTickListEntry.java b/src/main/java/net/minecraft/world/level/NextTickListEntry.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/NextTickListEntry.java
++++ b/src/main/java/net/minecraft/world/level/NextTickListEntry.java
+@@ -0,0 +0,0 @@ import net.minecraft.core.BlockPosition;
  public class NextTickListEntry<T> {
  
      private static final java.util.concurrent.atomic.AtomicLong COUNTER = new java.util.concurrent.atomic.AtomicLong(); // Paper - async chunk loading
@@ -989,64 +1063,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public String toString() {
          return this.e + ": " + this.a + ", " + this.b + ", " + this.c + ", " + this.f;
-diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+diff --git a/src/main/java/net/minecraft/world/level/TickListChunk.java b/src/main/java/net/minecraft/world/level/TickListChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerChunk.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunk.java
-@@ -0,0 +0,0 @@ public class PlayerChunk {
-                     PlayerChunk.this.isTickingReady = true;
- 
- 
--
-+                    // Paper start - rewrite ticklistserver
-+                    PlayerChunk.this.chunkMap.world.onChunkSetTicking(PlayerChunk.this.location.x, PlayerChunk.this.location.z);
-+                    // Paper end - rewrite ticklistserver
- 
-                 }
-             });
-diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
-+++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
-@@ -0,0 +0,0 @@ import com.google.common.base.MoreObjects;
- 
- public class StructureBoundingBox {
- 
--    public int a;
--    public int b;
--    public int c;
--    public int d;
--    public int e;
--    public int f;
-+    public int a; public final int getMinX() { return this.a; } // Paper - OBFHELPER
-+    public int b; public final int getMinY() { return this.b; } // Paper - OBFHELPER
-+    public int c; public final int getMinZ() { return this.c; } // Paper - OBFHELPER
-+    public int d; public final int getMaxX() { return this.d; } // Paper - OBFHELPER
-+    public int e; public final int getMaxY() { return this.e; } // Paper - OBFHELPER
-+    public int f; public final int getMaxZ() { return this.f; } // Paper - OBFHELPER
- 
-     public StructureBoundingBox() {}
- 
-@@ -0,0 +0,0 @@ public class StructureBoundingBox {
-         this.e = 512;
-     }
- 
-+    public final boolean intersects(StructureBoundingBox boundingBox) { return this.b(boundingBox); } // Paper - OBFHELPER
-     public boolean b(StructureBoundingBox structureboundingbox) {
-         return this.d >= structureboundingbox.a && this.a <= structureboundingbox.d && this.f >= structureboundingbox.c && this.c <= structureboundingbox.f && this.e >= structureboundingbox.b && this.b <= structureboundingbox.e;
-     }
-@@ -0,0 +0,0 @@ public class StructureBoundingBox {
-         this.a(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
-     }
- 
-+    public final boolean hasPoint(BaseBlockPosition baseblockposition) { return this.b(baseblockposition); } // Paper - OBFHELPER
-     public boolean b(BaseBlockPosition baseblockposition) {
-         return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
-     }
-diff --git a/src/main/java/net/minecraft/server/TickListChunk.java b/src/main/java/net/minecraft/server/TickListChunk.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TickListChunk.java
-+++ b/src/main/java/net/minecraft/server/TickListChunk.java
+--- a/src/main/java/net/minecraft/world/level/TickListChunk.java
++++ b/src/main/java/net/minecraft/world/level/TickListChunk.java
 @@ -0,0 +0,0 @@ public class TickListChunk<T> implements TickList<T> {
          return nbttaglist;
      }
@@ -1072,10 +1092,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-diff --git a/src/main/java/net/minecraft/server/TickListServer.java b/src/main/java/net/minecraft/server/TickListServer.java
+diff --git a/src/main/java/net/minecraft/world/level/TickListServer.java b/src/main/java/net/minecraft/world/level/TickListServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TickListServer.java
-+++ b/src/main/java/net/minecraft/server/TickListServer.java
+--- a/src/main/java/net/minecraft/world/level/TickListServer.java
++++ b/src/main/java/net/minecraft/world/level/TickListServer.java
 @@ -0,0 +0,0 @@ public class TickListServer<T> implements TickList<T> {
      private final co.aikar.timings.Timing timingTicking; // Paper
      // Paper end
@@ -1190,62 +1210,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.nextTickListHash.size();
      }
  }
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureBoundingBox.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureBoundingBox.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureBoundingBox.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureBoundingBox.java
+@@ -0,0 +0,0 @@ import net.minecraft.nbt.NBTTagIntArray;
+ 
+ public class StructureBoundingBox {
+ 
+-    public int a;
+-    public int b;
+-    public int c;
+-    public int d;
+-    public int e;
+-    public int f;
++    public int a; public final int getMinX() { return this.a; } // Paper - OBFHELPER
++    public int b; public final int getMinY() { return this.b; } // Paper - OBFHELPER
++    public int c; public final int getMinZ() { return this.c; } // Paper - OBFHELPER
++    public int d; public final int getMaxX() { return this.d; } // Paper - OBFHELPER
++    public int e; public final int getMaxY() { return this.e; } // Paper - OBFHELPER
++    public int f; public final int getMaxZ() { return this.f; } // Paper - OBFHELPER
+ 
+     public StructureBoundingBox() {}
+ 
+@@ -0,0 +0,0 @@ public class StructureBoundingBox {
+         this.e = 512;
      }
-     // Paper end
  
-+    // Paper start - rewrite ticklistserver
-+    void onChunkSetTicking(int chunkX, int chunkZ) {
-+        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
-+            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListBlock).onChunkSetTicking(chunkX, chunkZ);
-+            ((com.destroystokyo.paper.server.ticklist.PaperTickList) this.nextTickListFluid).onChunkSetTicking(chunkX, chunkZ);
-+        }
-+    }
-+    // Paper end - rewrite ticklistserver
-+
-     // Add env and gen to constructor, WorldData -> WorldDataServer
-     public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-         super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-         convertable = convertable_conversionsession;
-         uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());
-         // CraftBukkit end
--        this.nextTickListBlock = new TickListServer<>(this, (block) -> {
--            return block == null || block.getBlockData().isAir();
--        }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
--        this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
--            return fluidtype == null || fluidtype == FluidTypes.EMPTY;
--        }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
-+        if (com.destroystokyo.paper.PaperConfig.useOptimizedTickList) {
-+            this.nextTickListBlock = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (block) -> {
-+                return block == null || block.getBlockData().isAir();
-+            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
-+            this.nextTickListFluid = new com.destroystokyo.paper.server.ticklist.PaperTickList<>(this, (fluidtype) -> {
-+                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-+            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
-+        } else {
-+            this.nextTickListBlock = new TickListServer<>(this, (block) -> {
-+                return block == null || block.getBlockData().isAir();
-+            }, IRegistry.BLOCK::getKey, this::b, "Blocks"); // Paper - Timings
-+            this.nextTickListFluid = new TickListServer<>(this, (fluidtype) -> {
-+                return fluidtype == null || fluidtype == FluidTypes.EMPTY;
-+            }, IRegistry.FLUID::getKey, this::a, "Fluids"); // Paper - Timings
-+        }
-         this.navigators = Sets.newHashSet();
-         this.L = new ObjectLinkedOpenHashSet();
-         this.Q = flag1;
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-         if (this.Q) {
-             long i = this.worldData.getTime() + 1L;
++    public final boolean intersects(StructureBoundingBox boundingBox) { return this.b(boundingBox); } // Paper - OBFHELPER
+     public boolean b(StructureBoundingBox structureboundingbox) {
+         return this.d >= structureboundingbox.a && this.a <= structureboundingbox.d && this.f >= structureboundingbox.c && this.c <= structureboundingbox.f && this.e >= structureboundingbox.b && this.b <= structureboundingbox.e;
+     }
+@@ -0,0 +0,0 @@ public class StructureBoundingBox {
+         this.a(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
+     }
  
--            this.worldDataServer.setTime(i);
-+            this.worldDataServer.setTime(i); // Paper - diff on change, we want the below to be ran right after this
-+            this.nextTickListBlock.nextTick(); // Paper
-+            this.nextTickListFluid.nextTick(); // Paper
-             this.worldDataServer.u().a(this.server, i);
-             if (this.worldData.q().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
-                 this.setDayTime(this.worldData.getDayTime() + 1L);
++    public final boolean hasPoint(BaseBlockPosition baseblockposition) { return this.b(baseblockposition); } // Paper - OBFHELPER
+     public boolean b(BaseBlockPosition baseblockposition) {
+         return baseblockposition.getX() >= this.a && baseblockposition.getX() <= this.d && baseblockposition.getZ() >= this.c && baseblockposition.getZ() <= this.f && baseblockposition.getY() >= this.b && baseblockposition.getY() <= this.e;
+     }

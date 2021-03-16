@@ -4,27 +4,23 @@ Date: Fri, 21 Aug 2020 20:57:54 +0200
 Subject: [PATCH] PortalCreateEvent needs to know its entity
 
 
-diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockBase.java
-+++ b/src/main/java/net/minecraft/server/BlockBase.java
-@@ -0,0 +0,0 @@ public abstract class BlockBase {
-         PacketDebug.a(world, blockposition);
-     }
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+                         IBlockData block = world.getType(newblockposition);
  
-+    // Paper start - add ItemActionContext param
-+    @Deprecated
-+    public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag, ItemActionContext itemActionContext) {
-+        this.onPlace(iblockdata, world, blockposition, iblockdata1, flag);
-+    }
-+    // Paper end
-     @Deprecated
-     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
-         org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
-diff --git a/src/main/java/net/minecraft/server/BlockFire.java b/src/main/java/net/minecraft/server/BlockFire.java
+                         if (!(block.getBlock() instanceof BlockTileEntity)) { // Containers get placed automatically
+-                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
++                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, itemactioncontext); // Paper - pass itemactioncontext
+                         }
+ 
+                         world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockFire.java b/src/main/java/net/minecraft/world/level/block/BlockFire.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockFire.java
-+++ b/src/main/java/net/minecraft/server/BlockFire.java
+--- a/src/main/java/net/minecraft/world/level/block/BlockFire.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockFire.java
 @@ -0,0 +0,0 @@ public class BlockFire extends BlockFireAbstract {
      }
  
@@ -38,10 +34,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          world.getBlockTickList().a(blockposition, this, a(world.random));
      }
  
-diff --git a/src/main/java/net/minecraft/server/BlockFireAbstract.java b/src/main/java/net/minecraft/server/BlockFireAbstract.java
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockFireAbstract.java b/src/main/java/net/minecraft/world/level/block/BlockFireAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockFireAbstract.java
-+++ b/src/main/java/net/minecraft/server/BlockFireAbstract.java
+--- a/src/main/java/net/minecraft/world/level/block/BlockFireAbstract.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockFireAbstract.java
 @@ -0,0 +0,0 @@ public abstract class BlockFireAbstract extends Block {
          super.a(iblockdata, world, blockposition, entity);
      }
@@ -62,10 +58,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      return;
                  }
              }
-diff --git a/src/main/java/net/minecraft/server/BlockPortalShape.java b/src/main/java/net/minecraft/server/BlockPortalShape.java
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBase.java b/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockPortalShape.java
-+++ b/src/main/java/net/minecraft/server/BlockPortalShape.java
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
+@@ -0,0 +0,0 @@ public abstract class BlockBase {
+         PacketDebug.a(world, blockposition);
+     }
+ 
++    // Paper start - add ItemActionContext param
++    @Deprecated
++    public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag, ItemActionContext itemActionContext) {
++        this.onPlace(iblockdata, world, blockposition, iblockdata1, flag);
++    }
++    // Paper end
+     @Deprecated
+     public void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
+         org.spigotmc.AsyncCatcher.catchOp("block onPlace"); // Spigot
+diff --git a/src/main/java/net/minecraft/world/level/portal/BlockPortalShape.java b/src/main/java/net/minecraft/world/level/portal/BlockPortalShape.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/portal/BlockPortalShape.java
++++ b/src/main/java/net/minecraft/world/level/portal/BlockPortalShape.java
 @@ -0,0 +0,0 @@ public class BlockPortalShape {
      }
  
@@ -87,16 +100,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.b.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
-diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ItemStack.java
-+++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -0,0 +0,0 @@ public final class ItemStack {
-                         IBlockData block = world.getType(newblockposition);
- 
-                         if (!(block.getBlock() instanceof BlockTileEntity)) { // Containers get placed automatically
--                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true);
-+                            block.getBlock().onPlace(block, world, newblockposition, oldBlock, true, itemactioncontext); // Paper - pass itemactioncontext
-                         }
- 
-                         world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getType(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point

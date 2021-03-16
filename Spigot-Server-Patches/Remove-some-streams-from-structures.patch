@@ -5,58 +5,19 @@ Subject: [PATCH] Remove some streams from structures
 
 This showed up a lot in the spark profiler, should have a low-medium performance improvement.
 
-diff --git a/src/main/java/net/minecraft/server/BiomeBase.java b/src/main/java/net/minecraft/server/BiomeBase.java
+diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BiomeBase.java
-+++ b/src/main/java/net/minecraft/server/BiomeBase.java
-@@ -0,0 +0,0 @@ public final class BiomeBase {
-                     int l1 = j1 << 4;
- 
-                     try {
--                        structuremanager.a(SectionPosition.a(blockposition), structuregenerator).forEach((structurestart) -> {
--                            structurestart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
--                        });
-+                        // Paper start - remove structure streams
-+                        for (StructureStart<?> structureStart : structuremanager.getFeatureStarts(SectionPosition.a(blockposition), structuregenerator)) {
-+                            structureStart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
-+                        }
-+                        // Paper end
-                     } catch (Exception exception) {
-                         CrashReport crashreport = CrashReport.a(exception, "Feature placement");
- 
-diff --git a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-+++ b/src/main/java/net/minecraft/server/ChunkGeneratorAbstract.java
-@@ -0,0 +0,0 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
-         while (iterator.hasNext()) {
-             StructureGenerator<?> structuregenerator = (StructureGenerator) iterator.next();
- 
--            structuremanager.a(SectionPosition.a(chunkcoordintpair, 0), structuregenerator).forEach((structurestart) -> {
-+            for (StructureStart<?> structurestart : structuremanager.getFeatureStarts(SectionPosition.a(chunkcoordintpair, 0), structuregenerator)) { // Paper - remove structure streams
-                 Iterator iterator1 = structurestart.d().iterator();
- 
-                 while (iterator1.hasNext()) {
-@@ -0,0 +0,0 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
-                     }
-                 }
- 
--            });
-+            } // Paper - remove structure streams
-         }
- 
-         double[][][] adouble = new double[2][this.p + 1][this.o + 1];
-diff --git a/src/main/java/net/minecraft/server/StructureManager.java b/src/main/java/net/minecraft/server/StructureManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/StructureManager.java
-+++ b/src/main/java/net/minecraft/server/StructureManager.java
+--- a/src/main/java/net/minecraft/world/level/StructureManager.java
++++ b/src/main/java/net/minecraft/world/level/StructureManager.java
 @@ -0,0 +0,0 @@
- package net.minecraft.server;
+ package net.minecraft.world.level;
  
  import com.mojang.datafixers.DataFixUtils;
 +import it.unimi.dsi.fastutil.objects.ObjectArrayList; // Paper
  import java.util.stream.Stream;
  import javax.annotation.Nullable;
+ import net.minecraft.core.BaseBlockPosition;
+@@ -0,0 +0,0 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
  
  public class StructureManager {
  
@@ -115,3 +76,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      // Spigot start
+diff --git a/src/main/java/net/minecraft/world/level/biome/BiomeBase.java b/src/main/java/net/minecraft/world/level/biome/BiomeBase.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/biome/BiomeBase.java
++++ b/src/main/java/net/minecraft/world/level/biome/BiomeBase.java
+@@ -0,0 +0,0 @@ public final class BiomeBase {
+                     int l1 = j1 << 4;
+ 
+                     try {
+-                        structuremanager.a(SectionPosition.a(blockposition), structuregenerator).forEach((structurestart) -> {
+-                            structurestart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
+-                        });
++                        // Paper start - remove structure streams
++                        for (StructureStart<?> structureStart : structuremanager.getFeatureStarts(SectionPosition.a(blockposition), structuregenerator)) {
++                            structureStart.a(regionlimitedworldaccess, structuremanager, chunkgenerator, seededrandom, new StructureBoundingBox(k1, l1, k1 + 15, l1 + 15), new ChunkCoordIntPair(i1, j1));
++                        }
++                        // Paper end
+                     } catch (Exception exception) {
+                         CrashReport crashreport = CrashReport.a(exception, "Feature placement");
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java b/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/ChunkGeneratorAbstract.java
+@@ -0,0 +0,0 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
+         while (iterator.hasNext()) {
+             StructureGenerator<?> structuregenerator = (StructureGenerator) iterator.next();
+ 
+-            structuremanager.a(SectionPosition.a(chunkcoordintpair, 0), structuregenerator).forEach((structurestart) -> {
++            for (StructureStart<?> structurestart : structuremanager.getFeatureStarts(SectionPosition.a(chunkcoordintpair, 0), structuregenerator)) { // Paper - remove structure streams
+                 Iterator iterator1 = structurestart.d().iterator();
+ 
+                 while (iterator1.hasNext()) {
+@@ -0,0 +0,0 @@ public final class ChunkGeneratorAbstract extends ChunkGenerator {
+                     }
+                 }
+ 
+-            });
++            } // Paper - remove structure streams
+         }
+ 
+         double[][][] adouble = new double[2][this.p + 1][this.o + 1];

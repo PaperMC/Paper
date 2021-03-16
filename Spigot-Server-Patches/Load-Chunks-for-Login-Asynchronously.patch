@@ -4,10 +4,10 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
-diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
-+++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+--- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -0,0 +0,0 @@ public class ChunkProviderServer extends IChunkProvider {
          return this.serverThreadQueue.executeNext();
      }
@@ -17,23 +17,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          boolean flag = this.chunkMapDistance.a(this.playerChunkMap);
          boolean flag1 = this.playerChunkMap.b();
  
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         this.lastY = d1;
-         this.lastZ = d4;
-         this.setPosition(d3, d1, d4);
--        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
-+        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
-     }
- 
-     public void d(Vec3D vec3d) {
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 @@ -0,0 +0,0 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
      private static final Logger LOGGER = LogManager.getLogger();
@@ -50,10 +37,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Integer clientViewDistance;
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
-diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/LoginListener.java
-+++ b/src/main/java/net/minecraft/server/LoginListener.java
+--- a/src/main/java/net/minecraft/server/level/TicketType.java
++++ b/src/main/java/net/minecraft/server/level/TicketType.java
+@@ -0,0 +0,0 @@ public class TicketType<T> {
+     public static final TicketType<ChunkCoordIntPair> FORCED = a("forced", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<ChunkCoordIntPair> LIGHT = a("light", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<BlockPosition> PORTAL = a("portal", BaseBlockPosition::compareTo, 300);
++    public static final TicketType<Long> LOGIN = a("login", Long::compareTo, 100); // Paper
+     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/network/LoginListener.java b/src/main/java/net/minecraft/server/network/LoginListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/LoginListener.java
++++ b/src/main/java/net/minecraft/server/network/LoginListener.java
 @@ -0,0 +0,0 @@ public class LoginListener implements PacketLoginInListener {
              }
              // Paper end
@@ -72,10 +71,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
-diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerConnection.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final Logger LOGGER = LogManager.getLogger();
      public final NetworkManager networkManager;
@@ -109,10 +108,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
      private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
@@ -254,15 +253,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Iterator iterator = list.iterator();
  
-diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TicketType.java
-+++ b/src/main/java/net/minecraft/server/TicketType.java
-@@ -0,0 +0,0 @@ public class TicketType<T> {
-     public static final TicketType<ChunkCoordIntPair> FORCED = a("forced", Comparator.comparingLong(ChunkCoordIntPair::pair));
-     public static final TicketType<ChunkCoordIntPair> LIGHT = a("light", Comparator.comparingLong(ChunkCoordIntPair::pair));
-     public static final TicketType<BlockPosition> PORTAL = a("portal", BaseBlockPosition::compareTo, 300);
-+    public static final TicketType<Long> LOGIN = a("login", Long::compareTo, 100); // Paper
-     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
-     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
-     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         this.lastY = d1;
+         this.lastZ = d4;
+         this.setPosition(d3, d1, d4);
+-        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
++        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
+     }
+ 
+     public void d(Vec3D vec3d) {

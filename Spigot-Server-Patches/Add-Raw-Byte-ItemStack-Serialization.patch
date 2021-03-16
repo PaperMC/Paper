@@ -5,34 +5,10 @@ Subject: [PATCH] Add Raw Byte ItemStack Serialization
 
 Serializes using NBT which is safer for server data migrations than bukkits format.
 
-diff --git a/src/main/java/net/minecraft/server/DataConverterRegistry.java b/src/main/java/net/minecraft/server/DataConverterRegistry.java
+diff --git a/src/main/java/net/minecraft/nbt/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/nbt/NBTCompressedStreamTools.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/DataConverterRegistry.java
-+++ b/src/main/java/net/minecraft/server/DataConverterRegistry.java
-@@ -0,0 +0,0 @@ public class DataConverterRegistry {
-         return datafixerbuilder.build(SystemUtils.e());
-     }
- 
-+    public static DataFixer getDataFixer() { return a(); } // Paper - OBFHELPER
-     public static DataFixer a() {
-         return DataConverterRegistry.c;
-     }
-diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ItemStack.java
-+++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -0,0 +0,0 @@ public final class ItemStack {
-         this.checkEmpty();
-     }
- 
-+    public static ItemStack fromCompound(NBTTagCompound nbttagcompound) { return a(nbttagcompound); } // Paper - OBFHELPER
-     public static ItemStack a(NBTTagCompound nbttagcompound) {
-         try {
-             return new ItemStack(nbttagcompound);
-diff --git a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
-+++ b/src/main/java/net/minecraft/server/NBTCompressedStreamTools.java
+--- a/src/main/java/net/minecraft/nbt/NBTCompressedStreamTools.java
++++ b/src/main/java/net/minecraft/nbt/NBTCompressedStreamTools.java
 @@ -0,0 +0,0 @@ public class NBTCompressedStreamTools {
          return nbttagcompound;
      }
@@ -49,6 +25,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static void a(NBTTagCompound nbttagcompound, OutputStream outputstream) throws IOException {
          DataOutputStream dataoutputstream = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputstream)));
          Throwable throwable = null;
+diff --git a/src/main/java/net/minecraft/util/datafix/DataConverterRegistry.java b/src/main/java/net/minecraft/util/datafix/DataConverterRegistry.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/util/datafix/DataConverterRegistry.java
++++ b/src/main/java/net/minecraft/util/datafix/DataConverterRegistry.java
+@@ -0,0 +0,0 @@ public class DataConverterRegistry {
+         return datafixerbuilder.build(SystemUtils.e());
+     }
+ 
++    public static DataFixer getDataFixer() { return a(); } // Paper - OBFHELPER
+     public static DataFixer a() {
+         return DataConverterRegistry.c;
+     }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+         this.checkEmpty();
+     }
+ 
++    public static ItemStack fromCompound(NBTTagCompound nbttagcompound) { return a(nbttagcompound); } // Paper - OBFHELPER
+     public static ItemStack a(NBTTagCompound nbttagcompound) {
+         try {
+             return new ItemStack(nbttagcompound);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        NBTTagCompound compound = (item instanceof CraftItemStack ? ((CraftItemStack) item).getHandle() : CraftItemStack.asNMSCopy(item)).save(new NBTTagCompound());
 +        compound.setInt("DataVersion", getDataVersion());
 +        try {
-+            net.minecraft.server.NBTCompressedStreamTools.writeNBT(
++            net.minecraft.nbt.NBTCompressedStreamTools.writeNBT(
 +                compound,
 +                outputStream
 +            );
@@ -84,14 +84,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 +
 +        try {
-+            NBTTagCompound compound = net.minecraft.server.NBTCompressedStreamTools.readNBT(
++            NBTTagCompound compound = net.minecraft.nbt.NBTCompressedStreamTools.readNBT(
 +                new java.io.ByteArrayInputStream(data)
 +            );
 +            int dataVersion = compound.getInt("DataVersion");
 +
 +            Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
 +            Dynamic<NBTBase> converted = DataConverterRegistry.getDataFixer().update(DataConverterTypes.ITEM_STACK, new Dynamic<NBTBase>(DynamicOpsNBT.a, compound), dataVersion, getDataVersion());
-+            return CraftItemStack.asCraftMirror(net.minecraft.server.ItemStack.fromCompound((NBTTagCompound) converted.getValue()));
++            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.fromCompound((NBTTagCompound) converted.getValue()));
 +        } catch (IOException ex) {
 +            com.destroystokyo.paper.util.SneakyThrow.sneaky(ex);
 +            throw new RuntimeException();

@@ -14,10 +14,10 @@ instead and save a lot of server resources.
 
 See: https://github.com/PaperMC/Paper/issues/917
 
-diff --git a/src/main/java/net/minecraft/server/EntityTypes.java b/src/main/java/net/minecraft/server/EntityTypes.java
+diff --git a/src/main/java/net/minecraft/world/entity/EntityTypes.java b/src/main/java/net/minecraft/world/entity/EntityTypes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityTypes.java
-+++ b/src/main/java/net/minecraft/server/EntityTypes.java
+--- a/src/main/java/net/minecraft/world/entity/EntityTypes.java
++++ b/src/main/java/net/minecraft/world/entity/EntityTypes.java
 @@ -0,0 +0,0 @@ public class EntityTypes<T extends Entity> {
  
      @Nullable
@@ -39,10 +39,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          T t0 = this.createCreature(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
  
          if (t0 != null) {
-diff --git a/src/main/java/net/minecraft/server/EntityVillager.java b/src/main/java/net/minecraft/server/EntityVillager.java
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityVillager.java
-+++ b/src/main/java/net/minecraft/server/EntityVillager.java
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
+@@ -0,0 +0,0 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
+         Optional<List<EntityLiving>> optional = entityliving.getBehaviorController().getMemory(MemoryModuleType.MOBS);
+ 
+         if (optional.isPresent()) {
+-            boolean flag = ((List) optional.get()).stream().anyMatch((entityliving1) -> {
++            boolean flag = optional.get().stream().anyMatch((entityliving1) -> { // Paper - decompile fixes
+                 return entityliving1.getEntityType().equals(EntityTypes.IRON_GOLEM);
+             });
+ 
+@@ -0,0 +0,0 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
+         }
+     }
+ 
++    public static void setDetectedRecently(EntityLiving entityLiving) { b(entityLiving); } // Paper - OBFHELPER
+     public static void b(EntityLiving entityliving) {
+         entityliving.getBehaviorController().a(MemoryModuleType.GOLEM_DETECTED_RECENTLY, true, 600L);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
 @@ -0,0 +0,0 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
              BlockPosition blockposition1 = this.a(blockposition, d0, d1);
  
@@ -65,10 +86,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  EntityIronGolem entityirongolem = (EntityIronGolem) EntityTypes.IRON_GOLEM.createCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition1, EnumMobSpawn.MOB_SUMMONED, false, false);
  
                  if (entityirongolem != null) {
-diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+diff --git a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-+++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+--- a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
                          WorldServer worldserver = (WorldServer) world;
  
@@ -97,31 +118,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              Entity entity = EntityTypes.a(nbttagcompound, world, (entity1) -> {
                                  entity1.setPositionRotation(d3, d4, d5, entity1.yaw, entity1.pitch);
                                  return entity1;
-diff --git a/src/main/java/net/minecraft/server/SensorGolemLastSeen.java b/src/main/java/net/minecraft/server/SensorGolemLastSeen.java
+diff --git a/src/main/java/net/minecraft/world/level/SpawnerCreature.java b/src/main/java/net/minecraft/world/level/SpawnerCreature.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/SensorGolemLastSeen.java
-+++ b/src/main/java/net/minecraft/server/SensorGolemLastSeen.java
-@@ -0,0 +0,0 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
-         Optional<List<EntityLiving>> optional = entityliving.getBehaviorController().getMemory(MemoryModuleType.MOBS);
- 
-         if (optional.isPresent()) {
--            boolean flag = ((List) optional.get()).stream().anyMatch((entityliving1) -> {
-+            boolean flag = optional.get().stream().anyMatch((entityliving1) -> { // Paper - decompile fixes
-                 return entityliving1.getEntityType().equals(EntityTypes.IRON_GOLEM);
-             });
- 
-@@ -0,0 +0,0 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
-         }
-     }
- 
-+    public static void setDetectedRecently(EntityLiving entityLiving) { b(entityLiving); } // Paper - OBFHELPER
-     public static void b(EntityLiving entityliving) {
-         entityliving.getBehaviorController().a(MemoryModuleType.GOLEM_DETECTED_RECENTLY, true, 600L);
-     }
-diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/SpawnerCreature.java
-+++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+--- a/src/main/java/net/minecraft/world/level/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/world/level/SpawnerCreature.java
 @@ -0,0 +0,0 @@ public final class SpawnerCreature {
                                          j1 = biomesettingsmobs_c.d + worldserver.random.nextInt(1 + biomesettingsmobs_c.e - biomesettingsmobs_c.d);
                                      }

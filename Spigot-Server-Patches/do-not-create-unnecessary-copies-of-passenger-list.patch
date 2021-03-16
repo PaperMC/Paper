@@ -4,11 +4,63 @@ Date: Sun, 13 Dec 2020 13:42:55 +0100
 Subject: [PATCH] do not create unnecessary copies of passenger list
 
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+diff --git a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMount.java b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMount.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+--- a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMount.java
++++ b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMount.java
+@@ -0,0 +0,0 @@ public class PacketPlayOutMount implements Packet<PacketListenerPlayOut> {
+ 
+     public PacketPlayOutMount(Entity entity) {
+         this.a = entity.getId();
+-        List<Entity> list = entity.getPassengers();
++        List<Entity> list = entity.passengers; // Paper - do not create a copy of the list
+ 
+         this.b = new int[list.size()];
+ 
+diff --git a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+ 
+     public final void tick() { this.a(); } // Paper - OBFHELPER
+     public void a() {
+-        List<Entity> list = this.tracker.getPassengers();
++        List<Entity> list = this.tracker.passengers; // Paper - do not copy list
+ 
+         if (!list.equals(this.p)) {
+-            this.p = list;
++            this.p = com.google.common.collect.ImmutableList.copyOf(list); // Paper - only copy list if something has changed
+             this.broadcastIncludingSelf(new PacketPlayOutMount(this.tracker)); // CraftBukkit
+         }
+ 
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+             }
+         }
+ 
+-        if (!this.tracker.getPassengers().isEmpty()) {
++        if (!this.tracker.passengers.isEmpty()) { // Paper - do not create copy of list
+             consumer.accept(new PacketPlayOutMount(this.tracker));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+@@ -0,0 +0,0 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
+                 list.add(entity);
+             }
+ 
+-            if (!entity.getPassengers().isEmpty()) {
++            if (!entity.passengers.isEmpty()) { // Paper - do not copy list
+                 list1.add(entity);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      }
  
      protected boolean q(Entity entity) {
@@ -17,7 +69,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public final float getCollisionBorderSize() { return bg(); } // Paper - OBFHELPER
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      }
  
      public boolean isVehicle() {
@@ -26,7 +78,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public boolean bt() {
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      }
  
      public boolean w(Entity entity) {
@@ -35,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Entity entity1;
  
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      }
  
      public boolean a(Class<? extends Entity> oclass) {
@@ -44,7 +96,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          Entity entity;
  
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
  
      public Collection<Entity> getAllPassengers() {
          Set<Entity> set = Sets.newHashSet();
@@ -53,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      private void a(boolean flag, Set<Entity> set) {
          Entity entity;
  
@@ -62,10 +114,62 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              entity = (Entity) iterator.next();
              if (!flag || EntityPlayer.class.isAssignableFrom(entity.getClass())) {
                  set.add(entity);
-diff --git a/src/main/java/net/minecraft/server/EntityBoat.java b/src/main/java/net/minecraft/server/EntityBoat.java
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalTame.java b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalTame.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityBoat.java
-+++ b/src/main/java/net/minecraft/server/EntityBoat.java
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalTame.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalTame.java
+@@ -0,0 +0,0 @@ public class PathfinderGoalTame extends PathfinderGoal {
+     @Override
+     public void e() {
+         if (!this.entity.isTamed() && this.entity.getRandom().nextInt(50) == 0) {
+-            Entity entity = (Entity) this.entity.getPassengers().get(0);
++            Entity entity = this.entity.passengers.isEmpty() ? null : this.entity.passengers.get(0); // Paper - do not copy list, fixed array out of bounds exception as well
+ 
+             if (entity == null) {
+                 return;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityPig.java b/src/main/java/net/minecraft/world/entity/animal/EntityPig.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityPig.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityPig.java
+@@ -0,0 +0,0 @@ public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
+     @Nullable
+     @Override
+     public Entity getRidingPassenger() {
+-        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
++        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java b/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseAbstract.java
+@@ -0,0 +0,0 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
+     @Nullable
+     @Override
+     public Entity getRidingPassenger() {
+-        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
++        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityRavager.java b/src/main/java/net/minecraft/world/entity/monster/EntityRavager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityRavager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityRavager.java
+@@ -0,0 +0,0 @@ public class EntityRavager extends EntityRaider {
+     @Nullable
+     @Override
+     public Entity getRidingPassenger() {
+-        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
++        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
 @@ -0,0 +0,0 @@ public class EntityBoat extends Entity {
          super.tick();
          this.r();
@@ -120,23 +224,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return list.isEmpty() ? null : (Entity) list.get(0);
      }
-diff --git a/src/main/java/net/minecraft/server/EntityHorseAbstract.java b/src/main/java/net/minecraft/server/EntityHorseAbstract.java
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityHorseAbstract.java
-+++ b/src/main/java/net/minecraft/server/EntityHorseAbstract.java
-@@ -0,0 +0,0 @@ public abstract class EntityHorseAbstract extends EntityAnimal implements IInven
-     @Nullable
-     @Override
-     public Entity getRidingPassenger() {
--        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
-+        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
-     }
- 
-     @Nullable
-diff --git a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
-+++ b/src/main/java/net/minecraft/server/EntityMinecartAbstract.java
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
 @@ -0,0 +0,0 @@ public abstract class EntityMinecartAbstract extends Entity {
  
          vec3d1 = new Vec3D(d8 * d4 / d6, vec3d1.y, d8 * d5 / d6);
@@ -146,94 +237,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (entity instanceof EntityHuman) {
              Vec3D vec3d2 = entity.getMot();
-diff --git a/src/main/java/net/minecraft/server/EntityPig.java b/src/main/java/net/minecraft/server/EntityPig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityPig.java
-+++ b/src/main/java/net/minecraft/server/EntityPig.java
-@@ -0,0 +0,0 @@ public class EntityPig extends EntityAnimal implements ISteerable, ISaddleable {
-     @Nullable
-     @Override
-     public Entity getRidingPassenger() {
--        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
-+        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
-     }
- 
-     @Override
-diff --git a/src/main/java/net/minecraft/server/EntityRavager.java b/src/main/java/net/minecraft/server/EntityRavager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityRavager.java
-+++ b/src/main/java/net/minecraft/server/EntityRavager.java
-@@ -0,0 +0,0 @@ public class EntityRavager extends EntityRaider {
-     @Nullable
-     @Override
-     public Entity getRidingPassenger() {
--        return this.getPassengers().isEmpty() ? null : (Entity) this.getPassengers().get(0);
-+        return this.passengers.isEmpty() ? null : (Entity) this.passengers.get(0); // Paper - do not copy list
-     }
- 
-     @Override
-diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-+++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
- 
-     public final void tick() { this.a(); } // Paper - OBFHELPER
-     public void a() {
--        List<Entity> list = this.tracker.getPassengers();
-+        List<Entity> list = this.tracker.passengers; // Paper - do not copy list
- 
-         if (!list.equals(this.p)) {
--            this.p = list;
-+            this.p = com.google.common.collect.ImmutableList.copyOf(list); // Paper - only copy list if something has changed
-             this.broadcastIncludingSelf(new PacketPlayOutMount(this.tracker)); // CraftBukkit
-         }
- 
-@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
-             }
-         }
- 
--        if (!this.tracker.getPassengers().isEmpty()) {
-+        if (!this.tracker.passengers.isEmpty()) { // Paper - do not create copy of list
-             consumer.accept(new PacketPlayOutMount(this.tracker));
-         }
- 
-diff --git a/src/main/java/net/minecraft/server/PacketPlayOutMount.java b/src/main/java/net/minecraft/server/PacketPlayOutMount.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketPlayOutMount.java
-+++ b/src/main/java/net/minecraft/server/PacketPlayOutMount.java
-@@ -0,0 +0,0 @@ public class PacketPlayOutMount implements Packet<PacketListenerPlayOut> {
- 
-     public PacketPlayOutMount(Entity entity) {
-         this.a = entity.getId();
--        List<Entity> list = entity.getPassengers();
-+        List<Entity> list = entity.passengers; // Paper - do not create a copy of the list
- 
-         this.b = new int[list.size()];
- 
-diff --git a/src/main/java/net/minecraft/server/PathfinderGoalTame.java b/src/main/java/net/minecraft/server/PathfinderGoalTame.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PathfinderGoalTame.java
-+++ b/src/main/java/net/minecraft/server/PathfinderGoalTame.java
-@@ -0,0 +0,0 @@ public class PathfinderGoalTame extends PathfinderGoal {
-     @Override
-     public void e() {
-         if (!this.entity.isTamed() && this.entity.getRandom().nextInt(50) == 0) {
--            Entity entity = (Entity) this.entity.getPassengers().get(0);
-+            Entity entity = this.entity.passengers.isEmpty() ? null : this.entity.passengers.get(0); // Paper - do not copy list, fixed array out of bounds exception as well
- 
-             if (entity == null) {
-                 return;
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -0,0 +0,0 @@ Sections go from 0..16. Now whenever a section is not empty, it can potentially
-                 list.add(entity);
-             }
- 
--            if (!entity.getPassengers().isEmpty()) {
-+            if (!entity.passengers.isEmpty()) { // Paper - do not copy list
-                 list1.add(entity);
-             }
-         }

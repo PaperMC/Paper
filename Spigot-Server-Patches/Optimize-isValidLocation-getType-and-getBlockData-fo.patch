@@ -12,10 +12,10 @@ Replace all calls to the new place to the unnecessary forward.
 
 Optimize getType and getBlockData to manually inline and optimize the calls
 
-diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+diff --git a/src/main/java/net/minecraft/core/BaseBlockPosition.java b/src/main/java/net/minecraft/core/BaseBlockPosition.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+--- a/src/main/java/net/minecraft/core/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/core/BaseBlockPosition.java
 @@ -0,0 +0,0 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
      private int b;public final void setY(final int y) { this.b = y; } // Paper - OBFHELPER
      private int e;public final void setZ(final int z) { this.e = z; } // Paper - OBFHELPER
@@ -32,10 +32,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public BaseBlockPosition(int i, int j, int k) {
          this.a = i;
          this.b = j;
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     public static boolean isValidLocation(BlockPosition blockposition) {
+-        return !isOutsideWorld(blockposition) && D(blockposition);
++        return blockposition.isValidLocation(); // Paper - use better/optimized check
+     }
+ 
+     public static boolean l(BlockPosition blockposition) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/Chunk.java b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/Chunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
 @@ -0,0 +0,0 @@ public class Chunk implements IChunkAccess {
          return this.sections;
      }
@@ -68,11 +81,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.world.isDebugWorld()) {
              IBlockData iblockdata = null;
  
-diff --git a/src/main/java/net/minecraft/server/ChunkEmpty.java b/src/main/java/net/minecraft/server/ChunkEmpty.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkEmpty.java b/src/main/java/net/minecraft/world/level/chunk/ChunkEmpty.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkEmpty.java
-+++ b/src/main/java/net/minecraft/server/ChunkEmpty.java
-@@ -0,0 +0,0 @@ import javax.annotation.Nullable;
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkEmpty.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkEmpty.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.phys.AxisAlignedBB;
  
  public class ChunkEmpty extends Chunk {
  
@@ -93,10 +106,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public IBlockData getType(BlockPosition blockposition) {
          return Blocks.VOID_AIR.getBlockData();
-diff --git a/src/main/java/net/minecraft/server/ChunkSection.java b/src/main/java/net/minecraft/server/ChunkSection.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ChunkSection.java
-+++ b/src/main/java/net/minecraft/server/ChunkSection.java
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
 @@ -0,0 +0,0 @@ public class ChunkSection {
  
      public static final DataPalette<IBlockData> GLOBAL_PALETTE = new DataPaletteGlobal<>(Block.REGISTRY_ID, Blocks.AIR.getBlockData());
@@ -121,10 +134,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public Fluid b(int i, int j, int k) {
-diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java b/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
-+++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+--- a/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
 @@ -0,0 +0,0 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
      }
  
@@ -134,10 +147,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected T a(int i) {
-diff --git a/src/main/java/net/minecraft/server/IChunkAccess.java b/src/main/java/net/minecraft/server/IChunkAccess.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IChunkAccess.java
-+++ b/src/main/java/net/minecraft/server/IChunkAccess.java
+--- a/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/IChunkAccess.java
 @@ -0,0 +0,0 @@ import org.apache.logging.log4j.LogManager;
  
  public interface IChunkAccess extends IBlockAccess, IStructureAccess {
@@ -146,10 +159,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      IBlockData setType(BlockPosition blockposition, IBlockData iblockdata, boolean flag);
  
-diff --git a/src/main/java/net/minecraft/server/ProtoChunk.java b/src/main/java/net/minecraft/server/ProtoChunk.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ProtoChunk.java
-+++ b/src/main/java/net/minecraft/server/ProtoChunk.java
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
 @@ -0,0 +0,0 @@ public class ProtoChunk implements IChunkAccess {
  
      @Override
@@ -175,10 +188,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Fluid getFluid(BlockPosition blockposition) {
-diff --git a/src/main/java/net/minecraft/server/ProtoChunkExtension.java b/src/main/java/net/minecraft/server/ProtoChunkExtension.java
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunkExtension.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunkExtension.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ProtoChunkExtension.java
-+++ b/src/main/java/net/minecraft/server/ProtoChunkExtension.java
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunkExtension.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunkExtension.java
 @@ -0,0 +0,0 @@ public class ProtoChunkExtension extends ProtoChunk {
      public IBlockData getType(BlockPosition blockposition) {
          return this.a.getType(blockposition);
@@ -191,16 +204,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Fluid getFluid(BlockPosition blockposition) {
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     }
- 
-     public static boolean isValidLocation(BlockPosition blockposition) {
--        return !isOutsideWorld(blockposition) && D(blockposition);
-+        return blockposition.isValidLocation(); // Paper - use better/optimized check
-     }
- 
-     public static boolean l(BlockPosition blockposition) {

@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.properties.Property;
 +import net.minecraft.server.MinecraftKey;
-+import net.minecraft.server.PacketDataSerializer;
++import net.minecraft.network.protocol.game.PacketDataSerializer;
 +
 +import java.net.InetAddress;
 +import java.security.InvalidKeyException;
@@ -126,10 +126,72 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
+diff --git a/src/main/java/net/minecraft/network/PacketDataSerializer.java b/src/main/java/net/minecraft/network/PacketDataSerializer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/LoginListener.java
-+++ b/src/main/java/net/minecraft/server/LoginListener.java
+--- a/src/main/java/net/minecraft/network/PacketDataSerializer.java
++++ b/src/main/java/net/minecraft/network/PacketDataSerializer.java
+@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
+         return this.d(oenum.ordinal());
+     }
+ 
++    public int readVarInt() { return i(); } // Paper - OBFHELPER
+     public int i() {
+         int i = 0;
+         int j = 0;
+@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
+         return this;
+     }
+ 
++    public UUID readUUID() { return k(); } // Paper - OBFHELPER
+     public UUID k() {
+         return new UUID(this.readLong(), this.readLong());
+     }
+@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
+         }
+     }
+ 
++    public String readUTF(int maxLength) { return this.e(maxLength); } // Paper - OBFHELPER
+     public String e(int i) {
+         int j = this.i();
+ 
+diff --git a/src/main/java/net/minecraft/network/protocol/login/PacketLoginInCustomPayload.java b/src/main/java/net/minecraft/network/protocol/login/PacketLoginInCustomPayload.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/login/PacketLoginInCustomPayload.java
++++ b/src/main/java/net/minecraft/network/protocol/login/PacketLoginInCustomPayload.java
+@@ -0,0 +0,0 @@ import net.minecraft.network.protocol.Packet;
+ 
+ public class PacketLoginInCustomPayload implements Packet<PacketLoginInListener> {
+ 
+-    private int a;
+-    private PacketDataSerializer b;
++    private int a; public int getId() { return a; } // Paper - OBFHELPER
++    private PacketDataSerializer b; public PacketDataSerializer getBuf() { return b; } // Paper - OBFHELPER
+ 
+     public PacketLoginInCustomPayload() {}
+ 
+diff --git a/src/main/java/net/minecraft/network/protocol/login/PacketLoginOutCustomPayload.java b/src/main/java/net/minecraft/network/protocol/login/PacketLoginOutCustomPayload.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/login/PacketLoginOutCustomPayload.java
++++ b/src/main/java/net/minecraft/network/protocol/login/PacketLoginOutCustomPayload.java
+@@ -0,0 +0,0 @@ public class PacketLoginOutCustomPayload implements Packet<PacketLoginOutListene
+ 
+     public PacketLoginOutCustomPayload() {}
+ 
++    // Paper start
++    public PacketLoginOutCustomPayload(int id, MinecraftKey channel, PacketDataSerializer buf) {
++        this.a = id;
++        this.b = channel;
++        this.c = buf;
++    }
++    // Paper end
++
+     @Override
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+         this.a = packetdataserializer.i();
+diff --git a/src/main/java/net/minecraft/server/network/LoginListener.java b/src/main/java/net/minecraft/server/network/LoginListener.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/LoginListener.java
++++ b/src/main/java/net/minecraft/server/network/LoginListener.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.util.Waitable;
  import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
  import org.bukkit.event.player.PlayerPreLoginEvent;
@@ -210,68 +272,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.disconnect(new ChatMessage("multiplayer.disconnect.unexpected_query_response"));
      }
  
-diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
-+++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
-@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
-         return this.d(oenum.ordinal());
-     }
- 
-+    public int readVarInt() { return i(); } // Paper - OBFHELPER
-     public int i() {
-         int i = 0;
-         int j = 0;
-@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
-         return this;
-     }
- 
-+    public UUID readUUID() { return k(); } // Paper - OBFHELPER
-     public UUID k() {
-         return new UUID(this.readLong(), this.readLong());
-     }
-@@ -0,0 +0,0 @@ public class PacketDataSerializer extends ByteBuf {
-         }
-     }
- 
-+    public String readUTF(int maxLength) { return this.e(maxLength); } // Paper - OBFHELPER
-     public String e(int i) {
-         int j = this.i();
- 
-diff --git a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
-+++ b/src/main/java/net/minecraft/server/PacketLoginInCustomPayload.java
-@@ -0,0 +0,0 @@ import java.io.IOException;
- 
- public class PacketLoginInCustomPayload implements Packet<PacketLoginInListener> {
- 
--    private int a;
--    private PacketDataSerializer b;
-+    private int a; public int getId() { return a; } // Paper - OBFHELPER
-+    private PacketDataSerializer b; public PacketDataSerializer getBuf() { return b; } // Paper - OBFHELPER
- 
-     public PacketLoginInCustomPayload() {}
- 
-diff --git a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
-+++ b/src/main/java/net/minecraft/server/PacketLoginOutCustomPayload.java
-@@ -0,0 +0,0 @@ public class PacketLoginOutCustomPayload implements Packet<PacketLoginOutListene
- 
-     public PacketLoginOutCustomPayload() {}
- 
-+    // Paper start
-+    public PacketLoginOutCustomPayload(int id, MinecraftKey channel, PacketDataSerializer buf) {
-+        this.a = id;
-+        this.b = channel;
-+        this.c = buf;
-+    }
-+    // Paper end
-+
-     @Override
-     public void a(PacketDataSerializer packetdataserializer) throws IOException {
-         this.a = packetdataserializer.i();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java

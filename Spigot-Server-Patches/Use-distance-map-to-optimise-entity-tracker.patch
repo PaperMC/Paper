@@ -5,44 +5,6 @@ Subject: [PATCH] Use distance map to optimise entity tracker
 
 Use the distance map to find candidate players for tracking.
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-     }
-     // CraftBukkit end
- 
-+    // Paper start - optimise entity tracking
-+    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
-+
-+    boolean isLegacyTrackingEntity = false;
-+
-+    public final void setLegacyTrackingEntity(final boolean isLegacyTrackingEntity) {
-+        this.isLegacyTrackingEntity = isLegacyTrackingEntity;
-+    }
-+
-+    final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInTrackRange() {
-+        return ((WorldServer)this.world).getChunkProvider().playerChunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
-+            .getObjectsInRange(MCUtil.getCoordinateKey(this));
-+    }
-+    // Paper end - optimise entity tracking
-+
-     public Entity(EntityTypes<?> entitytypes, World world) {
-         this.id = Entity.entityCount.incrementAndGet();
-         this.passengers = Lists.newArrayList();
-diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-+++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
-@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
-         this.r = entity.isOnGround();
-     }
- 
-+    public final void tick() { this.a(); } // Paper - OBFHELPER
-     public void a() {
-         List<Entity> list = this.tracker.getPassengers();
- 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -55,10 +17,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public int b(int i) {
          return i;
      }
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+diff --git a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+--- a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+@@ -0,0 +0,0 @@ public class EntityTrackerEntry {
+         this.r = entity.isOnGround();
+     }
+ 
++    public final void tick() { this.a(); } // Paper - OBFHELPER
+     public void a() {
+         List<Entity> list = this.tracker.getPassengers();
+ 
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -0,0 +0,0 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      // Paper start - distance maps
@@ -333,6 +307,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      i = j;
                  }
              }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     }
+     // CraftBukkit end
+ 
++    // Paper start - optimise entity tracking
++    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
++
++    boolean isLegacyTrackingEntity = false;
++
++    public final void setLegacyTrackingEntity(final boolean isLegacyTrackingEntity) {
++        this.isLegacyTrackingEntity = isLegacyTrackingEntity;
++    }
++
++    final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInTrackRange() {
++        return ((WorldServer)this.world).getChunkProvider().playerChunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
++            .getObjectsInRange(MCUtil.getCoordinateKey(this));
++    }
++    // Paper end - optimise entity tracking
++
+     public Entity(EntityTypes<?> entitytypes, World world) {
+         this.id = Entity.entityCount.incrementAndGet();
+         this.passengers = Lists.newArrayList();
 diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/TrackingRange.java
@@ -341,7 +341,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
       */
      public static int getEntityTrackingRange(Entity entity, int defaultRange)
      {
-+        if (entity instanceof EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
++        if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon) return defaultRange; // Paper - enderdragon is exempt
          SpigotWorldConfig config = entity.world.spigotConfig;
          if ( entity instanceof EntityPlayer )
          {
@@ -349,7 +349,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return config.miscTrackingRange;
          } else
          {
--            if (entity instanceof EntityEnderDragon) return ((WorldServer)(entity.getWorld())).getChunkProvider().playerChunkMap.getLoadViewDistance(); // Paper - enderdragon is exempt
+-            if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon) return ((net.minecraft.server.level.WorldServer)(entity.getWorld())).getChunkProvider().playerChunkMap.getLoadViewDistance(); // Paper - enderdragon is exempt
              return config.otherTrackingRange;
          }
      }
@@ -358,7 +358,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // copied from above, TODO check on update
 +    public static TrackingRangeType getTrackingRangeType(Entity entity)
 +    {
-+        if (entity instanceof EntityEnderDragon) return TrackingRangeType.ENDERDRAGON; // Paper - enderdragon is exempt
++        if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon) return TrackingRangeType.ENDERDRAGON; // Paper - enderdragon is exempt
 +        if ( entity instanceof EntityPlayer )
 +        {
 +            return TrackingRangeType.PLAYER;

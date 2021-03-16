@@ -9,11 +9,36 @@ Pre existing entities will return NATURAL if it was a non
 persistenting Living Entity, SPAWNER for spawners,
 or DEFAULT since data was not stored.
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     // CraftBukkit start
+     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
+         // Paper start
+         if (entity.valid) {
+             MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+             // CraftBukkit start
+             WorldServer finalWorldServer = worldserver1;
+             Entity entity = EntityTypes.a(nbttagcompound1.getCompound("Entity"), finalWorldServer, (entity1) -> {
+-                return !finalWorldServer.addEntitySerialized(entity1) ? null : entity1;
++                return !finalWorldServer.addEntitySerialized(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
+                 // CraftBukkit end
+             });
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
          }
      };
      List<Entity> entitySlice = null;
@@ -21,7 +46,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
      public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              if (this.origin != null) {
                  nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
              }
@@ -31,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Save entity's from mob spawner status
              if (spawnedViaMobSpawner) {
                  nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              }
  
              spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
@@ -58,10 +83,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Paper end
  
          } catch (Throwable throwable) {
-diff --git a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+diff --git a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
-+++ b/src/main/java/net/minecraft/server/MobSpawnerAbstract.java
+--- a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
 @@ -0,0 +0,0 @@ public abstract class MobSpawnerAbstract {
                                  // Spigot End
                              }
@@ -70,31 +95,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                              flag = true; // Paper
                              // Spigot Start
                              if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, blockposition).isCancelled()) {
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-             // CraftBukkit start
-             WorldServer finalWorldServer = worldserver1;
-             Entity entity = EntityTypes.a(nbttagcompound1.getCompound("Entity"), finalWorldServer, (entity1) -> {
--                return !finalWorldServer.addEntitySerialized(entity1) ? null : entity1;
-+                return !finalWorldServer.addEntitySerialized(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // Paper
-                 // CraftBukkit end
-             });
- 
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-     // CraftBukkit start
-     private boolean addEntity0(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
-         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
-+        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper
-         // Paper start
-         if (entity.valid) {
-             MinecraftServer.LOGGER.error("Attempted Double World add on " + entity, new Throwable());
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java

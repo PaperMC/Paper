@@ -5,32 +5,6 @@ Subject: [PATCH] Only process BlockPhysicsEvent if a plugin has a listener
 
 Saves on some object allocation and processing when no plugin listens to this
 
-diff --git a/src/main/java/net/minecraft/server/BlockPlant.java b/src/main/java/net/minecraft/server/BlockPlant.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockPlant.java
-+++ b/src/main/java/net/minecraft/server/BlockPlant.java
-@@ -0,0 +0,0 @@ public class BlockPlant extends Block {
-     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
-         // CraftBukkit start
-         if (!iblockdata.canPlace(generatoraccess, blockposition)) {
--            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) {
-+            if (!(generatoraccess instanceof WorldServer && ((WorldServer) generatoraccess).hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) { // Paper
-                 return Blocks.AIR.getBlockData();
-             }
-         }
-diff --git a/src/main/java/net/minecraft/server/BlockTallPlant.java b/src/main/java/net/minecraft/server/BlockTallPlant.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockTallPlant.java
-+++ b/src/main/java/net/minecraft/server/BlockTallPlant.java
-@@ -0,0 +0,0 @@ public class BlockTallPlant extends BlockPlant {
- 
-     protected static void b(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
-         // CraftBukkit start
--        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
-+        if (((WorldServer)world).hasPhysicsEvent && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) { // Paper
-             return;
-         }
-         // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -43,10 +17,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.methodProfiler.a(() -> {
                  return worldserver + " " + worldserver.getDimensionKey().a();
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     private int tickPosition;
+     public final Convertable.ConversionSession convertable;
+     public final UUID uuid;
++    boolean hasPhysicsEvent = true; // Paper
+ 
+     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+         return this.chunkProvider.getChunkAt(x, z, false);
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
 @@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
                  // CraftBukkit start
                  iblockdata1.b(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
@@ -65,15 +51,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata), world.getBlockAt(blockposition1.getX(), blockposition1.getY(), blockposition1.getZ()));
                      this.getServer().getPluginManager().callEvent(event);
  
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockPlant.java b/src/main/java/net/minecraft/world/level/block/BlockPlant.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-     private int tickPosition;
-     public final Convertable.ConversionSession convertable;
-     public final UUID uuid;
-+    boolean hasPhysicsEvent = true; // Paper
+--- a/src/main/java/net/minecraft/world/level/block/BlockPlant.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockPlant.java
+@@ -0,0 +0,0 @@ public class BlockPlant extends Block {
+     public IBlockData updateState(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+         // CraftBukkit start
+         if (!iblockdata.canPlace(generatoraccess, blockposition)) {
+-            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) {
++            if (!(generatoraccess instanceof WorldServer && ((WorldServer) generatoraccess).hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) { // Paper
+                 return Blocks.AIR.getBlockData();
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockTallPlant.java b/src/main/java/net/minecraft/world/level/block/BlockTallPlant.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockTallPlant.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockTallPlant.java
+@@ -0,0 +0,0 @@ public class BlockTallPlant extends BlockPlant {
  
-     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
-         return this.chunkProvider.getChunkAt(x, z, false);
+     protected static void b(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman) {
+         // CraftBukkit start
+-        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
++        if (((WorldServer)world).hasPhysicsEvent && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) { // Paper
+             return;
+         }
+         // CraftBukkit end

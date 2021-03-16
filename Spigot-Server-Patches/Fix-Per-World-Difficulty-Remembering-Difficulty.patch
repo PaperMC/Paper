@@ -7,37 +7,6 @@ Fixes per world difficulty with /difficulty command and also
 makes it so that the server keeps the last difficulty used instead
 of restoring the server.properties every single load.
 
-diff --git a/src/main/java/net/minecraft/server/CommandDifficulty.java b/src/main/java/net/minecraft/server/CommandDifficulty.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/CommandDifficulty.java
-+++ b/src/main/java/net/minecraft/server/CommandDifficulty.java
-@@ -0,0 +0,0 @@ public class CommandDifficulty {
-     public static int a(CommandListenerWrapper commandlistenerwrapper, EnumDifficulty enumdifficulty) throws CommandSyntaxException {
-         MinecraftServer minecraftserver = commandlistenerwrapper.getServer();
- 
--        if (minecraftserver.getSaveData().getDifficulty() == enumdifficulty) {
-+        WorldServer world = commandlistenerwrapper.getWorld(); // Paper
-+        if (world.worldDataServer.getDifficulty() == enumdifficulty) { // Paper
-             throw CommandDifficulty.a.create(enumdifficulty.c());
-         } else {
--            minecraftserver.a(enumdifficulty, true);
-+            minecraftserver.a(world, enumdifficulty, true); // Paper
-             commandlistenerwrapper.sendMessage(new ChatMessage("commands.difficulty.success", new Object[]{enumdifficulty.b()}), true);
-             return 0;
-         }
-diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/DedicatedServer.java
-+++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
- 
-     @Override
-     public void updateWorldSettings() {
--        this.a(this.getDedicatedServerProperties().difficulty, true);
-+        //this.a(this.getDedicatedServerProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -63,10 +32,41 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+diff --git a/src/main/java/net/minecraft/server/commands/CommandDifficulty.java b/src/main/java/net/minecraft/server/commands/CommandDifficulty.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerConnection.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+--- a/src/main/java/net/minecraft/server/commands/CommandDifficulty.java
++++ b/src/main/java/net/minecraft/server/commands/CommandDifficulty.java
+@@ -0,0 +0,0 @@ public class CommandDifficulty {
+     public static int a(CommandListenerWrapper commandlistenerwrapper, EnumDifficulty enumdifficulty) throws CommandSyntaxException {
+         MinecraftServer minecraftserver = commandlistenerwrapper.getServer();
+ 
+-        if (minecraftserver.getSaveData().getDifficulty() == enumdifficulty) {
++        WorldServer world = commandlistenerwrapper.getWorld(); // Paper
++        if (world.worldDataServer.getDifficulty() == enumdifficulty) { // Paper
+             throw CommandDifficulty.a.create(enumdifficulty.c());
+         } else {
+-            minecraftserver.a(enumdifficulty, true);
++            minecraftserver.a(world, enumdifficulty, true); // Paper
+             commandlistenerwrapper.sendMessage(new ChatMessage("commands.difficulty.success", new Object[]{enumdifficulty.b()}), true);
+             return 0;
+         }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     @Override
+     public void updateWorldSettings() {
+-        this.a(this.getDedicatedServerProperties().difficulty, true);
++        //this.a(this.getDedicatedServerProperties().difficulty, true); // Paper - Don't overwrite level.dat's difficulty, keep current
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
 @@ -0,0 +0,0 @@ public class PlayerConnection implements PacketListenerPlayIn {
      public void a(PacketPlayInDifficultyChange packetplayindifficultychange) {
          PlayerConnectionUtils.ensureMainThread(packetplayindifficultychange, this, this.player.getWorldServer());

@@ -4,11 +4,39 @@ Date: Tue, 1 Mar 2016 23:45:08 -0600
 Subject: [PATCH] Entity Origin API
 
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+diff --git a/src/main/java/net/minecraft/nbt/NBTTagList.java b/src/main/java/net/minecraft/nbt/NBTTagList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+--- a/src/main/java/net/minecraft/nbt/NBTTagList.java
++++ b/src/main/java/net/minecraft/nbt/NBTTagList.java
+@@ -0,0 +0,0 @@ public class NBTTagList extends NBTList<NBTBase> {
+         return new int[0];
+     }
+ 
++    public final double getDoubleAt(int i) { return this.h(i); } // Paper - OBFHELPER
+     public double h(int i) {
+         if (i >= 0 && i < this.list.size()) {
+             NBTBase nbtbase = (NBTBase) this.list.get(i);
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+                 this.navigators.add(((EntityInsentient) entity).getNavigation());
+             }
+             entity.valid = true; // CraftBukkit
++            // Paper start - Set origin location when the entity is being added to the world
++            if (entity.origin == null) {
++                entity.origin = entity.getBukkitEntity().getLocation();
++            }
++            // Paper end
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
      public boolean forceExplosionKnockback; // SPIGOT-949
      public boolean persistentInvisibility = false;
@@ -16,7 +44,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
                  this.bukkitEntity.storeBukkitValues(nbttagcompound);
              }
              // CraftBukkit end
@@ -28,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              }
              // CraftBukkit end
  
@@ -42,7 +70,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
-@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+@@ -0,0 +0,0 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
  
      protected abstract void saveData(NBTTagCompound nbttagcompound);
  
@@ -50,10 +78,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected NBTTagList a(double... adouble) {
          NBTTagList nbttaglist = new NBTTagList();
          double[] adouble1 = adouble;
-diff --git a/src/main/java/net/minecraft/server/EntityFallingBlock.java b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+diff --git a/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java b/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityFallingBlock.java
-+++ b/src/main/java/net/minecraft/server/EntityFallingBlock.java
+--- a/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
++++ b/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
 @@ -0,0 +0,0 @@ public class EntityFallingBlock extends Entity {
              this.block = Blocks.SAND.getBlockData();
          }
@@ -69,10 +97,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public void a(boolean flag) {
-diff --git a/src/main/java/net/minecraft/server/EntityTNTPrimed.java b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+diff --git a/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java b/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/EntityTNTPrimed.java
-+++ b/src/main/java/net/minecraft/server/EntityTNTPrimed.java
+--- a/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
 @@ -0,0 +0,0 @@ public class EntityTNTPrimed extends Entity {
      @Override
      protected void loadData(NBTTagCompound nbttagcompound) {
@@ -88,34 +116,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Nullable
-diff --git a/src/main/java/net/minecraft/server/NBTTagList.java b/src/main/java/net/minecraft/server/NBTTagList.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/NBTTagList.java
-+++ b/src/main/java/net/minecraft/server/NBTTagList.java
-@@ -0,0 +0,0 @@ public class NBTTagList extends NBTList<NBTBase> {
-         return new int[0];
-     }
- 
-+    public final double getDoubleAt(int i) { return this.h(i); } // Paper - OBFHELPER
-     public double h(int i) {
-         if (i >= 0 && i < this.list.size()) {
-             NBTBase nbtbase = (NBTBase) this.list.get(i);
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
-@@ -0,0 +0,0 @@ public class WorldServer extends World implements GeneratorAccessSeed {
-                 this.navigators.add(((EntityInsentient) entity).getNavigation());
-             }
-             entity.valid = true; // CraftBukkit
-+            // Paper start - Set origin location when the entity is being added to the world
-+            if (entity.origin == null) {
-+                entity.origin = entity.getBukkitEntity().getLocation();
-+            }
-+            // Paper end
-         }
- 
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java

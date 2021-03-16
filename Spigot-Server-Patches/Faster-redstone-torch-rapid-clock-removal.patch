@@ -5,10 +5,22 @@ Subject: [PATCH] Faster redstone torch rapid clock removal
 
 Only resize the the redstone torch list once, since resizing arrays / lists is costly
 
-diff --git a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
-+++ b/src/main/java/net/minecraft/server/BlockRedstoneTorch.java
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
++    public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockRedstoneTorch.java b/src/main/java/net/minecraft/world/level/block/BlockRedstoneTorch.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockRedstoneTorch.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockRedstoneTorch.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
  public class BlockRedstoneTorch extends BlockTorch {
  
@@ -76,15 +88,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          public RedstoneUpdateInfo(BlockPosition blockposition, long i) {
              this.a = blockposition;
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     private org.spigotmc.TickLimiter tileLimiter;
-     private int tileTickPosition;
-     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-+    public java.util.ArrayDeque<BlockRedstoneTorch.RedstoneUpdateInfo> redstoneUpdateInfos; // Paper - Move from Map in BlockRedstoneTorch to here
- 
-     public CraftWorld getWorld() {
-         return this.world;

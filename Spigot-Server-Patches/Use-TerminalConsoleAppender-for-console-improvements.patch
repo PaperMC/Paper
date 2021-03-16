@@ -143,48 +143,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +}
-diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/DedicatedServer.java
-+++ b/src/main/java/net/minecraft/server/DedicatedServer.java
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-                 if (!org.bukkit.craftbukkit.Main.useConsole) {
-                     return;
-                 }
-+                // Paper start - Use TerminalConsoleAppender
-+                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
-+                /*
-                 jline.console.ConsoleReader bufferedreader = reader;
- 
-                 // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-                 }
- 
-+                */
-+                // Paper end
-             }
-         };
- 
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         }
-         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
- 
-+        // Paper start - Not needed with TerminalConsoleAppender
-+        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
-+        /*
-         final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
-         for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
-             if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
-@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
-         }
- 
-         new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
-+        */
-+        // Paper end
- 
-         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
-         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -196,8 +154,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -import jline.console.ConsoleReader;
 +// import jline.console.ConsoleReader; // Paper
  import joptsimple.OptionSet;
- import org.bukkit.Bukkit;
- import org.bukkit.craftbukkit.CraftServer;
+ import net.minecraft.nbt.DynamicOpsNBT;
+ import net.minecraft.nbt.NBTBase;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
      public OptionSet options;
      public org.bukkit.command.ConsoleCommandSender console;
@@ -244,10 +202,52 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public KeyPair getKeyPair() {
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                 if (!org.bukkit.craftbukkit.Main.useConsole) {
+                     return;
+                 }
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
+                 jline.console.ConsoleReader bufferedreader = reader;
+ 
+                 // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+                     DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
+                 }
+ 
++                */
++                // Paper end
+             }
+         };
+ 
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         }
+         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
+ 
++        // Paper start - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
++        /*
+         final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
+         for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
+             if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+         }
+ 
+         new org.bukkit.craftbukkit.util.TerminalConsoleWriterThread(System.out, this.reader).start();
++        */
++        // Paper end
+ 
+         System.setOut(IoBuilder.forLogger(logger).setLevel(Level.INFO).buildPrintStream());
+         System.setErr(IoBuilder.forLogger(logger).setLevel(Level.WARN).buildPrintStream());
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
  
      public PlayerList(MinecraftServer minecraftserver, IRegistryCustom.Dimension iregistrycustom_dimension, WorldNBTStorage worldnbtstorage, int i) {
@@ -267,10 +267,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.logging.Logger;
  import javax.imageio.ImageIO;
 -import jline.console.ConsoleReader;
+ import net.minecraft.advancements.Advancement;
+ import net.minecraft.commands.CommandDispatcher;
+ import net.minecraft.commands.CommandListenerWrapper;
+@@ -0,0 +0,0 @@ import net.minecraft.nbt.NBTBase;
+ import net.minecraft.resources.MinecraftKey;
+ import net.minecraft.resources.RegistryReadOps;
+ import net.minecraft.resources.ResourceKey;
 +//import jline.console.ConsoleReader; // Paper
- import net.minecraft.server.Advancement;
- import net.minecraft.server.ArgumentEntity;
- import net.minecraft.server.BiomeManager;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.ServerCommand;
+ import net.minecraft.server.bossevents.BossBattleCustom;
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
          return logger;
      }

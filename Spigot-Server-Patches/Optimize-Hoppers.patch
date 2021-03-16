@@ -30,10 +30,57 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/IHopper.java b/src/main/java/net/minecraft/server/IHopper.java
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/IHopper.java
-+++ b/src/main/java/net/minecraft/server/IHopper.java
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+         while (iterator.hasNext()) {
+             WorldServer worldserver = (WorldServer) iterator.next();
+             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
++            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
+ 
+             this.methodProfiler.a(() -> {
+                 return worldserver + " " + worldserver.getDimensionKey().a();
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack {
+         return this.getItem().a(this, entityhuman, entityliving, enumhand);
+     }
+ 
+-    public ItemStack cloneItemStack() {
+-        if (this.isEmpty()) {
++    public ItemStack cloneItemStack() { return cloneItemStack(false); } // Paper
++    public ItemStack cloneItemStack(boolean origItem) { // Paper
++        if (!origItem && this.isEmpty()) { // Paper
+             return ItemStack.b;
+         } else {
+-            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
++            ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
+ 
+             itemstack.d(this.D());
+             if (this.tag != null) {
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return list;
+     }
+ 
+-    @Override
+-    public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
++    public <T extends Entity> List<T> getEntities(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) { return a(oclass, axisalignedbb, predicate); } // Paper - OBFHELPER
++    @Override public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
+         this.getMethodProfiler().c("getEntities");
+         int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
+         int j = MathHelper.f((axisalignedbb.maxX + 2.0D) / 16.0D);
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/IHopper.java b/src/main/java/net/minecraft/world/level/block/entity/IHopper.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/IHopper.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/IHopper.java
 @@ -0,0 +0,0 @@ public interface IHopper extends IInventory {
          return IHopper.c;
      }
@@ -52,43 +99,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    double A();
 +    double A(); default double getZ() { return this.A(); } // Paper - OBFHELPER
  }
-diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/ItemStack.java
-+++ b/src/main/java/net/minecraft/server/ItemStack.java
-@@ -0,0 +0,0 @@ public final class ItemStack {
-         return this.getItem().a(this, entityhuman, entityliving, enumhand);
-     }
- 
--    public ItemStack cloneItemStack() {
--        if (this.isEmpty()) {
-+    public ItemStack cloneItemStack() { return cloneItemStack(false); } // Paper
-+    public ItemStack cloneItemStack(boolean origItem) { // Paper
-+        if (!origItem && this.isEmpty()) { // Paper
-             return ItemStack.b;
-         } else {
--            ItemStack itemstack = new ItemStack(this.getItem(), this.count);
-+            ItemStack itemstack = new ItemStack(origItem ? this.item : this.getItem(), this.count); // Paper
- 
-             itemstack.d(this.D());
-             if (this.tag != null) {
-diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/MinecraftServer.java
-+++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
-         while (iterator.hasNext()) {
-             WorldServer worldserver = (WorldServer) iterator.next();
-             worldserver.hasPhysicsEvent =  org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper
-+            TileEntityHopper.skipHopperEvents = worldserver.paperConfig.disableHopperMoveEvents || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper
- 
-             this.methodProfiler.a(() -> {
-                 return worldserver + " " + worldserver.getDimensionKey().a();
-diff --git a/src/main/java/net/minecraft/server/TileEntity.java b/src/main/java/net/minecraft/server/TileEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TileEntity.java
-+++ b/src/main/java/net/minecraft/server/TileEntity.java
-@@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject { // Paper
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
+@@ -0,0 +0,0 @@ public abstract class TileEntity implements net.minecraft.server.KeyedObject { /
      public void setCurrentChunk(Chunk chunk) {
          this.currentChunk = chunk != null ? new java.lang.ref.WeakReference<>(chunk) : null;
      }
@@ -96,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Paper end
  
      @Nullable
-@@ -0,0 +0,0 @@ public abstract class TileEntity implements KeyedObject { // Paper
+@@ -0,0 +0,0 @@ public abstract class TileEntity implements net.minecraft.server.KeyedObject { /
  
      public void update() {
          if (this.world != null) {
@@ -104,10 +119,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.c = this.world.getType(this.position);
              this.world.b(this.position, this);
              if (!this.c.isAir()) {
-diff --git a/src/main/java/net/minecraft/server/TileEntityHopper.java b/src/main/java/net/minecraft/server/TileEntityHopper.java
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityHopper.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityHopper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TileEntityHopper.java
-+++ b/src/main/java/net/minecraft/server/TileEntityHopper.java
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityHopper.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityHopper.java
 @@ -0,0 +0,0 @@ public class TileEntityHopper extends TileEntityLootable implements IHopper, ITi
          return false;
      }
@@ -458,10 +473,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              List<Entity> list = world.getEntities((Entity) null, new AxisAlignedBB(d0 - 0.5D, d1 - 0.5D, d2 - 0.5D, d0 + 0.5D, d1 + 0.5D, d2 + 0.5D), IEntitySelector.d);
  
              if (!list.isEmpty()) {
-diff --git a/src/main/java/net/minecraft/server/TileEntityLootable.java b/src/main/java/net/minecraft/server/TileEntityLootable.java
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityLootable.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityLootable.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/TileEntityLootable.java
-+++ b/src/main/java/net/minecraft/server/TileEntityLootable.java
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityLootable.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityLootable.java
 @@ -0,0 +0,0 @@ public abstract class TileEntityLootable extends TileEntityContainer {
      @Override
      public boolean isEmpty() {
@@ -484,18 +499,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return (ItemStack) this.f().get(i);
      }
  
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -0,0 +0,0 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-         return list;
-     }
- 
--    @Override
--    public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
-+    public <T extends Entity> List<T> getEntities(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) { return a(oclass, axisalignedbb, predicate); } // Paper - OBFHELPER
-+    @Override public <T extends Entity> List<T> a(Class<? extends T> oclass, AxisAlignedBB axisalignedbb, @Nullable Predicate<? super T> predicate) {
-         this.getMethodProfiler().c("getEntities");
-         int i = MathHelper.floor((axisalignedbb.minX - 2.0D) / 16.0D);
-         int j = MathHelper.f((axisalignedbb.maxX + 2.0D) / 16.0D);
