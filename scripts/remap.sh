@@ -5,7 +5,7 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
-minecraftversion=$(cat "${workdir}/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)
+minecraftversion="$(cat "${workdir}/BuildData/info.json" | grep minecraftVersion | cut -d '"' -f 4)"-R0.2
 minecraftserverurl=$(cat "${workdir}/BuildData/info.json" | grep serverUrl | cut -d '"' -f 4)
 minecrafthash=$(cat "${workdir}/BuildData/info.json" | grep minecraftHash | cut -d '"' -f 4)
 accesstransforms="$workdir/BuildData/mappings/"$(cat "${workdir}/BuildData/info.json" | grep accessTransforms | cut -d '"' -f 4)
