@@ -139,9 +139,9 @@ fi
 currentlink="$workdir/Minecraft/current"
 if ([ ! -e "$currentlink" ] || [ -L "$currentlink" ]) && [ "$windows" == "false" ]; then
 	set +e
-	echo "Pointing $currentlink to $minecraftversion"
+	echo "Pointing $currentlink to $minecraftversion-$revision"
 	rm -rf "$currentlink" || true
-	ln -sfn "$minecraftversion" "$currentlink" || echo "Failed to set current symlink"
+	ln -sfn "$minecraftversion-$revision" "$currentlink" || echo "Failed to set current symlink"
 fi
 
 )
