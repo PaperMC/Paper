@@ -4,23 +4,11 @@ Date: Sat, 14 Nov 2020 16:19:52 +0100
 Subject: [PATCH] Add API for quit reason
 
 
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 8436b7be989bf08c8ec1f0d646b20e777a0ebd55..3728ff515feea7fd6fe8c62c0e6646e8a8662beb 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -130,6 +130,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
-     double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
- 
-     boolean needsChunkCenterUpdate; // Paper - no-tick view distance
-+    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
- 
-     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
-         super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
-diff --git a/src/main/java/net/minecraft/server/NetworkManager.java b/src/main/java/net/minecraft/server/NetworkManager.java
-index fc4ad72ffaed5e747cfecc71e9ac8ee2b556ce31..fb1e3c705b8abee13695762cdfd0e9f1bfdb5ad8 100644
---- a/src/main/java/net/minecraft/server/NetworkManager.java
-+++ b/src/main/java/net/minecraft/server/NetworkManager.java
-@@ -119,12 +119,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
+diff --git a/src/main/java/net/minecraft/network/NetworkManager.java b/src/main/java/net/minecraft/network/NetworkManager.java
+index b865e759ff522051c20534fea726d8610b7694ca..9a919542f1a4a23fdf64753a88de9b421e2b2a25 100644
+--- a/src/main/java/net/minecraft/network/NetworkManager.java
++++ b/src/main/java/net/minecraft/network/NetworkManager.java
+@@ -129,12 +129,15 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet<?>> {
  
              this.u = true;
              if (this.channel.isOpen()) {
@@ -36,11 +24,23 @@ index fc4ad72ffaed5e747cfecc71e9ac8ee2b556ce31..fb1e3c705b8abee13695762cdfd0e9f1
                      if (flag) {
                          NetworkManager.LOGGER.debug("Failed to sent packet", throwable);
                          this.sendPacket(new PacketPlayOutKickDisconnect(chatmessage), (future) -> {
-diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index efd66e81492ec4f976b9db66b84f1c5d728c7a13..1f1baaa464459e06ac877ea3dcd1d30604ef8d88 100644
---- a/src/main/java/net/minecraft/server/PlayerConnection.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -302,6 +302,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index 8e75c55460aba3885f52f7b0dc6e320101d402ba..8fa8d2e1e85fa382af9e9d65322bd98a87a6e3a9 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -257,6 +257,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     double lastEntitySpawnRadiusSquared; // Paper - optimise isOutsideRange, this field is in blocks
+ 
+     boolean needsChunkCenterUpdate; // Paper - no-tick view distance
++    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - there are a lot of changes to do if we change all methods leading to the event
+ 
+     public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, PlayerInteractManager playerinteractmanager) {
+         super(worldserver, worldserver.getSpawn(), worldserver.v(), gameprofile);
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 741011eed09109f8653fb8066ce636297f44b371..54a72470275cce96f86fe1e7219f931b738c71ec 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -446,6 +446,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
          final IChatBaseComponent ichatbasecomponent = PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
          // CraftBukkit end
  
@@ -48,11 +48,11 @@ index efd66e81492ec4f976b9db66b84f1c5d728c7a13..1f1baaa464459e06ac877ea3dcd1d306
          this.networkManager.sendPacket(new PacketPlayOutKickDisconnect(ichatbasecomponent), (future) -> {
              this.networkManager.close(ichatbasecomponent);
          });
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index f7b17c80480e7d4650fe7210936923c6c3f8b45c..a6a836c936a687d67c67d861c72addf319b44263 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -507,7 +507,7 @@ public abstract class PlayerList {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 8214bd759b306f86d44a53b2aa07dc053f72f282..c7464ee5f29aa5ee0994fd4a352756a59055d9ee 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -582,7 +582,7 @@ public abstract class PlayerList {
              entityplayer.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper
          }
  

@@ -4,11 +4,11 @@ Date: Sun, 19 Apr 2020 04:28:29 -0400
 Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
-diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-index 75500aaae0dc44f0da3b4d5ed94da6fef9f96c38..322d0a7d127878ba49362454808b82172acf1600 100644
---- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
-+++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
-@@ -604,7 +604,7 @@ public class ChunkProviderServer extends IChunkProvider {
+diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
+index 0d093c4babc16493185eac8069ab2cfb4a2d6787..9e1b2c6466edff3cfeb3bf8172f4589d2cb712ad 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
+@@ -626,7 +626,7 @@ public class ChunkProviderServer extends IChunkProvider {
          return this.serverThreadQueue.executeNext();
      }
  
@@ -17,24 +17,11 @@ index 75500aaae0dc44f0da3b4d5ed94da6fef9f96c38..322d0a7d127878ba49362454808b8217
          boolean flag = this.chunkMapDistance.a(this.playerChunkMap);
          boolean flag1 = this.playerChunkMap.b();
  
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 7da08dd7c2396ae1048d857bfae4fee2a9f3b4d9..1ed26fa55b149e3717cf190abde8f865a4c076eb 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -1283,7 +1283,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         this.lastY = d1;
-         this.lastZ = d4;
-         this.setPosition(d3, d1, d4);
--        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
-+        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
-     }
- 
-     public void d(Vec3D vec3d) {
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 50ffd62534793596017368423b11cd5a94950009..05483a9c5b8f77959fb44532f506e268b1676acd 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -46,6 +46,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index 9ef603805019a7582f1b8f16a4a85a31ffbd8212..3c75a74292858ccff0357fb11a92673ae6a5129b 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -173,6 +173,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
      private static final Logger LOGGER = LogManager.getLogger();
      public PlayerConnection playerConnection;
@@ -42,7 +29,7 @@ index 50ffd62534793596017368423b11cd5a94950009..05483a9c5b8f77959fb44532f506e268
      public final MinecraftServer server;
      public final PlayerInteractManager playerInteractManager;
      public final Deque<Integer> removeQueue = new ArrayDeque<>(); // Paper
-@@ -112,6 +113,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -239,6 +240,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public boolean joining = true;
      public boolean sentListPacket = false;
      public boolean supressTrackerForLogin = false; // Paper
@@ -50,11 +37,23 @@ index 50ffd62534793596017368423b11cd5a94950009..05483a9c5b8f77959fb44532f506e268
      public Integer clientViewDistance;
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
-diff --git a/src/main/java/net/minecraft/server/LoginListener.java b/src/main/java/net/minecraft/server/LoginListener.java
-index e5790c2aeaa380a3acc26434f5de78ac746c6d57..bdd4766976902e11411728e6faa93b7e43a7ba22 100644
---- a/src/main/java/net/minecraft/server/LoginListener.java
-+++ b/src/main/java/net/minecraft/server/LoginListener.java
-@@ -68,7 +68,7 @@ public class LoginListener implements PacketLoginInListener {
+diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
+index 218dc900e125a11548485887b1918742072c7a77..2c932d36f982e7f8713aabff9a6c631055810366 100644
+--- a/src/main/java/net/minecraft/server/level/TicketType.java
++++ b/src/main/java/net/minecraft/server/level/TicketType.java
+@@ -21,6 +21,7 @@ public class TicketType<T> {
+     public static final TicketType<ChunkCoordIntPair> FORCED = a("forced", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<ChunkCoordIntPair> LIGHT = a("light", Comparator.comparingLong(ChunkCoordIntPair::pair));
+     public static final TicketType<BlockPosition> PORTAL = a("portal", BaseBlockPosition::compareTo, 300);
++    public static final TicketType<Long> LOGIN = a("login", Long::compareTo, 100); // Paper
+     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
+     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
+     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/network/LoginListener.java b/src/main/java/net/minecraft/server/network/LoginListener.java
+index 98ae77269b5aaad951b0e26da61e6f5eb7ec2818..6bfb703ffafd707fb83743abc7d1bfbb96f867f1 100644
+--- a/src/main/java/net/minecraft/server/network/LoginListener.java
++++ b/src/main/java/net/minecraft/server/network/LoginListener.java
+@@ -86,7 +86,7 @@ public class LoginListener implements PacketLoginInListener {
              }
              // Paper end
          } else if (this.g == LoginListener.EnumProtocolState.DELAY_ACCEPT) {
@@ -63,7 +62,7 @@ index e5790c2aeaa380a3acc26434f5de78ac746c6d57..bdd4766976902e11411728e6faa93b7e
  
              if (entityplayer == null) {
                  this.g = LoginListener.EnumProtocolState.READY_TO_ACCEPT;
-@@ -167,7 +167,7 @@ public class LoginListener implements PacketLoginInListener {
+@@ -185,7 +185,7 @@ public class LoginListener implements PacketLoginInListener {
              }
  
              this.networkManager.sendPacket(new PacketLoginOutSuccess(this.i));
@@ -72,11 +71,11 @@ index e5790c2aeaa380a3acc26434f5de78ac746c6d57..bdd4766976902e11411728e6faa93b7e
  
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
-diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
-index 8fbafc6057a6062cbc222239e542a1bffc4fc09e..d525f4b783bc3bff180c9dbc31750f5bc061a7fb 100644
---- a/src/main/java/net/minecraft/server/PlayerConnection.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnection.java
-@@ -76,6 +76,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 31fb6eda544568b14255aede0a981d065bdf3aee..8bfc26eb12cc5523c64a210383c9156aef6883b3 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -220,6 +220,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final Logger LOGGER = LogManager.getLogger();
      public final NetworkManager networkManager;
      private final MinecraftServer minecraftServer;
@@ -84,7 +83,7 @@ index 8fbafc6057a6062cbc222239e542a1bffc4fc09e..d525f4b783bc3bff180c9dbc31750f5b
      public EntityPlayer player;
      private int e;
      private long lastKeepAlive = SystemUtils.getMonotonicMillis(); private void setLastPing(long lastPing) { this.lastKeepAlive = lastPing;}; private long getLastPing() { return this.lastKeepAlive;}; // Paper - OBFHELPER
-@@ -154,6 +155,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -298,6 +299,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
      // CraftBukkit end
  
      public void tick() {
@@ -100,7 +99,7 @@ index 8fbafc6057a6062cbc222239e542a1bffc4fc09e..d525f4b783bc3bff180c9dbc31750f5b
          this.syncPosition();
          this.player.lastX = this.player.locX();
          this.player.lastY = this.player.locY();
-@@ -195,7 +205,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -339,7 +349,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
              this.r = null;
              this.D = false;
              this.E = 0;
@@ -109,11 +108,11 @@ index 8fbafc6057a6062cbc222239e542a1bffc4fc09e..d525f4b783bc3bff180c9dbc31750f5b
  
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24db542ae91 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -51,11 +51,12 @@ public abstract class PlayerList {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 12de64d34f5011771a5515710839f60098f56ad8..beb18eb9e7e37020ebd7bb03e9a65e090dcfdb4b 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -124,11 +124,12 @@ public abstract class PlayerList {
      private static final SimpleDateFormat g = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
      private final MinecraftServer server;
      public final List<EntityPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
@@ -127,7 +126,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
      // CraftBukkit start
      // private final Map<UUID, ServerStatisticManager> o;
      // private final Map<UUID, AdvancementDataPlayer> p;
-@@ -94,6 +95,11 @@ public abstract class PlayerList {
+@@ -167,6 +168,11 @@ public abstract class PlayerList {
      }
  
      public void a(NetworkManager networkmanager, EntityPlayer entityplayer) {
@@ -139,7 +138,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
          entityplayer.loginTime = System.currentTimeMillis(); // Paper
          GameProfile gameprofile = entityplayer.getProfile();
          UserCache usercache = this.server.getUserCache();
-@@ -107,7 +113,7 @@ public abstract class PlayerList {
+@@ -180,7 +186,7 @@ public abstract class PlayerList {
          if (nbttagcompound != null && nbttagcompound.hasKey("bukkit")) {
              NBTTagCompound bukkit = nbttagcompound.getCompound("bukkit");
              s = bukkit.hasKeyOfType("lastKnownName", 8) ? bukkit.getString("lastKnownName") : s;
@@ -148,7 +147,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
          // CraftBukkit end
  
          if (nbttagcompound != null) {
-@@ -180,6 +186,51 @@ public abstract class PlayerList {
+@@ -255,6 +261,51 @@ public abstract class PlayerList {
          entityplayer.getRecipeBook().a(entityplayer);
          this.sendScoreboard(worldserver1.getScoreboard(), entityplayer);
          this.server.invalidatePingSample();
@@ -200,7 +199,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
          ChatMessage chatmessage;
  
          if (entityplayer.getProfile().getName().equalsIgnoreCase(s)) {
-@@ -417,6 +468,7 @@ public abstract class PlayerList {
+@@ -492,6 +543,7 @@ public abstract class PlayerList {
  
      protected void savePlayerFile(EntityPlayer entityplayer) {
          if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -208,7 +207,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -444,7 +496,7 @@ public abstract class PlayerList {
+@@ -519,7 +571,7 @@ public abstract class PlayerList {
          }
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getName())));
@@ -217,7 +216,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
  
          if (server.isMainThread()) entityplayer.playerTick(); // SPIGOT-924 // Paper - don't tick during emergency shutdowns (Watchdog)
-@@ -497,6 +549,13 @@ public abstract class PlayerList {
+@@ -572,6 +624,13 @@ public abstract class PlayerList {
              // this.p.remove(uuid);
              // CraftBukkit end
          }
@@ -231,7 +230,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
  
          // CraftBukkit start
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, new EntityPlayer[]{entityplayer}));
-@@ -514,7 +573,7 @@ public abstract class PlayerList {
+@@ -589,7 +648,7 @@ public abstract class PlayerList {
          cserver.getScoreboardManager().removePlayer(entityplayer.getBukkitEntity());
          // CraftBukkit end
  
@@ -240,7 +239,7 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
      }
  
      // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-@@ -533,6 +592,13 @@ public abstract class PlayerList {
+@@ -608,6 +667,13 @@ public abstract class PlayerList {
                  list.add(entityplayer);
              }
          }
@@ -254,15 +253,16 @@ index 5222382bc572ffa5a9e3274c522f1f956a27e732..f1cd31c4ccc1566327041b9b8469f24d
  
          Iterator iterator = list.iterator();
  
-diff --git a/src/main/java/net/minecraft/server/TicketType.java b/src/main/java/net/minecraft/server/TicketType.java
-index 8055f5998213ab1c6c10d03d88d2b14d220a5e40..d7b9d9fd3a3b607278a3d72b0b306b0be2aa30ad 100644
---- a/src/main/java/net/minecraft/server/TicketType.java
-+++ b/src/main/java/net/minecraft/server/TicketType.java
-@@ -17,6 +17,7 @@ public class TicketType<T> {
-     public static final TicketType<ChunkCoordIntPair> FORCED = a("forced", Comparator.comparingLong(ChunkCoordIntPair::pair));
-     public static final TicketType<ChunkCoordIntPair> LIGHT = a("light", Comparator.comparingLong(ChunkCoordIntPair::pair));
-     public static final TicketType<BlockPosition> PORTAL = a("portal", BaseBlockPosition::compareTo, 300);
-+    public static final TicketType<Long> LOGIN = a("login", Long::compareTo, 100); // Paper
-     public static final TicketType<Integer> POST_TELEPORT = a("post_teleport", Integer::compareTo, 5);
-     public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
-     public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 1aaebe236255f19cf4798ab1dce3493e703bcb7e..84c2488a432f2c306567dd4576dd522efcf073ef 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1368,7 +1368,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         this.lastY = d1;
+         this.lastZ = d4;
+         this.setPosition(d3, d1, d4);
+-        world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit
++        if (valid) world.getChunkAt((int) Math.floor(this.locX()) >> 4, (int) Math.floor(this.locZ()) >> 4); // CraftBukkit // Paper
+     }
+ 
+     public void d(Vec3D vec3d) {

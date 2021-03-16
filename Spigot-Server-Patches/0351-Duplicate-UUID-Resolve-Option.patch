@@ -80,36 +80,12 @@ index fbf3ccfb347a5ba6e895339e9576629d940d1aa4..38d25a12c6a52d8a83214e2a0f43a218
 +        }
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
-index 3cb1ee261724e34a23c4a0f98673da1597786a01..b258d4a85c41c2de55a28c565766f57c3f1604ff 100644
---- a/src/main/java/net/minecraft/server/Chunk.java
-+++ b/src/main/java/net/minecraft/server/Chunk.java
-@@ -504,6 +504,7 @@ public class Chunk implements IChunkAccess {
-         if (i != this.loc.x || j != this.loc.z) {
-             Chunk.LOGGER.warn("Wrong location! ({}, {}) should be ({}, {}), {}", i, j, this.loc.x, this.loc.z, entity);
-             entity.dead = true;
-+            return; // Paper
-         }
- 
-         int k = MathHelper.floor(entity.locY() / 16.0D);
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 1dbeda9fb385be29b3bb20c33a0487334c6e7c16..595adbeb253529720e72f695667d5bf9584ebaf0 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -2711,6 +2711,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
-         });
-     }
- 
-+    public final void setUUID(UUID uuid) { a_(uuid); } // Paper - OBFHELPER
-     public void a_(UUID uuid) {
-         this.uniqueID = uuid;
-         this.ae = this.uniqueID.toString();
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 6d048fbb48444885051efcb83a55d32047ff6517..8370bb32f9ca5c88cea52b90a6f361ad5333bbb2 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index f0347a71b5937f9b68a4024fd0595a2d3e98eef5..90a3ca4e92fefc1f20b2878686030e9123238384 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -1,6 +1,7 @@
- package net.minecraft.server;
+ package net.minecraft.server.level;
  
  import co.aikar.timings.Timing; // Paper
 +import com.destroystokyo.paper.PaperWorldConfig; // Paper
@@ -134,10 +110,10 @@ index 6d048fbb48444885051efcb83a55d32047ff6517..8370bb32f9ca5c88cea52b90a6f361ad
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.CompletionException;
  import java.util.concurrent.Executor;
-@@ -652,12 +656,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -696,12 +700,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                              // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
                              boolean needsRemoval = false;
-                             if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof NPC) {
+                             if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
 -                                entity.die();
 +                                entity.dead = true; // Paper
                                  needsRemoval = true;
@@ -151,7 +127,7 @@ index 6d048fbb48444885051efcb83a55d32047ff6517..8370bb32f9ca5c88cea52b90a6f361ad
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -684,6 +688,44 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -728,6 +732,44 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          });
      }
  
@@ -196,10 +172,10 @@ index 6d048fbb48444885051efcb83a55d32047ff6517..8370bb32f9ca5c88cea52b90a6f361ad
      public CompletableFuture<Either<Chunk, PlayerChunk.Failure>> a(PlayerChunk playerchunk) {
          ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
          CompletableFuture<Either<List<IChunkAccess>, PlayerChunk.Failure>> completablefuture = this.a(chunkcoordintpair, 1, (i) -> {
-diff --git a/src/main/java/net/minecraft/server/WorldServer.java b/src/main/java/net/minecraft/server/WorldServer.java
-index 676d160fe5132177a7d91cbf514a386607826964..628d1a5555ec70571c0467900c884cc419cbab37 100644
---- a/src/main/java/net/minecraft/server/WorldServer.java
-+++ b/src/main/java/net/minecraft/server/WorldServer.java
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index b8f0ea863b89bf9ddeef8104d09fe7f00b91f711..a6f3f773a2fbbf98f9ef1eb03a6b392fb9082d25 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
  import com.google.common.collect.Iterables;
  import co.aikar.timings.TimingHistory; // Paper
@@ -209,7 +185,7 @@ index 676d160fe5132177a7d91cbf514a386607826964..628d1a5555ec70571c0467900c884cc4
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Queues;
-@@ -997,7 +999,22 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -1106,7 +1108,22 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          if (entity1 == null) {
              return false;
          } else {
@@ -232,3 +208,27 @@ index 676d160fe5132177a7d91cbf514a386607826964..628d1a5555ec70571c0467900c884cc4
              return true;
          }
      }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f024db3fe2a9fb9af536fe144b9e871712ae327a..abfda88ab1d0353bbb14ae99dea212941ab2e899 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2796,6 +2796,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         });
+     }
+ 
++    public final void setUUID(UUID uuid) { a_(uuid); } // Paper - OBFHELPER
+     public void a_(UUID uuid) {
+         this.uniqueID = uuid;
+         this.ae = this.uniqueID.toString();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/Chunk.java b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
+index 246a4b69e1b4ee6affa9564d50f261fac2f269d0..5539ee8552c4bcfa718a63dbd4c25bd232048bff 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/Chunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
+@@ -538,6 +538,7 @@ public class Chunk implements IChunkAccess {
+         if (i != this.loc.x || j != this.loc.z) {
+             Chunk.LOGGER.warn("Wrong location! ({}, {}) should be ({}, {}), {}", i, j, this.loc.x, this.loc.z, entity);
+             entity.dead = true;
++            return; // Paper
+         }
+ 
+         int k = MathHelper.floor(entity.locY() / 16.0D);

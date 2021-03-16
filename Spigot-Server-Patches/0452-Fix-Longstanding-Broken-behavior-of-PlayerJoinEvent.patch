@@ -27,11 +27,11 @@ This was very non deterministic. This change will ensure every plugin
 receives a deterministic result, and should no longer require 1 tick
 delays anymore.
 
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 9030b76ca6b9dd2bf3f6baa003f68d8b43f3741e..50ffd62534793596017368423b11cd5a94950009 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -111,6 +111,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index b3df6032d42ac7f933d3843b7cd758219590b985..9ef603805019a7582f1b8f16a4a85a31ffbd8212 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -238,6 +238,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      public double maxHealthCache;
      public boolean joining = true;
      public boolean sentListPacket = false;
@@ -39,11 +39,11 @@ index 9030b76ca6b9dd2bf3f6baa003f68d8b43f3741e..50ffd62534793596017368423b11cd5a
      public Integer clientViewDistance;
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
-diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-index 356147a09c4aa027480804d9edcca21dc3d85b78..429355e5790148e2e061f67e44f0c8f96855f7c5 100644
---- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
-+++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
-@@ -1539,6 +1539,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 5b9011fa9cf9fd023c1b64a0d6eecfc424747ef4..21cf7390e4564b28a25b2d28932b697bbf7d0e15 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+@@ -1583,6 +1583,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  .printStackTrace();
              return;
          }
@@ -51,11 +51,11 @@ index 356147a09c4aa027480804d9edcca21dc3d85b78..429355e5790148e2e061f67e44f0c8f9
          // Paper end
          if (!(entity instanceof EntityComplexPart)) {
              EntityTypes<?> entitytypes = entity.getEntityType();
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 34246ba0f8a50f732f2ff863f8a824f8573fee83..5222382bc572ffa5a9e3274c522f1f956a27e732 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -197,6 +197,12 @@ public abstract class PlayerList {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index d06d31207ce724a6318a87a37d26a7e30372aa22..12de64d34f5011771a5515710839f60098f56ad8 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -272,6 +272,12 @@ public abstract class PlayerList {
          this.j.put(entityplayer.getUniqueID(), entityplayer);
          // this.sendAll(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[]{entityplayer})); // CraftBukkit - replaced with loop below
  
@@ -68,7 +68,7 @@ index 34246ba0f8a50f732f2ff863f8a824f8573fee83..5222382bc572ffa5a9e3274c522f1f95
          // CraftBukkit start
          PlayerJoinEvent playerJoinEvent = new org.bukkit.event.player.PlayerJoinEvent(cserver.getPlayer(entityplayer), PaperAdventure.asAdventure(chatmessage)); // Paper - Adventure
          cserver.getPluginManager().callEvent(playerJoinEvent);
-@@ -232,6 +238,8 @@ public abstract class PlayerList {
+@@ -307,6 +313,8 @@ public abstract class PlayerList {
              entityplayer.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, new EntityPlayer[] { entityplayer1}));
          }
          entityplayer.sentListPacket = true;
@@ -76,8 +76,8 @@ index 34246ba0f8a50f732f2ff863f8a824f8573fee83..5222382bc572ffa5a9e3274c522f1f95
 +        ((WorldServer)entityplayer.world).getChunkProvider().playerChunkMap.addEntity(entityplayer); // Paper - track entity now
          // CraftBukkit end
  
-         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.datawatcher, true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
-@@ -257,6 +265,11 @@ public abstract class PlayerList {
+         entityplayer.playerConnection.sendPacket(new PacketPlayOutEntityMetadata(entityplayer.getId(), entityplayer.getDataWatcher(), true)); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
+@@ -332,6 +340,11 @@ public abstract class PlayerList {
              playerconnection.sendPacket(new PacketPlayOutEntityEffect(entityplayer.getId(), mobeffect));
          }
  
@@ -89,7 +89,7 @@ index 34246ba0f8a50f732f2ff863f8a824f8573fee83..5222382bc572ffa5a9e3274c522f1f95
          if (nbttagcompound != null && nbttagcompound.hasKeyOfType("RootVehicle", 10)) {
              NBTTagCompound nbttagcompound1 = nbttagcompound.getCompound("RootVehicle");
              // CraftBukkit start
-@@ -305,6 +318,10 @@ public abstract class PlayerList {
+@@ -380,6 +393,10 @@ public abstract class PlayerList {
              }
          }
  

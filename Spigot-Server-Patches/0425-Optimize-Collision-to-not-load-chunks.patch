@@ -13,11 +13,23 @@ If that serting is not enabled, collisions will be ignored for players, since
 movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
-diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
-index 874dddc5d70dc149c272855a98ed858867dd2bb6..7da08dd7c2396ae1048d857bfae4fee2a9f3b4d9 100644
---- a/src/main/java/net/minecraft/server/Entity.java
-+++ b/src/main/java/net/minecraft/server/Entity.java
-@@ -80,6 +80,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, Ke
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0c51f90c103600be8881f204bdd18fb12e0ef11c..a1597b45c93a70bb5308985040f2bd19cef5325c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -807,6 +807,7 @@ public abstract class PlayerList {
+         entityplayer1.forceSetPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+         // CraftBukkit end
+ 
++        worldserver1.getChunkProvider().addTicket(TicketType.POST_TELEPORT, new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
+         while (avoidSuffocation && !worldserver1.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
+             entityplayer1.setPosition(entityplayer1.locX(), entityplayer1.locY() + 1.0D, entityplayer1.locZ());
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index bded403c87c2dfe4bcaab21be56e7b120efb112a..1aaebe236255f19cf4798ab1dce3493e703bcb7e 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -165,6 +165,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      private CraftEntity bukkitEntity;
  
      PlayerChunkMap.EntityTracker tracker; // Paper
@@ -25,11 +37,11 @@ index 874dddc5d70dc149c272855a98ed858867dd2bb6..7da08dd7c2396ae1048d857bfae4fee2
      Throwable addedToWorldStack; // Paper - entity debug
      public CraftEntity getBukkitEntity() {
          if (bukkitEntity == null) {
-diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
-index 7bb0843d76864fc10575532745eb63f9ca478354..25e54a1fadc5d31fb250a3f47524b4f345fc8cc6 100644
---- a/src/main/java/net/minecraft/server/ICollisionAccess.java
-+++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
-@@ -46,7 +46,9 @@ public interface ICollisionAccess extends IBlockAccess {
+diff --git a/src/main/java/net/minecraft/world/level/ICollisionAccess.java b/src/main/java/net/minecraft/world/level/ICollisionAccess.java
+index fcf6cc86e3b5d9afe3ab3b3fba2ec13846ed0b4c..fcb3e2f9dea97138e0fd4cd2eb11b54799e1d3b5 100644
+--- a/src/main/java/net/minecraft/world/level/ICollisionAccess.java
++++ b/src/main/java/net/minecraft/world/level/ICollisionAccess.java
+@@ -54,7 +54,9 @@ public interface ICollisionAccess extends IBlockAccess {
      }
  
      default boolean b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
@@ -39,23 +51,11 @@ index 7bb0843d76864fc10575532745eb63f9ca478354..25e54a1fadc5d31fb250a3f47524b4f3
      }
  
      Stream<VoxelShape> c(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate);
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index bd8d2e60a1d0609d03978328b44516a18a0d2553..73a29023767e6452cd263564c9bce3fb52e93312 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -732,6 +732,7 @@ public abstract class PlayerList {
-         entityplayer1.forceSetPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-         // CraftBukkit end
- 
-+        worldserver1.getChunkProvider().addTicket(TicketType.POST_TELEPORT, new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
-         while (avoidSuffocation && !worldserver1.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
-             entityplayer1.setPosition(entityplayer1.locX(), entityplayer1.locY() + 1.0D, entityplayer1.locZ());
-         }
-diff --git a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
-index 4967d1ebd109c462a322e4829d01ff519d1b5366..ed0f3ddbcb7d6ce8a59ae3829f4cb11ae75046cb 100644
---- a/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
-+++ b/src/main/java/net/minecraft/server/VoxelShapeSpliterator.java
-@@ -9,13 +9,13 @@ import javax.annotation.Nullable;
+diff --git a/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java b/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
+index fa3421c9cd8531618827627e9c524a8df77c4c58..1fe6aba0884755be3382d38cebfdd1916bd9180e 100644
+--- a/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
++++ b/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
+@@ -21,13 +21,13 @@ import net.minecraft.world.phys.shapes.VoxelShapes;
  public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
  
      @Nullable
@@ -72,7 +72,7 @@ index 4967d1ebd109c462a322e4829d01ff519d1b5366..ed0f3ddbcb7d6ce8a59ae3829f4cb11a
      private boolean h;
      private final BiPredicate<IBlockData, BlockPosition> i;
  
-@@ -52,23 +52,37 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+@@ -64,23 +64,37 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
      boolean a(Consumer<? super VoxelShape> consumer) {
          while (true) {
              if (this.d.a()) {
@@ -119,11 +119,11 @@ index 4967d1ebd109c462a322e4829d01ff519d1b5366..ed0f3ddbcb7d6ce8a59ae3829f4cb11a
  
                  if (!this.i.test(iblockdata, this.e) || l == 1 && !iblockdata.d() || l == 2 && !iblockdata.a(Blocks.MOVING_PISTON)) {
                      continue;
-diff --git a/src/main/java/net/minecraft/server/VoxelShapes.java b/src/main/java/net/minecraft/server/VoxelShapes.java
-index 881cea7c466f29ff4a89db28d104e8500a548b1f..dd91a57f994f1c23464f5e33ca332529d7d9ea19 100644
---- a/src/main/java/net/minecraft/server/VoxelShapes.java
-+++ b/src/main/java/net/minecraft/server/VoxelShapes.java
-@@ -239,7 +239,8 @@ public final class VoxelShapes {
+diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
+index cf32a4f63e8e59535c02a3f9c57f98833a2b0e83..24ecac40625629b0bbe460e7fc984b147ede1f1f 100644
+--- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
++++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
+@@ -249,7 +249,8 @@ public final class VoxelShapes {
  
                              if (k2 < 3) {
                                  blockposition_mutableblockposition.a(enumaxiscycle1, i2, j2, l1);
