@@ -106,10 +106,10 @@ index 0000000000000000000000000000000000000000..a2acd31dce4461338a8baa96e03df36a
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8767c84e6417888cacf1ed76c7e3def73f873d70
+index 0000000000000000000000000000000000000000..aa509a1f382991e0f5683b75b0af4094f84d2844
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,211 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatFormatter;
@@ -123,8 +123,6 @@ index 0000000000000000000000000000000000000000..8767c84e6417888cacf1ed76c7e3def7
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TextReplacementConfig;
 +import net.kyori.adventure.text.event.ClickEvent;
-+import net.kyori.adventure.text.format.Style;
-+import net.kyori.adventure.text.format.TextDecoration;
 +import net.minecraft.server.EntityPlayer;
 +import net.minecraft.server.IChatBaseComponent;
 +import net.minecraft.server.MinecraftServer;
@@ -165,66 +163,80 @@ index 0000000000000000000000000000000000000000..8767c84e6417888cacf1ed76c7e3def7
 +        this.async = async;
 +    }
 +
-+    @SuppressWarnings("deprecation")
++    @SuppressWarnings("CodeBlock2Expr")
 +    public void process() {
-+        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
-+
-+        this.processLegacy(
++        this.processingLegacyFirst(
 +            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
 +            event -> {
-+                final AsyncChatEvent ae = this.createAsync(
++                this.processModern(
 +                    legacyFormatter(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
 +                    event.getRecipients(),
-+                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
++                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
++                    event.isCancelled()
 +                );
-+                ae.setCancelled(event.isCancelled()); // propagate cancelled state
-+                post(ae);
-+                if (listenersOnSyncEvent) {
-+                    this.continueWithSyncFromWhereAsyncLeftOff(ae);
-+                } else {
-+                    this.complete(ae);
-+                }
 +            },
 +            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
 +            event -> {
-+                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
-+                    @Override
-+                    protected Void evaluate() {
-+                        final ChatEvent se = ChatProcessor.this.createSync(
-+                            legacyFormatter(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
-+                            event.getRecipients(),
-+                            PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage())
-+                        );
-+                        se.setCancelled(event.isCancelled()); // propagate cancelled state
-+                        post(se);
-+                        ChatProcessor.this.complete(se);
-+                        return null;
-+                    }
-+                });
++                this.processModern(
++                    legacyFormatter(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
++                    event.getRecipients(),
++                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
++                    event.isCancelled()
++                );
 +            },
 +            // no legacy events called, all nice and fresh!
 +            () -> {
-+                final AsyncChatEvent ae = this.createAsync(ChatFormatter.DEFAULT, new LazyPlayerSet(this.server), Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG));
-+                post(ae);
-+                if (listenersOnSyncEvent) {
-+                    this.continueWithSyncFromWhereAsyncLeftOff(ae);
-+                } else {
-+                    this.complete(ae);
-+                }
++                this.processModern(
++                    ChatFormatter.DEFAULT,
++                    new LazyPlayerSet(this.server),
++                    Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
++                    false
++                );
 +            }
 +        );
 +    }
 +
-+    private static String legacyDisplayName(final CraftPlayer player) {
-+        return player.getDisplayName();
++    @SuppressWarnings("deprecation")
++    private void processingLegacyFirst(
++        final Consumer<AsyncPlayerChatEvent> continueAfterAsync,
++        final Consumer<PlayerChatEvent> continueAfterAsyncAndSync,
++        final Runnable modernOnly
++    ) {
++        final boolean listenersOnAsyncEvent = anyListeners(AsyncPlayerChatEvent.getHandlerList());
++        final boolean listenersOnSyncEvent = anyListeners(PlayerChatEvent.getHandlerList());
++        if (listenersOnAsyncEvent || listenersOnSyncEvent) {
++            final CraftPlayer player = this.player.getBukkitEntity();
++            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.message, new LazyPlayerSet(this.server));
++            post(ae);
++            if (listenersOnSyncEvent) {
++                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
++                se.setCancelled(ae.isCancelled()); // propagate cancelled state
++                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
++                    @Override
++                    protected Void evaluate() {
++                        post(se);
++                        return null;
++                    }
++                });
++                continueAfterAsyncAndSync.accept(se);
++            } else if (!ae.isCancelled()) {
++                continueAfterAsync.accept(ae);
++            }
++        } else {
++            modernOnly.run();
++        }
 +    }
 +
-+    private static Component displayName(final CraftPlayer player) {
-+        return player.displayName();
-+    }
-+
-+    private static ChatFormatter legacyFormatter(final String format, final String legacyDisplayName, final String legacyMessage) {
-+        return (displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName, legacyMessage)).replaceText(URL_REPLACEMENT_CONFIG);
++    private void processModern(final ChatFormatter formatter, final Set<Player> recipients, final Component message, final boolean cancelled) {
++        final AsyncChatEvent ae = this.createAsync(formatter, recipients, message);
++        ae.setCancelled(cancelled); // propagate cancelled state
++        post(ae);
++        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
++        if (listenersOnSyncEvent) {
++            this.continueWithSyncFromWhereAsyncLeftOff(ae);
++        } else {
++            this.complete(ae);
++        }
 +    }
 +
 +    private void continueWithSyncFromWhereAsyncLeftOff(final AsyncChatEvent ae) {
@@ -274,35 +286,16 @@ index 0000000000000000000000000000000000000000..8767c84e6417888cacf1ed76c7e3def7
 +        return new ChatEvent(this.player.getBukkitEntity(), recipients, formatter, message);
 +    }
 +
-+    @SuppressWarnings("deprecation")
-+    public void processLegacy(
-+        final Consumer<AsyncPlayerChatEvent> continueAfterAsync,
-+        final Consumer<PlayerChatEvent> continueAfterAsyncAndSync,
-+        final Runnable modernOnly
-+    ) {
-+        final boolean listenersOnAsyncEvent = anyListeners(AsyncPlayerChatEvent.getHandlerList());
-+        final boolean listenersOnSyncEvent = anyListeners(PlayerChatEvent.getHandlerList());
-+        if (listenersOnAsyncEvent || listenersOnSyncEvent) {
-+            final CraftPlayer player = this.player.getBukkitEntity();
-+            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.message, new LazyPlayerSet(this.server));
-+            post(ae);
-+            if (listenersOnSyncEvent) {
-+                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
-+                se.setCancelled(ae.isCancelled()); // propagate cancelled state
-+                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
-+                    @Override
-+                    protected Void evaluate() {
-+                        post(se);
-+                        return null;
-+                    }
-+                });
-+                continueAfterAsyncAndSync.accept(se);
-+            } else if (!ae.isCancelled()) {
-+                continueAfterAsync.accept(ae);
-+            }
-+        } else {
-+            modernOnly.run();
-+        }
++    private static String legacyDisplayName(final CraftPlayer player) {
++        return player.getDisplayName();
++    }
++
++    private static Component displayName(final CraftPlayer player) {
++        return player.displayName();
++    }
++
++    private static ChatFormatter legacyFormatter(final String format, final String legacyDisplayName, final String legacyMessage) {
++        return (displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName, legacyMessage)).replaceText(URL_REPLACEMENT_CONFIG);
 +    }
 +
 +    private void queueIfAsyncOrRunImmediately(final Waitable<Void> waitable) {
