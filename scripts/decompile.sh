@@ -5,6 +5,7 @@ set -e
 PS1="$"
 basedir="$(cd "$1" && pwd -P)"
 workdir="$basedir/work"
+revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
 decompiledir="$workdir/Minecraft/$minecraftversion"
@@ -73,7 +74,7 @@ if [ ! -d "$classdir" ]; then
     mkdir -p "$classdir"
     cd "$classdir"
     set +e
-    jar xf "$decompiledir/$minecraftversion-mapped.jar" net/minecraft
+    jar xf "$decompiledir/$minecraftversion-$revision-mapped.jar" net/minecraft
     if [ "$?" != "0" ]; then
         cd "$basedir"
         echo "Failed to extract NMS classes."
