@@ -3009,7 +3009,7 @@ index 0000000000000000000000000000000000000000..18b56b59fd6efd618e6ff6f9cf3a02f5
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 76d880e05bbc1534343a105dd7121bddd729b8a2..08443ca31ead7c484f0faeef57305c28d74c0e3f 100644
+index 078631631616874741b0e0662e51b3faadcddcec..8203192a94da26e8bfd6cf9999a2b2e8d26b1acf 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -874,6 +874,9 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -3023,7 +3023,7 @@ index 76d880e05bbc1534343a105dd7121bddd729b8a2..08443ca31ead7c484f0faeef57305c28
              LOGGER.info("Saving usercache.json");
              this.getUserCache().b();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 7fd6893c30fbb34367181620aa159ed79b803455..3055ef62a054d91a74552f83f7afdfe08c7880db 100644
+index 7fd6893c30fbb34367181620aa159ed79b803455..0b5bcb60472c778574702a5ac26a6d02d54bfeac 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -42,6 +42,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStruct
@@ -3057,7 +3057,7 @@ index 7fd6893c30fbb34367181620aa159ed79b803455..3055ef62a054d91a74552f83f7afdfe0
 +        return x & 3 | ((z & 3) << 2);
 +    }
 +
-+    void addLoadedChunk(Chunk chunk) {
++    public void addLoadedChunk(Chunk chunk) {
 +        this.loadedChunkMapSeqLock.acquireWrite();
 +        try {
 +            this.loadedChunkMap.put(chunk.coordinateKey, chunk);
@@ -3072,7 +3072,7 @@ index 7fd6893c30fbb34367181620aa159ed79b803455..3055ef62a054d91a74552f83f7afdfe0
 +        this.lastLoadedChunks[cacheKey] = chunk;
 +    }
 +
-+    void removeLoadedChunk(Chunk chunk) {
++    public void removeLoadedChunk(Chunk chunk) {
 +        this.loadedChunkMapSeqLock.acquireWrite();
 +        try {
 +            this.loadedChunkMap.remove(chunk.coordinateKey);
@@ -3890,10 +3890,18 @@ index 5f8022745f709b6d542182d2ac94147aefdd3f0f..543b13c1e43135c044f834c2a6231e17
      public IBlockData getType(BlockPosition blockposition) {
          return Blocks.AIR.getBlockData();
 diff --git a/src/main/java/net/minecraft/world/level/ChunkCache.java b/src/main/java/net/minecraft/world/level/ChunkCache.java
-index 8541e87a34612e8bc86cf5c291164e091641d1af..5694c6225fd2b79c61ed004c4a696e75bbd53716 100644
+index 8541e87a34612e8bc86cf5c291164e091641d1af..7a760ef0264c9041c38bdfb8fd31333052c26139 100644
 --- a/src/main/java/net/minecraft/world/level/ChunkCache.java
 +++ b/src/main/java/net/minecraft/world/level/ChunkCache.java
-@@ -23,7 +23,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+@@ -4,6 +4,7 @@ import java.util.function.Predicate;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPosition;
++import net.minecraft.server.level.WorldServer;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.entity.TileEntity;
+@@ -23,7 +24,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
      protected final int b;
      protected final IChunkAccess[][] c;
      protected boolean d;
@@ -3902,7 +3910,7 @@ index 8541e87a34612e8bc86cf5c291164e091641d1af..5694c6225fd2b79c61ed004c4a696e75
  
      public ChunkCache(World world, BlockPosition blockposition, BlockPosition blockposition1) {
          this.e = world;
-@@ -42,7 +42,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+@@ -42,7 +43,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
  
          for (k = this.a; k <= i; ++k) {
              for (l = this.b; l <= j; ++l) {
@@ -3911,7 +3919,7 @@ index 8541e87a34612e8bc86cf5c291164e091641d1af..5694c6225fd2b79c61ed004c4a696e75
              }
          }
  
-@@ -67,7 +67,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+@@ -67,7 +68,7 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
          int k = i - this.a;
          int l = j - this.b;
  
@@ -3920,7 +3928,7 @@ index 8541e87a34612e8bc86cf5c291164e091641d1af..5694c6225fd2b79c61ed004c4a696e75
              IChunkAccess ichunkaccess = this.c[k][l];
  
              return (IChunkAccess) (ichunkaccess != null ? ichunkaccess : new ChunkEmpty(this.e, new ChunkCoordIntPair(i, j)));
-@@ -86,6 +86,29 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
+@@ -86,6 +87,29 @@ public class ChunkCache implements IBlockAccess, ICollisionAccess {
          return this.a(i, j);
      }
  

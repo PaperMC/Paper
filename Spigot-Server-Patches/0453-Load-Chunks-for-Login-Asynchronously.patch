@@ -5,7 +5,7 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 612a05f493981f9fb22522da4f3a5379bce4b786..bc642671292a753484e47f87bef4eee724353f07 100644
+index 6e5d21af43261dc2f12ceec7b7e3269be635cf7a..ecf4cd6dfea777ab9daea0b40724d247df7ddb53 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -629,7 +629,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -37,6 +37,19 @@ index eaeac60b2d54d8e7d298ea412d888471a7ea9e79..2ca9335129465ffb67617b42534db530
      public Integer clientViewDistance;
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
+diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+index 94860c06717e8dcf969277562e88687e9a99aaa4..e5d94dedc88e8bbcf8d9517dfb5c6ec6f62de5aa 100644
+--- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
+@@ -147,7 +147,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxWorldGen;
+     private final Mailbox<ChunkTaskQueueSorter.a<Runnable>> mailboxMain;
+     public final WorldLoadListener worldLoadListener;
+-    public final PlayerChunkMap.a chunkDistanceManager;
++    public final PlayerChunkMap.a chunkDistanceManager; public final ChunkMapDistance getChunkDistanceManager() { return this.chunkDistanceManager; } // Paper - OBFHELPER
+     private final AtomicInteger u;
+     public final DefinedStructureManager definedStructureManager; // Paper - private -> public
+     private final File w;
 diff --git a/src/main/java/net/minecraft/server/level/TicketType.java b/src/main/java/net/minecraft/server/level/TicketType.java
 index 218dc900e125a11548485887b1918742072c7a77..2c932d36f982e7f8713aabff9a6c631055810366 100644
 --- a/src/main/java/net/minecraft/server/level/TicketType.java
@@ -109,7 +122,7 @@ index 3285a4248a7c5352454a64c6a84658f585932548..6a0e3bd8641c895decd83b80e3a715ea
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index c9a8e5c04a10c28ce79368a783dfe3c8e3709583..b5a1f2ca1ad1e48ee61df394ef01e1bee768aea7 100644
+index 7305bba223229d9aa5315a8dff5fdc5af8faba6a..70b3a7c8c4bd817be9c4dfaee71ec22a42620e11 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -41,6 +41,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutEntityStatus;
@@ -174,7 +187,7 @@ index c9a8e5c04a10c28ce79368a783dfe3c8e3709583..b5a1f2ca1ad1e48ee61df394ef01e1be
 +        int chunkZ = loc.getBlockZ() >> 4;
 +        final ChunkCoordIntPair pos = new ChunkCoordIntPair(chunkX, chunkZ);
 +        PlayerChunkMap playerChunkMap = worldserver1.getChunkProvider().playerChunkMap;
-+        playerChunkMap.chunkDistanceManager.addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
++        playerChunkMap.getChunkDistanceManager().addTicketAtLevel(TicketType.LOGIN, pos, 31, pos.pair());
 +        worldserver1.getChunkProvider().tickDistanceManager();
 +        worldserver1.getChunkProvider().getChunkAtAsynchronously(chunkX, chunkZ, true, true).thenApply(chunk -> {
 +            PlayerChunk updatingChunk = playerChunkMap.getUpdatingChunk(pos.pair());
@@ -271,7 +284,7 @@ index c9a8e5c04a10c28ce79368a783dfe3c8e3709583..b5a1f2ca1ad1e48ee61df394ef01e1be
          Iterator iterator = list.iterator();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 1824dac8f3015e4b86685374ad98b1650c319479..c7786e8d100cb872b10664b9c16de332ada3e3fe 100644
+index 7bce3722fb00194f5a913c0b9866b73cfc74611d..8ca7012264528f17ac2e4f15ced96c774fa566d7 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1372,7 +1372,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
