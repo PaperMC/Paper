@@ -11,9 +11,10 @@ gitcmd="git -c commit.gpgsign=false"
 
 workdir="$basedir/work"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
-decompiledir="$workdir/Minecraft/$minecraftversion/forge"
+revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
+decompiledir="$workdir/Minecraft/$minecraftversion-$revision/forge"
 # replace for now
-decompiledir="$workdir/Minecraft/$minecraftversion/spigot"
+decompiledir="$workdir/Minecraft/$minecraftversion-$revision/spigot"
 export importedmcdev=""
 function import {
     export importedmcdev="$importedmcdev $1"
@@ -41,7 +42,7 @@ function importLibrary {
         target="$workdir/Spigot/Spigot-Server/src/main/java/${file}"
         targetdir=$(dirname "$target")
         mkdir -p "${targetdir}"
-        base="$workdir/Minecraft/$minecraftversion/libraries/${group}/${lib}/$file"
+        base="$workdir/Minecraft/$minecraftversion-$revision/libraries/${group}/${lib}/$file"
         if [ ! -f "$base" ]; then
             echo "Missing $base"
             exit 1

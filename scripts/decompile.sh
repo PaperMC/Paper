@@ -8,7 +8,7 @@ workdir="$basedir/work"
 revision="$(cat "$basedir"/revision.txt | tr -d '\n')"
 minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion | cut -d '"' -f 4)
 windows="$([[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]] && echo "true" || echo "false")"
-decompiledir="$workdir/Minecraft/$minecraftversion"
+decompiledir="$workdir/Minecraft/$minecraftversion-$revision"
 spigotdecompiledir="$decompiledir/spigot"
 forgedecompiledir="$decompiledir/forge"
 forgeflowerversion="1.5.380.19"
@@ -21,7 +21,7 @@ forgefloweroptions="-dgs=1 -hdc=0 -asc=1 -udv=1 -jvn=1"
 forgeflowercachefile="$decompiledir/forgeflowercache"
 forgeflowercachevalue="$forgeflowerurl - $forgeflowerversion - $forgefloweroptions";
 classdir="$decompiledir/classes"
-versionjson="$workdir/Minecraft/$minecraftversion/$minecraftversion.json"
+versionjson="$workdir/Minecraft/$minecraftversion-$revision/$minecraftversion.json"
 
 if [[ ! -f "$versionjson" ]]; then
     echo "Downloading $minecraftversion JSON Data"
@@ -74,7 +74,7 @@ if [ ! -d "$classdir" ]; then
     mkdir -p "$classdir"
     cd "$classdir"
     set +e
-    jar xf "$decompiledir/$minecraftversion-$revision-mapped.jar" net/minecraft
+    jar xf "$decompiledir/$minecraftversion-mapped.jar" net/minecraft
     if [ "$?" != "0" ]; then
         cd "$basedir"
         echo "Failed to extract NMS classes."
