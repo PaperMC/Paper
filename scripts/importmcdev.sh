@@ -63,7 +63,7 @@ function importLibrary {
 
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\///g')
 
-nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -v "new file mode" | grep -oE "net\/minecraft\/**\/.*.java" | sed 's/.*\/net\/minecraft\///g;s/\.java$//g')
+nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -v "new file mode" | grep -oE "net\/minecraft\/**\/.*.java" | sed 's/.*\/net\/minecraft\///g')
 function containsElement {
 	local e
 	for e in "${@:2}"; do
