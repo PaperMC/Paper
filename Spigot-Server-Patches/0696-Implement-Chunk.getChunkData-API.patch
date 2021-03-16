@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Tue, 16 Mar 2021 02:24:44 -0500
+Subject: [PATCH] Implement Chunk.getChunkData API
+
+
+diff --git a/src/main/java/net/minecraft/server/DataPaletteBlock.java b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+index 95ef96286855624590b72d69514b0fc0e08fddba..c064d3353e7aa8ac9822fe2830c835bd103e639f 100644
+--- a/src/main/java/net/minecraft/server/DataPaletteBlock.java
++++ b/src/main/java/net/minecraft/server/DataPaletteBlock.java
+@@ -159,6 +159,7 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {
+         this.a.b(i, j);
+     }
+ 
++    public T getBlockAt(int x, int y, int z) { return this.a(x, y, z); } // Paper - OBFHELPER
+     public T a(int i, int j, int k) {
+         return this.a(j << 8 | k << 4 | i); // Paper - inline
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index b345b7658b7de28787cb10255d7d881bc1493003..8928b1d2b08cde46961c3d93fdcbb80c03fabf19 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -263,6 +263,41 @@ public class CraftChunk implements Chunk {
+         return false;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.Material[] getChunkData(org.bukkit.Material[] array) {
++        int size = 16 * 16 * this.getWorld().getMaxHeight();
++        if (array.length != size) {
++            array = new org.bukkit.Material[size];
++        } else {
++            Arrays.fill(array, null);
++        }
++
++        net.minecraft.server.Chunk chunk = getHandle();
++
++        ChunkSection[] cs = chunk.getSections();
++
++        int index = 0;
++        for (int i = 0; i < cs.length; i++) {
++            if (cs[i] == null) {
++                index += 16 * 16 * 16;
++            } else {
++                DataPaletteBlock<IBlockData> blocks = cs[i].getBlocks();
++
++                for (int y = 0; y < 16; y++) {
++                    for (int x = 0; x < 16; x++) {
++                        for (int z = 0; z < 16; z++) {
++                            array[index++] = blocks.getBlockAt(x, y, z).getBukkitMaterial();
++                        }
++                    }
++                }
++            }
++        }
++
++        return array;
++    }
++    // Paper end
++
+     @Override
+     public ChunkSnapshot getChunkSnapshot() {
+         return getChunkSnapshot(true, false, false);
