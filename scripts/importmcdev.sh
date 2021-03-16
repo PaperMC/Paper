@@ -62,7 +62,7 @@ function importLibrary {
 
 files=$(cat "$basedir/Spigot-Server-Patches/"* | grep "+++ b/src/main/java/net/minecraft/" | sort | uniq | sed 's/\+\+\+ b\/src\/main\/java\/net\/minecraft\///g')
 
-nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -v "new file mode" | grep -oE "net\/minecraft\/**\/.*.java" | grep -oE "[A-Za-z]+?.java$" --color=none | sed 's/.java//g')
+nonnms=$(grep -R "new file mode" -B 1 "$basedir/Spigot-Server-Patches/" | grep -v "new file mode" | grep -oE "net\/minecraft\/**\/.*.java" | sed -E 's/.*\/net\/minecraft\/(.*)/\1/g')
 function containsElement {
 	local e
 	for e in "${@:2}"; do
@@ -78,12 +78,16 @@ for f in $files; do
       f="$(echo "$f" | sed 's/.java//g')"
 			if [ ! -f "$decompiledir/$nms/$f.java" ]; then
 				echo "$(color 1 31) ERROR!!! Missing NMS$(color 1 34) $f $(colorend)";
+				error=true
 			else
 				import $f
 			fi
 		fi
 	fi
 done
+if [ -n "$error" ]; then
+  exit 1
+fi
 
 ########################################################
 ########################################################
