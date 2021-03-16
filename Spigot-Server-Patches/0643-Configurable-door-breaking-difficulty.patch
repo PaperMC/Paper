@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 22:27:43 -0800
+Subject: [PATCH] Configurable door breaking difficulty
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c42e5d9f9c9f67988383c4c25123d8a629ede9e3..946c12abc0e25ccfe09ee64a7ac8b045ba5c46a9 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -5,8 +5,12 @@ import java.util.EnumMap;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
++import java.util.stream.Collectors;
+ 
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
++import net.minecraft.world.EnumDifficulty;
++import net.minecraft.world.entity.monster.EntityVindicator;
++import net.minecraft.world.entity.monster.EntityZombie;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.ConfigurationSection;
+@@ -73,6 +77,11 @@ public class PaperWorldConfig {
+         return config.getString("world-settings." + worldName + "." + path, config.getString("world-settings.default." + path));
+     }
+ 
++    private <T extends Enum<T>> List<T> getEnumList(String path, List<T> def, Class<T> type) {
++        config.addDefault("world-settings.default." + path, def.stream().map(Enum::name).collect(Collectors.toList()));
++        return ((List<String>) (config.getList("world-settings." + worldName + "." + path, config.getList("world-settings.default." + path)))).stream().map(s -> Enum.valueOf(type, s)).collect(Collectors.toList());
++    }
++
+     public int cactusMaxHeight;
+     public int reedMaxHeight;
+     public int bambooMaxHeight;
+@@ -733,4 +742,23 @@ public class PaperWorldConfig {
+     private void disableMobSpawnerSpawnEggTransformation() {
+         disableMobSpawnerSpawnEggTransformation = getBoolean("game-mechanics.disable-mob-spawner-spawn-egg-transformation", disableMobSpawnerSpawnEggTransformation);
+     }
++
++    public List<EnumDifficulty> zombieBreakDoors;
++    public List<EnumDifficulty> vindicatorBreakDoors;
++    private void setupEntityBreakingDoors() {
++        zombieBreakDoors = getEnumList(
++            "door-breaking-difficulty.zombie",
++            Arrays.stream(EnumDifficulty.values())
++                .filter(EntityZombie.getDoorBreakingPredicate())
++                .collect(Collectors.toList()),
++            EnumDifficulty.class
++        );
++        vindicatorBreakDoors = getEnumList(
++            "door-breaking-difficulty.vindicator",
++            Arrays.stream(EnumDifficulty.values())
++                .filter(EntityVindicator.getDoorBreakingPredicate())
++                .collect(Collectors.toList()),
++            EnumDifficulty.class
++        );
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityVindicator.java b/src/main/java/net/minecraft/world/entity/monster/EntityVindicator.java
+index c45dcb56af95f3e87e292b92b697a336461f01bc..f0eda0b83bab8e3a8adbb569b5997402b0e08e9a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityVindicator.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityVindicator.java
+@@ -48,6 +48,7 @@ import net.minecraft.world.level.WorldAccess;
+ 
+ public class EntityVindicator extends EntityIllagerAbstract {
+ 
++    public static final Predicate<EnumDifficulty> getDoorBreakingPredicate() { return b; } // Paper - OBFHELPER
+     private static final Predicate<EnumDifficulty> b = (enumdifficulty) -> {
+         return enumdifficulty == EnumDifficulty.NORMAL || enumdifficulty == EnumDifficulty.HARD;
+     };
+@@ -204,7 +205,7 @@ public class EntityVindicator extends EntityIllagerAbstract {
+     static class a extends PathfinderGoalBreakDoor {
+ 
+         public a(EntityInsentient entityinsentient) {
+-            super(entityinsentient, 6, EntityVindicator.b);
++            super(entityinsentient, 6, com.google.common.base.Predicates.in(entityinsentient.world.paperConfig.vindicatorBreakDoors)); // Paper
+             this.a(EnumSet.of(PathfinderGoal.Type.MOVE));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+index fb98609a38d665659076b8949b59eaf084408a17..634416c354184bc6a2348c27c55e9868009ccd28 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+@@ -86,6 +86,7 @@ public class EntityZombie extends EntityMonster {
+     private static final DataWatcherObject<Boolean> d = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
+     private static final DataWatcherObject<Integer> bo = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.b);
+     public static final DataWatcherObject<Boolean> DROWN_CONVERTING = DataWatcher.a(EntityZombie.class, DataWatcherRegistry.i);
++    public static final Predicate<EnumDifficulty> getDoorBreakingPredicate() { return bq; } // Paper - OBFHELPER
+     private static final Predicate<EnumDifficulty> bq = (enumdifficulty) -> {
+         return enumdifficulty == EnumDifficulty.HARD;
+     };
+@@ -98,7 +99,7 @@ public class EntityZombie extends EntityMonster {
+ 
+     public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
+         super(entitytypes, world);
+-        this.br = new PathfinderGoalBreakDoor(this, EntityZombie.bq);
++        this.br = new PathfinderGoalBreakDoor(this, com.google.common.base.Predicates.in(world.paperConfig.zombieBreakDoors)); // Paper
+     }
+ 
+     public EntityZombie(World world) {

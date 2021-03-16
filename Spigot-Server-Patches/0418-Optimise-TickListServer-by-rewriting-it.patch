@@ -61,31 +61,24 @@ index 8bf4d2b8c38c02d6a5b2fea37113689a252f1571..da93d38fe63035e4ff198ada84a4431f
          ConfigurationSection section;
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7624948ea4aa1a07d84ed3d295cfe2dd354fd14
+index 0000000000000000000000000000000000000000..8918bad880d6eeed30db39b6326b2f65e24edf45
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/PaperTickList.java
 @@ -0,0 +1,628 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
++import java.util.function.Function;
++import net.minecraft.CrashReport;
++import net.minecraft.CrashReportSystemDetails;
++import net.minecraft.ReportedException;
++import net.minecraft.core.BlockPosition;
++import net.minecraft.nbt.NBTTagList;
++import net.minecraft.resources.MinecraftKey;
 +import net.minecraft.server.MCUtil;
 +import net.minecraft.server.MinecraftServer;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
-+import net.minecraft.server.BlockPosition;
-+import net.minecraft.server.ChunkCoordIntPair;
-+import net.minecraft.server.ChunkProviderServer;
-+import net.minecraft.server.CrashReport;
-+import net.minecraft.server.CrashReportSystemDetails;
-+import net.minecraft.server.IBlockData;
-+import net.minecraft.server.MinecraftKey;
-+import net.minecraft.server.NBTTagList;
-+import net.minecraft.server.NextTickListEntry;
-+import net.minecraft.server.ReportedException;
-+import net.minecraft.server.StructureBoundingBox;
-+import net.minecraft.server.TickListPriority;
-+import net.minecraft.server.TickListServer;
-+import net.minecraft.server.WorldServer;
 +import java.util.ArrayDeque;
 +import java.util.ArrayList;
 +import java.util.Collections;
@@ -93,8 +86,15 @@ index 0000000000000000000000000000000000000000..e7624948ea4aa1a07d84ed3d295cfe2d
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.function.Consumer;
-+import java.util.function.Function;
 +import java.util.function.Predicate;
++import net.minecraft.server.level.ChunkProviderServer;
++import net.minecraft.server.level.WorldServer;
++import net.minecraft.world.level.ChunkCoordIntPair;
++import net.minecraft.world.level.NextTickListEntry;
++import net.minecraft.world.level.TickListPriority;
++import net.minecraft.world.level.TickListServer;
++import net.minecraft.world.level.block.state.IBlockData;
++import net.minecraft.world.level.levelgen.structure.StructureBoundingBox;
 +
 +public final class PaperTickList<T> extends TickListServer<T> { // extend to avoid breaking ABI
 +
@@ -334,7 +334,7 @@ index 0000000000000000000000000000000000000000..e7624948ea4aa1a07d84ed3d295cfe2d
 +    private boolean warnedAboutDesync;
 +
 +    @Override
-+    protected void nextTick() {
++    public void nextTick() {
 +        ++this.currentTick;
 +        if (this.currentTick != this.world.getTime()) {
 +            if (!this.warnedAboutDesync) {
@@ -695,16 +695,16 @@ index 0000000000000000000000000000000000000000..e7624948ea4aa1a07d84ed3d295cfe2d
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..13cf1a55a9babbffccbca1acfbe1c496e8925521
+index 0000000000000000000000000000000000000000..b58432a8b60670562baf00cf5279c702aaad4557
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/server/ticklist/TickListServerInterval.java
 @@ -0,0 +1,41 @@
 +package com.destroystokyo.paper.server.ticklist;
 +
 +import com.destroystokyo.paper.util.set.LinkedSortedSet;
-+import net.minecraft.server.NextTickListEntry;
-+import net.minecraft.server.TickListPriority;
 +import java.util.Comparator;
++import net.minecraft.world.level.NextTickListEntry;
++import net.minecraft.world.level.TickListPriority;
 +
 +// represents a set of entries to tick at a specified time
 +public final class TickListServerInterval<T> {
@@ -901,10 +901,18 @@ index 8c0aeb51f5e230fd6109e750732eb54559bc9637..1fb931d4c0720a5e496030e25c865771
          return this.b(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index d6f897bf045ad00792e57adfe233548e9bd54877..071151b774564f25ad08f47a8ffd67434d5bf940 100644
+index 2f172f38f817f48fe2e62235c3859b91e60bc0df..911b733d32400a6f963a20f10de3802e70dd8823 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-@@ -216,6 +216,13 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -21,6 +21,7 @@ import net.minecraft.SystemUtils;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.SectionPosition;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.progress.WorldLoadListener;
+ import net.minecraft.util.MathHelper;
+ import net.minecraft.util.profiling.GameProfilerFiller;
+@@ -217,6 +218,13 @@ public class ChunkProviderServer extends IChunkProvider {
      }
      // Paper end
  
@@ -934,10 +942,10 @@ index 6433463938d8bb717840c8f57fe6e7079e1030f2..445dba8ed210407664904b707c36c78a
                  }
              });
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 2b58f4b80f10b93868a686bc9d2630a02832d1dd..bb66597eb882d6937c02982dd252951f1f37bb42 100644
+index f666b281926876636672e76a7a5e6386a9701b6a..74aef9741cc3ebf36749dc510bc4ef9d8f5580b0 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
-@@ -295,6 +295,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -298,6 +298,15 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      }
      // Paper end
  
@@ -953,7 +961,7 @@ index 2b58f4b80f10b93868a686bc9d2630a02832d1dd..bb66597eb882d6937c02982dd252951f
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
          super(iworlddataserver, resourcekey, dimensionmanager, minecraftserver::getMethodProfiler, false, flag, i, gen, env, executor); // Paper pass executor
-@@ -302,12 +311,21 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -305,12 +314,21 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          convertable = convertable_conversionsession;
          uuid = WorldUUID.getUUID(convertable_conversionsession.folder.toFile());
          // CraftBukkit end
@@ -981,7 +989,7 @@ index 2b58f4b80f10b93868a686bc9d2630a02832d1dd..bb66597eb882d6937c02982dd252951f
          this.navigators = Sets.newHashSet();
          this.L = new ObjectLinkedOpenHashSet();
          this.Q = flag1;
-@@ -640,7 +658,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -643,7 +661,9 @@ public class WorldServer extends World implements GeneratorAccessSeed {
          if (this.Q) {
              long i = this.worldData.getTime() + 1L;
  
@@ -1093,7 +1101,7 @@ index c3cb513d0d107ecb43e98960b25054626aa6a03f..d7f532388b65161f8dcced02aebba6b0
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/TickListServer.java b/src/main/java/net/minecraft/world/level/TickListServer.java
-index c221e5caf518b8c588390e438346fa58fa8c5a38..8a78a03ccf5b688ae3fd4616ae9f495f00a7cb30 100644
+index c221e5caf518b8c588390e438346fa58fa8c5a38..4fd89bbe6ce578fd3a166bcfbbe41908a7bb4753 100644
 --- a/src/main/java/net/minecraft/world/level/TickListServer.java
 +++ b/src/main/java/net/minecraft/world/level/TickListServer.java
 @@ -50,7 +50,16 @@ public class TickListServer<T> implements TickList<T> {
@@ -1101,7 +1109,7 @@ index c221e5caf518b8c588390e438346fa58fa8c5a38..8a78a03ccf5b688ae3fd4616ae9f495f
      // Paper end
  
 +    // Paper start
-+    protected void nextTick() {}
++    public void nextTick() {}
 +    // Paper end
 +
      public void b() {

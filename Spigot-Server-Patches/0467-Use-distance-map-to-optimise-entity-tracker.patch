@@ -30,10 +30,18 @@ index bcc1103e21cc10d5b405a2b89f3dfe78eda271bd..4c82266656d0a60a166faa082a9aaaae
          List<Entity> list = this.tracker.getPassengers();
  
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6efdfcf91 100644
+index 1b309682b58a2ef52b973181aefb0136f1aa3e80..3e5c3d33a2d031915305abd37d1ba6e1ebfd089e 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-@@ -191,21 +191,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -61,6 +61,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutMapChunk;
+ import net.minecraft.network.protocol.game.PacketPlayOutMount;
+ import net.minecraft.network.protocol.game.PacketPlayOutViewCentre;
+ import net.minecraft.server.MCUtil;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.progress.WorldLoadListener;
+ import net.minecraft.util.CSVWriter;
+ import net.minecraft.util.EntitySlice;
+@@ -195,21 +196,55 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      // Paper start - distance maps
      private final com.destroystokyo.paper.util.misc.PooledLinkedHashSets<EntityPlayer> pooledLinkedPlayerHashSets = new com.destroystokyo.paper.util.misc.PooledLinkedHashSets<>();
@@ -44,7 +52,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
 +
 +    // inlined EnumMap, TrackingRange.TrackingRangeType
 +    static final org.spigotmc.TrackingRange.TrackingRangeType[] TRACKING_RANGE_TYPES = org.spigotmc.TrackingRange.TrackingRangeType.values();
-+    final com.destroystokyo.paper.util.misc.PlayerAreaMap[] playerEntityTrackerTrackMaps;
++    public final com.destroystokyo.paper.util.misc.PlayerAreaMap[] playerEntityTrackerTrackMaps;
 +    final int[] entityTrackerTrackRanges;
 +
 +    private int convertSpigotRangeToVanilla(final int vanilla) {
@@ -90,7 +98,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
      }
      // Paper end
  
-@@ -242,6 +276,45 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -246,6 +281,45 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          this.m = new VillagePlace(new File(this.w, "poi"), datafixer, flag, this.world); // Paper
          this.setViewDistance(i);
          this.playerMobDistanceMap = this.world.paperConfig.perPlayerMobSpawns ? new com.destroystokyo.paper.util.PlayerMobDistanceMap() : null; // Paper
@@ -136,7 +144,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
      }
  
      public void updatePlayerMobTypeMap(Entity entity) {
-@@ -1480,17 +1553,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1484,17 +1558,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      public void movePlayer(EntityPlayer entityplayer) {
@@ -155,7 +163,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
  
          int i = MathHelper.floor(entityplayer.locX()) >> 4;
          int j = MathHelper.floor(entityplayer.locZ()) >> 4;
-@@ -1606,7 +1669,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1610,7 +1674,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
                  entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
                  this.trackedEntities.put(entity.getId(), playerchunkmap_entitytracker);
@@ -164,7 +172,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
                  if (entity instanceof EntityPlayer) {
                      EntityPlayer entityplayer = (EntityPlayer) entity;
  
-@@ -1649,7 +1712,37 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1653,7 +1717,37 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          entity.tracker = null; // Paper - We're no longer tracked
      }
  
@@ -202,7 +210,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
          List<EntityPlayer> list = Lists.newArrayList();
          List<EntityPlayer> list1 = this.world.getPlayers();
  
-@@ -1718,23 +1811,31 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1722,23 +1816,31 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          PacketDebug.a(this.world, chunk.getPos());
          List<Entity> list = Lists.newArrayList();
          List<Entity> list1 = Lists.newArrayList();
@@ -246,7 +254,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
  
          Iterator iterator;
          Entity entity1;
-@@ -1772,7 +1873,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1776,7 +1878,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
  
      public class EntityTracker {
  
@@ -255,7 +263,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
          private final Entity tracker;
          private final int trackingDistance;
          private SectionPosition e;
-@@ -1789,6 +1890,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1793,6 +1895,42 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
              this.e = SectionPosition.a(entity);
          }
  
@@ -298,7 +306,7 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
          public boolean equals(Object object) {
              return object instanceof PlayerChunkMap.EntityTracker ? ((PlayerChunkMap.EntityTracker) object).tracker.getId() == this.tracker.getId() : false;
          }
-@@ -1889,7 +2026,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -1893,7 +2031,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
                  int j = entity.getEntityType().getChunkRange() * 16;
                  j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
  
@@ -308,23 +316,31 @@ index c6a66273cc14dbb8c02e96a6eb9ea64e540b4ec5..631f3a8b62a7842bd8d360e98643d6b6
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b4bf64610bc595bc3ea36410fd878144ed761740..031b754079dc1944b232014c28c64cdb6bcad2fb 100644
+index b57888b2b53a8cf6d1e8af0f6e779bbcf748cd61..8a1a7a465f007109f8e3b5359cac8ea9d9673049 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -291,6 +291,21 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -46,6 +46,7 @@ import net.minecraft.network.syncher.DataWatcherObject;
+ import net.minecraft.network.syncher.DataWatcherRegistry;
+ import net.minecraft.resources.MinecraftKey;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.server.level.PlayerChunkMap;
+@@ -295,6 +296,21 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      }
      // CraftBukkit end
  
 +    // Paper start - optimise entity tracking
 +    final org.spigotmc.TrackingRange.TrackingRangeType trackingRangeType = org.spigotmc.TrackingRange.getTrackingRangeType(this);
 +
-+    boolean isLegacyTrackingEntity = false;
++    public boolean isLegacyTrackingEntity = false;
 +
 +    public final void setLegacyTrackingEntity(final boolean isLegacyTrackingEntity) {
 +        this.isLegacyTrackingEntity = isLegacyTrackingEntity;
 +    }
 +
-+    final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInTrackRange() {
++    public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> getPlayersInTrackRange() {
 +        return ((WorldServer)this.world).getChunkProvider().playerChunkMap.playerEntityTrackerTrackMaps[this.trackingRangeType.ordinal()]
 +            .getObjectsInRange(MCUtil.getCoordinateKey(this));
 +    }

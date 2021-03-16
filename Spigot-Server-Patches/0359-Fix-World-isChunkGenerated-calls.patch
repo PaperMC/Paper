@@ -8,7 +8,7 @@ This patch also adds a chunk status cache on region files (note that
 its only purpose is to cache the status on DISK)
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 0b2973a7272890ebee205bd74e7d75c174ceeb9a..24b7b76e11cf2b389c6f40fb4046294f356164c5 100644
+index b80c3bd702141ca4a88078386845d731b3ecc539..c6acc429fd0a599c1c1ab676054d9e3f720fbd39 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -52,7 +52,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -67,10 +67,10 @@ index 9891cf98f8c740f84f9135ee8176e67abb648b3a..6bced8533df49d7bfdb32dfa0caad9d7
  
      public CompletableFuture<Either<IChunkAccess, PlayerChunk.Failure>> getStatusFutureUnchecked(ChunkStatus chunkstatus) {
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index bdcc4542eb5da0a80f00a1d41d4773bb3be3996a..c8b2013791ce0ac4438243998b43bbd781405254 100644
+index a0fcd20d4a7e951437756edb60a44c627612e04c..ccfde274edfe1b611ccf8c583c92b16d52e4518d 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-@@ -983,12 +983,61 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -985,12 +985,61 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
      }
  
      @Nullable
@@ -200,10 +200,18 @@ index 247d14a3ca56734bbbf4dc0ec247d60a1f241e7a..d785f44cd503d4d91589f3fc4bc8dc80
      @Nullable
      private PersistentStructureLegacy c;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 7491c09b3d8fdd27fa83d850ff097e44e1bb0eee..299806b73e44a7128e829b35cc2b017a321d7926 100644
+index a9cbe17f6ccf0ce4ace97ba4b951b3fd7415d71b..39d3a71f3945b1c97df35e28d1011b9d42b162f5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -41,6 +41,30 @@ public class RegionFile implements AutoCloseable {
+@@ -26,6 +26,7 @@ import net.minecraft.SystemUtils;
+ import net.minecraft.nbt.NBTCompressedStreamTools;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.world.level.ChunkCoordIntPair;
++import net.minecraft.world.level.chunk.ChunkStatus;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.Logger;
+ 
+@@ -43,6 +44,30 @@ public class RegionFile implements AutoCloseable {
      protected final RegionFileBitSet freeSectors;
      public final File file; // Paper
  
@@ -234,7 +242,7 @@ index 7491c09b3d8fdd27fa83d850ff097e44e1bb0eee..299806b73e44a7128e829b35cc2b017a
      public RegionFile(File file, File file1, boolean flag) throws IOException {
          this(file.toPath(), file1.toPath(), RegionFileCompression.b, flag);
      }
-@@ -377,11 +401,13 @@ public class RegionFile implements AutoCloseable {
+@@ -379,11 +404,13 @@ public class RegionFile implements AutoCloseable {
          return this.getOffset(chunkcoordintpair) != 0;
      }
  
@@ -249,10 +257,10 @@ index 7491c09b3d8fdd27fa83d850ff097e44e1bb0eee..299806b73e44a7128e829b35cc2b017a
              this.d();
          } finally {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-index 571b34cd30bb76dcfac928e29a1cafd5824d4772..8ceebe1f5ca8821228faf65e1d26fa205ec1e56c 100644
+index ab9f4d40fd1126a3d7ba5b16fdc6ab09de4a7fdb..55e7e983d2c760a8052d7b3ddbdc8447f619a60f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-@@ -25,7 +25,14 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -28,7 +28,14 @@ public final class RegionFileCache implements AutoCloseable {
          this.c = flag;
      }
  
@@ -268,7 +276,7 @@ index 571b34cd30bb76dcfac928e29a1cafd5824d4772..8ceebe1f5ca8821228faf65e1d26fa20
          long i = ChunkCoordIntPair.pair(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.cache.getAndMoveToFirst(i);
  
-@@ -172,6 +179,7 @@ public final class RegionFileCache implements AutoCloseable {
+@@ -175,6 +182,7 @@ public final class RegionFileCache implements AutoCloseable {
  
          try {
              NBTCompressedStreamTools.a(nbttagcompound, (DataOutput) dataoutputstream);
