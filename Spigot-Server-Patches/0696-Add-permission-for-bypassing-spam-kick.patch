@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Thu, 18 Mar 2021 11:45:04 -0500
+Subject: [PATCH] Add permission for bypassing spam kick
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 3435eb1584546d2963324372ddab1645dcf6327a..4d38d0ac5d4e8218ac8eacb5655c862d8ce231b2 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -604,13 +604,15 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     public void a(PacketPlayInTabComplete packetplayintabcomplete) {
+         // PlayerConnectionUtils.ensureMainThread(packetplayintabcomplete, this, this.player.getWorldServer()); // Paper - run this async
+         // CraftBukkit start
+-        if (tabSpamLimiter.addAndGet(com.destroystokyo.paper.PaperConfig.tabSpamIncrement) > com.destroystokyo.paper.PaperConfig.tabSpamLimit && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) { // Paper start - split and make configurable
++        if (tabSpamLimiter.addAndGet(com.destroystokyo.paper.PaperConfig.tabSpamIncrement) > com.destroystokyo.paper.PaperConfig.tabSpamLimit
++                && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())
++                && !this.player.getBukkitEntity().hasPermission("minecraft.canspam")) { // Paper start - split and make configurable
+             minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+             return;
+         }
+         // Paper start
+         String str = packetplayintabcomplete.c(); int index = -1;
+-        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
++        if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64) && !this.player.getBukkitEntity().hasPermission("minecraft.canspam")) { // Paper
+             minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+             return;
+         }
+@@ -1873,7 +1875,10 @@ public class PlayerConnection implements PacketListenerPlayIn {
+             // Spigot end
+             // CraftBukkit start - replaced with thread safe throttle
+             // this.chatThrottle += 20;
+-            if (counted && chatSpamField.addAndGet(this, 20) > 200 && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())) { // Spigot
++            if (counted
++                    && chatSpamField.addAndGet(this, 20) > 200
++                    && !this.minecraftServer.getPlayerList().isOp(this.player.getProfile())
++                    && !this.player.getBukkitEntity().hasPermission("minecraft.canspam")) { // Spigot // Paper (canspam check)
+                 if (!isSync) {
+                     Waitable waitable = new Waitable() {
+                         @Override
+@@ -2636,7 +2641,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+     public void a(PacketPlayInAutoRecipe packetplayinautorecipe) {
+         // Paper start
+         if (!Bukkit.isPrimaryThread()) {
+-            if (recipeSpamPackets.addAndGet(PaperConfig.autoRecipeIncrement) > PaperConfig.autoRecipeLimit) {
++            if (recipeSpamPackets.addAndGet(PaperConfig.autoRecipeIncrement) > PaperConfig.autoRecipeLimit
++                && !this.player.getBukkitEntity().hasPermission("minecraft.canspam")) { // Paper
+                 minecraftServer.scheduleOnMain(() -> this.disconnect(new ChatMessage("disconnect.spam", new Object[0]))); // Paper
+                 return;
+             }
