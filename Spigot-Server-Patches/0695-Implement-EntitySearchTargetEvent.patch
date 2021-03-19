@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Miller <mnmiller1@me.com>
+Date: Fri, 19 Mar 2021 19:24:48 +1000
+Subject: [PATCH] Implement EntitySearchTargetEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java b/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
+index 44f21c3f7af17e9d39777a48c6715a22fc085da6..7252e5629bff8fb42402b75fe389121c45626379 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
+@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.goal.PathfinderGoal;
+ import net.minecraft.world.entity.ai.targeting.PathfinderTargetCondition;
+ import net.minecraft.world.entity.player.EntityHuman;
+ import net.minecraft.world.phys.AxisAlignedBB;
++import io.papermc.paper.event.entity.EntitySearchTargetEvent; // Paper
+ 
+ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> extends PathfinderGoalTarget {
+ 
+@@ -50,12 +51,22 @@ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> exten
+     }
+ 
+     protected void g() {
++        // Paper start - call EntitySearchTargetEvent
++        EntityLiving lastTarget = this.c;
+         if (this.a != EntityHuman.class && this.a != EntityPlayer.class) {
+             this.c = this.e.world.b(this.a, this.d, this.e, this.e.locX(), this.e.getHeadY(), this.e.locZ(), this.a(this.k()));
+         } else {
+             this.c = this.e.world.a(this.d, this.e, this.e.locX(), this.e.getHeadY(), this.e.locZ());
+         }
+ 
++        EntitySearchTargetEvent event = new EntitySearchTargetEvent(this.e.getBukkitLivingEntity(), this.c == null ? null : this.c.getBukkitLivingEntity());
++        this.e.world.getServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            this.c = lastTarget;
++        } else {
++            this.c = event.getTarget() == null ? null : ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle();
++        }
++        // Paper end
+     }
+ 
+     @Override
