@@ -1,0 +1,210 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aurora <aurora@relanet.eu>
+Date: Sat, 20 Mar 2021 18:14:43 +0100
+Subject: [PATCH] Add EntityExtinguishEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 429f0591c6a55f6c5d08a0755f7d39da676468bc..86c4fdde7d282a20d5889d9f5f43048893eb8ed1 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3,6 +3,7 @@ package net.minecraft.world.entity;
+ import com.google.common.collect.Iterables;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
+ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+ import java.util.Arrays;
+@@ -529,12 +530,22 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         this.m();
+         this.aJ();
+         if (this.world.isClientSide) {
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.TIME);
++            if (!event.isCancelled()) {
+             this.extinguish();
++            }
++            // Paper end
+         } else if (this.fireTicks > 0) {
+             if (this.isFireProof()) {
+                 this.setFireTicks(this.fireTicks - 4);
+                 if (this.fireTicks < 0) {
++                    // Paper start - add EntityExtinguishEvent
++                    EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.TIME);
++                    if (!event.isCancelled()) {
+                     this.extinguish();
++                    }
++                    // Paper end
+                 }
+             } else {
+                 if (this.fireTicks % 20 == 0 && !this.aQ()) {
+@@ -1225,7 +1236,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+ 
+             this.fallDistance = 0.0F;
+             this.inWater = true;
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.WATER);
++            if (!event.isCancelled()) {
+             this.extinguish();
++            }
++            // Paper end
+         } else {
+             this.inWater = false;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index b0ee9e98d5f1e56c8d82e90dd7761c8ef79cfb1c..73bfa8b84610cc7f5f9f84391d8af66142b80437 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -10,6 +10,7 @@ import com.mojang.datafixers.util.Pair;
+ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.DynamicOps;
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import io.papermc.paper.event.entity.EntityMoveEvent;
+ import java.util.Collection;
+ import java.util.ConcurrentModificationException;
+@@ -378,7 +379,12 @@ public abstract class EntityLiving extends Entity {
+         }
+ 
+         if (this.isFireProof() || this.world.isClientSide) {
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.FIREPROOF);
++            if (!event.isCancelled()) {
+             this.extinguish();
++            }
++            // Paper end
+         }
+ 
+         boolean flag1 = flag && ((EntityHuman) this).abilities.isInvulnerable;
+@@ -421,7 +427,12 @@ public abstract class EntityLiving extends Entity {
+         }
+ 
+         if (this.isAlive() && this.aG()) {
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.WATER);
++            if (!event.isCancelled()) {
+             this.extinguish();
++            }
++            // Paper end
+         }
+ 
+         if (this.hurtTicks > 0) {
+diff --git a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..16d6641bbff61301952f11c8910cf3de46cffd61 100644
+--- a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
++++ b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+@@ -15,6 +15,8 @@ import java.util.OptionalInt;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import net.minecraft.SharedConstants;
+ import net.minecraft.advancements.CriterionTriggers;
+ import net.minecraft.core.BlockPosition;
+@@ -596,7 +598,12 @@ public abstract class EntityHuman extends EntityLiving {
+         this.a(StatisticList.DEATHS);
+         this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_DEATH));
+         this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_REST));
++        // Paper start - add EntityExtinguishEvent
++        EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.DEATH);
++        if (!event.isCancelled()) {
+         this.extinguish();
++        }
++        // Paper end
+         this.setFlag(0, false);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
+index 2f8b3587f527620152609d5be342b328a7621e0f..5e6fddc3e5afc69b57d3935c7f29fe57405a7fc2 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.entity.projectile;
+ 
+ import com.google.common.collect.Lists;
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+ import java.util.Arrays;
+ import java.util.Collection;
+@@ -47,6 +48,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
+ // CraftBukkit start
+ import net.minecraft.world.entity.item.EntityItem;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ import org.bukkit.event.player.PlayerPickupArrowEvent;
+ // CraftBukkit end
+@@ -159,7 +161,12 @@ public abstract class EntityArrow extends IProjectile {
+         }
+ 
+         if (this.isInWaterOrRain()) {
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, this.isInWater() ? EntityExtinguishEvent.Cause.WATER : EntityExtinguishEvent.Cause.RAIN);
++            if (!event.isCancelled()) {
+             this.extinguish();
++            }
++            // Paper end
+         }
+ 
+         if (this.inGround && !flag) {
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockCauldron.java b/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
+index 66d0a08f250fc947ec2d978a527ad77e32114b84..566930b55835d06bfcc0403961c244fbc6503bdf 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.level.block;
+ 
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.sounds.SoundCategory;
+@@ -34,6 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
+ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ import net.minecraft.world.phys.shapes.VoxelShapes;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.block.CauldronLevelChangeEvent; // CraftBukkit
+ 
+ public class BlockCauldron extends Block {
+@@ -67,7 +69,12 @@ public class BlockCauldron extends Block {
+             if (!this.changeLevel(world, blockposition, iblockdata, i - 1, entity, CauldronLevelChangeEvent.ChangeReason.EXTINGUISH)) {
+                 return;
+             }
++            // Paper start - add EntityExtinguishEvent
++            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(entity, EntityExtinguishEvent.Cause.CAULDRON);
++            if (!event.isCancelled()) {
+             entity.extinguish();
++            }
++            // Paper end
+             // this.a(world, blockposition, iblockdata, i - 1);
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 926440e846eff2c1aaa262aa2b3975b7dd225332..95363865916ec58a9403c7f67b2b06b921faf762 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -13,6 +13,8 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.stream.Collectors;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.EnumDirection;
+ import net.minecraft.network.protocol.game.PacketPlayInCloseWindow;
+@@ -1432,6 +1434,13 @@ public class CraftEventFactory {
+         world.getServer().getPluginManager().callEvent(event);
+         return event;
+     }
++    // Paper start
++    public static EntityExtinguishEvent callEntityExtinguishEvent(Entity entity, EntityExtinguishEvent.Cause cause) {
++        EntityExtinguishEvent event = new EntityExtinguishEvent(entity.getBukkitEntity(), cause);
++        entity.world.getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
+ 
+     // Paper start
+     /**
