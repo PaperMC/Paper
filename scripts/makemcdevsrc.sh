@@ -18,7 +18,9 @@ cd "${nms}"
 for file in $(find . -name '*.java')
 do
     if [ ! -f "${papernms}/${file}" ]; then
-		cp --parents "${file}" "${mcdevsrc}"
+		destdir="${mcdevsrc}"/$(dirname "${file}")
+		mkdir -p "${destdir}"
+		cp "${file}" "${destdir}"
     fi
 done
 
