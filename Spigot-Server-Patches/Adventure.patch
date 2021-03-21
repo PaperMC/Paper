@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.adventure;
 +
-+import io.papermc.paper.chat.ChatFormatter;
++import io.papermc.paper.chat.ChatComposer;
 +import io.papermc.paper.event.player.AbstractChatEvent;
 +import io.papermc.paper.event.player.AsyncChatEvent;
 +import io.papermc.paper.event.player.ChatEvent;
@@ -123,8 +123,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TextReplacementConfig;
 +import net.kyori.adventure.text.event.ClickEvent;
-+import net.kyori.adventure.text.format.Style;
-+import net.kyori.adventure.text.format.TextDecoration;
 +import net.minecraft.network.chat.IChatBaseComponent;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.EntityPlayer;
@@ -171,7 +169,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
 +            event -> {
 +                this.processModern(
-+                    legacyFormatter(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
++                    legacyComposer(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
 +                    event.getRecipients(),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -180,7 +178,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
 +            event -> {
 +                this.processModern(
-+                    legacyFormatter(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
++                    legacyComposer(event.getFormat(), legacyDisplayName((CraftPlayer) event.getPlayer()), event.getMessage()),
 +                    event.getRecipients(),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -189,7 +187,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // no legacy events called, all nice and fresh!
 +            () -> {
 +                this.processModern(
-+                    ChatFormatter.DEFAULT,
++                    ChatComposer.DEFAULT,
 +                    new LazyPlayerSet(this.server),
 +                    Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
 +                    false
@@ -229,8 +227,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    private void processModern(final ChatFormatter formatter, final Set<Player> recipients, final Component message, final boolean cancelled) {
-+        final AsyncChatEvent ae = this.createAsync(formatter, recipients, message);
++    private void processModern(final ChatComposer composer, final Set<Player> recipients, final Component message, final boolean cancelled) {
++        final AsyncChatEvent ae = this.createAsync(composer, recipients, message);
 +        ae.setCancelled(cancelled); // propagate cancelled state
 +        post(ae);
 +        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
@@ -245,7 +243,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
 +            @Override
 +            protected Void evaluate() {
-+                final ChatEvent se = ChatProcessor.this.createSync(ae.formatter(), ae.recipients(), ae.message());
++                final ChatEvent se = ChatProcessor.this.createSync(ae.composer(), ae.recipients(), ae.message());
 +                se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                post(se);
 +                ChatProcessor.this.complete(se);
@@ -261,7 +259,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final CraftPlayer player = this.player.getBukkitEntity();
 +
-+        final Component message = event.formatter().chat(
++        final Component message = event.composer().composeChat(
++            event.getPlayer(),
 +            displayName(player),
 +            event.message()
 +        );
@@ -280,12 +279,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    private AsyncChatEvent createAsync(final ChatFormatter formatter, final Set<Player> recipients, final Component message) {
-+        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, formatter, message);
++    private AsyncChatEvent createAsync(final ChatComposer composer, final Set<Player> recipients, final Component message) {
++        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, composer, message);
 +    }
 +
-+    private ChatEvent createSync(final ChatFormatter formatter, final Set<Player> recipients, final Component message) {
-+        return new ChatEvent(this.player.getBukkitEntity(), recipients, formatter, message);
++    private ChatEvent createSync(final ChatComposer composer, final Set<Player> recipients, final Component message) {
++        return new ChatEvent(this.player.getBukkitEntity(), recipients, composer, message);
 +    }
 +
 +    private static String legacyDisplayName(final CraftPlayer player) {
@@ -296,8 +295,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return player.displayName();
 +    }
 +
-+    private static ChatFormatter legacyFormatter(final String format, final String legacyDisplayName, final String legacyMessage) {
-+        return (displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName, legacyMessage)).replaceText(URL_REPLACEMENT_CONFIG);
++    private static ChatComposer legacyComposer(final String format, final String legacyDisplayName, final String legacyMessage) {
++        return (player, displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName, legacyMessage)).replaceText(URL_REPLACEMENT_CONFIG);
 +    }
 +
 +    private void queueIfAsyncOrRunImmediately(final Waitable<Void> waitable) {
