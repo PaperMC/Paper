@@ -4,8 +4,33 @@ Date: Sat, 20 Mar 2021 18:14:43 +0100
 Subject: [PATCH] Add EntityExtinguishEvent
 
 
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index 37c9b5fd712e30a9a0faccc840f738f4b2cfc723..3551d4d14d6af7043edd2fd16207cf2c67b79cfa 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -16,6 +16,8 @@ import java.util.OptionalInt;
+ import java.util.Random;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.event.entity.EntityExtinguishEvent;
+ import net.minecraft.BlockUtil;
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportSystemDetails;
+@@ -887,7 +889,11 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.a(StatisticList.DEATHS);
+         this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_DEATH));
+         this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_REST));
++        // Paper start - add EntityExtinguishEvent
++        if (new EntityExtinguishEvent(this.getBukkitEntity(), EntityExtinguishEvent.Cause.DEATH).callEvent()) {
+         this.extinguish();
++        }
++        // Paper end
+         this.setFlag(0, false);
+         this.getCombatTracker().g();
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 429f0591c6a55f6c5d08a0755f7d39da676468bc..86c4fdde7d282a20d5889d9f5f43048893eb8ed1 100644
+index 429f0591c6a55f6c5d08a0755f7d39da676468bc..72cd29e37a181d0f7500e530593f83063a93b041 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -3,6 +3,7 @@ package net.minecraft.world.entity;
@@ -16,36 +41,24 @@ index 429f0591c6a55f6c5d08a0755f7d39da676468bc..86c4fdde7d282a20d5889d9f5f430488
  import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
  import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
  import java.util.Arrays;
-@@ -529,12 +530,22 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
-         this.m();
-         this.aJ();
-         if (this.world.isClientSide) {
-+            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.TIME);
-+            if (!event.isCancelled()) {
-             this.extinguish();
-+            }
-+            // Paper end
-         } else if (this.fireTicks > 0) {
+@@ -534,7 +535,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              if (this.isFireProof()) {
                  this.setFireTicks(this.fireTicks - 4);
                  if (this.fireTicks < 0) {
 +                    // Paper start - add EntityExtinguishEvent
-+                    EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.TIME);
-+                    if (!event.isCancelled()) {
++                    if (new EntityExtinguishEvent(this.getBukkitEntity(), EntityExtinguishEvent.Cause.TIME).callEvent()) {
                      this.extinguish();
 +                    }
 +                    // Paper end
                  }
              } else {
                  if (this.fireTicks % 20 == 0 && !this.aQ()) {
-@@ -1225,7 +1236,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1225,7 +1230,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
  
              this.fallDistance = 0.0F;
              this.inWater = true;
 +            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.WATER);
-+            if (!event.isCancelled()) {
++            if (new EntityExtinguishEvent(this.getBukkitEntity(), EntityExtinguishEvent.Cause.WATER).callEvent()) {
              this.extinguish();
 +            }
 +            // Paper end
@@ -53,7 +66,7 @@ index 429f0591c6a55f6c5d08a0755f7d39da676468bc..86c4fdde7d282a20d5889d9f5f430488
              this.inWater = false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
-index b0ee9e98d5f1e56c8d82e90dd7761c8ef79cfb1c..73bfa8b84610cc7f5f9f84391d8af66142b80437 100644
+index b0ee9e98d5f1e56c8d82e90dd7761c8ef79cfb1c..67c434a63f94696b37337a18ddbf9e077d6acadb 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
 @@ -10,6 +10,7 @@ import com.mojang.datafixers.util.Pair;
@@ -64,34 +77,41 @@ index b0ee9e98d5f1e56c8d82e90dd7761c8ef79cfb1c..73bfa8b84610cc7f5f9f84391d8af661
  import io.papermc.paper.event.entity.EntityMoveEvent;
  import java.util.Collection;
  import java.util.ConcurrentModificationException;
-@@ -378,7 +379,12 @@ public abstract class EntityLiving extends Entity {
+@@ -378,7 +379,11 @@ public abstract class EntityLiving extends Entity {
          }
  
          if (this.isFireProof() || this.world.isClientSide) {
 +            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.FIREPROOF);
-+            if (!event.isCancelled()) {
++            if (new EntityExtinguishEvent(this.getBukkitEntity(), EntityExtinguishEvent.Cause.FIREPROOF).callEvent()) {
              this.extinguish();
 +            }
 +            // Paper end
          }
  
          boolean flag1 = flag && ((EntityHuman) this).abilities.isInvulnerable;
-@@ -421,7 +427,12 @@ public abstract class EntityLiving extends Entity {
+@@ -421,7 +426,19 @@ public abstract class EntityLiving extends Entity {
          }
  
          if (this.isAlive() && this.aG()) {
+-            this.extinguish();
 +            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.WATER);
-+            if (!event.isCancelled()) {
-             this.extinguish();
++            EntityExtinguishEvent.Cause cause;
++            if (this.isInWater()) {
++                cause = EntityExtinguishEvent.Cause.WATER;
++            } else if (this.isInRain()) {
++                cause = EntityExtinguishEvent.Cause.RAIN;
++            } else if (this.isInBubbleColumn()) {
++                cause = EntityExtinguishEvent.Cause.BUBBLE;
++            }
++            if (new EntityExtinguishEvent(this.getBukkitEntity(), cause).callEvent()) {
++                this.extinguish();
 +            }
 +            // Paper end
          }
  
          if (this.hurtTicks > 0) {
 diff --git a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
-index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..16d6641bbff61301952f11c8910cf3de46cffd61 100644
+index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..3405d621ee8c15b7fa5789af7a7a5ddaa9a07679 100644
 --- a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
 @@ -15,6 +15,8 @@ import java.util.OptionalInt;
@@ -103,13 +123,12 @@ index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..16d6641bbff61301952f11c8910cf3de
  import net.minecraft.SharedConstants;
  import net.minecraft.advancements.CriterionTriggers;
  import net.minecraft.core.BlockPosition;
-@@ -596,7 +598,12 @@ public abstract class EntityHuman extends EntityLiving {
+@@ -596,7 +598,11 @@ public abstract class EntityHuman extends EntityLiving {
          this.a(StatisticList.DEATHS);
          this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_DEATH));
          this.a(StatisticList.CUSTOM.b(StatisticList.TIME_SINCE_REST));
 +        // Paper start - add EntityExtinguishEvent
-+        EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, EntityExtinguishEvent.Cause.DEATH);
-+        if (!event.isCancelled()) {
++        if (new EntityExtinguishEvent(this.getBukkitEntity(), EntityExtinguishEvent.Cause.DEATH).callEvent()) {
          this.extinguish();
 +        }
 +        // Paper end
@@ -117,7 +136,7 @@ index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..16d6641bbff61301952f11c8910cf3de
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
-index 2f8b3587f527620152609d5be342b328a7621e0f..5e6fddc3e5afc69b57d3935c7f29fe57405a7fc2 100644
+index 2f8b3587f527620152609d5be342b328a7621e0f..948d29d0abb8340a675f0ffd2a0da7de5ab1e7e7 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
 @@ -1,6 +1,7 @@
@@ -136,13 +155,12 @@ index 2f8b3587f527620152609d5be342b328a7621e0f..5e6fddc3e5afc69b57d3935c7f29fe57
  import org.bukkit.event.entity.EntityCombustByEntityEvent;
  import org.bukkit.event.player.PlayerPickupArrowEvent;
  // CraftBukkit end
-@@ -159,7 +161,12 @@ public abstract class EntityArrow extends IProjectile {
+@@ -159,7 +161,11 @@ public abstract class EntityArrow extends IProjectile {
          }
  
          if (this.isInWaterOrRain()) {
 +            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(this, this.isInWater() ? EntityExtinguishEvent.Cause.WATER : EntityExtinguishEvent.Cause.RAIN);
-+            if (!event.isCancelled()) {
++            if (new EntityExtinguishEvent(this.getBukkitEntity(), this.isInWater() ? EntityExtinguishEvent.Cause.WATER : EntityExtinguishEvent.Cause.RAIN).callEvent()) {
              this.extinguish();
 +            }
 +            // Paper end
@@ -150,7 +168,7 @@ index 2f8b3587f527620152609d5be342b328a7621e0f..5e6fddc3e5afc69b57d3935c7f29fe57
  
          if (this.inGround && !flag) {
 diff --git a/src/main/java/net/minecraft/world/level/block/BlockCauldron.java b/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
-index 66d0a08f250fc947ec2d978a527ad77e32114b84..566930b55835d06bfcc0403961c244fbc6503bdf 100644
+index 66d0a08f250fc947ec2d978a527ad77e32114b84..b1a8243f70ed038df6b3e94e299190d504cee72b 100644
 --- a/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
 +++ b/src/main/java/net/minecraft/world/level/block/BlockCauldron.java
 @@ -1,5 +1,6 @@
@@ -168,13 +186,12 @@ index 66d0a08f250fc947ec2d978a527ad77e32114b84..566930b55835d06bfcc0403961c244fb
  import org.bukkit.event.block.CauldronLevelChangeEvent; // CraftBukkit
  
  public class BlockCauldron extends Block {
-@@ -67,7 +69,12 @@ public class BlockCauldron extends Block {
+@@ -67,7 +69,11 @@ public class BlockCauldron extends Block {
              if (!this.changeLevel(world, blockposition, iblockdata, i - 1, entity, CauldronLevelChangeEvent.ChangeReason.EXTINGUISH)) {
                  return;
              }
 +            // Paper start - add EntityExtinguishEvent
-+            EntityExtinguishEvent event = CraftEventFactory.callEntityExtinguishEvent(entity, EntityExtinguishEvent.Cause.CAULDRON);
-+            if (!event.isCancelled()) {
++            if (new EntityExtinguishEvent(entity.getBukkitEntity(), EntityExtinguishEvent.Cause.CAULDRON).callEvent()) {
              entity.extinguish();
 +            }
 +            // Paper end
@@ -182,7 +199,7 @@ index 66d0a08f250fc947ec2d978a527ad77e32114b84..566930b55835d06bfcc0403961c244fb
              // CraftBukkit end
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 926440e846eff2c1aaa262aa2b3975b7dd225332..95363865916ec58a9403c7f67b2b06b921faf762 100644
+index 926440e846eff2c1aaa262aa2b3975b7dd225332..4f481030e6fc54153e574ee976fa4d79b8c941c0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -13,6 +13,8 @@ import java.util.List;
@@ -194,17 +211,3 @@ index 926440e846eff2c1aaa262aa2b3975b7dd225332..95363865916ec58a9403c7f67b2b06b9
  import net.minecraft.core.BlockPosition;
  import net.minecraft.core.EnumDirection;
  import net.minecraft.network.protocol.game.PacketPlayInCloseWindow;
-@@ -1432,6 +1434,13 @@ public class CraftEventFactory {
-         world.getServer().getPluginManager().callEvent(event);
-         return event;
-     }
-+    // Paper start
-+    public static EntityExtinguishEvent callEntityExtinguishEvent(Entity entity, EntityExtinguishEvent.Cause cause) {
-+        EntityExtinguishEvent event = new EntityExtinguishEvent(entity.getBukkitEntity(), cause);
-+        entity.world.getServer().getPluginManager().callEvent(event);
-+        return event;
-+    }
-+    // Paper end
- 
-     // Paper start
-     /**
