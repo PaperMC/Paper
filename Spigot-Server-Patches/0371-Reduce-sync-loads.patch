@@ -10,15 +10,15 @@ it must be enabled by setting the startup flag -Dpaper.debug-sync-loads=true
 
 To get a debug log for sync loads, the command is /paper syncloadinfo
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperCommand.java b/src/main/java/com/destroystokyo/paper/PaperCommand.java
-index f657e9b6bb3d24a6c77ef584711a003d1eea0341..eb1e86e8bb0f421e3686ffa02a4015a588107863 100644
---- a/src/main/java/com/destroystokyo/paper/PaperCommand.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperCommand.java
+diff --git a/src/main/java/io/papermc/paper/PaperCommand.java b/src/main/java/io/papermc/paper/PaperCommand.java
+index afd51609a1cfc2093c5f881da6ff79aade0f933d..16b9f2dd168503438169e1fb8d88c02145151ace 100644
+--- a/src/main/java/io/papermc/paper/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/PaperCommand.java
 @@ -1,6 +1,7 @@
- package com.destroystokyo.paper;
+ package io.papermc.paper;
  
- import com.destroystokyo.paper.io.chunk.ChunkTaskManager;
-+import com.destroystokyo.paper.io.SyncLoadFinder;
+ import io.papermc.paper.io.chunk.ChunkTaskManager;
++import io.papermc.paper.io.SyncLoadFinder;
  import com.google.common.base.Functions;
  import com.google.common.base.Joiner;
  import com.google.common.collect.ImmutableSet;
@@ -103,13 +103,13 @@ index f657e9b6bb3d24a6c77ef584711a003d1eea0341..eb1e86e8bb0f421e3686ffa02a4015a5
      private void doChunkInfo(CommandSender sender, String[] args) {
          List<org.bukkit.World> worlds;
          if (args.length < 2 || args[1].equals("*")) {
-diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+diff --git a/src/main/java/io/papermc/paper/io/SyncLoadFinder.java b/src/main/java/io/papermc/paper/io/SyncLoadFinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d381f91cf105bfc01846ada90da8971a3618e784
+index 0000000000000000000000000000000000000000..bd492628398becc219c783790dc2a566aa48ee89
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
++++ b/src/main/java/io/papermc/paper/io/SyncLoadFinder.java
 @@ -0,0 +1,171 @@
-+package com.destroystokyo.paper.io;
++package io.papermc.paper.io;
 +
 +import com.google.gson.JsonArray;
 +import com.google.gson.JsonObject;
@@ -281,24 +281,24 @@ index 0000000000000000000000000000000000000000..d381f91cf105bfc01846ada90da8971a
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index df71f8c42ac488153257614b58202bb5d7083251..2530c5ddfc8469329b411ad5c98ed718a3771890 100644
+index c2bf36a604d8038de78cd7818404d3d083ed9beb..3248c8f744ac800560ad61a47ddff5a96cfbd55e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -494,6 +494,7 @@ public class ChunkProviderServer extends IChunkProvider {
-                 this.world.asyncChunkTaskManager.raisePriority(x, z, com.destroystokyo.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
-                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
+                 this.world.asyncChunkTaskManager.raisePriority(x, z, io.papermc.paper.io.PrioritizedTaskQueue.HIGHEST_PRIORITY);
+                 io.papermc.paper.io.chunk.ChunkTaskManager.pushChunkWait(this.world, x, z);
                  // Paper end
-+                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.world, x, z); // Paper - sync load info
++                io.papermc.paper.io.SyncLoadFinder.logSyncLoad(this.world, x, z); // Paper - sync load info
                  this.world.timings.syncChunkLoad.startTiming(); // Paper
              this.serverThreadQueue.awaitTasks(completablefuture::isDone);
-                 com.destroystokyo.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
+                 io.papermc.paper.io.chunk.ChunkTaskManager.popChunkWait(); // Paper - async chunk debug
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index a67462e10c6f8cb0eecb9a81fdc55f353c258368..23f88bd794b2c738463e1aa1180b6826d33f3b77 100644
+index c6e11e7fb1dcb7db191cb46052dc7f9cbdd330da..510f025905dae4ed9039f6bd9bdf48a41bd926fc 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -282,6 +282,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      };
-     public final com.destroystokyo.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
+     public final io.papermc.paper.io.chunk.ChunkTaskManager asyncChunkTaskManager;
      // Paper end
 +    // Paper start
 +    @Override
@@ -310,7 +310,7 @@ index a67462e10c6f8cb0eecb9a81fdc55f353c258368..23f88bd794b2c738463e1aa1180b6826
      // Add env and gen to constructor, WorldData -> WorldDataServer
      public WorldServer(MinecraftServer minecraftserver, Executor executor, Convertable.ConversionSession convertable_conversionsession, IWorldDataServer iworlddataserver, ResourceKey<World> resourcekey, DimensionManager dimensionmanager, WorldLoadListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<MobSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
 diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
-index b620d7e0d824c8d0758a66a8fbe872c3e45103d2..6781b25cc8e15be2556bb1bb8dc8c18c106b40ec 100644
+index 2bff54f6e2ce320728ed0af77492179aa05bf34c..46eb1214168fa6d99cd0a9dda87fb89696f88912 100644
 --- a/src/main/java/net/minecraft/world/level/World.java
 +++ b/src/main/java/net/minecraft/world/level/World.java
 @@ -1130,7 +1130,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {

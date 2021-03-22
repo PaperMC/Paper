@@ -4,13 +4,13 @@ Date: Mon, 20 Jan 2020 21:38:15 +0100
 Subject: [PATCH] Implement Player Client Options API
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperSkinParts.java b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
+diff --git a/src/main/java/io/papermc/paper/PaperSkinParts.java b/src/main/java/io/papermc/paper/PaperSkinParts.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6f4400df3d8ec7e06a996de54f8cabba57885e1
+index 0000000000000000000000000000000000000000..900e56c6e8418a8aa41ad7204e13319a78e43b2b
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
++++ b/src/main/java/io/papermc/paper/PaperSkinParts.java
 @@ -0,0 +1,74 @@
-+package com.destroystokyo.paper;
++package io.papermc.paper;
 +
 +import com.google.common.base.Objects;
 +
@@ -107,14 +107,14 @@ index 90842b27f64afcdd8eb7d0e52df8cfcb418b5b5a..f47cd43f96f61475bd1d5da11bdbc7c5
          return this.e;
      }
 diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
-index 320be04d9e3284d728adb2df9da7edb63e5f71d1..5b9778c0a7a52ddb05ca7a6864e3b8852cec03e4 100644
+index e41748595e0d4bd55d90505e13e1dbf776821f12..a733b0fdaadadeed7cca30756ee989521b8c097f 100644
 --- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 @@ -2,6 +2,7 @@ package net.minecraft.server.level;
  
- import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
+ import io.papermc.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
  import com.google.common.collect.Lists;
-+import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent; // Paper
++import io.papermc.paper.event.player.PlayerClientOptionsChangeEvent; // Paper
  import com.mojang.authlib.GameProfile;
  import com.mojang.datafixers.util.Either;
  import com.mojang.serialization.DataResult;
@@ -131,12 +131,12 @@ index 320be04d9e3284d728adb2df9da7edb63e5f71d1..5b9778c0a7a52ddb05ca7a6864e3b885
      public String locale = null; // CraftBukkit - add, lowercase // Paper - default to null
      public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
      public void a(PacketPlayInSettings packetplayinsettings) {
-+        new PlayerClientOptionsChangeEvent(getBukkitEntity(), packetplayinsettings.locale, packetplayinsettings.viewDistance, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(packetplayinsettings.getChatVisibility().name()), packetplayinsettings.hasChatColorsEnabled(), new com.destroystokyo.paper.PaperSkinParts(packetplayinsettings.getSkinParts()), packetplayinsettings.getMainHand() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT).callEvent(); // Paper - settings event
++        new PlayerClientOptionsChangeEvent(getBukkitEntity(), packetplayinsettings.locale, packetplayinsettings.viewDistance, io.papermc.paper.ClientOption.ChatVisibility.valueOf(packetplayinsettings.getChatVisibility().name()), packetplayinsettings.hasChatColorsEnabled(), new io.papermc.paper.PaperSkinParts(packetplayinsettings.getSkinParts()), packetplayinsettings.getMainHand() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT).callEvent(); // Paper - settings event
          // CraftBukkit start
          if (getMainHand() != packetplayinsettings.getMainHand()) {
              PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(getBukkitEntity(), getMainHand() == EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT);
 diff --git a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
-index 8981dfacd10cae9de052e1b36ce5181cd0e6752d..202fa94d5dc55b549475ae0309bbcfca8f1b2c96 100644
+index ab24b82f42b80cd6625ae828b5c456536da76de5..d095583bd4fdc291551dd2be71f6395a72e246db 100644
 --- a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
 @@ -133,7 +133,7 @@ public abstract class EntityHuman extends EntityLiving {
@@ -149,16 +149,16 @@ index 8981dfacd10cae9de052e1b36ce5181cd0e6752d..202fa94d5dc55b549475ae0309bbcfca
      protected static final DataWatcherObject<NBTTagCompound> bk = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
      protected static final DataWatcherObject<NBTTagCompound> bl = DataWatcher.a(EntityHuman.class, DataWatcherRegistry.p);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 43e4ade73619d430be7ee93687e98ef5a27cb329..7a240739ac6e043e590b380659d8e6d794954f84 100644
+index 16100e4bb3f8ae09c5daf65986e914c8e0df6266..3f497d5af2395199eb0a06b818f6556379c7774a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -1,5 +1,8 @@
  package org.bukkit.craftbukkit.entity;
  
-+import com.destroystokyo.paper.ClientOption.ChatVisibility;
-+import com.destroystokyo.paper.PaperSkinParts;
-+import com.destroystokyo.paper.ClientOption;
- import com.destroystokyo.paper.Title;
++import io.papermc.paper.ClientOption.ChatVisibility;
++import io.papermc.paper.PaperSkinParts;
++import io.papermc.paper.ClientOption;
+ import io.papermc.paper.Title;
  import com.google.common.base.Preconditions;
  import com.google.common.collect.ImmutableSet;
 @@ -2250,6 +2253,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {

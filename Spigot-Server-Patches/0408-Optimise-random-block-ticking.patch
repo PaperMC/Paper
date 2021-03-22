@@ -18,13 +18,13 @@ total number of blocks ticked per world tick remains the same.
 Therefore, the chance of a random tickable block being ticked
 remains the same.
 
-diff --git a/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
+diff --git a/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java b/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3edc8e52e06a62ce9f8cc734fd7458b37cfaad91
+index 0000000000000000000000000000000000000000..e8b4053babe46999980b92643125405064af1c04
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/math/ThreadUnsafeRandom.java
++++ b/src/main/java/io/papermc/paper/util/math/ThreadUnsafeRandom.java
 @@ -0,0 +1,46 @@
-+package com.destroystokyo.paper.util.math;
++package io.papermc.paper.util.math;
 +
 +import java.util.Random;
 +
@@ -83,7 +83,7 @@ index 4c9ec211470f95d538d1d95c74796190edf99b87..8c0aeb51f5e230fd6109e750732eb545
              return this.d(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
          }
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index c4adf5d3c2389d3344e179562eee6817cd4fb298..f666b281926876636672e76a7a5e6386a9701b6a 100644
+index f62aecd841138d1872c28622db890e3ffa992d4b..8f3e7229f84b561345e12b563ff7afe0a4bd7af4 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -673,7 +673,12 @@ public class WorldServer extends World implements GeneratorAccessSeed {
@@ -93,7 +93,7 @@ index c4adf5d3c2389d3344e179562eee6817cd4fb298..f666b281926876636672e76a7a5e6386
 -    public void a(Chunk chunk, int i) {
 +    // Paper start - optimise random block ticking
 +    private final BlockPosition.MutableBlockPosition chunkTickMutablePosition = new BlockPosition.MutableBlockPosition();
-+    private final com.destroystokyo.paper.util.math.ThreadUnsafeRandom randomTickRandom = new com.destroystokyo.paper.util.math.ThreadUnsafeRandom();
++    private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom();
 +    // Paper end
 +
 +    public void a(Chunk chunk, int i) { final int randomTickSpeed = i; // Paper
@@ -192,14 +192,14 @@ index c4adf5d3c2389d3344e179562eee6817cd4fb298..f666b281926876636672e76a7a5e6386
 -                            iblockdata.b(this, blockposition2, this.random);
 -                        }
 +                    long raw = section.tickingList.getRaw(index);
-+                    int location = com.destroystokyo.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
++                    int location = io.papermc.paper.util.maplist.IBlockDataList.getLocationFromRaw(raw);
 +                    int randomX = location & 15;
 +                    int randomY = ((location >>> (4 + 4)) & 255) | yPos;
 +                    int randomZ = (location >>> 4) & 15;
  
 -                        Fluid fluid = iblockdata.getFluid();
 +                    BlockPosition blockposition2 = blockposition.setValues(j + randomX, randomY, k + randomZ);
-+                    IBlockData iblockdata = com.destroystokyo.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
++                    IBlockData iblockdata = io.papermc.paper.util.maplist.IBlockDataList.getBlockDataFromRaw(raw);
  
 -                        if (fluid.f()) {
 -                            fluid.b(this, blockposition2, this.random);
@@ -259,7 +259,7 @@ index c4f3b680512fb15cea01ad12d0a00c6e60bf34b7..cfa444cf384920d446c6dc14b23e5158
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityTurtle.java b/src/main/java/net/minecraft/world/entity/animal/EntityTurtle.java
-index 09a6310af6712d36c20167256b60dc3235e76021..ecec8a3c4d4b5d491f79ad60d7ce5a118f30b3db 100644
+index 91a89a9f5120405004d0df3e4b5295b3e026119f..cebffe13c09d3d04a50de21aac100e3bfece06fb 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/EntityTurtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/EntityTurtle.java
 @@ -91,7 +91,7 @@ public class EntityTurtle extends EntityAnimal {
@@ -272,7 +272,7 @@ index 09a6310af6712d36c20167256b60dc3235e76021..ecec8a3c4d4b5d491f79ad60d7ce5a11
  
      public BlockPosition getHomePos() { // Paper - public
 diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
-index c4680142bf23d30169555abe7db78d85811e042b..cc41dcd85760b57bb8076b37e9a907d1cb4e12c7 100644
+index 2d7771959ba17b6cce2025b9061ed72aead1ddbd..b1ade4a463f6f280679dc716b4bb3281fcb4fb57 100644
 --- a/src/main/java/net/minecraft/world/level/World.java
 +++ b/src/main/java/net/minecraft/world/level/World.java
 @@ -1472,10 +1472,18 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
@@ -296,7 +296,7 @@ index c4680142bf23d30169555abe7db78d85811e042b..cc41dcd85760b57bb8076b37e9a907d1
  
      public boolean isSavingDisabled() {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/Chunk.java b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
-index e7bb33125a25b9e5a68013b15d7b5b6b6769ab9b..fc55e89260fdec2c5045e8f00e091191980ff1f2 100644
+index 041c0e79496341cc08672b32413c6b258199e7bf..a20e72e8561bb813c2c8c42e516ce88e54f90d81 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/Chunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/Chunk.java
 @@ -640,8 +640,8 @@ public class Chunk implements IChunkAccess {
@@ -311,7 +311,7 @@ index e7bb33125a25b9e5a68013b15d7b5b6b6769ab9b..fc55e89260fdec2c5045e8f00e091191
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
-index 0b4e346daaea91565fde2f789fafa8b431a7b042..4bc26a7a4ae91aac90c256758ec8868d83027c0c 100644
+index c8f32c6cf71bfc82de417c7aa9fbc922c60a6a10..3ba7c7f97432475688d8f83a419c8aa606aacd21 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkSection.java
 @@ -14,12 +14,14 @@ import net.minecraft.world.level.material.Fluid;
@@ -326,7 +326,7 @@ index 0b4e346daaea91565fde2f789fafa8b431a7b042..4bc26a7a4ae91aac90c256758ec8868d
      private short e;
      final DataPaletteBlock<IBlockData> blockIds; // Paper - package-private
  
-+    public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
++    public final io.papermc.paper.util.maplist.IBlockDataList tickingList = new io.papermc.paper.util.maplist.IBlockDataList(); // Paper
 +
      // Paper start - Anti-Xray - Add parameters
      @Deprecated public ChunkSection(int i) { this(i, null, null, true); } // Notice for updates: Please make sure this constructor isn't used anywhere
@@ -387,7 +387,7 @@ index 0b4e346daaea91565fde2f789fafa8b431a7b042..4bc26a7a4ae91aac90c256758ec8868d
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java b/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
-index 68d53a51acc9790b9cda20ec4d2ec6edd1baac1a..86dfab740883c138a0df8a3da9dfb4eb9acefaa3 100644
+index 131d04cdf542f9a2a975127a2cff8f224c58ea89..75c918a6924f10b9f442f81f90c840c5d03c262b 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/DataPaletteBlock.java
 @@ -286,6 +286,14 @@ public class DataPaletteBlock<T> implements DataPaletteExpandable<T> {

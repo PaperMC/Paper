@@ -10,13 +10,13 @@ Also optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoal.java
-index b505c23c57a4b84faf5906c6295455b4720c4426..5c32cbe81c47fcb9ae347faa6fc007c5d28d79bf 100644
+index b505c23c57a4b84faf5906c6295455b4720c4426..1cf21a617165409acdc889562395b5eb2b6829fa 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoal.java
 @@ -1,10 +1,12 @@
  package net.minecraft.world.entity.ai.goal;
  
-+import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
++import io.papermc.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
  import java.util.EnumSet;
  
  public abstract class PathfinderGoal {
@@ -46,20 +46,20 @@ index b505c23c57a4b84faf5906c6295455b4720c4426..5c32cbe81c47fcb9ae347faa6fc007c5
 -    public EnumSet<PathfinderGoal.Type> i() {
 -        return this.a;
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<PathfinderGoal.Type> getGoalTypes() {
++    public io.papermc.paper.util.set.OptimizedSmallEnumSet<PathfinderGoal.Type> getGoalTypes() {
 +        return this.goalTypes;
 +        // Paper end - remove streams from pathfindergoalselector
      }
  
      public static enum Type {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalSelector.java
-index 8c234c09a4d9ada83e36e3cdbcc1f2f5c6202f28..385cd079e264a7e66e91ab3b70b90afb59688dcd 100644
+index 8c234c09a4d9ada83e36e3cdbcc1f2f5c6202f28..3156d21e59351735f1d5bd847a8e158d36407b4f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalSelector.java
 @@ -1,8 +1,10 @@
  package net.minecraft.world.entity.ai.goal;
  
-+import com.destroystokyo.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
++import io.papermc.paper.util.set.OptimizedSmallEnumSet; // Paper - remove streams from pathfindergoalselector
  import com.google.common.collect.Sets;
  import java.util.EnumMap;
  import java.util.EnumSet;
@@ -180,7 +180,7 @@ index 8c234c09a4d9ada83e36e3cdbcc1f2f5c6202f28..385cd079e264a7e66e91ab3b70b90afb
 +            int wrappedGoalSize = wrappedGoalSet.size();
 +            for (int i = 0; i < wrappedGoalSize; ++i) {
 +                PathfinderGoal.Type type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
-+                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
++                iterator1 ^= io.papermc.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
 +                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
 +                if (!wrapped.a(wrappedGoal)) {
 +                    continue goal_update_loop;
@@ -195,7 +195,7 @@ index 8c234c09a4d9ada83e36e3cdbcc1f2f5c6202f28..385cd079e264a7e66e91ab3b70b90afb
 +            wrappedGoalSize = wrappedGoalSet.size();
 +            for (int i = 0; i < wrappedGoalSize; ++i) {
 +                PathfinderGoal.Type type = PATHFINDER_GOAL_TYPES[Long.numberOfTrailingZeros(iterator1)];
-+                iterator1 ^= com.destroystokyo.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
++                iterator1 ^= io.papermc.paper.util.math.IntegerUtil.getTrailingBit(iterator1);
 +                PathfinderGoalWrapped wrapped = this.c.getOrDefault(type, PathfinderGoalSelector.b);
 +
 +                wrapped.d();
@@ -234,7 +234,7 @@ index 8c234c09a4d9ada83e36e3cdbcc1f2f5c6202f28..385cd079e264a7e66e91ab3b70b90afb
  
      public void a(PathfinderGoal.Type pathfindergoal_type, boolean flag) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalWrapped.java b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalWrapped.java
-index 7bb531e47668cf445083c4dedb03ccafe6a9c96b..8c8e39d35fb56aa6cf7d456adab01dff5d13a60d 100644
+index 7bb531e47668cf445083c4dedb03ccafe6a9c96b..ae537d9ed2497c27a4b859719de6f9812d6ac76f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalWrapped.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/PathfinderGoalWrapped.java
 @@ -59,9 +59,10 @@ public class PathfinderGoalWrapped extends PathfinderGoal {
@@ -245,7 +245,7 @@ index 7bb531e47668cf445083c4dedb03ccafe6a9c96b..8c8e39d35fb56aa6cf7d456adab01dff
 -    public EnumSet<PathfinderGoal.Type> i() {
 -        return this.a.i();
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<PathfinderGoal.Type> getGoalTypes() {
++    public io.papermc.paper.util.set.OptimizedSmallEnumSet<PathfinderGoal.Type> getGoalTypes() {
 +        return this.a.getGoalTypes();
 +        // Paper end - remove streams from pathfindergoalselector
      }

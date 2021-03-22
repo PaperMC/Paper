@@ -5,7 +5,7 @@ Subject: [PATCH] Add ProjectileCollideEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
-index 9bd4a283a99f86c9a26f73e0bad0c3414d66ad55..5ecbe9135a71dd84e0722fa9c039c272a11d206f 100644
+index 9bd4a283a99f86c9a26f73e0bad0c3414d66ad55..9ad5a5212265c65e0f91c40480be7f172f57c1e0 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EntityArrow.java
 @@ -198,6 +198,17 @@ public abstract class EntityArrow extends IProjectile {
@@ -15,7 +15,7 @@ index 9bd4a283a99f86c9a26f73e0bad0c3414d66ad55..5ecbe9135a71dd84e0722fa9c039c272
 +                // Paper start - Call ProjectileCollideEvent
 +                // TODO: flag - noclip - call cancelled?
 +                if (object instanceof MovingObjectPositionEntity) {
-+                    com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)object);
++                    io.papermc.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)object);
 +                    if (event.isCancelled()) {
 +                        object = null;
 +                        movingobjectpositionentity = null;
@@ -27,7 +27,7 @@ index 9bd4a283a99f86c9a26f73e0bad0c3414d66ad55..5ecbe9135a71dd84e0722fa9c039c272
                      this.a((MovingObjectPosition) object);
                      this.impulse = true;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java b/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
-index ed76aec99f46a7923d139e347779c24f512ac131..ede7b4dbf2dce7bac83c5e17eecfdaf0e8a84fe7 100644
+index ed76aec99f46a7923d139e347779c24f512ac131..f83f8d16477c2eb9c1824bae4893b06ce235ec27 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
 @@ -13,6 +13,7 @@ import net.minecraft.world.entity.EntityLiving;
@@ -45,7 +45,7 @@ index ed76aec99f46a7923d139e347779c24f512ac131..ede7b4dbf2dce7bac83c5e17eecfdaf0
 -            if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
 +            // Paper start - Call ProjectileCollideEvent
 +            if (movingobjectposition instanceof MovingObjectPositionEntity) {
-+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
++                io.papermc.paper.event.entity.ProjectileCollideEvent event = CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
 +                if (event.isCancelled()) {
 +                    movingobjectposition = null;
 +                }
@@ -57,7 +57,7 @@ index ed76aec99f46a7923d139e347779c24f512ac131..ede7b4dbf2dce7bac83c5e17eecfdaf0
  
                  // CraftBukkit start - Fire ProjectileHitEvent
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/EntityProjectile.java
-index 829b4f28896bcb0eb6e48242bd00585eeaae62c2..3b379e83b79bd9b46dbdd4a48ac3842abc4dfbb8 100644
+index 829b4f28896bcb0eb6e48242bd00585eeaae62c2..9ab1add48afd77593a83b563ccdb3d79593b8e0b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EntityProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EntityProjectile.java
 @@ -14,6 +14,7 @@ import net.minecraft.world.level.block.entity.TileEntityEndGateway;
@@ -74,7 +74,7 @@ index 829b4f28896bcb0eb6e48242bd00585eeaae62c2..3b379e83b79bd9b46dbdd4a48ac3842a
          if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS && !flag) {
 +            // Paper start - Call ProjectileCollideEvent
 +            if (movingobjectposition instanceof MovingObjectPositionEntity) {
-+                com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
++                io.papermc.paper.event.entity.ProjectileCollideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileCollideEvent(this, (MovingObjectPositionEntity)movingobjectposition);
 +                if (event.isCancelled()) {
 +                    movingobjectposition = null;
 +                }
@@ -87,7 +87,7 @@ index 829b4f28896bcb0eb6e48242bd00585eeaae62c2..3b379e83b79bd9b46dbdd4a48ac3842a
  
          this.checkBlockCollisions();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 52028387ae90b9e125b4522e5a3963a1119499e4..2dcdc428028a40c06b0ec1e50af76c16f051f084 100644
+index 05e0ad66cf60b78a9cf2165b24bf515e84f51e12..5798166c4309b4884dc671a2529d58c45b478597 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -1181,6 +1181,16 @@ public class CraftEventFactory {
@@ -95,10 +95,10 @@ index 52028387ae90b9e125b4522e5a3963a1119499e4..2dcdc428028a40c06b0ec1e50af76c16
      }
  
 +    // Paper start
-+    public static com.destroystokyo.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, MovingObjectPositionEntity position) {
++    public static io.papermc.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, MovingObjectPositionEntity position) {
 +        Projectile projectile = (Projectile) entity.getBukkitEntity();
 +        org.bukkit.entity.Entity collided = position.getEntity().getBukkitEntity();
-+        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);
++        io.papermc.paper.event.entity.ProjectileCollideEvent event = new io.papermc.paper.event.entity.ProjectileCollideEvent(projectile, collided);
 +        Bukkit.getPluginManager().callEvent(event);
 +        return event;
 +    }

@@ -5,7 +5,7 @@ Subject: [PATCH] Load Chunks for Login Asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 6e5d21af43261dc2f12ceec7b7e3269be635cf7a..ecf4cd6dfea777ab9daea0b40724d247df7ddb53 100644
+index e43e7a5b72165c4c6207c949ef3cf1388ec2b353..339a50065eb79df28064a369413bafbe129e5ab2 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -629,7 +629,7 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -18,7 +18,7 @@ index 6e5d21af43261dc2f12ceec7b7e3269be635cf7a..ecf4cd6dfea777ab9daea0b40724d247
          boolean flag1 = this.playerChunkMap.b();
  
 diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
-index eaeac60b2d54d8e7d298ea412d888471a7ea9e79..36b4792687a5c6316bf95995e761bf4aa49779f6 100644
+index 96f5a62fc0e03b549c80ea7b4afbefcee2692c66..7abebf42b32f95daca1f6b7d216575f202eb16f6 100644
 --- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 @@ -31,6 +31,7 @@ import net.minecraft.core.NonNullList;
@@ -46,7 +46,7 @@ index eaeac60b2d54d8e7d298ea412d888471a7ea9e79..36b4792687a5c6316bf95995e761bf4a
      // CraftBukkit end
      public PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index 94860c06717e8dcf969277562e88687e9a99aaa4..e5d94dedc88e8bbcf8d9517dfb5c6ec6f62de5aa 100644
+index c2d35508afa907f47926187c031894d740385392..2be223ffdf67880a9281b225ca3782dfa057ceae 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -147,7 +147,7 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
@@ -71,7 +71,7 @@ index 218dc900e125a11548485887b1918742072c7a77..2c932d36f982e7f8713aabff9a6c6310
      public static final TicketType<ChunkCoordIntPair> UNKNOWN = a("unknown", Comparator.comparingLong(ChunkCoordIntPair::pair), 1);
      public static final TicketType<Unit> PLUGIN = a("plugin", (a, b) -> 0); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/network/LoginListener.java b/src/main/java/net/minecraft/server/network/LoginListener.java
-index 4dd2f7fb32b8618d752e0988acadcb41223c0e4c..78a8eb89e9113a1002ba6177f96d5734a10e8d7d 100644
+index 3fbcca3aa312f03a7c403cd3b87fbb20e92c0df9..dc42a33d053810c1d92df87cfe5b06af12e23ceb 100644
 --- a/src/main/java/net/minecraft/server/network/LoginListener.java
 +++ b/src/main/java/net/minecraft/server/network/LoginListener.java
 @@ -88,7 +88,7 @@ public class LoginListener implements PacketLoginInListener {
@@ -93,7 +93,7 @@ index 4dd2f7fb32b8618d752e0988acadcb41223c0e4c..78a8eb89e9113a1002ba6177f96d5734
              if (entityplayer != null) {
                  this.g = LoginListener.EnumProtocolState.DELAY_ACCEPT;
 diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
-index 3285a4248a7c5352454a64c6a84658f585932548..6a0e3bd8641c895decd83b80e3a715ea31a5cce7 100644
+index a19073c41c7180e66e491be787aeeb948e81c2f4..1535e2bc0371cecdffc230b44f1e0c4e15e81845 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
 @@ -220,6 +220,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
@@ -130,7 +130,7 @@ index 3285a4248a7c5352454a64c6a84658f585932548..6a0e3bd8641c895decd83b80e3a715ea
          this.minecraftServer.getMethodProfiler().enter("keepAlive");
          // Paper Start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 7305bba223229d9aa5315a8dff5fdc5af8faba6a..70b3a7c8c4bd817be9c4dfaee71ec22a42620e11 100644
+index 7ae3905867053946ad10f7e715a35276e7f5242d..1123921eb8f3f2e57ee7451333519585445a2851 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -41,6 +41,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutEntityStatus;
@@ -248,7 +248,7 @@ index 7305bba223229d9aa5315a8dff5fdc5af8faba6a..70b3a7c8c4bd817be9c4dfaee71ec22a
 @@ -523,7 +578,7 @@ public abstract class PlayerList {
          }
  
-         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, com.destroystokyo.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getName())));
+         PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(cserver.getPlayer(entityplayer), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.PaperConfig.useDisplayNameInQuit ? entityplayer.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(entityplayer.getName())));
 -        cserver.getPluginManager().callEvent(playerQuitEvent);
 +        if (entityplayer.didPlayerJoinEvent) cserver.getPluginManager().callEvent(playerQuitEvent); // Paper - if we disconnected before join ever fired, don't fire quit
          entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
@@ -292,7 +292,7 @@ index 7305bba223229d9aa5315a8dff5fdc5af8faba6a..70b3a7c8c4bd817be9c4dfaee71ec22a
          Iterator iterator = list.iterator();
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 7bce3722fb00194f5a913c0b9866b73cfc74611d..8ca7012264528f17ac2e4f15ced96c774fa566d7 100644
+index 85517f554fcd65380da6e235e2a9106455b5f44d..f57c34bbcec14875bc3d07cc8b1710bbf874d514 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1372,7 +1372,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
