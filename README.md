@@ -44,6 +44,7 @@ How To (Plugin Developers)
 **Or alternatively, with Gradle:**
 
  * Repository:
+  ##### Groovy
 ```groovy
 repositories {
     maven {
@@ -51,10 +52,25 @@ repositories {
     }
 }
 ```
+  ##### Kotlin
+```kotlin
+repositories {
+    maven {
+        url = uri("https://papermc.io/repo/repository/maven-public/")
+    }
+}
+```
  * Artifact:
+  ##### Groovy
 ```groovy
 dependencies {
     compileOnly 'com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT'
+}
+```
+  ##### Kotlin
+```kotlin
+dependencies {
+    compileOnly("com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT")
 }
 ```
 
