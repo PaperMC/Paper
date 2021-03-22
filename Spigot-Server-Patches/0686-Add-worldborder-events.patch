@@ -5,27 +5,17 @@ Subject: [PATCH] Add worldborder events
 
 
 diff --git a/src/main/java/net/minecraft/world/level/border/WorldBorder.java b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
-index bedaa9dd6390e81df5872c2dd6e202a038367bf6..3c25021835d6d8fd112fc89636616bfd744e7f1a 100644
+index bedaa9dd6390e81df5872c2dd6e202a038367bf6..2b5f2a07f22b8ecaa60ae2efde5d61190684ec29 100644
 --- a/src/main/java/net/minecraft/world/level/border/WorldBorder.java
 +++ b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
-@@ -14,6 +14,9 @@ import net.minecraft.world.phys.AxisAlignedBB;
- import net.minecraft.world.phys.shapes.OperatorBoolean;
- import net.minecraft.world.phys.shapes.VoxelShape;
- import net.minecraft.world.phys.shapes.VoxelShapes;
-+import io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent; // Paper
-+import io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent; // Paper
-+import io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent; // Paper
- 
- public class WorldBorder {
- 
-@@ -102,15 +105,19 @@ public class WorldBorder {
+@@ -102,15 +102,19 @@ public class WorldBorder {
      }
  
      public void setCenter(double d0, double d1) {
 -        this.g = d0;
 -        this.h = d1;
 +        // Paper start
-+        WorldBorderCenterChangeEvent event = new WorldBorderCenterChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), new org.bukkit.Location(world.getWorld(), this.getCenterX(), 0, this.getCenterZ()), new org.bukkit.Location(world.getWorld(), d0, 0, d1));
++        io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), new org.bukkit.Location(world.getWorld(), this.getCenterX(), 0, this.getCenterZ()), new org.bukkit.Location(world.getWorld(), d0, 0, d1));
 +        if (!event.callEvent()) return;
 +        this.g = event.getNewCenter().getX();
 +        this.h = event.getNewCenter().getZ();
@@ -41,15 +31,15 @@ index bedaa9dd6390e81df5872c2dd6e202a038367bf6..3c25021835d6d8fd112fc89636616bfd
          }
  
      }
-@@ -128,25 +135,43 @@ public class WorldBorder {
+@@ -128,25 +132,43 @@ public class WorldBorder {
      }
  
      public void setSize(double d0) {
 -        this.j = new WorldBorder.d(d0);
 +        // Paper start
-+        WorldBorderBoundsChangeEvent event = new WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), d0, 0);
++        io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), d0, 0);
 +        if (!event.callEvent()) return;
-+        if (event.getType() == WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDuration() > 0) { // If changed to a timed transition
++        if (event.getType() == io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDuration() > 0) { // If changed to a timed transition
 +            transitionSizeBetween(event.getOldSize(), event.getNewSize(), event.getDuration());
 +            return;
 +        }
@@ -69,13 +59,13 @@ index bedaa9dd6390e81df5872c2dd6e202a038367bf6..3c25021835d6d8fd112fc89636616bfd
      public void transitionSizeBetween(double d0, double d1, long i) {
 -        this.j = (WorldBorder.a) (d0 == d1 ? new WorldBorder.d(d1) : new WorldBorder.b(d0, d1, i));
 +        // Paper start
-+        WorldBorderBoundsChangeEvent.Type type;
++        io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type type;
 +        if (d0 == d1) { // new size = old size
-+            type = WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE; // Use INSTANT_MOVE because below it creates a Static border if they are equal.
++            type = io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE; // Use INSTANT_MOVE because below it creates a Static border if they are equal.
 +        } else {
-+            type = WorldBorderBoundsChangeEvent.Type.STARTED_MOVE;
++            type = io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE;
 +        }
-+        WorldBorderBoundsChangeEvent event = new WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), type, d0, d1, i);
++        io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), type, d0, d1, i);
 +        if (!event.callEvent()) return;
 +        this.j = (WorldBorder.a) (d0 == event.getNewSize() ? new WorldBorder.d(event.getNewSize()) : new WorldBorder.b(d0, event.getNewSize(), event.getDuration()));
 +        // Paper end
@@ -89,7 +79,7 @@ index bedaa9dd6390e81df5872c2dd6e202a038367bf6..3c25021835d6d8fd112fc89636616bfd
          }
  
      }
-@@ -434,11 +459,11 @@ public class WorldBorder {
+@@ -434,11 +456,11 @@ public class WorldBorder {
  
      class b implements WorldBorder.a {
  
@@ -104,15 +94,15 @@ index bedaa9dd6390e81df5872c2dd6e202a038367bf6..3c25021835d6d8fd112fc89636616bfd
  
          private b(double d0, double d1, long i) {
              this.b = d0;
-@@ -493,6 +518,7 @@ public class WorldBorder {
+@@ -493,6 +515,7 @@ public class WorldBorder {
  
          @Override
          public WorldBorder.a l() {
-+            if (this.getLerpTimeRemaining() <= 0L) new WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), getOldSize(), getNewSize(), getDuration()).callEvent(); // Paper
++            if (this.getLerpTimeRemaining() <= 0L) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), getOldSize(), getNewSize(), getDuration()).callEvent(); // Paper
              return (WorldBorder.a) (this.g() <= 0L ? WorldBorder.this.new d(this.c) : this);
          }
  
-@@ -514,6 +540,7 @@ public class WorldBorder {
+@@ -514,6 +537,7 @@ public class WorldBorder {
  
          double e();
  

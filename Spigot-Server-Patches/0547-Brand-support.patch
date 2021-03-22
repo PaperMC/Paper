@@ -5,18 +5,10 @@ Subject: [PATCH] Brand support
 
 
 diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
-index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc549087bf1335b 100644
+index 3caef9a27339ff208829bdc16814e71065d43fa3..1d27a516df0f24ea582e18aa774e6b2590bdf228 100644
 --- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
-@@ -5,6 +5,7 @@ import com.google.common.primitives.Doubles;
- import com.google.common.primitives.Floats;
- import com.mojang.brigadier.ParseResults;
- import com.mojang.brigadier.StringReader;
-+import io.netty.buffer.Unpooled;
- import io.netty.util.concurrent.Future;
- import io.netty.util.concurrent.GenericFutureListener;
- import it.unimi.dsi.fastutil.ints.Int2ShortMap;
-@@ -37,6 +38,7 @@ import net.minecraft.nbt.NBTTagCompound;
+@@ -37,6 +37,7 @@ import net.minecraft.nbt.NBTTagCompound;
  import net.minecraft.nbt.NBTTagList;
  import net.minecraft.nbt.NBTTagString;
  import net.minecraft.network.NetworkManager;
@@ -24,7 +16,7 @@ index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc54908
  import net.minecraft.network.chat.ChatComponentText;
  import net.minecraft.network.chat.ChatMessage;
  import net.minecraft.network.chat.ChatMessageType;
-@@ -258,6 +260,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -256,6 +257,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80);
      private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
  
@@ -33,7 +25,7 @@ index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc54908
      public PlayerConnection(MinecraftServer minecraftserver, NetworkManager networkmanager, EntityPlayer entityplayer) {
          this.minecraftServer = minecraftserver;
          this.networkManager = networkmanager;
-@@ -2986,6 +2990,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -2984,6 +2987,8 @@ public class PlayerConnection implements PacketListenerPlayIn {
      private static final MinecraftKey CUSTOM_REGISTER = new MinecraftKey("register");
      private static final MinecraftKey CUSTOM_UNREGISTER = new MinecraftKey("unregister");
  
@@ -42,7 +34,7 @@ index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc54908
      @Override
      public void a(PacketPlayInCustomPayload packetplayincustompayload) {
          PlayerConnectionUtils.ensureMainThread(packetplayincustompayload, this, this.player.getWorldServer());
-@@ -3013,6 +3019,16 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -3011,6 +3016,16 @@ public class PlayerConnection implements PacketListenerPlayIn {
              try {
                  byte[] data = new byte[packetplayincustompayload.data.readableBytes()];
                  packetplayincustompayload.data.readBytes(data);
@@ -50,7 +42,7 @@ index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc54908
 +                // Paper start - Brand support
 +                if (packetplayincustompayload.tag.equals(MINECRAFT_BRAND)) {
 +                    try {
-+                        this.clientBrandName = new PacketDataSerializer(Unpooled.copiedBuffer(data)).readUTF(256);
++                        this.clientBrandName = new PacketDataSerializer(io.netty.buffer.Unpooled.copiedBuffer(data)).readUTF(256);
 +                    } catch (StringIndexOutOfBoundsException ex) {
 +                        this.clientBrandName = "illegal";
 +                    }
@@ -59,7 +51,7 @@ index bd6f3e9d321abcf039875dd5c9f7ccc59afd2dd2..0d65ffcad016a5f3fa9ddf616bc54908
                  server.getMessenger().dispatchIncomingMessage(player.getBukkitEntity(), packetplayincustompayload.tag.toString(), data);
              } catch (Exception ex) {
                  PlayerConnection.LOGGER.error("Couldn\'t dispatch custom payload", ex);
-@@ -3022,6 +3038,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
+@@ -3020,6 +3035,12 @@ public class PlayerConnection implements PacketListenerPlayIn {
  
      }
  
