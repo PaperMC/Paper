@@ -56,7 +56,7 @@
      @Nullable
      static Holder<MobEffect> filterEffect(@Nullable Holder<MobEffect> effect) {
          return BeaconBlockEntity.VALID_EFFECTS.contains(effect) ? effect : null;
-@@ -186,7 +221,7 @@
+@@ -186,10 +221,19 @@
              }
  
              if (blockEntity.levels > 0 && !blockEntity.beamSections.isEmpty()) {
@@ -65,7 +65,27 @@
                  BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
              }
          }
-@@ -251,39 +286,96 @@
++        // Paper start - beacon activation/deactivation events
++        if (i1 <= 0 && blockEntity.levels > 0) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            new io.papermc.paper.event.block.BeaconActivatedEvent(block).callEvent();
++        } else if (i1 > 0 && blockEntity.levels <= 0) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
++        }
++        // Paper end - beacon activation/deactivation events
+ 
+         if (blockEntity.lastCheckY >= l) {
+             blockEntity.lastCheckY = world.getMinY() - 1;
+@@ -247,43 +291,104 @@
+ 
+     @Override
+     public void setRemoved() {
++        // Paper start - beacon activation/deactivation events
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
++        new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
++        // Paper end - beacon activation/deactivation events
+         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
          super.setRemoved();
      }
  
@@ -177,7 +197,7 @@
      public static void playSound(Level world, BlockPos pos, SoundEvent sound) {
          world.playSound((Player) null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
      }
-@@ -316,7 +408,7 @@
+@@ -316,7 +421,7 @@
          if (nbt.contains(key, 8)) {
              ResourceLocation minecraftkey = ResourceLocation.tryParse(nbt.getString(key));
  
@@ -186,7 +206,7 @@
          } else {
              return null;
          }
-@@ -327,11 +419,13 @@
+@@ -327,11 +432,13 @@
          super.loadAdditional(nbt, registries);
          this.primaryPower = BeaconBlockEntity.loadEffect(nbt, "primary_effect");
          this.secondaryPower = BeaconBlockEntity.loadEffect(nbt, "secondary_effect");
@@ -200,7 +220,7 @@
      }
  
      @Override
-@@ -345,6 +439,7 @@
+@@ -345,6 +452,7 @@
          }
  
          this.lockKey.addToTag(nbt, registries);
