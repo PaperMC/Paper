@@ -543,6 +543,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public String getMainLevelName() {
         return ((net.minecraft.server.dedicated.DedicatedServer) net.minecraft.server.MinecraftServer.getServer()).getProperties().levelName;
     }
+
+    @Override
+    public int getProtocolVersion() {
+        return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
+    }
     // Paper end
 
     /**
