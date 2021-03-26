@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matthew Miller <mnmiller1@me.com>
+Date: Thu, 31 Dec 2020 12:48:19 +1000
+Subject: [PATCH] Implement API to get Material from Boats and Minecarts
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
+index add2aef0192a3b3767c1e477145978b9702c0fb4..2609b83573e0e8532e6c4c36d4f475bf0da6a354 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
+@@ -260,6 +260,7 @@ public class EntityBoat extends Entity {
+ 
+     }
+ 
++    public final Item getBoatItem() { return this.g(); } // Paper - OBFHELPER
+     public Item g() {
+         switch (this.getType()) {
+             case OAK:
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+index c7a459c0c860724ef1890b8fb9a59a5508b3f6d6..16799dc565c5ca42d1fdb3122594d9dae21c74e0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+@@ -1,8 +1,10 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import net.minecraft.world.entity.vehicle.EntityBoat;
++import org.bukkit.Material; // Paper
+ import org.bukkit.TreeSpecies;
+ import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers; // Paper
+ import org.bukkit.entity.Boat;
+ import org.bukkit.entity.EntityType;
+ 
+@@ -66,6 +68,13 @@ public class CraftBoat extends CraftVehicle implements Boat {
+         getHandle().landBoats = workOnLand;
+     }
+ 
++    // Paper start
++    @Override
++    public Material getBoatMaterial() {
++        return CraftMagicNumbers.getMaterial(getHandle().getBoatItem());
++    }
++    // Paper end
++
+     @Override
+     public EntityBoat getHandle() {
+         return (EntityBoat) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+index 69415f5a838345826fa5cf1d855e057794520f2c..e5ebb80a44da775df6f3d5a9db5cf58295e2e960 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+@@ -1,8 +1,10 @@
+ package org.bukkit.craftbukkit.entity;
+ 
+ import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
++import net.minecraft.world.item.Items; // Paper
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.IBlockData;
++import org.bukkit.Material; // Paper
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+@@ -68,6 +70,38 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+         getHandle().setDerailedVelocityMod(derailed);
+     }
+ 
++    // Paper start
++    @Override
++    public Material getMinecartMaterial() {
++        net.minecraft.world.item.Item minecartItem;
++        switch (getHandle().getMinecartType()) {
++            case CHEST:
++                minecartItem = Items.CHEST_MINECART;
++                break;
++            case FURNACE:
++                minecartItem = Items.FURNACE_MINECART;
++                break;
++            case TNT:
++                minecartItem = Items.TNT_MINECART;
++                break;
++            case HOPPER:
++                minecartItem = Items.HOPPER_MINECART;
++                break;
++            case COMMAND_BLOCK:
++                minecartItem = Items.COMMAND_BLOCK_MINECART;
++                break;
++            case RIDEABLE:
++            case SPAWNER:
++                minecartItem = Items.MINECART;
++                break;
++            default:
++                throw new IllegalStateException("Unexpected value: " + getHandle().getMinecartType());
++        }
++
++        return CraftMagicNumbers.getMaterial(minecartItem);
++    }
++    // Paper end
++
+     @Override
+     public EntityMinecartAbstract getHandle() {
+         return (EntityMinecartAbstract) entity;

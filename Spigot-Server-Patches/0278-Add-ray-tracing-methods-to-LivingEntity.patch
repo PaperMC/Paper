@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 3 Sep 2018 18:20:03 -0500
+Subject: [PATCH] Add ray tracing methods to LivingEntity
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index 189a00cb68ce9a9060117b79c5356ebb93d7fa62..9d8f92c313829bb32c17907bf2ef23d069517dc3 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -3585,6 +3585,23 @@ public abstract class EntityLiving extends Entity {
+         this.broadcastItemBreak(enumhand == EnumHand.MAIN_HAND ? EnumItemSlot.MAINHAND : EnumItemSlot.OFFHAND);
+     }
+     // Paper start
++    public MovingObjectPosition getRayTrace(int maxDistance) {
++        return getRayTrace(maxDistance, RayTrace.FluidCollisionOption.NONE);
++    }
++
++    public MovingObjectPosition getRayTrace(int maxDistance, RayTrace.FluidCollisionOption fluidCollisionOption) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3D start = new Vec3D(locX(), locY() + getHeadHeight(), locZ());
++        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
++        Vec3D end = new Vec3D(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
++        RayTrace raytrace = new RayTrace(start, end, RayTrace.BlockCollisionOption.OUTLINE, fluidCollisionOption, this);
++
++        return world.rayTrace(raytrace);
++    }
++
+     public int shieldBlockingDelay = world.paperConfig.shieldBlockingDelay;
+ 
+     public int getShieldBlockingDelay() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index bd24b9865f37c34ffd63cd411ddc84abe5ab30d0..c692626b747008a5418ecabf550fc67e3b676f5b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.block.TargetBlockInfo;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Sets;
+ import java.util.ArrayList;
+@@ -8,6 +9,7 @@ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Set;
+ import java.util.UUID;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.world.EnumHand;
+ import net.minecraft.world.damagesource.DamageSource;
+@@ -40,6 +42,8 @@ import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
+ import net.minecraft.world.entity.projectile.EntityThrownTrident;
+ import net.minecraft.world.entity.projectile.EntityTippedArrow;
+ import net.minecraft.world.entity.projectile.EntityWitherSkull;
++import net.minecraft.world.phys.MovingObjectPosition;
++import net.minecraft.world.phys.MovingObjectPositionBlock;
+ import org.apache.commons.lang.Validate;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.Location;
+@@ -49,6 +53,7 @@ import org.bukkit.attribute.AttributeInstance;
+ import org.bukkit.block.Block;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
+ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
+ import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
+@@ -202,6 +207,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return blocks.get(0);
+     }
+ 
++    // Paper start
++    @Override
++    public Block getTargetBlock(int maxDistance, TargetBlockInfo.FluidMode fluidMode) {
++        MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, MCUtil.getNMSFluidCollisionOption(fluidMode));
++        return !(rayTrace instanceof MovingObjectPositionBlock) ? null : CraftBlock.at(getHandle().world, ((MovingObjectPositionBlock)rayTrace).getBlockPosition());
++    }
++
++    @Override
++    public org.bukkit.block.BlockFace getTargetBlockFace(int maxDistance, TargetBlockInfo.FluidMode fluidMode) {
++        MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, MCUtil.getNMSFluidCollisionOption(fluidMode));
++        return !(rayTrace instanceof MovingObjectPositionBlock) ? null : MCUtil.toBukkitBlockFace(((MovingObjectPositionBlock)rayTrace).getDirection());
++    }
++
++    @Override
++    public TargetBlockInfo getTargetBlockInfo(int maxDistance, TargetBlockInfo.FluidMode fluidMode) {
++        MovingObjectPosition rayTrace = getHandle().getRayTrace(maxDistance, MCUtil.getNMSFluidCollisionOption(fluidMode));
++        return !(rayTrace instanceof MovingObjectPositionBlock) ? null :
++            new TargetBlockInfo(CraftBlock.at(getHandle().world, ((MovingObjectPositionBlock)rayTrace).getBlockPosition()),
++                MCUtil.toBukkitBlockFace(((MovingObjectPositionBlock)rayTrace).getDirection()));
++    }
++    // Paper end
++
+     @Override
+     public List<Block> getLastTwoTargetBlocks(Set<Material> transparent, int maxDistance) {
+         return getLineOfSight(transparent, maxDistance, 2);

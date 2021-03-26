@@ -5,10 +5,10 @@ Subject: [PATCH] Incremental player saving
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index fd3b4a01c84da110d41b7224ebb38ae78b389f79..deb77934dcba8c9209c942a6521dd8486cb5a48d 100644
+index b67ba8f75e4a3358d7c2462918b85b0bf9b5a922..fdbd8b89bb8bf3b61f60b812b90483c98a3d5ccb 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -435,4 +435,15 @@ public class PaperConfig {
+@@ -440,4 +440,15 @@ public class PaperConfig {
          allowPistonDuplication = getBoolean("settings.unsupported-settings.allow-piston-duplication", config.getBoolean("settings.unsupported-settings.allow-tnt-duplication", false));
          set("settings.unsupported-settings.allow-tnt-duplication", null);
      }
@@ -24,23 +24,11 @@ index fd3b4a01c84da110d41b7224ebb38ae78b389f79..deb77934dcba8c9209c942a6521dd848
 +        }
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index 804ac31e83e40a532999d546eaac0aae3642ec28..f09c1367f375dc6930fb95ec8f216c6c421a34ea 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -44,6 +44,7 @@ import org.bukkit.inventory.MainHand;
- public class EntityPlayer extends EntityHuman implements ICrafting {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
-+    public long lastSave = MinecraftServer.currentTick; // Paper
-     public PlayerConnection playerConnection;
-     public NetworkManager networkManager; // Paper
-     public final MinecraftServer server;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ca417825eb0827caad817f65b5132f1de37e3679..69fcfff3f21168f334fd526cb65e63e086d32a70 100644
+index 3867e1d9a3d3648aaea46816643c0d8f070baf5d..ca284cd0419f5d99efa7e73c19fa1591261d8d5b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1226,9 +1226,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1337,9 +1337,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
              //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
              serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
@@ -58,11 +46,23 @@ index ca417825eb0827caad817f65b5132f1de37e3679..69fcfff3f21168f334fd526cb65e63e0
              }// Paper
              // Paper start
              for (WorldServer world : getWorlds()) {
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index 1f7ded35ee0586c27d8cceabcb20ccb2369e8c02..ad6207dfb9b524b6d85bf8d904527db04672661d 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -482,6 +482,7 @@ public abstract class PlayerList {
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index bb4c6b3790192c0e9f21859b6b3fd62a847787b7..c4f2c164927db4917f85a8bd65fdbf00e9b062a3 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -175,6 +175,7 @@ import org.bukkit.inventory.MainHand;
+ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
++    public long lastSave = MinecraftServer.currentTick; // Paper
+     public PlayerConnection playerConnection;
+     public NetworkManager networkManager; // Paper
+     public final MinecraftServer server;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 1b78f53d09cc26fe881933df8aa1a7e77337acf1..939e3721af52069f1abad79d28c0555be3ac2d59 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -563,6 +563,7 @@ public abstract class PlayerList {
      protected void savePlayerFile(EntityPlayer entityplayer) {
          if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
          if (!entityplayer.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
@@ -70,7 +70,7 @@ index 1f7ded35ee0586c27d8cceabcb20ccb2369e8c02..ad6207dfb9b524b6d85bf8d904527db0
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -1141,10 +1142,21 @@ public abstract class PlayerList {
+@@ -1222,10 +1223,21 @@ public abstract class PlayerList {
      }
  
      public void savePlayers() {

@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 16 May 2017 21:29:08 -0500
+Subject: [PATCH] Add option to make parrots stay on shoulders despite movement
+
+Makes parrots not fall off whenever the player changes height, or touches water, or gets hit by a passing leaf.
+Instead, switches the behavior so that players have to sneak to make the birds leave.
+
+I suspect Mojang may switch to this behavior before full release.
+
+To be converted into a Paper-API event at some point in the future?
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index c611b5a63498f5ad1f50a75ccd5d7299e27df7e3..9d1cddc6038f0fd0286e4a32013ae98ff0b00dd1 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -330,4 +330,10 @@ public class PaperWorldConfig {
+         maxCollisionsPerEntity = getInt( "max-entity-collisions", this.spigotConfig.getInt("max-entity-collisions", 8) );
+         log( "Max Entity Collisions: " + maxCollisionsPerEntity );
+     }
++
++    public boolean parrotsHangOnBetter;
++    private void parrotsHangOnBetter() {
++        parrotsHangOnBetter = getBoolean("parrots-are-unaffected-by-player-movement", false);
++        log("Parrots are unaffected by player movement: " + parrotsHangOnBetter);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index bc0b1d0cc9c54d53c68ee59b0a707e0335297441..62fb502adf8cd7095e4826eb72ab39cf0bcc6d55 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -2050,6 +2050,13 @@ public class PlayerConnection implements PacketListenerPlayIn {
+         switch (packetplayinentityaction.c()) {
+             case PRESS_SHIFT_KEY:
+                 this.player.setSneaking(true);
++
++            // Paper start - Hang on!
++            if (this.player.world.paperConfig.parrotsHangOnBetter) {
++                this.player.releaseShoulderEntities();
++            }
++            // Paper end
++
+                 break;
+             case RELEASE_SHIFT_KEY:
+                 this.player.setSneaking(false);
+diff --git a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+index e3e3426a00128b56d523bb43a59b814b915ad0ff..ba26fc2405e17d582da971d03147fb1865e9b546 100644
+--- a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
++++ b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+@@ -532,7 +532,7 @@ public abstract class EntityHuman extends EntityLiving {
+         this.j(this.getShoulderEntityLeft());
+         this.j(this.getShoulderEntityRight());
+         if (!this.world.isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.isFlying || this.isSleeping()) {
+-            this.releaseShoulderEntities();
++            if (!this.world.paperConfig.parrotsHangOnBetter) this.releaseShoulderEntities(); // Paper - Hang on!
+         }
+ 
+     }

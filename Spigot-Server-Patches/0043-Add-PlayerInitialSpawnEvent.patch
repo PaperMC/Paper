@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Steve Anton <anxuiz.nx@gmail.com>
+Date: Thu, 3 Mar 2016 00:09:38 -0600
+Subject: [PATCH] Add PlayerInitialSpawnEvent
+
+For modifying a player's initial spawn location as they join the server
+
+This is a duplicate API from spigot, so use our duplicate subclass and
+improve setPosition to use raw
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 15418868c2b92498139e66d913ee1c35b3abf0cf..cfd0af520dd3dcf364a3ffd03a74e3b9ee6045af 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -213,7 +213,7 @@ public abstract class PlayerList {
+ 
+         // Spigot start - spawn location event
+         Player bukkitPlayer = entityplayer.getBukkitEntity();
+-        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(bukkitPlayer, bukkitPlayer.getLocation());
++        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new com.destroystokyo.paper.event.player.PlayerInitialSpawnEvent(bukkitPlayer, bukkitPlayer.getLocation()); // Paper use our duplicate event
+         cserver.getPluginManager().callEvent(ev);
+ 
+         Location loc = ev.getSpawnLocation();
+@@ -221,7 +221,10 @@ public abstract class PlayerList {
+ 
+         entityplayer.spawnIn(worldserver1);
+         entityplayer.playerInteractManager.a((WorldServer) entityplayer.world);
+-        entityplayer.setLocation(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
++        // Paper start - set raw so we aren't fully joined to the world (not added to chunk or world)
++        entityplayer.setPositionRaw(loc.getX(), loc.getY(), loc.getZ());
++        entityplayer.setYawPitch(loc.getYaw(), loc.getPitch());
++        // Paper end
+         // Spigot end
+ 
+         // CraftBukkit - Moved message to after join
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index cf92de7c138ef9cbbc1263bee29b9d0017b45827..10cbf66f06b31c9a4cae2359b3fbb9988abb9278 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -398,7 +398,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         return d1 * d1 + d2 * d2 + d3 * d3 < d0 * d0;
+     }
+ 
+-    protected void setYawPitch(float f, float f1) {
++    public void setYawPitch(float f, float f1) { // Paper - protected -> public
+         // CraftBukkit start - yaw was sometimes set to NaN, so we need to set it back to 0
+         if (Float.isNaN(f)) {
+             f = 0;

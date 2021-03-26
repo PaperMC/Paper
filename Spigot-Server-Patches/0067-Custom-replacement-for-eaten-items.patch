@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sun, 21 Jun 2015 15:07:20 -0400
+Subject: [PATCH] Custom replacement for eaten items
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index 318c96ee92fc8c6f5926aeadaa597d32ad590974..9b12e15a6c377ae90193596a35114dd452cf6e0c 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -3205,9 +3205,10 @@ public abstract class EntityLiving extends Entity {
+                 this.b(this.activeItem, 16);
+                 // CraftBukkit start - fire PlayerItemConsumeEvent
+                 ItemStack itemstack;
++                PlayerItemConsumeEvent event = null; // Paper
+                 if (this instanceof EntityPlayer) {
+                     org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.activeItem);
+-                    PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem);
++                    event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem); // Paper
+                     world.getServer().getPluginManager().callEvent(event);
+ 
+                     if (event.isCancelled()) {
+@@ -3221,6 +3222,13 @@ public abstract class EntityLiving extends Entity {
+                 } else {
+                     itemstack = this.activeItem.a(this.world, this);
+                 }
++
++                // Paper start - save the default replacement item and change it if necessary
++                final ItemStack defaultReplacement = itemstack;
++                if (event != null && event.getReplacement() != null) {
++                    itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++                }
++                // Paper end
+                 // CraftBukkit end
+ 
+                 if (itemstack != this.activeItem) {
+@@ -3228,6 +3236,11 @@ public abstract class EntityLiving extends Entity {
+                 }
+ 
+                 this.clearActiveItem();
++                // Paper start - if the replacement is anything but the default, update the client inventory
++                if (this instanceof EntityPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                    ((EntityPlayer) this).getBukkitEntity().updateInventory();
++                }
++                // Paper end
+             }
+ 
+         }

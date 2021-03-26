@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 2 Apr 2020 02:37:57 -0400
+Subject: [PATCH] Optimize Collision to not load chunks
+
+The collision code takes an AABB and generates a cuboid of checks rather
+than a cylinder, so at high velocity this can generate a lot of chunk checks.
+
+Treat an unloaded chunk as a collision for entities, and also for players if
+the "prevent moving into unloaded chunks" setting is enabled.
+
+If that serting is not enabled, collisions will be ignored for players, since
+movement will load only the chunk the player enters anyways and avoids loading
+massive amounts of surrounding chunks due to large AABB lookups.
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index c5116a9c596074a33c98d29bb1e9cf22a8ad53bf..84c2bc0bac4f388094693859ab7b6ced5e315c27 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -61,6 +61,7 @@ import net.minecraft.server.ScoreboardServer;
+ import net.minecraft.server.level.DemoPlayerInteractManager;
+ import net.minecraft.server.level.EntityPlayer;
+ import net.minecraft.server.level.PlayerInteractManager;
++import net.minecraft.server.level.TicketType;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.server.network.PlayerConnection;
+ import net.minecraft.sounds.SoundCategory;
+@@ -74,6 +75,7 @@ import net.minecraft.world.effect.MobEffect;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityTypes;
+ import net.minecraft.world.entity.player.EntityHuman;
++import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.EnumGamemode;
+ import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.World;
+@@ -809,6 +811,7 @@ public abstract class PlayerList {
+         entityplayer1.forceSetPositionRotation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+         // CraftBukkit end
+ 
++        worldserver1.getChunkProvider().addTicket(TicketType.POST_TELEPORT, new ChunkCoordIntPair(location.getBlockX() >> 4, location.getBlockZ() >> 4), 1, entityplayer.getId()); // Paper
+         while (avoidSuffocation && !worldserver1.getCubes(entityplayer1) && entityplayer1.locY() < 256.0D) {
+             entityplayer1.setPosition(entityplayer1.locX(), entityplayer1.locY() + 1.0D, entityplayer1.locZ());
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f95aa9b4cc53c1e3258b7b32249ec1c3ef4ae2f1..7bce3722fb00194f5a913c0b9866b73cfc74611d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -169,6 +169,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     private CraftEntity bukkitEntity;
+ 
+     PlayerChunkMap.EntityTracker tracker; // Paper
++    public boolean collisionLoadChunks = false; // Paper
+     public Throwable addedToWorldStack; // Paper - entity debug
+     public CraftEntity getBukkitEntity() {
+         if (bukkitEntity == null) {
+diff --git a/src/main/java/net/minecraft/world/level/ICollisionAccess.java b/src/main/java/net/minecraft/world/level/ICollisionAccess.java
+index fcf6cc86e3b5d9afe3ab3b3fba2ec13846ed0b4c..fcb3e2f9dea97138e0fd4cd2eb11b54799e1d3b5 100644
+--- a/src/main/java/net/minecraft/world/level/ICollisionAccess.java
++++ b/src/main/java/net/minecraft/world/level/ICollisionAccess.java
+@@ -54,7 +54,9 @@ public interface ICollisionAccess extends IBlockAccess {
+     }
+ 
+     default boolean b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate) {
++        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
+         return this.d(entity, axisalignedbb, predicate).allMatch(VoxelShape::isEmpty);
++        } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
+     }
+ 
+     Stream<VoxelShape> c(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Predicate<Entity> predicate);
+diff --git a/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java b/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
+index fa3421c9cd8531618827627e9c524a8df77c4c58..d0cc8677f2be422722160fee9b71894b5ddd3186 100644
+--- a/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
++++ b/src/main/java/net/minecraft/world/level/VoxelShapeSpliterator.java
+@@ -7,6 +7,9 @@ import java.util.function.Consumer;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPosition;
+ import net.minecraft.core.CursorPosition;
++import net.minecraft.server.MCUtil;
++import net.minecraft.server.level.EntityPlayer;
++import net.minecraft.server.level.RegionLimitedWorldAccess;
+ import net.minecraft.util.MathHelper;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.block.Blocks;
+@@ -21,13 +24,13 @@ import net.minecraft.world.phys.shapes.VoxelShapes;
+ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+ 
+     @Nullable
+-    private final Entity a;
++    private final Entity a; final Entity getEntity() { return this.a; } // Paper - OBFHELPER
+     private final AxisAlignedBB b;
+     private final VoxelShapeCollision c;
+     private final CursorPosition d;
+-    private final BlockPosition.MutableBlockPosition e;
++    private final BlockPosition.MutableBlockPosition e; final BlockPosition.MutableBlockPosition getMutablePos() { return this.e; } // Paper - OBFHELPER
+     private final VoxelShape f;
+-    private final ICollisionAccess g;
++    private final ICollisionAccess g; final ICollisionAccess getCollisionAccess() { return this.g; } // Paper - OBFHELPER
+     private boolean h;
+     private final BiPredicate<IBlockData, BlockPosition> i;
+ 
+@@ -64,23 +67,37 @@ public class VoxelShapeSpliterator extends AbstractSpliterator<VoxelShape> {
+     boolean a(Consumer<? super VoxelShape> consumer) {
+         while (true) {
+             if (this.d.a()) {
+-                int i = this.d.b();
+-                int j = this.d.c();
+-                int k = this.d.d();
++                int i = this.d.b(); final int x = i;
++                int j = this.d.c(); final int y = j;
++                int k = this.d.d(); final int z = k;
+                 int l = this.d.e();
+ 
+                 if (l == 3) {
+                     continue;
+                 }
+ 
+-                IBlockAccess iblockaccess = this.a(i, k);
+-
+-                if (iblockaccess == null) {
++                // Paper start - ensure we don't load chunks
++                Entity entity = this.getEntity();
++                BlockPosition.MutableBlockPosition blockposition_mutableblockposition = this.getMutablePos();
++                boolean far = entity != null && MCUtil.distanceSq(entity.locX(), y, entity.locZ(), x, y, z) > 14;
++                blockposition_mutableblockposition.setValues(x, y, z);
++
++                boolean isRegionLimited = this.getCollisionAccess() instanceof RegionLimitedWorldAccess;
++                IBlockData iblockdata = isRegionLimited ? Blocks.VOID_AIR.getBlockData() : ((!far && entity instanceof EntityPlayer) || (entity != null && entity.collisionLoadChunks)
++                    ? this.getCollisionAccess().getType(blockposition_mutableblockposition)
++                    : this.getCollisionAccess().getTypeIfLoaded(blockposition_mutableblockposition)
++                );
++
++                if (iblockdata == null) {
++                    if (!(entity instanceof EntityPlayer) || entity.world.paperConfig.preventMovingIntoUnloadedChunks) {
++                        VoxelShape voxelshape3 = VoxelShapes.of(far ? entity.getBoundingBox() : new AxisAlignedBB(new BlockPosition(x, y, z)));
++                        consumer.accept(voxelshape3);
++                        return true;
++                    }
+                     continue;
+                 }
+-
+-                this.e.d(i, j, k);
+-                IBlockData iblockdata = iblockaccess.getType(this.e);
++                // Paper - moved up
++                // Paper end
+ 
+                 if (!this.i.test(iblockdata, this.e) || l == 1 && !iblockdata.d() || l == 2 && !iblockdata.a(Blocks.MOVING_PISTON)) {
+                     continue;
+diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
+index cf32a4f63e8e59535c02a3f9c57f98833a2b0e83..24ecac40625629b0bbe460e7fc984b147ede1f1f 100644
+--- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
++++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShapes.java
+@@ -249,7 +249,8 @@ public final class VoxelShapes {
+ 
+                             if (k2 < 3) {
+                                 blockposition_mutableblockposition.a(enumaxiscycle1, i2, j2, l1);
+-                                IBlockData iblockdata = iworldreader.getType(blockposition_mutableblockposition);
++                                IBlockData iblockdata = iworldreader.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
++                                if (iblockdata == null) return 0.0D; // Paper
+ 
+                                 if ((k2 != 1 || iblockdata.d()) && (k2 != 2 || iblockdata.a(Blocks.MOVING_PISTON))) {
+                                     d0 = iblockdata.b((IBlockAccess) iworldreader, blockposition_mutableblockposition, voxelshapecollision).a(enumdirection_enumaxis2, axisalignedbb.d((double) (-blockposition_mutableblockposition.getX()), (double) (-blockposition_mutableblockposition.getY()), (double) (-blockposition_mutableblockposition.getZ())), d0);

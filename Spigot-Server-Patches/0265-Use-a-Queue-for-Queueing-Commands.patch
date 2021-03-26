@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 12 Aug 2018 02:33:39 -0400
+Subject: [PATCH] Use a Queue for Queueing Commands
+
+Lists are bad as Queues mmmkay.
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index a0804c4df6f047cf913ae70970219617052e853f..2d42b863b3fd83d1ee0532d1fcb63861641ec47b 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -75,7 +75,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+     private static final Pattern k = Pattern.compile("^[a-fA-F0-9]{40}$");
+-    private final List<ServerCommand> serverCommandQueue = Collections.synchronizedList(Lists.newArrayList());
++    private final java.util.Queue<ServerCommand> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - use a proper queue
+     private RemoteStatusListener remoteStatusListener;
+     public final RemoteControlCommandListener remoteControlCommandListener;
+     private RemoteControlListener remoteControlListener;
+@@ -434,8 +434,10 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+ 
+     public void handleCommandQueue() {
+         MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
+-        while (!this.serverCommandQueue.isEmpty()) {
+-            ServerCommand servercommand = (ServerCommand) this.serverCommandQueue.remove(0);
++        // Paper start - use proper queue
++        ServerCommand servercommand;
++        while ((servercommand = this.serverCommandQueue.poll()) != null) {
++            // Paper end
+ 
+             // CraftBukkit start - ServerCommand for preprocessing
+             ServerCommandEvent event = new ServerCommandEvent(console, servercommand.command);

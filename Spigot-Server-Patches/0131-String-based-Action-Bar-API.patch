@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 27 Dec 2016 15:02:42 -0500
+Subject: [PATCH] String based Action Bar API
+
+
+diff --git a/src/main/java/net/minecraft/SystemUtils.java b/src/main/java/net/minecraft/SystemUtils.java
+index c8bb06a31242089ad950713bd5f94abbfe12adc8..68ce7605bd63ea280b96db8230463d2afb0a6cb1 100644
+--- a/src/main/java/net/minecraft/SystemUtils.java
++++ b/src/main/java/net/minecraft/SystemUtils.java
+@@ -58,7 +58,7 @@ public class SystemUtils {
+     private static final ExecutorService e = a("Main");
+     private static final ExecutorService f = n();
+     public static LongSupplier a = System::nanoTime;
+-    public static final UUID b = new UUID(0L, 0L);
++    public static final UUID b = new UUID(0L, 0L); public static final UUID getNullUUID() {return b;} // Paper OBFHELPER
+     private static final Logger LOGGER = LogManager.getLogger();
+ 
+     public static <K, V> Collector<Entry<? extends K, ? extends V>, ?, Map<K, V>> a() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 6d7f1dee9ae2fb0b9620d85969de86eee09020cc..c3058d6fca2fd58aea5001e4310592aa8bd20640 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -244,6 +244,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     // Paper start
++    @Override
++    public void sendActionBar(BaseComponent[] message) {
++        if (getHandle().playerConnection == null) return;
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.ACTIONBAR, message, -1, -1, -1));
++    }
++
++    @Override
++    public void sendActionBar(String message) {
++        if (getHandle().playerConnection == null || message == null || message.isEmpty()) return;
++        getHandle().playerConnection.sendPacket(new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.ACTIONBAR, CraftChatMessage.fromStringOrNull(message)));
++    }
++
++    @Override
++    public void sendActionBar(char alternateChar, String message) {
++        if (message == null || message.isEmpty()) return;
++        sendActionBar(org.bukkit.ChatColor.translateAlternateColorCodes(alternateChar, message));
++    }
++
+     @Override
+     public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
+          if (header != null) {

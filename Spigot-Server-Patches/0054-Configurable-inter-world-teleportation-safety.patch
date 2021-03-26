@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sudzzy <originmc@outlook.com>
+Date: Thu, 3 Mar 2016 02:50:31 -0600
+Subject: [PATCH] Configurable inter-world teleportation safety
+
+People are able to abuse the way Bukkit handles teleportation across worlds since it provides a built in teleportation
+safety check.
+
+To abuse the safety check, players are required to get into a location deemed unsafe by Bukkit e.g. be within a chest
+or door block. While they are in this block, they accept a teleport request from a player within a different world. Once
+the player teleports, Minecraft will recursively search upwards for a safe location, this could eventually land within a
+player's skybase.
+
+Example setup to perform the glitch: http://puu.sh/ng3PC/cf072dcbdb.png
+The wanted destination was on top of the emerald block however the player ended on top of the diamond block.
+This only is the case if the player is teleporting between worlds.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 670efbe53241a0ae32d618c83da601ccc1f26e37..abbbe1786eb68af02f9d39650aad730ac44aac8a 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -205,4 +205,9 @@ public class PaperWorldConfig {
+         portalCreateRadius = getInt("portal-create-radius", 16);
+         portalSearchVanillaDimensionScaling = getBoolean("portal-search-vanilla-dimension-scaling", true);
+     }
++
++    public boolean disableTeleportationSuffocationCheck;
++    private void disableTeleportationSuffocationCheck() {
++        disableTeleportationSuffocationCheck = getBoolean("disable-teleportation-suffocation-check", false);
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 2542b3a135dd3f728a5a44c9f9c81ae524734abf..465fd7b4ee8f0a36c2a944c95666979a2d33c248 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -865,7 +865,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         if (fromWorld == toWorld) {
+             entity.playerConnection.teleport(to);
+         } else {
+-            server.getHandle().moveToWorld(entity, toWorld, true, to, true);
++            server.getHandle().moveToWorld(entity, toWorld, true, to, !toWorld.paperConfig.disableTeleportationSuffocationCheck); // Paper
+         }
+         return true;
+     }

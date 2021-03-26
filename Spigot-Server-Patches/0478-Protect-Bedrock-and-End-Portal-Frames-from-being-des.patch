@@ -13,10 +13,10 @@ A config is provided if you rather let players use these exploits, and let
 them destroy the worlds End Portals and get on top of the nether easy.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-index 6f0c5a2d33001f59e560ec239c0edbd32de84ed8..ac6b291c103c432fdced603674345096326a9efe 100644
+index 78271b400c79578d043b20a5389a37b1bef9a70d..5f3b0d95cc7e6a0434d78ea7305a70689c41c71c 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
-@@ -411,4 +411,17 @@ public class PaperConfig {
+@@ -416,4 +416,17 @@ public class PaperConfig {
      private static void midTickChunkTasks() {
          midTickChunkTasks = getInt("settings.chunk-tasks-per-tick", midTickChunkTasks);
      }
@@ -34,11 +34,47 @@ index 6f0c5a2d33001f59e560ec239c0edbd32de84ed8..ac6b291c103c432fdced603674345096
 +    }
 +
  }
-diff --git a/src/main/java/net/minecraft/server/Block.java b/src/main/java/net/minecraft/server/Block.java
-index b364ceafb4c3412b0d11b3b2e8b4321ed96769bb..a45ceff9ff970b996b2767379a2ecd4693f52d3a 100644
---- a/src/main/java/net/minecraft/server/Block.java
-+++ b/src/main/java/net/minecraft/server/Block.java
-@@ -23,6 +23,19 @@ public class Block extends BlockBase implements IMaterial {
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index a9ecc2b4da587ca3d3c99f8c8af38092a02fb572..0b3479aae8f7cad7bd0b8b64aa2dead43baf4c56 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -153,6 +153,7 @@ public class Explosion {
+                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
+                             BlockPosition blockposition = new BlockPosition(d4, d5, d6);
+                             IBlockData iblockdata = this.world.getType(blockposition);
++                            if (!iblockdata.isDestroyable()) continue; // Paper
+                             Fluid fluid = iblockdata.getFluid(); // Paper
+                             Optional<Float> optional = this.l.a(this, this.world, blockposition, iblockdata, fluid);
+ 
+@@ -306,7 +307,7 @@ public class Explosion {
+                 IBlockData iblockdata = this.world.getType(blockposition);
+                 Block block = iblockdata.getBlock();
+ 
+-                if (!iblockdata.isAir()) {
++                if (!iblockdata.isAir() && iblockdata.isDestroyable()) { // Paper
+                     BlockPosition blockposition1 = blockposition.immutableCopy();
+ 
+                     this.world.getMethodProfiler().enter("explosion_blocks");
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index 7ead848342bfbb5b20e95d716805f4b4fd36eb63..9369a0c6c0ae2d8518ebfb17f2c93ead2647ab8d 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -422,6 +422,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
+         // CraftBukkit start - tree generation
+         if (this.captureTreeGeneration) {
++            // Paper start
++            IBlockData type = getType(blockposition);
++            if (!type.isDestroyable()) return false;
++            // Paper end
+             CraftBlockState blockstate = capturedBlockStates.get(blockposition);
+             if (blockstate == null) {
+                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index e5c43b383a93fac76333a67b41535ab009d1dcf3..cc512bd2e89382e7fdbc59b41640e95ccafbbfe9 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -62,6 +62,19 @@ public class Block extends BlockBase implements IMaterial {
      protected final BlockStateList<Block, IBlockData> blockStateList;
      private IBlockData blockData;
      // Paper start
@@ -58,46 +94,11 @@ index b364ceafb4c3412b0d11b3b2e8b4321ed96769bb..a45ceff9ff970b996b2767379a2ecd46
      public co.aikar.timings.Timing timing;
      public co.aikar.timings.Timing getTiming() {
          if (timing == null) {
-diff --git a/src/main/java/net/minecraft/server/BlockBase.java b/src/main/java/net/minecraft/server/BlockBase.java
-index 62e7c6cb1b363d1ee626c4405f8c30e74aba03e9..1c06647fb6f8e757ca7a737a371cb1dec2aeb80e 100644
---- a/src/main/java/net/minecraft/server/BlockBase.java
-+++ b/src/main/java/net/minecraft/server/BlockBase.java
-@@ -138,7 +138,7 @@ public abstract class BlockBase {
- 
-     @Deprecated
-     public boolean a(IBlockData iblockdata, BlockActionContext blockactioncontext) {
--        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem());
-+        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem()) && (iblockdata.isDestroyable() || (blockactioncontext.getEntity() != null && blockactioncontext.getEntity().abilities.canInstantlyBuild)); // Paper
-     }
- 
-     @Deprecated
-@@ -342,7 +342,11 @@ public abstract class BlockBase {
-         public Block getBlock() {
-             return (Block) this.c;
-         }
--
-+        // Paper start
-+        public final boolean isDestroyable() {
-+            return getBlock().isDestroyable();
-+        }
-+        // Paper end
-         public Material getMaterial() {
-             return this.g;
-         }
-@@ -432,7 +436,7 @@ public abstract class BlockBase {
-         }
- 
-         public EnumPistonReaction getPushReaction() {
--            return this.getBlock().getPushReaction(this.p());
-+            return !isDestroyable() ? EnumPistonReaction.BLOCK : this.getBlock().getPushReaction(this.p()); // Paper
-         }
- 
-         public boolean i(IBlockAccess iblockaccess, BlockPosition blockposition) {
-diff --git a/src/main/java/net/minecraft/server/BlockPiston.java b/src/main/java/net/minecraft/server/BlockPiston.java
-index 417d1a6c3dbd23905672a847939d92a953bbc91c..0bab7dfb053c1aa92f5417c25fed5484e09bbec3 100644
---- a/src/main/java/net/minecraft/server/BlockPiston.java
-+++ b/src/main/java/net/minecraft/server/BlockPiston.java
-@@ -165,6 +165,12 @@ public class BlockPiston extends BlockDirectional {
+diff --git a/src/main/java/net/minecraft/world/level/block/piston/BlockPiston.java b/src/main/java/net/minecraft/world/level/block/piston/BlockPiston.java
+index 7de86d6232eb84642fb6423a1b0a9f30d9df9f2b..e062fd288098127fae22a55562e0207ceaf50163 100644
+--- a/src/main/java/net/minecraft/world/level/block/piston/BlockPiston.java
++++ b/src/main/java/net/minecraft/world/level/block/piston/BlockPiston.java
+@@ -194,6 +194,12 @@ public class BlockPiston extends BlockDirectional {
      @Override
      public boolean a(IBlockData iblockdata, World world, BlockPosition blockposition, int i, int j) {
          EnumDirection enumdirection = (EnumDirection) iblockdata.get(BlockPiston.FACING);
@@ -110,7 +111,7 @@ index 417d1a6c3dbd23905672a847939d92a953bbc91c..0bab7dfb053c1aa92f5417c25fed5484
  
          if (!world.isClientSide) {
              boolean flag = this.a(world, blockposition, enumdirection);
-@@ -196,7 +202,7 @@ public class BlockPiston extends BlockDirectional {
+@@ -225,7 +231,7 @@ public class BlockPiston extends BlockDirectional {
              IBlockData iblockdata1 = (IBlockData) ((IBlockData) Blocks.MOVING_PISTON.getBlockData().set(BlockPistonMoving.a, enumdirection)).set(BlockPistonMoving.b, this.sticky ? BlockPropertyPistonType.STICKY : BlockPropertyPistonType.DEFAULT);
  
              world.setTypeAndData(blockposition, iblockdata1, 20);
@@ -119,7 +120,7 @@ index 417d1a6c3dbd23905672a847939d92a953bbc91c..0bab7dfb053c1aa92f5417c25fed5484
              world.update(blockposition, iblockdata1.getBlock());
              iblockdata1.a(world, blockposition, 2);
              if (this.sticky) {
-@@ -225,7 +231,14 @@ public class BlockPiston extends BlockDirectional {
+@@ -254,7 +260,14 @@ public class BlockPiston extends BlockDirectional {
                      }
                  }
              } else {
@@ -135,39 +136,38 @@ index 417d1a6c3dbd23905672a847939d92a953bbc91c..0bab7dfb053c1aa92f5417c25fed5484
              }
  
              world.playSound((EntityHuman) null, blockposition, SoundEffects.BLOCK_PISTON_CONTRACT, SoundCategory.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
-diff --git a/src/main/java/net/minecraft/server/Explosion.java b/src/main/java/net/minecraft/server/Explosion.java
-index a552cc5bebb1a70db2e679a514769d0ad791ad68..72de544c0782e4daff222a0ca04e5bc870cf148c 100644
---- a/src/main/java/net/minecraft/server/Explosion.java
-+++ b/src/main/java/net/minecraft/server/Explosion.java
-@@ -125,6 +125,7 @@ public class Explosion {
-                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
-                             BlockPosition blockposition = new BlockPosition(d4, d5, d6);
-                             IBlockData iblockdata = this.world.getType(blockposition);
-+                            if (!iblockdata.isDestroyable()) continue; // Paper
-                             Fluid fluid = iblockdata.getFluid(); // Paper
-                             Optional<Float> optional = this.l.a(this, this.world, blockposition, iblockdata, fluid);
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBase.java b/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
+index 58c9f11bda5b8a0d80739d7c243e8e5cba4fe0af..1fcbb2e78904aa9f6ab870d7e2bc95ae25fbd33a 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBase.java
+@@ -189,7 +189,7 @@ public abstract class BlockBase {
  
-@@ -278,7 +279,7 @@ public class Explosion {
-                 IBlockData iblockdata = this.world.getType(blockposition);
-                 Block block = iblockdata.getBlock();
+     @Deprecated
+     public boolean a(IBlockData iblockdata, BlockActionContext blockactioncontext) {
+-        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem());
++        return this.material.isReplaceable() && (blockactioncontext.getItemStack().isEmpty() || blockactioncontext.getItemStack().getItem() != this.getItem()) && (iblockdata.isDestroyable() || (blockactioncontext.getEntity() != null && blockactioncontext.getEntity().abilities.canInstantlyBuild)); // Paper
+     }
  
--                if (!iblockdata.isAir()) {
-+                if (!iblockdata.isAir() && iblockdata.isDestroyable()) { // Paper
-                     BlockPosition blockposition1 = blockposition.immutableCopy();
+     @Deprecated
+@@ -393,7 +393,11 @@ public abstract class BlockBase {
+         public Block getBlock() {
+             return (Block) this.c;
+         }
+-
++        // Paper start
++        public final boolean isDestroyable() {
++            return getBlock().isDestroyable();
++        }
++        // Paper end
+         public Material getMaterial() {
+             return this.g;
+         }
+@@ -483,7 +487,7 @@ public abstract class BlockBase {
+         }
  
-                     this.world.getMethodProfiler().enter("explosion_blocks");
-diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
-index b479a25044ecf8c1a791729d643cf8dc90193b2b..8d59391befcbc2542a79758d2021ef51df59d815 100644
---- a/src/main/java/net/minecraft/server/World.java
-+++ b/src/main/java/net/minecraft/server/World.java
-@@ -362,6 +362,10 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
-     public boolean a(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
-         // CraftBukkit start - tree generation
-         if (this.captureTreeGeneration) {
-+            // Paper start
-+            IBlockData type = getType(blockposition);
-+            if (!type.isDestroyable()) return false;
-+            // Paper end
-             CraftBlockState blockstate = capturedBlockStates.get(blockposition);
-             if (blockstate == null) {
-                 blockstate = CapturedBlockState.getTreeBlockState(this, blockposition, i);
+         public EnumPistonReaction getPushReaction() {
+-            return this.getBlock().getPushReaction(this.p());
++            return !isDestroyable() ? EnumPistonReaction.BLOCK : this.getBlock().getPushReaction(this.p()); // Paper
+         }
+ 
+         public boolean i(IBlockAccess iblockaccess, BlockPosition blockposition) {

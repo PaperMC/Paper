@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Wed, 18 Dec 2019 22:21:35 -0600
+Subject: [PATCH] MC-145656 Fix Follow Range Initial Target
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index e726b6213cf2e8f5b326f05c0438b8f1ee2b73c5..edda2121f8c1046478beaa77030ebb36d403b334 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -580,4 +580,9 @@ public class PaperWorldConfig {
+     private void pillagerSettings() {
+         disablePillagerPatrols = getBoolean("game-mechanics.disable-pillager-patrols", disablePillagerPatrols);
+     }
++
++    public boolean entitiesTargetWithFollowRange = false;
++    private void entitiesTargetWithFollowRange() {
++        entitiesTargetWithFollowRange = getBoolean("entities-target-with-follow-range", entitiesTargetWithFollowRange);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java b/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
+index 4f0a2cbdd6d42e3e4721345e21bf0ef33ec48e1e..44f21c3f7af17e9d39777a48c6715a22fc085da6 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/target/PathfinderGoalNearestAttackableTarget.java
+@@ -32,6 +32,7 @@ public class PathfinderGoalNearestAttackableTarget<T extends EntityLiving> exten
+         this.b = i;
+         this.a(EnumSet.of(PathfinderGoal.Type.TARGET));
+         this.d = (new PathfinderTargetCondition()).a(this.k()).a(predicate);
++        if (entityinsentient.world.paperConfig.entitiesTargetWithFollowRange) this.d.useFollowRange(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/PathfinderTargetCondition.java b/src/main/java/net/minecraft/world/entity/ai/targeting/PathfinderTargetCondition.java
+index 0de32bcf24a94efe5af922b877d4cdc3578e0cbd..e6988f7ea428f1503e3db63876b13e57f898ee30 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/targeting/PathfinderTargetCondition.java
++++ b/src/main/java/net/minecraft/world/entity/ai/targeting/PathfinderTargetCondition.java
+@@ -4,6 +4,8 @@ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
+ import net.minecraft.world.entity.EntityInsentient;
+ import net.minecraft.world.entity.EntityLiving;
++import net.minecraft.world.entity.ai.attributes.AttributeModifiable;
++import net.minecraft.world.entity.ai.attributes.GenericAttributes;
+ 
+ public class PathfinderTargetCondition {
+ 
+@@ -82,7 +84,7 @@ public class PathfinderTargetCondition {
+ 
+                 if (this.b > 0.0D) {
+                     double d0 = this.g ? entityliving1.A(entityliving) : 1.0D;
+-                    double d1 = Math.max(this.b * d0, 2.0D);
++                    double d1 = Math.max((useFollowRange ? getFollowRange(entityliving) : this.b) * d0, 2.0D); // Paper
+                     double d2 = entityliving.h(entityliving1.locX(), entityliving1.locY(), entityliving1.locZ());
+ 
+                     if (d2 > d1 * d1) {
+@@ -98,4 +100,18 @@ public class PathfinderTargetCondition {
+             return true;
+         }
+     }
++
++    // Paper start
++    private boolean useFollowRange = false;
++
++    public PathfinderTargetCondition useFollowRange() {
++        this.useFollowRange = true;
++        return this;
++    }
++
++    private double getFollowRange(EntityLiving entityliving) {
++        AttributeModifiable attributeinstance = entityliving.getAttributeInstance(GenericAttributes.FOLLOW_RANGE);
++        return attributeinstance == null ? 16.0D : attributeinstance.getValue();
++    }
++    // Paper end
+ }

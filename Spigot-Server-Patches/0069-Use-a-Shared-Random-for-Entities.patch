@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Mar 2016 00:33:47 -0400
+Subject: [PATCH] Use a Shared Random for Entities
+
+Reduces memory usage and provides ensures more randomness, Especially since a lot of garbage entity objects get created.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b7df4d8eb3ccb9e8dc85898352f41c5c20abcb34..6cbb797cb0de4b26d8ddd7f0bf567f49bd36f9c0 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -143,6 +143,21 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         return tag.hasKey("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+     }
+ 
++    // Paper start
++    public static Random SHARED_RANDOM = new Random() {
++        private boolean locked = false;
++        @Override
++        public synchronized void setSeed(long seed) {
++            if (locked) {
++                LogManager.getLogger().error("Ignoring setSeed on Entity.SHARED_RANDOM", new Throwable());
++            } else {
++                super.setSeed(seed);
++                locked = true;
++            }
++        }
++    };
++    // Paper end
++
+     private CraftEntity bukkitEntity;
+ 
+     public CraftEntity getBukkitEntity() {
+@@ -272,7 +287,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         this.x = Vec3D.ORIGIN;
+         this.am = 1.0F;
+         this.an = 1.0F;
+-        this.random = new Random();
++        this.random = SHARED_RANDOM; // Paper
+         this.fireTicks = -this.getMaxFireTicks();
+         this.M = new Object2DoubleArrayMap(2);
+         this.justCreated = true;

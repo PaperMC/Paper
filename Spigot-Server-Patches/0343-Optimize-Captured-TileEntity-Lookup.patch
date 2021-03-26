@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 6 Apr 2019 10:16:48 -0400
+Subject: [PATCH] Optimize Captured TileEntity Lookup
+
+upstream was doing a containsKey/get pattern, and always doing it at that.
+that scenario is only even valid if were in the middle of a block place.
+
+Optimize to check if the captured list even has values in it, and also to
+just do a get call since the value can never be null.
+
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index 3b5ddc083719608e944bdefa38e1fd3909e8e200..b6b9a471426ddf911a1f6bf38543c0304bfc31f6 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -968,12 +968,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+             return null;
+         } else {
+             // CraftBukkit start
+-            if (capturedTileEntities.containsKey(blockposition)) {
+-                return capturedTileEntities.get(blockposition);
++            TileEntity tileentity = null; // Paper
++            if (!capturedTileEntities.isEmpty() && (tileentity = capturedTileEntities.get(blockposition)) != null) { // Paper
++                return tileentity; // Paper
+             }
+             // CraftBukkit end
+ 
+-            TileEntity tileentity = null;
++            //TileEntity tileentity = null; // Paper - move up
+ 
+             if (this.tickingTileEntities) {
+                 tileentity = this.E(blockposition);

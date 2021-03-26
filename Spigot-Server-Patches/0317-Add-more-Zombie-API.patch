@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 Oct 2018 04:29:59 -0500
+Subject: [PATCH] Add more Zombie API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+index 219e3b1626d68ede57b08a706d24bb6bc4b13fac..79d34b0296f88e5b4fe0351fe2483fc0128deabc 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+@@ -94,6 +94,7 @@ public class EntityZombie extends EntityMonster {
+     private int bt;
+     public int drownedConversionTime;
+     private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    private boolean shouldBurnInDay = true; // Paper
+ 
+     public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -262,6 +263,12 @@ public class EntityZombie extends EntityMonster {
+         super.movementTick();
+     }
+ 
++    // Paper start
++    public void stopDrowning() {
++        this.drownedConversionTime = -1;
++        this.getDataWatcher().set(EntityZombie.DROWN_CONVERTING, false);
++    }
++    // Paper end
+     public void startDrownedConversion(int i) {
+         this.lastTick = MinecraftServer.currentTick; // CraftBukkit
+         this.drownedConversionTime = i;
+@@ -290,9 +297,16 @@ public class EntityZombie extends EntityMonster {
+ 
+     }
+ 
++    public boolean shouldBurnInDay() { return T_(); } // Paper - OBFHELPER
+     protected boolean T_() {
+-        return true;
++        return this.shouldBurnInDay; // Paper - use api value instead
++    }
++
++    // Paper start
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
+     }
++    // Paper end
+ 
+     @Override
+     public boolean damageEntity(DamageSource damagesource, float f) {
+@@ -413,6 +427,7 @@ public class EntityZombie extends EntityMonster {
+         nbttagcompound.setBoolean("CanBreakDoors", this.eU());
+         nbttagcompound.setInt("InWaterTime", this.isInWater() ? this.bt : -1);
+         nbttagcompound.setInt("DrownedConversionTime", this.isDrownConverting() ? this.drownedConversionTime : -1);
++        nbttagcompound.setBoolean("Paper.ShouldBurnInDay", shouldBurnInDay); // Paper
+     }
+ 
+     @Override
+@@ -424,7 +439,11 @@ public class EntityZombie extends EntityMonster {
+         if (nbttagcompound.hasKeyOfType("DrownedConversionTime", 99) && nbttagcompound.getInt("DrownedConversionTime") > -1) {
+             this.startDrownedConversion(nbttagcompound.getInt("DrownedConversionTime"));
+         }
+-
++        // Paper start
++        if (nbttagcompound.hasKey("Paper.ShouldBurnInDay")) {
++            shouldBurnInDay = nbttagcompound.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+index 8ba92b7edacc088d610a9ed46eb7f61ebd8101a8..42d98d798bb8fe2d3c7cc2bfcf2ec38d97d99bd2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+@@ -94,6 +94,42 @@ public class CraftZombie extends CraftMonster implements Zombie {
+     @Override
+     public void setAgeLock(boolean b) {
+     }
++    // Paper start
++    @Override
++    public boolean isDrowning() {
++        return getHandle().isDrownConverting();
++    }
++
++    @Override
++    public void startDrowning(int drownedConversionTime) {
++        getHandle().startDrownedConversion(drownedConversionTime);
++    }
++
++    @Override
++    public void stopDrowning() {
++        getHandle().stopDrowning();
++    }
++
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    @Override
++    public boolean isArmsRaised() {
++        return getHandle().isAggressive();
++    }
++
++    @Override
++    public void setArmsRaised(final boolean raised) {
++        getHandle().setAggressive(raised);
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
++    // Paper end
+ 
+     @Override
+     public boolean getAgeLock() {

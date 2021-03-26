@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 23:58:50 -0600
+Subject: [PATCH] Configurable top of nether void damage
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index d16ae924bcbe31c964f7fb448757c748e5c4418c..4bba6977a0287837b8927718c040ac61463f0469 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -134,4 +134,19 @@ public class PaperWorldConfig {
+         if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
+         if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
+     }
++
++    public int netherVoidTopDamageHeight;
++    public boolean doNetherTopVoidDamage() { return netherVoidTopDamageHeight > 0; }
++    private void netherVoidTopDamageHeight() {
++        netherVoidTopDamageHeight = getInt("nether-ceiling-void-damage-height", 0);
++        log("Top of the nether void damage height: " + netherVoidTopDamageHeight);
++
++        if (PaperConfig.version < 18) {
++            boolean legacy = getBoolean("nether-ceiling-void-damage", false);
++            if (legacy) {
++                netherVoidTopDamageHeight = 128;
++                set("nether-ceiling-void-damage-height", netherVoidTopDamageHeight);
++            }
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index dce47ec1fc186d12ffa30bfd3d71870aecb95d40..cf92de7c138ef9cbbc1263bee29b9d0017b45827 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -500,9 +500,16 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+             this.fallDistance *= 0.5F;
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++
++        // Extracted to own function
++        /*
+         if (this.locY() < -64.0D) {
+             this.an();
+         }
++        */
++        this.performVoidDamage();
++        // Paper end
+ 
+         if (!this.world.isClientSide) {
+             this.setFlag(0, this.fireTicks > 0);
+@@ -595,6 +602,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+         this.setFireTicks(0);
+     }
+ 
++    // Paper start
++    protected void performVoidDamage() {
++        if (this.locY() < -64.0D || (this.world.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++            && world.paperConfig.doNetherTopVoidDamage()
++            && this.locY() >= world.paperConfig.netherVoidTopDamageHeight)) {
++            this.doVoidDamage();
++        }
++    }
++    // Paper end
++
++    protected final void doVoidDamage() { this.an(); } // Paper - OBFHELPER
+     protected void an() {
+         this.die();
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
+index 37785b27c3d9ffd010f09f53b2ca09941f609872..1f94cc096d95129d85a6278b1e369729df93d27d 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
+@@ -330,9 +330,15 @@ public abstract class EntityMinecartAbstract extends Entity {
+             this.setDamage(this.getDamage() - 1.0F);
+         }
+ 
++        // Paper start - Configurable nether ceiling damage
++        // Extracted to own function
++        /*
+         if (this.locY() < -64.0D) {
+             this.an();
+         }
++        */
++        this.performVoidDamage();
++        // Paper end
+ 
+         // this.doPortalTick(); // CraftBukkit - handled in postTick
+         if (this.world.isClientSide) {

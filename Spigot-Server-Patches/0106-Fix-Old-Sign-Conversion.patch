@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 17 Jun 2016 20:50:11 -0400
+Subject: [PATCH] Fix Old Sign Conversion
+
+1) Sign loading code was trying to parse the JSON before the check for oldSign.
+   That code could then skip the old sign converting code if it triggers a JSON parse exception.
+2) New Mojang Schematic system has Tile Entities in the new converted format, but missing the Bukkit.isConverted flag
+   This causes Igloos and such to render broken signs. We fix this by ignoring sign conversion for Defined Structures
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
+index 58789a6e285c31947508deae37caefe7e182278c..9b44ca96669ce423e5649f11743226dfdd9ce746 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
+@@ -34,6 +34,7 @@ public abstract class TileEntity implements net.minecraft.server.KeyedObject { /
+     public CraftPersistentDataContainer persistentDataContainer;
+     // CraftBukkit end
+     private static final Logger LOGGER = LogManager.getLogger();
++    public boolean isLoadingStructure = false; // Paper
+     private final TileEntityTypes<?> tileType; public TileEntityTypes getTileEntityType() { return tileType; } // Paper - OBFHELPER
+     @Nullable
+     protected World world;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
+index 29db550d91cf9e5a23052772df6e482a5e2b0b90..ec550aaa4e7943af4ecdd2275f1f32c21edf770a 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySign.java
+@@ -78,13 +78,14 @@ public class TileEntitySign extends TileEntity implements ICommandListener { //
+             }
+ 
+             try {
+-                IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s);
++                //IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s); // Paper - move down - the old format might throw a json error
+ 
+-                if (oldSign) {
++                if (oldSign && !isLoadingStructure) { // Paper - saved structures will be in the new format, but will not have isConverted
+                     lines[i] = org.bukkit.craftbukkit.util.CraftChatMessage.fromString(s)[0];
+                     continue;
+                 }
+                 // CraftBukkit end
++                IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.ChatSerializer.a(s.isEmpty() ? "\"\"" : s); // Paper - after old sign
+ 
+                 if (this.world instanceof WorldServer) {
+                     try {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java
+index a2bc771df054923a9a96c0024a426ef707624359..9b82ff37faaafc3a799413f6949fb88a993aa9a0 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/DefinedStructure.java
+@@ -278,9 +278,11 @@ public class DefinedStructure {
+                                         definedstructure_blockinfo.c.setLong("LootTableSeed", random.nextLong());
+                                     }
+ 
++                                    tileentity.isLoadingStructure = true; // Paper
+                                     tileentity.load(definedstructure_blockinfo.b, definedstructure_blockinfo.c);
+                                     tileentity.a(definedstructureinfo.c());
+                                     tileentity.a(definedstructureinfo.d());
++                                    tileentity.isLoadingStructure = false; // Paper
+                                 }
+                             }
+ 

@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 14 Jan 2018 17:01:31 -0500
+Subject: [PATCH] PreCreatureSpawnEvent
+
+Adds an event to fire before an Entity is created, so that plugins that need to cancel
+CreatureSpawnEvent can do so from this event instead.
+
+Cancelling CreatureSpawnEvent rapidly causes a lot of garbage collection and CPU waste
+as it's done after the Entity object has been fully created.
+
+Mob Limiting plugins and blanket "ban this type of monster" plugins should use this event
+instead and save a lot of server resources.
+
+See: https://github.com/PaperMC/Paper/issues/917
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityTypes.java b/src/main/java/net/minecraft/world/entity/EntityTypes.java
+index a707ba365e25ea15e2e9d22110696b6136aa0c6f..1355c074353611669c947cb0f06c67be0ab418aa 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityTypes.java
++++ b/src/main/java/net/minecraft/world/entity/EntityTypes.java
+@@ -17,6 +17,7 @@ import net.minecraft.nbt.NBTTagList;
+ import net.minecraft.network.chat.ChatMessage;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.resources.MinecraftKey;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.tags.Tag;
+@@ -317,6 +318,20 @@ public class EntityTypes<T extends Entity> {
+ 
+     @Nullable
+     public T spawnCreature(WorldServer worldserver, @Nullable NBTTagCompound nbttagcompound, @Nullable IChatBaseComponent ichatbasecomponent, @Nullable EntityHuman entityhuman, BlockPosition blockposition, EnumMobSpawn enummobspawn, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // Paper start - Call PreCreatureSpawnEvent
++        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(this).getKey());
++        if (type != null) {
++            com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                MCUtil.toLocation(worldserver, blockposition),
++                type,
++                spawnReason
++            );
++            if (!event.callEvent()) {
++                return null;
++            }
++        }
++        // Paper end
+         T t0 = this.createCreature(worldserver, nbttagcompound, ichatbasecomponent, entityhuman, blockposition, enummobspawn, flag, flag1);
+ 
+         if (t0 != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
+index 41f1aecbf6b506231a1b3b525fe0ce23b35c7840..6c01e460d3a1ff7f865ebc34dfd28d55b16aab98 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/SensorGolemLastSeen.java
+@@ -33,7 +33,7 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
+         Optional<List<EntityLiving>> optional = entityliving.getBehaviorController().getMemory(MemoryModuleType.MOBS);
+ 
+         if (optional.isPresent()) {
+-            boolean flag = ((List) optional.get()).stream().anyMatch((entityliving1) -> {
++            boolean flag = optional.get().stream().anyMatch((entityliving1) -> { // Paper - decompile fixes
+                 return entityliving1.getEntityType().equals(EntityTypes.IRON_GOLEM);
+             });
+ 
+@@ -44,6 +44,7 @@ public class SensorGolemLastSeen extends Sensor<EntityLiving> {
+         }
+     }
+ 
++    public static void setDetectedRecently(EntityLiving entityLiving) { b(entityLiving); } // Paper - OBFHELPER
+     public static void b(EntityLiving entityliving) {
+         entityliving.getBehaviorController().a(MemoryModuleType.GOLEM_DETECTED_RECENTLY, true, 600L);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+index adce6f17a5dd33004f8a67cd55d195de029e0263..534efe39beee393d11705b8f0b13ce4ca727c3eb 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+@@ -30,6 +30,7 @@ import net.minecraft.network.protocol.game.PacketDebug;
+ import net.minecraft.network.syncher.DataWatcher;
+ import net.minecraft.network.syncher.DataWatcherObject;
+ import net.minecraft.network.syncher.DataWatcherRegistry;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.sounds.SoundEffect;
+@@ -936,6 +937,21 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+             BlockPosition blockposition1 = this.a(blockposition, d0, d1);
+ 
+             if (blockposition1 != null) {
++                // Paper start - Call PreCreatureSpawnEvent
++                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                    MCUtil.toLocation(world, blockposition1),
++                    org.bukkit.entity.EntityType.IRON_GOLEM,
++                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE
++                );
++                if (!event.callEvent()) {
++                    if (event.shouldAbortSpawn()) {
++                        SensorGolemLastSeen.b(this); // Set Golem Last Seen to stop it from spawning another one
++                        return null;
++                    }
++                    break;
++                }
++                // Paper end
+                 EntityIronGolem entityirongolem = (EntityIronGolem) EntityTypes.IRON_GOLEM.createCreature(worldserver, (NBTTagCompound) null, (IChatBaseComponent) null, (EntityHuman) null, blockposition1, EnumMobSpawn.MOB_SUMMONED, false, false);
+ 
+                 if (entityirongolem != null) {
+diff --git a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
+index 883c724fbb86a84ee903b5e7127f14726fe4cf24..d4b8126f12fdf7d9b4f882d3ed7d8da544ed9e8a 100644
+--- a/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
++++ b/src/main/java/net/minecraft/world/level/MobSpawnerAbstract.java
+@@ -12,6 +12,7 @@ import net.minecraft.core.particles.Particles;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.nbt.NBTTagList;
+ import net.minecraft.resources.MinecraftKey;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.util.UtilColor;
+ import net.minecraft.util.WeightedRandom;
+@@ -125,6 +126,27 @@ public abstract class MobSpawnerAbstract {
+                         WorldServer worldserver = (WorldServer) world;
+ 
+                         if (EntityPositionTypes.a((EntityTypes) optional.get(), worldserver, EnumMobSpawn.SPAWNER, new BlockPosition(d3, d4, d5), world.getRandom())) {
++                            // Paper start
++                            EntityTypes<?> entityType = optional.get();
++                            String key = EntityTypes.getName(entityType).getKey();
++
++                            org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(key);
++                            if (type != null) {
++                                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++                                event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                                    MCUtil.toLocation(world, d3, d4, d5),
++                                    type,
++                                    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
++                                );
++                                if (!event.callEvent()) {
++                                    flag = true;
++                                    if (event.shouldAbortSpawn()) {
++                                        break;
++                                    }
++                                    continue;
++                                }
++                            }
++                            // Paper end
+                             Entity entity = EntityTypes.a(nbttagcompound, world, (entity1) -> {
+                                 entity1.setPositionRotation(d3, d4, d5, entity1.yaw, entity1.pitch);
+                                 return entity1;
+diff --git a/src/main/java/net/minecraft/world/level/SpawnerCreature.java b/src/main/java/net/minecraft/world/level/SpawnerCreature.java
+index fd0595fd584046326eccacdf0a6afe40c5e84eed..1969d1002b3182338614a2be0519fcdc385b7a44 100644
+--- a/src/main/java/net/minecraft/world/level/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/world/level/SpawnerCreature.java
+@@ -15,6 +15,7 @@ import net.minecraft.core.EnumDirection;
+ import net.minecraft.core.IPosition;
+ import net.minecraft.core.IRegistry;
+ import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.tags.Tag;
+ import net.minecraft.tags.TagsBlock;
+@@ -216,9 +217,16 @@ public final class SpawnerCreature {
+                                         j1 = biomesettingsmobs_c.d + worldserver.random.nextInt(1 + biomesettingsmobs_c.e - biomesettingsmobs_c.d);
+                                     }
+ 
+-                                    if (a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
++                                    // Paper start
++                                    Boolean doSpawning = a(worldserver, enumcreaturetype, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
++                                    if (doSpawning == null) {
++                                        return;
++                                    }
++                                    if (doSpawning && spawnercreature_c.test(biomesettingsmobs_c.c, blockposition_mutableblockposition, ichunkaccess)) {
++                                        // Paper end
+                                         EntityInsentient entityinsentient = a(worldserver, biomesettingsmobs_c.c);
+ 
++
+                                         if (entityinsentient == null) {
+                                             return;
+                                         }
+@@ -271,8 +279,24 @@ public final class SpawnerCreature {
+         }
+     }
+ 
+-    private static boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) {
++    private static Boolean a(WorldServer worldserver, EnumCreatureType enumcreaturetype, StructureManager structuremanager, ChunkGenerator chunkgenerator, BiomeSettingsMobs.c biomesettingsmobs_c, BlockPosition.MutableBlockPosition blockposition_mutableblockposition, double d0) { // Paper
+         EntityTypes<?> entitytypes = biomesettingsmobs_c.c;
++        // Paper start
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event;
++        org.bukkit.entity.EntityType type = org.bukkit.entity.EntityType.fromName(EntityTypes.getName(entitytypes).getKey());
++        if (type != null) {
++            event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                MCUtil.toLocation(worldserver, blockposition_mutableblockposition),
++                type, SpawnReason.NATURAL
++            );
++            if (!event.callEvent()) {
++                if (event.shouldAbortSpawn()) {
++                    return null;
++                }
++                return false;
++            }
++        }
++        // Paper end
+ 
+         if (entitytypes.e() == EnumCreatureType.MISC) {
+             return false;

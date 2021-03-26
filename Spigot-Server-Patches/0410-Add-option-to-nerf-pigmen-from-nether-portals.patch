@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Feb 2020 14:36:56 -0600
+Subject: [PATCH] Add option to nerf pigmen from nether portals
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 7fbd501d70dccf869a4454e2789a5d68f2e15754..9e4591ddc4b755f4ff5a6f1078b51cb13db80480 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -594,4 +594,9 @@ public class PaperWorldConfig {
+         disableHopperMoveEvents = getBoolean("hopper.disable-move-event", disableHopperMoveEvents);
+         log("Hopper Move Item Events: " + (disableHopperMoveEvents ? "disabled" : "enabled"));
+     }
++
++    public boolean nerfNetherPortalPigmen = false;
++    private void nerfNetherPortalPigmen() {
++        nerfNetherPortalPigmen = getBoolean("game-mechanics.nerf-pigmen-from-nether-portals", nerfNetherPortalPigmen);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index d676eaad8179cdeae410038e58ddafe0fe541ccc..68fdb01c3f11c3b060d3d621099d67f6b29431d6 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -278,6 +278,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     public long activatedTick = Integer.MIN_VALUE;
+     public boolean isTemporarilyActive = false; // Paper
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
++    public boolean fromNetherPortal; // Paper
+     protected int numCollisions = 0; // Paper
+     public void inactiveTick() { }
+     // Spigot end
+@@ -1693,6 +1694,9 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.setBoolean("Paper.FromMobSpawner", true);
+             }
++            if (fromNetherPortal) {
++                nbttagcompound.setBoolean("Paper.FromNetherPortal", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -1823,6 +1827,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+             }
+ 
+             spawnedViaMobSpawner = nbttagcompound.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = nbttagcompound.getBoolean("Paper.FromNetherPortal");
+             if (nbttagcompound.hasKey("Paper.SpawnReason")) {
+                 String spawnReasonName = nbttagcompound.getString("Paper.SpawnReason");
+                 try {
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockPortal.java b/src/main/java/net/minecraft/world/level/block/BlockPortal.java
+index e115ff86987c69f5e3571af5d7f034f24a3f6bba..5f797260eff317409a5039b88b01ad79ee2fdd91 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockPortal.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockPortal.java
+@@ -7,6 +7,7 @@ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityInsentient;
+ import net.minecraft.world.entity.EntityTypes;
+ import net.minecraft.world.entity.EnumMobSpawn;
+ import net.minecraft.world.entity.player.EntityHuman;
+@@ -62,6 +63,8 @@ public class BlockPortal extends Block {
+ 
+                 if (entity != null) {
+                     entity.resetPortalCooldown();
++                    entity.fromNetherPortal = true; // Paper
++                    if (worldserver.paperConfig.nerfNetherPortalPigmen) ((EntityInsentient) entity).aware = false; // Paper
+                 }
+             }
+         }

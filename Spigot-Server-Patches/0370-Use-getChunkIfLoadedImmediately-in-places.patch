@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 00:13:36 -0700
+Subject: [PATCH] Use getChunkIfLoadedImmediately in places
+
+This prevents us from hitting chunk loads for chunks at or less-than
+ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
+load in that case).
+
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index 1ceff988080b47352edf9cdf3c4f8e69421765d2..a67462e10c6f8cb0eecb9a81fdc55f353c258368 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -207,7 +207,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     }
+ 
+     @Override public Chunk getChunkIfLoaded(int x, int z) { // Paper - this was added in world too but keeping here for NMS ABI
+-        return this.chunkProvider.getChunkAt(x, z, false);
++        return this.chunkProvider.getChunkAtIfLoadedImmediately(x, z); // Paper
+     }
+ 
+     // Paper start - Asynchronous IO
+diff --git a/src/main/java/net/minecraft/server/network/PlayerConnection.java b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+index 12d98c82b93658d1246bfe267bbfc87d3a56bbaa..bae1fb41b1559373f73d4ed3ba145d81a71cabeb 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/network/PlayerConnection.java
+@@ -1242,7 +1242,7 @@ public class PlayerConnection implements PacketListenerPlayIn {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
+                             // Paper start - Prevent moving into unloaded chunks
+-                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4)) {
++                            if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX() != toX || this.player.locZ() != toZ) && worldserver.getChunkIfLoadedImmediately((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4) == null) { // Paper - use getIfLoadedImmediately
+                                 this.internalTeleport(this.player.locX(), this.player.locY(), this.player.locZ(), this.player.yaw, this.player.pitch, Collections.emptySet());
+                                 return;
+                             }
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index 15da3511a9e57c320f4cf409852bee07109095bc..b620d7e0d824c8d0758a66a8fbe872c3e45103d2 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -164,6 +164,13 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+         return (CraftServer) Bukkit.getServer();
+     }
+ 
++    // Paper start
++    @Override
++    public boolean isChunkLoaded(int x, int z) {
++        return ((WorldServer)this).getChunkIfLoaded(x, z) != null;
++    }
++    // Paper end
++
+     public ResourceKey<DimensionManager> getTypeKey() {
+         return typeKey;
+     }
+@@ -1062,14 +1069,14 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+     }
+ 
+     public boolean p(BlockPosition blockposition) {
+-        return isOutsideWorld(blockposition) ? false : this.getChunkProvider().b(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return isOutsideWorld(blockposition) ? false : isChunkLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
+     }
+ 
+     public boolean a(BlockPosition blockposition, Entity entity, EnumDirection enumdirection) {
+         if (isOutsideWorld(blockposition)) {
+             return false;
+         } else {
+-            IChunkAccess ichunkaccess = this.getChunkAt(blockposition.getX() >> 4, blockposition.getZ() >> 4, ChunkStatus.FULL, false);
++            IChunkAccess ichunkaccess = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4); // Paper
+ 
+             return ichunkaccess == null ? false : ichunkaccess.getType(blockposition).a((IBlockAccess) this, blockposition, entity, enumdirection);
+         }
+@@ -1190,7 +1197,7 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         for (int i1 = i; i1 < j; ++i1) {
+             for (int j1 = k; j1 < l; ++j1) {
+-                Chunk chunk = ichunkprovider.a(i1, j1);
++                Chunk chunk = (Chunk)this.getChunkIfLoadedImmediately(i1, j1); // Paper
+ 
+                 if (chunk != null) {
+                     chunk.a(oclass, axisalignedbb, list, predicate);
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 58d22363124a9343188d8c19476e5a92f2f0b80b..53d0541aba207b5eaea2e49edbb56df918d30333 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -140,9 +140,10 @@ public class ActivationRange
+             {
+                 for ( int j1 = k; j1 <= l; ++j1 )
+                 {
+-                    if ( world.getWorld().isChunkLoaded( i1, j1 ) )
++                    Chunk chunk = (Chunk) world.getChunkIfLoadedImmediately( i1, j1 );
++                    if ( chunk != null )
+                     {
+-                        activateChunkEntities( world.getChunkAt( i1, j1 ) );
++                        activateChunkEntities( chunk );
+                     }
+                 }
+             }

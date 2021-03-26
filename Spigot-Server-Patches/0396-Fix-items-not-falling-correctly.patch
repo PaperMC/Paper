@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AJMFactsheets <AJMFactsheets@gmail.com>
+Date: Fri, 17 Jan 2020 17:17:54 -0600
+Subject: [PATCH] Fix items not falling correctly
+
+Since 1.14, Mojang has added an optimization which skips checking if
+an item should fall every fourth tick.
+
+However, Spigot's entity activation range class also has an
+optimization which skips ticking active entities every fourth tick.
+This can result in a state where an item will never properly fall
+due to its move method never being called.
+
+This patch resolves the conflict by offsetting checking an item's
+move method from Spigot's entity activation range check.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/EntityItem.java b/src/main/java/net/minecraft/world/entity/item/EntityItem.java
+index 0b2e6e72a85e05f239d56afb6785c91da5b25d55..11e029f6f97f1dd9c32e311d1a3800f2fa54b91f 100644
+--- a/src/main/java/net/minecraft/world/entity/item/EntityItem.java
++++ b/src/main/java/net/minecraft/world/entity/item/EntityItem.java
+@@ -116,7 +116,7 @@ public class EntityItem extends Entity {
+                 }
+             }
+ 
+-            if (!this.onGround || c(this.getMot()) > 9.999999747378752E-6D || (this.ticksLived + this.getId()) % 4 == 0) {
++            if (!this.onGround || c(this.getMot()) > 9.999999747378752E-6D || this.ticksLived % 4 == 0) { // Paper - Ensure checking item movement is always offset from Spigot's entity activation range check
+                 this.move(EnumMoveType.SELF, this.getMot());
+                 float f1 = 0.98F;
+ 

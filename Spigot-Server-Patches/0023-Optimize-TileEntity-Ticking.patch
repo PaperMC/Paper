@@ -1,0 +1,248 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 8 Mar 2015 22:55:25 -0600
+Subject: [PATCH] Optimize TileEntity Ticking
+
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index d4ebcf8f66197299256bd6b65710a1488c90ea41..c9164dfdb27ddf3709129c8aec54903a1df121ff 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -109,7 +109,7 @@ public class TimingsExport extends Thread {
+             pair("end", System.currentTimeMillis() / 1000),
+             pair("online-mode", Bukkit.getServer().getOnlineMode()),
+             pair("sampletime", (System.currentTimeMillis() - TimingsManager.timingStart) / 1000),
+-            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().d(), pack -> {
++            pair("datapacks", toArrayMapper(MinecraftServer.getServer().getResourcePackRepository().e(), pack -> {
+                 // Don't feel like obf helper'ing these, non fatal if its temp missed.
+                 return ChatColor.stripColor(CraftChatMessage.fromComponent(pack.a(true)));
+             }))
+@@ -148,8 +148,8 @@ public class TimingsExport extends Thread {
+         );
+ 
+         parent.put("worlds", toObjectMapper(MinecraftServer.getServer().getWorlds(), world -> {
+-            if (world.getWorldData().getName().equals("worldeditregentempworld")) return null;
+-            return pair(world.getWorldData().getName(), createObject(
++            if (world.getWorld().getName().equals("worldeditregentempworld")) return null;
++            return pair(world.getWorld().getName(), createObject(
+                 pair("gamerules", toObjectMapper(world.getWorld().getGameRules(), rule -> {
+                     return pair(rule, world.getWorld().getGameRuleValue(rule));
+                 })),
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockChest.java b/src/main/java/net/minecraft/world/level/block/BlockChest.java
+index 60e7dc1910ae9214d84d65b011cfec278b6b32ae..b229faad99120c67b089f7680d800fbe594fe7da 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockChest.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockChest.java
+@@ -54,8 +54,8 @@ import net.minecraft.world.phys.shapes.VoxelShapeCollision;
+ public class BlockChest extends BlockChestAbstract<TileEntityChest> implements IBlockWaterlogged {
+ 
+     public static final BlockStateDirection FACING = BlockFacingHorizontal.FACING;
+-    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF;
+-    public static final BlockStateBoolean d = BlockProperties.C;
++    public static final BlockStateEnum<BlockPropertyChestType> c = BlockProperties.aF; public static final BlockStateEnum<BlockPropertyChestType> CHEST_TYPE_PROPERTY = c; // Paper - OBFHELPER
++    public static final BlockStateBoolean d = BlockProperties.C; public static final BlockStateBoolean waterlogged() { return d; } // Paper OBFHELPER
+     protected static final VoxelShape e = Block.a(1.0D, 0.0D, 0.0D, 15.0D, 14.0D, 15.0D);
+     protected static final VoxelShape f = Block.a(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 16.0D);
+     protected static final VoxelShape g = Block.a(0.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D);
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityChest.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityChest.java
+index eed95b370d1d624ffc6b7a35357b7028ec58c584..51167d776c710decb0107bebcb35bdf43103772b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityChest.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityChest.java
+@@ -8,6 +8,7 @@ import net.minecraft.core.NonNullList;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.network.chat.ChatMessage;
+ import net.minecraft.network.chat.IChatBaseComponent;
++import net.minecraft.server.MCUtil;
+ import net.minecraft.sounds.SoundCategory;
+ import net.minecraft.sounds.SoundEffect;
+ import net.minecraft.sounds.SoundEffects;
+@@ -33,7 +34,7 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+ import org.bukkit.entity.HumanEntity;
+ // CraftBukkit end
+ 
+-public class TileEntityChest extends TileEntityLootable implements ITickable {
++public class TileEntityChest extends TileEntityLootable { // Paper - Remove ITickable
+ 
+     private NonNullList<ItemStack> items;
+     protected float a;
+@@ -111,14 +112,20 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+         return nbttagcompound;
+     }
+ 
+-    @Override
+     public void tick() {
+         int i = this.position.getX();
+         int j = this.position.getY();
+         int k = this.position.getZ();
+ 
+         ++this.j;
+-        this.viewingCount = a(this.world, this, this.j, i, j, k, this.viewingCount);
++    }
++
++    public void doOpenLogic() {
++        int i = this.position.getX();
++        int j = this.position.getY();
++        int k = this.position.getZ();
++
++        //this.viewingCount = a(this.world, this, this.j, i, j, k, this.viewingCount); // Paper - check is faulty given our logic is called before active container set
+         this.b = this.a;
+         float f = 0.1F;
+ 
+@@ -132,8 +139,11 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+         if (this.viewingCount > 0 && this.a == 0.0F) {
+             this.playOpenSound(SoundEffects.BLOCK_CHEST_OPEN);
+         }
++    }
+ 
+-        if (this.viewingCount == 0 && this.a > 0.0F || this.viewingCount > 0 && this.a < 1.0F) {
++    public void doCloseLogic() {
++        if (this.viewingCount == 0 /* && this.a > 0.0F || this.viewingCount > 0 && this.a < 1.0F */) { // Paper - disable all but player count check
++            /* // Paper - disable animation stuff
+             float f1 = this.a;
+ 
+             if (this.viewingCount > 0) {
+@@ -149,8 +159,11 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+             float f2 = 0.5F;
+ 
+             if (this.a < 0.5F && f1 >= 0.5F) {
++            */
++            MCUtil.scheduleTask(10, () -> {
+                 this.playOpenSound(SoundEffects.BLOCK_CHEST_CLOSE);
+-            }
++                }, "Chest Sounds");
++            //} // Paper end
+ 
+             if (this.a < 0.0F) {
+                 this.a = 0.0F;
+@@ -189,6 +202,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+     }
+ 
+     public void playOpenSound(SoundEffect soundeffect) {
++        if (!this.getBlock().contains(BlockChest.CHEST_TYPE_PROPERTY)) { return; } // Paper - this can be delayed, double check exists - Fixes GH-2074
+         BlockPropertyChestType blockpropertychesttype = (BlockPropertyChestType) this.getBlock().get(BlockChest.c);
+ 
+         if (blockpropertychesttype != BlockPropertyChestType.LEFT) {
+@@ -227,6 +241,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+ 
+             ++this.viewingCount;
+             if (this.world == null) return; // CraftBukkit
++            doOpenLogic(); // Paper
+ 
+             // CraftBukkit start - Call redstone event
+             if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
+@@ -249,6 +264,7 @@ public class TileEntityChest extends TileEntityLootable implements ITickable {
+             --this.viewingCount;
+ 
+             // CraftBukkit start - Call redstone event
++            doCloseLogic(); // Paper
+             if (this.getBlock().getBlock() == Blocks.TRAPPED_CHEST) {
+                 int newPower = Math.max(0, Math.min(15, this.viewingCount));
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityEnderChest.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityEnderChest.java
+index 930f1bd091d9754f7ca5d9e36cdf49b2be03eb23..2bc4213c70be47ca8bbc24898cc92e43f4228821 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityEnderChest.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityEnderChest.java
+@@ -1,11 +1,12 @@
+ package net.minecraft.world.level.block.entity;
+ 
++import net.minecraft.server.MCUtil;
+ import net.minecraft.sounds.SoundCategory;
+ import net.minecraft.sounds.SoundEffects;
+ import net.minecraft.world.entity.player.EntityHuman;
+ import net.minecraft.world.level.block.Blocks;
+ 
+-public class TileEntityEnderChest extends TileEntity implements ITickable {
++public class TileEntityEnderChest extends TileEntity { // Paper - Remove ITickable
+ 
+     public float a;
+     public float b;
+@@ -16,18 +17,28 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+         super(TileEntityTypes.ENDER_CHEST);
+     }
+ 
+-    @Override
+     public void tick() {
+         if (++this.g % 20 * 4 == 0) {
+             this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.c);
+         }
+ 
+         this.b = this.a;
++        /* // Paper
+         int i = this.position.getX();
+         int j = this.position.getY();
+         int k = this.position.getZ();
+         float f = 0.1F;
+         double d0;
++        // Paper start
++        */
++    }
++
++    private void doOpenLogic() {
++        int i = this.position.getX();
++        int j = this.position.getY();
++        int k = this.position.getZ();
++        double d0;
++        // Paper end
+ 
+         if (this.c > 0 && this.a == 0.0F) {
+             double d1 = (double) i + 0.5D;
+@@ -35,8 +46,17 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+             d0 = (double) k + 0.5D;
+             this.world.playSound((EntityHuman) null, d1, (double) j + 0.5D, d0, SoundEffects.BLOCK_ENDER_CHEST_OPEN, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+         }
++        // Paper start
++    }
+ 
+-        if (this.c == 0 && this.a > 0.0F || this.c > 0 && this.a < 1.0F) {
++    private void doCloseLogic() {
++        int i = this.position.getX();
++        int j = this.position.getY();
++        int k = this.position.getZ();
++        double d0;
++
++        if (this.c == 0) { /* && this.a > 0.0F || this.c > 0 && this.a < 1.0F) {
++        // Paper end
+             float f1 = this.a;
+ 
+             if (this.c > 0) {
+@@ -52,11 +72,14 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+             float f2 = 0.5F;
+ 
+             if (this.a < 0.5F && f1 >= 0.5F) {
++            // Paper start
++            */
+                 d0 = (double) i + 0.5D;
+                 double d2 = (double) k + 0.5D;
+ 
++            MCUtil.scheduleTask(10, () -> {
+                 this.world.playSound((EntityHuman) null, d0, (double) j + 0.5D, d2, SoundEffects.BLOCK_ENDER_CHEST_CLOSE, SoundCategory.BLOCKS, 0.5F, this.world.random.nextFloat() * 0.1F + 0.9F);
+-            }
++            }, "Chest Sounds");
+ 
+             if (this.a < 0.0F) {
+                 this.a = 0.0F;
+@@ -84,11 +107,13 @@ public class TileEntityEnderChest extends TileEntity implements ITickable {
+     public void d() {
+         ++this.c;
+         this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.c);
++        doOpenLogic(); // Paper
+     }
+ 
+     public void f() {
+         --this.c;
+         this.world.playBlockAction(this.position, Blocks.ENDER_CHEST, 1, this.c);
++        doCloseLogic(); // Paper
+     }
+ 
+     public boolean a(EntityHuman entityhuman) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/IBlockDataHolder.java b/src/main/java/net/minecraft/world/level/block/state/IBlockDataHolder.java
+index e4b59a85ee9b435b2e86d4c7d78b7224773f6967..ba046cffdd8331c7e0427f19fa54d0c7a99077d9 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/IBlockDataHolder.java
++++ b/src/main/java/net/minecraft/world/level/block/state/IBlockDataHolder.java
+@@ -84,6 +84,7 @@ public abstract class IBlockDataHolder<O, S> {
+         return Collections.unmodifiableCollection(this.b.keySet());
+     }
+ 
++    public <T extends Comparable<T>> boolean contains(IBlockState<T> iblockstate) { return this.b(iblockstate); } // Paper - OBFHELPER
+     public <T extends Comparable<T>> boolean b(IBlockState<T> iblockstate) {
+         return this.b.containsKey(iblockstate);
+     }

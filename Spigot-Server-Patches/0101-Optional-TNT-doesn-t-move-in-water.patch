@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Sun, 22 May 2016 20:20:55 -0500
+Subject: [PATCH] Optional TNT doesn't move in water
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index eb04fdb172a50ec1f5b7fe78fa0e7655246abd60..6eca3f300020006f02dd36253b522db442e3cc33 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -2,7 +2,6 @@ package com.destroystokyo.paper;
+ 
+ import java.util.List;
+ 
+-import org.bukkit.Bukkit;
+ import org.bukkit.configuration.file.YamlConfiguration;
+ import org.spigotmc.SpigotWorldConfig;
+ 
+@@ -291,4 +290,14 @@ public class PaperWorldConfig {
+             );
+         }
+     }
++
++    public boolean preventTntFromMovingInWater;
++    private void preventTntFromMovingInWater() {
++        if (PaperConfig.version < 13) {
++            boolean oldVal = getBoolean("enable-old-tnt-cannon-behaviors", false);
++            set("prevent-tnt-from-moving-in-water", oldVal);
++        }
++        preventTntFromMovingInWater = getBoolean("prevent-tnt-from-moving-in-water", false);
++        log("Prevent TNT from moving in water: " + preventTntFromMovingInWater);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+index f5227aa761d326376d057eaadcdbef024ed30241..44b79c97d5cc7570683e1b7f025b4f3ad65beb81 100644
+--- a/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/level/EntityTrackerEntry.java
+@@ -67,7 +67,7 @@ public class EntityTrackerEntry {
+     private boolean q;
+     private boolean r;
+     // CraftBukkit start
+-    private final Set<EntityPlayer> trackedPlayers;
++    final Set<EntityPlayer> trackedPlayers; // Paper - private -> package
+     // Paper start
+     private java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = null;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f942d75982409f7640f073f9c77f8939225c6939..88ffc594a2ee7f8718337883609ad4c082f85f50 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2766,6 +2766,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     }
+ 
+     public boolean bV() {
++        // Paper start
++        return this.pushedByWater();
++    }
++    public boolean pushedByWater() {
++        // Paper end
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java b/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
+index 535e7d7297d81026b8586d5049b72fa65519b464..63b35feac07f01b200dd68c4836ceb419e951660 100644
+--- a/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
++++ b/src/main/java/net/minecraft/world/entity/item/EntityTNTPrimed.java
+@@ -4,10 +4,14 @@ import javax.annotation.Nullable;
+ import net.minecraft.core.particles.Particles;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
++import net.minecraft.network.protocol.game.PacketPlayOutEntityVelocity;
+ import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
+ import net.minecraft.network.syncher.DataWatcher;
+ import net.minecraft.network.syncher.DataWatcherObject;
+ import net.minecraft.network.syncher.DataWatcherRegistry;
++import net.minecraft.server.level.PlayerChunkMap;
++import net.minecraft.server.level.WorldServer;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityLiving;
+ import net.minecraft.world.entity.EntityPose;
+@@ -96,7 +100,27 @@ public class EntityTNTPrimed extends Entity {
+                 this.world.addParticle(Particles.SMOKE, this.locX(), this.locY() + 0.5D, this.locZ(), 0.0D, 0.0D, 0.0D);
+             }
+         }
+-
++        // Paper start - Optional prevent TNT from moving in water
++        if (!this.dead && this.inWater && this.world.paperConfig.preventTntFromMovingInWater) {
++            /*
++             * Author: Jedediah Smith <jedediah@silencegreys.com>
++             */
++            // Send position and velocity updates to nearby players on every tick while the TNT is in water.
++            // This does pretty well at keeping their clients in sync with the server.
++            PlayerChunkMap.EntityTracker ete = ((WorldServer)this.world).getChunkProvider().playerChunkMap.trackedEntities.get(this.getId());
++            if (ete != null) {
++                PacketPlayOutEntityVelocity velocityPacket = new PacketPlayOutEntityVelocity(this);
++                PacketPlayOutEntityTeleport positionPacket = new PacketPlayOutEntityTeleport(this);
++
++                ete.trackedPlayers.stream()
++                    .filter(viewer -> (viewer.locX() - this.locX()) * (viewer.locY() - this.locY()) * (viewer.locZ() - this.locZ()) < 16 * 16)
++                    .forEach(viewer -> {
++                        viewer.playerConnection.sendPacket(velocityPacket);
++                        viewer.playerConnection.sendPacket(positionPacket);
++                    });
++            }
++        }
++        // Paper end
+     }
+ 
+     private void explode() {
+@@ -165,4 +189,11 @@ public class EntityTNTPrimed extends Entity {
+     public Packet<?> P() {
+         return new PacketPlayOutSpawnEntity(this);
+     }
++
++    // Paper start - Optional prevent TNT from moving in water
++    @Override
++    public boolean pushedByWater() {
++        return !world.paperConfig.preventTntFromMovingInWater && super.pushedByWater();
++    }
++    // Paper end
+ }

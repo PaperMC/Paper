@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Mon, 9 Nov 2020 20:44:51 +0100
+Subject: [PATCH] Add ignore discounts API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+index 80a9eecfd2eb17db6a7d0b3973f4acdb80f873e8..382059b2c2b6a7b8231b3c3a5c9a401091b1ad18 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+@@ -460,6 +460,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+ 
+             while (iterator.hasNext()) {
+                 MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
++                if (merchantrecipe.ignoreDiscounts) continue; // Paper
+ 
+                 // CraftBukkit start
+                 int bonus = -MathHelper.d((float) i * merchantrecipe.getPriceMultiplier());
+@@ -479,6 +480,7 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+ 
+             while (iterator1.hasNext()) {
+                 MerchantRecipe merchantrecipe1 = (MerchantRecipe) iterator1.next();
++                if (merchantrecipe1.ignoreDiscounts) continue; // Paper
+                 double d0 = 0.3D + 0.0625D * (double) j;
+                 int k = (int) Math.floor(d0 * (double) merchantrecipe1.a().getCount());
+ 
+diff --git a/src/main/java/net/minecraft/world/item/trading/MerchantRecipe.java b/src/main/java/net/minecraft/world/item/trading/MerchantRecipe.java
+index 9e2fe0d5e6d4ea1f4c9cea96b755ddcd1e3c9009..605d1b2514c272c0fcf3cb9d7575ad8066dad31b 100644
+--- a/src/main/java/net/minecraft/world/item/trading/MerchantRecipe.java
++++ b/src/main/java/net/minecraft/world/item/trading/MerchantRecipe.java
+@@ -19,6 +19,7 @@ public class MerchantRecipe {
+     private int demand;
+     public float priceMultiplier;
+     public int xp;
++    public boolean ignoreDiscounts; // Paper
+     // CraftBukkit start
+     private CraftMerchantRecipe bukkitHandle;
+ 
+@@ -27,7 +28,12 @@ public class MerchantRecipe {
+     }
+ 
+     public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int uses, int maxUses, int experience, float priceMultiplier, CraftMerchantRecipe bukkit) {
+-        this(itemstack, itemstack1, itemstack2, uses, maxUses, experience, priceMultiplier);
++        // Paper start - add ignoreDiscounts param
++        this(itemstack, itemstack1, itemstack2, uses, maxUses, experience, priceMultiplier, false, bukkit);
++    }
++    public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int uses, int maxUses, int experience, float priceMultiplier, boolean ignoreDiscounts, CraftMerchantRecipe bukkit) {
++        this(itemstack, itemstack1, itemstack2, uses, maxUses, experience, priceMultiplier, ignoreDiscounts);
++        // Paper end
+         this.bukkitHandle = bukkit;
+     }
+     // CraftBukkit end
+@@ -59,6 +65,7 @@ public class MerchantRecipe {
+ 
+         this.specialPrice = nbttagcompound.getInt("specialPrice");
+         this.demand = nbttagcompound.getInt("demand");
++        this.ignoreDiscounts = nbttagcompound.getBoolean("Paper.IgnoreDiscounts"); // Paper
+     }
+ 
+     public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, int i, int j, float f) {
+@@ -70,10 +77,19 @@ public class MerchantRecipe {
+     }
+ 
+     public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int i, int j, int k, float f) {
+-        this(itemstack, itemstack1, itemstack2, i, j, k, f, 0);
++        // Paper start - add ignoreDiscounts param
++        this(itemstack, itemstack1, itemstack2, i, j, k, f, false);
++    }
++    public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int i, int j, int k, float f, boolean ignoreDiscounts) {
++        this(itemstack, itemstack1, itemstack2, i, j, k, f, 0, ignoreDiscounts);
+     }
+ 
+     public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int i, int j, int k, float f, int l) {
++        this(itemstack, itemstack1, itemstack2, i, j, k, f, l, false);
++    }
++    public MerchantRecipe(ItemStack itemstack, ItemStack itemstack1, ItemStack itemstack2, int i, int j, int k, float f, int l, boolean ignoreDiscounts) {
++        this.ignoreDiscounts = ignoreDiscounts;
++        // Paper end
+         this.rewardExp = true;
+         this.xp = 1;
+         this.buyingItem1 = itemstack;
+@@ -189,6 +205,7 @@ public class MerchantRecipe {
+         nbttagcompound.setFloat("priceMultiplier", this.priceMultiplier);
+         nbttagcompound.setInt("specialPrice", this.specialPrice);
+         nbttagcompound.setInt("demand", this.demand);
++        nbttagcompound.setBoolean("Paper.IgnoreDiscounts", this.ignoreDiscounts); // Paper
+         return nbttagcompound;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantRecipe.java
+index e3b9a0ebe5cec5b47d9d225887656e00e999960b..0c8728bd8272e36d70cf8f05fcd7656ea5a48702 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantRecipe.java
+@@ -17,7 +17,12 @@ public class CraftMerchantRecipe extends MerchantRecipe {
+     }
+ 
+     public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier) {
+-        super(result, uses, maxUses, experienceReward, experience, priceMultiplier);
++        // Paper start - add ignoreDiscounts param
++        this(result, uses, maxUses, experienceReward, experience, priceMultiplier, false);
++    }
++    public CraftMerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int experience, float priceMultiplier, boolean ignoreDiscounts) {
++        super(result, uses, maxUses, experienceReward, experience, priceMultiplier, ignoreDiscounts);
++        // Paper end
+         this.handle = new net.minecraft.world.item.trading.MerchantRecipe(
+                 net.minecraft.world.item.ItemStack.b,
+                 net.minecraft.world.item.ItemStack.b,
+@@ -26,6 +31,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
+                 maxUses,
+                 experience,
+                 priceMultiplier,
++                ignoreDiscounts, // Paper - add ignoreDiscounts param
+                 this
+         );
+         this.setExperienceReward(experienceReward);
+@@ -81,6 +87,18 @@ public class CraftMerchantRecipe extends MerchantRecipe {
+         handle.priceMultiplier = priceMultiplier;
+     }
+ 
++    // Paper start
++    @Override
++    public boolean shouldIgnoreDiscounts() {
++        return this.handle.ignoreDiscounts;
++    }
++
++    @Override
++    public void setIgnoreDiscounts(boolean ignoreDiscounts) {
++        this.handle.ignoreDiscounts = ignoreDiscounts;
++    }
++    // Paper end
++
+     public net.minecraft.world.item.trading.MerchantRecipe toMinecraft() {
+         List<ItemStack> ingredients = getIngredients();
+         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
+@@ -95,7 +113,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
+         if (recipe instanceof CraftMerchantRecipe) {
+             return (CraftMerchantRecipe) recipe;
+         } else {
+-            CraftMerchantRecipe craft = new CraftMerchantRecipe(recipe.getResult(), recipe.getUses(), recipe.getMaxUses(), recipe.hasExperienceReward(), recipe.getVillagerExperience(), recipe.getPriceMultiplier());
++            CraftMerchantRecipe craft = new CraftMerchantRecipe(recipe.getResult(), recipe.getUses(), recipe.getMaxUses(), recipe.hasExperienceReward(), recipe.getVillagerExperience(), recipe.getPriceMultiplier(), recipe.shouldIgnoreDiscounts()); // Paper - shouldIgnoreDiscounts
+             craft.setIngredients(recipe.getIngredients());
+ 
+             return craft;

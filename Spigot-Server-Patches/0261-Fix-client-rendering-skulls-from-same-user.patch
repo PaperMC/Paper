@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 22 Nov 2016 00:40:42 -0500
+Subject: [PATCH] Fix client rendering skulls from same user
+
+See: https://github.com/PaperMC/Paper/issues/1304
+
+Changes the UUID sent to client to be based on either
+the texture payload, or random.
+
+This allows the client to render multiple skull textures from the same user,
+for when different skins were used when skull was made.
+
+diff --git a/src/main/java/net/minecraft/network/PacketDataSerializer.java b/src/main/java/net/minecraft/network/PacketDataSerializer.java
+index df459918c14589155a574730205cb35d463b8079..5a1187b001004afe22d208bc5d7c288e796e16a6 100644
+--- a/src/main/java/net/minecraft/network/PacketDataSerializer.java
++++ b/src/main/java/net/minecraft/network/PacketDataSerializer.java
+@@ -37,6 +37,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.resources.MinecraftKey;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.block.entity.TileEntitySkull;
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
+ import net.minecraft.world.phys.Vec3D;
+ 
+@@ -311,9 +312,18 @@ public class PacketDataSerializer extends ByteBuf {
+             if (item.usesDurability() || item.n()) {
+                 // Spigot start - filter
+                 itemstack = itemstack.cloneItemStack();
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                //CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
+                 // Spigot end
+                 nbttagcompound = itemstack.getTag();
++                // Paper start
++                if (nbttagcompound != null && nbttagcompound.hasKeyOfType("SkullOwner", 10)) {
++                    NBTTagCompound owner = nbttagcompound.getCompound("SkullOwner");
++                    if (owner.hasUUID("Id")) {
++                        nbttagcompound.setUUID("SkullOwnerOrig", owner.getUUID("Id"));
++                        TileEntitySkull.sanitizeUUID(owner);
++                    }
++                }
++                // Paper end
+             }
+ 
+             this.a(nbttagcompound);
+@@ -333,7 +343,16 @@ public class PacketDataSerializer extends ByteBuf {
+             itemstack.setTag(this.l());
+             // CraftBukkit start
+             if (itemstack.getTag() != null) {
+-                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                // Paper start - Fix skulls of same owner - restore orig ID since we changed it on send to client
++                if (itemstack.tag.hasKey("SkullOwnerOrig")) {
++                    NBTTagCompound owner = itemstack.tag.getCompound("SkullOwner");
++                    if (itemstack.tag.hasKey("SkullOwnerOrig")) {
++                        owner.map.put("Id", itemstack.tag.map.get("SkullOwnerOrig"));
++                        itemstack.tag.remove("SkullOwnerOrig");
++                    }
++                }
++                // Paper end
++                // CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack)); // Paper - This is no longer needed due to NBT being supported
+             }
+             // CraftBukkit end
+             return itemstack;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMapChunk.java b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMapChunk.java
+index b6b55d5baa5e8a6b69a3e4865c06bc8a4d61a4f3..152118729b1a95dcae05d32aa4289034ba394226 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMapChunk.java
++++ b/src/main/java/net/minecraft/network/protocol/game/PacketPlayOutMapChunk.java
+@@ -15,6 +15,7 @@ import net.minecraft.network.PacketDataSerializer;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.world.level.ChunkCoordIntPair;
+ import net.minecraft.world.level.block.entity.TileEntity;
++import net.minecraft.world.level.block.entity.TileEntitySkull;
+ import net.minecraft.world.level.chunk.BiomeStorage;
+ import net.minecraft.world.level.chunk.Chunk;
+ import net.minecraft.world.level.chunk.ChunkSection;
+@@ -69,6 +70,7 @@ public class PacketPlayOutMapChunk implements Packet<PacketListenerPlayOut> {
+ 
+             if (this.f() || (i & 1 << j) != 0) {
+                 NBTTagCompound nbttagcompound = tileentity.b();
++                if (tileentity instanceof TileEntitySkull) { TileEntitySkull.sanitizeTileEntityUUID(nbttagcompound); } // Paper
+ 
+                 this.g.add(nbttagcompound);
+             }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index c525afbc7d73488db2cae1501cdbe80ec05aeb7c..ce5d8463763dd39e1225d9dec0514b1754df5411 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -114,7 +114,7 @@ public final class ItemStack {
+     private int g;
+     @Deprecated
+     private Item item;
+-    private NBTTagCompound tag;
++    public NBTTagCompound tag; // Paper private -> public
+     private boolean j;
+     private Entity k;
+     private ShapeDetectorBlock l;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySkull.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySkull.java
+index 06ab45e0927403beb6b5e11d2b5ea93d4786f1d3..1d1d708d1cbebb5a3ee50d5f46d9d953f22447dc 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntitySkull.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntitySkull.java
+@@ -8,6 +8,7 @@ import java.util.UUID;
+ import javax.annotation.Nullable;
+ import net.minecraft.nbt.GameProfileSerializer;
+ import net.minecraft.nbt.NBTTagCompound;
++import net.minecraft.nbt.NBTTagList;
+ import net.minecraft.network.protocol.game.PacketPlayOutTileEntityData;
+ import net.minecraft.server.players.UserCache;
+ import net.minecraft.util.UtilColor;
+@@ -153,9 +154,37 @@ public class TileEntitySkull extends TileEntity /*implements ITickable*/ { // Pa
+     @Nullable
+     @Override
+     public PacketPlayOutTileEntityData getUpdatePacket() {
+-        return new PacketPlayOutTileEntityData(this.position, 4, this.b());
++        return new PacketPlayOutTileEntityData(this.position, 4, sanitizeTileEntityUUID(this.b())); // Paper
+     }
+ 
++    // Paper start
++    public static NBTTagCompound sanitizeTileEntityUUID(NBTTagCompound cmp) {
++        NBTTagCompound owner = cmp.getCompound("Owner");
++        if (!owner.isEmpty()) {
++            sanitizeUUID(owner);
++        }
++        return cmp;
++    }
++
++    public static void sanitizeUUID(NBTTagCompound owner) {
++        NBTTagCompound properties = owner.getCompound("Properties");
++        NBTTagList list = null;
++        if (!properties.isEmpty()) {
++            list = properties.getList("textures", 10);
++        }
++
++        if (list != null && !list.isEmpty()) {
++            String textures = ((NBTTagCompound)list.get(0)).getString("Value");
++            if (textures != null && textures.length() > 3) {
++                UUID uuid = UUID.nameUUIDFromBytes(textures.getBytes());
++                owner.setUUID("Id", uuid);
++                return;
++            }
++        }
++        owner.setUUID("Id", UUID.randomUUID());
++    }
++    // Paper end
++
+     @Override
+     public NBTTagCompound b() {
+         return this.save(new NBTTagCompound());

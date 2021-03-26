@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 5 Feb 2017 00:04:04 -0500
+Subject: [PATCH] Remove CraftScheduler Async Task Debugger
+
+I have not once ever seen this system help debug a crash.
+One report of a suspected memory leak with the system.
+
+This adds additional overhead to asynchronous task dispatching
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 9b6d9373abb59a30c2835ca891282d07559281f5..0e0f361c3af363539d5d1d865603114bdb84fd67 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -430,7 +430,7 @@ public class CraftScheduler implements BukkitScheduler {
+                 }
+                 parsePending();
+             } else {
+-                debugTail = debugTail.setNext(new CraftAsyncDebugger(currentTick + RECENT_TICKS, task.getOwner(), task.getTaskClass()));
++                //debugTail = debugTail.setNext(new CraftAsyncDebugger(currentTick + RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                 executor.execute(new ServerSchedulerReportingWrapper(task)); // Paper
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+@@ -447,7 +447,7 @@ public class CraftScheduler implements BukkitScheduler {
+         pending.addAll(temp);
+         temp.clear();
+         MinecraftTimings.bukkitSchedulerFinishTimer.stopTiming();
+-        debugHead = debugHead.getNextHead(currentTick);
++        //debugHead = debugHead.getNextHead(currentTick); // Paper
+     }
+ 
+     private void addTask(final CraftTask task) {
+@@ -507,10 +507,15 @@ public class CraftScheduler implements BukkitScheduler {
+ 
+     @Override
+     public String toString() {
++        // Paper start
++        return "";
++        /*
+         int debugTick = currentTick;
+         StringBuilder string = new StringBuilder("Recent tasks from ").append(debugTick - RECENT_TICKS).append('-').append(debugTick).append('{');
+         debugHead.debugTo(string);
+         return string.append('}').toString();
++        */
++        // Paper end
+     }
+ 
+     @Deprecated

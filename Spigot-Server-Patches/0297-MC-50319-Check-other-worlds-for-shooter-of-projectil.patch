@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 17 Oct 2018 19:17:27 -0400
+Subject: [PATCH] MC-50319: Check other worlds for shooter of projectiles
+
+Say a player shoots an arrow through a nether portal, the game
+would lose the shooter for determining things such as Player Kills,
+because the entity is in another world.
+
+If the projectile fails to find the shooter in the current world, check
+other worlds.
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/IProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/IProjectile.java
+index 65cee640040bdd1229149409ff046b765ee08c34..a33f3924a95b86c2337c455f30de9bb257cb8db4 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/IProjectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/IProjectile.java
+@@ -41,7 +41,18 @@ public abstract class IProjectile extends Entity {
+ 
+     @Nullable
+     public Entity getShooter() {
+-        return this.shooter != null && this.world instanceof WorldServer ? ((WorldServer) this.world).getEntity(this.shooter) : (this.c != 0 ? this.world.getEntity(this.c) : null);
++        // Paper start - MC-50319 - shooter might be in another world (arrows through portals)
++        Entity entity = this.shooter != null && this.world instanceof WorldServer ? ((WorldServer) this.world).getEntity(this.shooter) : (this.c != 0 ? this.world.getEntity(this.c) : null);
++        if (entity == null) {
++            for (WorldServer world : world.getMinecraftServer().getWorlds()) {
++                entity = world.getEntity(this.shooter);
++                if (entity != null) {
++                    break;
++                }
++            }
++        }
++        return entity;
++        // Paper end
+     }
+ 
+     @Override

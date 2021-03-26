@@ -1,0 +1,152 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 27 Jul 2018 22:36:31 -0500
+Subject: [PATCH] SkeletonHorse Additions
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/IEntitySelector.java b/src/main/java/net/minecraft/world/entity/IEntitySelector.java
+index dfcfdb31ca9531913d705aaaf85fb67399cfdc8c..4776a47566aac487dc77fd6b4b9b42b95974e31a 100644
+--- a/src/main/java/net/minecraft/world/entity/IEntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/IEntitySelector.java
+@@ -25,6 +25,7 @@ public final class IEntitySelector {
+     public static final Predicate<Entity> f = (entity) -> {
+         return !(entity instanceof EntityHuman) || !entity.isSpectator() && !((EntityHuman) entity).isCreative() && entity.world.getDifficulty() != EnumDifficulty.PEACEFUL;
+     };
++    public static Predicate<Entity> notSpectator() { return g; } // Paper - OBFHELPER
+     public static final Predicate<Entity> g = (entity) -> {
+         return !entity.isSpectator();
+     };
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseSkeleton.java b/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseSkeleton.java
+index 0ddb676a2d1c38c97cd7750c1594fd6468156d0a..da5365372e89b847d626e52c5541544467f14702 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/EntityHorseSkeleton.java
+@@ -26,7 +26,7 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+ 
+     private final PathfinderGoalHorseTrap bw = new PathfinderGoalHorseTrap(this);
+     private boolean bx;
+-    private int by;
++    private int by; public int getTrapTime() { return this.by; } // Paper - OBFHELPER
+ 
+     public EntityHorseSkeleton(EntityTypes<? extends EntityHorseSkeleton> entitytypes, World world) {
+         super(entitytypes, world);
+@@ -145,10 +145,12 @@ public class EntityHorseSkeleton extends EntityHorseAbstract {
+         return 0.96F;
+     }
+ 
++    public boolean isTrap() { return this.eM(); } // Paper - OBFHELPER
+     public boolean eM() {
+         return this.bx;
+     }
+ 
++    public void setTrap(boolean trap) { this.t(trap); } // Paper - OBFHELPER
+     public void t(boolean flag) {
+         if (flag != this.bx) {
+             this.bx = flag;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/PathfinderGoalHorseTrap.java b/src/main/java/net/minecraft/world/entity/animal/horse/PathfinderGoalHorseTrap.java
+index 9b6a4f93dca6eeddad43d5f5675c551fb3fd2fdb..cf250cc6b7a77a7af742eab0b89cff2bc17fc5e4 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/PathfinderGoalHorseTrap.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/PathfinderGoalHorseTrap.java
+@@ -15,9 +15,14 @@ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.enchantment.EnchantmentManager;
+ import net.minecraft.world.level.World;
+ 
++import org.bukkit.entity.HumanEntity;
++
++import java.util.List;
++
+ public class PathfinderGoalHorseTrap extends PathfinderGoal {
+ 
+     private final EntityHorseSkeleton a;
++    private List<HumanEntity> eligiblePlayers; // Paper
+ 
+     public PathfinderGoalHorseTrap(EntityHorseSkeleton entityhorseskeleton) {
+         this.a = entityhorseskeleton;
+@@ -25,12 +30,13 @@ public class PathfinderGoalHorseTrap extends PathfinderGoal {
+ 
+     @Override
+     public boolean a() {
+-        return this.a.world.isPlayerNearby(this.a.locX(), this.a.locY(), this.a.locZ(), 10.0D);
++        return !(eligiblePlayers = this.a.world.findNearbyBukkitPlayers(this.a.locX(), this.a.locY(), this.a.locZ(), 10.0D, false)).isEmpty(); // Paper
+     }
+ 
+     @Override
+     public void e() {
+         WorldServer worldserver = (WorldServer) this.a.world;
++        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.a.getBukkitEntity(), eligiblePlayers).callEvent()) return; // Paper
+         DifficultyDamageScaler difficultydamagescaler = worldserver.getDamageScaler(this.a.getChunkCoordinates());
+ 
+         this.a.t(false);
+diff --git a/src/main/java/net/minecraft/world/level/IEntityAccess.java b/src/main/java/net/minecraft/world/level/IEntityAccess.java
+index 6d5d4c3df65995b9a13b66d070ba08d553cc98a2..8fdc4b22e8c99d653bd213fe64339c133b46b4e9 100644
+--- a/src/main/java/net/minecraft/world/level/IEntityAccess.java
++++ b/src/main/java/net/minecraft/world/level/IEntityAccess.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.world.level;
+ 
++import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Lists;
++import org.bukkit.entity.HumanEntity;
++
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.UUID;
+@@ -115,6 +118,28 @@ public interface IEntityAccess {
+         return entityhuman;
+     }
+ 
++    // Paper start
++    default List<HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, boolean notSpectator) {
++        return findNearbyBukkitPlayers(x, y, z, radius, notSpectator ? IEntitySelector.notSpectator() : IEntitySelector.canAITarget());
++    }
++
++    default List<HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, @Nullable Predicate<Entity> predicate) {
++        ImmutableList.Builder<HumanEntity> builder = ImmutableList.builder();
++
++        for (EntityHuman human : this.getPlayers()) {
++            if (predicate == null || predicate.test(human)) {
++                double distanceSquared = human.getDistanceSquared(x, y, z);
++
++                if (radius < 0.0D || distanceSquared < radius * radius) {
++                    builder.add(human.getBukkitEntity());
++                }
++            }
++        }
++
++        return builder.build();
++    }
++    // Paper end
++
+     @Nullable
+     default EntityHuman findNearbyPlayer(Entity entity, double d0) {
+         return this.a(entity.locX(), entity.locY(), entity.locZ(), d0, false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+index 4aec5fdb6b0379b0797969ff3c8f8a9629a18bfb..7366d56cefad45883f353ea5fb16b41f87006ec1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSkeletonHorse.java
+@@ -26,4 +26,26 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
+     public Variant getVariant() {
+         return Variant.SKELETON_HORSE;
+     }
++
++    // Paper start
++    @Override
++    public EntityHorseSkeleton getHandle() {
++        return (EntityHorseSkeleton) super.getHandle();
++    }
++
++    @Override
++    public int getTrapTime() {
++        return getHandle().getTrapTime();
++    }
++
++    @Override
++    public boolean isTrap() {
++        return getHandle().isTrap();
++    }
++
++    @Override
++    public void setTrap(boolean trap) {
++        getHandle().setTrap(trap);
++    }
++    // Paper end
+ }
