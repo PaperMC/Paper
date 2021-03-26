@@ -180,5 +180,12 @@ public interface UnsafeValues {
      * Just don't use it.
      */
     @org.jetbrains.annotations.NotNull String getMainLevelName();
+
+    /**
+     * Returns the server's protocol version.
+     *
+     * @return the server's protocol version
+     */
+    int getProtocolVersion();
     // Paper end
 }
