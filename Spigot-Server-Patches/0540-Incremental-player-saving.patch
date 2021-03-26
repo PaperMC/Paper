@@ -24,23 +24,11 @@ index b67ba8f75e4a3358d7c2462918b85b0bf9b5a922..fdbd8b89bb8bf3b61f60b812b90483c9
 +        }
 +    }
  }
-diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
-index a7f39878829f1c901934fb2d8b53d906295112e9..8436b7be989bf08c8ec1f0d646b20e777a0ebd55 100644
---- a/src/main/java/net/minecraft/server/EntityPlayer.java
-+++ b/src/main/java/net/minecraft/server/EntityPlayer.java
-@@ -45,6 +45,7 @@ import org.bukkit.inventory.MainHand;
- public class EntityPlayer extends EntityHuman implements ICrafting {
- 
-     private static final Logger LOGGER = LogManager.getLogger();
-+    public long lastSave = MinecraftServer.currentTick; // Paper
-     public PlayerConnection playerConnection;
-     public NetworkManager networkManager; // Paper
-     public final MinecraftServer server;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index cfe770b7b77bb08407b164b932b898dfbe869b28..641c31597cad47c4950d5453e85ce692ab13d2fd 100644
+index 3867e1d9a3d3648aaea46816643c0d8f070baf5d..ca284cd0419f5d99efa7e73c19fa1591261d8d5b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1228,9 +1228,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -1337,9 +1337,15 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
          //if (autosavePeriod > 0 && this.ticks % autosavePeriod == 0) { // CraftBukkit // Paper - move down
              //MinecraftServer.LOGGER.debug("Autosave started"); // Paper
              serverAutoSave = (autosavePeriod > 0 && this.ticks % autosavePeriod == 0); // Paper
@@ -58,11 +46,23 @@ index cfe770b7b77bb08407b164b932b898dfbe869b28..641c31597cad47c4950d5453e85ce692
              }// Paper
              // Paper start
              for (WorldServer world : getWorlds()) {
-diff --git a/src/main/java/net/minecraft/server/PlayerList.java b/src/main/java/net/minecraft/server/PlayerList.java
-index faf82af08b00f74d3d835bd54b9c2864aa67ddd4..086ada9b6a1d590356919fda078c777bd95f9f44 100644
---- a/src/main/java/net/minecraft/server/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/PlayerList.java
-@@ -480,6 +480,7 @@ public abstract class PlayerList {
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index bb4c6b3790192c0e9f21859b6b3fd62a847787b7..c4f2c164927db4917f85a8bd65fdbf00e9b062a3 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -175,6 +175,7 @@ import org.bukkit.inventory.MainHand;
+ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
++    public long lastSave = MinecraftServer.currentTick; // Paper
+     public PlayerConnection playerConnection;
+     public NetworkManager networkManager; // Paper
+     public final MinecraftServer server;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 1b78f53d09cc26fe881933df8aa1a7e77337acf1..939e3721af52069f1abad79d28c0555be3ac2d59 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -563,6 +563,7 @@ public abstract class PlayerList {
      protected void savePlayerFile(EntityPlayer entityplayer) {
          if (!entityplayer.getBukkitEntity().isPersistent()) return; // CraftBukkit
          if (!entityplayer.didPlayerJoinEvent) return; // Paper - If we never fired PJE, we disconnected during login. Data has not changed, and additionally, our saved vehicle is not loaded! If we save now, we will lose our vehicle (CraftBukkit bug)
@@ -70,7 +70,7 @@ index faf82af08b00f74d3d835bd54b9c2864aa67ddd4..086ada9b6a1d590356919fda078c777b
          this.playerFileData.save(entityplayer);
          ServerStatisticManager serverstatisticmanager = (ServerStatisticManager) entityplayer.getStatisticManager(); // CraftBukkit
  
-@@ -1139,10 +1140,21 @@ public abstract class PlayerList {
+@@ -1222,10 +1223,21 @@ public abstract class PlayerList {
      }
  
      public void savePlayers() {

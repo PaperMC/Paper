@@ -4,11 +4,11 @@ Date: Sun, 5 Jul 2020 22:38:18 -0400
 Subject: [PATCH] Optimize NetworkManager Exception Handling
 
 
-diff --git a/src/main/java/net/minecraft/server/EnumProtocol.java b/src/main/java/net/minecraft/server/EnumProtocol.java
-index 32f5470baa88c3dc80db1bb547e1c982ac90237d..64df649e8d209246cc836793160eb0a1506826f8 100644
---- a/src/main/java/net/minecraft/server/EnumProtocol.java
-+++ b/src/main/java/net/minecraft/server/EnumProtocol.java
-@@ -129,6 +129,7 @@ public enum EnumProtocol {
+diff --git a/src/main/java/net/minecraft/network/EnumProtocol.java b/src/main/java/net/minecraft/network/EnumProtocol.java
+index a892521db1197369bf6363bd2f5da24bf53643ab..46d8471ba98a5f2c659d35dd86c4c20c67f1ceac 100644
+--- a/src/main/java/net/minecraft/network/EnumProtocol.java
++++ b/src/main/java/net/minecraft/network/EnumProtocol.java
+@@ -286,6 +286,7 @@ public enum EnumProtocol {
  
          @Nullable
          public Packet<?> a(int i) {
@@ -16,10 +16,10 @@ index 32f5470baa88c3dc80db1bb547e1c982ac90237d..64df649e8d209246cc836793160eb0a1
              Supplier<? extends Packet<T>> supplier = (Supplier) this.b.get(i);
  
              return supplier != null ? (Packet) supplier.get() : null;
-diff --git a/src/main/java/net/minecraft/server/PacketSplitter.java b/src/main/java/net/minecraft/server/PacketSplitter.java
-index cdaa8be90d16b0e9e2f92a3e2ed120b856feab54..2aaa8770edfd8acc6861c23176e405863858b275 100644
---- a/src/main/java/net/minecraft/server/PacketSplitter.java
-+++ b/src/main/java/net/minecraft/server/PacketSplitter.java
+diff --git a/src/main/java/net/minecraft/network/PacketSplitter.java b/src/main/java/net/minecraft/network/PacketSplitter.java
+index 2c7de7ab6da2106394ec668cd7cb9be1f8dabeb3..e81bfd35b9a745eeb1457ceda5fda320654bd89a 100644
+--- a/src/main/java/net/minecraft/network/PacketSplitter.java
++++ b/src/main/java/net/minecraft/network/PacketSplitter.java
 @@ -9,11 +9,21 @@ import java.util.List;
  
  public class PacketSplitter extends ByteToMessageDecoder {
@@ -43,11 +43,36 @@ index cdaa8be90d16b0e9e2f92a3e2ed120b856feab54..2aaa8770edfd8acc6861c23176e40586
  
          for (int i = 0; i < abyte.length; ++i) {
              if (!bytebuf.isReadable()) {
-diff --git a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-index eb3269e0ea3ce33d08e9eee3bca7cf434921e991..7ea293f38dedd6066601d94adbe175a31c502e1f 100644
---- a/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-+++ b/src/main/java/net/minecraft/server/PlayerConnectionUtils.java
-@@ -22,6 +22,21 @@ public class PlayerConnectionUtils {
+diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
+index b644c91cecd8a347319dfe8c8923fd05919a9795..4c583593de4dc8ab27b3e1187f4dfe1740ef07a7 100644
+--- a/src/main/java/net/minecraft/network/protocol/Packet.java
++++ b/src/main/java/net/minecraft/network/protocol/Packet.java
+@@ -2,8 +2,10 @@ package net.minecraft.network.protocol;
+ 
+ import io.netty.channel.ChannelFuture; // Paper
+ import java.io.IOException;
++import net.minecraft.network.NetworkManager;
+ import net.minecraft.network.PacketDataSerializer;
+ import net.minecraft.network.PacketListener;
++import net.minecraft.server.level.EntityPlayer;
+ 
+ public interface Packet<T extends PacketListener> {
+ 
+diff --git a/src/main/java/net/minecraft/network/protocol/PlayerConnectionUtils.java b/src/main/java/net/minecraft/network/protocol/PlayerConnectionUtils.java
+index e47da20ab8ce4da34755e105bf55d8542fb50138..67d8fe8ad036a9252c774bb6a914c8ec79981876 100644
+--- a/src/main/java/net/minecraft/network/protocol/PlayerConnectionUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PlayerConnectionUtils.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.network.protocol;
+ 
++import net.minecraft.network.NetworkManager;
+ import net.minecraft.network.PacketListener;
++import net.minecraft.network.chat.ChatComponentText;
++import net.minecraft.network.protocol.game.PacketPlayOutKickDisconnect;
+ import net.minecraft.server.CancelledPacketHandleException;
+ import net.minecraft.server.level.WorldServer;
+ import net.minecraft.util.thread.IAsyncTaskHandler;
+@@ -31,6 +34,21 @@ public class PlayerConnectionUtils {
                      try (Timing ignored = timing.startTiming()) { // Paper - timings
                      packet.a(t0);
                      } // Paper - timings

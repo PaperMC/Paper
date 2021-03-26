@@ -6,11 +6,11 @@ Subject: [PATCH] Optimize Bit Operations by inlining
 Inline bit operations and reduce instruction count to make these hot
 operations faster
 
-diff --git a/src/main/java/net/minecraft/server/BlockPosition.java b/src/main/java/net/minecraft/server/BlockPosition.java
-index 52ae74571b0d671a294900caedaa400b62d4ea34..2d887af902a33b0e28d8f0a6ac2e59c815a7856e 100644
---- a/src/main/java/net/minecraft/server/BlockPosition.java
-+++ b/src/main/java/net/minecraft/server/BlockPosition.java
-@@ -25,14 +25,16 @@ public class BlockPosition extends BaseBlockPosition {
+diff --git a/src/main/java/net/minecraft/core/BlockPosition.java b/src/main/java/net/minecraft/core/BlockPosition.java
+index 1fb931d4c0720a5e496030e25c865771aea3ec70..eb67af795dd716d9f92ac32843accc1ec4efd647 100644
+--- a/src/main/java/net/minecraft/core/BlockPosition.java
++++ b/src/main/java/net/minecraft/core/BlockPosition.java
+@@ -31,14 +31,16 @@ public class BlockPosition extends BaseBlockPosition {
      }).stable();
      private static final Logger LOGGER = LogManager.getLogger();
      public static final BlockPosition ZERO = new BlockPosition(0, 0, 0);
@@ -35,7 +35,7 @@ index 52ae74571b0d671a294900caedaa400b62d4ea34..2d887af902a33b0e28d8f0a6ac2e59c8
  
      public BlockPosition(int i, int j, int k) {
          super(i, j, k);
-@@ -54,28 +56,29 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -60,28 +62,29 @@ public class BlockPosition extends BaseBlockPosition {
          this(baseblockposition.getX(), baseblockposition.getY(), baseblockposition.getZ());
      }
  
@@ -70,7 +70,7 @@ index 52ae74571b0d671a294900caedaa400b62d4ea34..2d887af902a33b0e28d8f0a6ac2e59c8
      }
  
      public long asLong() {
-@@ -84,12 +87,7 @@ public class BlockPosition extends BaseBlockPosition {
+@@ -90,12 +93,7 @@ public class BlockPosition extends BaseBlockPosition {
  
      public static long asLong(int x, int y, int z) { return a(x, y, z); } // Paper - OBFHELPER
      public static long a(int i, int j, int k) {
@@ -84,11 +84,11 @@ index 52ae74571b0d671a294900caedaa400b62d4ea34..2d887af902a33b0e28d8f0a6ac2e59c8
      }
  
      public static long f(long i) {
-diff --git a/src/main/java/net/minecraft/server/SectionPosition.java b/src/main/java/net/minecraft/server/SectionPosition.java
-index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175c6ac080f 100644
---- a/src/main/java/net/minecraft/server/SectionPosition.java
-+++ b/src/main/java/net/minecraft/server/SectionPosition.java
-@@ -16,7 +16,7 @@ public class SectionPosition extends BaseBlockPosition {
+diff --git a/src/main/java/net/minecraft/core/SectionPosition.java b/src/main/java/net/minecraft/core/SectionPosition.java
+index 97126ae5a43bb7acb04a1ab14fb7f364c8c2675f..7d9a16eb81288b74425319c60525f57c98ad3b69 100644
+--- a/src/main/java/net/minecraft/core/SectionPosition.java
++++ b/src/main/java/net/minecraft/core/SectionPosition.java
+@@ -19,7 +19,7 @@ public class SectionPosition extends BaseBlockPosition {
      }
  
      public static SectionPosition a(BlockPosition blockposition) {
@@ -97,7 +97,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public static SectionPosition a(ChunkCoordIntPair chunkcoordintpair, int i) {
-@@ -28,15 +28,23 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -31,15 +31,23 @@ public class SectionPosition extends BaseBlockPosition {
      }
  
      public static SectionPosition a(long i) {
@@ -123,7 +123,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public static int a(int i) {
-@@ -48,11 +56,7 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -51,11 +59,7 @@ public class SectionPosition extends BaseBlockPosition {
      }
  
      public static short b(BlockPosition blockposition) {
@@ -136,7 +136,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public static int a(short short0) {
-@@ -111,16 +115,16 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -114,16 +118,16 @@ public class SectionPosition extends BaseBlockPosition {
          return this.getZ();
      }
  
@@ -159,7 +159,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public int g() {
-@@ -135,8 +139,10 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -138,8 +142,10 @@ public class SectionPosition extends BaseBlockPosition {
          return (this.c() << 4) + 15;
      }
  
@@ -171,7 +171,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public static long f(long i) {
-@@ -157,17 +163,18 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -160,17 +166,18 @@ public class SectionPosition extends BaseBlockPosition {
          return new ChunkCoordIntPair(this.a(), this.c());
      }
  
@@ -197,7 +197,7 @@ index 8d325ec19c5d954785732d8e295b4ba150f740ca..f95925f1c5d091f1a129d0437bb6e175
      }
  
      public Stream<BlockPosition> t() {
-@@ -175,18 +182,11 @@ public class SectionPosition extends BaseBlockPosition {
+@@ -178,18 +185,11 @@ public class SectionPosition extends BaseBlockPosition {
      }
  
      public static Stream<SectionPosition> a(SectionPosition sectionposition, int i) {

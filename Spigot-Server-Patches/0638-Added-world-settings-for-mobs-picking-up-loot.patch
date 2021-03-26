@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 28 Nov 2020 18:43:52 -0800
+Subject: [PATCH] Added world settings for mobs picking up loot
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index a555d040fdc58f7c89ef78e3e6851916fdd8462a..c42e5d9f9c9f67988383c4c25123d8a629ede9e3 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -361,6 +361,14 @@ public class PaperWorldConfig {
+         log("Creeper lingering effect: " + disableCreeperLingeringEffect);
+     }
+ 
++    public boolean zombiesAlwaysCanPickUpLoot;
++    public boolean skeletonsAlwaysCanPickUpLoot;
++    private void setMobsAlwaysCanPickUpLoot() {
++        zombiesAlwaysCanPickUpLoot = getBoolean("mobs-can-always-pick-up-loot.zombies", false);
++        skeletonsAlwaysCanPickUpLoot = getBoolean("mobs-can-always-pick-up-loot.skeletons", false);
++        log("Zombies can always pick up loot: " + zombiesAlwaysCanPickUpLoot + ". Skeletons can always pick up loot: " + skeletonsAlwaysCanPickUpLoot + ".");
++    }
++
+     public int expMergeMaxValue;
+     private void expMergeMaxValue() {
+         expMergeMaxValue = getInt("experience-merge-max-value", -1);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java b/src/main/java/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java
+index 4dca5ea9127c15b2739483b2ad74a5296a6b96ad..06d50b22ede102556fdb3e2a6f1424f7ff13f120 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java
+@@ -149,7 +149,7 @@ public abstract class EntitySkeletonAbstract extends EntityMonster implements IR
+         this.a(difficultydamagescaler);
+         this.b(difficultydamagescaler);
+         this.eL();
+-        this.setCanPickupLoot(this.random.nextFloat() < 0.55F * difficultydamagescaler.d());
++        this.setCanPickupLoot(this.world.paperConfig.skeletonsAlwaysCanPickUpLoot || this.random.nextFloat() < 0.55F * difficultydamagescaler.d()); // Paper
+         if (this.getEquipment(EnumItemSlot.HEAD).isEmpty()) {
+             LocalDate localdate = LocalDate.now();
+             int i = localdate.get(ChronoField.DAY_OF_MONTH);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+index 5b0c79d752d616e5824393968136f3844ce52c22..fb98609a38d665659076b8949b59eaf084408a17 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+@@ -497,7 +497,7 @@ public class EntityZombie extends EntityMonster {
+         Object object = super.prepare(worldaccess, difficultydamagescaler, enummobspawn, groupdataentity, nbttagcompound);
+         float f = difficultydamagescaler.d();
+ 
+-        this.setCanPickupLoot(this.random.nextFloat() < 0.55F * f);
++        this.setCanPickupLoot(this.world.paperConfig.zombiesAlwaysCanPickUpLoot || this.random.nextFloat() < 0.55F * f); // Paper
+         if (object == null) {
+             object = new EntityZombie.GroupDataZombie(a(worldaccess.getRandom()), true);
+         }

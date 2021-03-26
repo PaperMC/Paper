@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: jmp <jasonpenilla2@me.com>
+Date: Wed, 18 Nov 2020 20:52:25 -0800
+Subject: [PATCH] Entity load/save limit per chunk
+
+Adds a config option to limit the number of entities saved and loaded
+to a chunk. The default values of -1 disable the limit. Although
+defaults are only included for certain entites, this allows setting
+limits for any entity type.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 946c12abc0e25ccfe09ee64a7ac8b045ba5c46a9..bda4eeb032bea452ea368c679f96b2bd93118730 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
+ 
+ import com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray.EngineMode;
+ import net.minecraft.world.EnumDifficulty;
++import net.minecraft.world.entity.EntityTypes;
+ import net.minecraft.world.entity.monster.EntityVindicator;
+ import net.minecraft.world.entity.monster.EntityZombie;
+ import org.bukkit.Bukkit;
+@@ -761,4 +762,18 @@ public class PaperWorldConfig {
+             EnumDifficulty.class
+         );
+     }
++
++    public Map<EntityTypes<?>, Integer> entityPerChunkSaveLimits = new HashMap<>();
++    private void entityPerChunkSaveLimits() {
++        getInt("entity-per-chunk-save-limit.experience_orb", -1);
++        getInt("entity-per-chunk-save-limit.snowball", -1);
++        getInt("entity-per-chunk-save-limit.ender_pearl", -1);
++        getInt("entity-per-chunk-save-limit.arrow", -1);
++        EntityTypes.getEntityNameList().forEach(name -> {
++            final EntityTypes<?> type = EntityTypes.getByName(name.getKey()).orElseThrow(() -> new IllegalStateException("Unknown Entity Type: " + name.toString()));
++            final String path = ".entity-per-chunk-save-limit." + name.getKey();
++            final int value = config.getInt("world-settings." + worldName + path, config.getInt("world-settings.default" + path, -1)); // get without setting defaults
++            if (value != -1) entityPerChunkSaveLimits.put(type, value);
++        });
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
+index 2e5221bc1b9e260e33f2cef2653dc59d05e2680d..4eaf497d048324a85ce49fc1c6e9559991c20df7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkRegionLoader.java
+@@ -539,11 +539,22 @@ public class ChunkRegionLoader {
+ 
+             chunk.d(false);
+ 
++            // Paper start
++            final Map<EntityTypes<?>, Integer> savedEntityCounts = Maps.newHashMap();
+             for (int j = 0; j < chunk.getEntitySlices().length; ++j) {
+                 Iterator iterator1 = chunk.getEntitySlices()[j].iterator();
+ 
+                 while (iterator1.hasNext()) {
+                     Entity entity = (Entity) iterator1.next();
++                    final EntityTypes<?> entityType = entity.getEntityType();
++                    final int saveLimit = worldserver.paperConfig.entityPerChunkSaveLimits.getOrDefault(entityType, -1);
++                    if (saveLimit > -1) {
++                        if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                            continue;
++                        }
++                        savedEntityCounts.merge(entityType, 1, Integer::sum);
++                    }
++                    // Paper end
+                     NBTTagCompound nbttagcompound4 = new NBTTagCompound();
+                     // Paper start
+                     if (asyncsavedata == null && !entity.dead && (int) Math.floor(entity.locX()) >> 4 != chunk.getPos().x || (int) Math.floor(entity.locZ()) >> 4 != chunk.getPos().z) {
+@@ -674,10 +685,21 @@ public class ChunkRegionLoader {
+         NBTTagList nbttaglist = nbttagcompound.getList("Entities", 10);
+         World world = chunk.getWorld();
+ 
++        // Paper start
++        final Map<EntityTypes<?>, Integer> loadedEntityCounts = Maps.newHashMap();
+         for (int i = 0; i < nbttaglist.size(); ++i) {
+             NBTTagCompound nbttagcompound1 = nbttaglist.getCompound(i);
+ 
+             EntityTypes.a(nbttagcompound1, world, (entity) -> {
++                final EntityTypes<?> entityType = entity.getEntityType();
++                final int saveLimit = world.paperConfig.entityPerChunkSaveLimits.getOrDefault(entityType, -1);
++                if (saveLimit > -1) {
++                    if (loadedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                        return null;
++                    }
++                    loadedEntityCounts.merge(entityType, 1, Integer::sum);
++                }
++                // Paper end
+                 chunk.a(entity);
+                 return entity;
+             });
