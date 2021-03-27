@@ -5,7 +5,7 @@ Subject: [PATCH] handle NaN health/absorb values and repair bad data
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
-index 9b12e15a6c377ae90193596a35114dd452cf6e0c..acbd10432b09172f7541b2f4081d1aa9812194ac 100644
+index 9b12e15a6c377ae90193596a35114dd452cf6e0c..835a643ac53b5bb260d55e66cadbb906f45d5f29 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
 @@ -702,7 +702,13 @@ public abstract class EntityLiving extends Entity {
@@ -23,18 +23,19 @@ index 9b12e15a6c377ae90193596a35114dd452cf6e0c..acbd10432b09172f7541b2f4081d1aa9
          if (nbttagcompound.hasKeyOfType("Attributes", 9) && this.world != null && !this.world.isClientSide) {
              this.getAttributeMap().a(nbttagcompound.getList("Attributes", 10));
          }
-@@ -1151,6 +1157,10 @@ public abstract class EntityLiving extends Entity {
+@@ -1151,6 +1157,11 @@ public abstract class EntityLiving extends Entity {
      }
  
      public void setHealth(float f) {
 +        // Paper start
 +        if (Float.isNaN(f)) { f = getMaxHealth(); if (this.valid) {
-+            System.err.println("[NAN-HEALTH] " + getName() + " had NaN health set");
++            Location location = getBukkitLivingEntity().getLocation();
++            System.err.println("[NAN-HEALTH] " + getName() + " (Type: " + getEntityType().id + ") at " + location.getX() + " " + location.getY() + " " + location.getZ() + " in " + location.getWorld().getName() + " had NaN health set");
 +        } } // Paper end
          // CraftBukkit start - Handle scaled health
          if (this instanceof EntityPlayer) {
              org.bukkit.craftbukkit.entity.CraftPlayer player = ((EntityPlayer) this).getBukkitEntity();
-@@ -3045,7 +3055,7 @@ public abstract class EntityLiving extends Entity {
+@@ -3045,7 +3056,7 @@ public abstract class EntityLiving extends Entity {
      }
  
      public void setAbsorptionHearts(float f) {
