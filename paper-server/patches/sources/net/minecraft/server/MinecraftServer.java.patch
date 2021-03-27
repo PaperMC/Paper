@@ -861,7 +861,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,12 +1152,31 @@
+@@ -744,11 +1152,30 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -870,7 +870,7 @@
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
                      }
-                 }
++                }
 +                // Spigot start
 +                // Paper start - further improve server tick loop
 +                currentTime = Util.getNanos();
@@ -880,19 +880,18 @@
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
- 
++
 +                    // Backwards compat with bad plugins
 +                    this.recentTps[0] = tps1.getAverage();
 +                    this.recentTps[1] = tps5.getAverage();
 +                    this.recentTps[2] = tps15.getAverage();
 +                    tickSection = currentTime;
-+                }
+                 }
 +                // Paper end - further improve server tick loop
 +                // Spigot end
-+
+ 
                  boolean flag = i == 0L;
  
-                 if (this.debugCommandProfilerDelayStart) {
 @@ -757,6 +1184,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
@@ -1236,7 +1235,7 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,13 +2317,14 @@
+@@ -1789,14 +2317,15 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1248,10 +1247,12 @@
                  ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
 -                if (!whitelist.isWhiteListed(entityplayer.getGameProfile())) {
+-                    entityplayer.connection.disconnect((Component) Component.translatable("multiplayer.disconnect.not_whitelisted"));
 +                if (!whitelist.isWhiteListed(entityplayer.getGameProfile()) && !this.getPlayerList().isOp(entityplayer.getGameProfile())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
-                     entityplayer.connection.disconnect((Component) Component.translatable("multiplayer.disconnect.not_whitelisted"));
++                    entityplayer.connection.disconnect(net.kyori.adventure.text.Component.text(org.spigotmc.SpigotConfig.whitelistMessage));
                  }
              }
+ 
 @@ -1952,7 +2481,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
@@ -1270,22 +1271,19 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,9 +2634,24 @@
-         if (bufferedwriter != null) {
-             bufferedwriter.close();
-         }
-+
-+    }
-+
+@@ -2108,6 +2637,21 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
 +    }
- 
++
 +    public static MinecraftServer getServer() {
 +        return SERVER; // Paper
-     }
- 
++    }
++
 +    @Deprecated
 +    public static RegistryAccess getDefaultRegistryAccess() {
 +        return CraftRegistry.getMinecraftRegistry();
@@ -1324,17 +1322,15 @@
      }
  
      public boolean logIPs() {
-@@ -2377,6 +2927,32 @@
-     }
- 
+@@ -2379,4 +2929,30 @@
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
-+
-+    }
+ 
+     }
 +
 +    // Paper start - Add tick times API and /mspt command
 +    public static class TickTimes {
 +        private final long[] times;
- 
++
 +        public TickTimes(int length) {
 +            times = new long[length];
 +        }
@@ -1354,6 +1350,6 @@
 +            }
 +            return ((double) total / (double) times.length) * 1.0E-6D;
 +        }
-     }
++    }
 +    // Paper end - Add tick times API and /mspt command
  }
