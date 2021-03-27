@@ -5,10 +5,18 @@ Subject: [PATCH] fix cancelling block falling causing client desync
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java b/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
-index 62d8b53c024888aa43b8fddf8a475dfb8284a4cc..91fd2a6efcd524634165cb70c302ee60105ec8c7 100644
+index 62d8b53c024888aa43b8fddf8a475dfb8284a4cc..2a61c24dd26edf4c72e977c6024fe233bab08a2f 100644
 --- a/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
 +++ b/src/main/java/net/minecraft/world/entity/item/EntityFallingBlock.java
-@@ -43,6 +43,7 @@ import net.minecraft.world.phys.MovingObjectPosition;
+@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
+ import net.minecraft.network.syncher.DataWatcher;
+ import net.minecraft.network.syncher.DataWatcherObject;
+ import net.minecraft.network.syncher.DataWatcherRegistry;
++import net.minecraft.server.level.WorldServer;
+ import net.minecraft.tags.Tag;
+ import net.minecraft.tags.TagsBlock;
+ import net.minecraft.tags.TagsFluid;
+@@ -43,6 +44,7 @@ import net.minecraft.world.phys.MovingObjectPosition;
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.Vec3D;
  
@@ -16,7 +24,7 @@ index 62d8b53c024888aa43b8fddf8a475dfb8284a4cc..91fd2a6efcd524634165cb70c302ee60
  import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
  
  public class EntityFallingBlock extends Entity {
-@@ -116,8 +117,18 @@ public class EntityFallingBlock extends Entity {
+@@ -116,8 +118,18 @@ public class EntityFallingBlock extends Entity {
  
              if (this.ticksLived++ == 0) {
                  blockposition = this.getChunkCoordinates();
@@ -26,7 +34,7 @@ index 62d8b53c024888aa43b8fddf8a475dfb8284a4cc..91fd2a6efcd524634165cb70c302ee60
 +                if (this.world.getType(blockposition).isSameInstance(block)) {
 +                    if (CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.getBlockData()).isCancelled()) {
 +                        if (this.world.getType(blockposition).isSameInstance(block)) { //if listener didn't update the block
-+                            CraftBlock.at(world, blockposition).getState().update(false, false);
++                            ((WorldServer) world).getChunkProvider().flagDirty(blockposition);
 +                        }
 +                        this.die();
 +                        return;
