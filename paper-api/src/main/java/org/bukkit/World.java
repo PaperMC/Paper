@@ -1506,6 +1506,15 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public double getHumidity(int x, int y, int z);
 
     /**
+     * Gets the minimum height of this world.
+     * <p>
+     * If the min height is 0, there are only blocks from y=0.
+     *
+     * @return Minimum height of the world
+     */
+    public int getMinHeight();
+
+    /**
      * Gets the maximum height of this world.
      * <p>
      * If the max height is 100, there are only blocks from y=0 to y=99.
