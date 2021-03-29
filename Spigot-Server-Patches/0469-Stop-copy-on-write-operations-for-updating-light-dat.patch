@@ -5,11 +5,11 @@ Subject: [PATCH] Stop copy-on-write operations for updating light data
 
 Causes huge memory allocations + gc issues
 
-diff --git a/src/main/java/net/minecraft/server/LightEngineStorage.java b/src/main/java/net/minecraft/server/LightEngineStorage.java
-index 916d38cebcbe912153d54a21acbf60bc26db7401..6c7c4e75670a7e08ba10c0231a2510bf985dab6b 100644
---- a/src/main/java/net/minecraft/server/LightEngineStorage.java
-+++ b/src/main/java/net/minecraft/server/LightEngineStorage.java
-@@ -19,8 +19,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorage.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorage.java
+index 5f3d2c090d098834e38e447d93f1ea8184c8fb3e..5b1ff4ff87591dd4ff0b79e4ac6ff0494fc3d0f8 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorage.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorage.java
+@@ -26,8 +26,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
      protected final LongSet b = new LongOpenHashSet();
      protected final LongSet c = new LongOpenHashSet();
      protected final LongSet d = new LongOpenHashSet();
@@ -20,7 +20,7 @@ index 916d38cebcbe912153d54a21acbf60bc26db7401..6c7c4e75670a7e08ba10c0231a2510bf
      protected final LongSet g = new LongOpenHashSet();
      protected final LongSet h = new LongOpenHashSet();
      protected final Long2ObjectMap<NibbleArray> i = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap());
-@@ -34,8 +34,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+@@ -41,8 +41,8 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
          this.l = enumskyblock;
          this.m = ilightaccess;
          this.f = m0;
@@ -31,7 +31,7 @@ index 916d38cebcbe912153d54a21acbf60bc26db7401..6c7c4e75670a7e08ba10c0231a2510bf
      }
  
      protected boolean g(long i) {
-@@ -44,7 +44,15 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+@@ -51,7 +51,15 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
  
      @Nullable
      protected NibbleArray a(long i, boolean flag) {
@@ -48,7 +48,7 @@ index 916d38cebcbe912153d54a21acbf60bc26db7401..6c7c4e75670a7e08ba10c0231a2510bf
      }
  
      @Nullable
-@@ -357,10 +365,12 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
+@@ -364,10 +372,12 @@ public abstract class LightEngineStorage<M extends LightEngineStorageArray<M>> e
  
      protected void e() {
          if (!this.g.isEmpty()) {
@@ -62,11 +62,11 @@ index 916d38cebcbe912153d54a21acbf60bc26db7401..6c7c4e75670a7e08ba10c0231a2510bf
              this.g.clear();
          }
  
-diff --git a/src/main/java/net/minecraft/server/LightEngineStorageArray.java b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee63edc0e1 100644
---- a/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-+++ b/src/main/java/net/minecraft/server/LightEngineStorageArray.java
-@@ -8,10 +8,23 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
+index 242a2c5dea1241b515b9eee7c334ab3c31ad9d12..ed7864c552054fc47c6010a094230ce4aebf1c54 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageArray.java
+@@ -9,10 +9,23 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      private final long[] b = new long[2];
      private final NibbleArray[] c = new NibbleArray[2];
      private boolean d;
@@ -94,7 +94,7 @@ index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee
          this.c();
          this.d = true;
      }
-@@ -19,16 +32,17 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -20,16 +33,17 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
      public abstract M b();
  
      public void a(long i) {
@@ -115,7 +115,7 @@ index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee
          if (this.d) {
              for (int j = 0; j < 2; ++j) {
                  if (i == this.b[j]) {
-@@ -37,7 +51,7 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -38,7 +52,7 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
              }
          }
  
@@ -124,7 +124,7 @@ index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee
  
          if (nibblearray == null) {
              return null;
-@@ -58,11 +72,13 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -59,11 +73,13 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
  
      @Nullable
      public NibbleArray d(long i) {
@@ -140,7 +140,7 @@ index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee
      }
  
      public void c() {
-@@ -70,7 +86,6 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
+@@ -71,7 +87,6 @@ public abstract class LightEngineStorageArray<M extends LightEngineStorageArray<
              this.b[i] = Long.MAX_VALUE;
              this.c[i] = null;
          }
@@ -148,11 +148,11 @@ index b978723a66d001f70325df0c7521025e079d7cfa..53199595da71a25710bd1ff8ee2868ee
      }
  
      public void d() {
-diff --git a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java b/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
-index 0f7f4744d9f9e5174fb38ccc72248397a4b064ea..292d8c742d3be41ba8ad7fb7f1251dc7f790b62b 100644
---- a/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
-+++ b/src/main/java/net/minecraft/server/LightEngineStorageBlock.java
-@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageBlock.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageBlock.java
+index 06c0635cb40114b078dace69bb5f987e24d25b0f..bba0dda3b8a4740bb18b9a1fc1821dc4e5890fb7 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageBlock.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageBlock.java
+@@ -10,7 +10,7 @@ import net.minecraft.world.level.chunk.NibbleArray;
  public class LightEngineStorageBlock extends LightEngineStorage<LightEngineStorageBlock.a> {
  
      protected LightEngineStorageBlock(ILightAccess ilightaccess) {
@@ -161,7 +161,7 @@ index 0f7f4744d9f9e5174fb38ccc72248397a4b064ea..292d8c742d3be41ba8ad7fb7f1251dc7
      }
  
      @Override
-@@ -18,13 +18,13 @@ public class LightEngineStorageBlock extends LightEngineStorage<LightEngineStora
+@@ -23,13 +23,13 @@ public class LightEngineStorageBlock extends LightEngineStorage<LightEngineStora
  
      public static final class a extends LightEngineStorageArray<LightEngineStorageBlock.a> {
  
@@ -178,11 +178,11 @@ index 0f7f4744d9f9e5174fb38ccc72248397a4b064ea..292d8c742d3be41ba8ad7fb7f1251dc7
          }
      }
  }
-diff --git a/src/main/java/net/minecraft/server/LightEngineStorageSky.java b/src/main/java/net/minecraft/server/LightEngineStorageSky.java
-index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6c1849e46 100644
---- a/src/main/java/net/minecraft/server/LightEngineStorageSky.java
-+++ b/src/main/java/net/minecraft/server/LightEngineStorageSky.java
-@@ -17,15 +17,16 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+diff --git a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageSky.java b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageSky.java
+index befc8f846c772d58ee687ad427bb71206b4dc43e..64d37f4c6a8167f47c80953a388ea6635490563a 100644
+--- a/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageSky.java
++++ b/src/main/java/net/minecraft/world/level/lighting/LightEngineStorageSky.java
+@@ -23,15 +23,16 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
      private volatile boolean p;
  
      protected LightEngineStorageSky(ILightAccess ilightaccess) {
@@ -202,7 +202,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
  
          if (l != lightenginestoragesky_a.b && k < l) {
              NibbleArray nibblearray = this.a(lightenginestoragesky_a, j); // Paper - decompile fix
-@@ -46,6 +47,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -52,6 +53,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
          } else {
              return 15;
          }
@@ -210,7 +210,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
      }
  
      @Override
-@@ -54,14 +56,14 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -60,14 +62,14 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
  
          if (((LightEngineStorageSky.a) this.f).b > j) {
              ((LightEngineStorageSky.a) this.f).b = j;
@@ -228,7 +228,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
              if (this.o.contains(k)) {
                  this.q(i);
                  if (l > ((LightEngineStorageSky.a) this.f).b) {
-@@ -101,7 +103,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -107,7 +109,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
  
          int k = SectionPosition.c(i);
  
@@ -237,7 +237,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
              long l;
  
              for (l = i; !this.g(l) && this.a(k); l = SectionPosition.a(l, EnumDirection.DOWN)) {
-@@ -109,12 +111,12 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -115,12 +117,12 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
              }
  
              if (this.g(l)) {
@@ -252,7 +252,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
              }
          }
  
-@@ -128,7 +130,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -134,7 +136,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
      protected void b(long i, boolean flag) {
          this.d();
          if (flag && this.o.add(i)) {
@@ -261,7 +261,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
  
              if (j != ((LightEngineStorageSky.a) this.f).b) {
                  long k = SectionPosition.b(SectionPosition.b(i), j - 1, SectionPosition.d(i));
-@@ -155,7 +157,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -161,7 +163,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
              return nibblearray;
          } else {
              long j = SectionPosition.a(i, EnumDirection.UP);
@@ -270,7 +270,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
  
              if (k != ((LightEngineStorageSky.a) this.f).b && SectionPosition.c(j) < k) {
                  NibbleArray nibblearray1;
-@@ -298,7 +300,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -304,7 +306,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
              if (!this.o.contains(l)) {
                  return false;
              } else {
@@ -279,7 +279,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
  
                  return SectionPosition.c(i1) == j + 16;
              }
-@@ -307,7 +309,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -313,7 +315,7 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
  
      protected boolean n(long i) {
          long j = SectionPosition.f(i);
@@ -288,7 +288,7 @@ index 75d9065b32731dc635d9d09c48fb9643172381a9..7cec18fcfc311d20beca244c0affe5d6
  
          return k == ((LightEngineStorageSky.a) this.f).b || SectionPosition.c(i) >= k;
      }
-@@ -321,18 +323,21 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
+@@ -327,18 +329,21 @@ public class LightEngineStorageSky extends LightEngineStorage<LightEngineStorage
      public static final class a extends LightEngineStorageArray<LightEngineStorageSky.a> {
  
          private int b;
