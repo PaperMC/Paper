@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Tue, 30 Mar 2021 20:48:11 +0200
+Subject: [PATCH] Enable tnt to mutate projectile velocity
+
+Spigot implemented a non-vanilla check prior to modifying an entities
+velocity due to an explosion that required the Entity#damageEntity call
+to return `true` (presumably) to not move entities for which the damage
+was cancelled.
+
+While the spigot implementation already exempted primed tnt and falling
+blocks from this condition, as they never take damage and always return
+`false, projectiles did not recieve the same treatment. As most
+projectiles cannot take damage (as they either simply ignore damage or
+die immediately) projectiles such as the arrow would no longer be
+affected by an explosion and would hence not change their velocity.
+
+This commit returns the vanilla behaviour by allowing all entities that
+extend the `IProjectile` class to change their velocity due to an
+explosion by adding an `instanceof` check to the two previously existing
+`instanceof` checks for primed tnt and falling block entities.
+
+Resolves: #5429
+
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 79008bda42558ea7d28ccf51b66405a3bdb52da7..2cab2f14a0c089cae1562064e64b1e886b1119bd 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -223,9 +223,11 @@ public class Explosion {
+                         entity.forceExplosionKnockback = false;
+                         boolean wasDamaged = entity.damageEntity(this.b(), (float) ((int) ((d13 * d13 + d13) / 2.0D * 7.0D * (double) f2 + 1.0D)));
+                         CraftEventFactory.entityDamage = null;
+-                        if (!wasDamaged && !(entity instanceof EntityTNTPrimed || entity instanceof EntityFallingBlock) && !entity.forceExplosionKnockback) {
++                        // Paper start - Allow projectiles to still be moved by explosion without taking damage
++                        if (!wasDamaged && !(entity instanceof EntityTNTPrimed || entity instanceof EntityFallingBlock || entity instanceof IProjectile) && !entity.forceExplosionKnockback) {
+                             continue;
+                         }
++                        // Paper end
+                         // CraftBukkit end
+                         double d14 = d13;
+ 
