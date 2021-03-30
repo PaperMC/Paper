@@ -18,9 +18,11 @@ import org.bukkit.event.server.TabCompleteEvent;
 
 public class ConsoleCommandCompleter implements Completer {
     private final DedicatedServer server; // Paper - CraftServer -> DedicatedServer
+    private final io.papermc.paper.console.BrigadierCommandCompleter brigadierCompleter; // Paper - Enhance console tab completions for brigadier commands
 
     public ConsoleCommandCompleter(DedicatedServer server) { // Paper - CraftServer -> DedicatedServer
         this.server = server;
+        this.brigadierCompleter = new io.papermc.paper.console.BrigadierCommandCompleter(this.server); // Paper - Enhance console tab completions for brigadier commands
     }
 
     // Paper start - Change method signature for JLine update
@@ -64,7 +66,7 @@ public class ConsoleCommandCompleter implements Completer {
                 }
             }
 
-            if (!completions.isEmpty()) {
+            if (false && !completions.isEmpty()) {
                 for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion completion : completions) {
                     if (completion.suggestion().isEmpty()) {
                         continue;
@@ -80,6 +82,7 @@ public class ConsoleCommandCompleter implements Completer {
                     ));
                 }
             }
+            this.addCompletions(reader, line, candidates, completions);
             return;
         }
 
@@ -99,10 +102,12 @@ public class ConsoleCommandCompleter implements Completer {
         try {
             List<String> offers = waitable.get();
             if (offers == null) {
+                this.addCompletions(reader, line, candidates, Collections.emptyList()); // Paper - Enhance console tab completions for brigadier commands
                 return; // Paper - Method returns void
             }
 
             // Paper start - JLine update
+            /*
             for (String completion : offers) {
                 if (completion.isEmpty()) {
                     continue;
@@ -110,6 +115,8 @@ public class ConsoleCommandCompleter implements Completer {
 
                 candidates.add(new Candidate(completion));
             }
+             */
+            this.addCompletions(reader, line, candidates, offers.stream().map(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion::completion).collect(java.util.stream.Collectors.toList()));
             // Paper end
 
             // Paper start - JLine handles cursor now
@@ -137,6 +144,10 @@ public class ConsoleCommandCompleter implements Completer {
             }
         }
         return false;
+    }
+
+    private void addCompletions(final LineReader reader, final ParsedLine line, final List<Candidate> candidates, final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> existing) {
+        this.brigadierCompleter.complete(reader, line, candidates, existing);
     }
     // Paper end
 }
