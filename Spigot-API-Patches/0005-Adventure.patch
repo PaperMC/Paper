@@ -399,8 +399,80 @@ index 0000000000000000000000000000000000000000..13c5df5fb8ce1d0203d99e88dd691019
 +        return HANDLERS;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..643895529dcd17d3b7bc3de78835ca3fae07ee3d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.text;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import org.bukkit.Bukkit;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++/**
++ * Paper API-specific methods for working with {@link Component}s and related.
++ */
++public interface PaperComponents {
++    /**
++     * Get the {@link PaperComponents} instance.
++     *
++     * @return PaperComponents
++     */
++    static @NonNull PaperComponents paperComponents() {
++        return Bukkit.getPaperComponents();
++    }
++
++    /**
++     * Return a component flattener that can use game data to resolve extra information about components.
++     *
++     * @return a component flattener
++     */
++    @NonNull ComponentFlattener flattener();
++
++    /**
++     * Get a serializer for {@link Component}s that will convert components to
++     * a plain-text string.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a serializer to plain text
++     */
++    @NonNull PlainComponentSerializer plainSerializer();
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    @NonNull GsonComponentSerializer gsonSerializer();
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson, downsampling any RGB colors
++     * to their nearest {@link NamedTextColor} counterpart.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer();
++}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac4376b06d 100644
+index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..b5d18b93f77e9f91a622cd45329d49366099fc1f 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
 @@ -278,7 +278,9 @@ public final class Bukkit {
@@ -413,22 +485,20 @@ index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac
      public static int broadcastMessage(@NotNull String message) {
          return server.broadcastMessage(message);
      }
-@@ -836,6 +838,7 @@ public final class Bukkit {
+@@ -836,6 +838,29 @@ public final class Bukkit {
          server.shutdown();
      }
  
 +    // Paper start
-     /**
-      * Broadcasts the specified message to every user with the given
-      * permission name.
-@@ -845,6 +848,21 @@ public final class Bukkit {
-      *     permissibles} must have to receive the broadcast
-      * @return number of message recipients
-      */
-+    public static int broadcast(@NotNull net.kyori.adventure.text.Component message, @NotNull String permission) {
-+        return server.broadcast(message, permission);
++    /**
++     * Get the {@link io.papermc.paper.text.PaperComponents} instance.
++     *
++     * @return PaperComponents
++     */
++    public static @NotNull io.papermc.paper.text.PaperComponents getPaperComponents() {
++        return server.getPaperComponents();
 +    }
-+    // Paper end
++
 +    /**
 +     * Broadcasts the specified message to every user with the given
 +     * permission name.
@@ -437,29 +507,29 @@ index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac
 +     * @param permission the required permission {@link Permissible
 +     *     permissibles} must have to receive the broadcast
 +     * @return number of message recipients
-+     * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
 +     */
++    public static int broadcast(@NotNull net.kyori.adventure.text.Component message, @NotNull String permission) {
++        return server.broadcast(message, permission);
++    }
++    // Paper end
+     /**
+      * Broadcasts the specified message to every user with the given
+      * permission name.
+@@ -844,7 +869,9 @@ public final class Bukkit {
+      * @param permission the required permission {@link Permissible
+      *     permissibles} must have to receive the broadcast
+      * @return number of message recipients
++     * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
+      */
 +    @Deprecated // Paper
      public static int broadcast(@NotNull String message, @NotNull String permission) {
          return server.broadcast(message, permission);
      }
-@@ -1044,6 +1062,7 @@ public final class Bukkit {
+@@ -1044,6 +1071,37 @@ public final class Bukkit {
          return server.createInventory(owner, type);
      }
  
 +    // Paper start
-     /**
-      * Creates an empty inventory with the specified type and title. If the type
-      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -1069,6 +1088,38 @@ public final class Bukkit {
-      * @see InventoryType#isCreatable()
-      */
-     @NotNull
-+    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title) {
-+        return server.createInventory(owner, type, title);
-+    }
-+    // Paper end
-+
 +    /**
 +     * Creates an empty inventory with the specified type and title. If the type
 +     * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
@@ -481,32 +551,35 @@ index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac
 +     * @return The new inventory.
 +     * @throws IllegalArgumentException if the {@link InventoryType} cannot be
 +     * viewed.
-+     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
 +     *
 +     * @see InventoryType#isCreatable()
 +     */
-+    @Deprecated // Paper
 +    @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull net.kyori.adventure.text.Component title) {
++        return server.createInventory(owner, type, title);
++    }
++    // Paper end
++
+     /**
+      * Creates an empty inventory with the specified type and title. If the type
+      * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
+@@ -1065,9 +1123,11 @@ public final class Bukkit {
+      * @return The new inventory.
+      * @throws IllegalArgumentException if the {@link InventoryType} cannot be
+      * viewed.
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+      *
+      * @see InventoryType#isCreatable()
+      */
++    @Deprecated // Paper
+     @NotNull
      public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title) {
          return server.createInventory(owner, type, title);
-     }
-@@ -1087,6 +1138,7 @@ public final class Bukkit {
+@@ -1087,6 +1147,24 @@ public final class Bukkit {
          return server.createInventory(owner, size);
      }
  
 +    // Paper start
-     /**
-      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
-      * specified size and title.
-@@ -1099,10 +1151,30 @@ public final class Bukkit {
-      * @throws IllegalArgumentException if the size is not a multiple of 9
-      */
-     @NotNull
-+    public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException {
-+        return server.createInventory(owner, size, title);
-+    }
-+    // Paper end
-+
 +    /**
 +     * Creates an empty inventory of type {@link InventoryType#CHEST} with the
 +     * specified size and title.
@@ -517,25 +590,28 @@ index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac
 +     *     viewed
 +     * @return a new inventory
 +     * @throws IllegalArgumentException if the size is not a multiple of 9
-+     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
 +     */
-+    @Deprecated // Paper
 +    @NotNull
++    public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull net.kyori.adventure.text.Component title) throws IllegalArgumentException {
++        return server.createInventory(owner, size, title);
++    }
++    // Paper end
++
+     /**
+      * Creates an empty inventory of type {@link InventoryType#CHEST} with the
+      * specified size and title.
+@@ -1097,20 +1175,36 @@ public final class Bukkit {
+      *     viewed
+      * @return a new inventory
+      * @throws IllegalArgumentException if the size is not a multiple of 9
++     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+      */
++    @Deprecated // Paper
+     @NotNull
      public static Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException {
          return server.createInventory(owner, size, title);
      }
  
-+    // Paper start
-     /**
-      * Creates an empty merchant.
-      *
-@@ -1110,7 +1182,20 @@ public final class Bukkit {
-      * when the merchant inventory is viewed
-      * @return a new merchant
-      */
-+    public static @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title) {
-+        return server.createMerchant(title);
-+    }
 +    // Paper start
 +    /**
 +     * Creates an empty merchant.
@@ -543,14 +619,25 @@ index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac
 +     * @param title the title of the corresponding merchant inventory, displayed
 +     * when the merchant inventory is viewed
 +     * @return a new merchant
-+     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
 +     */
++    public static @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title) {
++        return server.createMerchant(title);
++    }
++    // Paper start
+     /**
+      * Creates an empty merchant.
+      *
+      * @param title the title of the corresponding merchant inventory, displayed
+      * when the merchant inventory is viewed
+      * @return a new merchant
++     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+      */
      @NotNull
 +    @Deprecated // Paper
      public static Merchant createMerchant(@Nullable String title) {
          return server.createMerchant(title);
      }
-@@ -1181,22 +1266,47 @@ public final class Bukkit {
+@@ -1181,22 +1275,47 @@ public final class Bukkit {
          return server.isPrimaryThread();
      }
  
@@ -672,7 +759,7 @@ index 803fa0019869127ee8c7e4fb1777a59c43e66f8a..c65f0d6569c130b4920a9e71ad24af64
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c108f206f3c 100644
+index a6b9e4f158583e5932bf8ca210d531857e9f5360..ed52472ea9d4c5d00db8291cff0e1dca302eee92 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
 @@ -55,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
@@ -694,7 +781,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      public int broadcastMessage(@NotNull String message);
  
      /**
-@@ -703,8 +705,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -703,8 +705,29 @@ public interface Server extends PluginMessageRecipient {
       * @param permission the required permission {@link Permissible
       *     permissibles} must have to receive the broadcast
       * @return number of message recipients
@@ -703,6 +790,13 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
 +    @Deprecated // Paper
      public int broadcast(@NotNull String message, @NotNull String permission);
 +    // Paper start
++    /**
++     * Get the {@link io.papermc.paper.text.PaperComponents} instance.
++     *
++     * @return PaperComponents
++     */
++    @NotNull io.papermc.paper.text.PaperComponents getPaperComponents();
++
 +    /**
 +     * Broadcasts the specified message to every user with the given
 +     * permission name.
@@ -717,7 +811,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
  
      /**
       * Gets the player by the given name, regardless if they are offline or
-@@ -869,6 +885,7 @@ public interface Server extends PluginMessageRecipient {
+@@ -869,6 +892,7 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
  
@@ -725,7 +819,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      /**
       * Creates an empty inventory with the specified type and title. If the type
       * is {@link InventoryType#CHEST}, the new inventory has a size of 27;
-@@ -894,6 +911,36 @@ public interface Server extends PluginMessageRecipient {
+@@ -894,6 +918,36 @@ public interface Server extends PluginMessageRecipient {
       * @see InventoryType#isCreatable()
       */
      @NotNull
@@ -762,7 +856,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, @NotNull String title);
  
      /**
-@@ -908,6 +955,22 @@ public interface Server extends PluginMessageRecipient {
+@@ -908,6 +962,22 @@ public interface Server extends PluginMessageRecipient {
      @NotNull
      Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
  
@@ -785,7 +879,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      /**
       * Creates an empty inventory of type {@link InventoryType#CHEST} with the
       * specified size and title.
-@@ -918,18 +981,32 @@ public interface Server extends PluginMessageRecipient {
+@@ -918,10 +988,13 @@ public interface Server extends PluginMessageRecipient {
       *     viewed
       * @return a new inventory
       * @throws IllegalArgumentException if the size is not a multiple of 9
@@ -796,29 +890,29 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      Inventory createInventory(@Nullable InventoryHolder owner, int size, @NotNull String title) throws IllegalArgumentException;
  
 +    // Paper start
+     /**
+      * Creates an empty merchant.
+      *
+@@ -929,7 +1002,18 @@ public interface Server extends PluginMessageRecipient {
+      * when the merchant inventory is viewed
+      * @return a new merchant
+      */
++    @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title);
++    // Paper start
 +    /**
 +     * Creates an empty merchant.
 +     *
 +     * @param title the title of the corresponding merchant inventory, displayed
 +     * when the merchant inventory is viewed
 +     * @return a new merchant
-+     */
-+    @NotNull Merchant createMerchant(@Nullable net.kyori.adventure.text.Component title);
-+    // Paper start
-     /**
-      * Creates an empty merchant.
-      *
-      * @param title the title of the corresponding merchant inventory, displayed
-      * when the merchant inventory is viewed
-      * @return a new merchant
 +     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
-      */
++     */
      @NotNull
 +    @Deprecated // Paper
      Merchant createMerchant(@Nullable String title);
  
      /**
-@@ -986,20 +1063,41 @@ public interface Server extends PluginMessageRecipient {
+@@ -986,20 +1070,41 @@ public interface Server extends PluginMessageRecipient {
       */
      boolean isPrimaryThread();
  
@@ -860,7 +954,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
      String getShutdownMessage();
  
      /**
-@@ -1368,7 +1466,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1368,7 +1473,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends the component to the player
           *
           * @param component the components to send
@@ -870,7 +964,7 @@ index a6b9e4f158583e5932bf8ca210d531857e9f5360..d9515a79dc7ed60c66960cd6c6bb4c10
          public void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
              throw new UnsupportedOperationException("Not supported yet.");
          }
-@@ -1377,7 +1477,9 @@ public interface Server extends PluginMessageRecipient {
+@@ -1377,7 +1484,9 @@ public interface Server extends PluginMessageRecipient {
           * Sends an array of components as a single message to the player
           *
           * @param components the components to send
@@ -931,7 +1025,7 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index fd2af5fded9335602e263a2098760da0e64a87a3..44f01a3d8a461acab187367fc8876e0b73c92386 100644
+index 0fcf1dbb7b9cd2cfcb803b1a430d6131de87c92d..f9dea4ed6c57c88fa2f5b710440a35f4d310dd5f 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;

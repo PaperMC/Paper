@@ -792,6 +792,48 @@ index 0000000000000000000000000000000000000000..71938ad7b3494e803beca7e4022aad12
 +        return EnumChatFormat.getByHexValue(color.value());
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperComponentsImpl.java b/src/main/java/io/papermc/paper/adventure/PaperComponentsImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3e6fd981fee17d1687e96ee7db7f824da6e2194a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/PaperComponentsImpl.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.adventure;
++
++import io.papermc.paper.text.PaperComponents;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++public enum PaperComponentsImpl implements PaperComponents {
++    INSTANCE;
++
++    private final GsonComponentSerializer colorDownsamplingGsonSerializer = GsonComponentSerializer.builder()
++        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
++        .downsampleColors()
++        .build();
++
++    @Override
++    public @NonNull ComponentFlattener flattener() {
++        return PaperAdventure.FLATTENER;
++    }
++
++    @Override
++    public @NonNull PlainComponentSerializer plainSerializer() {
++        return PaperAdventure.PLAIN;
++    }
++
++    @Override
++    public @NonNull GsonComponentSerializer gsonSerializer() {
++        return PaperAdventure.GSON;
++    }
++
++    @Override
++    public @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++        return this.colorDownsamplingGsonSerializer;
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..3a4158781e464d9a860bab72ed719a41929c8add
@@ -1634,7 +1676,7 @@ index 7ec93ddd7e7c9dc54e3e4dcfe0d1654c0b0a8536..3f057f0bd23bc1c693c8f04ee8acd662
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e3a4896de 100644
+index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..3686d40db09becbeb5692a1d4ab16ed6e0efd5b3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -563,8 +563,11 @@ public final class CraftServer implements Server {
@@ -1756,12 +1798,16 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      @Override
      public String getMotd() {
          return console.getMotd();
-@@ -2149,5 +2197,15 @@ public final class CraftServer implements Server {
+@@ -2149,5 +2197,19 @@ public final class CraftServer implements Server {
              return null;
          }
      }
 +
 +    // Paper start
++    public io.papermc.paper.text.PaperComponents getPaperComponents() {
++        return io.papermc.paper.adventure.PaperComponentsImpl.INSTANCE;
++    }
++
 +    private Iterable<? extends net.kyori.adventure.audience.Audience> adventure$audiences;
 +    @Override
 +    public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
