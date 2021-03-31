@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Wed, 31 Mar 2021 09:19:29 -0500
+Subject: [PATCH] Implement Reusable ChunkSnapshot API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 98ab124b4dca9387b4793cef68a33c67aed64e21..6af38cdfc915f1523d75705b63fee064287f1581 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -38,6 +38,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.persistence.PersistentDataContainer;
+ import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.Nullable;
+ 
+ public class CraftChunk implements Chunk {
+     private WeakReference<net.minecraft.world.level.chunk.Chunk> weakChunk;
+@@ -268,15 +269,36 @@ public class CraftChunk implements Chunk {
+         return getChunkSnapshot(true, false, false);
+     }
+ 
++    // Paper start - include version for reusing ChunkSnapshot
+     @Override
+     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
++        return this.getChunkSnapshot(null, includeMaxBlockY, includeBiome, includeBiomeTempRain);
++    }
++
++    @Override
++    public ChunkSnapshot getChunkSnapshot(@Nullable ChunkSnapshot snapshot, boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
++        com.google.common.base.Preconditions.checkState(snapshot == null || snapshot instanceof CraftChunkSnapshot, "Snapshot should not be custom implementation");
+         net.minecraft.world.level.chunk.Chunk chunk = getHandle();
+ 
+         ChunkSection[] cs = chunk.getSections();
+-        DataPaletteBlock[] sectionBlockIDs = new DataPaletteBlock[cs.length];
+-        byte[][] sectionSkyLights = new byte[cs.length][];
+-        byte[][] sectionEmitLights = new byte[cs.length][];
+-        boolean[] sectionEmpty = new boolean[cs.length];
++
++        DataPaletteBlock[] sectionBlockIDs;
++        byte[][] sectionSkyLights;
++        byte[][] sectionEmitLights;
++        boolean[] sectionEmpty;
++        if (snapshot == null) {
++            World world = getWorld();
++            sectionBlockIDs = new DataPaletteBlock[cs.length];
++            sectionSkyLights = new byte[cs.length][];
++            sectionEmitLights = new byte[cs.length][];
++            sectionEmpty = new boolean[cs.length];
++            snapshot = new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, null, null);
++        } else {
++            sectionBlockIDs = ((CraftChunkSnapshot) snapshot).blockids;
++            sectionSkyLights = ((CraftChunkSnapshot) snapshot).skylight;
++            sectionEmitLights = ((CraftChunkSnapshot) snapshot).emitlight;
++            sectionEmpty = ((CraftChunkSnapshot) snapshot).empty;
++        }
+ 
+         for (int i = 0; i < cs.length; i++) {
+             if (cs[i] == null) { // Section is empty?
+@@ -316,17 +338,19 @@ public class CraftChunk implements Chunk {
+         if (includeMaxBlockY) {
+             hmap = new HeightMap(null, HeightMap.Type.MOTION_BLOCKING);
+             hmap.a(chunk.heightMap.get(HeightMap.Type.MOTION_BLOCKING).a());
++            ((CraftChunkSnapshot) snapshot).hmap = hmap;
+         }
+ 
+         BiomeStorage biome = null;
+ 
+         if (includeBiome || includeBiomeTempRain) {
+             biome = chunk.getBiomeIndex();
++            ((CraftChunkSnapshot) snapshot).biome = biome;
+         }
+ 
+-        World world = getWorld();
+-        return new CraftChunkSnapshot(getX(), getZ(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, biome);
++        return snapshot;
+     }
++    // Paper end
+ 
+     @Override
+     public PersistentDataContainer getPersistentDataContainer() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+index fc65c138bab242d5b533381ea496a2a48fcd91ea..8c82d7865d24b7aa08f80fbecf4fac42dfbc4a14 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunkSnapshot.java
+@@ -25,13 +25,15 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ public class CraftChunkSnapshot implements ChunkSnapshot {
+     private final int x, z;
+     private final String worldname;
+-    private final DataPaletteBlock<IBlockData>[] blockids;
+-    private final byte[][] skylight;
+-    private final byte[][] emitlight;
+-    private final boolean[] empty;
+-    private final HeightMap hmap; // Height map
+-    private final long captureFulltime;
+-    private final BiomeStorage biome;
++    // Paper start - make class mutable for re-use
++    protected final DataPaletteBlock<IBlockData>[] blockids;
++    protected final byte[][] skylight;
++    protected final byte[][] emitlight;
++    protected final boolean[] empty;
++    protected HeightMap hmap; // Height map
++    protected long captureFulltime;
++    protected BiomeStorage biome;
++    // Paper end
+ 
+     CraftChunkSnapshot(int x, int z, String wname, long wtime, DataPaletteBlock<IBlockData>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, HeightMap hmap, BiomeStorage biome) {
+         this.x = x;
