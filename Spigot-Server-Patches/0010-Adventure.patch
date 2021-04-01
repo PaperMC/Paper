@@ -448,7 +448,7 @@ index 0000000000000000000000000000000000000000..caa9708f321f04cd02534161231c0599
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c08f2757ea46c49cfe2de1cc4b4674204ba081cd
+index 0000000000000000000000000000000000000000..cd2da276c09dcf98c1c50dc66aa30dd3b67b43af
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 @@ -0,0 +1,344 @@
@@ -536,10 +536,10 @@ index 0000000000000000000000000000000000000000..c08f2757ea46c49cfe2de1cc4b467420
 +        .build();
 +    public static final LegacyComponentSerializer LEGACY_SECTION_UXRC = LegacyComponentSerializer.builder().flattener(FLATTENER).hexColors().useUnusualXRepeatedCharacterHexFormat().build();
 +    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
-+    static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
++    public static final GsonComponentSerializer GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .build();
-+    static final GsonComponentSerializer COLOR_DOWNSAMPLING_GSON = GsonComponentSerializer.builder()
++    public static final GsonComponentSerializer COLOR_DOWNSAMPLING_GSON = GsonComponentSerializer.builder()
 +        .legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.INSTANCE)
 +        .downsampleColors()
 +        .build();
@@ -794,43 +794,6 @@ index 0000000000000000000000000000000000000000..c08f2757ea46c49cfe2de1cc4b467420
 +
 +    public static @Nullable EnumChatFormat asVanilla(TextColor color) {
 +        return EnumChatFormat.getByHexValue(color.value());
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/adventure/PaperComponentsProvidersImpl.java b/src/main/java/io/papermc/paper/adventure/PaperComponentsProvidersImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..30154b3da2acb13d6b031b365be825dbab3a28a1
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/adventure/PaperComponentsProvidersImpl.java
-@@ -0,0 +1,31 @@
-+package io.papermc.paper.adventure;
-+
-+import io.papermc.paper.text.PaperComponents;
-+import net.kyori.adventure.text.flattener.ComponentFlattener;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-+import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+
-+public enum PaperComponentsProvidersImpl implements PaperComponents.Providers {
-+    INSTANCE;
-+
-+    @Override
-+    public @NonNull ComponentFlattener flattener() {
-+        return PaperAdventure.FLATTENER;
-+    }
-+
-+    @Override
-+    public @NonNull PlainComponentSerializer plainSerializer() {
-+        return PaperAdventure.PLAIN;
-+    }
-+
-+    @Override
-+    public @NonNull GsonComponentSerializer gsonSerializer() {
-+        return PaperAdventure.GSON;
-+    }
-+
-+    @Override
-+    public @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
-+        return PaperAdventure.COLOR_DOWNSAMPLING_GSON;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
@@ -3181,7 +3144,7 @@ index 6a0b4cd36ac54df41642e8499c50e59f2b347b48..666af6cc91bd12ba5d5a846d663a5aab
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 65131f0977fa55c4761c34ce52720170feb61a72..96e8bb132b09038d5420dd759bc6e841ea696978 100644
+index 65131f0977fa55c4761c34ce52720170feb61a72..f241dc03f12664d6b607fc36db56f62cb967b5c9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -18,6 +18,7 @@ import java.util.Locale;
@@ -3192,14 +3155,29 @@ index 65131f0977fa55c4761c34ce52720170feb61a72..96e8bb132b09038d5420dd759bc6e841
  import net.minecraft.SharedConstants;
  import net.minecraft.advancements.critereon.LootDeserializationContext;
  import net.minecraft.core.IRegistry;
-@@ -59,6 +60,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -59,6 +60,33 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      private CraftMagicNumbers() {}
  
 +    // Paper start
 +    @Override
-+    public io.papermc.paper.text.PaperComponents.Providers getPaperComponentsProviders() {
-+        return io.papermc.paper.adventure.PaperComponentsProvidersImpl.INSTANCE;
++    public net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener() {
++        return io.papermc.paper.adventure.PaperAdventure.FLATTENER;
++    }
++
++    @Override
++    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer() {
++        return io.papermc.paper.adventure.PaperAdventure.COLOR_DOWNSAMPLING_GSON;
++    }
++
++    @Override
++    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer() {
++        return io.papermc.paper.adventure.PaperAdventure.GSON;
++    }
++
++    @Override
++    public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
++        return io.papermc.paper.adventure.PaperAdventure.PLAIN;
 +    }
 +
 +    @Override

@@ -401,16 +401,17 @@ index 0000000000000000000000000000000000000000..13c5df5fb8ce1d0203d99e88dd691019
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ffa36944241cec126f698d662b9321fadfa55ffa
+index 0000000000000000000000000000000000000000..aca8e5ca4a7e11613076fe752fe9ff6df8ab48e9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.text;
 +
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 +import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 +import org.bukkit.Bukkit;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -425,7 +426,7 @@ index 0000000000000000000000000000000000000000..ffa36944241cec126f698d662b9321fa
 +     * @return a component flattener
 +     */
 +    static @NonNull ComponentFlattener flattener() {
-+        return Bukkit.getUnsafe().getPaperComponentsProviders().flattener();
++        return Bukkit.getUnsafe().componentFlattener();
 +    }
 +
 +    /**
@@ -438,7 +439,7 @@ index 0000000000000000000000000000000000000000..ffa36944241cec126f698d662b9321fa
 +     * @return a serializer to plain text
 +     */
 +    static @NonNull PlainComponentSerializer plainSerializer() {
-+        return Bukkit.getUnsafe().getPaperComponentsProviders().plainSerializer();
++        return Bukkit.getUnsafe().plainComponentSerializer();
 +    }
 +
 +    /**
@@ -452,7 +453,7 @@ index 0000000000000000000000000000000000000000..ffa36944241cec126f698d662b9321fa
 +     * @return a json component serializer
 +     */
 +    static @NonNull GsonComponentSerializer gsonSerializer() {
-+        return Bukkit.getUnsafe().getPaperComponentsProviders().gsonSerializer();
++        return Bukkit.getUnsafe().gsonComponentSerializer();
 +    }
 +
 +    /**
@@ -467,55 +468,25 @@ index 0000000000000000000000000000000000000000..ffa36944241cec126f698d662b9321fa
 +     * @return a json component serializer
 +     */
 +    static @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
-+        return Bukkit.getUnsafe().getPaperComponentsProviders().colorDownsamplingGsonSerializer();
++        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
 +    }
 +
 +    /**
-+     * Interface backing {@link PaperComponents} static methods.
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * legacy component format used by Bukkit. This serializer uses the
++     * {@link LegacyComponentSerializer.Builder#useUnusualXRepeatedCharacterHexFormat()}
++     * option to match upstream behavior.
++     *
++     * <p>This legacy serializer uses the standard section symbol to mark
++     * formatting characters.</p>
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a section serializer
 +     */
-+    interface Providers {
-+        /**
-+         * Return a component flattener that can use game data to resolve extra information about components.
-+         *
-+         * @return a component flattener
-+         */
-+        @NonNull ComponentFlattener flattener();
-+
-+        /**
-+         * Get a serializer for {@link Component}s that will convert components to
-+         * a plain-text string.
-+         *
-+         * <p>Implementations may provide a serializer capable of processing any
-+         * information that requires access to implementation details.</p>
-+         *
-+         * @return a serializer to plain text
-+         */
-+        @NonNull PlainComponentSerializer plainSerializer();
-+
-+        /**
-+         * Get a serializer for {@link Component}s that will convert to and from the
-+         * standard JSON serialization format using Gson.
-+         *
-+         * <p>Implementations may provide a serializer capable of processing any
-+         * information that requires implementation details, such as legacy
-+         * (pre-1.16) hover events.</p>
-+         *
-+         * @return a json component serializer
-+         */
-+        @NonNull GsonComponentSerializer gsonSerializer();
-+
-+        /**
-+         * Get a serializer for {@link Component}s that will convert to and from the
-+         * standard JSON serialization format using Gson, downsampling any RGB colors
-+         * to their nearest {@link NamedTextColor} counterpart.
-+         *
-+         * <p>Implementations may provide a serializer capable of processing any
-+         * information that requires implementation details, such as legacy
-+         * (pre-1.16) hover events.</p>
-+         *
-+         * @return a json component serializer
-+         */
-+        @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer();
++    static @NonNull LegacyComponentSerializer legacySectionSerializer() {
++        return Bukkit.getUnsafe().legacyComponentSerializer();
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
@@ -1026,14 +997,17 @@ index 768f35c19c4557236bded5f4a85f48a2b2b2a9e6..d0ce64412276512cde133937a85a3340
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 945b8b030d1b2a13afc0c4efad76997eb7bf00ba..12e78c33dec1860c742e30229b8d365f7d37dfae 100644
+index 945b8b030d1b2a13afc0c4efad76997eb7bf00ba..d916fb59a8dd6f9e5cbeb0b734c747a62c8128cd 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -17,6 +17,8 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -17,6 +17,11 @@ import org.bukkit.plugin.PluginDescriptionFile;
   */
  @Deprecated
  public interface UnsafeValues {
-+    io.papermc.paper.text.PaperComponents.Providers getPaperComponentsProviders(); // Paper
++    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
++    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
 +    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer(); // Paper
  
      void reportTimings(); // Paper
