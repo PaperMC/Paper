@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Sun, 4 Apr 2021 17:51:05 -0400
+Subject: [PATCH] Improve per-player-mob-spawns with event cancels
+
+
+diff --git a/src/main/java/net/minecraft/server/ChunkProviderServer.java b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+index d07fcc0c51679104506d81acfdee6f391f30c0a0..0600b19a08bc3e661032876da6d0501f4dd2d1ad 100644
+--- a/src/main/java/net/minecraft/server/ChunkProviderServer.java
++++ b/src/main/java/net/minecraft/server/ChunkProviderServer.java
+@@ -810,7 +810,10 @@ public class ChunkProviderServer extends IChunkProvider {
+                 this.world.timings.playerMobDistanceMapUpdate.stopTiming();
+                 // re-set mob counts
+                 for (EntityPlayer player : this.world.players) {
+-                    Arrays.fill(player.mobCounts, 0);
++                    for (int ii = 0; ii < EntityPlayer.ENUMCREATURETYPE_TOTAL_ENUMS; i++){
++                        player.mobCounts[ii] = 0;
++                        player.mobBackoffCounts[ii] -= 1; //todo make configurable bleed // todo use non linear algorithm?
++                    }
+                 }
+                 worldMobCount = this.world.countMobs(true);
+             } else {
+@@ -890,7 +893,8 @@ public class ChunkProviderServer extends IChunkProvider {
+ 
+                                     if (difference > 0) {
+                                         int spawnCount = SpawnerCreature.spawnMobs(enumcreaturetype, this.world, chunk, blockposition, difference,
+-                                            this.world.paperConfig.perPlayerMobSpawns ? this.playerChunkMap::updatePlayerMobTypeMap : null);
++                                            this.world.paperConfig.perPlayerMobSpawns ? this.playerChunkMap::updatePlayerMobTypeMap : null,
++                                            this.world.paperConfig.perPlayerMobSpawns ? this.playerChunkMap::updatePlayerMobTypeMapFail : null);
+                                         worldMobCount[enumcreaturetype.ordinal()] += spawnCount;
+                                         // Paper end
+                                     }
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index 4ed4ad6bc3b4ab6702ca500dc26e889dca6ed2d7..9b630256c2fe5da379370e50645fd694685cb69d 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -88,6 +88,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     // Paper start - mob spawning rework
+     public static final int ENUMCREATURETYPE_TOTAL_ENUMS = EnumCreatureType.values().length;
+     public final int[] mobCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
++    public final int[] mobBackoffCounts = new int[ENUMCREATURETYPE_TOTAL_ENUMS]; // Paper
+     public final com.destroystokyo.paper.util.PooledHashSets.PooledObjectLinkedOpenHashSet<EntityPlayer> cachedSingleMobDistanceMap;
+     // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerChunkMap.java b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+index 8abf276a325cbc3a863fb89276526790c4de2692..d5eff578ce48a3025ca02c78a9e3ae35aa25e9c2 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunkMap.java
++++ b/src/main/java/net/minecraft/server/PlayerChunkMap.java
+@@ -534,8 +534,19 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+         }
+     }
+ 
++    public void updatePlayerMobTypeMapFail(int chunkX, int chunkZ, EnumCreatureType type) {
++        if (!this.world.paperConfig.perPlayerMobSpawns) {
++            return;
++        }
++        int index = type.ordinal();
++
++        for (EntityPlayer player : this.playerMobDistanceMap.getPlayersInRange(chunkX, chunkZ)) {
++            ++player.mobBackoffCounts[index]; // todo add upper limit?
++        }
++    }
++
+     public int getMobCountNear(EntityPlayer entityPlayer, EnumCreatureType enumCreatureType) {
+-        return entityPlayer.mobCounts[enumCreatureType.ordinal()];
++        return entityPlayer.mobCounts[enumCreatureType.ordinal()] + entityPlayer.mobBackoffCounts[enumCreatureType.ordinal()];
+     }
+ 
+     private static double getDistanceSquaredFromChunk(ChunkCoordIntPair chunkPos, Entity entity) { return a(chunkPos, entity); } // Paper - OBFHELPER
+diff --git a/src/main/java/net/minecraft/server/SpawnerCreature.java b/src/main/java/net/minecraft/server/SpawnerCreature.java
+index 58bbf2f9d2ec91715051d40e108e16067bb36561..b4c4055da8742e75e5f742a8deb2f706c228420b 100644
+--- a/src/main/java/net/minecraft/server/SpawnerCreature.java
++++ b/src/main/java/net/minecraft/server/SpawnerCreature.java
+@@ -14,14 +14,18 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+ // CraftBukkit end
+ 
+ public final class SpawnerCreature {
++    @FunctionalInterface
++    public interface FailConsumer {
++        void accept(int chunkX, int chunkZ, EnumCreatureType type);
++    }
+ 
+     private static final Logger LOGGER = LogManager.getLogger();
+ 
+     // Paper start - add maxSpawns parameter and return spawned mobs
+     public static void a(EnumCreatureType enumcreaturetype, WorldServer worldserver, Chunk chunk, BlockPosition blockposition) {
+-        spawnMobs(enumcreaturetype, worldserver, chunk, blockposition, Integer.MAX_VALUE, null);
++        spawnMobs(enumcreaturetype, worldserver, chunk, blockposition, Integer.MAX_VALUE, null, null);
+     }
+-    public static int spawnMobs(EnumCreatureType enumcreaturetype, WorldServer worldserver, Chunk chunk, BlockPosition blockposition, int maxSpawns, Consumer<Entity> trackEntity) {
++    public static int spawnMobs(EnumCreatureType enumcreaturetype, WorldServer worldserver, Chunk chunk, BlockPosition blockposition, int maxSpawns, Consumer<Entity> trackEntity, FailConsumer trackFail) {
+         // Paper end
+         ChunkGenerator<?> chunkgenerator = worldserver.getChunkProvider().getChunkGenerator();
+         int i = 0; // Paper - force diff on name change
+@@ -93,6 +97,10 @@ public final class SpawnerCreature {
+                                                             type, SpawnReason.NATURAL
+                                                         );
+                                                         if (!event.callEvent()) {
++
++                                                            if (trackFail != null) {
++                                                                trackFail.accept(blockposition_mutableblockposition.getX() >> 4, blockposition_mutableblockposition.getZ() >> 4, cls.getEnumCreatureType());
++                                                            }
+                                                             if (event.shouldAbortSpawn()) {
+                                                                 return i; // Paper
+                                                             }
+@@ -127,6 +135,9 @@ public final class SpawnerCreature {
+                                                                     trackEntity.accept(entityinsentient); // Paper
+                                                                 }
+                                                             }
++                                                            else if (trackFail != null) {
++                                                                trackFail.accept(entityinsentient.getChunkX(), entityinsentient.getChunkZ(), entityinsentient.getEntityType().getEnumCreatureType());
++                                                            }
+                                                             if (i >= maxSpawns) { return i; } // Paper
+                                                             // CraftBukkit end
+                                                             if (i >= entityinsentient.getMaxSpawnGroup()) {
