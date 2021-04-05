@@ -95,4 +95,11 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
     public CraftBeehive copy(Location location) {
         return new CraftBeehive(this, location);
     }
+
+    // Paper start - Add EntityBlockStorage clearEntities
+    @Override
+    public void clearEntities() {
+        getSnapshot().clearBees();
+    }
+    // Paper end
 }
