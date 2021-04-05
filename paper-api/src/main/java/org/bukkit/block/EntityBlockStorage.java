@@ -53,4 +53,11 @@ public interface EntityBlockStorage<T extends Entity> extends TileState {
      * @param entity Entity to add to the block
      */
     void addEntity(@NotNull T entity);
+
+    // Paper start - Add EntityBlockStorage clearEntities
+    /**
+     * Clear all currently stored entities in the block.
+     */
+    void clearEntities();
+    // Paper end
 }
