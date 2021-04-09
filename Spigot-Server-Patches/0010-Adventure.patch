@@ -2045,7 +2045,7 @@ index 3a4e2261d0b0cd17df3f96e75f3c509156679c48..105d0388998d1e35e634d2163fe1a44a
          player.activeContainer.addSlotListener(player);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42ec40c669 100644
+index 597b3b061c707081e7665d5896f5d73676e691d6..618c3ec76ce57f29ab3dda1c1b7c6f85ec79c24a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -240,14 +240,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2230,7 +2230,7 @@ index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42
      @Override
      public String getLocale() {
          return getHandle().locale;
-@@ -1711,6 +1787,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1711,6 +1787,143 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2329,8 +2329,13 @@ index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42
 +
 +    @Override
 +    public void playSound(final net.kyori.adventure.sound.Sound sound) {
-+        final Vec3D pos = this.getHandle().getPositionVector();
-+        this.playSound(sound, pos.x, pos.y, pos.z);
++        final MinecraftKey name = io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.name());
++        final java.util.Optional<net.minecraft.sounds.SoundEffect> event = net.minecraft.core.IRegistry.SOUND_EVENT.getOptional(name);
++        if (event.isPresent()) {
++            this.getHandle().playerConnection.sendPacket(new net.minecraft.network.protocol.game.PacketPlayOutEntitySound(event.get(), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), this.getHandle(), sound.volume(), sound.pitch()));
++        } else {
++            this.getHandle().playerConnection.sendPacket(new PacketPlayOutCustomSoundEffect(name, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), this.getHandle().getPositionVector(), sound.volume(), sound.pitch()));
++        }
 +    }
 +
 +    @Override
