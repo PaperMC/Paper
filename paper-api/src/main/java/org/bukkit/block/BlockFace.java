@@ -84,6 +84,26 @@ public enum BlockFace {
         return direction;
     }
 
+    /**
+     * Returns true if this face is aligned with one of the unit axes in 3D
+     * Cartesian space (ie NORTH, SOUTH, EAST, WEST, UP, DOWN).
+     *
+     * @return Cartesian status
+     */
+    public boolean isCartesian() {
+        switch (this) {
+            case NORTH:
+            case SOUTH:
+            case EAST:
+            case WEST:
+            case UP:
+            case DOWN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     @NotNull
     public BlockFace getOppositeFace() {
         switch (this) {
