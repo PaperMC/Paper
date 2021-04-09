@@ -366,6 +366,15 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     void setHurtDirection(float hurtDirection);
     // Paper end
 
+    // Paper start
+    /**
+     * If the player has slept enough to count towards passing the night.
+     *
+     * @return true if the player has slept enough
+     */
+    public boolean isDeeplySleeping();
+    // Paper end
+
     /**
      * Check whether a cooldown is active on the specified item.
      *
