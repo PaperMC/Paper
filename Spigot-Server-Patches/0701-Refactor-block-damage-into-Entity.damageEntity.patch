@@ -1,0 +1,860 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ultra <ultra64cmy@protonmail.com>
+Date: Thu, 1 Apr 2021 15:40:39 -0700
+Subject: [PATCH] Refactor block damage into Entity.damageEntity
+
+Previously this value was a static member of CraftEventFactory, making
+it effectively a global. This does not introduce any issues with the
+single-threaded server but severely breaks multithreading (wherein the
+block damage block can be overwritten when two entities are being
+damaged in parallel threads).
+
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index 37c9b5fd712e30a9a0faccc840f738f4b2cfc723..764b9a3a064a2f442ca3e0741ec00fafefdc9376 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -941,7 +941,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+@@ -969,7 +969,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 // Paper start - cancellable death events
+                 //return super.damageEntity(damagesource, f);
+                 this.queueHealthUpdatePacket = true;
+-                boolean damaged = super.damageEntity(damagesource, f);
++                boolean damaged = super.damageEntity(damagesource, f, b);
+                 this.queueHealthUpdatePacket = false;
+                 if (this.queuedHealthUpdatePacket != null) {
+                     this.playerConnection.sendPacket(this.queuedHealthUpdatePacket);
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 429f0591c6a55f6c5d08a0755f7d39da676468bc..17e6910299bf4622e48c40918a9a22475339463f 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1511,6 +1511,10 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     }
+ 
+     public boolean damageEntity(DamageSource damagesource, float f) {
++        return this.damageEntity(damagesource, f, null);
++    }
++
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/EntityExperienceOrb.java b/src/main/java/net/minecraft/world/entity/EntityExperienceOrb.java
+index a7551e95185895a290be70d501496279eaf884ae..20ee72b9ac28eb9f15a0b9338fd0ed795076affc 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityExperienceOrb.java
++++ b/src/main/java/net/minecraft/world/entity/EntityExperienceOrb.java
+@@ -200,7 +200,7 @@ public class EntityExperienceOrb extends Entity {
+     protected void aM() {}
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index 21341eeb8148be119fbc1dd370c1beaf70a319e0..a89021428001802e13aaf58062f8b7f7262d5060 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -1195,7 +1195,7 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (this.world.isClientSide) {
+@@ -1249,7 +1249,7 @@ public abstract class EntityLiving extends Entity {
+                 }
+ 
+                 // CraftBukkit start
+-                if (!this.damageEntity0(damagesource, f - this.lastDamage)) {
++                if (!this.damageEntity0(damagesource, f - this.lastDamage, b)) {
+                     return false;
+                 }
+                 // CraftBukkit end
+@@ -1257,7 +1257,7 @@ public abstract class EntityLiving extends Entity {
+                 flag1 = false;
+             } else {
+                 // CraftBukkit start
+-                if (!this.damageEntity0(damagesource, f)) {
++                if (!this.damageEntity0(damagesource, f, b)) {
+                     return false;
+                 }
+                 this.lastDamage = f;
+@@ -1862,7 +1862,7 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     // CraftBukkit start
+-    protected boolean damageEntity0(final DamageSource damagesource, float f) { // void -> boolean, add final
++    protected boolean damageEntity0(final DamageSource damagesource, float f, org.bukkit.block.Block b) { // void -> boolean, add final
+        if (!this.isInvulnerable(damagesource)) {
+             final boolean human = this instanceof EntityHuman;
+             float originalDamage = f;
+@@ -1929,7 +1929,7 @@ public abstract class EntityLiving extends Entity {
+             };
+             float absorptionModifier = absorption.apply((double) f).floatValue();
+ 
+-            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
++            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption, b);
+             if (damagesource.getEntity() instanceof EntityHuman) {
+                 // Paper start - PlayerAttackEntityCooldownResetEvent
+                 if (damagesource.getEntity() instanceof EntityPlayer) {
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/EntityBat.java b/src/main/java/net/minecraft/world/entity/ambient/EntityBat.java
+index 61ebb278cf4ef57ae7a86c6c6ef1fa14559f21e2..a1908a004f8da29308962d27ac4d649af96b4037 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/EntityBat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/EntityBat.java
+@@ -202,7 +202,7 @@ public class EntityBat extends EntityAmbient {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+@@ -214,7 +214,7 @@ public class EntityBat extends EntityAmbient {
+                 // CraftBukkit End - Call BatToggleSleepEvent
+             }
+ 
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityBee.java b/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
+index 1d1f71a995a99b2101891a7a5bda7bec5d67f118..45c2dac4ef61726d6d90a1f84d318df77c427f49 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityBee.java
+@@ -593,14 +593,14 @@ public class EntityBee extends EntityAnimal implements IEntityAngerable, EntityB
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+             Entity entity = damagesource.getEntity();
+ 
+             // CraftBukkit start
+-            boolean result = super.damageEntity(damagesource, f);
++            boolean result = super.damageEntity(damagesource, f, b);
+ 
+             if (result && !this.world.isClientSide) {
+                 this.bC.l();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityIronGolem.java b/src/main/java/net/minecraft/world/entity/animal/EntityIronGolem.java
+index 5e2b49d120b724cb5a7ae00940ded4f4875ea8a1..d118c18c34be3a272f10693eae2325116d232fce 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityIronGolem.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityIronGolem.java
+@@ -204,9 +204,9 @@ public class EntityIronGolem extends EntityGolem implements IEntityAngerable {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         EntityIronGolem.CrackLevel entityirongolem_cracklevel = this.eK();
+-        boolean flag = super.damageEntity(damagesource, f);
++        boolean flag = super.damageEntity(damagesource, f, b);
+ 
+         if (flag && this.eK() != entityirongolem_cracklevel) {
+             this.playSound(SoundEffects.ENTITY_IRON_GOLEM_DAMAGE, 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityOcelot.java b/src/main/java/net/minecraft/world/entity/animal/EntityOcelot.java
+index f3e9c73f28584bcccd6f82d8974eabe4b4a892fa..caa592a63a81a275dee189917f8241cfd00a22c9 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityOcelot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityOcelot.java
+@@ -171,8 +171,8 @@ public class EntityOcelot extends EntityAnimal {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f);
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityPanda.java b/src/main/java/net/minecraft/world/entity/animal/EntityPanda.java
+index 711b322007a0973ff0aebf3c25efbae8fc7741d0..ef91c2b545166462ab86e2e1731aa39d3a2db3f6 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityPanda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityPanda.java
+@@ -517,9 +517,9 @@ public class EntityPanda extends EntityAnimal {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         this.t(false);
+-        return super.damageEntity(damagesource, f);
++        return super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityParrot.java b/src/main/java/net/minecraft/world/entity/animal/EntityParrot.java
+index 699dd0ac1f8d0d340ab1a560106336fc7cc95d5b..1ff80caaccaf59c5b9c2da8831c1e31aaa10f7fa 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityParrot.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityParrot.java
+@@ -380,12 +380,12 @@ public class EntityParrot extends EntityPerchable implements EntityBird {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+             // this.setWillSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityRabbit.java b/src/main/java/net/minecraft/world/entity/animal/EntityRabbit.java
+index dcbb07fb6ab799d4526a2da0614c193c7abba715..53f87c6e3935c0c3dba0006bf57d4215a8da67a9 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityRabbit.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityRabbit.java
+@@ -308,8 +308,8 @@ public class EntityRabbit extends EntityAnimal {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f);
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f, b);
+     }
+ 
+     private boolean b(Item item) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntitySquid.java b/src/main/java/net/minecraft/world/entity/animal/EntitySquid.java
+index 1f5f3e0d209426b97e32b82dd15176b800f85816..b50db7075286b74b9e82232154ddcbea0d79a741 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntitySquid.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntitySquid.java
+@@ -161,8 +161,8 @@ public class EntitySquid extends EntityWaterAnimal {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        if (super.damageEntity(damagesource, f) && this.getLastDamager() != null) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        if (super.damageEntity(damagesource, f, b) && this.getLastDamager() != null) {
+             this.eL();
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/EntityWolf.java b/src/main/java/net/minecraft/world/entity/animal/EntityWolf.java
+index b44b1544f401c1a5127bed3239bfd60420d17329..5356e47670d2087ebac1c2c5cd7038d552f03c99 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/EntityWolf.java
++++ b/src/main/java/net/minecraft/world/entity/animal/EntityWolf.java
+@@ -276,7 +276,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+@@ -287,7 +287,7 @@ public class EntityWolf extends EntityTameableAnimal implements IEntityAngerable
+                 f = (f + 1.0F) / 2.0F;
+             }
+ 
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderCrystal.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderCrystal.java
+index 9658d93615a51375204481cfe0a1fce6f105fd70..8768cabe7d8091e6cb714991fee3c04b0515638e 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderCrystal.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderCrystal.java
+@@ -97,7 +97,7 @@ public class EntityEnderCrystal extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (damagesource.getEntity() instanceof EntityEnderDragon) {
+@@ -105,7 +105,7 @@ public class EntityEnderCrystal extends Entity {
+         } else {
+             if (!this.dead && !this.world.isClientSide) {
+                 // CraftBukkit start - All non-living entities need this
+-                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
++                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b, false)) {
+                     return false;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
+index c296fcf80c2f3f210fa020416973ec8d5db541ba..55fc5b2b1bf33e698197efbaabb7f84f2ec71d80 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
+@@ -573,7 +573,7 @@ public class EntityEnderDragon extends EntityInsentient implements IMonster {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (damagesource instanceof EntityDamageSource && ((EntityDamageSource) damagesource).y()) {
+             this.a(this.bz, damagesource, f);
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java b/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
+index 229eabe0510e6c3660236ed0fb3e80d41074642c..557fe531df705ddd92ceac3535657e9121c24791 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/EntityWither.java
+@@ -500,7 +500,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (damagesource != DamageSource.DROWN && !(damagesource.getEntity() instanceof EntityWither)) {
+@@ -528,7 +528,7 @@ public class EntityWither extends EntityMonster implements IRangedEntity {
+                         this.bv[i] += 3;
+                     }
+ 
+-                    return super.damageEntity(damagesource, f);
++                    return super.damageEntity(damagesource, f, b);
+                 }
+             }
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/EntityArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/EntityArmorStand.java
+index c0e0750adef0ae6aff7635c84f6585f06c5fc38d..90919fc6bdadce5c18367ad29122626d0b711fa7 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/EntityArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/EntityArmorStand.java
+@@ -499,11 +499,11 @@ public class EntityArmorStand extends EntityLiving {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (!this.world.isClientSide && !this.dead) {
+             if (DamageSource.OUT_OF_WORLD.equals(damagesource)) {
+                 // CraftBukkit start
+-                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b)) {
+                     return false;
+                 }
+                 // CraftBukkit end
+@@ -511,7 +511,7 @@ public class EntityArmorStand extends EntityLiving {
+                 return false;
+             } else if (!this.isInvulnerable(damagesource) && (true || !this.armorStandInvisible) && !this.isMarker()) { // CraftBukkit
+                 // CraftBukkit start
+-                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, true, this.armorStandInvisible)) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b, true, this.armorStandInvisible)) {
+                     return false;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/EntityHanging.java b/src/main/java/net/minecraft/world/entity/decoration/EntityHanging.java
+index 9d491240bcb3ba6ffbee963a13d31aa7b6cd5d45..0d9d239f52e6eb28f4dd5f1c805bbf1e05c990f6 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/EntityHanging.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/EntityHanging.java
+@@ -199,7 +199,7 @@ public abstract class EntityHanging extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/EntityItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/EntityItemFrame.java
+index 43152a6c70c9433d627a58051101530ddd693307..8f8961e45edcc6ade9e83970a6cff7ecdc268d11 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/EntityItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/EntityItemFrame.java
+@@ -165,15 +165,15 @@ public class EntityItemFrame extends EntityHanging {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.fixed) {
+-            return damagesource != DamageSource.OUT_OF_WORLD && !damagesource.v() ? false : super.damageEntity(damagesource, f);
++            return damagesource != DamageSource.OUT_OF_WORLD && !damagesource.v() ? false : super.damageEntity(damagesource, f, b);
+         } else if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (!damagesource.isExplosion() && !this.getItem().isEmpty()) {
+             if (!this.world.isClientSide) {
+                 // CraftBukkit start - fire EntityDamageEvent
+-                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false) || this.dead) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b, false) || this.dead) {
+                     return true;
+                 }
+                 // CraftBukkit end
+@@ -183,7 +183,7 @@ public class EntityItemFrame extends EntityHanging {
+ 
+             return true;
+         } else {
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/item/EntityItem.java b/src/main/java/net/minecraft/world/entity/item/EntityItem.java
+index 575833807ff647f30d7c2b7abcd01701c7dec85b..00b67d10fb79519c08d6db3fb7dd413c4f1a0c14 100644
+--- a/src/main/java/net/minecraft/world/entity/item/EntityItem.java
++++ b/src/main/java/net/minecraft/world/entity/item/EntityItem.java
+@@ -294,7 +294,7 @@ public class EntityItem extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (!this.getItemStack().isEmpty() && this.getItemStack().getItem() == Items.NETHER_STAR && damagesource.isExplosion()) {
+@@ -303,7 +303,7 @@ public class EntityItem extends Entity {
+             return false;
+         } else {
+             // CraftBukkit start
+-            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b)) {
+                 return false;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityEnderman.java b/src/main/java/net/minecraft/world/entity/monster/EntityEnderman.java
+index e993b1849beb60515c51ee4f37617faab63ca223..d66665720a86f2349e3f178c9758ba3cbc788d01 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityEnderman.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityEnderman.java
+@@ -372,7 +372,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (damagesource instanceof EntityDamageSourceIndirect) {
+@@ -386,7 +386,7 @@ public class EntityEnderman extends EntityMonster implements IEntityAngerable {
+ 
+             return false;
+         } else {
+-            boolean flag = super.damageEntity(damagesource, f);
++            boolean flag = super.damageEntity(damagesource, f, b);
+ 
+             if (!this.world.s_() && !(damagesource.getEntity() instanceof EntityLiving) && this.random.nextInt(10) != 0 && this.tryEscape(damagesource == DamageSource.DROWN ? EndermanEscapeEvent.Reason.DROWN : EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - use to be critical hits as else, but mojang removed critical hits in 1.16.2 due to MC-185684
+                 this.eL();
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityGhast.java b/src/main/java/net/minecraft/world/entity/monster/EntityGhast.java
+index a3e3f6e07674c54c2d2a02661ce4342b43aafe44..2bc796ecdcf0f5ec368b018d9ce87ad07a6eec4e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityGhast.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityGhast.java
+@@ -68,14 +68,14 @@ public class EntityGhast extends EntityFlying implements IMonster {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (damagesource.j() instanceof EntityLargeFireball && damagesource.getEntity() instanceof EntityHuman) {
+-            super.damageEntity(damagesource, 1000.0F);
++            super.damageEntity(damagesource, 1000.0F, b);
+             return true;
+         } else {
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityMonster.java b/src/main/java/net/minecraft/world/entity/monster/EntityMonster.java
+index c484e27650364b6537fe6b2e8e14de98382b86a3..e1912e9ae5d86d645cff1aad37ff7ba49ac15253 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityMonster.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityMonster.java
+@@ -70,8 +70,8 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f);
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityPigZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityPigZombie.java
+index cc1bff409cad2eb6264d4b691599576960080ccd..dfdf4140d67fc4311133a6b95f802d0e5e5358b6 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityPigZombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityPigZombie.java
+@@ -210,8 +210,8 @@ public class EntityPigZombie extends EntityZombie implements IEntityAngerable {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f);
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        return this.isInvulnerable(damagesource) ? false : super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityShulker.java b/src/main/java/net/minecraft/world/entity/monster/EntityShulker.java
+index bfecaa56c3d93436d71082f1398e0ceb12336e38..3e609c0d42417e0bcfc6b091d5eb34e3396fa6e0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityShulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityShulker.java
+@@ -383,7 +383,7 @@ public class EntityShulker extends EntityGolem implements IMonster {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.eT()) {
+             Entity entity = damagesource.j();
+ 
+@@ -392,7 +392,7 @@ public class EntityShulker extends EntityGolem implements IMonster {
+             }
+         }
+ 
+-        if (super.damageEntity(damagesource, f)) {
++        if (super.damageEntity(damagesource, f, b)) {
+             if ((double) this.getHealth() < (double) this.getMaxHealth() * 0.5D && this.random.nextInt(4) == 0) {
+                 this.eK();
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntitySilverfish.java b/src/main/java/net/minecraft/world/entity/monster/EntitySilverfish.java
+index e1fcb1be102822e87eaf7757fbd64a516b2f58ac..87870e85a33f8853d63495e8b675661ae7057e63 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntitySilverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntitySilverfish.java
+@@ -89,7 +89,7 @@ public class EntitySilverfish extends EntityMonster {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+@@ -97,7 +97,7 @@ public class EntitySilverfish extends EntityMonster {
+                 this.b.g();
+             }
+ 
+-            return super.damageEntity(damagesource, f);
++            return super.damageEntity(damagesource, f, b);
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+index 634416c354184bc6a2348c27c55e9868009ccd28..008583b5150a6e55c3cd22174a502b3b9426653c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EntityZombie.java
+@@ -313,8 +313,8 @@ public class EntityZombie extends EntityMonster {
+     // Paper end
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
+-        if (!super.damageEntity(damagesource, f)) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
++        if (!super.damageEntity(damagesource, f, b)) {
+             return false;
+         } else if (!(this.world instanceof WorldServer)) {
+             return false;
+diff --git a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+index ec0956a98c133bcd3d4f92f696c667eab6ff98f1..20b8c7c9eafbca8651c29f9c5a1e494705ba6940 100644
+--- a/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
++++ b/src/main/java/net/minecraft/world/entity/player/EntityHuman.java
+@@ -936,9 +936,9 @@ public abstract class EntityHuman extends EntityLiving {
+ 
+     // CraftBukkit start
+     @Override
+-    protected boolean damageEntity0(DamageSource damagesource, float f) { // void -> boolean
++    protected boolean damageEntity0(DamageSource damagesource, float f, org.bukkit.block.Block b) { // void -> boolean
+         if (true) {
+-            return super.damageEntity0(damagesource, f);
++            return super.damageEntity0(damagesource, f, b);
+         }
+         // CraftBukkit end
+         if (!this.isInvulnerable(damagesource)) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
+index 27853f510e15e40c66da2cb4905c43f5e8f99d3d..0cd58f7fdfc136cce69175f5b4e7341d3326bb79 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityDragonFireball.java
+@@ -74,7 +74,7 @@ public class EntityDragonFireball extends EntityFireball {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java b/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
+index b9680f6f2e30ec9397d6a9c83e79563d9253aff6..9f7389cc7312bef192a26ff7e987183a73f068e7 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityFireball.java
+@@ -166,7 +166,7 @@ public abstract class EntityFireball extends IProjectile {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else {
+@@ -175,7 +175,7 @@ public abstract class EntityFireball extends IProjectile {
+ 
+             if (entity != null) {
+                 // CraftBukkit start
+-                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f)) {
++                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b)) {
+                     return false;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityShulkerBullet.java b/src/main/java/net/minecraft/world/entity/projectile/EntityShulkerBullet.java
+index c3dcebad0706386e52ef2d28f2074cb6aed9f9e4..20e5a993788e70c8e134f33db7e022f253c61efe 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityShulkerBullet.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityShulkerBullet.java
+@@ -318,9 +318,9 @@ public class EntityShulkerBullet extends IProjectile {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         // CraftBukkit start
+-        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, b, false)) {
+             return false;
+         }
+         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntitySmallFireball.java b/src/main/java/net/minecraft/world/entity/projectile/EntitySmallFireball.java
+index d139c5806e5971e82865c2ce627e87c631e42d7a..f6e3fe02ccce6d245ebf39d45f75466f8bf00f46 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntitySmallFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntitySmallFireball.java
+@@ -97,7 +97,7 @@ public class EntitySmallFireball extends EntityFireballFireball {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         return false;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EntityWitherSkull.java b/src/main/java/net/minecraft/world/entity/projectile/EntityWitherSkull.java
+index 021a7e31dc3650c0c404a893374528e6a63dfbad..f41c6fcf72f78136c30f9bda5aec49f185022f4c 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EntityWitherSkull.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EntityWitherSkull.java
+@@ -116,7 +116,7 @@ public class EntityWitherSkull extends EntityFireball {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         return false;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/raid/EntityRaider.java b/src/main/java/net/minecraft/world/entity/raid/EntityRaider.java
+index ff41ee884e3e46af1b1e9fb550f0abc6998fd031..b99919e6776ca5f5afd2eb89f131dc11723ecc4b 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/EntityRaider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/EntityRaider.java
+@@ -282,12 +282,12 @@ public abstract class EntityRaider extends EntityMonsterPatrolling {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.fb()) {
+             this.fa().updateProgress();
+         }
+ 
+-        return super.damageEntity(damagesource, f);
++        return super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
+index 5e2c13bd6e52ffe182ef034e05ba6fe1cb301005..c7717a48e5d27730ef286eb7f48e09f0af271f37 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityBoat.java
+@@ -166,7 +166,7 @@ public class EntityBoat extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (this.isInvulnerable(damagesource)) {
+             return false;
+         } else if (!this.world.isClientSide && !this.dead) {
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
+index 75a88ab5d5b0fdb98ea8d61bb6b82049b21101f3..9cd08eb1565e6f304b328d27a8254e50c3d0a132 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartAbstract.java
+@@ -229,7 +229,7 @@ public abstract class EntityMinecartAbstract extends Entity {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         if (!this.world.isClientSide && !this.dead) {
+             if (this.isInvulnerable(damagesource)) {
+                 return false;
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartTNT.java
+index 4bec5c1d504b9456dafe1b76bdbb523d0a324abe..1be5cff86d527b8229fe4b697990bd7c29cde964 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartTNT.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/EntityMinecartTNT.java
+@@ -70,7 +70,7 @@ public class EntityMinecartTNT extends EntityMinecartAbstract {
+     }
+ 
+     @Override
+-    public boolean damageEntity(DamageSource damagesource, float f) {
++    public boolean damageEntity(DamageSource damagesource, float f, org.bukkit.block.Block b) {
+         Entity entity = damagesource.j();
+ 
+         if (entity instanceof EntityArrow) {
+@@ -81,7 +81,7 @@ public class EntityMinecartTNT extends EntityMinecartAbstract {
+             }
+         }
+ 
+-        return super.damageEntity(damagesource, f);
++        return super.damageEntity(damagesource, f, b);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockCactus.java b/src/main/java/net/minecraft/world/level/block/BlockCactus.java
+index 9f1e9fc5361cd051b909e2e1b2095722064185da..42c45f829a23a175201aeee58af554d83b1fdcab 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockCactus.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockCactus.java
+@@ -116,9 +116,8 @@ public class BlockCactus extends Block {
+ 
+     @Override
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
+-        CraftEventFactory.blockDamage = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
+-        entity.damageEntity(DamageSource.CACTUS, 1.0F);
+-        CraftEventFactory.blockDamage = null; // CraftBukkit
++        org.bukkit.block.Block blockDamage = (org.bukkit.block.Block)world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
++        entity.damageEntity(DamageSource.CACTUS, 1.0F, blockDamage);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockMagma.java b/src/main/java/net/minecraft/world/level/block/BlockMagma.java
+index 4559085fa4452d3a9f59ed967ccb69a7823718e5..2955aba57dd511cfd78692fcae1f8789bb2f13b1 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockMagma.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockMagma.java
+@@ -28,9 +28,8 @@ public class BlockMagma extends Block {
+     @Override
+     public void stepOn(World world, BlockPosition blockposition, Entity entity) {
+         if (!entity.isFireProof() && entity instanceof EntityLiving && !EnchantmentManager.i((EntityLiving) entity)) {
+-            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
+-            entity.damageEntity(DamageSource.HOT_FLOOR, 1.0F);
+-            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = null; // CraftBukkit
++            org.bukkit.block.Block blockDamage = (org.bukkit.block.Block)world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
++            entity.damageEntity(DamageSource.HOT_FLOOR, 1.0F, blockDamage);
+         }
+ 
+         super.stepOn(world, blockposition, entity);
+diff --git a/src/main/java/net/minecraft/world/level/block/BlockSweetBerryBush.java b/src/main/java/net/minecraft/world/level/block/BlockSweetBerryBush.java
+index 46459c3840ea23d11d2f44befc687018be2cf7e5..6b1d968459779316ba17a33bc2adbea9dc5583f2 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlockSweetBerryBush.java
++++ b/src/main/java/net/minecraft/world/level/block/BlockSweetBerryBush.java
+@@ -74,9 +74,8 @@ public class BlockSweetBerryBush extends BlockPlant implements IBlockFragilePlan
+                 double d1 = Math.abs(entity.locZ() - entity.F);
+ 
+                 if (d0 >= 0.003000000026077032D || d1 >= 0.003000000026077032D) {
+-                    CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition); // CraftBukkit
+-                    entity.damageEntity(DamageSource.SWEET_BERRY_BUSH, 1.0F);
+-                    CraftEventFactory.blockDamage = null; // CraftBukkit
++                    org.bukkit.block.Block blockDamage = (org.bukkit.block.Block)CraftBlock.at(world, blockposition); // CraftBukkit
++                    entity.damageEntity(DamageSource.SWEET_BERRY_BUSH, 1.0F, blockDamage);
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntityConduit.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntityConduit.java
+index 9db6753a0abc4febde2e8972117768da929b8c53..119b2d1a4225da0b6fd5ea3e14d25a363fbb6f4c 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntityConduit.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntityConduit.java
+@@ -213,11 +213,10 @@ public class TileEntityConduit extends TileEntity implements ITickable {
+ 
+         if (this.target != null) {
+             // CraftBukkit start
+-            CraftEventFactory.blockDamage = CraftBlock.at(this.world, this.position);
+-            if (this.target.damageEntity(DamageSource.MAGIC, 4.0F)) {
++            org.bukkit.block.Block blockDamage = (org.bukkit.block.Block)CraftBlock.at(this.world, this.position);
++            if (this.target.damageEntity(DamageSource.MAGIC, 4.0F, blockDamage)) {
+                 this.world.playSound((EntityHuman) null, this.target.locX(), this.target.locY(), this.target.locZ(), SoundEffects.BLOCK_CONDUIT_ATTACK_TARGET, SoundCategory.BLOCKS, 1.0F, 1.0F);
+             }
+-            CraftEventFactory.blockDamage = null;
+             // CraftBukkit end
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 9084aa4b7c0059c995a3d1a89188379b52c9d620..d98e18c0d21045a2def574541ed3c66e5089ccc7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -228,7 +228,6 @@ import org.bukkit.event.entity.SpawnerSpawnEvent; // Spigot
+ public class CraftEventFactory {
+     public static final DamageSource MELTING = CraftDamageSource.copyOf(DamageSource.BURN);
+     public static final DamageSource POISON = CraftDamageSource.copyOf(DamageSource.MAGIC);
+-    public static org.bukkit.block.Block blockDamage; // For use in EntityDamageByBlockEvent
+     public static Entity entityDamage; // For use in EntityDamageByEntityEvent
+ 
+     // helper methods
+@@ -909,11 +908,11 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions) {
+-        return handleEntityDamageEvent(entity, source, modifiers, modifierFunctions, false);
++    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, org.bukkit.block.Block blockDamage) {
++        return handleEntityDamageEvent(entity, source, modifiers, modifierFunctions, blockDamage, false);
+     }
+ 
+-    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
++    private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, org.bukkit.block.Block blockDamage, boolean cancelled) {
+         if (source.isExplosion()) {
+             DamageCause damageCause;
+             Entity damager = entityDamage;
+@@ -974,7 +973,7 @@ public class CraftEventFactory {
+         } else if (blockDamage != null) {
+             DamageCause cause = null;
+             Block damager = blockDamage;
+-            blockDamage = null;
++            // blockDamage = null;
+             if (source == DamageSource.CACTUS || source == DamageSource.SWEET_BERRY_BUSH) {
+                 cause = DamageCause.CONTACT;
+             } else if (source == DamageSource.HOT_FLOOR) {
+@@ -1078,7 +1077,7 @@ public class CraftEventFactory {
+ 
+     private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
+ 
+-    public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption) {
++    public static EntityDamageEvent handleLivingEntityDamageEvent(Entity damagee, DamageSource source, double rawDamage, double hardHatModifier, double blockingModifier, double armorModifier, double resistanceModifier, double magicModifier, double absorptionModifier, Function<Double, Double> hardHat, Function<Double, Double> blocking, Function<Double, Double> armor, Function<Double, Double> resistance, Function<Double, Double> magic, Function<Double, Double> absorption, Block b) {
+         Map<DamageModifier, Double> modifiers = new EnumMap<DamageModifier, Double>(DamageModifier.class);
+         Map<DamageModifier, Function<? super Double, Double>> modifierFunctions = new EnumMap<DamageModifier, Function<? super Double, Double>>(DamageModifier.class);
+         modifiers.put(DamageModifier.BASE, rawDamage);
+@@ -1099,26 +1098,26 @@ public class CraftEventFactory {
+         modifierFunctions.put(DamageModifier.MAGIC, magic);
+         modifiers.put(DamageModifier.ABSORPTION, absorptionModifier);
+         modifierFunctions.put(DamageModifier.ABSORPTION, absorption);
+-        return handleEntityDamageEvent(damagee, source, modifiers, modifierFunctions);
++        return handleEntityDamageEvent(damagee, source, modifiers, modifierFunctions, b);
+     }
+ 
+     // Non-Living Entities such as EntityEnderCrystal and EntityFireball need to call this
+-    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage) {
+-        return handleNonLivingEntityDamageEvent(entity, source, damage, true);
++    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, Block b) {
++        return handleNonLivingEntityDamageEvent(entity, source, damage, b, true);
+     }
+ 
+-    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage) {
+-        return handleNonLivingEntityDamageEvent(entity, source, damage, cancelOnZeroDamage, false);
++    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, Block b, boolean cancelOnZeroDamage) {
++        return handleNonLivingEntityDamageEvent(entity, source, damage, b, cancelOnZeroDamage, false);
+     }
+ 
+-    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, boolean cancelOnZeroDamage, boolean cancelled) {
++    public static boolean handleNonLivingEntityDamageEvent(Entity entity, DamageSource source, double damage, Block b, boolean cancelOnZeroDamage, boolean cancelled) {
+         final EnumMap<DamageModifier, Double> modifiers = new EnumMap<DamageModifier, Double>(DamageModifier.class);
+         final EnumMap<DamageModifier, Function<? super Double, Double>> functions = new EnumMap(DamageModifier.class);
+ 
+         modifiers.put(DamageModifier.BASE, damage);
+         functions.put(DamageModifier.BASE, ZERO);
+ 
+-        final EntityDamageEvent event = handleEntityDamageEvent(entity, source, modifiers, functions, cancelled);
++        final EntityDamageEvent event = handleEntityDamageEvent(entity, source, modifiers, functions, b, cancelled);
+ 
+         if (event == null) {
+             return false;
