@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SirYwell <hannesgreule@outlook.de>
+Date: Sat, 10 Apr 2021 18:58:57 +0200
+Subject: [PATCH] Add API to get players in view distance
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index e739b4f8a7b8785ceb11c553bd27e2fe0e64a4bb..ca3ca47442cb4a1fc85a0e58b340ad892feb4243 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2631,6 +2631,28 @@ public class CraftWorld implements World {
+             chunkMap.setNoTickViewDistance(viewDistance);
+         }
+     }
++
++    @Override
++    public Collection<Player> getPlayersInViewDistance(int chunkX, int chunkZ) {
++        return getPlayersInDistance(chunkX, chunkZ, getHandle().getChunkProvider().playerChunkMap.playerViewDistanceTickMap);
++    }
++
++    @Override
++    public Collection<Player> getPlayersInNoTickViewDistance(int chunkX, int chunkZ) {
++        return getPlayersInDistance(chunkX, chunkZ, getHandle().getChunkProvider().playerChunkMap.playerViewDistanceNoTickMap);
++    }
++
++    private Collection<Player> getPlayersInDistance(int chunkX, int chunkZ, com.destroystokyo.paper.util.misc.PlayerAreaMap areaMap) {
++        com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<?> inRange = areaMap.getObjectsInRange(chunkX, chunkZ);
++        Set<Player> players = new HashSet<>();
++        if (inRange == null) return players;
++        for (Object player : inRange.getBackingSet()) {
++            if (player instanceof net.minecraft.server.level.EntityPlayer) {
++                players.add(((net.minecraft.server.level.EntityPlayer) player).getBukkitEntity());
++            }
++        }
++        return players;
++    }
+     // Paper end - per player view distance
+ 
+     // Spigot start
