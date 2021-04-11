@@ -2430,7 +2430,11 @@ public interface World extends PluginMessageRecipient, Metadatable {
         /**
          * Represents the "end" map
          */
-        THE_END(1);
+        THE_END(1),
+        /**
+         * Represents a custom dimension
+         */
+        CUSTOM(-999);
 
         private final int id;
         private static final Map<Integer, Environment> lookup = new HashMap<Integer, Environment>();
