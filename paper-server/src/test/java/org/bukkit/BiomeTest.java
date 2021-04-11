@@ -13,14 +13,19 @@ public class BiomeTest extends AbstractTestingBase {
     @Test
     public void testBukkitToMinecraft() {
         for (Biome biome : Biome.values()) {
+            if (biome == Biome.CUSTOM) {
+                continue;
+            }
+
             Assert.assertNotNull("No NMS mapping for " + biome, CraftBlock.biomeToBiomeBase(RegistryGeneration.WORLDGEN_BIOME, biome));
         }
     }
 
     @Test
     public void testMinecraftToBukkit() {
-        for (Object biome : RegistryGeneration.WORLDGEN_BIOME) {
-            Assert.assertNotNull("No Bukkit mapping for " + biome, CraftBlock.biomeBaseToBiome(RegistryGeneration.WORLDGEN_BIOME, (BiomeBase) biome));
+        for (BiomeBase biomeBase : RegistryGeneration.WORLDGEN_BIOME) {
+            Biome biome = CraftBlock.biomeBaseToBiome(RegistryGeneration.WORLDGEN_BIOME, biomeBase);
+            Assert.assertTrue("No Bukkit mapping for " + biomeBase, biome != null && biome != Biome.CUSTOM);
         }
     }
 }

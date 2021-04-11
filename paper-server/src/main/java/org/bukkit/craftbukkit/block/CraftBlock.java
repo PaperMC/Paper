@@ -499,11 +499,12 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getKey(base)));
+        Biome biome = Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getKey(base)));
+        return (biome == null) ? Biome.CUSTOM : biome;
     }
 
     public static BiomeBase biomeToBiomeBase(IRegistry<BiomeBase> registry, Biome bio) {
-        if (bio == null) {
+        if (bio == null || bio == Biome.CUSTOM) {
             return null;
         }
 

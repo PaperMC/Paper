@@ -954,6 +954,7 @@ public class CraftWorld implements World {
 
     @Override
     public void setBiome(int x, int y, int z, Biome bio) {
+        Preconditions.checkArgument(bio != Biome.CUSTOM, "Cannot set the biome to %s", bio);
         BiomeBase bb = CraftBlock.biomeToBiomeBase(getHandle().r().b(IRegistry.ay), bio);
         BlockPosition pos = new BlockPosition(x, 0, z);
         if (this.world.isLoaded(pos)) {
