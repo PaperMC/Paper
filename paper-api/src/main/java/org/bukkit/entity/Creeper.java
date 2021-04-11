@@ -38,6 +38,22 @@ public interface Creeper extends Monster {
     public int getMaxFuseTicks();
 
     /**
+     * Set the fuse ticks for this Creeper, where the ticks is the amount of
+     * time in which a creeper has been in the primed state.
+     *
+     * @param ticks the new fuse ticks
+     */
+    public void setFuseTicks(int ticks);
+
+    /**
+     * Get the maximum fuse ticks for this Creeper, where the ticks is the
+     * amount of time in which a creeper has been in the primed state.
+     *
+     * @return the fuse ticks
+     */
+    public int getFuseTicks();
+
+    /**
      * Set the explosion radius in which this Creeper's explosion will affect.
      *
      * @param radius the new explosion radius
