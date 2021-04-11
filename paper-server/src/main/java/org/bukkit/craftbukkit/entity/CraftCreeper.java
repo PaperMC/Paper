@@ -53,6 +53,19 @@ public class CraftCreeper extends CraftMonster implements Creeper {
     }
 
     @Override
+    public void setFuseTicks(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks < 0");
+        Preconditions.checkArgument(ticks <= getMaxFuseTicks(), "ticks > maxFuseTicks");
+
+        getHandle().fuseTicks = ticks;
+    }
+
+    @Override
+    public int getFuseTicks() {
+        return getHandle().fuseTicks;
+    }
+
+    @Override
     public void setExplosionRadius(int radius) {
         Preconditions.checkArgument(radius >= 0, "radius < 0");
 
