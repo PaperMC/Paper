@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+Date: Sun, 11 Apr 2021 21:43:48 -0500
+Subject: [PATCH] add get set biome for namespaced keys
+
+
+diff --git a/src/main/java/net/minecraft/core/IRegistry.java b/src/main/java/net/minecraft/core/IRegistry.java
+index 4f04d8081912e0fe771f0db9e086c789328f246f..4bcf5971cf57c5d75ca876ddc57197095785f39e 100644
+--- a/src/main/java/net/minecraft/core/IRegistry.java
++++ b/src/main/java/net/minecraft/core/IRegistry.java
+@@ -229,7 +229,7 @@ public abstract class IRegistry<T> implements Codec<T>, Keyable, Registry<T> {
+     public static final ResourceKey<IRegistry<StructureFeature<?, ?>>> av = a("worldgen/configured_structure_feature");
+     public static final ResourceKey<IRegistry<ProcessorList>> aw = a("worldgen/processor_list");
+     public static final ResourceKey<IRegistry<WorldGenFeatureDefinedStructurePoolTemplate>> ax = a("worldgen/template_pool");
+-    public static final ResourceKey<IRegistry<BiomeBase>> ay = a("worldgen/biome");
++    public static final ResourceKey<IRegistry<BiomeBase>> ay = a("worldgen/biome"); public static ResourceKey<IRegistry<BiomeBase>> getBiomeKeys() { return ay; } // paper - OBFhelper
+     public static final ResourceKey<IRegistry<WorldGenSurface<?>>> az = a("worldgen/surface_builder");
+     public static final IRegistry<WorldGenSurface<?>> SURFACE_BUILDER = a(IRegistry.az, () -> {
+         return WorldGenSurface.v;
+diff --git a/src/main/java/net/minecraft/core/IRegistryCustom.java b/src/main/java/net/minecraft/core/IRegistryCustom.java
+index 489737d8b108bbca4124495faf92cb27f666a750..b32a3221f97c8ccec748c965d0189d8da592d0ac 100644
+--- a/src/main/java/net/minecraft/core/IRegistryCustom.java
++++ b/src/main/java/net/minecraft/core/IRegistryCustom.java
+@@ -70,6 +70,7 @@ public abstract class IRegistryCustom {
+             return new IllegalStateException("Missing registry: " + resourcekey);
+         });
+     }
++    public <E> IRegistryWritable<E> getRegistry(ResourceKey<? extends IRegistry<E>> resourcekey) { return b(resourcekey); } // Paper - OBFHELPER
+ 
+     public IRegistry<DimensionManager> a() {
+         return this.b(IRegistry.K);
+@@ -119,7 +120,7 @@ public abstract class IRegistryCustom {
+     }
+ 
+     private static <R extends IRegistry<?>> void a(IRegistryCustom.Dimension iregistrycustom_dimension, ResourceKey<R> resourcekey) {
+-        IRegistry<R> iregistry = RegistryGeneration.b;
++        IRegistry<R> iregistry = (IRegistry<R>) RegistryGeneration.b; // paper - decompile fix
+         IRegistry<?> iregistry1 = (IRegistry) iregistry.a(resourcekey);
+ 
+         if (iregistry1 == null) {
+@@ -213,14 +214,12 @@ public abstract class IRegistryCustom {
+         }
+ 
+         private static <E> RegistryMaterials<?> d(ResourceKey<? extends IRegistry<?>> resourcekey) {
+-            return new RegistryMaterials<>(resourcekey, Lifecycle.stable());
++            return new RegistryMaterials(resourcekey, Lifecycle.stable()); // Paper - decompile fix
+         }
+ 
+         @Override
+         public <E> Optional<IRegistryWritable<E>> a(ResourceKey<? extends IRegistry<E>> resourcekey) {
+-            return Optional.ofNullable(this.b.get(resourcekey)).map((registrymaterials) -> {
+-                return registrymaterials;
+-            });
++            return Optional.ofNullable((IRegistryWritable<E>) this.b.get(resourcekey)); // Paper - decompile fix
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index ef9b08df58d9d28df6b8ade076d95bf7e5cb1b18..2e244b5860954bdbba8896565821732ca1a8a663 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -1896,6 +1896,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+     public IRegistryCustom r() {
+         return this.server.getCustomRegistry();
+     }
++    public IRegistryCustom getCustomRegistry() { return r(); } // Paper - OBFHELPER
+ 
+     public WorldPersistentData getWorldPersistentData() {
+         return this.getChunkProvider().getWorldPersistentData();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 62513d3acb930c4c9fa3d875a1fc94bb4d948951..c91e10182ee75eb8cfa77fa1cb2923b567476476 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -103,6 +103,7 @@ import org.bukkit.Effect;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.GameRule;
+ import org.bukkit.Location;
++import org.bukkit.NamespacedKey;
+ import org.bukkit.Particle;
+ import org.bukkit.Raid;
+ import org.bukkit.Sound;
+@@ -1106,6 +1107,28 @@ public class CraftWorld implements World {
+         return CraftBlock.biomeBaseToBiome(getHandle().r().b(IRegistry.ay), this.world.getBiome(x >> 2, y >> 2, z >> 2));
+     }
+ 
++    // Paper start
++    @Override
++    public NamespacedKey getBiomeKey(int x, int y, int z) {
++        return CraftBlock.biomeBaseToKey(getHandle().getCustomRegistry().getRegistry(IRegistry.getBiomeKeys()), this.world.getBiome(x >> 2, y >> 2, z >> 2));
++    }
++
++    @Override
++    public void setBiome(int x, int y, int z, NamespacedKey key) {
++        BiomeBase base = CraftBlock.biomeToBiomeBase(getHandle().getCustomRegistry().getRegistry(IRegistry.getBiomeKeys()), key);
++        if (base == null) {
++            throw new NullPointerException("Invalid biome key, biome was null.");
++        }
++        BlockPosition pos = new BlockPosition(x, 0, z);
++        if (this.world.isLoaded(pos)) {
++            net.minecraft.world.level.chunk.Chunk chunk = this.world.getChunkAtWorldCoords(pos);
++            if (chunk != null) {
++                chunk.getBiomeIndex().setBiome(x >> 2, y >> 2, z >> 2, base);
++                chunk.markDirty(); // SPIGOT-2890
++            }
++        }
++    }
++    // paper end
+     @Override
+     public void setBiome(int x, int z, Biome bio) {
+         for (int y = 0; y < getMaxHeight(); y++) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index eeeaadbd3aa290fc916f0d465f10cad0687b900d..97ef0cc21e5888bf99cf1d08680a6e49f99c480d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -33,6 +33,7 @@ import org.bukkit.Chunk;
+ import org.bukkit.FluidCollisionMode;
+ import org.bukkit.Location;
+ import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
+ import org.bukkit.Registry;
+ import org.bukkit.World;
+ import org.bukkit.block.Biome;
+@@ -507,6 +508,27 @@ public class CraftBlock implements Block {
+     public void setBiome(Biome bio) {
+         getWorld().setBiome(getX(), getY(), getZ(), bio);
+     }
++    // Paper start
++    public NamespacedKey getBiomeKey() {
++        return getWorld().getBiomeKey(getX(), getY(), getZ());
++    }
++
++    @Override
++    public void setBiome(NamespacedKey key) {
++        getWorld().setBiome(getX(), getY(), getZ(), key);
++    }
++
++    public static NamespacedKey biomeBaseToKey(IRegistry<BiomeBase> registry, BiomeBase base) {
++        if (base == null) {
++            return null;
++        }
++        return CraftNamespacedKey.fromMinecraft(registry.getKey(base));
++    }
++
++    public static BiomeBase biomeToBiomeBase(IRegistry<BiomeBase> registry, NamespacedKey key) {
++        return registry.get(CraftNamespacedKey.toMinecraft(key));
++    }
++    // Paper end
+ 
+     public static Biome biomeBaseToBiome(IRegistry<BiomeBase> registry, BiomeBase base) {
+         if (base == null) {
