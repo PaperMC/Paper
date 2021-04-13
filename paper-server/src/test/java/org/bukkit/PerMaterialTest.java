@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.EnumHand;
+import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemRecord;
@@ -19,9 +20,11 @@ import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.EnchantmentTarget;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.AbstractTestingBase;
 import org.bukkit.support.Util;
@@ -254,6 +257,14 @@ public class PerMaterialTest extends AbstractTestingBase {
             Material expected = expectedItem == null ? null : CraftMagicNumbers.getMaterial(expectedItem);
 
             assertThat(material.getCraftingRemainingItem(), is(expected));
+        }
+    }
+
+    @Test
+    public void testEquipmentSlot() {
+        if (material.isItem()) {
+            EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.j(CraftItemStack.asNMSCopy(new ItemStack(material)))); // PAIL rename getEquipmentSlotForItem
+            assertThat(material.getEquipmentSlot(), is(expected));
         }
     }
 }
