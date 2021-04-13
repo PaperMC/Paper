@@ -79,6 +79,7 @@ import org.bukkit.block.data.type.TripwireHook;
 import org.bukkit.block.data.type.TurtleEgg;
 import org.bukkit.block.data.type.Wall;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8612,6 +8613,63 @@ public enum Material implements Keyed {
                 return GLASS_BOTTLE;
             default:
                 return null;
+            // </editor-fold>
+        }
+    }
+
+    /**
+     * Get the best suitable slot for this Material.
+     *
+     * For most items this will be {@link EquipmentSlot#HAND}.
+     *
+     * @return the best EquipmentSlot for this Material
+     */
+    @NotNull
+    public EquipmentSlot getEquipmentSlot() {
+        Validate.isTrue(isItem(), "The Material is not an item!");
+        switch (this) {
+            // <editor-fold defaultstate="collapsed" desc="getEquipmentSlot">
+            case CARVED_PUMPKIN:
+            case CHAINMAIL_HELMET:
+            case CREEPER_HEAD:
+            case DIAMOND_HELMET:
+            case DRAGON_HEAD:
+            case GOLDEN_HELMET:
+            case IRON_HELMET:
+            case LEATHER_HELMET:
+            case NETHERITE_HELMET:
+            case PLAYER_HEAD:
+            case SKELETON_SKULL:
+            case TURTLE_HELMET:
+            case WITHER_SKELETON_SKULL:
+            case ZOMBIE_HEAD:
+                return EquipmentSlot.HEAD;
+            case CHAINMAIL_CHESTPLATE:
+            case DIAMOND_CHESTPLATE:
+            case ELYTRA:
+            case GOLDEN_CHESTPLATE:
+            case IRON_CHESTPLATE:
+            case LEATHER_CHESTPLATE:
+            case NETHERITE_CHESTPLATE:
+                return EquipmentSlot.CHEST;
+            case CHAINMAIL_LEGGINGS:
+            case DIAMOND_LEGGINGS:
+            case GOLDEN_LEGGINGS:
+            case IRON_LEGGINGS:
+            case LEATHER_LEGGINGS:
+            case NETHERITE_LEGGINGS:
+                return EquipmentSlot.LEGS;
+            case CHAINMAIL_BOOTS:
+            case DIAMOND_BOOTS:
+            case GOLDEN_BOOTS:
+            case IRON_BOOTS:
+            case LEATHER_BOOTS:
+            case NETHERITE_BOOTS:
+                return EquipmentSlot.FEET;
+            case SHIELD:
+                return EquipmentSlot.OFF_HAND;
+            default:
+                return EquipmentSlot.HAND;
             // </editor-fold>
         }
     }
