@@ -79,7 +79,7 @@ index 17de074111a174f3a39a4477afc3ad62e04a73b5..1d72af9cace7aa8f1d20c7c1c5be621f
                  chunkData.addProperty("queued-for-unload", chunkMap.unloadQueue.contains(playerChunk.location.pair()));
                  chunkData.addProperty("status", status == null ? "unloaded" : status.toString());
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMapDistance.java b/src/main/java/net/minecraft/server/level/ChunkMapDistance.java
-index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..fb4e587e86c76ea720bddcdbb969f21d50aa7527 100644
+index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..a3c44fdfca8290313b9b1117b984533183b583ad 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMapDistance.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMapDistance.java
 @@ -21,7 +21,10 @@ import java.util.Set;
@@ -307,7 +307,36 @@ index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..fb4e587e86c76ea720bddcdbb969f21d
      public <T> boolean addTicketAtLevel(TicketType<T> ticketType, ChunkCoordIntPair chunkcoordintpair, int level, T identifier) {
          return this.addTicket(chunkcoordintpair.pair(), new Ticket<>(ticketType, level, identifier));
          // CraftBukkit end
-@@ -388,27 +530,50 @@ public abstract class ChunkMapDistance {
+@@ -358,7 +500,7 @@ public abstract class ChunkMapDistance {
+ 
+     class c extends ChunkMapDistance.b {
+ 
+-        private int e = 0;
++        private int e = 0; private int getViewDistance() { return e; } private void setViewDistance(int value) { this.e = value; } // Paper - OBFHELPER
+         private final Long2IntMap f = Long2IntMaps.synchronize(new Long2IntOpenHashMap());
+         private final LongSet g = new LongOpenHashSet();
+ 
+@@ -374,41 +516,68 @@ public abstract class ChunkMapDistance {
+ 
+         public void a(int i) {
+             ObjectIterator objectiterator = this.a.long2ByteEntrySet().iterator();
++            // Paper start - set the view distance before scheduling chunk loads/unloads
++            int lastViewDistance = getViewDistance();
++            setViewDistance(i);
++            // Paper end
+ 
+             while (objectiterator.hasNext()) {
+                 Long2ByteMap.Entry it_unimi_dsi_fastutil_longs_long2bytemap_entry = (Long2ByteMap.Entry) objectiterator.next(); // Paper - decompile fix
+                 byte b0 = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getByteValue();
+                 long j = it_unimi_dsi_fastutil_longs_long2bytemap_entry.getLongKey();
+ 
+-                this.a(j, b0, this.c(b0), b0 <= i - 2);
++                this.a(j, b0, b0 <= lastViewDistance - 2, this.c(b0)); // Paper
+             }
+ 
+-            this.e = i;
++            //this.e = i; // Paper - view distance is now set further up
+         }
  
          private void a(long i, int j, boolean flag, boolean flag1) {
              if (flag != flag1) {
@@ -364,7 +393,7 @@ index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..fb4e587e86c76ea720bddcdbb969f21d
                          });
                      }, i, true));
                  }
-@@ -416,6 +581,101 @@ public abstract class ChunkMapDistance {
+@@ -416,6 +585,101 @@ public abstract class ChunkMapDistance {
  
          }
  
@@ -466,7 +495,7 @@ index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..fb4e587e86c76ea720bddcdbb969f21d
          @Override
          public void a() {
              super.a();
-@@ -447,6 +707,7 @@ public abstract class ChunkMapDistance {
+@@ -447,6 +711,7 @@ public abstract class ChunkMapDistance {
  
          }
  
@@ -474,7 +503,7 @@ index 2bbdcedf4856080ea9232effdf3bdae9c26c425b..fb4e587e86c76ea720bddcdbb969f21d
          private boolean c(int i) {
              return i <= this.e - 2;
          }
-@@ -463,6 +724,7 @@ public abstract class ChunkMapDistance {
+@@ -463,6 +728,7 @@ public abstract class ChunkMapDistance {
              this.a.defaultReturnValue((byte) (i + 2));
          }
  
