@@ -1,0 +1,250 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Callum Seabrook <yutubebroz@gmail.com>
+Date: Sun, 18 Apr 2021 15:36:01 +0100
+Subject: [PATCH] ANSI support for server GUI
+
+
+diff --git a/src/main/java/io/papermc/paper/gui/ANSITextPane.java b/src/main/java/io/papermc/paper/gui/ANSITextPane.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b7735e162d98b1fbc6d6f03e276b1299809f22b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/gui/ANSITextPane.java
+@@ -0,0 +1,124 @@
++package io.papermc.paper.gui;
++
++import javax.swing.JTextPane;
++import javax.swing.text.AttributeSet;
++import javax.swing.text.BadLocationException;
++import javax.swing.text.SimpleAttributeSet;
++import javax.swing.text.StyleConstants;
++import javax.swing.text.StyleContext;
++import java.awt.Color;
++import java.util.regex.Pattern;
++
++/**
++ * A text pane that can translate ANSI codes into {@link java.awt.Color}s.
++ *
++ * Credit for the translation algorithm goes to NetBeans (<a href="https://stackoverflow.com/a/6899478">Stack Overflow answer</a>)
++ *
++ * @author Callum Seabrook (BomBardyGamer)
++ * @see <a href="https://stackoverflow.com/a/6899478">Stack Overflow</a>
++ */
++public class ANSITextPane extends JTextPane {
++
++    private static ANSIColor currentColor = ANSIColor.RESET;
++    private String remaining = "";
++
++    public ANSITextPane() {
++        super();
++        setBackground(Color.BLACK);
++    }
++
++    public void appendANSI(String text) {
++        int aPosition = 0;
++        int aIndex;
++        int mIndex;
++        String tempString;
++        boolean stillSearching = true;
++        final String addString = remaining + text;
++        remaining = "";
++
++        if (!addString.isEmpty()) {
++            aIndex = addString.indexOf('\u001B');
++            if (aIndex == -1) {
++                append(currentColor, addString);
++                return;
++            }
++
++            if (aIndex > 0) {
++                tempString = addString.substring(0, aIndex);
++                append(currentColor, tempString);
++                aPosition = aIndex;
++            }
++
++            while (stillSearching) {
++                mIndex = addString.indexOf("m", aPosition);
++                if (mIndex < 0) {
++                    remaining = addString.substring(aPosition);
++                    stillSearching = false;
++                    continue;
++                } else {
++                    tempString = addString.substring(aPosition, mIndex + 1);
++                    currentColor = ANSIColor.fromString(tempString);
++                }
++                aPosition = mIndex + 1;
++
++                aIndex = addString.indexOf('\u001B', aPosition);
++                if (aIndex == -1) {
++                    tempString = addString.substring(aPosition);
++                    append(currentColor, tempString);
++                    stillSearching = false;
++                    continue;
++                }
++
++                tempString = addString.substring(aPosition, aIndex);
++                aPosition = aIndex;
++                append(currentColor, tempString);
++            }
++        }
++    }
++
++    private void append(ANSIColor color, String text) {
++        final StyleContext context = StyleContext.getDefaultStyleContext();
++        final AttributeSet attributes = context.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, color.color);
++        try {
++            getDocument().insertString(getDocument().getLength(), text, attributes);
++        } catch (BadLocationException ignored) {}
++    }
++
++    enum ANSIColor {
++
++        D_BLACK("(0;)?30m", Color.BLACK),
++        D_RED("(0;)?31m", Color.getHSBColor(0F, 1F, 0.502F)),
++        D_GREEN("(0;)?32m", Color.getHSBColor(0.333F, 1F, 0.502F)),
++        D_YELLOW("(0;)?33m", Color.getHSBColor(0.167F, 1F, 0.502F)),
++        D_BLUE("(0;)?34m", Color.getHSBColor(0.667F, 1F, 0.502F)),
++        D_MAGENTA("(0;)?35m", Color.getHSBColor(0.833F, 1F, 0.502F)),
++        D_CYAN("(0;)?36m", Color.getHSBColor(0.5F, 1F, 0.502F)),
++        D_WHITE("(0;)?37m", Color.getHSBColor(0F, 0F, 0.753F)),
++        B_BLACK("1;30m", Color.getHSBColor(0F, 0F, 0.502F)),
++        B_RED("1;31m", Color.getHSBColor(0F, 1F, 1F)),
++        B_GREEN("1;32m", Color.getHSBColor(0.333F, 1F, 1F)),
++        B_YELLOW("1;33m", Color.getHSBColor(0.167F, 1F, 1F)),
++        B_BLUE("1;34m", Color.getHSBColor(0.667F, 1F, 1F)),
++        B_MAGENTA("1;35m", Color.getHSBColor(0.833F, 1F, 1F)),
++        B_CYAN("1;36m", Color.getHSBColor(0.5F, 1F, 1F)),
++        B_WHITE("1;37m", Color.getHSBColor(0F, 0F, 1F)),
++        RESET("0m", Color.getHSBColor(0F, 0F, 1F));
++
++        private static final String ANSI_PREFIX = "\\u001B\\[";
++
++        private final Pattern regex;
++        private final Color color;
++
++        ANSIColor(final String codeRegex, final Color color) {
++            this.regex = Pattern.compile(ANSI_PREFIX + codeRegex);
++            this.color = color;
++        }
++
++        public static ANSIColor fromString(String string) {
++            for (ANSIColor entry : values()) {
++                if (entry.regex.matcher(string).find()) return entry;
++            }
++            return B_WHITE;
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/gui/ServerGUI.java b/src/main/java/net/minecraft/server/gui/ServerGUI.java
+index d1d98c2f192514a3f511bebb00c088b03e6be84c..ef4fd66c552450883ecd3a7a4dbdcd1203932e32 100644
+--- a/src/main/java/net/minecraft/server/gui/ServerGUI.java
++++ b/src/main/java/net/minecraft/server/gui/ServerGUI.java
+@@ -45,6 +45,7 @@ public class ServerGUI extends JComponent {
+     private Thread d;
+     private final Collection<Runnable> e = Lists.newArrayList();
+     private final AtomicBoolean f = new AtomicBoolean();
++    private final boolean ansiEnabled = System.getProperty("terminal.ansi") == null || Boolean.getBoolean("terminal.ansi"); // Paper - add support for ANSI
+ 
+     public static ServerGUI a(final DedicatedServer dedicatedserver) {
+         try {
+@@ -124,7 +125,16 @@ public class ServerGUI extends JComponent {
+ 
+     private JComponent e() {
+         JPanel jpanel = new JPanel(new BorderLayout());
+-        JTextArea jtextarea = new JTextArea();
++        // Paper start - add support for ANSI
++        //JTextArea jtextarea = new JTextArea();
++        final javax.swing.JTextPane jtextarea;
++        // Respect terminal.ansi setting
++        if (ansiEnabled) {
++            jtextarea = new io.papermc.paper.gui.ANSITextPane();
++        } else {
++            jtextarea = new javax.swing.JTextPane();
++        }
++        // Paper end
+         JScrollPane jscrollpane = new JScrollPane(jtextarea, 22, 30);
+ 
+         jtextarea.setEditable(false);
+@@ -174,14 +184,14 @@ public class ServerGUI extends JComponent {
+         this.e.forEach(Runnable::run);
+     }
+ 
+-    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]"); // CraftBukkit
+-    public void a(JTextArea jtextarea, JScrollPane jscrollpane, String s) {
++    //private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\x1B\\[([0-9]{1,2}(;[0-9]{1,2})*)?[m|K]"); // CraftBukkit // Paper - add support for ANSI
++    public void a(javax.swing.JTextPane jtextarea, JScrollPane jscrollpane, String s) { // Paper - add support for ANSI
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> {
+                 this.a(jtextarea, jscrollpane, s);
+             });
+         } else {
+-            Document document = jtextarea.getDocument();
++            //Document document = jtextarea.getDocument(); // Paper - add support for ANSI
+             JScrollBar jscrollbar = jscrollpane.getVerticalScrollBar();
+             boolean flag = false;
+ 
+@@ -189,11 +199,26 @@ public class ServerGUI extends JComponent {
+                 flag = (double) jscrollbar.getValue() + jscrollbar.getSize().getHeight() + (double) (ServerGUI.a.getSize() * 4) > (double) jscrollbar.getMaximum();
+             }
+ 
++            // Paper start - add support for ANSI
++            // Respect terminal.ansi setting
++            if (ansiEnabled) {
++                if (jtextarea instanceof io.papermc.paper.gui.ANSITextPane) {
++                    final io.papermc.paper.gui.ANSITextPane ansiTextPane = (io.papermc.paper.gui.ANSITextPane) jtextarea;
++                    ansiTextPane.appendANSI(s);
++                } else {
++                    insertString(jtextarea.getDocument(), s);
++                }
++            } else {
++                insertString(jtextarea.getDocument(), s);
++            }
++            /*
+             try {
+                 document.insertString(document.getLength(), ANSI.matcher(s).replaceAll(""), (AttributeSet) null); // CraftBukkit
+             } catch (BadLocationException badlocationexception) {
+                 ;
+             }
++            */
++            // Paper end
+ 
+             if (flag) {
+                 jscrollbar.setValue(Integer.MAX_VALUE);
+@@ -201,4 +226,11 @@ public class ServerGUI extends JComponent {
+ 
+         }
+     }
++    // Paper start - add support for ANSI
++    private void insertString(Document document, String text) {
++        try {
++            document.insertString(document.getLength(), text, null);
++        } catch (BadLocationException ignored) {}
++    }
++    // Paper end
+ }
+diff --git a/src/main/resources/log4j2.xml b/src/main/resources/log4j2.xml
+index 67da1aa7a21622fb231d19dede3775a282a4a12e..9679f8b0cbb9711b5faa4da5bfba6d0548758620 100644
+--- a/src/main/resources/log4j2.xml
++++ b/src/main/resources/log4j2.xml
+@@ -2,7 +2,14 @@
+ <Configuration status="WARN" packages="com.mojang.util" shutdownHook="disable">
+     <Appenders>
+         <Queue name="ServerGuiConsole">
+-            <PatternLayout pattern="[%d{HH:mm:ss} %level]: %msg%n" />
++            <PatternLayout pattern="%highlightError{[%d{HH:mm:ss} %level]: [%logger] %paperMinecraftFormatting{%msg}%n%xEx{full}}">
++                <LoggerNamePatternSelector defaultPattern="%highlightError{[%d{HH:mm:ss} %level]: [%logger] %paperMinecraftFormatting{%msg}%n%xEx{full}}">
++                    <!-- Log root, Minecraft, Mojang and Bukkit loggers without prefix -->
++                    <!-- Disable prefix for various plugins that bypass the plugin logger -->
++                    <PatternMatch key=",net.minecraft.,Minecraft,com.mojang.,com.sk89q.,ru.tehkode.,Minecraft.AWE"
++                                  pattern="%highlightError{[%d{HH:mm:ss} %level]: %paperMinecraftFormatting{%msg}%n%xEx{full}}" />
++                </LoggerNamePatternSelector>
++            </PatternLayout>
+         </Queue>
+         <TerminalConsole name="TerminalConsole">
+             <PatternLayout>
+@@ -40,4 +47,4 @@
+             <AppenderRef ref="ServerGuiConsole" level="info"/>
+         </Root>
+     </Loggers>
+-</Configuration>
++</Configuration>
+\ No newline at end of file
