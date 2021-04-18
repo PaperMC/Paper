@@ -6,7 +6,7 @@ Subject: [PATCH] Validate bungee forwarded hostname
 Seriously, fix your firewalls. -.-
 
 diff --git a/src/main/java/net/minecraft/server/network/HandshakeListener.java b/src/main/java/net/minecraft/server/network/HandshakeListener.java
-index b97d289afdff81d9959e238639f4e3e186f8e9c8..e13ed3a17866ce3ef0b2ac1dbcb17fb726c89fa8 100644
+index b97d289afdff81d9959e238639f4e3e186f8e9c8..423696df365ceb20b673a87714b753d7b3b7a3af 100644
 --- a/src/main/java/net/minecraft/server/network/HandshakeListener.java
 +++ b/src/main/java/net/minecraft/server/network/HandshakeListener.java
 @@ -1,5 +1,8 @@
@@ -31,17 +31,17 @@ index b97d289afdff81d9959e238639f4e3e186f8e9c8..e13ed3a17866ce3ef0b2ac1dbcb17fb7
                          String[] split = packethandshakinginsetprotocol.hostname.split("\00");
                          if ( split.length == 3 || split.length == 4 ) {
 +                            // Paper start
-+                            if (!BYPASS_HOSTCHECK && !validate(split[0])) {
++                            if (!BYPASS_HOSTCHECK && !validate(split[1])) {
 +                                final ChatMessage message = new ChatMessage("Invalid hostname");
-+                                this.c.sendPacket(new PacketLoginOutDisconnect(message));
-+                                this.c.close(message);
++                                this.getNetworkManager().sendPacket(new PacketLoginOutDisconnect(message));
++                                this.getNetworkManager().close(message);
 +                                return;
 +                            }
 +                            // Paper end
                              packethandshakinginsetprotocol.hostname = split[0];
                              c.socketAddress = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) c.getSocketAddress()).getPort());
                              c.spoofedUUID = com.mojang.util.UUIDTypeAdapter.fromString( split[2] );
-@@ -158,4 +170,10 @@ public class HandshakeListener implements PacketHandshakingInListener {
+@@ -158,4 +170,11 @@ public class HandshakeListener implements PacketHandshakingInListener {
      public NetworkManager a() {
          return this.c;
      }
@@ -51,4 +51,5 @@ index b97d289afdff81d9959e238639f4e3e186f8e9c8..e13ed3a17866ce3ef0b2ac1dbcb17fb7
 +        //noinspection UnstableApiUsage
 +        return InetAddresses.isUriInetAddress(hostname);
 +    }
++    // Paper end
  }
