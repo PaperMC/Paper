@@ -557,7 +557,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
      *
      * @param loc The location to spawn the entity
      * @param type The entity to spawn
-     * @return Resulting Entity of this method, or null if it was unsuccessful
+     * @return Resulting Entity of this method
      */
     @NotNull
     public Entity spawnEntity(@NotNull Location loc, @NotNull EntityType type);
