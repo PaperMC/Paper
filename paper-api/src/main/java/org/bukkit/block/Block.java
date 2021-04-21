@@ -431,6 +431,17 @@ public interface Block extends Metadatable {
     Collection<ItemStack> getDrops(@NotNull ItemStack tool, @Nullable Entity entity);
 
     /**
+     * Returns if the given item is a preferred choice to break this Block.
+     *
+     * In some cases this determines if a block will drop anything or extra
+     * loot.
+     *
+     * @param tool The tool or item used for breaking this block
+     * @return true if the tool is preferred for breaking this block.
+     */
+    boolean isPreferredTool(@NotNull ItemStack tool);
+
+    /**
      * Checks if this block is passable.
      * <p>
      * A block is passable if it has no colliding parts that would prevent
