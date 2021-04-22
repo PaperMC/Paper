@@ -399,6 +399,100 @@ index 0000000000000000000000000000000000000000..13c5df5fb8ce1d0203d99e88dd691019
 +        return HANDLERS;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..239f41e32dd94c75a8a549816465417bb4c63d71
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
+@@ -0,0 +1,88 @@
++package io.papermc.paper.text;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.flattener.ComponentFlattener;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
++import org.bukkit.Bukkit;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++/**
++ * Paper API-specific methods for working with {@link Component}s and related.
++ */
++public final class PaperComponents {
++    private PaperComponents() {
++        throw new RuntimeException("PaperComponents is not to be instantiated!");
++    }
++
++    /**
++     * Return a component flattener that can use game data to resolve extra information about components.
++     *
++     * @return a component flattener
++     */
++    public static @NonNull ComponentFlattener flattener() {
++        return Bukkit.getUnsafe().componentFlattener();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert components to
++     * a plain-text string.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a serializer to plain text
++     */
++    public static @NonNull PlainComponentSerializer plainSerializer() {
++        return Bukkit.getUnsafe().plainComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    public static @NonNull GsonComponentSerializer gsonSerializer() {
++        return Bukkit.getUnsafe().gsonComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * standard JSON serialization format using Gson, downsampling any RGB colors
++     * to their nearest {@link NamedTextColor} counterpart.
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires implementation details, such as legacy
++     * (pre-1.16) hover events.</p>
++     *
++     * @return a json component serializer
++     */
++    public static @NonNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
++    }
++
++    /**
++     * Get a serializer for {@link Component}s that will convert to and from the
++     * legacy component format used by Bukkit. This serializer uses the
++     * {@link LegacyComponentSerializer.Builder#useUnusualXRepeatedCharacterHexFormat()}
++     * option to match upstream behavior.
++     *
++     * <p>This legacy serializer uses the standard section symbol to mark
++     * formatting characters.</p>
++     *
++     * <p>Implementations may provide a serializer capable of processing any
++     * information that requires access to implementation details.</p>
++     *
++     * @return a section serializer
++     */
++    public static @NonNull LegacyComponentSerializer legacySectionSerializer() {
++        return Bukkit.getUnsafe().legacyComponentSerializer();
++    }
++}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 7c715fdc11ab7837552b1fe3ffd08b31cec0a63b..426b1e83226e674ee4bf3ec05ddcd3ac4376b06d 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
@@ -907,14 +1001,20 @@ index 768f35c19c4557236bded5f4a85f48a2b2b2a9e6..d0ce64412276512cde133937a85a3340
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 945b8b030d1b2a13afc0c4efad76997eb7bf00ba..dd0b80c268644ac714311501215f45166092b856 100644
+index 945b8b030d1b2a13afc0c4efad76997eb7bf00ba..207c656c0a11a3a630bc70491efcf433b2681e18 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -17,6 +17,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
+@@ -17,6 +17,13 @@ import org.bukkit.plugin.PluginDescriptionFile;
   */
  @Deprecated
  public interface UnsafeValues {
-+    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer(); // Paper
++    // Paper start
++    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
++    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
++    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
++    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
++    // Paper end
  
      void reportTimings(); // Paper
      Material toLegacy(Material material);
@@ -931,7 +1031,7 @@ index efb97712cc9dc7c1e12a59f5b94e4f2ad7c6b7d8..3024468af4c073324e536c1cb26beffb
                  return warning == null || warning.value();
              }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index fd2af5fded9335602e263a2098760da0e64a87a3..44f01a3d8a461acab187367fc8876e0b73c92386 100644
+index 0fcf1dbb7b9cd2cfcb803b1a430d6131de87c92d..f9dea4ed6c57c88fa2f5b710440a35f4d310dd5f 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
