@@ -527,4 +527,34 @@ public interface EntityEquipment {
      */
     @NotNull // Paper
     Entity getHolder();
+    // Paper start
+    /**
+     * Gets the drop chance of specified slot.
+     *
+     * <ul>
+     * <li>A drop chance of 0.0F will never drop
+     * <li>A drop chance of 1.0F will always drop if killed by a player
+     * <li>A drop chance of greater than 1.0F will always drop if killed by anything
+     * </ul>
+     *
+     * @param slot the slot to get the drop chance of
+     * @return the drop chance for the slot
+     */
+    float getDropChance(@NotNull EquipmentSlot slot);
+
+    /**
+     * Sets the drop chance of the specified slot.
+     *
+     * <ul>
+     * <li>A drop chance of 0.0F will never drop
+     * <li>A drop chance of 1.0F will always drop if killed by a player
+     * <li>A drop chance of greater than 1.0F will always drop if killed by anything
+     * </ul>
+     *
+     * @param slot the slot to set the drop chance of
+     * @param chance the drop chance for the slot
+     * @throws UnsupportedOperationException when called on non-{@link Mob} entities
+     */
+    void setDropChance(@NotNull EquipmentSlot slot, float chance);
+    // Paper end
 }
