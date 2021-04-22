@@ -18,6 +18,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     private int burnTime;
     private boolean cancelled;
     private boolean burning;
+    private boolean consumeFuel = true; // Paper
 
     public FurnaceBurnEvent(@NotNull final Block furnace, @NotNull final ItemStack fuel, final int burnTime) {
         super(furnace);
@@ -72,6 +73,25 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     public void setBurning(boolean burning) {
         this.burning = burning;
     }
+    // Paper start
+    /**
+     * Gets whether the furnace's fuel will be consumed or not.
+     *
+     * @return whether the furnace's fuel will be consumed
+     */
+    public boolean willConsumeFuel() {
+        return consumeFuel;
+    }
+
+    /**
+     * Sets whether the furnace's fuel will be consumed or not.
+     *
+     * @param consumeFuel true to consume the fuel
+     */
+    public void setConsumeFuel(boolean consumeFuel) {
+        this.consumeFuel = consumeFuel;
+    }
+    // Paper end
 
     @Override
     public boolean isCancelled() {
