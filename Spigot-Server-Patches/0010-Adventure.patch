@@ -105,10 +105,10 @@ index 0000000000000000000000000000000000000000..89597b4a3064c3c6001c7e927a848ee7
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..75c36e772be93c9808cd8b72410ad8baa3d47006
+index 0000000000000000000000000000000000000000..84dcca67ccd2e52881b4a97de0f061b396ab5f35
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,215 @@
 +package io.papermc.paper.adventure;
 +
 +import io.papermc.paper.chat.ChatComposer;
@@ -124,6 +124,7 @@ index 0000000000000000000000000000000000000000..75c36e772be93c9808cd8b72410ad8ba
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TextReplacementConfig;
 +import net.kyori.adventure.text.event.ClickEvent;
++import net.minecraft.network.chat.ChatMessageType;
 +import net.minecraft.network.chat.IChatBaseComponent;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.EntityPlayer;
@@ -271,7 +272,7 @@ index 0000000000000000000000000000000000000000..75c36e772be93c9808cd8b72410ad8ba
 +        if (((LazyPlayerSet) event.recipients()).isLazy()) {
 +            final IChatBaseComponent vanilla = PaperAdventure.asVanilla(message);
 +            for (final EntityPlayer recipient : this.server.getPlayerList().players) {
-+                recipient.sendMessage(vanilla, this.player.getUniqueID());
++                recipient.sendMessage(vanilla, ChatMessageType.CHAT, this.player.getUniqueID());
 +            }
 +        } else {
 +            for (final Player recipient : event.recipients()) {
@@ -1132,7 +1133,7 @@ index 9c44a3d9273afaf4d35f4ff86727386b34d9eb06..fff22c40ba38575951e8e4821ade22b2
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
-index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..0ff92d701d6ee5ce56eec624eece11de15195b41 100644
+index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1819d2261 100644
 --- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 @@ -143,6 +143,7 @@ import net.minecraft.world.item.enchantment.EnchantmentManager;
@@ -1187,7 +1188,15 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..0ff92d701d6ee5ce56eec624eece11de
  
              this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
-@@ -1682,6 +1679,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1660,6 +1657,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+         this.a(ichatbasecomponent, ChatMessageType.SYSTEM, uuid);
+     }
+ 
++    public void sendMessage(final IChatBaseComponent message, final ChatMessageType type, final UUID sender) { this.a(message, type, sender); } // Paper - OBFHELPER
+     public void a(IChatBaseComponent ichatbasecomponent, ChatMessageType chatmessagetype, UUID uuid) {
+         this.playerConnection.a((Packet) (new PacketPlayOutChat(ichatbasecomponent, chatmessagetype, uuid)), (future) -> {
+             if (!future.isSuccess() && (chatmessagetype == ChatMessageType.GAME_INFO || chatmessagetype == ChatMessageType.SYSTEM)) {
+@@ -1682,6 +1680,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      }
  
      public String locale = "en_us"; // CraftBukkit - add, lowercase
@@ -1195,7 +1204,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..0ff92d701d6ee5ce56eec624eece11de
      public void a(PacketPlayInSettings packetplayinsettings) {
          // CraftBukkit start
          if (getMainHand() != packetplayinsettings.getMainHand()) {
-@@ -1693,6 +1691,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1693,6 +1692,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
              this.server.server.getPluginManager().callEvent(event);
          }
          this.locale = packetplayinsettings.locale;
