@@ -244,15 +244,22 @@ public class CraftEntityEquipment implements EntityEquipment {
     public void setBootsDropChance(float chance) {
         this.setDropChance(net.minecraft.world.entity.EquipmentSlot.FEET, chance);
     }
+    // Paper start
+    @Override
+    public float getDropChance(EquipmentSlot slot) {
+        return getDropChance(CraftEquipmentSlot.getNMS(slot));
+    }
+
+    @Override
+    public void setDropChance(EquipmentSlot slot, float chance) {
+        setDropChance(CraftEquipmentSlot.getNMS(slot), chance);
+    }
+    // Paper end
 
     private void setDropChance(net.minecraft.world.entity.EquipmentSlot slot, float chance) {
         Preconditions.checkArgument(this.entity.getHandle() instanceof Mob, "Cannot set drop chance for non-Mob entity");
 
-        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
-            ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()] = chance;
-        } else {
-            ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()] = chance;
-        }
+        ((Mob) this.entity.getHandle()).setDropChance(slot, chance); // Paper - use setter on Mob
     }
 
     private float getDropChance(net.minecraft.world.entity.EquipmentSlot slot) {
@@ -260,10 +267,6 @@ public class CraftEntityEquipment implements EntityEquipment {
             return 1;
         }
 
-        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
-            return ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()];
-        } else {
-            return ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()];
-        }
+        return ((Mob) this.entity.getHandle()).getEquipmentDropChance(slot); // Paper - use getter on Mob
     }
 }

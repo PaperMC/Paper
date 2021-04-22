@@ -353,4 +353,15 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     public void setBootsDropChance(float chance) {
         throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
     }
+    // Paper start
+    @Override
+    public float getDropChance(EquipmentSlot slot) {
+        return 1;
+    }
+
+    @Override
+    public void setDropChance(EquipmentSlot slot, float chance) {
+        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
+    }
+    // Paper end
 }
