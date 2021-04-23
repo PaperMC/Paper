@@ -188,8 +188,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-+    }
-+
+     }
+ 
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    public void resendItemInHands() {
@@ -235,9 +235,9 @@
 +        }
 +
 +        return blockposition;
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -488,12 +488,10 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -863,8 +1055,22 @@
- 
-             if (this.tickCount % 20 == 0) {
+@@ -865,6 +1057,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
-+            }
-+
+             }
+ 
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
@@ -502,8 +500,8 @@
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
-             }
- 
++            }
++
 +            if (this.getBukkitEntity().hasClientWorldBorder()) {
 +                ((CraftWorldBorder) this.getBukkitEntity().getWorldBorder()).getHandle().tick();
 +            }
@@ -704,7 +702,7 @@
  
                      if (!this.canHarmPlayer(entityhuman1)) {
                          return false;
-@@ -1083,38 +1387,78 @@
+@@ -1083,38 +1387,84 @@
                  }
              }
  
@@ -776,7 +774,13 @@
 +        Player respawnPlayer = this.getBukkitEntity();
 +        Location location = CraftLocation.toBukkit(teleportTransition.position(), teleportTransition.newLevel().getWorld(), teleportTransition.yRot(), teleportTransition.xRot());
 +
-+        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn, isAnchorSpawn, reason);
++        // Paper start - respawn flags
++        com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> builder = com.google.common.collect.ImmutableSet.builder();
++        if (reason == org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.END_PORTAL) {
++            builder.add(org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag.END_PORTAL);
++        }
++        PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn, isAnchorSpawn, reason, builder);
++        // Paper end - respawn flags
 +        this.level().getCraftServer().getPluginManager().callEvent(respawnEvent);
 +        // Spigot Start
 +        if (this.connection.isDisconnected()) {
@@ -791,7 +795,7 @@
      }
  
      public static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(ServerLevel world, BlockPos pos, float spawnAngle, boolean spawnForced, boolean alive) {
-@@ -1129,11 +1473,11 @@
+@@ -1129,11 +1479,11 @@
              }
  
              return optional.map((vec3d) -> {
@@ -805,7 +809,7 @@
              });
          } else if (!spawnForced) {
              return Optional.empty();
-@@ -1142,7 +1486,7 @@
+@@ -1142,7 +1492,7 @@
              BlockState iblockdata1 = world.getBlockState(pos.above());
              boolean flag3 = iblockdata1.getBlock().isPossibleToRespawnInThis(iblockdata1);
  
@@ -814,7 +818,7 @@
          }
      }
  
-@@ -1160,6 +1504,7 @@
+@@ -1160,6 +1510,7 @@
      @Nullable
      @Override
      public ServerPlayer teleport(TeleportTransition teleportTarget) {
@@ -822,7 +826,7 @@
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1169,39 +1514,78 @@
+@@ -1169,39 +1520,78 @@
  
              ServerLevel worldserver = teleportTarget.newLevel();
              ServerLevel worldserver1 = this.serverLevel();
@@ -909,7 +913,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,12 +1599,35 @@
+@@ -1215,12 +1605,35 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -945,7 +949,7 @@
      public void forceSetRotation(float yaw, float pitch) {
          this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
      }
-@@ -1228,13 +1635,21 @@
+@@ -1228,13 +1641,21 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
          ResourceKey<Level> resourcekey1 = this.level().dimension();
@@ -970,7 +974,7 @@
              this.enteredNetherPosition = null;
          }
  
-@@ -1251,36 +1666,63 @@
+@@ -1251,36 +1672,63 @@
          this.containerMenu.broadcastChanges();
      }
  
@@ -1049,7 +1053,7 @@
                          this.awardStat(Stats.SLEEP_IN_BED);
                          CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                      });
-@@ -1293,9 +1735,8 @@
+@@ -1293,9 +1741,8 @@
                      return either;
                  }
              }
@@ -1060,7 +1064,7 @@
      }
  
      @Override
-@@ -1322,13 +1763,31 @@
+@@ -1322,13 +1769,31 @@
  
      @Override
      public void stopSleepInBed(boolean skipSleepTimer, boolean updateSleepingPlayers) {
@@ -1093,7 +1097,7 @@
          }
  
      }
-@@ -1387,8 +1846,9 @@
+@@ -1387,8 +1852,9 @@
          this.connection.send(new ClientboundOpenSignEditorPacket(sign.getBlockPos(), front));
      }
  
@@ -1104,7 +1108,7 @@
      }
  
      @Override
-@@ -1396,13 +1856,35 @@
+@@ -1396,13 +1862,35 @@
          if (factory == null) {
              return OptionalInt.empty();
          } else {
@@ -1140,7 +1144,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1410,9 +1892,11 @@
+@@ -1410,9 +1898,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1154,7 +1158,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1425,15 +1909,26 @@
+@@ -1425,15 +1915,26 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1184,7 +1188,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1456,6 +1951,13 @@
+@@ -1456,6 +1957,13 @@
  
      @Override
      public void closeContainer() {
@@ -1198,7 +1202,7 @@
          this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
          this.doCloseContainer();
      }
-@@ -1485,19 +1987,19 @@
+@@ -1485,19 +1993,19 @@
                  i = Math.round((float) Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * 100.0F);
                  if (i > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, i);
@@ -1221,7 +1225,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (deltaY > 0.0D) {
-@@ -1508,13 +2010,13 @@
+@@ -1508,13 +2016,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, i);
@@ -1238,7 +1242,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1557,7 +2059,7 @@
+@@ -1557,7 +2065,7 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1247,7 +1251,7 @@
              scoreaccess.add(amount);
          });
      }
-@@ -1565,7 +2067,7 @@
+@@ -1565,7 +2073,7 @@
      @Override
      public void resetStat(Stat<?> stat) {
          this.stats.setValue(this, stat, 0);
@@ -1256,7 +1260,7 @@
      }
  
      @Override
-@@ -1597,9 +2099,9 @@
+@@ -1597,9 +2105,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1268,7 +1272,7 @@
          }
  
      }
-@@ -1613,6 +2115,13 @@
+@@ -1613,6 +2121,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1282,7 +1286,7 @@
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1625,6 +2134,7 @@
+@@ -1625,6 +2140,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1290,7 +1294,7 @@
      }
  
      @Override
-@@ -1661,7 +2171,7 @@
+@@ -1661,7 +2177,7 @@
          this.onUpdateAbilities();
          if (alive) {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1299,7 +1303,7 @@
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
              Iterator iterator = oldPlayer.getActiveEffects().iterator();
-@@ -1669,7 +2179,7 @@
+@@ -1669,7 +2185,7 @@
              while (iterator.hasNext()) {
                  MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -1308,7 +1312,7 @@
              }
  
              this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -1680,7 +2190,7 @@
+@@ -1680,7 +2196,7 @@
              this.portalProcess = oldPlayer.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1317,7 +1321,7 @@
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
                  this.experienceLevel = oldPlayer.experienceLevel;
-@@ -1696,7 +2206,7 @@
+@@ -1696,7 +2212,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1326,7 +1330,7 @@
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
          this.chunkTrackingView = oldPlayer.chunkTrackingView;
-@@ -1752,19 +2262,19 @@
+@@ -1752,19 +2268,19 @@
      }
  
      @Override
@@ -1350,7 +1354,7 @@
          }
  
          return flag1;
-@@ -1861,8 +2371,13 @@
+@@ -1861,8 +2377,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1365,7 +1369,7 @@
          }
  
      }
-@@ -1878,7 +2393,36 @@
+@@ -1878,7 +2399,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1402,7 +1406,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2501,27 @@
+@@ -1957,12 +2507,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1431,7 +1435,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2558,11 @@
+@@ -1999,11 +2564,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1445,7 +1449,7 @@
      }
  
      @Override
-@@ -2046,17 +2605,43 @@
+@@ -2046,17 +2611,43 @@
      }
  
      public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
@@ -1496,7 +1500,7 @@
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2088,18 +2673,44 @@
+@@ -2088,18 +2679,44 @@
      }
  
      @Override
@@ -1545,7 +1549,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2275,9 +2886,15 @@
+@@ -2275,9 +2892,15 @@
  
      @Override
      public void stopRiding() {
@@ -1562,7 +1566,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,16 +2992,161 @@
+@@ -2375,10 +2998,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1578,11 +1582,10 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
- 
+@@ -2387,4 +3012,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-+        }
-+    }
+         }
+     }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1607,7 +1610,7 @@
 +    public void setPlayerWeather(WeatherType type, boolean plugin) {
 +        if (!plugin && this.weather != null) {
 +            return;
-         }
++        }
 +
 +        if (plugin) {
 +            this.weather = type;
@@ -1618,7 +1621,7 @@
 +        } else {
 +            this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0));
 +        }
-     }
++    }
 +
 +    private float pluginRainPosition;
 +    private float pluginRainPositionPrevious;
