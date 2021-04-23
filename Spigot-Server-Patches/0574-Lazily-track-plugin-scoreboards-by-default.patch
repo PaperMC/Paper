@@ -28,7 +28,7 @@ index 545948f20efd6c8dd42140b565af94cd6b52b661..7d50aded88f5b7dfebaea1aebc86231f
 +    }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
-index 6ea491f6308317059c4bc6735abbdce370df0f34..88bc3fbfa3bfb27cc4f9003a99cbce6e58def98f 100644
+index 6ea491f6308317059c4bc6735abbdce370df0f34..3dfb6ad1ed5fae773b88cbe9ad540fd2520b8b50 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboard.java
 @@ -19,6 +19,7 @@ import org.bukkit.scoreboard.Team;
@@ -39,7 +39,20 @@ index 6ea491f6308317059c4bc6735abbdce370df0f34..88bc3fbfa3bfb27cc4f9003a99cbce6e
  
      CraftScoreboard(Scoreboard board) {
          this.board = board;
-@@ -66,6 +67,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+@@ -45,6 +46,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
+         Validate.isTrue(name.length() <= 16, "The name '" + name + "' is longer than the limit of 16 characters");
+         Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
+         CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
++        // Paper start - the block comment from the old registerNewObjective didnt cause a conflict when rebasing, so this block wasn't added to the adventure registerNewObjective
++        if (craftCriteria.criteria != net.minecraft.world.scores.criteria.IScoreboardCriteria.DUMMY && !registeredGlobally) {
++            net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
++            registeredGlobally = true;
++        }
++        // Paper end
+         ScoreboardObjective objective = board.registerObjective(name, craftCriteria.criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType));
+         return new CraftObjective(this, objective);
+     }
+@@ -66,6 +73,12 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
          Validate.isTrue(board.getObjective(name) == null, "An objective of name '" + name + "' already exists");
  
          CraftCriteria craftCriteria = CraftCriteria.getFromBukkit(criteria);
