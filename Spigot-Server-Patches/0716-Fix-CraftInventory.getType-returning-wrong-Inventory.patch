@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Professor Bloodstone <git@bloodstone.dev>
+Date: Sat, 24 Apr 2021 21:44:26 +0200
+Subject: [PATCH] Fix CraftInventory.getType() returning wrong InventoryType
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+index c3fa97ac34e1fc61ae02f224f8afe5a0b486fb4d..3c726bd09b126b8ca29b68bbdc5197a3ca75ca8b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+@@ -471,6 +471,13 @@ public class CraftInventory implements Inventory {
+     @Override
+     public InventoryType getType() {
+         // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
++        // Paper start - Fix wrong InventoryType returned
++        if (this instanceof CraftInventoryAnvil) {
++            return InventoryType.ANVIL;
++        } else if (this instanceof CraftInventorySmithing) {
++            return InventoryType.SMITHING;
++        } else
++        // Paper end
+         if (inventory instanceof InventoryCrafting) {
+             return inventory.getSize() >= 9 ? InventoryType.WORKBENCH : InventoryType.CRAFTING;
+         } else if (inventory instanceof PlayerInventory) {
+@@ -497,10 +504,14 @@ public class CraftInventory implements Inventory {
+             return InventoryType.MERCHANT;
+         } else if (this instanceof CraftInventoryBeacon) {
+             return InventoryType.BEACON;
++        // Paper start - moved up
++        /*
+         } else if (this instanceof CraftInventoryAnvil) {
+             return InventoryType.ANVIL;
+         } else if (this instanceof CraftInventorySmithing) {
+             return InventoryType.SMITHING;
++        */
++        // Paper end
+         } else if (inventory instanceof IHopper) {
+             return InventoryType.HOPPER;
+         } else if (inventory instanceof TileEntityShulkerBox) {
