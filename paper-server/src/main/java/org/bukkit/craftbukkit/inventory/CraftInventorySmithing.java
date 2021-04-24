@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.world.IInventory;
+import net.minecraft.world.inventory.InventoryCraftResult;
 import net.minecraft.world.item.crafting.IRecipe;
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
@@ -11,9 +12,14 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
 
     private final Location location;
 
-    public CraftInventorySmithing(Location location, IInventory inventory, IInventory resultInventory) {
+    public CraftInventorySmithing(Location location, IInventory inventory, InventoryCraftResult resultInventory) {
         super(inventory, resultInventory);
         this.location = location;
+    }
+
+    @Override
+    public InventoryCraftResult getResultInventory() {
+        return (InventoryCraftResult) super.getResultInventory();
     }
 
     @Override
@@ -33,7 +39,7 @@ public class CraftInventorySmithing extends CraftResultInventory implements Smit
 
     @Override
     public Recipe getRecipe() {
-        IRecipe recipe = getInventory().getCurrentRecipe();
+        IRecipe recipe = getResultInventory().ak_();
         return (recipe == null) ? null : recipe.toBukkitRecipe();
     }
 }
