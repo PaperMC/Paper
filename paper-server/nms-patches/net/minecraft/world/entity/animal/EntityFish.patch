@@ -1,6 +1,21 @@
 --- a/net/minecraft/world/entity/animal/EntityFish.java
 +++ b/net/minecraft/world/entity/animal/EntityFish.java
-@@ -70,7 +70,7 @@
+@@ -41,6 +41,14 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
++import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntityLiving;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.player.PlayerBucketFishEvent;
++// CraftBukkit end
++
+ public abstract class EntityFish extends EntityWaterAnimal {
+ 
+     private static final DataWatcherObject<Boolean> FROM_BUCKET = DataWatcher.a(EntityFish.class, DataWatcherRegistry.i);
+@@ -70,7 +78,7 @@
  
      @Override
      public boolean isTypeNotPersistent(double d0) {
@@ -9,7 +24,7 @@
      }
  
      @Override
-@@ -90,6 +90,7 @@
+@@ -90,6 +98,7 @@
  
      public void setFromBucket(boolean flag) {
          this.datawatcher.set(EntityFish.FROM_BUCKET, flag);
@@ -17,3 +32,30 @@
      }
  
      @Override
+@@ -153,11 +162,24 @@
+         ItemStack itemstack = entityhuman.b(enumhand);
+ 
+         if (itemstack.getItem() == Items.WATER_BUCKET && this.isAlive()) {
++            // CraftBukkit start
++            ItemStack itemstack1 = this.eK();
++            this.k(itemstack1);
++
++            PlayerBucketFishEvent playerBucketFishEvent = CraftEventFactory.callPlayerFishBucketEvent(this, entityhuman, itemstack, itemstack1);
++            itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getFishBucket());
++            if (playerBucketFishEvent.isCancelled()) {
++                ((EntityPlayer) entityhuman).updateInventory(((EntityPlayer) entityhuman).activeContainer); // We need to update inventory to resync client's bucket
++                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutSpawnEntityLiving(this)); // We need to play out these packets as the client assumes the fish is gone
++                ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutEntityMetadata(this.getId(), datawatcher, true)); // Need to send data such as the display name to client
++                return EnumInteractionResult.FAIL;
++            }
++            // CraftBukkit end
+             this.playSound(SoundEffects.ITEM_BUCKET_FILL_FISH, 1.0F, 1.0F);
+             itemstack.subtract(1);
+-            ItemStack itemstack1 = this.eK();
++            // ItemStack itemstack1 = this.eK(); // CraftBukkit - moved up
+ 
+-            this.k(itemstack1);
++            // this.k(itemstack1); // CraftBukkit - moved up
+             if (!this.world.isClientSide) {
+                 CriterionTriggers.j.a((EntityPlayer) entityhuman, itemstack1);
+             }
