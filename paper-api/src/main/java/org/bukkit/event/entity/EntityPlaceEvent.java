@@ -1,6 +1,5 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
@@ -16,11 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * Note that this event is currently only fired for four specific placements:
  * armor stands, boats, minecarts, and end crystals.
- *
- * @deprecated draft API
  */
-@Deprecated
-@Warning(false)
 public class EntityPlaceEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

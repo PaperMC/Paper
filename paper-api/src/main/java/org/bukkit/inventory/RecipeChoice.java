@@ -23,7 +23,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Gets a single item stack representative of this stack choice.
      *
      * @return a single representative item
-     * @deprecated for compatability only
+     * @deprecated for compatibility only
      */
     @Deprecated
     @NotNull
@@ -148,10 +148,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * matched (aside from stack size).
      * <br>
      * <b>Only valid for shaped recipes</b>
-     *
-     * @deprecated draft API
      */
-    @Deprecated
     public static class ExactChoice implements RecipeChoice {
 
         private List<ItemStack> choices;
