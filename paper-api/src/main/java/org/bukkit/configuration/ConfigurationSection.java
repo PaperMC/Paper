@@ -9,6 +9,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -180,6 +181,7 @@ public interface ConfigurationSection {
      * @param def The default value to return if the path is not found.
      * @return Requested Object.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public Object get(@NotNull String path, @Nullable Object def);
 
@@ -254,6 +256,7 @@ public interface ConfigurationSection {
      *     not a String.
      * @return Requested String.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public String getString(@NotNull String path, @Nullable String def);
 
@@ -456,6 +459,7 @@ public interface ConfigurationSection {
      *     not a List.
      * @return Requested List.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public List<?> getList(@NotNull String path, @Nullable List<?> def);
 
@@ -677,6 +681,7 @@ public interface ConfigurationSection {
      * the path
      * @return Requested object
      */
+    @Contract("_, _, !null -> !null")
     @Nullable
     public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz, @Nullable T def);
 
@@ -711,6 +716,7 @@ public interface ConfigurationSection {
      * the path
      * @return Requested {@link ConfigurationSerializable} object
      */
+    @Contract("_, _, !null -> !null")
     @Nullable
     public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz, @Nullable T def);
 
@@ -740,6 +746,7 @@ public interface ConfigurationSection {
      *     not a Vector.
      * @return Requested Vector.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public Vector getVector(@NotNull String path, @Nullable Vector def);
 
@@ -783,6 +790,7 @@ public interface ConfigurationSection {
      *     not an OfflinePlayer.
      * @return Requested OfflinePlayer.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public OfflinePlayer getOfflinePlayer(@NotNull String path, @Nullable OfflinePlayer def);
 
@@ -825,6 +833,7 @@ public interface ConfigurationSection {
      *     not an ItemStack.
      * @return Requested ItemStack.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public ItemStack getItemStack(@NotNull String path, @Nullable ItemStack def);
 
@@ -867,6 +876,7 @@ public interface ConfigurationSection {
      *     not a Color.
      * @return Requested Color.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public Color getColor(@NotNull String path, @Nullable Color def);
 
@@ -909,6 +919,7 @@ public interface ConfigurationSection {
      * a Location.
      * @return Requested Location.
      */
+    @Contract("_, !null -> !null")
     @Nullable
     public Location getLocation(@NotNull String path, @Nullable Location def);
 
