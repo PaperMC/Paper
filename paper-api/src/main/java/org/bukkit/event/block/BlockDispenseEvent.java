@@ -47,7 +47,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the velocity.
+     * Gets the velocity in meters per tick.
      * <p>
      * Note: Modifying the returned Vector will not change the velocity, you
      * must use {@link #setVelocity(org.bukkit.util.Vector)} instead.
@@ -60,7 +60,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Sets the velocity of the item being dispensed.
+     * Sets the velocity of the item being dispensed in meters per tick.
      *
      * @param vel the velocity of the item being dispensed
      */

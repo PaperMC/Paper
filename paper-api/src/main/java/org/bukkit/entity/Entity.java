@@ -49,7 +49,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public Location getLocation(@Nullable Location loc);
 
     /**
-     * Sets this entity's velocity
+     * Sets this entity's velocity in meters per tick
      *
      * @param velocity New velocity to travel with
      */

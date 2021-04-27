@@ -18,7 +18,7 @@ public interface Vehicle extends Entity {
     public Vector getVelocity();
 
     /**
-     * Sets the vehicle's velocity.
+     * Sets the vehicle's velocity in meters per tick.
      *
      * @param vel velocity vector
      */

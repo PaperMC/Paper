@@ -40,7 +40,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Sets the velocity vector that will be sent to the player
+     * Sets the velocity vector in meters per tick that will be sent to the player
      *
      * @param velocity The velocity vector that will be sent to the player
      */
