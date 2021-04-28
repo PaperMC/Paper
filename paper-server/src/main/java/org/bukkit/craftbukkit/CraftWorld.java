@@ -734,10 +734,10 @@ public class CraftWorld implements World {
             ((BlockChorusFlower) Blocks.CHORUS_FLOWER).a(world, pos, rand, 8);
             return true;
         case CRIMSON_FUNGUS:
-            gen = BiomeDecoratorGroups.CRIMSON_FUNGI;
+            gen = BiomeDecoratorGroups.CRIMSON_FUNGI_PLANTED;
             break;
         case WARPED_FUNGUS:
-            gen = BiomeDecoratorGroups.WARPED_FUNGI;
+            gen = BiomeDecoratorGroups.WARPED_FUNGI_PLANTED;
             break;
         case TREE:
         default:
