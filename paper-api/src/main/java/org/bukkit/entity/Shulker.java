@@ -1,6 +1,8 @@
 package org.bukkit.entity;
 
+import org.bukkit.block.BlockFace;
 import org.bukkit.material.Colorable;
+import org.jetbrains.annotations.NotNull;
 
 public interface Shulker extends Golem, Colorable {
 
@@ -19,4 +21,19 @@ public interface Shulker extends Golem, Colorable {
      * range in between of 0.0 and 1.0
      */
     public void setPeek(float value);
+
+    /**
+     * Gets the face to which the shulker is attached.
+     *
+     * @return the face to which the shulker is attached
+     */
+    @NotNull
+    public BlockFace getAttachedFace();
+
+    /**
+     * Sets the face to which the shulker is attached.
+     *
+     * @param face the face to attach the shulker to
+     */
+    public void setAttachedFace(@NotNull BlockFace face);
 }
