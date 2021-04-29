@@ -29,7 +29,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -114,7 +119,25 @@
+@@ -114,6 +119,24 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -39,7 +39,7 @@
 +    public java.net.InetSocketAddress virtualHost;
 +    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
 +    // Paper end
- 
++
 +    // Paper start - add utility methods
 +    public final net.minecraft.server.level.ServerPlayer getPlayer() {
 +        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
@@ -51,10 +51,9 @@
 +        return null;
 +    }
 +    // Paper end - add utility methods
-+
+ 
      public Connection(PacketFlow side) {
          this.receiving = side;
-     }
 @@ -123,6 +146,9 @@
          super.channelActive(channelhandlercontext);
          this.channel = channelhandlercontext.channel();
@@ -163,7 +162,23 @@
              public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
                  super.write(channelhandlercontext, object, channelpromise);
              }
-@@ -661,6 +708,27 @@
+@@ -633,6 +680,7 @@
+             } else {
+                 this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
+         } else {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove("decompress");
+@@ -641,6 +689,7 @@
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove("compress");
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper - Add Channel initialization listeners
+         }
+ 
+     }
+@@ -661,6 +710,27 @@
  
                      packetlistener1.onDisconnect(disconnectiondetails);
                  }
