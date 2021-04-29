@@ -93,6 +93,53 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
         this.to = to;
     }
 
+    // Paper start - PlayerMoveEvent improvements
+    /**
+     * Check if the player has changed position (even within the same block) in the event
+     *
+     * @return whether the player has changed position or not
+     */
+    public boolean hasChangedPosition() {
+        return hasExplicitlyChangedPosition() || !from.getWorld().equals(to.getWorld());
+    }
+
+    /**
+     * Check if the player has changed position (even within the same block) in the event, disregarding a possible world change
+     *
+     * @return whether the player has changed position or not
+     */
+    public boolean hasExplicitlyChangedPosition() {
+        return from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
+    }
+
+    /**
+     * Check if the player has moved to a new block in the event
+     *
+     * @return whether the player has moved to a new block or not
+     */
+    public boolean hasChangedBlock() {
+        return hasExplicitlyChangedBlock() || !from.getWorld().equals(to.getWorld());
+    }
+
+    /**
+     * Check if the player has moved to a new block in the event, disregarding a possible world change
+     *
+     * @return whether the player has moved to a new block or not
+     */
+    public boolean hasExplicitlyChangedBlock() {
+        return from.getBlockX() != to.getBlockX() || from.getBlockY() != to.getBlockY() || from.getBlockZ() != to.getBlockZ();
+    }
+
+    /**
+     * Check if the player has changed orientation in the event
+     *
+     * @return whether the player has changed orientation or not
+     */
+    public boolean hasChangedOrientation() {
+        return from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
+    }
+    // Paper end
+
     private void validateLocation(@NotNull Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
         Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
