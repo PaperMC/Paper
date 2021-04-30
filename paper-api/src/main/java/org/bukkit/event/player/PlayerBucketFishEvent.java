@@ -39,13 +39,13 @@ public class PlayerBucketFishEvent extends PlayerEvent implements Cancellable {
     /**
      * Gets the bucket used.
      *
-     * This refers to the bucket clicked with, ie {@link Material#WATER}.
+     * This refers to the bucket clicked with, ie {@link Material#WATER_BUCKET}.
      *
      * @return The used bucket
      */
     @NotNull
     public ItemStack getWaterBucket() {
-        return fishBucket;
+        return waterBucket;
     }
 
     /**
