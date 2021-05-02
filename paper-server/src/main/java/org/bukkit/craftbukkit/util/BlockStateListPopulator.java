@@ -40,7 +40,9 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     public boolean setTypeAndData(BlockPosition position, IBlockData data, int flag) {
         CraftBlockState state = CraftBlockState.getBlockState(world, position, flag);
         state.setData(data);
-        list.put(position, state);
+        // remove first to keep insertion order
+        list.remove(position);
+        list.put(position.immutableCopy(), state);
         return true;
     }
 
