@@ -11,7 +11,7 @@ public interface BubbleColumn extends BlockData {
     /**
      * Gets the value of the 'drag' property.
      *
-     * @return the 'part' value
+     * @return the 'drag' value
      */
     boolean isDrag();
 
