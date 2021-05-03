@@ -1,0 +1,104 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DongHoon Yoo <nano@kakao.com>
+Date: Tue, 4 May 2021 04:06:06 +0900
+Subject: [PATCH] Fix an issue that
+ PlayerBucketEmptyEvent.setItemStack(ItemStack) as no effect
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemBucket.java b/src/main/java/net/minecraft/world/item/ItemBucket.java
+index d126f668828e0788e369294c0b376ef52b344f2c..cb264f4b1754b3a96cc6602b2e5dbb3aaa9e8a9f 100644
+--- a/src/main/java/net/minecraft/world/item/ItemBucket.java
++++ b/src/main/java/net/minecraft/world/item/ItemBucket.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.item;
+ 
++import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ import net.minecraft.advancements.CriterionTriggers;
+ import net.minecraft.core.BlockPosition;
+@@ -48,6 +49,26 @@ public class ItemBucket extends Item {
+         this.fluidType = fluidtype;
+     }
+ 
++    // Paper start
++    private class ItemStackContainer {
++        private boolean changed = false;
++        private ItemStack instance;
++
++        public ItemStack getInstance() {
++            return instance;
++        }
++
++        public void setInstance(ItemStack value) {
++            instance = value;
++            changed = true;
++        }
++
++        public ItemStackContainer(@Nonnull ItemStack itemStack) {
++            instance = itemStack;
++        }
++    }
++    // Paper end
++
+     @Override
+     public InteractionResultWrapper<ItemStack> a(World world, EntityHuman entityhuman, EnumHand enumhand) {
+         ItemStack itemstack = entityhuman.b(enumhand);
+@@ -99,14 +120,16 @@ public class ItemBucket extends Item {
+                     iblockdata = world.getType(blockposition);
+                     BlockPosition blockposition2 = iblockdata.getBlock() instanceof IFluidContainer && this.fluidType == FluidTypes.WATER ? blockposition : blockposition1;
+ 
+-                    if (this.a(entityhuman, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemstack, enumhand)) { // CraftBukkit // Paper - add enumhand
++                    ItemStackContainer itemStackContainer = new ItemStackContainer(itemstack); // Paper
++
++                    if (this.a(entityhuman, world, blockposition2, movingobjectpositionblock1, movingobjectpositionblock1.getDirection(), blockposition, itemStackContainer, enumhand)) { // CraftBukkit // Paper - add enumhand // Paper - Utilize ItemStackContainer
+                         this.a(world, itemstack, blockposition2);
+                         if (entityhuman instanceof EntityPlayer) {
+                             CriterionTriggers.y.a((EntityPlayer) entityhuman, blockposition2, itemstack);
+                         }
+ 
+                         entityhuman.b(StatisticList.ITEM_USED.b(this));
+-                        return InteractionResultWrapper.a(this.a(itemstack, entityhuman), world.s_());
++                        return InteractionResultWrapper.a(entityhuman.abilities.canInstantlyBuild || itemStackContainer.changed ? itemStackContainer.instance : new ItemStack(Items.BUCKET), world.s_()); // Paper
+                     } else {
+                         return InteractionResultWrapper.fail(itemstack);
+                     }
+@@ -117,10 +140,6 @@ public class ItemBucket extends Item {
+         }
+     }
+ 
+-    protected ItemStack a(ItemStack itemstack, EntityHuman entityhuman) {
+-        return !entityhuman.abilities.canInstantlyBuild ? new ItemStack(Items.BUCKET) : itemstack;
+-    }
+-
+     public void a(World world, ItemStack itemstack, BlockPosition blockposition) {}
+ 
+     public boolean a(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock) {
+@@ -128,7 +147,7 @@ public class ItemBucket extends Item {
+         return a(entityhuman, world, blockposition, movingobjectpositionblock, null, null, null, null);
+     }
+ 
+-    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStack itemstack, EnumHand enumhand) {
++    public boolean a(EntityHuman entityhuman, World world, BlockPosition blockposition, @Nullable MovingObjectPositionBlock movingobjectpositionblock, EnumDirection enumdirection, BlockPosition clicked, ItemStackContainer itemstack, EnumHand enumhand) { // Paper - Utilize ItemStackContainer
+         // Paper end
+         // CraftBukkit end
+         if (!(this.fluidType instanceof FluidTypeFlowing)) {
+@@ -142,12 +161,18 @@ public class ItemBucket extends Item {
+ 
+             // CraftBukkit start
+             if (flag1 && entityhuman != null) {
+-                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((WorldServer) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand); // Paper - add enumhand
++                PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((WorldServer) world, entityhuman, blockposition, clicked, enumdirection, itemstack.instance, enumhand); // Paper - add enumhand // Paper - export ItemStack from ItemStackContainer
+                 if (event.isCancelled()) {
+                     ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutBlockChange(world, blockposition)); // SPIGOT-4238: needed when looking through entity
+                     ((EntityPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
+                     return false;
+                 }
++
++                // Paper start
++                if (event.getItemStack() == null || !event.getItemStack().isSimilar(new org.bukkit.inventory.ItemStack(org.bukkit.Material.BUCKET))) {
++                    itemstack.setInstance(CraftItemStack.asNMSCopy(event.getItemStack()));
++                }
++                // Paper end
+             }
+             // CraftBukkit end
+             if (!flag1) {
