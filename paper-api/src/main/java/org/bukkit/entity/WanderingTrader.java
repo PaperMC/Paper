@@ -28,4 +28,30 @@ public interface WanderingTrader extends AbstractVillager {
      * {@link WanderingTrader} is forcibly despawned
      */
     public void setDespawnDelay(int despawnDelay);
+    
+    // Paper start - Add more WanderingTrader API
+    /**
+     * Set if the Wandering Trader can and will drink an invisibility potion.
+     * @param bool whether the mob will drink
+     */
+    public void setCanDrinkPotion(boolean bool);
+
+    /**
+     * Get if the Wandering Trader can and will drink an invisibility potion.
+     * @return whether the mob will drink
+     */
+    public boolean canDrinkPotion();
+
+    /**
+     * Set if the Wandering Trader can and will drink milk.
+      * @param bool whether the mob will drink
+     */
+    public void setCanDrinkMilk(boolean bool);
+
+    /**
+     * Get if the Wandering Trader can and will drink milk.
+     * @return whether the mob will drink
+     */
+    public boolean canDrinkMilk();
+    // Paper end
 }
