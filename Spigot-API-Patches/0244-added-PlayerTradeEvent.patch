@@ -4,15 +4,15 @@ Date: Thu, 2 Jul 2020 16:10:10 -0700
 Subject: [PATCH] added PlayerTradeEvent
 
 
-diff --git a/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
-new file mode 100755
-index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a4bb33cf6
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9d2592a4880a4d5c8021a08968960965f71f450a
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
-@@ -0,0 +1,121 @@
++++ b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
+@@ -0,0 +1,113 @@
 +package io.papermc.paper.event.player;
 +
-+import org.bukkit.entity.AbstractVillager;
++import java.util.Objects;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
@@ -22,33 +22,24 @@ index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a
 +import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * Called when a player trades with a villager or wandering trader
++ * Called when a player trades with a standalone merchant GUI.
 + */
-+public class PlayerTradeEvent extends PlayerEvent implements Cancellable {
-+
++public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +
 +    private boolean increaseTradeUses;
 +    private boolean rewardExp;
-+    private final AbstractVillager villager;
 +    private MerchantRecipe trade;
 +
-+    public PlayerTradeEvent(@NotNull Player player, @NotNull AbstractVillager villager, @NotNull MerchantRecipe trade, boolean rewardExp, boolean increaseTradeUses) {
-+        super(player);
-+        this.villager = villager;
-+        this.trade = trade;
++    public PlayerPurchaseEvent(@NotNull Player player,
++                               @NotNull MerchantRecipe trade,
++                               boolean rewardExp,
++                               boolean increaseTradeUses) {
++        super(Objects.requireNonNull(player, "Player cannot be null!"));
++        this.trade = Objects.requireNonNull(trade, "Trade cannot be null!");
 +        this.rewardExp = rewardExp;
 +        this.increaseTradeUses = increaseTradeUses;
-+    }
-+
-+    /**
-+     * Gets the Villager or Wandering trader associated with this event
-+     * @return the villager or wandering trader
-+     */
-+    @NotNull
-+    public AbstractVillager getVillager() {
-+        return villager;
 +    }
 +
 +    /**
@@ -130,4 +121,54 @@ index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
+new file mode 100755
+index 0000000000000000000000000000000000000000..a83a7f6c4f528b820320ba33c8d8ab074d2b2051
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.event.player;
++
++import org.bukkit.entity.AbstractVillager;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.MerchantRecipe;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when a player trades with a villager or wandering trader
++ */
++public class PlayerTradeEvent extends PlayerPurchaseEvent {
++
++    private static final HandlerList handlers = new HandlerList();
++
++    private final AbstractVillager villager;
++
++    public PlayerTradeEvent(@NotNull Player player, @NotNull AbstractVillager villager, @NotNull MerchantRecipe trade, boolean rewardExp, boolean increaseTradeUses) {
++        super(player, trade, rewardExp, increaseTradeUses);
++        this.villager = villager;
++    }
++
++    /**
++     * Gets the Villager or Wandering trader associated with this event
++     * @return the villager or wandering trader
++     */
++    @NotNull
++    public AbstractVillager getVillager() {
++        return villager;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
 +}
