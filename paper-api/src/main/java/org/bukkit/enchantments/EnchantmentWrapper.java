@@ -31,5 +31,42 @@ public abstract class EnchantmentWrapper extends Enchantment {
     public @NotNull String translationKey() {
         return getEnchantment().translationKey();
     }
+
+    @Override
+    public boolean isTradeable() {
+        return getEnchantment().isTradeable();
+    }
+
+    @Override
+    public boolean isDiscoverable() {
+        return getEnchantment().isDiscoverable();
+    }
+
+    @Override
+    public int getMinModifiedCost(int level) {
+        return getEnchantment().getMinModifiedCost(level);
+    }
+
+    @Override
+    public int getMaxModifiedCost(int level) {
+        return getEnchantment().getMaxModifiedCost(level);
+    }
+
+    @NotNull
+    @Override
+    public io.papermc.paper.enchantments.EnchantmentRarity getRarity() {
+        return getEnchantment().getRarity();
+    }
+
+    @Override
+    public float getDamageIncrease(int level, @NotNull org.bukkit.entity.EntityCategory entityCategory) {
+        return getEnchantment().getDamageIncrease(level, entityCategory);
+    }
+
+    @NotNull
+    @Override
+    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots() {
+        return getEnchantment().getActiveSlots();
+    }
     // Paper end
 }
