@@ -386,7 +386,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot) {
-        return material.getDefaultAttributeModifiers(slot);
+        // Paper start - delegate to method on ItemType
+        final org.bukkit.inventory.ItemType item = material.asItemType();
+        Preconditions.checkArgument(item != null, material + " is not an item and does not have default attributes");
+        return item.getDefaultAttributeModifiers(slot);
+        // Paper end - delegate to method on ItemType
     }
 
     @Override
