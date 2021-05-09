@@ -8,7 +8,15 @@
  
  public class DetectorRailBlock extends BaseRailBlock {
  
-@@ -77,6 +78,7 @@
+@@ -51,6 +52,7 @@
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (!world.isClientSide) {
+             if (!(Boolean) state.getValue(DetectorRailBlock.POWERED)) {
+                 this.checkPressed(world, pos, state);
+@@ -77,6 +79,7 @@
  
      private void checkPressed(Level world, BlockPos pos, BlockState state) {
          if (this.canSurvive(state, world, pos)) {
@@ -16,17 +24,17 @@
              boolean flag = (Boolean) state.getValue(DetectorRailBlock.POWERED);
              boolean flag1 = false;
              List<AbstractMinecart> list = this.getInteractingMinecartOfType(world, pos, AbstractMinecart.class, (entity) -> {
-@@ -88,7 +90,17 @@
+@@ -88,7 +91,17 @@
              }
  
              BlockState iblockdata1;
 +            // CraftBukkit start
 +            if (flag != flag1) {
 +                org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-+
+ 
 +                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 15 : 0, flag1 ? 15 : 0);
 +                world.getCraftServer().getPluginManager().callEvent(eventRedstone);
- 
++
 +                flag1 = eventRedstone.getNewCurrent() > 0;
 +            }
 +            // CraftBukkit end
