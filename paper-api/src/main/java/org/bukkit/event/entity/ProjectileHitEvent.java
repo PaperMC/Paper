@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,11 +12,12 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a projectile hits an object
  */
-public class ProjectileHitEvent extends EntityEvent {
+public class ProjectileHitEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final Entity hitEntity;
     private final Block hitBlock;
     private final BlockFace hitFace;
+    private boolean cancel = false;
 
     public ProjectileHitEvent(@NotNull final Projectile projectile) {
         this(projectile, null, null);
@@ -77,6 +79,30 @@ public class ProjectileHitEvent extends EntityEvent {
         return hitEntity;
     }
 
+    @Override
+    public boolean isCancelled() {
+        return cancel;
+    }
+
+    /**
+     * Whether to cancel the action that occurs when the projectile hits.
+     *
+     * In the case of an entity, it will not collide (unless it's a firework,
+     * then use {@link FireworkExplodeEvent}).
+     * <br>
+     * In the case of a block, some blocks (eg target block, bell) will not
+     * perform the action associated.
+     * <br>
+     * This does NOT prevent block collisions, and explosions will still occur
+     * unless their respective events are cancelled.
+     *
+     * @param cancel true if you wish to cancel this event
+     */
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancel = cancel;
+    }
+
     @NotNull
     @Override
     public HandlerList getHandlers() {
@@ -87,5 +113,4 @@ public class ProjectileHitEvent extends EntityEvent {
     public static HandlerList getHandlerList() {
         return handlers;
     }
-
 }
