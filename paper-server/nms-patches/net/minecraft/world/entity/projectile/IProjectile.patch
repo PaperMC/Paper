@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/IProjectile.java
 +++ b/net/minecraft/world/entity/projectile/IProjectile.java
-@@ -15,6 +15,10 @@
+@@ -15,12 +15,20 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  import net.minecraft.world.phys.Vec3D;
  
@@ -11,7 +11,17 @@
  public abstract class IProjectile extends Entity {
  
      private UUID shooter;
-@@ -30,6 +34,7 @@
+     private int c;
+     private boolean d;
+ 
++    // CraftBukkit start
++    private boolean hitCancelled = false;
++    // CraftBukkit end
++
+     IProjectile(EntityTypes<? extends IProjectile> entitytypes, World world) {
+         super(entitytypes, world);
+     }
+@@ -30,6 +38,7 @@
              this.shooter = entity.getUniqueID();
              this.c = entity.getId();
          }
@@ -19,11 +29,32 @@
  
      }
  
-@@ -112,6 +117,7 @@
+@@ -111,6 +120,16 @@
+         this.setMot(this.getMot().add(vec3d.x, entity.isOnGround() ? 0.0D : vec3d.y, vec3d.z));
      }
  
++    // CraftBukkit start - call projectile hit event
++    protected void preOnHit(MovingObjectPosition movingobjectposition) {
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
++        this.hitCancelled = event != null && event.isCancelled();
++        if (movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.BLOCK || !this.hitCancelled) {
++            this.a(movingobjectposition); // PAIL rename onHit
++        }
++    }
++    // CraftBukkit end
++
      protected void a(MovingObjectPosition movingobjectposition) {
-+        org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // CraftBukkit - Call event
          MovingObjectPosition.EnumMovingObjectType movingobjectposition_enummovingobjecttype = movingobjectposition.getType();
  
-         if (movingobjectposition_enummovingobjecttype == MovingObjectPosition.EnumMovingObjectType.ENTITY) {
+@@ -125,6 +144,11 @@
+     protected void a(MovingObjectPositionEntity movingobjectpositionentity) {}
+ 
+     protected void a(MovingObjectPositionBlock movingobjectpositionblock) {
++        // CraftBukkit start - cancellable hit event
++        if (hitCancelled) {
++            return;
++        }
++        // CraftBukkit end
+         IBlockData iblockdata = this.world.getType(movingobjectpositionblock.getBlockPosition());
+ 
+         iblockdata.a(this.world, iblockdata, movingobjectpositionblock, this);
