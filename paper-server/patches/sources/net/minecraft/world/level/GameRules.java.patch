@@ -27,7 +27,7 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
-@@ -123,7 +123,7 @@
+@@ -123,12 +123,13 @@
      public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
      }));
      public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
@@ -36,16 +36,36 @@
  
          worldserver.setDefaultSpawnPos(worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle());
      }));
-@@ -164,7 +164,7 @@
+     private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
+     private final FeatureFlagSet enabledFeatures;
++    private final GameRules.Value<?>[] gameruleArray; // Paper - Perf: Use array for gamerule storage
+ 
+     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String name, GameRules.Category category, GameRules.Type<T> type) {
+         GameRules.Key<T> gamerules_gamerulekey = new GameRules.Key<>(name, category);
+@@ -161,10 +162,21 @@
+     private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
+         this.rules = rules;
+         this.enabledFeatures = enabledFeatures;
++
++        // Paper start - Perf: Use array for gamerule storage
++        int arraySize = GameRules.Key.lastGameRuleIndex + 1;
++        GameRules.Value<?>[] values = new GameRules.Value[arraySize];
++
++        for (Entry<GameRules.Key<?>, GameRules.Value<?>> entry : rules.entrySet()) {
++            values[entry.getKey().gameRuleIndex] = entry.getValue();
++        }
++
++        this.gameruleArray = values;
++        // Paper end - Perf: Use array for gamerule storage
      }
  
      public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
 -        T t0 = (GameRules.Value) this.rules.get(key);
-+        T t0 = (T) this.rules.get(key); // CraftBukkit - decompile error
++        T t0 = key == null ? null : (T) this.gameruleArray[key.gameRuleIndex]; // Paper - Perf: Use array for gamerule storage
  
          if (t0 == null) {
              throw new IllegalArgumentException("Tried to access invalid game rule");
-@@ -184,7 +184,7 @@
+@@ -184,7 +196,7 @@
  
      private void loadFromTag(DynamicLike<?> values) {
          this.rules.forEach((gamerules_gamerulekey, gamerules_gamerulevalue) -> {
@@ -54,7 +74,7 @@
  
              Objects.requireNonNull(gamerules_gamerulevalue);
              dataresult.ifSuccess(gamerules_gamerulevalue::deserialize);
-@@ -205,22 +205,22 @@
+@@ -205,22 +217,22 @@
  
      private <T extends GameRules.Value<T>> void callVisitorCap(GameRules.GameRuleTypeVisitor visitor, GameRules.Key<?> key, GameRules.Type<?> type) {
          if (type.requiredFeatures.isSubsetOf(this.enabledFeatures)) {
@@ -85,7 +105,18 @@
      }
  
      public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> rule) {
-@@ -285,11 +285,11 @@
+@@ -232,6 +244,10 @@
+     }
+ 
+     public static final class Key<T extends GameRules.Value<T>> {
++        // Paper start - Perf: Use array for gamerule storage
++        public static int lastGameRuleIndex = 0;
++        public final int gameRuleIndex = lastGameRuleIndex++;
++        // Paper end - Perf: Use array for gamerule storage
+ 
+         final String id;
+         private final GameRules.Category category;
+@@ -285,11 +301,11 @@
  
          final Supplier<ArgumentType<?>> argument;
          private final Function<GameRules.Type<T>, T> constructor;
@@ -99,7 +130,7 @@
              this.argument = argumentType;
              this.constructor = ruleFactory;
              this.callback = changeCallback;
-@@ -302,7 +302,7 @@
+@@ -302,7 +318,7 @@
          }
  
          public T createRule() {
@@ -108,7 +139,7 @@
          }
  
          public void callVisitor(GameRules.GameRuleTypeVisitor consumer, GameRules.Key<T> key) {
-@@ -322,21 +322,21 @@
+@@ -322,21 +338,21 @@
              this.type = type;
          }
  
@@ -138,7 +169,7 @@
  
          public abstract String serialize();
  
-@@ -350,7 +350,7 @@
+@@ -350,7 +366,7 @@
  
          protected abstract T copy();
  
@@ -147,7 +178,7 @@
      }
  
      public interface GameRuleTypeVisitor {
-@@ -366,7 +366,7 @@
+@@ -366,7 +382,7 @@
  
          private boolean value;
  
@@ -156,7 +187,7 @@
              return new GameRules.Type<>(BoolArgumentType::bool, (gamerules_gameruledefinition) -> {
                  return new GameRules.BooleanValue(gamerules_gameruledefinition, initialValue);
              }, changeCallback, GameRules.GameRuleTypeVisitor::visitBoolean, FeatureFlagSet.of());
-@@ -383,17 +383,20 @@
+@@ -383,17 +399,20 @@
          }
  
          @Override
@@ -182,7 +213,7 @@
          }
  
          @Override
-@@ -402,7 +405,7 @@
+@@ -402,7 +421,7 @@
          }
  
          @Override
@@ -191,7 +222,7 @@
              this.value = Boolean.parseBoolean(value);
          }
  
-@@ -421,9 +424,9 @@
+@@ -421,9 +440,9 @@
              return new GameRules.BooleanValue(this.type, this.value);
          }
  
@@ -204,7 +235,7 @@
          }
      }
  
-@@ -431,13 +434,13 @@
+@@ -431,13 +450,13 @@
  
          private int value;
  
@@ -220,7 +251,7 @@
              return new GameRules.Type<>(() -> {
                  return IntegerArgumentType.integer(min, max);
              }, (gamerules_gameruledefinition) -> {
-@@ -456,17 +459,20 @@
+@@ -456,17 +475,20 @@
          }
  
          @Override
@@ -246,7 +277,7 @@
          }
  
          @Override
-@@ -475,7 +481,7 @@
+@@ -475,7 +497,7 @@
          }
  
          @Override
@@ -255,7 +286,7 @@
              this.value = IntegerValue.safeParse(value);
          }
  
-@@ -517,9 +523,9 @@
+@@ -517,9 +539,9 @@
              return new GameRules.IntegerValue(this.type, this.value);
          }
  
