@@ -1222,6 +1222,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public int getClientViewDistance();
 
     /**
+     * Gets the player's estimated ping in milliseconds.
+     *
+     * In Vanilla this value represents the average of the response time to the
+     * last four application layer ping packets sent. This value does not
+     * represent the network round trip time and as such may have less
+     * granularity and be impacted by other sources. For these reasons it
+     * <b>should not</b> be used for anti-cheat purposes. Its recommended use is
+     * only as a <b>qualitative</b> indicator of connection quality (Vanilla
+     * uses it for this purpose in the tab list).
+     *
+     * @return player ping
+     */
+    public int getPing();
+
+    /**
      * Gets the player's current locale.
      *
      * The value of the locale String is not defined properly.
