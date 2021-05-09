@@ -178,6 +178,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         PIGLIN_ZOMBIFIED,
         /**
+         * When a creature is spawned by the "/summon" command
+         */
+        COMMAND,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
