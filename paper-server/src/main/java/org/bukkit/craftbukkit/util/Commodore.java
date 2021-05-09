@@ -159,6 +159,16 @@ public class Commodore
                             }
                         }
 
+                        if ( owner.equals( "org/bukkit/loot/LootTables" ) )
+                        {
+                            switch ( name )
+                            {
+                                case "ZOMBIE_PIGMAN":
+                                    super.visitFieldInsn( opcode, owner, "ZOMBIFIED_PIGLIN", desc );
+                                    return;
+                            }
+                        }
+
                         if ( modern )
                         {
                             if ( owner.equals( "org/bukkit/Material" ) )
