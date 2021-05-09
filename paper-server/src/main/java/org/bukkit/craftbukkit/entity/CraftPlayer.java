@@ -1678,6 +1678,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public int getPing() {
+        return getHandle().ping;
+    }
+
+    @Override
     public String getLocale() {
         return getHandle().locale;
     }
