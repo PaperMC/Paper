@@ -82,15 +82,23 @@
              CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkSave();
  
              if (completablefuture1 != completablefuture) {
-@@ -616,8 +645,15 @@
+@@ -616,8 +645,23 @@
  
                          while (iterator.hasNext()) {
                              Entity entity = (Entity) iterator.next();
 +                            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
 +                            boolean needsRemoval = false;
-+                            if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
-+                                entity.die();
-+                                needsRemoval = true;
++                            if (chunk.needsDecoration) {
++                                net.minecraft.server.dedicated.DedicatedServer server = this.world.getServer().getServer();
++                                if (!server.getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
++                                    entity.die();
++                                    needsRemoval = true;
++                                }
++
++                                if (!server.getSpawnAnimals() && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
++                                    entity.die();
++                                    needsRemoval = true;
++                                }
 +                            }
  
 -                            if (!(entity instanceof EntityHuman) && !this.world.addEntityChunk(entity)) {
@@ -99,7 +107,7 @@
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -828,7 +864,8 @@
+@@ -828,7 +872,8 @@
                  return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
              });
  
@@ -109,7 +117,7 @@
                  return Stream.of(chunk.getEntitySlices()).mapToInt(EntitySlice::size).sum();
              }).orElse(0), optional1.map((chunk) -> {
                  return chunk.getTileEntities().size();
-@@ -839,7 +876,7 @@
+@@ -839,7 +884,7 @@
  
      private static String a(CompletableFuture<Either<Chunk, PlayerChunk.Failure>> completablefuture) {
          try {
@@ -118,7 +126,7 @@
  
              return either != null ? (String) either.map((chunk) -> {
                  return "done";
-@@ -857,7 +894,7 @@
+@@ -857,7 +902,7 @@
      private NBTTagCompound readChunkData(ChunkCoordIntPair chunkcoordintpair) throws IOException {
          NBTTagCompound nbttagcompound = this.read(chunkcoordintpair);
  
@@ -127,7 +135,7 @@
      }
  
      boolean isOutsideOfRange(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1189,7 +1226,7 @@
+@@ -1189,7 +1234,7 @@
          public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
  
          public EntityTracker(Entity entity, int i, int j, boolean flag) {
@@ -136,7 +144,7 @@
              this.tracker = entity;
              this.trackingDistance = i;
              this.e = SectionPosition.a(entity);
-@@ -1242,7 +1279,7 @@
+@@ -1242,7 +1287,7 @@
  
          public void updatePlayer(EntityPlayer entityplayer) {
              if (entityplayer != this.tracker) {
@@ -145,7 +153,7 @@
                  int i = Math.min(this.b(), (PlayerChunkMap.this.viewDistance - 1) * 16);
                  boolean flag = vec3d.x >= (double) (-i) && vec3d.x <= (double) i && vec3d.z >= (double) (-i) && vec3d.z <= (double) i && this.tracker.a(entityplayer);
  
-@@ -1258,6 +1295,17 @@
+@@ -1258,6 +1303,17 @@
                          }
                      }
  
