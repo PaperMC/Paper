@@ -26,5 +26,19 @@ public interface Phantom extends Flying, Enemy {
      */
     @Nullable
     public java.util.UUID getSpawningEntity();
+
+    /**
+     * Check if this phantom will burn in the sunlight
+     *
+     * @return True if phantom will burn in sunlight
+     */
+    public boolean shouldBurnInDay();
+
+    /**
+     * Set if this phantom should burn in the sunlight
+     *
+     * @param shouldBurnInDay True to burn in sunlight
+     */
+    public void setShouldBurnInDay(boolean shouldBurnInDay);
     // Paper end
 }

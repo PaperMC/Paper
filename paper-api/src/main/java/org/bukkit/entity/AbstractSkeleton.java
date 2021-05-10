@@ -32,4 +32,24 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
     @Deprecated(since = "1.17")
     @Contract("_ -> fail")
     public void setSkeletonType(Skeleton.SkeletonType type);
+
+    // Paper start
+    /**
+     * Check if this skeleton will burn in the sunlight. This
+     * does not take into account an entity's natural fire
+     * immunity.
+     *
+     * @return True if skeleton will burn in sunlight
+     */
+    boolean shouldBurnInDay();
+
+    /**
+     * Set if this skeleton should burn in the sunlight. This
+     * will not override an entity's natural fire
+     * immunity.
+     *
+     * @param shouldBurnInDay True to burn in sunlight
+     */
+    void setShouldBurnInDay(boolean shouldBurnInDay);
+    // Paper end
 }
