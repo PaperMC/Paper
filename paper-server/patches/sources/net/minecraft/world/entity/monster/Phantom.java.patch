@@ -1,6 +1,15 @@
 --- a/net/minecraft/world/entity/monster/Phantom.java
 +++ b/net/minecraft/world/entity/monster/Phantom.java
-@@ -161,6 +161,11 @@
+@@ -139,7 +139,7 @@
+ 
+     @Override
+     public void aiStep() {
+-        if (this.isAlive() && this.isSunBurnTick()) {
++        if (this.isAlive() && this.shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
+             this.igniteForSeconds(8.0F);
+         }
+ 
+@@ -161,6 +161,14 @@
          }
  
          this.setPhantomSize(nbt.getInt("Size"));
@@ -8,11 +17,14 @@
 +        if (nbt.hasUUID("Paper.SpawningEntity")) {
 +            this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
 +        }
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        }
 +        // Paper end
      }
  
      @Override
-@@ -170,6 +175,11 @@
+@@ -170,6 +178,12 @@
          nbt.putInt("AY", this.anchorPoint.getY());
          nbt.putInt("AZ", this.anchorPoint.getZ());
          nbt.putInt("Size", this.getPhantomSize());
@@ -20,16 +32,15 @@
 +        if (this.spawningEntity != null) {
 +            nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
 +        }
++        nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
 +        // Paper end
      }
  
      @Override
-@@ -217,7 +227,18 @@
- 
-     boolean canAttack(ServerLevel world, LivingEntity target, TargetingConditions predicate) {
+@@ -219,6 +233,20 @@
          return predicate.test(world, this, target);
-+    }
-+
+     }
+ 
 +    // Paper start
 +    @Nullable
 +    java.util.UUID spawningEntity;
@@ -37,13 +48,17 @@
 +    @Nullable
 +    public java.util.UUID getSpawningEntity() {
 +        return this.spawningEntity;
-     }
++    }
 +    public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
 +    // Paper end
- 
++
      private static enum AttackPhase {
  
-@@ -522,14 +543,15 @@
+         CIRCLE, SWOOP;
+@@ -522,14 +550,15 @@
                  List<Player> list = worldserver.getNearbyPlayers(this.attackTargeting, Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
  
                  if (!list.isEmpty()) {

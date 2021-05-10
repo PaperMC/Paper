@@ -1,6 +1,23 @@
 --- a/net/minecraft/world/entity/monster/AbstractSkeleton.java
 +++ b/net/minecraft/world/entity/monster/AbstractSkeleton.java
-@@ -152,7 +152,7 @@
+@@ -97,9 +97,15 @@
+ 
+     abstract SoundEvent getStepSound();
+ 
++    // Paper start - shouldBurnInDay API
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
++    // Paper end - shouldBurnInDay API
++
+     @Override
+     public void aiStep() {
+-        boolean flag = this.isSunBurnTick();
++        boolean flag = shouldBurnInDay && this.isSunBurnTick(); // Paper - shouldBurnInDay API
+ 
+         if (flag) {
+             ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
+@@ -152,7 +158,7 @@
          this.populateDefaultEquipmentSlots(randomsource, difficulty);
          this.populateDefaultEquipmentEnchantments(world, randomsource, difficulty);
          this.reassessWeaponGoal();
@@ -9,7 +26,7 @@
          if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
              LocalDate localdate = LocalDate.now();
              int i = localdate.get(ChronoField.DAY_OF_MONTH);
-@@ -209,7 +209,17 @@
+@@ -209,7 +215,17 @@
          Level world = this.level();
  
          if (world instanceof ServerLevel worldserver) {
@@ -28,3 +45,26 @@
          }
  
          this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+@@ -233,9 +249,22 @@
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         this.reassessWeaponGoal();
++        // Paper start - shouldBurnInDay API
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end - shouldBurnInDay API
+     }
+ 
++    // Paper start - shouldBurnInDay API
+     @Override
++    public void addAdditionalSaveData(CompoundTag nbt) {
++        super.addAdditionalSaveData(nbt);
++        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
++    }
++    // Paper end - shouldBurnInDay API
++
++    @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+         super.setItemSlot(slot, stack);
+         if (!this.level().isClientSide) {

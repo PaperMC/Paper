@@ -34,5 +34,15 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     public java.util.UUID getSpawningEntity() {
         return getHandle().getSpawningEntity();
     }
+
+    @Override
+    public boolean shouldBurnInDay() {
+        return getHandle().shouldBurnInDay();
+    }
+
+    @Override
+    public void setShouldBurnInDay(boolean shouldBurnInDay) {
+        getHandle().setShouldBurnInDay(shouldBurnInDay);
+    }
     // Paper end
 }
