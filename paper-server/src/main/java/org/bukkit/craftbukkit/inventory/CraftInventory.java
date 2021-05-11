@@ -439,6 +439,14 @@ public class CraftInventory implements Inventory {
             this.clear(i);
         }
     }
+    // Paper start
+    @Override
+    public int close() {
+        int count = this.inventory.getViewers().size();
+        com.google.common.collect.Lists.newArrayList(this.inventory.getViewers()).forEach(HumanEntity::closeInventory);
+        return count;
+    }
+    // Paper end
 
     @Override
     public ListIterator<ItemStack> iterator() {
