@@ -35,7 +35,7 @@
          switch (packet.intention()) {
              case LOGIN:
                  this.beginLogin(packet, false);
-@@ -55,23 +71,122 @@
+@@ -55,23 +71,127 @@
                  throw new UnsupportedOperationException("Invalid intention " + String.valueOf(packet.intention()));
          }
  
@@ -49,6 +49,7 @@
          this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
 +        // CraftBukkit start - Connection throttle
 +        try {
++            if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - Unix domain socket support; the connection throttle is useless when you have a Unix domain socket
 +            long currentTime = System.currentTimeMillis();
 +            long connectionThrottle = this.server.server.getConnectionThrottle();
 +            InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
@@ -77,6 +78,7 @@
 +                    }
 +                }
 +            }
++            } // Paper - Unix domain socket support
 +        } catch (Throwable t) {
 +            org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +        }
@@ -138,8 +140,11 @@
 +            if (!handledByEvent && proxyLogicEnabled) { // Paper
 +                // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
 +                if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) { // Paper - Add bypass host check
++                    // Paper start - Unix domain socket support
++                    java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
 +                    this.connection.hostname = split[0];
-+                    this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
++                    this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
++                    // Paper end - Unix domain socket support
 +                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
 +                } else
 +                {

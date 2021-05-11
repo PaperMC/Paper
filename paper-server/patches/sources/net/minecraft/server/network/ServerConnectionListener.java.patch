@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -52,15 +52,24 @@
+@@ -52,22 +52,36 @@
  
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(() -> {
@@ -27,7 +27,33 @@
  
      public ServerConnectionListener(MinecraftServer server) {
          this.server = server;
-@@ -100,16 +109,28 @@
+         this.running = true;
+     }
+ 
++    // Paper start - Unix domain socket support
+     public void startTcpServerListener(@Nullable InetAddress address, int port) throws IOException {
++        bind(new java.net.InetSocketAddress(address, port));
++    }
++    public void bind(java.net.SocketAddress address) throws IOException {
++    // Paper end - Unix domain socket support
+         List list = this.channels;
+ 
+         synchronized (this.channels) {
+@@ -75,7 +89,13 @@
+             EventLoopGroup eventloopgroup;
+ 
+             if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
++                // Paper start - Unix domain socket support
++                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                    oclass = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
++                } else {
+                 oclass = EpollServerSocketChannel.class;
++                }
++                // Paper end - Unix domain socket support
+                 eventloopgroup = (EventLoopGroup) ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP.get();
+                 ServerConnectionListener.LOGGER.info("Using epoll channel type");
+             } else {
+@@ -100,16 +120,28 @@
  
                      Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, false, (BandwidthDebugMonitor) null);
                      int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
@@ -42,7 +68,7 @@
 +                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper - Add Channel initialization listeners
                  }
 -            }).group(eventloopgroup).localAddress(address, port)).bind().syncUninterruptibly());
-+            }).group(eventloopgroup).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
++            }).group(eventloopgroup).localAddress(address)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit // Paper - Unix domain socket support
          }
      }
  
@@ -59,7 +85,7 @@
      public SocketAddress startMemoryChannel() {
          List list = this.channels;
          ChannelFuture channelfuture;
-@@ -153,6 +174,14 @@
+@@ -153,6 +185,14 @@
          List list = this.connections;
  
          synchronized (this.connections) {
@@ -74,7 +100,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -176,6 +205,10 @@
+@@ -176,6 +216,10 @@
                              networkmanager.setReadOnly();
                          }
                      } else {
