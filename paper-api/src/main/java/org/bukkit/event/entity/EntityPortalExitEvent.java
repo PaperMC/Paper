@@ -11,6 +11,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * This event allows you to modify the velocity of the entity after they have
  * successfully exited the portal.
+ * <p>
+ * Cancelling this event does not prevent the teleport, but it does prevent
+ * any changes to velocity and location from taking place.
  */
 public class EntityPortalExitEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
