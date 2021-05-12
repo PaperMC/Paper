@@ -46,6 +46,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected String m() {
          if (this.name == null) {
              this.name = SystemUtils.a("item", IRegistry.ITEM.getKey(this));
+@@ -0,0 +0,0 @@ public class Item implements IMaterial {
+         return this.m();
+     }
+ 
++    public String getDescriptionId(ItemStack itemStack) { return f(itemStack); } // Paper - OBFHELPER
+     public String f(ItemStack itemstack) {
+         return this.getName();
+     }
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
@@ -54,7 +62,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return !this.material.isBuildable() && !this.material.isLiquid();
      }
  
-+    public String getDescriptionId() { return i(); } // Paper - OBFHELPER
++    public String getOrCreateDescriptionId() { return i(); } // Paper - OBFHELPER
      public String i() {
          if (this.name == null) {
              this.name = SystemUtils.a("block", IRegistry.BLOCK.getKey(this));
@@ -93,14 +101,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public String getTranslationKey(Material mat) {
 +        if (mat.isBlock()) {
-+            return getBlock(mat).getDescriptionId();
++            return getBlock(mat).getOrCreateDescriptionId();
 +        }
-+        return getItem(mat).getOrCreateDescriptionId();
++        return getItem(mat).getName();
 +    }
 +
 +    @Override
 +    public String getTranslationKey(org.bukkit.block.Block block) {
-+        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getDescriptionId();
++        return ((org.bukkit.craftbukkit.block.CraftBlock)block).getNMS().getBlock().getOrCreateDescriptionId();
 +    }
 +
 +    @Override
@@ -108,6 +116,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return net.minecraft.world.entity.EntityTypes.getByName(type.getName()).map(net.minecraft.world.entity.EntityTypes::getDescriptionId).orElse(null);
 +    }
 +
++    @Override
++    public String getTranslationKey(org.bukkit.inventory.ItemStack itemStack) {
++        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
++        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
++    }
      // Paper end
  
      /**
