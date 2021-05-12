@@ -18,42 +18,18 @@ index 5644affeadc51ac3209ee9a087b3d2dd887e401c..7c54ca6af424b9d31f73187df9015f5d
      void k(ItemStack itemstack);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
-index 206c133ebc6c44038585236b0628543b8bed278c..3d05c5e76b860231e863108b3372fe82c672d405 100644
+index 206c133ebc6c44038585236b0628543b8bed278c..a7230776b8e85d5d1873ab2dc4e10c5bf78889bb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
-@@ -1,9 +1,15 @@
- package org.bukkit.craftbukkit.inventory;
- 
-+import io.papermc.paper.event.player.PlayerPurchaseEvent;
- import net.minecraft.network.chat.ChatComponentText;
- import net.minecraft.network.chat.IChatBaseComponent;
-+import net.minecraft.server.level.EntityPlayer;
- import net.minecraft.sounds.SoundEffect;
- import net.minecraft.sounds.SoundEffects;
-+import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.entity.EntityExperienceOrb;
-+import net.minecraft.world.entity.npc.EntityVillagerAbstract;
-+import net.minecraft.world.entity.npc.EntityVillagerTrader;
- import net.minecraft.world.entity.player.EntityHuman;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.trading.IMerchant;
-@@ -11,6 +17,7 @@ import net.minecraft.world.item.trading.MerchantRecipe;
- import net.minecraft.world.item.trading.MerchantRecipeList;
- import net.minecraft.world.level.World;
- import org.apache.commons.lang.Validate;
-+import org.bukkit.entity.ExperienceOrb;
- 
- public class CraftMerchantCustom extends CraftMerchant {
- 
-@@ -81,6 +88,35 @@ public class CraftMerchantCustom extends CraftMerchant {
+@@ -81,6 +81,35 @@ public class CraftMerchantCustom extends CraftMerchant {
  
          @Override
          public void a(MerchantRecipe merchantrecipe) {
 +            // Paper start
-+            /** Based on {@link EntityVillagerAbstract#b(MerchantRecipe)} */
-+            if (getTrader() instanceof EntityPlayer) {
-+                final EntityPlayer trader = (EntityPlayer) getTrader();
-+                final PlayerPurchaseEvent event = new PlayerPurchaseEvent(
++            /** Based on {@link net.minecraft.world.entity.npc.EntityVillagerAbstract#b(MerchantRecipe)} */
++            if (getTrader() instanceof net.minecraft.server.level.EntityPlayer) {
++                final net.minecraft.server.level.EntityPlayer trader = (net.minecraft.server.level.EntityPlayer) getTrader();
++                final io.papermc.paper.event.player.PlayerPurchaseEvent event = new io.papermc.paper.event.player.PlayerPurchaseEvent(
 +                    trader.getBukkitEntity(),
 +                    merchantrecipe.asBukkit(),
 +                    false, // reward xp?
@@ -67,12 +43,12 @@ index 206c133ebc6c44038585236b0628543b8bed278c..3d05c5e76b860231e863108b3372fe82
 +                    eventTrade.setUses(eventTrade.getUses() + 1);
 +                }
 +                if (event.isRewardingExp() && eventTrade.hasExperienceReward()) {
-+                    /** Based on {@link EntityVillagerTrader#b(MerchantRecipe)} */
-+                    final int xp = 3 + Entity.SHARED_RANDOM.nextInt(4);
++                    /** Based on {@link net.minecraft.world.entity.npc.EntityVillagerTrader#b(MerchantRecipe)} */
++                    final int xp = 3 + net.minecraft.world.entity.Entity.SHARED_RANDOM.nextInt(4);
 +                    final World world = trader.getWorld();
-+                    world.addEntity(new EntityExperienceOrb(
-+                        world, trader.locX(), trader.locY() + 0.5d, trader.locZ(),
-+                        xp, ExperienceOrb.SpawnReason.VILLAGER_TRADE, trader, null));
++                    world.addEntity(new net.minecraft.world.entity.EntityExperienceOrb(
++                        world, trader.locX(), trader.locY() + 0.5d, trader.locZ(), xp,
++                        org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, trader, null));
 +                }
 +                return;
 +            }
