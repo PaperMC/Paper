@@ -81,7 +81,7 @@ index fbf3ccfb347a5ba6e895339e9576629d940d1aa4..38d25a12c6a52d8a83214e2a0f43a218
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
-index c4dd2bac48bb93117925b35dcd753d0fbb22e3cf..aeed11cfee42fbde2c2e5731f46ac24de6469e0e 100644
+index 66c808244bba70f827d8f15a96814251d352a046..b736917891afb17e412f94c5d8713aa653b8dc46 100644
 --- a/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/PlayerChunkMap.java
 @@ -1,6 +1,7 @@
@@ -118,13 +118,20 @@ index c4dd2bac48bb93117925b35dcd753d0fbb22e3cf..aeed11cfee42fbde2c2e5731f46ac24d
  import net.minecraft.world.level.chunk.Chunk;
  import net.minecraft.world.level.chunk.ChunkConverter;
  import net.minecraft.world.level.chunk.ChunkGenerator;
-@@ -697,12 +702,12 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
-                             // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
-                             boolean needsRemoval = false;
-                             if (chunk.needsDecoration && !this.world.getServer().getServer().getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
--                                entity.die();
-+                                entity.dead = true; // Paper
-                                 needsRemoval = true;
+@@ -699,18 +704,18 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+                             if (chunk.needsDecoration) {
+                                 net.minecraft.server.dedicated.DedicatedServer server = this.world.getServer().getServer();
+                                 if (!server.getSpawnNPCs() && entity instanceof net.minecraft.world.entity.npc.NPC) {
+-                                    entity.die();
++                                    entity.dead = true; // Paper
+                                     needsRemoval = true;
+                                 }
+ 
+                                 if (!server.getSpawnAnimals() && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
+-                                    entity.die();
++                                    entity.dead = true; // Paper
+                                     needsRemoval = true;
+                                 }
                              }
 -
 -                            if (!(entity instanceof EntityHuman) && (needsRemoval || !this.world.addEntityChunk(entity))) {
@@ -135,7 +142,7 @@ index c4dd2bac48bb93117925b35dcd753d0fbb22e3cf..aeed11cfee42fbde2c2e5731f46ac24d
                                  if (list == null) {
                                      list = Lists.newArrayList(new Entity[]{entity});
                                  } else {
-@@ -729,6 +734,44 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
+@@ -737,6 +742,44 @@ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.d {
          });
      }
  
@@ -181,7 +188,7 @@ index c4dd2bac48bb93117925b35dcd753d0fbb22e3cf..aeed11cfee42fbde2c2e5731f46ac24d
          ChunkCoordIntPair chunkcoordintpair = playerchunk.i();
          CompletableFuture<Either<List<IChunkAccess>, PlayerChunk.Failure>> completablefuture = this.a(chunkcoordintpair, 1, (i) -> {
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 61d3524e962b97ed032af1990f8dc6513fbe51d6..a7fbbb755b2e829022efb0ae63fc1020d5adda4f 100644
+index 4e26db120e544d8867d895395241e425f23f575b..fbff779fa581a661cc03850bffa0da346ce15625 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting;

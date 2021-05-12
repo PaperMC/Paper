@@ -1020,7 +1020,7 @@ index dc8cc8d6c00176c8562086282f726dc1b24b2c65..2f6da89d6b25ba5144ec15b1bf0e8ed1
                  packetdataserializer.d(integer);
  
 diff --git a/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java b/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java
-index 85140d961722e86abfe7006a0ad752751e73c721..c7c191b0a9889450fdf495f5aa45d59f159f1401 100644
+index 85140d961722e86abfe7006a0ad752751e73c721..e96fa348a37a39c381b6659f612232933686c2a7 100644
 --- a/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java
 +++ b/src/main/java/net/minecraft/network/chat/IChatBaseComponent.java
 @@ -1,5 +1,6 @@
@@ -1038,7 +1038,15 @@ index 85140d961722e86abfe7006a0ad752751e73c721..c7c191b0a9889450fdf495f5aa45d59f
              gsonbuilder.registerTypeHierarchyAdapter(IChatBaseComponent.class, new IChatBaseComponent.ChatSerializer());
              gsonbuilder.registerTypeHierarchyAdapter(ChatModifier.class, new ChatModifier.ChatModifierSerializer());
              gsonbuilder.registerTypeAdapterFactory(new ChatTypeAdapterFactory());
-@@ -351,10 +353,12 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
+@@ -263,6 +265,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
+         }
+ 
+         public JsonElement serialize(IChatBaseComponent ichatbasecomponent, Type type, JsonSerializationContext jsonserializationcontext) {
++            if (ichatbasecomponent instanceof AdventureComponent) return jsonserializationcontext.serialize(ichatbasecomponent); // Paper
+             JsonObject jsonobject = new JsonObject();
+ 
+             if (!ichatbasecomponent.getChatModifier().g()) {
+@@ -351,10 +354,12 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
              return jsonobject;
          }
  
@@ -1051,7 +1059,7 @@ index 85140d961722e86abfe7006a0ad752751e73c721..c7c191b0a9889450fdf495f5aa45d59f
          public static JsonElement b(IChatBaseComponent ichatbasecomponent) {
              return IChatBaseComponent.ChatSerializer.a.toJsonTree(ichatbasecomponent);
          }
-@@ -364,6 +368,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
+@@ -364,6 +369,7 @@ public interface IChatBaseComponent extends Message, IChatFormatted, Iterable<IC
              return (IChatMutableComponent) ChatDeserializer.a(IChatBaseComponent.ChatSerializer.a, s, IChatMutableComponent.class, false);
          }
  
@@ -1638,7 +1646,7 @@ index 7ec93ddd7e7c9dc54e3e4dcfe0d1654c0b0a8536..3f057f0bd23bc1c693c8f04ee8acd662
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e3a4896de 100644
+index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041fac91ce5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -563,8 +563,11 @@ public final class CraftServer implements Server {
@@ -1654,7 +1662,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      }
  
      public Player getPlayer(final EntityPlayer entity) {
-@@ -1302,7 +1305,15 @@ public final class CraftServer implements Server {
+@@ -1310,7 +1313,15 @@ public final class CraftServer implements Server {
          return configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -1670,7 +1678,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      public String getShutdownMessage() {
          return configuration.getString("settings.shutdown-message");
      }
-@@ -1418,7 +1429,15 @@ public final class CraftServer implements Server {
+@@ -1426,7 +1437,15 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1686,7 +1694,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1426,14 +1445,14 @@ public final class CraftServer implements Server {
+@@ -1434,14 +1453,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -1703,7 +1711,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1659,6 +1678,14 @@ public final class CraftServer implements Server {
+@@ -1667,6 +1686,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1718,7 +1726,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1671,13 +1698,28 @@ public final class CraftServer implements Server {
+@@ -1679,13 +1706,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1747,7 +1755,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1721,6 +1763,12 @@ public final class CraftServer implements Server {
+@@ -1729,6 +1771,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1760,7 +1768,7 @@ index 6d68610d8ffdef4357cf61ac2f4cf6bf54157b15..2f6b49e3ae7a7407eaec9810af8bf72e
      @Override
      public String getMotd() {
          return console.getMotd();
-@@ -2149,5 +2197,15 @@ public final class CraftServer implements Server {
+@@ -2157,5 +2205,15 @@ public final class CraftServer implements Server {
              return null;
          }
      }
@@ -2058,7 +2066,7 @@ index 3a4e2261d0b0cd17df3f96e75f3c509156679c48..105d0388998d1e35e634d2163fe1a44a
          player.activeContainer.addSlotListener(player);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42ec40c669 100644
+index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6cb968dec5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -240,14 +240,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2241,9 +2249,9 @@ index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42
 +    }
 +    // Paper end
      @Override
-     public String getLocale() {
-         return getHandle().locale;
-@@ -1711,6 +1787,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public int getPing() {
+         return getHandle().ping;
+@@ -1716,6 +1792,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2383,10 +2391,10 @@ index 597b3b061c707081e7665d5896f5d73676e691d6..137870c7d18c9ef3ae637e83c5457d42
      private final Player.Spigot spigot = new Player.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 731ee453d962b375c280b2ad3b63c7141a687da7..f3801a88711a3431fd135efca4d5c15385593a41 100644
+index 8e83eb95ffce62aad10f4d9b259dc5dd076b7640..418becfe2b4fe5ca808f250469bbb46414a5cbc0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -781,9 +781,9 @@ public class CraftEventFactory {
+@@ -785,9 +785,9 @@ public class CraftEventFactory {
          return event;
      }
  
@@ -2398,7 +2406,7 @@ index 731ee453d962b375c280b2ad3b63c7141a687da7..f3801a88711a3431fd135efca4d5c153
          event.setKeepInventory(keepInventory);
          org.bukkit.World world = entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -807,7 +807,7 @@ public class CraftEventFactory {
+@@ -811,7 +811,7 @@ public class CraftEventFactory {
       * Server methods
       */
      public static ServerListPingEvent callServerListPingEvent(Server craftServer, InetAddress address, String motd, int numPlayers, int maxPlayers) {
@@ -2637,7 +2645,7 @@ index ef10c7ab1d615cdba182eca63eb14309339a5314..206c133ebc6c44038585236b0628543b
          @Override
          public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 4cdc504df4cad6f7725f6d18482e88433523943a..af1f45bb8bbe380eec1dcdef1beacb06c9d932a8 100644
+index 4cdc504df4cad6f7725f6d18482e88433523943a..65b6d32e3e1130a64df33082f3292cb1ce6f500a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -1,8 +1,9 @@
@@ -2651,7 +2659,15 @@ index 4cdc504df4cad6f7725f6d18482e88433523943a..af1f45bb8bbe380eec1dcdef1beacb06
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.List;
-@@ -269,6 +270,135 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -21,6 +22,7 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.inventory.meta.BookMeta;
+ import org.bukkit.inventory.meta.BookMeta.Generation;
++import org.checkerframework.checker.nullness.qual.NonNull;
+ 
+ // Spigot start
+ import static org.spigotmc.ValidateUtils.*;
+@@ -269,6 +271,141 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          this.generation = (generation == null) ? null : generation.ordinal();
      }
  
@@ -2783,11 +2799,17 @@ index 4cdc504df4cad6f7725f6d18482e88433523943a..af1f45bb8bbe380eec1dcdef1beacb06
 +            return new CraftMetaBook(title, author, pages);
 +        }
 +    }
++
++    @Override
++    public BookMetaBuilder toBuilder() {
++        return new CraftMetaBookBuilder();
++    }
++
 +    // Paper end
      @Override
      public String getPage(final int page) {
          Validate.isTrue(isValidPage(page), "Invalid page number");
-@@ -413,7 +543,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -413,7 +550,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      }
  
      @Override
