@@ -57,7 +57,7 @@
              entity.setAsInsidePortal(this, pos);
          }
  
-@@ -121,51 +138,72 @@
+@@ -121,51 +138,80 @@
      @Nullable
      @Override
      public TeleportTransition getPortalDestination(ServerLevel world, Entity entity, BlockPos pos) {
@@ -65,6 +65,14 @@
 +        // CraftBukkit start
 +        ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER;
          ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
++        // Paper start - Add EntityPortalReadyEvent
++        io.papermc.paper.event.entity.EntityPortalReadyEvent portalReadyEvent = new io.papermc.paper.event.entity.EntityPortalReadyEvent(entity.getBukkitEntity(), worldserver1 == null ? null : worldserver1.getWorld(), org.bukkit.PortalType.NETHER);
++        if (!portalReadyEvent.callEvent()) {
++            entity.portalProcess = null;
++            return null;
++        }
++        worldserver1 = portalReadyEvent.getTargetWorld() == null ? null : ((org.bukkit.craftbukkit.CraftWorld) portalReadyEvent.getTargetWorld()).getHandle();
++        // Paper end - Add EntityPortalReadyEvent
  
          if (worldserver1 == null) {
 -            return null;
@@ -143,7 +151,7 @@
      }
  
      private static TeleportTransition getDimensionTransitionFromExit(Entity entity, BlockPos pos, BlockUtil.FoundRectangle exitPortalRectangle, ServerLevel world, TeleportTransition.PostTeleportTransition postDimensionTransition) {
-@@ -203,7 +241,7 @@
+@@ -203,7 +249,7 @@
          Vec3 vec3d1 = new Vec3((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));
          Vec3 vec3d2 = PortalShape.findCollisionFreePosition(vec3d1, world, entity, entitysize);
  
