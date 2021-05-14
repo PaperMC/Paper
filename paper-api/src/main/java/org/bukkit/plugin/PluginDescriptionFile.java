@@ -133,6 +133,10 @@ import org.yaml.snakeyaml.nodes.Tag;
  *     <td><code>api-version</code></td>
  *     <td>{@link #getAPIVersion()}</td>
  *     <td>The API version which this plugin was programmed against</td>
+ * </tr><tr>
+ *     <td><code>libraries</code></td>
+ *     <td>{@link #getLibraries() ()}</td>
+ *     <td>The libraries to be linked with this plugin</td>
  * </tr>
  * </table>
  * <p>
@@ -152,6 +156,8 @@ import org.yaml.snakeyaml.nodes.Tag;
  *main: com.captaininflamo.bukkit.inferno.Inferno
  *depend: [NewFire, FlameWire]
  *api-version: 1.13
+ *libraries:
+    - com.squareup.okhttp3:okhttp:4.9.0
  *
  *commands:
  *  flagrate:
@@ -247,6 +253,7 @@ public final class PluginDescriptionFile {
     private PermissionDefault defaultPerm = PermissionDefault.OP;
     private Set<PluginAwareness> awareness = ImmutableSet.of();
     private String apiVersion = null;
+    private List<String> libraries = ImmutableList.of();
 
     public PluginDescriptionFile(@NotNull final InputStream stream) throws InvalidDescriptionException {
         loadMap(asMap(YAML.get().load(stream)));
@@ -958,6 +965,22 @@ public final class PluginDescriptionFile {
     }
 
     /**
+     * Gets the libraries this plugin requires. This is a preview feature.
+     * <ul>
+     * <li>Libraries must be GAV specifiers and are loaded from Maven Central.
+     * </ul>
+     * <p>
+     * Example:<blockquote><pre>libraries:
+     *     - com.squareup.okhttp3:okhttp:4.9.0</pre></blockquote>
+     *
+     * @return required libraries
+     */
+    @NotNull
+    public List<String> getLibraries() {
+        return libraries;
+    }
+
+    /**
      * @return unused
      * @deprecated unused
      */
@@ -1127,6 +1150,20 @@ public final class PluginDescriptionFile {
             apiVersion = map.get("api-version").toString();
         }
 
+        if (map.get("libraries") != null) {
+            ImmutableList.Builder<String> contributorsBuilder = ImmutableList.<String>builder();
+            try {
+                for (Object o : (Iterable<?>) map.get("libraries")) {
+                    contributorsBuilder.add(o.toString());
+                }
+            } catch (ClassCastException ex) {
+                throw new InvalidDescriptionException(ex, "libraries are of wrong type");
+            }
+            libraries = contributorsBuilder.build();
+        } else {
+            libraries = ImmutableList.<String>of();
+        }
+
         try {
             lazyPermissions = (Map<?, ?>) map.get("permissions");
         } catch (ClassCastException ex) {
@@ -1199,6 +1236,10 @@ public final class PluginDescriptionFile {
 
         if (apiVersion != null) {
             map.put("api-version", apiVersion);
+        }
+
+        if (libraries != null) {
+            map.put("libraries", libraries);
         }
 
         if (classLoaderOf != null) {
