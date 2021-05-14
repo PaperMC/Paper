@@ -27,6 +27,88 @@ public interface Mob extends LivingEntity, Lootable {
      * @return True if mob is exposed to daylight
      */
     boolean isInDaylight();
+
+    /**
+     * Instruct this Mob to look at a specific Location
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param location location to look at
+     */
+    void lookAt(@NotNull org.bukkit.Location location);
+
+    /**
+     * Instruct this Mob to look at a specific Location
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param location location to look at
+     * @param headRotationSpeed head rotation speed
+     * @param maxHeadPitch max head pitch rotation
+     */
+    void lookAt(@NotNull org.bukkit.Location location, float headRotationSpeed, float maxHeadPitch);
+
+    /**
+     * Instruct this Mob to look at a specific Entity
+     * <p>
+     * If a LivingEntity, look at eye location
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param entity entity to look at
+     */
+    void lookAt(@NotNull Entity entity);
+
+    /**
+     * Instruct this Mob to look at a specific Entity
+     * <p>
+     * If a LivingEntity, look at eye location
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param entity entity to look at
+     * @param headRotationSpeed head rotation speed
+     * @param maxHeadPitch max head pitch rotation
+     */
+    void lookAt(@NotNull Entity entity, float headRotationSpeed, float maxHeadPitch);
+
+    /**
+     * Instruct this Mob to look at a specific position
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param z z coordinate
+     */
+    void lookAt(double x, double y, double z);
+
+    /**
+     * Instruct this Mob to look at a specific position
+     * <p>
+     * Useful when implementing custom mob goals
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param z z coordinate
+     * @param headRotationSpeed head rotation speed
+     * @param maxHeadPitch max head pitch rotation
+     */
+    void lookAt(double x, double y, double z, float headRotationSpeed, float maxHeadPitch);
+
+    /**
+     * Gets the head rotation speed
+     *
+     * @return the head rotation speed
+     */
+    int getHeadRotationSpeed();
+
+    /**
+     * Gets the max head pitch rotation
+     *
+     * @return the max head pitch rotation
+     */
+    int getMaxHeadPitch();
     // Paper end
     /**
      * Instructs this Mob to set the specified LivingEntity as its target.
