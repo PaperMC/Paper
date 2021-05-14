@@ -18,17 +18,17 @@ index 4f04d8081912e0fe771f0db9e086c789328f246f..4bcf5971cf57c5d75ca876ddc5719709
      public static final IRegistry<WorldGenSurface<?>> SURFACE_BUILDER = a(IRegistry.az, () -> {
          return WorldGenSurface.v;
 diff --git a/src/main/java/net/minecraft/core/IRegistryCustom.java b/src/main/java/net/minecraft/core/IRegistryCustom.java
-index 489737d8b108bbca4124495faf92cb27f666a750..b32a3221f97c8ccec748c965d0189d8da592d0ac 100644
+index 489737d8b108bbca4124495faf92cb27f666a750..110667ac327fc3a94a2e9f2642ce340c766ad279 100644
 --- a/src/main/java/net/minecraft/core/IRegistryCustom.java
 +++ b/src/main/java/net/minecraft/core/IRegistryCustom.java
-@@ -70,6 +70,7 @@ public abstract class IRegistryCustom {
-             return new IllegalStateException("Missing registry: " + resourcekey);
-         });
-     }
-+    public <E> IRegistryWritable<E> getRegistry(ResourceKey<? extends IRegistry<E>> resourcekey) { return b(resourcekey); } // Paper - OBFHELPER
+@@ -65,6 +65,7 @@ public abstract class IRegistryCustom {
  
-     public IRegistry<DimensionManager> a() {
-         return this.b(IRegistry.K);
+     public abstract <E> Optional<IRegistryWritable<E>> a(ResourceKey<? extends IRegistry<E>> resourcekey);
+ 
++    public <E> IRegistryWritable<E> getRegistry(ResourceKey<? extends IRegistry<E>> resourcekey) { return b(resourcekey); } // Paper - OBFHELPER
+     public <E> IRegistryWritable<E> b(ResourceKey<? extends IRegistry<E>> resourcekey) {
+         return (IRegistryWritable) this.a(resourcekey).orElseThrow(() -> {
+             return new IllegalStateException("Missing registry: " + resourcekey);
 @@ -119,7 +120,7 @@ public abstract class IRegistryCustom {
      }
  
@@ -56,10 +56,10 @@ index 489737d8b108bbca4124495faf92cb27f666a750..b32a3221f97c8ccec748c965d0189d8d
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index ef9b08df58d9d28df6b8ade076d95bf7e5cb1b18..2e244b5860954bdbba8896565821732ca1a8a663 100644
+index 7e032845fe9a46d33236444d62405a41e29daa17..bafe478751f955773db15586fab36455f387713a 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
-@@ -1896,6 +1896,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+@@ -1897,6 +1897,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {
      public IRegistryCustom r() {
          return this.server.getCustomRegistry();
      }
@@ -68,7 +68,7 @@ index ef9b08df58d9d28df6b8ade076d95bf7e5cb1b18..2e244b5860954bdbba8896565821732c
      public WorldPersistentData getWorldPersistentData() {
          return this.getChunkProvider().getWorldPersistentData();
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 62513d3acb930c4c9fa3d875a1fc94bb4d948951..c91e10182ee75eb8cfa77fa1cb2923b567476476 100644
+index 3b3eda95c0ff8b129adedbae6561bba2d01c2f3a..6f28c93a95b0766b47858f1421d5927b000befac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -103,6 +103,7 @@ import org.bukkit.Effect;
@@ -79,7 +79,7 @@ index 62513d3acb930c4c9fa3d875a1fc94bb4d948951..c91e10182ee75eb8cfa77fa1cb2923b5
  import org.bukkit.Particle;
  import org.bukkit.Raid;
  import org.bukkit.Sound;
-@@ -1106,6 +1107,28 @@ public class CraftWorld implements World {
+@@ -1099,6 +1100,28 @@ public class CraftWorld implements World {
          return CraftBlock.biomeBaseToBiome(getHandle().r().b(IRegistry.ay), this.world.getBiome(x >> 2, y >> 2, z >> 2));
      }
  
@@ -109,7 +109,7 @@ index 62513d3acb930c4c9fa3d875a1fc94bb4d948951..c91e10182ee75eb8cfa77fa1cb2923b5
      public void setBiome(int x, int z, Biome bio) {
          for (int y = 0; y < getMaxHeight(); y++) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index eeeaadbd3aa290fc916f0d465f10cad0687b900d..97ef0cc21e5888bf99cf1d08680a6e49f99c480d 100644
+index 0006b3cad5fe46e50b0efeae99102f9d80276d61..337920c8aaf81f7278be8561231f7f0b22b0a988 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 @@ -33,6 +33,7 @@ import org.bukkit.Chunk;
