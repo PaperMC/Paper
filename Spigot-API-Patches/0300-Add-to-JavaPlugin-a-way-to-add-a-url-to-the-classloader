@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Cameron Weaver (Clutch)" <lockerzmodding@gmail.com>
+Date: Fri, 14 May 2021 17:10:57 -0400
+Subject: [PATCH] Add to JavaPlugin a way to add a url to the classloader
+
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 04fa3991f6ce4e9dad804f28fc6c947695857089..79113b41eeec228d36285903313d973908cf7018 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -355,6 +355,18 @@ public abstract class JavaPlugin extends PluginBase {
+         return logger;
+     }
+ 
++    // Paper start
++    protected void addToClasspath(@NotNull URL url) {
++        if (url == null) {
++            throw new IllegalArgumentException("URL cannot be null");
++        }
++        if (!(classLoader instanceof PluginClassLoader)) {
++            throw new IllegalStateException("JavaPlugin requires " + PluginClassLoader.class.getName());
++        }
++        ((PluginClassLoader) classLoader).addURL(url);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public String toString() {
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 7760be3e34fa20825faf145d9fb5b2855c1a4602..d617922a6f1e858ee29b2f2142e0feab530ffb4e 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -111,6 +111,13 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         return findClass(name, true);
+     }
+ 
++    // Paper start
++    @Override
++    protected void addURL(URL url) {
++        super.addURL(url);
++    }
++    // Paper end
++
+     Class<?> findClass(@NotNull String name, boolean checkGlobal) throws ClassNotFoundException {
+         if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
+             throw new ClassNotFoundException(name);
