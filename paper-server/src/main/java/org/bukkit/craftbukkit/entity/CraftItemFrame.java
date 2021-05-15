@@ -1,17 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
-import net.minecraft.server.level.WorldServer;
+import net.minecraft.network.syncher.DataWatcher;
 import net.minecraft.world.entity.decoration.EntityHanging;
 import net.minecraft.world.entity.decoration.EntityItemFrame;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.EntityType;
@@ -39,20 +37,17 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         return true;
     }
 
-    private void update() {
-        EntityItemFrame old = this.getHandle();
+    @Override
+    protected void update() {
+        super.update();
 
-        WorldServer world = ((CraftWorld) getWorld()).getHandle();
-        BlockPosition position = old.getBlockPosition();
-        EnumDirection direction = old.getDirection();
-        ItemStack item = old.getItem() != null ? old.getItem().cloneItemStack() : null;
+        // mark dirty, so that the client gets updated with item and rotation
+        for (DataWatcher.Item<?> dataItem : getHandle().getDataWatcher().c()) {
+            getHandle().getDataWatcher().markDirty(dataItem.a());
+        }
 
-        old.die();
-
-        EntityItemFrame frame = new EntityItemFrame(world, position, direction);
-        frame.setItem(item);
-        world.addEntity(frame);
-        this.entity = frame;
+        // update redstone
+        getHandle().getWorld().updateAdjacentComparators(getHandle().blockPosition, Blocks.AIR);
     }
 
     @Override
