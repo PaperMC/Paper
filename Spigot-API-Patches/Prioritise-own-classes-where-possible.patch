@@ -34,20 +34,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      final Server server;
 +    private static final boolean DISABLE_CLASS_PRIORITIZATION = Boolean.getBoolean("Paper.DisableClassPrioritization"); // Paper
      private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$")};
+     private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final Map<String, java.util.concurrent.locks.ReentrantReadWriteLock> classLoadLock = new java.util.HashMap<String, java.util.concurrent.locks.ReentrantReadWriteLock>(); // Paper
-     private final Map<String, Integer> classLoadLockCount = new java.util.HashMap<String, Integer>(); // Paper
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
  
      @Nullable
-     Class<?> getClassByName(final String name, boolean resolve, PluginDescriptionFile description) {
+     Class<?> getClassByName(final String name) {
 +        // Paper start - prioritize self
-+        return getClassByName(name, resolve, description, null);
++        return getClassByName(name, null);
 +    }
-+    Class<?> getClassByName(final String name, boolean resolve, PluginDescriptionFile description, PluginClassLoader requester) {
++    Class<?> getClassByName(final String name, PluginClassLoader requester) {
 +        // Paper end
          // Paper start - make MT safe
-         java.util.concurrent.locks.ReentrantReadWriteLock lock;
-         synchronized (classLoadLock) {
+         Class<?> cachedClass = classes.get(name);
+         if (cachedClass != null) {
 @@ -0,0 +0,0 @@ public final class JavaPluginLoader implements PluginLoader {
              classLoadLockCount.compute(name, (x, prev) -> prev != null ? prev + 1 : 1);
          }
@@ -55,23 +55,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - prioritize self
 +            if (!DISABLE_CLASS_PRIORITIZATION && requester != null) {
 +                try {
-+                return requester.loadClass0(name, false, false, ((SimplePluginManager) server.getPluginManager()).isTransitiveDepend(description, requester.plugin.getDescription()));
++                cachedClass = requester.findClass(name, false);
 +                } catch (ClassNotFoundException cnfe) {}
++                if (cachedClass != null) {
++                    return cachedClass;
++                }
 +            }
-+            // Paper end
++            // Paper end-
+         cachedClass = classes.get(name);
          // Paper end
-         for (PluginClassLoader loader : loaders) {
-             try {
+ 
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -0,0 +0,0 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
-         }
  
-         if (checkGlobal) {
--            Class<?> result = loader.getClassByName(name, resolve, description);
-+            Class<?> result = loader.getClassByName(name, resolve, description, this);  // Paper - prioritize self
+         if (result == null) {
+             if (checkGlobal) {
+-                result = loader.getClassByName(name);
++                result = loader.getClassByName(name, this); // Paper - prioritize self
  
-             if (result != null) {
-                 PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
+                 if (result != null) {
+                     PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
