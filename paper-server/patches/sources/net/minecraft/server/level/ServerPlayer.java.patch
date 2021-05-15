@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +293,35 @@
+@@ -258,7 +293,36 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
-+
+ 
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -147,9 +147,10 @@
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
- 
++
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +330,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -288,16 +289,16 @@
  
          if (this.isSleeping()) {
              this.stopSleeping();
-         }
- 
++        }
++
 +        // CraftBukkit start
 +        String spawnWorld = nbt.getString("SpawnWorld");
 +        CraftWorld oldWorld = (CraftWorld) Bukkit.getWorld(spawnWorld);
 +        if (oldWorld != null) {
 +            this.respawnDimension = oldWorld.getHandle().dimension();
-+        }
+         }
 +        // CraftBukkit end
-+
+ 
          if (nbt.contains("SpawnX", 99) && nbt.contains("SpawnY", 99) && nbt.contains("SpawnZ", 99)) {
              this.respawnPosition = new BlockPos(nbt.getInt("SpawnX"), nbt.getInt("SpawnY"), nbt.getInt("SpawnZ"));
              this.respawnForced = nbt.getBoolean("SpawnForced");
@@ -913,7 +914,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,12 +1605,35 @@
+@@ -1215,10 +1605,33 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -929,26 +930,24 @@
 +                // Paper end - Reset shield blocking on dimension change
                  return this;
              }
-         }
-     }
- 
++        }
++    }
++
 +    // CraftBukkit start
-     @Override
++    @Override
 +    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, TeleportCause cause, int searchRadius, int creationRadius) {
 +        Location enter = this.getBukkitEntity().getLocation();
 +        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
-+        }
+         }
 +        return new CraftPortalEvent(event);
-+    }
-+    // CraftBukkit end
-+
-+    @Override
-     public void forceSetRotation(float yaw, float pitch) {
-         this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
      }
++    // CraftBukkit end
+ 
+     @Override
+     public void forceSetRotation(float yaw, float pitch) {
 @@ -1228,13 +1641,21 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
@@ -1354,7 +1353,37 @@
          }
  
          return flag1;
-@@ -1861,8 +2377,13 @@
+@@ -1799,10 +2315,18 @@
+     }
+ 
+     public boolean setGameMode(GameType gameMode) {
++        // Paper start - Expand PlayerGameModeChangeEvent
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
++        return event == null ? false : event.isCancelled();
++    }
++    @Nullable
++    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
+         boolean flag = this.isSpectator();
+ 
+-        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
+-            return false;
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
++        if (event == null || event.isCancelled()) {
++            return null;
++            // Paper end - Expand PlayerGameModeChangeEvent
+         } else {
+             this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
+             if (gameMode == GameType.SPECTATOR) {
+@@ -1818,7 +2342,7 @@
+ 
+             this.onUpdateAbilities();
+             this.updateEffectVisibility();
+-            return true;
++            return event; // Paper - Expand PlayerGameModeChangeEvent
+         }
+     }
+ 
+@@ -1861,8 +2385,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1369,7 +1398,7 @@
          }
  
      }
-@@ -1878,7 +2399,36 @@
+@@ -1878,7 +2407,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1406,7 +1435,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2507,27 @@
+@@ -1957,12 +2515,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1435,7 +1464,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2564,11 @@
+@@ -1999,11 +2572,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1449,7 +1478,7 @@
      }
  
      @Override
-@@ -2046,17 +2611,43 @@
+@@ -2046,17 +2619,43 @@
      }
  
      public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos pos, float angle, boolean forced, boolean sendMessage) {
@@ -1500,7 +1529,7 @@
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2088,18 +2679,44 @@
+@@ -2088,18 +2687,44 @@
      }
  
      @Override
@@ -1549,7 +1578,24 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2275,9 +2892,15 @@
+@@ -2166,6 +2791,16 @@
+     }
+ 
+     public void loadGameTypes(@Nullable CompoundTag nbt) {
++        // Paper start - Expand PlayerGameModeChangeEvent
++        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != ServerPlayer.readPlayerMode(nbt, "playerGameType")) {
++            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
++                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
++            } else {
++                this.gameMode.setGameModeForPlayer(ServerPlayer.readPlayerMode(nbt,"playerGameType"), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
++            }
++            return;
++        }
++        // Paper end - Expand PlayerGameModeChangeEvent
+         this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
+     }
+ 
+@@ -2275,9 +2910,15 @@
  
      @Override
      public void stopRiding() {
@@ -1566,7 +1612,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +2998,12 @@
+@@ -2375,10 +3016,12 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1582,7 +1628,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +3012,147 @@
+@@ -2387,4 +3030,147 @@
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
          }
      }
