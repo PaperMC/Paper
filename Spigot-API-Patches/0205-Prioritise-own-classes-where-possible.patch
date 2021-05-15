@@ -25,56 +25,62 @@ The patch in general terms just loads the class in the plugin's jar
 before it starts looking elsewhere for it.
 
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-index 9d1f7cdf12029c8198792fd299f92be476040222..384edf9890dfbd1cddfdcac4db1ebe9a4d761f78 100644
+index ce751577623eaad0f31e2eb7bf0842d1ab73e845..31793f46e5623729dfb4048e901f274082f57826 100644
 --- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
-@@ -50,6 +50,7 @@ import org.yaml.snakeyaml.error.YAMLException;
+@@ -51,6 +51,7 @@ import org.yaml.snakeyaml.error.YAMLException;
   */
  public final class JavaPluginLoader implements PluginLoader {
      final Server server;
 +    private static final boolean DISABLE_CLASS_PRIORITIZATION = Boolean.getBoolean("Paper.DisableClassPrioritization"); // Paper
      private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$")};
-     private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
      private final Map<String, java.util.concurrent.locks.ReentrantReadWriteLock> classLoadLock = new java.util.HashMap<String, java.util.concurrent.locks.ReentrantReadWriteLock>(); // Paper
-@@ -193,6 +194,11 @@ public final class JavaPluginLoader implements PluginLoader {
+     private final Map<String, Integer> classLoadLockCount = new java.util.HashMap<String, Integer>(); // Paper
+@@ -203,6 +204,11 @@ public final class JavaPluginLoader implements PluginLoader {
  
      @Nullable
-     Class<?> getClassByName(final String name) {
+     Class<?> getClassByName(final String name, boolean resolve, PluginDescriptionFile description) {
 +        // Paper start - prioritize self
-+        return getClassByName(name, null);
++        return getClassByName(name, resolve, description, null);
 +    }
-+    Class<?> getClassByName(final String name, PluginClassLoader requester) {
++    Class<?> getClassByName(final String name, boolean resolve, PluginDescriptionFile description, PluginClassLoader requester) {
 +        // Paper end
          // Paper start - make MT safe
-         Class<?> cachedClass = classes.get(name);
-         if (cachedClass != null) {
-@@ -204,6 +210,16 @@ public final class JavaPluginLoader implements PluginLoader {
+         java.util.concurrent.locks.ReentrantReadWriteLock lock;
+         synchronized (classLoadLock) {
+@@ -210,6 +216,13 @@ public final class JavaPluginLoader implements PluginLoader {
              classLoadLockCount.compute(name, (x, prev) -> prev != null ? prev + 1 : 1);
          }
          lock.writeLock().lock();try {
 +            // Paper start - prioritize self
 +            if (!DISABLE_CLASS_PRIORITIZATION && requester != null) {
 +                try {
-+                cachedClass = requester.findClass(name, false);
++                return requester.loadClass0(name, false, false, ((SimplePluginManager) server.getPluginManager()).isTransitiveDepend(description, requester.getDescription()));
 +                } catch (ClassNotFoundException cnfe) {}
-+                if (cachedClass != null) {
-+                    return cachedClass;
-+                }
 +            }
-+            // Paper end-
-         cachedClass = classes.get(name);
++            // Paper end
          // Paper end
- 
+         for (PluginClassLoader loader : loaders) {
+             try {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 3a02dbe9d183bc907dcce081d8338d5716ed5242..28e5c6591fb594ca79ee92480cedc8f549e3fe01 100644
+index 22abd85da592c79e312928de596e5d552a45ef12..cfa408e560d85311b474562a6d3860363727eff0 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -108,7 +108,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+@@ -33,7 +33,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+     public JavaPlugin getPlugin() { return plugin; } // Spigot
+     private final JavaPluginLoader loader;
+     private final Map<String, Class<?>> classes = new ConcurrentHashMap<String, Class<?>>();
+-    private final PluginDescriptionFile description;
++    private final PluginDescriptionFile description; PluginDescriptionFile getDescription() { return description; } // Paper
+     private final File dataFolder;
+     private final File file;
+     private final JarFile jar;
+@@ -117,7 +117,7 @@ public final class PluginClassLoader extends URLClassLoader { // Spigot
+         }
  
-         if (result == null) {
-             if (checkGlobal) {
--                result = loader.getClassByName(name);
-+                result = loader.getClassByName(name, this); // Paper - prioritize self
+         if (checkGlobal) {
+-            Class<?> result = loader.getClassByName(name, resolve, description);
++            Class<?> result = loader.getClassByName(name, resolve, description, this);  // Paper - prioritize self
  
-                 if (result != null) {
-                     PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
+             if (result != null) {
+                 PluginDescriptionFile provider = ((PluginClassLoader) result.getClassLoader()).description;
