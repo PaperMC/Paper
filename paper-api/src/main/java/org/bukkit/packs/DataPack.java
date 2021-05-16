@@ -9,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
  * Represents a data pack.
  *
  * @see <a href="https://minecraft.wiki/w/Data_pack">Minecraft wiki</a>
+ * @deprecated use {@link io.papermc.paper.datapack.Datapack}
  */
+@Deprecated(forRemoval = true, since = "1.20") // Paper
 public interface DataPack extends Keyed {
 
     /**

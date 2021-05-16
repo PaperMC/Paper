@@ -328,9 +328,11 @@ public final class Bukkit {
     /**
      * Get the DataPack Manager.
      *
+     * @deprecated use {@link #getDatapackManager()}
      * @return the manager
      */
     @NotNull
+    @Deprecated(forRemoval = true, since = "1.20")
     public static DataPackManager getDataPackManager() {
         return server.getDataPackManager();
     }
@@ -2640,6 +2642,14 @@ public final class Bukkit {
     @NotNull
     public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
         return server.getMobGoals();
+    }
+
+    /**
+     * @return the datapack manager
+     */
+    @NotNull
+    public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
+        return server.getDatapackManager();
     }
     // Paper end
 

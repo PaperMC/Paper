@@ -485,6 +485,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      * @param world the world to check
      * @return true if this EntityType can be used to spawn an Entity for this World.
      */
+    @Deprecated(forRemoval = true, since = "1.20") // Paper
     public boolean isEnabledByFeature(@NotNull World world) {
         return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
     }

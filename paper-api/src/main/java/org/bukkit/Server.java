@@ -267,9 +267,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get the DataPack Manager.
      *
+     * @deprecated use {@link #getDatapackManager()}
      * @return the manager
      */
     @NotNull
+    @Deprecated(forRemoval = true, since = "1.20") // Paper
     public DataPackManager getDataPackManager();
 
     /**
@@ -2302,5 +2304,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
+
+    /**
+     * @return the datapack manager
+     */
+    @NotNull
+    io.papermc.paper.datapack.DatapackManager getDatapackManager();
     // Paper end
 }
