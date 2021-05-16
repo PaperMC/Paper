@@ -1006,5 +1006,27 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public io.papermc.paper.inventory.ItemRarity getRarity() {
         return io.papermc.paper.inventory.ItemRarity.valueOf(this.getItemMeta().getRarity().name());
     }
+
+    /**
+     * Checks if an itemstack can repair this itemstack.
+     * Returns false if {@code this} or {@code repairMaterial}'s type is not an item ({@link Material#isItem()}).
+     *
+     * @param repairMaterial the repair material
+     * @return true if it is repairable by, false if not
+     */
+    public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
+        return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
+    }
+
+    /**
+     * Checks if this itemstack can repair another.
+     * Returns false if {@code this} or {@code toBeRepaired}'s type is not an item ({@link Material#isItem()}).
+     *
+     * @param toBeRepaired the itemstack to be repaired
+     * @return true if it can repair, false if not
+     */
+    public boolean canRepair(@NotNull ItemStack toBeRepaired) {
+        return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
+    }
     // Paper end
 }
