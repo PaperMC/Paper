@@ -308,6 +308,7 @@ public final class CraftServer implements Server {
     private final List<CraftPlayer> playerView;
     public int reloadCount;
     public Set<String> activeCompatibilities = Collections.emptySet();
+    private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
     public static Exception excessiveVelEx; // Paper - Velocity warnings
 
     static {
@@ -392,6 +393,7 @@ public final class CraftServer implements Server {
         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
         }
+        datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
     }
 
     public boolean getCommandBlockOverride(String command) {
@@ -3036,5 +3038,11 @@ public final class CraftServer implements Server {
     public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
         return mobGoals;
     }
+
+    @Override
+    public io.papermc.paper.datapack.PaperDatapackManager getDatapackManager() {
+        return datapackManager;
+    }
+
     // Paper end
 }
