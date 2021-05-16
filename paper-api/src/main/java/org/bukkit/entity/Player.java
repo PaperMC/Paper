@@ -335,6 +335,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param message kick message
      */
     void kick(final net.kyori.adventure.text.@Nullable Component message);
+
+    /**
+     * Kicks player with custom kick message and cause.
+     *
+     * @param message kick message
+     * @param cause kick cause
+     */
+    void kick(final net.kyori.adventure.text.@Nullable Component message, org.bukkit.event.player.PlayerKickEvent.@NotNull Cause cause);
     // Paper end
 
     /**

@@ -12,6 +12,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private net.kyori.adventure.text.Component leaveMessage; // Paper
     private net.kyori.adventure.text.Component kickReason; // Paper
+    private final Cause cause; // Paper
     private boolean cancel;
 
     @Deprecated // Paper
@@ -19,14 +20,26 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         super(playerKicked);
         this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
         this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
+        this.cause  = Cause.UNKNOWN; // Paper
         this.cancel = false;
     }
     // Paper start
+    @Deprecated
     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage) {
         super(playerKicked);
         this.kickReason = kickReason;
         this.leaveMessage = leaveMessage;
         this.cancel = false;
+        this.cause = Cause.UNKNOWN;
+    }
+
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage, @NotNull final Cause cause) {
+        super(playerKicked);
+        this.kickReason = kickReason;
+        this.leaveMessage = leaveMessage;
+        this.cancel = false;
+        this.cause = cause;
     }
 
     /**
@@ -132,4 +145,79 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     public static HandlerList getHandlerList() {
         return handlers;
     }
+    // Paper start
+    /**
+     * Gets the cause of this kick
+     *
+     * @return
+     */
+    @NotNull
+    public org.bukkit.event.player.PlayerKickEvent.Cause getCause() {
+        return cause;
+    }
+
+    public enum Cause {
+
+        PLUGIN,
+
+        WHITELIST,
+
+        BANNED,
+
+        IP_BANNED,
+
+        KICK_COMMAND,
+
+        FLYING_PLAYER,
+
+        FLYING_VEHICLE,
+
+        TIMEOUT,
+
+        IDLING,
+
+        INVALID_VEHICLE_MOVEMENT,
+
+        INVALID_PLAYER_MOVEMENT,
+
+        INVALID_ENTITY_ATTACKED,
+
+        INVALID_PAYLOAD,
+
+        INVALID_COOKIE,
+
+        SPAM,
+
+        ILLEGAL_ACTION,
+
+        ILLEGAL_CHARACTERS,
+
+        OUT_OF_ORDER_CHAT,
+
+        UNSIGNED_CHAT,
+
+        CHAT_VALIDATION_FAILED,
+
+        EXPIRED_PROFILE_PUBLIC_KEY,
+
+        INVALID_PUBLIC_KEY_SIGNATURE,
+
+        TOO_MANY_PENDING_CHATS,
+
+        SELF_INTERACTION,
+
+        DUPLICATE_LOGIN,
+
+        RESOURCE_PACK_REJECTION,
+
+        /**
+         * Spigot's restart command
+         */
+        RESTART_COMMAND,
+        /**
+         * Fallback cause
+         */
+        UNKNOWN,
+    }
+    // Paper end
 }
