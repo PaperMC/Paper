@@ -6,7 +6,7 @@ Subject: [PATCH] Add basic ResourcePack/DataPack API
 
 diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePack.java b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7e41a850c49be0b3c3772ef9d362ae0d26531d56
+index 0000000000000000000000000000000000000000..cf59fb9591af3397ed0db290c5f02a7d82eb237d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
 @@ -0,0 +1,51 @@
@@ -21,12 +21,12 @@ index 0000000000000000000000000000000000000000..7e41a850c49be0b3c3772ef9d362ae0d
 +
 +public class PaperResourcePack implements ResourcePack {
 +    private final String name;
-+    private final ResourcePackCompatibility compatibility;
++    private final Compatibility compatibility;
 +    private final boolean enabled;
 +
 +    PaperResourcePack(ResourcePackLoader loader, boolean enabled) {
-+        this.name = loader.e();
-+        this.compatibility = ResourcePackCompatibility.valueOf(loader.c().name());
++        this.name = loader.getName();
++        this.compatibility = Compatibility.valueOf(loader.getVersion().name());
 +        this.enabled = enabled;
 +    }
 +
@@ -36,7 +36,7 @@ index 0000000000000000000000000000000000000000..7e41a850c49be0b3c3772ef9d362ae0d
 +    }
 +
 +    @Override
-+    public ResourcePackCompatibility getCompatibility() {
++    public Compatibility getCompatibility() {
 +        return compatibility;
 +    }
 +
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..7e41a850c49be0b3c3772ef9d362ae0d
 +        }
 +
 +        MinecraftServer server = MinecraftServer.getServer();
-+        List<String> enabledKeys = server.getResourcePackRepository().e().stream().map(ResourcePackLoader::e).collect(Collectors.toList());
++        List<String> enabledKeys = server.getResourcePackRepository().getEnabledPacks().stream().map(ResourcePackLoader::getName).collect(Collectors.toList());
 +        if (enabled) {
 +            enabledKeys.add(this.name);
 +        } else {
@@ -63,7 +63,7 @@ index 0000000000000000000000000000000000000000..7e41a850c49be0b3c3772ef9d362ae0d
 +}
 diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java b/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aff39cff9170f93dc3c5cdabf3d8217a18ff0bdd
+index 0000000000000000000000000000000000000000..58950bdff2992399310b8c6e9128660d40ec7ef7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java
 @@ -0,0 +1,26 @@
@@ -84,15 +84,63 @@ index 0000000000000000000000000000000000000000..aff39cff9170f93dc3c5cdabf3d8217a
 +
 +    @Override
 +    public Collection<ResourcePack> getPacks() {
-+        Collection<ResourcePackLoader> enabledPacks = repository.e();
-+        return repository.c().stream().map(loader -> new PaperResourcePack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
++        Collection<ResourcePackLoader> enabledPacks = repository.getEnabledPacks();
++        return repository.getPacks().stream().map(loader -> new PaperResourcePack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
 +    }
 +
 +    @Override
 +    public Collection<ResourcePack> getEnabledPacks() {
-+        return repository.e().stream().map(loader -> new PaperResourcePack(loader, true)).collect(Collectors.toList());
++        return repository.getEnabledPacks().stream().map(loader -> new PaperResourcePack(loader, true)).collect(Collectors.toList());
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java b/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java
+index 5c038c02955d8517db0686f3b73c8573d3770466..cf594fa1f95408c5b46184578095946fdd217d56 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java
+@@ -2,6 +2,7 @@ package net.minecraft.server.packs.repository;
+ 
+ import com.mojang.brigadier.arguments.StringArgumentType;
+ import java.io.IOException;
++import java.util.Collection;
+ import java.util.List;
+ import java.util.function.Function;
+ import java.util.function.Supplier;
+@@ -102,6 +103,7 @@ public class ResourcePackLoader implements AutoCloseable {
+         });
+     }
+ 
++    public final EnumResourcePackVersion getVersion() { return this.c(); } // Paper - OBFHELPER
+     public EnumResourcePackVersion c() {
+         return this.g;
+     }
+@@ -110,6 +112,7 @@ public class ResourcePackLoader implements AutoCloseable {
+         return (IResourcePack) this.d.get();
+     }
+ 
++    public final String getName() { return this.e(); } // Paper - OBFHELPER
+     public String e() {
+         return this.c;
+     }
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ResourcePackRepository.java b/src/main/java/net/minecraft/server/packs/repository/ResourcePackRepository.java
+index e87523612d0423d71eab7b9af851c1c268cdf84f..568da9686c41a41e43ede3fe15e0ca53c9688f8b 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ResourcePackRepository.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ResourcePackRepository.java
+@@ -88,6 +88,7 @@ public class ResourcePackRepository implements AutoCloseable {
+         return this.b.keySet();
+     }
+ 
++    public final Collection<ResourcePackLoader> getPacks() { return this.c(); } // Paper - OBFHELPER
+     public Collection<ResourcePackLoader> c() {
+         return this.b.values();
+     }
+@@ -96,6 +97,7 @@ public class ResourcePackRepository implements AutoCloseable {
+         return (Collection) this.c.stream().map(ResourcePackLoader::e).collect(ImmutableSet.toImmutableSet());
+     }
+ 
++    public final Collection<ResourcePackLoader> getEnabledPacks() { return this.e(); } // Paper - OBFHELPER
+     public Collection<ResourcePackLoader> e() {
+         return this.c;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..d6514748e925b35b968711a8b02bb63a00cbdae3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
