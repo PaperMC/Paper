@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Connor Linfoot <connorlinfoot@me.com>
 Date: Sun, 16 May 2021 15:07:34 +0100
-Subject: [PATCH] Add basic ResourcePack/DataPack API
+Subject: [PATCH] Add basic Datapack API
 
 
-diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePack.java b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
+diff --git a/src/main/java/io/papermc/paper/resource/PaperDatapack.java b/src/main/java/io/papermc/paper/resource/PaperDatapack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cf59fb9591af3397ed0db290c5f02a7d82eb237d
+index 0000000000000000000000000000000000000000..3108efce8657db84329eceae43a10532f3d1f8d9
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
++++ b/src/main/java/io/papermc/paper/resource/PaperDatapack.java
 @@ -0,0 +1,51 @@
 +package io.papermc.paper.resource;
 +
@@ -19,12 +19,12 @@ index 0000000000000000000000000000000000000000..cf59fb9591af3397ed0db290c5f02a7d
 +import java.util.List;
 +import java.util.stream.Collectors;
 +
-+public class PaperResourcePack implements ResourcePack {
++public class PaperDatapack implements Datapack {
 +    private final String name;
 +    private final Compatibility compatibility;
 +    private final boolean enabled;
 +
-+    PaperResourcePack(ResourcePackLoader loader, boolean enabled) {
++    PaperDatapack(ResourcePackLoader loader, boolean enabled) {
 +        this.name = loader.getName();
 +        this.compatibility = Compatibility.valueOf(loader.getVersion().name());
 +        this.enabled = enabled;
@@ -61,11 +61,11 @@ index 0000000000000000000000000000000000000000..cf59fb9591af3397ed0db290c5f02a7d
 +        server.reloadServerResources(enabledKeys, ServerResourcesReloadedEvent.Cause.PLUGIN);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java b/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java
+diff --git a/src/main/java/io/papermc/paper/resource/PaperDatapackManager.java b/src/main/java/io/papermc/paper/resource/PaperDatapackManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58950bdff2992399310b8c6e9128660d40ec7ef7
+index 0000000000000000000000000000000000000000..5c4858dfc5a416c88c1dedca5d59ee72dd8aa0ca
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java
++++ b/src/main/java/io/papermc/paper/resource/PaperDatapackManager.java
 @@ -0,0 +1,26 @@
 +package io.papermc.paper.resource;
 +
@@ -75,22 +75,22 @@ index 0000000000000000000000000000000000000000..58950bdff2992399310b8c6e9128660d
 +import java.util.Collection;
 +import java.util.stream.Collectors;
 +
-+public class PaperResourcePackManager implements ResourcePackManager {
++public class PaperDatapackManager implements DatapackManager {
 +    private final ResourcePackRepository repository;
 +
-+    public PaperResourcePackManager(ResourcePackRepository repository) {
++    public PaperDatapackManager(ResourcePackRepository repository) {
 +        this.repository = repository;
 +    }
 +
 +    @Override
-+    public Collection<ResourcePack> getPacks() {
++    public Collection<Datapack> getPacks() {
 +        Collection<ResourcePackLoader> enabledPacks = repository.getEnabledPacks();
-+        return repository.getPacks().stream().map(loader -> new PaperResourcePack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
++        return repository.getPacks().stream().map(loader -> new PaperDatapack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
 +    }
 +
 +    @Override
-+    public Collection<ResourcePack> getEnabledPacks() {
-+        return repository.getEnabledPacks().stream().map(loader -> new PaperResourcePack(loader, true)).collect(Collectors.toList());
++    public Collection<Datapack> getEnabledPacks() {
++        return repository.getEnabledPacks().stream().map(loader -> new PaperDatapack(loader, true)).collect(Collectors.toList());
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java b/src/main/java/net/minecraft/server/packs/repository/ResourcePackLoader.java
@@ -134,14 +134,14 @@ index e87523612d0423d71eab7b9af851c1c268cdf84f..568da9686c41a41e43ede3fe15e0ca53
          return this.c;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..d6514748e925b35b968711a8b02bb63a00cbdae3 100644
+index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..9c842f149c0f0967168907f45ea7a0c527efb300 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -18,6 +18,7 @@ import com.mojang.serialization.Lifecycle;
  import io.netty.buffer.ByteBuf;
  import io.netty.buffer.ByteBufOutputStream;
  import io.netty.buffer.Unpooled;
-+import io.papermc.paper.resource.PaperResourcePackManager; // Paper
++import io.papermc.paper.resource.PaperDatapackManager; // Paper
  import io.papermc.paper.util.TraceUtil;
  import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
  import java.awt.image.BufferedImage;
@@ -149,7 +149,7 @@ index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..d6514748e925b35b968711a8b02bb63a
      public boolean ignoreVanillaPermissions = false;
      private final List<CraftPlayer> playerView;
      public int reloadCount;
-+    private final PaperResourcePackManager resourcePackManager; // Paper
++    private final PaperDatapackManager resourcePackManager; // Paper
      public static Exception excessiveVelEx; // Paper - Velocity warnings
  
      static {
@@ -157,7 +157,7 @@ index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..d6514748e925b35b968711a8b02bb63a
          TicketType.PLUGIN.loadPeriod = Math.min(20, configuration.getInt("chunk-gc.period-in-ticks")); // Paper - cap plugin loads to 1 second
          minimumAPI = configuration.getString("settings.minimum-api");
          loadIcon();
-+        resourcePackManager = new PaperResourcePackManager(console.getResourcePackRepository()); // Paper
++        resourcePackManager = new PaperDatapackManager(console.getResourcePackRepository()); // Paper
      }
  
      public boolean getCommandBlockOverride(String command) {
@@ -167,7 +167,7 @@ index 6cc8eb04f42592aa12f76bb4a0a863ea509741b2..d6514748e925b35b968711a8b02bb63a
      }
 +
 +    @Override
-+    public PaperResourcePackManager getResourcePackManager() {
++    public PaperDatapackManager getResourcePackManager() {
 +        return resourcePackManager;
 +    }
 +

@@ -1,20 +1,20 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Connor Linfoot <connorlinfoot@me.com>
 Date: Sun, 16 May 2021 15:07:34 +0100
-Subject: [PATCH] Add basic ResourcePack/DataPack API
+Subject: [PATCH] Add basic Datapack API
 
 
-diff --git a/src/main/java/io/papermc/paper/resource/ResourcePack.java b/src/main/java/io/papermc/paper/resource/ResourcePack.java
+diff --git a/src/main/java/io/papermc/paper/resource/Datapack.java b/src/main/java/io/papermc/paper/resource/Datapack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..26f32901f95b55fe2cb7f88df720e1287c9e471c
+index 0000000000000000000000000000000000000000..5233057bf1ee10da28d7c3b9c36665616650b1ea
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/resource/ResourcePack.java
++++ b/src/main/java/io/papermc/paper/resource/Datapack.java
 @@ -0,0 +1,32 @@
 +package io.papermc.paper.resource;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +
-+public interface ResourcePack {
++public interface Datapack {
 +
 +    /**
 +     * @return the name of the pack
@@ -42,11 +42,11 @@ index 0000000000000000000000000000000000000000..26f32901f95b55fe2cb7f88df720e128
 +    }
 +
 +}
-diff --git a/src/main/java/io/papermc/paper/resource/ResourcePackManager.java b/src/main/java/io/papermc/paper/resource/ResourcePackManager.java
+diff --git a/src/main/java/io/papermc/paper/resource/DatapackManager.java b/src/main/java/io/papermc/paper/resource/DatapackManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..697efd26d967326a7526b938b9cbc0ff974cd8d1
+index 0000000000000000000000000000000000000000..b404e1a0d0afbf6297cc0c2623696fac26bcbc08
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/resource/ResourcePackManager.java
++++ b/src/main/java/io/papermc/paper/resource/DatapackManager.java
 @@ -0,0 +1,21 @@
 +package io.papermc.paper.resource;
 +
@@ -54,35 +54,34 @@ index 0000000000000000000000000000000000000000..697efd26d967326a7526b938b9cbc0ff
 +
 +import java.util.Collection;
 +
-+public interface ResourcePackManager {
++public interface DatapackManager {
 +
 +    /**
 +     * @return all the packs known to the server
 +     */
 +    @NonNull
-+    Collection<ResourcePack> getPacks();
++    Collection<Datapack> getPacks();
 +
 +    /**
 +     * @return all the packs which are currently enabled
 +     */
 +    @NonNull
-+    Collection<ResourcePack> getEnabledPacks();
++    Collection<Datapack> getEnabledPacks();
 +
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 5f7208196684d9c8373df28b7cfb5f9e21baa41e..21450745ae5f54ac82b5ffae927f5c2c232125b9 100644
+index 5f7208196684d9c8373df28b7cfb5f9e21baa41e..366e184d792d7c981224d8e22f5dbcecad9c167d 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -13,6 +13,8 @@ import java.util.Set;
+@@ -13,6 +13,7 @@ import java.util.Set;
  import java.util.UUID;
  import java.util.function.Consumer;
  import java.util.logging.Logger;
 +
-+import io.papermc.paper.resource.ResourcePackManager; // Paper
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1937,6 +1939,14 @@ public final class Bukkit {
+@@ -1937,6 +1938,14 @@ public final class Bukkit {
      public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
          return server.getMobGoals();
      }
@@ -91,26 +90,25 @@ index 5f7208196684d9c8373df28b7cfb5f9e21baa41e..21450745ae5f54ac82b5ffae927f5c2c
 +     * @return the resource pack manager
 +     */
 +    @NotNull
-+    public static ResourcePackManager getResourcePackManager() {
++    public static io.papermc.paper.resource.DatapackManager getResourcePackManager() {
 +        return server.getResourcePackManager();
 +    }
      // Paper end
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index f3e27d2d02a9407bb1b091b8c1125ad5abf99e55..f31abc0940de2d3fbb45910e44f30ba8829f8b35 100644
+index f3e27d2d02a9407bb1b091b8c1125ad5abf99e55..d5ae5cf84d3cbacd8b0b58237f835303f3256255 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -13,6 +13,8 @@ import java.util.Set;
+@@ -13,6 +13,7 @@ import java.util.Set;
  import java.util.UUID;
  import java.util.function.Consumer;
  import java.util.logging.Logger;
 +
-+import io.papermc.paper.resource.ResourcePackManager; // Paper
  import org.bukkit.Warning.WarningState;
  import org.bukkit.advancement.Advancement;
  import org.bukkit.block.data.BlockData;
-@@ -1698,5 +1700,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -1698,5 +1699,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       */
      @NotNull
      com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
@@ -119,6 +117,6 @@ index f3e27d2d02a9407bb1b091b8c1125ad5abf99e55..f31abc0940de2d3fbb45910e44f30ba8
 +     * @return the resource pack manager
 +     */
 +    @NotNull
-+    ResourcePackManager getResourcePackManager();
++    io.papermc.paper.resource.DatapackManager getResourcePackManager();
      // Paper end
  }
