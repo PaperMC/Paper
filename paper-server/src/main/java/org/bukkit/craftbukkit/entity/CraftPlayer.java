@@ -280,7 +280,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         void sendPacket(Packet<?> packet);
 
-        void kickPlayer(Component reason);
+        void kickPlayer(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause); // Paper - kick event causes
     }
 
     public record CookieFuture(ResourceLocation key, CompletableFuture<byte[]> future) {
@@ -640,7 +640,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void kickPlayer(String message) {
         org.spigotmc.AsyncCatcher.catchOp("player kick"); // Spigot
-        this.getHandle().transferCookieConnection.kickPlayer(CraftChatMessage.fromStringOrEmpty(message, true));
+        this.getHandle().transferCookieConnection.kickPlayer(CraftChatMessage.fromStringOrEmpty(message, true), org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN); // Paper - kick event cause
     }
 
     // Paper start
@@ -652,10 +652,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void kick(final net.kyori.adventure.text.Component message) {
+        kick(message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN);
+    }
+
+    @Override
+    public void kick(net.kyori.adventure.text.Component message, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
         org.spigotmc.AsyncCatcher.catchOp("player kick");
         final ServerGamePacketListenerImpl connection = this.getHandle().connection;
         if (connection != null) {
-            connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message);
+            connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message, cause);
         }
     }
 
@@ -716,7 +721,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // Paper start - Improve chat handling
         if (ServerGamePacketListenerImpl.isChatMessageIllegal(msg)) {
-            this.getHandle().connection.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
+            this.getHandle().connection.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - kick event causes
         } else {
             if (msg.startsWith("/")) {
                 this.getHandle().connection.handleCommand(msg);
