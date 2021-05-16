@@ -6,14 +6,18 @@ Subject: [PATCH] Add basic ResourcePack/DataPack API
 
 diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePack.java b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c9d3aa1e1adbfbcf4400dead5118d7b2e57b8965
+index 0000000000000000000000000000000000000000..fa1e4d7778eb98b6d558bf4bf41034bc3e3ac7bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/resource/PaperResourcePack.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.resource;
 +
++import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.packs.repository.ResourcePackLoader;
-+import org.apache.commons.lang.NotImplementedException;
++
++import java.util.List;
++import java.util.stream.Collectors;
 +
 +public class PaperResourcePack implements ResourcePack {
 +    private final String name;
@@ -43,7 +47,14 @@ index 0000000000000000000000000000000000000000..c9d3aa1e1adbfbcf4400dead5118d7b2
 +
 +    @Override
 +    public void setEnabled(boolean enabled) {
-+        throw new NotImplementedException(); // todo
++        if (enabled == this.enabled) {
++            return;
++        }
++
++        MinecraftServer server = MinecraftServer.getServer();
++        List<String> enabledKeys = server.getResourcePackRepository().e().stream().map(ResourcePackLoader::e).collect(Collectors.toList());
++        enabledKeys.add(this.name);
++        server.reloadServerResources(enabledKeys, ServerResourcesReloadedEvent.Cause.PLUGIN);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java b/src/main/java/io/papermc/paper/resource/PaperResourcePackManager.java
