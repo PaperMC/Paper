@@ -42,7 +42,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (!testPermission(sender)) return true;
 
         CommandListenerWrapper icommandlistener = getListener(sender);
-        dispatcher.a(icommandlistener, toDispatcher(args, getName()), toDispatcher(args, commandLabel));
+        dispatcher.a(icommandlistener, toDispatcher(args, getName()), toDispatcher(args, commandLabel), true);
         return true;
     }
 
