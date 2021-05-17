@@ -182,7 +182,6 @@ import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.server.TabCompleteEvent;
-import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.ChunkGenerator;
@@ -1052,8 +1051,6 @@ public final class CraftServer implements Server {
 
         internal.setSpawnFlags(true, true);
         console.worldServer.put(internal.getDimensionKey(), internal);
-
-        pluginManager.callEvent(new WorldInitEvent(internal.getWorld()));
 
         getServer().loadSpawn(internal.getChunkProvider().playerChunkMap.worldLoadListener, internal);
 
