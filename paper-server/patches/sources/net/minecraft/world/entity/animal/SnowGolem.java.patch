@@ -32,22 +32,52 @@
                      this.level().gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(this, iblockdata));
                  }
              }
-@@ -153,6 +160,11 @@
+@@ -153,7 +160,19 @@
              if (world instanceof ServerLevel) {
                  ServerLevel worldserver = (ServerLevel) world;
  
+-                this.shear(worldserver, SoundSource.PLAYERS, itemstack);
 +                // CraftBukkit start
-+                if (!CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand)) {
-+                    return InteractionResult.PASS;
++                // Paper start - custom shear drops
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(worldserver, itemstack);
++                org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                // Paper end - custom shear drops
 +                }
 +                // CraftBukkit end
-                 this.shear(worldserver, SoundSource.PLAYERS, itemstack);
++                this.shear(worldserver, SoundSource.PLAYERS, itemstack, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
-@@ -169,7 +181,9 @@
+             }
+@@ -166,10 +185,29 @@
+ 
+     @Override
+     public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears) {
++    // Paper start - custom shear drops
++        this.shear(world, shearedSoundCategory, shears, this.generateDefaultDrops(world, shears));
++    }
++
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel serverLevel, final ItemStack shears) {
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        this.dropFromShearingLootTable(serverLevel, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (ignored, stack) -> {
++            drops.add(stack);
++        });
++        return drops;
++    }
++
++    @Override
++    public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears, java.util.List<ItemStack> drops) {
++        final ServerLevel worldserver1 = world; // Named for lambda consumption
++    // Paper end - custom shear drops
          world.playSound((Player) null, (Entity) this, SoundEvents.SNOW_GOLEM_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
          this.setPumpkin(false);
-         this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (worldserver1, itemstack1) -> {
+-        this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (worldserver1, itemstack1) -> {
++        drops.forEach(itemstack1 -> { // Paper - custom shear drops
 +            this.forceDrops = true; // CraftBukkit
              this.spawnAtLocation(worldserver1, itemstack1, this.getEyeHeight());
 +            this.forceDrops = false; // CraftBukkit

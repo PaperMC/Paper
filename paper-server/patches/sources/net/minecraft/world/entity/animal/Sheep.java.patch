@@ -21,29 +21,61 @@
  
  public class Sheep extends Animal implements Shearable {
  
-@@ -160,6 +165,11 @@
+@@ -160,7 +165,19 @@
                  ServerLevel worldserver = (ServerLevel) world;
  
                  if (this.readyForShearing()) {
+-                    this.shear(worldserver, SoundSource.PLAYERS, itemstack);
 +                    // CraftBukkit start
-+                    if (!CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand)) {
-+                        return InteractionResult.PASS;
++                    // Paper start - custom shear drops
++                    java.util.List<ItemStack> drops = this.generateDefaultDrops(worldserver, itemstack);
++                    org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
++                    if (event != null) {
++                        if (event.isCancelled()) {
++                            return InteractionResult.PASS;
++                        }
++                        drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                    // Paper end - custom shear drops
 +                    }
 +                    // CraftBukkit end
-                     this.shear(worldserver, SoundSource.PLAYERS, itemstack);
++                    this.shear(worldserver, SoundSource.PLAYERS, itemstack, drops); // Paper - custom shear drops
                      this.gameEvent(GameEvent.SHEAR, player);
                      itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
-@@ -178,7 +188,9 @@
+                     return InteractionResult.SUCCESS_SERVER;
+@@ -175,10 +192,29 @@
+ 
+     @Override
+     public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears) {
++        // Paper start - custom shear drops
++        this.shear(world, shearedSoundCategory, shears, this.generateDefaultDrops(world, shears));
++    }
++
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel serverLevel, final ItemStack shears) {
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        this.dropFromShearingLootTable(serverLevel, BuiltInLootTables.SHEAR_SHEEP, shears, (ignored, stack) -> {
++            for (int i = 0; i < stack.getCount(); ++i) drops.add(stack.copyWithCount(1));
++        });
++        return drops;
++    }
++
++    @Override
++    public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears, java.util.List<ItemStack> drops) {
++        final ServerLevel worldserver1 = world; // Named for lambda consumption
++        // Paper end - custom shear drops
          world.playSound((Player) null, (Entity) this, SoundEvents.SHEEP_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
-         this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SHEEP, shears, (worldserver1, itemstack1) -> {
-             for (int i = 0; i < itemstack1.getCount(); ++i) {
+-        this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SHEEP, shears, (worldserver1, itemstack1) -> {
+-            for (int i = 0; i < itemstack1.getCount(); ++i) {
+-                ItemEntity entityitem = this.spawnAtLocation(worldserver1, itemstack1.copyWithCount(1), 1.0F);
++        drops.forEach(itemstack1 -> { // Paper - custom drops - loop in generated default drops
++            if (true) { // Paper - custom drops - loop in generated default drops
 +                this.forceDrops = true; // CraftBukkit
-                 ItemEntity entityitem = this.spawnAtLocation(worldserver1, itemstack1.copyWithCount(1), 1.0F);
++                ItemEntity entityitem = this.spawnAtLocation(worldserver1, itemstack1, 1.0F); // Paper - custom drops - copy already done above
 +                this.forceDrops = false; // CraftBukkit
  
                  if (entityitem != null) {
                      entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
-@@ -276,6 +288,12 @@
+@@ -276,6 +312,12 @@
  
      @Override
      public void ate() {

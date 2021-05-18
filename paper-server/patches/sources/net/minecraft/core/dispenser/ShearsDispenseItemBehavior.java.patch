@@ -60,18 +60,21 @@
          Iterator iterator = list.iterator();
  
          while (iterator.hasNext()) {
-@@ -73,8 +102,13 @@
+@@ -73,8 +102,16 @@
  
              if (entityliving instanceof Shearable ishearable) {
                  if (ishearable.readyForShearing()) {
 -                    ishearable.shear(world, SoundSource.BLOCKS, shears);
 -                    world.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, pos);
 +                    // CraftBukkit start
-+                    if (CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem).isCancelled()) {
++                    // Paper start - Add drops to shear events
++                    org.bukkit.event.block.BlockShearEntityEvent event = CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem, ishearable.generateDefaultDrops(worldserver, itemstack));
++                    if (event.isCancelled()) {
++                        // Paper end - Add drops to shear events
 +                        continue;
 +                    }
 +                    // CraftBukkit end
-+                    ishearable.shear(worldserver, SoundSource.BLOCKS, itemstack);
++                    ishearable.shear(worldserver, SoundSource.BLOCKS, itemstack, CraftItemStack.asNMSCopy(event.getDrops())); // Paper - Add drops to shear events
 +                    worldserver.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, blockposition);
                      return true;
                  }

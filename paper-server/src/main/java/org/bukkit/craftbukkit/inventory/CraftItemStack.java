@@ -74,6 +74,16 @@ public final class CraftItemStack extends ItemStack {
         return stack;
     }
 
+    // Paper start
+    public static java.util.List<net.minecraft.world.item.ItemStack> asNMSCopy(java.util.List<? extends ItemStack> originals) {
+        final java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>(originals.size());
+        for (final ItemStack original : originals) {
+            items.add(asNMSCopy(original));
+        }
+        return items;
+    }
+    // Paper end
+
     public static net.minecraft.world.item.ItemStack copyNMSStack(net.minecraft.world.item.ItemStack original, int amount) {
         net.minecraft.world.item.ItemStack stack = original.copy();
         stack.setCount(amount);
