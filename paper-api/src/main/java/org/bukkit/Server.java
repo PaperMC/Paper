@@ -69,6 +69,18 @@ import org.jetbrains.annotations.Nullable;
 public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
     /**
+     * Returns the de facto plugins directory, generally used for storing plugin jars to be loaded,
+     * as well as their {@link org.bukkit.plugin.Plugin#getDataFolder() data folders}.
+     *
+     * <p>Plugins should use {@link org.bukkit.plugin.Plugin#getDataFolder()} rather than traversing this
+     * directory manually when determining the location in which to store their data and configuration files.</p>
+     *
+     * @return plugins directory
+     */
+    @NotNull
+    File getPluginsFolder();
+
+    /**
      * Used for all administrative messages, such as an operator using a
      * command.
      * <p>

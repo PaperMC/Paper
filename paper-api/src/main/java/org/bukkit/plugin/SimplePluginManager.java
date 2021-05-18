@@ -117,9 +117,22 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Plugin[] loadPlugins(@NotNull File directory) {
+        // Paper start - extra jars
+        return this.loadPlugins(directory, java.util.Collections.emptyList());
+    }
+    @NotNull
+    public Plugin[] loadPlugins(final @NotNull File directory, final @NotNull List<File> extraPluginJars) {
+        // Paper end
         if (true) {
             List<Plugin> pluginList = new ArrayList<>();
             java.util.Collections.addAll(pluginList, this.paperPluginManager.loadPlugins(directory));
+            for (File file : extraPluginJars) {
+                try {
+                    pluginList.add(this.paperPluginManager.loadPlugin(file));
+                } catch (Exception e) {
+                    this.server.getLogger().log(Level.SEVERE, "Plugin loading error!", e);
+                }
+            }
             return pluginList.toArray(new Plugin[0]);
         }
         Preconditions.checkArgument(directory != null, "Directory cannot be null");
