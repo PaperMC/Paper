@@ -17,11 +17,14 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
     private final Entity sheared;
     private final ItemStack tool;
     private boolean cancelled;
+    private java.util.List<ItemStack> drops; // Paper
 
-    public BlockShearEntityEvent(@NotNull Block dispenser, @NotNull Entity sheared, @NotNull ItemStack tool) {
+    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    public BlockShearEntityEvent(@NotNull Block dispenser, @NotNull Entity sheared, @NotNull ItemStack tool, final @NotNull java.util.List<ItemStack> drops) { // Paper - custom shear drops
         super(dispenser);
         this.sheared = sheared;
         this.tool = tool;
+        this.drops = drops; // Paper
     }
 
     /**
@@ -64,4 +67,24 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
     public static HandlerList getHandlerList() {
         return handlers;
     }
+    // Paper start - custom shear drops
+    /**
+     * Get an immutable list of drops for this shearing.
+     *
+     * @return the shearing drops
+     * @see #setDrops(java.util.List)
+     */
+    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<ItemStack> getDrops() {
+        return java.util.Collections.unmodifiableList(this.drops);
+    }
+
+    /**
+     * Sets the drops for the shearing.
+     *
+     * @param drops the shear drops
+     */
+    public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
+        this.drops = java.util.List.copyOf(drops);
+    }
+    // Paper end - custom shear drops
 }
