@@ -461,6 +461,35 @@ public final class CraftServer implements Server {
         io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.INSTANCE.enter(io.papermc.paper.plugin.entrypoint.Entrypoint.PLUGIN); // Paper - replace implementation
     }
 
+    // Paper start
+    @Override
+    public File getPluginsFolder() {
+        return this.console.getPluginsFolder();
+    }
+
+    private List<File> extraPluginJars() {
+        @SuppressWarnings("unchecked")
+        final List<File> jars = (List<File>) this.console.options.valuesOf("add-plugin");
+        final List<File> list = new ArrayList<>();
+        for (final File file : jars) {
+            if (!file.exists()) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument does not exist, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            if (!file.isFile()) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a file, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            if (!file.getName().endsWith(".jar")) {
+                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a jar file, cannot load a plugin from it!", file.getAbsolutePath());
+                continue;
+            }
+            list.add(file);
+        }
+        return list;
+    }
+    // Paper end
+
     public void enablePlugins(PluginLoadOrder type) {
         if (type == PluginLoadOrder.STARTUP) {
             this.helpMap.clear();

@@ -160,6 +160,12 @@ public class Main {
                         .ofType(File.class)
                         .defaultsTo(new File("paper.yml"))
                         .describedAs("Yml file");
+
+                acceptsAll(asList("add-plugin", "add-extra-plugin-jar"), "Specify paths to extra plugin jars to be loaded in addition to those in the plugins folder. This argument can be specified multiple times, once for each extra plugin jar path.")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File[] {})
+                        .describedAs("Jar file");
                 // Paper end
             }
         };
