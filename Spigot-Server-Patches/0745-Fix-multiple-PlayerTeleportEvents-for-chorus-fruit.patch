@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 18 May 2021 17:30:49 -0700
+Subject: [PATCH] Fix multiple PlayerTeleportEvents for chorus fruit
+
+Fixes SPIGOT-6133: https://hub.spigotmc.org/jira/browse/SPIGOT-6133
+
+diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+index 558af73ac16550ee6964c4dce681a404633b2552..30c61fb36a269a7418b96966a1f1061a36e76043 100644
+--- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
+@@ -1768,7 +1768,13 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+ 
+     @Override
+     public void enderTeleportTo(double d0, double d1, double d2) {
+-        this.playerConnection.a(d0, d1, d2, this.yaw, this.pitch);
++        // Paper start
++        this.enderTeleportTo(d0, d1, d2, TeleportCause.UNKNOWN);
++    }
++    @Override
++    public void enderTeleportTo(double d0, double d1, double d2, TeleportCause cause) {
++        this.playerConnection.a(d0, d1, d2, this.yaw, this.pitch, cause);
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 6fdcd96fd75cd63d769b012827519f554af4cf54..b8ee04f5cfd66f954a1e4e33def69a1bf10bc9c1 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2935,6 +2935,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+     }
+ 
+     public void enderTeleportTo(double d0, double d1, double d2) {
++        // Paper start
++        this.enderTeleportTo(d0, d1, d2, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++    public void enderTeleportTo(double d0, double d1, double d2, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // Paper end
+         if (this.world instanceof WorldServer) {
+             WorldServer worldserver = (WorldServer) this.world;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index 2537c9fcf155253da53ada3829c3caca765f35f4..d52520fec5088254f84c711331f1bf9391cbf660 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -3447,6 +3447,11 @@ public abstract class EntityLiving extends Entity {
+     }
+ 
+     public boolean a(double d0, double d1, double d2, boolean flag) {
++        // Paper start
++        return this.randomTeleport(d0, d1, d2, flag, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++    public boolean randomTeleport(double d0, double d1, double d2, boolean flag, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // Paper end
+         double d3 = this.locX();
+         double d4 = this.locY();
+         double d5 = this.locZ();
+@@ -3477,7 +3482,7 @@ public abstract class EntityLiving extends Entity {
+                 this.world.getServer().getPluginManager().callEvent(teleport);
+                 if (!teleport.isCancelled()) {
+                     Location to = teleport.getTo();
+-                    this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
++                    this.enderTeleportTo(to.getX(), to.getY(), to.getZ(), cause); // Paper
+                     if (world.getCubes(this) && !world.containsLiquid(this.getBoundingBox())) {
+                         flag1 = true;
+                     }
+diff --git a/src/main/java/net/minecraft/world/item/ItemChorusFruit.java b/src/main/java/net/minecraft/world/item/ItemChorusFruit.java
+index 8260cd7f82dd5f8c4f22c532c9d905dcf161234e..3e59ca0bf13e77e5fd3e0a5f687d1a96fbf4f49b 100644
+--- a/src/main/java/net/minecraft/world/item/ItemChorusFruit.java
++++ b/src/main/java/net/minecraft/world/item/ItemChorusFruit.java
+@@ -36,25 +36,25 @@ public class ItemChorusFruit extends Item {
+                 double d4 = MathHelper.a(entityliving.locY() + (double) (entityliving.getRandom().nextInt(16) - 8), 0.0D, (double) (world.getHeight() - 1));
+                 double d5 = entityliving.locZ() + (entityliving.getRandom().nextDouble() - 0.5D) * 16.0D;
+ 
+-                // CraftBukkit start
+-                if (entityliving instanceof EntityPlayer) {
+-                    Player player = ((EntityPlayer) entityliving).getBukkitEntity();
+-                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), new Location(player.getWorld(), d3, d4, d5), PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
+-                    world.getServer().getPluginManager().callEvent(teleEvent);
+-                    if (teleEvent.isCancelled()) {
+-                        break;
+-                    }
+-                    d3 = teleEvent.getTo().getX();
+-                    d4 = teleEvent.getTo().getY();
+-                    d5 = teleEvent.getTo().getZ();
+-                }
++                // CraftBukkit start // Paper - this is totally the wrong spot to call this event
++                // if (entityliving instanceof EntityPlayer) {
++                //     Player player = ((EntityPlayer) entityliving).getBukkitEntity();
++                //     PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), new Location(player.getWorld(), d3, d4, d5), PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
++                //     world.getServer().getPluginManager().callEvent(teleEvent);
++                //     if (teleEvent.isCancelled()) {
++                //         break;
++                //     }
++                //     d3 = teleEvent.getTo().getX();
++                //     d4 = teleEvent.getTo().getY();
++                //     d5 = teleEvent.getTo().getZ();
++                // }
+                 // CraftBukkit end
+ 
+                 if (entityliving.isPassenger()) {
+                     entityliving.stopRiding();
+                 }
+ 
+-                if (entityliving.a(d3, d4, d5, true)) {
++                if (entityliving.randomTeleport(d3, d4, d5, true, PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT)) { // Paper
+                     SoundEffect soundeffect = entityliving instanceof EntityFox ? SoundEffects.ENTITY_FOX_TELEPORT : SoundEffects.ITEM_CHORUS_FRUIT_TELEPORT;
+ 
+                     world.playSound((EntityHuman) null, d0, d1, d2, soundeffect, SoundCategory.PLAYERS, 1.0F, 1.0F);
