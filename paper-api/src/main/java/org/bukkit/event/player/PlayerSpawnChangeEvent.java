@@ -10,7 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This event is fired when the spawn point of the player is changed.
+ * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}
  */
+@Deprecated(forRemoval = true) // Paper
 public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
