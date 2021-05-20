@@ -1,15 +1,22 @@
 --- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
-@@ -88,7 +88,7 @@
+@@ -88,9 +88,14 @@
                  ServerPlayer entityplayer = (ServerPlayer) player;
  
                  if (entityplayer.getRespawnDimension() != world.dimension() || !pos.equals(entityplayer.getRespawnPosition())) {
 -                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true);
-+                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR); // CraftBukkit
++                    if (entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
                      world.playSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
                      return InteractionResult.SUCCESS_SERVER;
++                    // Paper start - Add PlayerSetSpawnEvent
++                    } else {
++                        return InteractionResult.FAIL;
++                    }
++                    // Paper end - Add PlayerSetSpawnEvent
                  }
-@@ -127,15 +127,16 @@
+             }
+ 
+@@ -127,15 +132,16 @@
      }
  
      private void explode(BlockState state, Level world, final BlockPos explodedPos) {
@@ -28,7 +35,7 @@
              @Override
              public Optional<Float> getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState) {
                  return pos.equals(explodedPos) && flag1 ? Optional.of(Blocks.WATER.getExplosionResistance()) : super.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState);
-@@ -143,7 +144,7 @@
+@@ -143,7 +149,7 @@
          };
          Vec3 vec3d = explodedPos.getCenter();
  

@@ -1,11 +1,42 @@
 --- a/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/net/minecraft/server/commands/SetSpawnCommand.java
-@@ -41,7 +41,7 @@
+@@ -38,24 +38,34 @@
+         ResourceKey<Level> resourcekey = source.getLevel().dimension();
+         Iterator iterator = targets.iterator();
+ 
++        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
 -            entityplayer.setRespawnPosition(resourcekey, pos, angle, true, false);
-+            entityplayer.setRespawnPosition(resourcekey, pos, angle, true, false, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.COMMAND); // CraftBukkit
++            // Paper start - Add PlayerSetSpawnEvent
++            if (entityplayer.setRespawnPosition(resourcekey, pos, angle, true, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++                actualTargets.add(entityplayer);
++            }
++            // Paper end - Add PlayerSetSpawnEvent
          }
++        // Paper start - Add PlayerSetSpawnEvent
++        if (actualTargets.isEmpty()) {
++            return 0;
++        }
++        // Paper end - Add PlayerSetSpawnEvent
  
          String s = resourcekey.location().toString();
+ 
+-        if (targets.size() == 1) {
++        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
+             source.sendSuccess(() -> {
+-                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) targets.iterator().next()).getDisplayName());
++                return Component.translatable("commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), angle, s, ((ServerPlayer) actualTargets.iterator().next()).getDisplayName()); // Paper - Add PlayerSetSpawnEvent
+             }, true);
+         } else {
+             source.sendSuccess(() -> {
+-                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, targets.size());
++                return Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), angle, s, actualTargets.size()); // Paper - Add PlayerSetSpawnEvent
+             }, true);
+         }
+ 
+-        return targets.size();
++        return actualTargets.size(); // Paper - Add PlayerSetSpawnEvent
+     }
+ }
