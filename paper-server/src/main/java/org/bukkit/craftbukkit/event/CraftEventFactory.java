@@ -884,6 +884,32 @@ public class CraftEventFactory {
         return event;
     }
 
+    // Paper start - Fix potions splash events
+    public static io.papermc.paper.event.entity.WaterBottleSplashEvent callWaterBottleSplashEvent(net.minecraft.world.entity.projectile.ThrownPotion potion, @Nullable HitResult hitResult, Map<LivingEntity, Double> affectedEntities, java.util.Set<LivingEntity> rehydrate, java.util.Set<LivingEntity> extinguish) {
+        ThrownPotion thrownPotion = (ThrownPotion) potion.getBukkitEntity();
+
+        Block hitBlock = null;
+        BlockFace hitFace = null;
+        org.bukkit.entity.Entity hitEntity = null;
+
+        if (hitResult != null) {
+            if (hitResult.getType() == HitResult.Type.BLOCK) {
+                BlockHitResult blockHitResult = (BlockHitResult) hitResult;
+                hitBlock = CraftBlock.at(potion.level(), blockHitResult.getBlockPos());
+                hitFace = CraftBlock.notchToBlockFace(blockHitResult.getDirection());
+            } else if (hitResult.getType() == HitResult.Type.ENTITY) {
+                hitEntity = ((EntityHitResult) hitResult).getEntity().getBukkitEntity();
+            }
+        }
+
+        io.papermc.paper.event.entity.WaterBottleSplashEvent event = new io.papermc.paper.event.entity.WaterBottleSplashEvent(
+            thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities, rehydrate, extinguish
+        );
+        event.callEvent();
+        return event;
+    }
+    // Paper end - Fix potions splash events
+
     /**
      * BlockFadeEvent
      */
