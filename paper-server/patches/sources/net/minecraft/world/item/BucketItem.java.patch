@@ -9,7 +9,7 @@
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
-@@ -29,6 +31,12 @@
+@@ -29,9 +31,17 @@
  import net.minecraft.world.level.material.Fluids;
  import net.minecraft.world.phys.BlockHitResult;
  import net.minecraft.world.phys.HitResult;
@@ -22,7 +22,12 @@
  
  public class BucketItem extends Item implements DispensibleContainerItem {
  
-@@ -63,7 +71,18 @@
++    private static @Nullable ItemStack itemLeftInHandAfterPlayerBucketEmptyEvent = null; // Paper - Fix PlayerBucketEmptyEvent result itemstack
++
+     public final Fluid content;
+ 
+     public BucketItem(Fluid fluid, Item.Properties settings) {
+@@ -63,7 +73,18 @@
  
                      if (block instanceof BucketPickup) {
                          BucketPickup ifluidsource = (BucketPickup) block;
@@ -41,7 +46,7 @@
                          itemstack1 = ifluidsource.pickupBlock(user, world, blockposition, iblockdata);
                          if (!itemstack1.isEmpty()) {
                              user.awardStat(Stats.ITEM_USED.get(this));
-@@ -71,7 +90,7 @@
+@@ -71,7 +92,7 @@
                                  user.playSound(soundeffect, 1.0F, 1.0F);
                              });
                              world.gameEvent((Entity) user, (Holder) GameEvent.FLUID_PICKUP, blockposition);
@@ -50,7 +55,7 @@
  
                              if (!world.isClientSide) {
                                  CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer) user, itemstack1);
-@@ -86,7 +105,7 @@
+@@ -86,7 +107,7 @@
                      iblockdata = world.getBlockState(blockposition);
                      BlockPos blockposition2 = iblockdata.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? blockposition : blockposition1;
  
@@ -59,7 +64,21 @@
                          this.checkExtraContent(user, world, itemstack, blockposition2);
                          if (user instanceof ServerPlayer) {
                              CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) user, blockposition2, itemstack);
-@@ -114,6 +133,12 @@
+@@ -106,6 +127,13 @@
+     }
+ 
+     public static ItemStack getEmptySuccessItem(ItemStack stack, Player player) {
++        // Paper start - Fix PlayerBucketEmptyEvent result itemstack
++        if (itemLeftInHandAfterPlayerBucketEmptyEvent != null) {
++            ItemStack itemInHand = itemLeftInHandAfterPlayerBucketEmptyEvent;
++            itemLeftInHandAfterPlayerBucketEmptyEvent = null;
++            return itemInHand;
++        }
++        // Paper end - Fix PlayerBucketEmptyEvent result itemstack
+         return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : stack;
+     }
+ 
+@@ -114,6 +142,12 @@
  
      @Override
      public boolean emptyContents(@Nullable Player player, Level world, BlockPos pos, @Nullable BlockHitResult hitResult) {
@@ -72,7 +91,7 @@
          Fluid fluidtype = this.content;
  
          if (!(fluidtype instanceof FlowingFluid fluidtypeflowing)) {
-@@ -126,7 +151,7 @@
+@@ -126,7 +160,7 @@
              boolean flag1;
              label70:
              {
@@ -81,7 +100,7 @@
                  block = iblockdata.getBlock();
                  flag = iblockdata.canBeReplaced(this.content);
                  if (!iblockdata.isAir() && !flag) {
-@@ -134,7 +159,7 @@
+@@ -134,7 +168,7 @@
                      {
                          if (block instanceof LiquidBlockContainer) {
                              ifluidcontainer = (LiquidBlockContainer) block;
@@ -90,7 +109,7 @@
                                  break label67;
                              }
                          }
-@@ -149,14 +174,24 @@
+@@ -149,14 +183,25 @@
  
              boolean flag2 = flag1;
  
@@ -102,6 +121,7 @@
 +                    ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
 +                    return false;
 +                }
++                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
 +            }
 +            // CraftBukkit end
              if (!flag2) {
@@ -120,7 +140,7 @@
  
                  for (int l = 0; l < 8; ++l) {
                      world.addParticle(ParticleTypes.LARGE_SMOKE, (double) i + Math.random(), (double) j + Math.random(), (double) k + Math.random(), 0.0D, 0.0D, 0.0D);
-@@ -167,20 +202,20 @@
+@@ -167,20 +212,20 @@
                  if (block instanceof LiquidBlockContainer) {
                      ifluidcontainer = (LiquidBlockContainer) block;
                      if (this.content == Fluids.WATER) {
