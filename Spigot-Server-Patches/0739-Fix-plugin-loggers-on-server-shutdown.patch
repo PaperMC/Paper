@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jos=C3=A9=20Miguel=20Moreno?= <josemmo@pm.me>
+Date: Sat, 22 May 2021 17:59:24 +0200
+Subject: [PATCH] Fix plugin loggers on server shutdown
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java b/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cc9f5e3dd5a43c033a716675450c149be3e2d61d
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java
+@@ -0,0 +1,26 @@
++package com.destroystokyo.paper.log;
++
++import java.util.logging.LogManager;
++
++public class CustomLogManager extends LogManager {
++    private static CustomLogManager instance;
++
++    public CustomLogManager() {
++        instance = this;
++    }
++
++    @Override
++    public void reset() {
++        // Ignore calls to this method
++    }
++
++    private void superReset() {
++        super.reset();
++    }
++
++    public static void forceReset() {
++        if (instance != null) {
++            instance.superReset();
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 848219f43b2bcb2d79147107c68df52efd46d461..3604c367bbe4a138c6c434b1a4a27586b26f4ddc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -968,6 +968,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+             net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+         } catch (Exception e) {
+         }
++        com.destroystokyo.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
+         this.exit();
+         // Paper end
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 409fbeeb66fb8f58a72d94686bc9515299927b75..743139cb322f0934636e760a46c78478c27b7112 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -20,6 +20,12 @@ public class Main {
+     public static boolean useJline = true;
+     public static boolean useConsole = true;
+ 
++    // Paper start - Hijack log manager to ensure logging on shutdown
++    static {
++        System.setProperty("java.util.logging.manager", com.destroystokyo.paper.log.CustomLogManager.class.getName());
++    }
++    // Paper end
++
+     public static void main(String[] args) {
+         // Paper start
+         final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");
