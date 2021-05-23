@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 23 May 2021 17:33:28 +0100
+Subject: [PATCH] Improve fixTileEntity
+
+Improves fixTileEntity to actually remove invalid TEs from the world
+
+Also, maybe marginal pointless improvements to removeTileEntity to
+make it safer to call in more places without potentially busting state
+
+diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
+index 6aace2155258d8257d53ebfcb20c37ea7497c02c..ab4bf94233d1b50d74b3a6a77c92d64812c42472 100644
+--- a/src/main/java/net/minecraft/server/level/WorldServer.java
++++ b/src/main/java/net/minecraft/server/level/WorldServer.java
+@@ -407,11 +407,13 @@ public class WorldServer extends World implements GeneratorAccessSeed {
+             if (replacement != null) {
+                 replacement.setLocation(this, pos);
+                 this.setTileEntity(pos, replacement);
++        // Paper start
++                return replacement; // Paper
+             }
+-            return replacement;
+-        } else {
+-            return found;
+         }
++        this.removeTileEntity(pos);
++        return null;
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/world/level/World.java b/src/main/java/net/minecraft/world/level/World.java
+index f7f593a9e58b537109fa6ca1c783f6614f4bfad5..0d1a0f45ef98f91c28c276f7e5b969c1d1785754 100644
+--- a/src/main/java/net/minecraft/world/level/World.java
++++ b/src/main/java/net/minecraft/world/level/World.java
+@@ -1084,10 +1084,11 @@ public abstract class World implements GeneratorAccess, AutoCloseable {
+ 
+         if (tileentity != null && this.tickingTileEntities) {
+             tileentity.al_();
+-            this.tileEntityListPending.remove(tileentity);
++            //this.tileEntityListPending.remove(tileentity); // Paper - Don't remove immediate
+         } else {
+             if (tileentity != null) {
+-                this.tileEntityListPending.remove(tileentity);
++                //this.tileEntityListPending.remove(tileentity); // Paper - Don't remove immediate
++                tileentity.markRemoved(); // Paper
+                 //this.tileEntityList.remove(tileentity); // Paper - remove unused list
+                 this.tileEntityListTick.remove(tileentity);
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
+index 93d02ccb87c17404c55884f52ae40c7b7ddfb103..0cfc2e8dda093f23821361b08412fa4686fe2dd9 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TileEntity.java
+@@ -198,6 +198,7 @@ public abstract class TileEntity implements net.minecraft.server.KeyedObject { /
+         return this.f;
+     }
+ 
++    public void markRemoved() { this.al_(); } // Paper - OBFHELPER
+     public void al_() {
+         this.f = true;
+     }
