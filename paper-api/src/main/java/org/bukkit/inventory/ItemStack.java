@@ -574,6 +574,50 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return result.ensureServerConversions(); // Paper
     }
 
+    // Paper start
+    /**
+     * Edits the {@link ItemMeta} of this stack.
+     * <p>
+     * The {@link java.util.function.Consumer} must only interact
+     * with this stack's {@link ItemMeta} through the provided {@link ItemMeta} instance.
+     * Calling this method or any other meta-related method of the {@link ItemStack} class
+     * (such as {@link #getItemMeta()}, {@link #addItemFlags(ItemFlag...)}, {@link #lore()}, etc.)
+     * from inside the consumer is disallowed and will produce undefined results or exceptions.
+     * </p>
+     *
+     * @param consumer the meta consumer
+     * @return {@code true} if the edit was successful, {@code false} otherwise
+     */
+    public boolean editMeta(final @NotNull java.util.function.Consumer<? super ItemMeta> consumer) {
+        return editMeta(ItemMeta.class, consumer);
+    }
+
+    /**
+     * Edits the {@link ItemMeta} of this stack if the meta is of the specified type.
+     * <p>
+     * The {@link java.util.function.Consumer} must only interact
+     * with this stack's {@link ItemMeta} through the provided {@link ItemMeta} instance.
+     * Calling this method or any other meta-related method of the {@link ItemStack} class
+     * (such as {@link #getItemMeta()}, {@link #addItemFlags(ItemFlag...)}, {@link #lore()}, etc.)
+     * from inside the consumer is disallowed and will produce undefined results or exceptions.
+     * </p>
+     *
+     * @param metaClass the type of meta to edit
+     * @param consumer the meta consumer
+     * @param <M> the meta type
+     * @return {@code true} if the edit was successful, {@code false} otherwise
+     */
+    public <M extends ItemMeta> boolean editMeta(final @NotNull Class<M> metaClass, final @NotNull java.util.function.Consumer<@NotNull ? super M> consumer) {
+        final @Nullable ItemMeta meta = this.getItemMeta();
+        if (metaClass.isInstance(meta)) {
+            consumer.accept((M) meta);
+            this.setItemMeta(meta);
+            return true;
+        }
+        return false;
+    }
+    // Paper end
+
     /**
      * Get a copy of this ItemStack's {@link ItemMeta}.
      *
