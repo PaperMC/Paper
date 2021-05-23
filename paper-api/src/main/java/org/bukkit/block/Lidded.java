@@ -13,4 +13,13 @@ public interface Lidded {
      * viewing this block.
      */
     void close();
+
+    // Paper start - More Lidded Block API
+    /**
+     * Checks if the block's animation state.
+     *
+     * @return true if the block's animation state is set to open.
+     */
+    boolean isOpen();
+    // Paper end - More Lidded Block API
 }
