@@ -27,8 +27,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                boolean handledByEvent = false;
 +                // Try and handle the handshake through the event
 +                if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
-+                    java.net.InetSocketAddress socketAddress = (java.net.InetSocketAddress) this.getNetworkManager().socketAddress;
-+                    com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packethandshakinginsetprotocol.hostname, socketAddress.getAddress().getHostAddress(), !proxyLogicEnabled);
++                    java.net.SocketAddress socketAddress = this.getNetworkManager().socketAddress;
++                    String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : InetAddress.getLoopbackAddress().getHostAddress();
++                    com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packethandshakinginsetprotocol.hostname, hostnameOfRemote, !proxyLogicEnabled);
 +                    if (event.callEvent()) {
 +                        // If we've failed somehow, let the client know so and go no further.
 +                        if (event.isFailed()) {
@@ -39,7 +40,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        }
 +
 +                        if (event.getServerHostname() != null) packethandshakinginsetprotocol.hostname = event.getServerHostname();
-+                        if (event.getSocketAddressHostname() != null) this.getNetworkManager().socketAddress = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress.getPort());
++                        if (event.getSocketAddressHostname() != null) this.getNetworkManager().socketAddress = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
 +                        this.getNetworkManager().spoofedUUID = event.getUniqueId();
 +                        this.getNetworkManager().spoofedProfile = gson.fromJson(event.getPropertiesJson(), com.mojang.authlib.properties.Property[].class);
 +                        handledByEvent = true; // Hooray, we did it!
