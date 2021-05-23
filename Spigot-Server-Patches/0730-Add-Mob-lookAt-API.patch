@@ -5,24 +5,24 @@ Subject: [PATCH] Add Mob#lookAt API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntityInsentient.java b/src/main/java/net/minecraft/world/entity/EntityInsentient.java
-index a246edd09854dabf095da75c9d200f5cf26e7138..1b8f42780cf852b287a7db401e63bdb9b3d097b7 100644
+index a246edd09854dabf095da75c9d200f5cf26e7138..718257ba7a65d473c8103a204e42b0faf4ce228b 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityInsentient.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityInsentient.java
 @@ -852,14 +852,17 @@ public abstract class EntityInsentient extends EntityLiving {
  
      protected void mobTick() {}
  
-+    public int getLookPitchSpeed() { return O(); } // Paper - OBFHELPER
++    public int getHeadPitchRotationSpeedForLookController() { return O(); } // Paper - OBFHELPER
      public int O() {
          return 40;
      }
  
-+    public int getBodyYawSpeed() { return Q(); } // Paper - OBFHELPER
++    public int getBodyYawRotationSpeedForLookController() { return Q(); } // Paper - OBFHELPER
      public int Q() {
          return 75;
      }
  
-+    public int getLookYawSpeed() { return ep(); } // Paper - OBFHELPER
++    public int getHeadYawRotationSpeedForLookController() { return ep(); } // Paper - OBFHELPER
      public int ep() {
          return 10;
      }
@@ -54,60 +54,40 @@ index 3ce9edde641c8b8eea75479615bcd2866ffd2198..950c92e008545405aec6962e75117b84
          this.e = d0;
          this.f = d1;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-index 06cbe63ef04e0de824ac0b9d545b6da1f53701b3..e9b0e03cd770eb47bc611014a50e382587e697b6 100644
+index 06cbe63ef04e0de824ac0b9d545b6da1f53701b3..b6766364ab42c679c968cf3cef0235bbfca65e54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-@@ -1,13 +1,17 @@
- package org.bukkit.craftbukkit.entity;
- 
-+import com.google.common.base.Preconditions;
- import net.minecraft.world.entity.EntityInsentient;
- import org.bukkit.Bukkit;
-+import org.bukkit.Location;
- import org.bukkit.NamespacedKey;
- import org.bukkit.craftbukkit.CraftServer;
- import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-+import org.bukkit.entity.Entity;
- import org.bukkit.entity.LivingEntity;
- import org.bukkit.entity.Mob;
- import org.bukkit.loot.LootTable;
-+import org.jetbrains.annotations.NotNull;
- 
- public abstract class CraftMob extends CraftLivingEntity implements Mob {
-     public CraftMob(CraftServer server, EntityInsentient entity) {
-@@ -84,5 +88,55 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+@@ -84,5 +84,53 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
      public boolean isInDaylight() {
          return getHandle().isInDaylight();
      }
 +
 +    @Override
-+    public void lookAt(@NotNull Location location) {
-+        Preconditions.checkNotNull(location, "location cannot be null");
-+        Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
-+        lookAt(location.getX(), location.getY(), location.getZ());
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location) {
++        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
++        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
++        getHandle().getControllerLook().lookAt(location.getX(), location.getY(), location.getZ());
 +    }
 +
 +    @Override
-+    public void lookAt(@NotNull Location location, float yawSpeed, float pitchSpeed) {
-+        Preconditions.checkNotNull(location, "location cannot be null");
-+        Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
-+        lookAt(location.getX(), location.getY(), location.getZ(), yawSpeed, pitchSpeed);
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.Location location, float yawSpeed, float pitchSpeed) {
++        com.google.common.base.Preconditions.checkNotNull(location, "location cannot be null");
++        com.google.common.base.Preconditions.checkArgument(location.getWorld().equals(getWorld()), "location in a different world");
++        getHandle().getControllerLook().lookAt(location.getX(), location.getY(), location.getZ(), yawSpeed, pitchSpeed);
 +    }
 +
 +    @Override
-+    public void lookAt(@NotNull Entity entity) {
-+        Preconditions.checkNotNull(entity, "entity cannot be null");
-+        Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
-+        Location location = entity instanceof LivingEntity ? ((LivingEntity) entity).getEyeLocation() : entity.getLocation();
-+        lookAt(location.getX(), location.getY(), location.getZ());
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity) {
++        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
++        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
++        getHandle().getControllerLook().lookAt(((CraftEntity) entity).getHandle(), getHeadYawRotationSpeedForLookController(), getHeadPitchRotationSpeedForLookController());
 +    }
 +
 +    @Override
-+    public void lookAt(@NotNull Entity entity, float yawSpeed, float pitchSpeed) {
-+        Preconditions.checkNotNull(entity, "entity cannot be null");
-+        Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
-+        Location location = entity instanceof LivingEntity ? ((LivingEntity) entity).getEyeLocation() : entity.getLocation();
-+        lookAt(location.getX(), location.getY(), location.getZ(), yawSpeed, pitchSpeed);
++    public void lookAt(@org.jetbrains.annotations.NotNull org.bukkit.entity.Entity entity, float yawSpeed, float pitchSpeed) {
++        com.google.common.base.Preconditions.checkNotNull(entity, "entity cannot be null");
++        com.google.common.base.Preconditions.checkArgument(entity.getWorld().equals(getWorld()), "entity in a different world");
++        getHandle().getControllerLook().lookAt(((CraftEntity) entity).getHandle(), yawSpeed, pitchSpeed);
 +    }
 +
 +    @Override
@@ -121,13 +101,13 @@ index 06cbe63ef04e0de824ac0b9d545b6da1f53701b3..e9b0e03cd770eb47bc611014a50e3825
 +    }
 +
 +    @Override
-+    public int getLookYawSpeed() {
-+        return getHandle().getLookYawSpeed();
++    public int getHeadYawRotationSpeedForLookController() {
++        return getHandle().getHeadYawRotationSpeedForLookController();
 +    }
 +
 +    @Override
-+    public int getLookPitchSpeed() {
-+        return getHandle().getLookPitchSpeed();
++    public int getHeadPitchRotationSpeedForLookController() {
++        return getHandle().getHeadPitchRotationSpeedForLookController();
 +    }
      // Paper end
  }
