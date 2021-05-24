@@ -104,6 +104,7 @@ import PathfinderAbstract
 import PathfinderGoal
 import PathfinderGoalFloat
 import PathfinderGoalGotoTarget
+import PathfinderGoalSelector
 import PathfinderWater
 import PersistentScoreboard
 import PersistentVillage
