@@ -105,13 +105,13 @@ index 0000000000000000000000000000000000000000..89597b4a3064c3c6001c7e927a848ee7
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43eb655ac43
+index 0000000000000000000000000000000000000000..e7ca0a44919ad052fa2ef279b4cd8989f8969a20
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,213 @@
 +package io.papermc.paper.adventure;
 +
-+import io.papermc.paper.chat.ChatComposer;
++import io.papermc.paper.chat.ChatRenderer;
 +import io.papermc.paper.event.player.AbstractChatEvent;
 +import io.papermc.paper.event.player.AsyncChatEvent;
 +import io.papermc.paper.event.player.ChatEvent;
@@ -120,11 +120,11 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +import java.util.function.Consumer;
 +import java.util.regex.Pattern;
 +
++import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.audience.MessageType;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.TextReplacementConfig;
 +import net.kyori.adventure.text.event.ClickEvent;
-+import net.minecraft.network.chat.ChatMessageType;
 +import net.minecraft.network.chat.IChatBaseComponent;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.EntityPlayer;
@@ -171,7 +171,7 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +            // continuing from AsyncPlayerChatEvent (without PlayerChatEvent)
 +            event -> {
 +                this.processModern(
-+                    legacyComposer(event.getFormat()),
++                    legacyRenderer(event.getFormat()),
 +                    event.getRecipients(),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -180,7 +180,7 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +            // continuing from AsyncPlayerChatEvent and PlayerChatEvent
 +            event -> {
 +                this.processModern(
-+                    legacyComposer(event.getFormat()),
++                    legacyRenderer(event.getFormat()),
 +                    event.getRecipients(),
 +                    PaperAdventure.LEGACY_SECTION_UXRC.deserialize(event.getMessage()),
 +                    event.isCancelled()
@@ -189,7 +189,7 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +            // no legacy events called, all nice and fresh!
 +            () -> {
 +                this.processModern(
-+                    ChatComposer.DEFAULT,
++                    ChatRenderer.defaultRenderer(),
 +                    new LazyPlayerSet(this.server),
 +                    Component.text(this.message).replaceText(URL_REPLACEMENT_CONFIG),
 +                    false
@@ -229,8 +229,8 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +        }
 +    }
 +
-+    private void processModern(final ChatComposer composer, final Set<Player> recipients, final Component message, final boolean cancelled) {
-+        final AsyncChatEvent ae = this.createAsync(composer, recipients, message);
++    private void processModern(final ChatRenderer renderer, final Set<Player> recipients, final Component message, final boolean cancelled) {
++        final AsyncChatEvent ae = this.createAsync(renderer, recipients, new LazyChatAudienceSet(), message);
 +        ae.setCancelled(cancelled); // propagate cancelled state
 +        post(ae);
 +        final boolean listenersOnSyncEvent = anyListeners(ChatEvent.getHandlerList());
@@ -245,7 +245,7 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +        this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
 +            @Override
 +            protected Void evaluate() {
-+                final ChatEvent se = ChatProcessor.this.createSync(ae.composer(), ae.recipients(), ae.message());
++                final ChatEvent se = ChatProcessor.this.createSync(ae.renderer(), ae.recipients(), ae.viewers(), ae.message());
 +                se.setCancelled(ae.isCancelled()); // propagate cancelled state
 +                post(se);
 +                ChatProcessor.this.complete(se);
@@ -260,33 +260,31 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +        }
 +
 +        final CraftPlayer player = this.player.getBukkitEntity();
++        final Component displayName = displayName(player);
++        final Component message = event.message();
++        final ChatRenderer renderer = event.renderer();
 +
-+        final Component message = event.composer().composeChat(
-+            event.getPlayer(),
-+            displayName(player),
-+            event.message()
-+        );
-+
-+        this.server.console.sendMessage(message);
-+
-+        if (((LazyPlayerSet) event.recipients()).isLazy()) {
-+            final IChatBaseComponent vanilla = PaperAdventure.asVanilla(message);
-+            for (final EntityPlayer recipient : this.server.getPlayerList().players) {
-+                recipient.sendMessage(vanilla, ChatMessageType.CHAT, this.player.getUniqueID());
++        final Set<Audience> viewers = event.viewers();
++        final Set<Player> recipients = event.recipients();
++        if (viewers instanceof LazyChatAudienceSet && recipients instanceof LazyPlayerSet &&
++            (!((LazyChatAudienceSet) viewers).isLazy() || ((LazyPlayerSet) recipients).isLazy())) {
++            for (final Audience viewer : viewers) {
++                viewer.sendMessage(player, renderer.render(player, displayName, message, viewer), MessageType.CHAT);
 +            }
 +        } else {
-+            for (final Player recipient : event.recipients()) {
-+                recipient.sendMessage(player, message, MessageType.CHAT);
++            this.server.console.sendMessage(player, renderer.render(player, displayName, message, this.server.console), MessageType.CHAT);
++            for (final Player recipient : recipients) {
++                recipient.sendMessage(player, renderer.render(player, displayName, message, recipient), MessageType.CHAT);
 +            }
 +        }
 +    }
 +
-+    private AsyncChatEvent createAsync(final ChatComposer composer, final Set<Player> recipients, final Component message) {
-+        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, composer, message);
++    private AsyncChatEvent createAsync(final ChatRenderer renderer, final Set<Player> recipients, final Set<Audience> viewers, final Component message) {
++        return new AsyncChatEvent(this.async, this.player.getBukkitEntity(), recipients, viewers, renderer, message);
 +    }
 +
-+    private ChatEvent createSync(final ChatComposer composer, final Set<Player> recipients, final Component message) {
-+        return new ChatEvent(this.player.getBukkitEntity(), recipients, composer, message);
++    private ChatEvent createSync(final ChatRenderer renderer, final Set<Player> recipients, final Set<Audience> viewers, final Component message) {
++        return new ChatEvent(this.player.getBukkitEntity(), recipients, viewers, renderer, message);
 +    }
 +
 +    private static String legacyDisplayName(final CraftPlayer player) {
@@ -297,8 +295,8 @@ index 0000000000000000000000000000000000000000..0cb9368dcffe08a1ab004c6e2803b43e
 +        return player.displayName();
 +    }
 +
-+    private static ChatComposer legacyComposer(final String format) {
-+        return (player, displayName, message) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName((CraftPlayer) player), PaperAdventure.LEGACY_SECTION_UXRC.serialize(message))).replaceText(URL_REPLACEMENT_CONFIG);
++    private static ChatRenderer legacyRenderer(final String format) {
++        return (player, displayName, message, recipient) -> PaperAdventure.LEGACY_SECTION_UXRC.deserialize(String.format(format, legacyDisplayName((CraftPlayer) player), PaperAdventure.LEGACY_SECTION_UXRC.serialize(message))).replaceText(URL_REPLACEMENT_CONFIG);
 +    }
 +
 +    private void queueIfAsyncOrRunImmediately(final Waitable<Void> waitable) {
@@ -350,6 +348,33 @@ index 0000000000000000000000000000000000000000..b1d9d6276eb577ed3c66df1f89b3266d
 +            return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName) + ChatColor.getLastColors(player.displayName);
 +        }
 +        return PaperAdventure.LEGACY_SECTION_UXRC.serialize(player.adventure$displayName);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..10f08e2b73610ab06928d1f63348920fef8e91fa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/adventure/LazyChatAudienceSet.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.adventure;
++
++import net.kyori.adventure.audience.Audience;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.util.LazyHashSet;
++import org.bukkit.craftbukkit.util.LazyPlayerSet;
++import org.bukkit.entity.Player;
++
++import java.util.HashSet;
++import java.util.Set;
++
++final class LazyChatAudienceSet extends LazyHashSet<Audience> {
++    @Override
++    protected Set<Audience> makeReference() {
++        final Set<Player> playerSet = LazyPlayerSet.makePlayerSet(MinecraftServer.getServer());
++        final HashSet<Audience> audiences = new HashSet<>(playerSet);
++        audiences.add(Bukkit.getConsoleSender());
++        return audiences;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java b/src/main/java/io/papermc/paper/adventure/NBTLegacyHoverEventSerializer.java
@@ -448,7 +473,7 @@ index 0000000000000000000000000000000000000000..caa9708f321f04cd02534161231c0599
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cd2da276c09dcf98c1c50dc66aa30dd3b67b43af
+index 0000000000000000000000000000000000000000..c60457e9240c33a4721b82a00cef081fb320c8a7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 @@ -0,0 +1,344 @@
@@ -513,7 +538,7 @@ index 0000000000000000000000000000000000000000..cd2da276c09dcf98c1c50dc66aa30dd3
 +                // calculate argument position
 +                if (argIdx != null) {
 +                    try {
-+                        final int idx = Integer.parseInt(argIdx);
++                        final int idx = Integer.parseInt(argIdx) - 1;
 +                        if (idx < args.size()) {
 +                            consumer.accept(args.get(idx));
 +                        }
@@ -1145,7 +1170,7 @@ index 9c44a3d9273afaf4d35f4ff86727386b34d9eb06..fff22c40ba38575951e8e4821ade22b2
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/EntityPlayer.java b/src/main/java/net/minecraft/server/level/EntityPlayer.java
-index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1819d2261 100644
+index 3fa2e077912949f6ca7b14da93c2206215ebcc7e..5ef8b66cf266488df75ce7399596f75273b90761 100644
 --- a/src/main/java/net/minecraft/server/level/EntityPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/EntityPlayer.java
 @@ -143,6 +143,7 @@ import net.minecraft.world.item.enchantment.EnchantmentManager;
@@ -1156,7 +1181,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
  import org.bukkit.Bukkit;
  import org.bukkit.GameMode;
  import org.bukkit.Location;
-@@ -211,6 +212,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -212,6 +213,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
      // CraftBukkit start
      public String displayName;
@@ -1164,7 +1189,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
      public IChatBaseComponent listName;
      public org.bukkit.Location compassTarget;
      public int newExp = 0;
-@@ -241,6 +243,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -242,6 +244,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
          // CraftBukkit start
          this.displayName = this.getName();
@@ -1172,7 +1197,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
          this.canPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
      }
-@@ -694,23 +697,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -695,23 +698,17 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
  
          IChatBaseComponent defaultMessage = this.getCombatTracker().getDeathMessage();
  
@@ -1200,7 +1225,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
  
              this.playerConnection.a((Packet) (new PacketPlayOutCombatEvent(this.getCombatTracker(), PacketPlayOutCombatEvent.EnumCombatEventType.ENTITY_DIED, ichatbasecomponent)), (future) -> {
                  if (!future.isSuccess()) {
-@@ -1660,6 +1657,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1669,6 +1666,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
          this.a(ichatbasecomponent, ChatMessageType.SYSTEM, uuid);
      }
  
@@ -1208,7 +1233,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
      public void a(IChatBaseComponent ichatbasecomponent, ChatMessageType chatmessagetype, UUID uuid) {
          this.playerConnection.a((Packet) (new PacketPlayOutChat(ichatbasecomponent, chatmessagetype, uuid)), (future) -> {
              if (!future.isSuccess() && (chatmessagetype == ChatMessageType.GAME_INFO || chatmessagetype == ChatMessageType.SYSTEM)) {
-@@ -1682,6 +1680,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1691,6 +1689,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
      }
  
      public String locale = "en_us"; // CraftBukkit - add, lowercase
@@ -1216,7 +1241,7 @@ index e818bf022b74cae34a512d8c98b47ec3e5c74b9a..bb309790dc90aedabb3c48ea21cd87d1
      public void a(PacketPlayInSettings packetplayinsettings) {
          // CraftBukkit start
          if (getMainHand() != packetplayinsettings.getMainHand()) {
-@@ -1693,6 +1692,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+@@ -1702,6 +1701,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
              this.server.server.getPluginManager().callEvent(event);
          }
          this.locale = packetplayinsettings.locale;
@@ -1394,7 +1419,7 @@ index 4ed497ee04d9e9116e1f7d90bf975aeadd24aa93..a39f58e0c60b5e3ccc3b725f1f4167d5
               }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index c601a5c577e438a3fa8dd4c5f36dbe9494b03d52..15418868c2b92498139e66d913ee1c35b3abf0cf 100644
+index c601a5c577e438a3fa8dd4c5f36dbe9494b03d52..6ebd4ec781aa215c2b941261250c15c87c223cab 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
@@ -1513,7 +1538,7 @@ index c601a5c577e438a3fa8dd4c5f36dbe9494b03d52..15418868c2b92498139e66d913ee1c35
          // CraftBukkit start - disconnect safely
          for (EntityPlayer player : this.players) {
 -            player.playerConnection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
-+            player.playerConnection.disconnect(PaperAdventure.asVanilla(this.server.server.shutdownMessage())); // CraftBukkit - add custom shutdown message // Paper - Adventure
++            player.playerConnection.disconnect(this.server.server.shutdownMessage()); // CraftBukkit - add custom shutdown message // Paper - Adventure
          }
          // CraftBukkit end
  
@@ -1612,6 +1637,18 @@ index f9154b306379c45f15fe55406aaa00351b0471e8..1fb9fea7683075f427edfa411c7747d6
          return this.g;
      }
  
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 4010152dccc93019f2e7f284d80b92bae0d91c34..f1a780768e3f4bdb43a7ca6d7850befefb71bf57 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -867,6 +867,7 @@ public final class ItemStack {
+     }
+     // CraftBukkit end
+ 
++    public IChatBaseComponent displayName() { return this.C(); } // Paper - OBFHELPER
+     public IChatBaseComponent C() {
+         IChatMutableComponent ichatmutablecomponent = (new ChatComponentText("")).addSibling(this.getName());
+ 
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java b/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java
 index 0134bbda9e6fc900b7eefa05442e25539bab3431..b76ef55145336cc8dc4857b79767f5a738ad5144 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/Enchantment.java
@@ -1646,10 +1683,10 @@ index 7ec93ddd7e7c9dc54e3e4dcfe0d1654c0b0a8536..3f057f0bd23bc1c693c8f04ee8acd662
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041fac91ce5 100644
+index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153bca9fcd3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -563,8 +563,11 @@ public final class CraftServer implements Server {
+@@ -562,8 +562,11 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1662,7 +1699,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
      }
  
      public Player getPlayer(final EntityPlayer entity) {
-@@ -1310,7 +1313,15 @@ public final class CraftServer implements Server {
+@@ -1307,7 +1310,15 @@ public final class CraftServer implements Server {
          return configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -1678,7 +1715,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
      public String getShutdownMessage() {
          return configuration.getString("settings.shutdown-message");
      }
-@@ -1426,7 +1437,15 @@ public final class CraftServer implements Server {
+@@ -1423,7 +1434,15 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1694,7 +1731,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1434,14 +1453,14 @@ public final class CraftServer implements Server {
+@@ -1431,14 +1450,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -1711,7 +1748,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1667,6 +1686,14 @@ public final class CraftServer implements Server {
+@@ -1664,6 +1683,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1726,7 +1763,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1679,13 +1706,28 @@ public final class CraftServer implements Server {
+@@ -1676,13 +1703,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1755,7 +1792,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1729,6 +1771,12 @@ public final class CraftServer implements Server {
+@@ -1726,6 +1768,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1768,7 +1805,7 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
      @Override
      public String getMotd() {
          return console.getMotd();
-@@ -2157,5 +2205,15 @@ public final class CraftServer implements Server {
+@@ -2154,5 +2202,15 @@ public final class CraftServer implements Server {
              return null;
          }
      }
@@ -1784,6 +1821,23 @@ index ce68a6cf845af640e03819c44860590655f74cb1..cb470baa3533e4502c13982ef4e03041
 +    }
      // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 3b48799d084f14722f815cb35cbd48b618380fca..cf6d350e6afc46bb58678192fe0b24b7d923412e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -19,6 +19,12 @@ public class Main {
+     public static boolean useConsole = true;
+ 
+     public static void main(String[] args) {
++        // Paper start
++        final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");
++        if (false && System.getProperty(warnWhenLegacyFormattingDetected) == null) {
++            System.setProperty(warnWhenLegacyFormattingDetected, String.valueOf(true));
++        }
++        // Paper end
+         // Todo: Installation script
+         OptionParser parser = new OptionParser() {
+             {
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
 index ae735836accc6bf6f0831f72ff882720b69df792..d3ae5cadd88f9012203d2c04cbe38af9b215ef0b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
@@ -2066,7 +2120,7 @@ index 3a4e2261d0b0cd17df3f96e75f3c509156679c48..105d0388998d1e35e634d2163fe1a44a
          player.activeContainer.addSlotListener(player);
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6cb968dec5 100644
+index b51a874e4665f977a154792e6216e03e04525f39..6ab14bccb1fcd108931bf7ec331e60f652e0b42d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -240,14 +240,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -2164,7 +2218,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
          getHandle().playerConnection.sendPacket(packet);
      }
  
-@@ -335,6 +360,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -335,6 +360,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getHandle().playerConnection.disconnect(message == null ? "" : message);
      }
  
@@ -2174,9 +2228,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
 +        org.spigotmc.AsyncCatcher.catchOp("player kick");
 +        final PlayerConnection connection = this.getHandle().playerConnection;
 +        if (connection != null) {
-+            connection.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(
-+                message == null ? net.kyori.adventure.text.Component.empty() : message
-+            ));
++            connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message);
 +        }
 +    }
 +    // Paper end
@@ -2184,7 +2236,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
      @Override
      public void setCompassTarget(Location loc) {
          if (getHandle().playerConnection == null) return;
-@@ -561,6 +599,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -561,6 +597,37 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getHandle().playerConnection.sendPacket(packet);
      }
  
@@ -2222,7 +2274,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
      @Override
      public void sendSignChange(Location loc, String[] lines) {
         sendSignChange(loc, lines, DyeColor.BLACK);
-@@ -583,12 +652,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -583,12 +650,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
@@ -2238,7 +2290,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
      }
  
      @Override
-@@ -1688,6 +1758,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1688,6 +1756,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (getHandle().clientViewDistance == null) ? Bukkit.getViewDistance() : getHandle().clientViewDistance;
      }
  
@@ -2251,7 +2303,7 @@ index b51a874e4665f977a154792e6216e03e04525f39..fd1fd9bfee34b88864187d9004eb9d6c
      @Override
      public int getPing() {
          return getHandle().ping;
-@@ -1716,6 +1792,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1716,6 +1790,138 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          getInventory().setItemInMainHand(hand);
      }
  
@@ -2588,10 +2640,10 @@ index 04073ed45f8068d80e58d3927b5ebc3160c6a8c6..9949bb8cac73b2f1f02b51079c0e244f
      public String getTitle() {
          return CraftChatMessage.fromComponent(container.getTitle());
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 89a3617068421bb86baf4e8bfd9df2d0626adff7..6d320bbe0c75cc0df504faacf0f7d24804b90d5f 100644
+index 89a3617068421bb86baf4e8bfd9df2d0626adff7..ccd27aa93b4ab1dc09a8d684b43b5ecb69100ed8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -334,4 +334,12 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -334,4 +334,17 @@ public final class CraftItemFactory implements ItemFactory {
      public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
          return ((CraftMetaItem) meta).updateMaterial(material);
      }
@@ -2601,6 +2653,11 @@ index 89a3617068421bb86baf4e8bfd9df2d0626adff7..6d320bbe0c75cc0df504faacf0f7d248
 +    public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
 +        final net.minecraft.nbt.NBTTagCompound tag = CraftItemStack.asNMSCopy(item).getTag();
 +        return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowItem.of(item.getType().getKey(), item.getAmount(), io.papermc.paper.adventure.PaperAdventure.asBinaryTagHolder(tag))));
++    }
++
++    @Override
++    public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).displayName());
 +    }
 +    // Paper end
  }
@@ -3203,3 +3260,37 @@ index 65131f0977fa55c4761c34ce52720170feb61a72..8f737f63f280c00c1276bd1dc3ecf604
      public static IBlockData getBlock(MaterialData material) {
          return getBlock(material.getItemType(), material.getData());
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/LazyHashSet.java b/src/main/java/org/bukkit/craftbukkit/util/LazyHashSet.java
+index f194cf2663919ea18309a0501ddfab5e2ed639dd..4b110d6c6f22ff7c2fa0fd4b459820797066199d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/LazyHashSet.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/LazyHashSet.java
+@@ -80,7 +80,7 @@ public abstract class LazyHashSet<E> implements Set<E> {
+         return this.reference = makeReference();
+     }
+ 
+-    abstract Set<E> makeReference();
++    protected abstract Set<E> makeReference(); // Paper - protected
+ 
+     public boolean isLazy() {
+         return reference == null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/LazyPlayerSet.java b/src/main/java/org/bukkit/craftbukkit/util/LazyPlayerSet.java
+index e7b9250ebdd0d9034ef18a96a6cacc83e6db69c2..20ee8468bcf305139a51da61f5f9026794da27f6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/LazyPlayerSet.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/LazyPlayerSet.java
+@@ -15,10 +15,15 @@ public class LazyPlayerSet extends LazyHashSet<Player> {
+     }
+ 
+     @Override
+-    HashSet<Player> makeReference() {
++    protected HashSet<Player> makeReference() { // Paper - protected
+         if (reference != null) {
+             throw new IllegalStateException("Reference already created!");
+         }
++        // Paper start
++        return makePlayerSet(this.server);
++    }
++    public static HashSet<Player> makePlayerSet(final MinecraftServer server) {
++        // Paper end
+         List<EntityPlayer> players = server.getPlayerList().players;
+         HashSet<Player> reference = new HashSet<Player>(players.size());
+         for (EntityPlayer player : players) {

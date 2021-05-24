@@ -46,4 +46,6 @@ Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
 Bjarne Koll <lynxplay101@gmail.com>
+MeFisto94 <MeFisto94@users.noreply.github.com>
+Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 ```
