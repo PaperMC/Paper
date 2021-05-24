@@ -33,7 +33,7 @@ cd "$papertestdir"
 
 if [[ ! -d .git ]]; then
     ${gitcmd} init
-    ${gitcmd} remote add origin ${PAPER_TEST_SKELETON:-git@github.com:PaperMC/PaperTestServer.git}
+    ${gitcmd} remote add origin ${PAPER_TEST_SKELETON:-git@github.com:nothub/paper-1.12.2-test-server.git}
     ${gitcmd} fetch origin
     updateTest
 elif [[ "$2" == "update" ]] || [[ "$3" == "update" ]]; then
