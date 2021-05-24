@@ -34,6 +34,7 @@ To generate and update the TOC: https://github.com/mzlogin/vim-markdown-toc -->
   * [My commit doesn't need a build, what do I do?](#my-commit-doesnt-need-a-build-what-do-i-do)
   * [Patching and building is *really* slow, what can I do?](#patching-and-building-is-really-slow-what-can-i-do)
   * [I wrote some API, how do I use it in Paper-Server?](#i-wrote-some-api-how-do-i-use-it-in-paper-server)
+  * [How can I use a debugger on the Paper Server?](#How can I use a debugger on the Paper Server?)  
 
 <!-- vim-markdown-toc -->
 
@@ -528,6 +529,15 @@ To install the API to your local maven repository, do the following:
 
 You can now use the API in your plugin to test it before PRing. You will also
 need to do this to build the Server with the implemented API.
+
+### How can I use a debugger on the Paper Server?
+
+To debug the paper server, do the following:
+
+- Activate the `noRelocation` maven profile, either on the command line when you build your project (`-PnoRelocation`), or in your build configuration in your IDE.
+- Create the server jar with the `noRelocation` profile active
+- Run the jar using your IDEs debugger
+- Add breakpoints and start debugging!
 
 [MiniMappingViewer]: https://minidigger.github.io/MiniMappingViewer/
 [yarn]: https://github.com/FabricMC/yarn
