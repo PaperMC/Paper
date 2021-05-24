@@ -1,7 +1,7 @@
 #### compile
 
-To compile Paper, you need __JDK 8__, __maven__, and an internet connection. Clone this repo, run `./paper jar` from __
-bash__, grab `paperclip.jar`.
+To compile Paper, you need __JDK 8__, __maven__, and an internet connection.
+Clone this repo, run `./paper jar` from __bash__, grab `paperclip.jar`.
 
 #### build jar
 
