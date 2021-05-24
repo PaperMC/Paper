@@ -1,0 +1,54 @@
+name: release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: checkout changes
+        uses: actions/checkout@v2
+
+      - name: get commit info
+        run: echo "SHA=$GITHUB_SHA" >> $GITHUB_ENV
+
+      - name: prepare java 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: prepare depdendency cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: '${{ runner.os }}-m2-${{ hashFiles(''**/pom.xml'') }}'
+          restore-keys: '${{ runner.os }}-m2'
+
+      - name: prepare git config
+        run: git config --global user.name "CI Slave Bot"
+
+      - name: build paper
+        run: ./paper jar
+
+      - name: prepare release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: automated release at commit ${{ env.SHA }}
+          draft: false
+          prerelease: false
+
+      - name: upload release
+        uses: csexton/release-asset-action@v2
+        with:
+          file: "paperclip.jar"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
