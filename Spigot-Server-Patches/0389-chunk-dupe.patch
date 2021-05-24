@@ -1,0 +1,64 @@
+From 04ddc31c9e32dbd0775972c48de7f70dcb6914aa Mon Sep 17 00:00:00 2001
+From: nothub <48992448+nothub@users.noreply.github.com>
+Date: Tue, 25 May 2021 00:42:15 +0200
+Subject: [PATCH] chunk dupe
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+index d1001605..4e6e2511 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperConfig.java
+@@ -336,4 +336,11 @@ public class PaperConfig {
+         pathfinderGoalSelectionDelay = getInt("settings.pathfinder.goal-selection-delay", pathfinderGoalSelectionDelay);
+     }
+ 
++    public static boolean chunkDupeAllow = true;
++    public static boolean chunkDupeLog = true;
++    private static void chunkOverloadDupe() {
++        chunkDupeAllow = getBoolean("settings.chunk-dupe.allow", chunkDupeAllow);
++        chunkDupeLog = getBoolean("settings.chunk-dupe.log", chunkDupeLog);
++    }
++
+ }
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index 542a35d1..a2c13308 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -20,6 +20,8 @@ import java.util.zip.GZIPInputStream;
+ import java.util.zip.InflaterInputStream;
+ import javax.annotation.Nullable;
+ 
++import com.destroystokyo.paper.PaperConfig;
++
+ public class RegionFile {
+ 
+     // Spigot start
+@@ -27,6 +29,10 @@ public class RegionFile {
+     // So we extend this to use the REAL size when the count is maxed by seeking to that section and reading the length.
+     private static final boolean ENABLE_EXTENDED_SAVE = Boolean.parseBoolean(System.getProperty("net.minecraft.server.RegionFile.enableExtendedSave", "true"));
+     // Spigot end
++
++    private static final boolean CHUNK_DUPE_ALLOW = PaperConfig.chunkDupeAllow; // paper-1.12.2
++    private static final boolean CHUNK_DUPE_LOG = PaperConfig.chunkDupeLog; // paper-1.12.2
++
+     private static final byte[] a = new byte[4096];
+     private final File b;private File getFile() { return b; } // Paper - OBFHELPER
+     private RandomAccessFile c;private RandomAccessFile getDataFile() { return c; } // Paper - OBFHELPER
+@@ -198,6 +204,14 @@ public class RegionFile {
+             int k1 = (k + 5) / 4096 + 1;
+ 
+             if (k1 >= 256) {
++                // paper-1.12.2 start
++                if (CHUNK_DUPE_ALLOW) {
++                    if (CHUNK_DUPE_LOG) {
++                        org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Chunk dupe Detected: ({0}, {1}) {2}", new Object[]{i, j, this.b});
++                    }
++                    return;
++                }
++                // paper-1.12.2 end
+                 // Spigot start
+                 if (!USE_SPIGOT_OVERSIZED_METHOD && !RegionFileCache.isOverzealous()) throw new ChunkTooLargeException(i, j, k1); // Paper - throw error instead
+                 org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.WARNING,"Large Chunk Detected: ({0}, {1}) Size: {2} {3}", new Object[]{i, j, k1, this.b});
+-- 
+2.25.1
+
