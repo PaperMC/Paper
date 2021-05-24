@@ -1,0 +1,43 @@
+From 8a6ac673856546d7ca4e5c3313361b6ed96bb3ae Mon Sep 17 00:00:00 2001
+From: nothub <48992448+nothub@users.noreply.github.com>
+Date: Mon, 24 May 2021 23:27:47 +0200
+Subject: [PATCH] map-icon-limit
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldMap.java b/src/main/java/net/minecraft/server/WorldMap.java
+index 59173605..74ca2aa5 100644
+--- a/src/main/java/net/minecraft/server/WorldMap.java
++++ b/src/main/java/net/minecraft/server/WorldMap.java
+@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
+ 
+ // CraftBukkit start
+ import java.util.UUID;
++import java.util.concurrent.atomic.AtomicInteger; // paper-1.12.2
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.CraftWorld;
+@@ -321,7 +322,10 @@ public class WorldMap extends PersistentBase {
+         // Paper start
+         private void addSeenPlayers(java.util.Collection<MapIcon> icons) {
+             org.bukkit.entity.Player player = (org.bukkit.entity.Player) trackee.getBukkitEntity();
++            AtomicInteger counter = new AtomicInteger(); // paper-1.12.2
+             WorldMap.this.decorations.forEach((uuid, mapIcon) -> {
++                counter.getAndIncrement(); // paper-1.12.2
++                if (counter.get() > 64) return; // paper-1.12.2
+                 // If this cursor is for a player check visibility with vanish system
+                 org.bukkit.entity.Player other = org.bukkit.Bukkit.getPlayer(uuid); // Spigot
+                 if (other == null || player.canSee(other)) {
+@@ -356,8 +360,10 @@ public class WorldMap extends PersistentBase {
+             java.util.Collection<MapIcon> icons = new java.util.ArrayList<MapIcon>();
+             if (vanillaMaps) addSeenPlayers(icons); // Paper
+ 
++            int counter = 0; // paper-1.12.2
+             for ( org.bukkit.map.MapCursor cursor : render.cursors) {
+ 
++                if (++counter > 64) break; // paper-1.12.2
+                 if (cursor.isVisible()) {
+                     icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection()));
+                 }
+-- 
+2.25.1
+
