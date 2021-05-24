@@ -689,7 +689,10 @@
 +                    }
 +                }
 +            }
-+
+ 
+-            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
+-            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
+-            float f2 = f1 - f;
 +            // Apply damage to helmet
 +            if ((damagesource == DamageSource.ANVIL || damagesource == DamageSource.FALLING_BLOCK) && this.getEquipment(EnumItemSlot.HEAD) != null) {
 +                this.getEquipment(EnumItemSlot.HEAD).damage((int) (event.getDamage() * 4.0F + this.random.nextFloat() * event.getDamage() * 2.0F), this, (entityliving) -> {
@@ -703,15 +706,12 @@
 +                this.damageArmor(damagesource, armorDamage);
 +            }
  
--            f = Math.max(f - this.getAbsorptionHearts(), 0.0F);
--            this.setAbsorptionHearts(this.getAbsorptionHearts() - (f1 - f));
--            float f2 = f1 - f;
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
 +                this.world.broadcastEntityEffect(this, (byte) 29); // SPIGOT-4635 - shield damage sound
 +                this.damageShield((float) -event.getDamage(DamageModifier.BLOCKING));
 +                Entity entity = damagesource.j();
- 
++
 +                if (entity instanceof EntityLiving) {
 +                    this.shieldBlock((EntityLiving) entity);
 +                }
@@ -833,7 +833,7 @@
          Vec3D vec3d = new Vec3D(this.locX(), this.getHeadY(), this.locZ());
          Vec3D vec3d1 = new Vec3D(entity.locX(), entity.getHeadY(), entity.locZ());
  
-@@ -2548,14 +2980,21 @@
+@@ -2548,13 +2980,20 @@
  
      @Override
      public boolean isInteractable() {
@@ -845,18 +845,17 @@
      public boolean isCollidable() {
 -        return this.isAlive() && !this.isSpectator() && !this.isClimbing();
 +        return this.isAlive() && !this.isSpectator() && !this.isClimbing() && this.collides; // CraftBukkit
-     }
- 
++    }
++
 +    // CraftBukkit start - collidable API
 +    @Override
 +    public boolean canCollideWith(Entity entity) {
 +        return isCollidable() && this.collides != this.collidableExemptions.contains(entity.getUniqueID());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      protected void velocityChanged() {
-         this.velocityChanged = this.random.nextDouble() >= this.b(GenericAttributes.KNOCKBACK_RESISTANCE);
 @@ -2748,7 +3187,25 @@
          } else {
              if (!this.activeItem.isEmpty() && this.isHandRaised()) {
@@ -884,29 +883,74 @@
  
                  if (itemstack != this.activeItem) {
                      this.a(enumhand, itemstack);
-@@ -2840,10 +3297,18 @@
+@@ -2816,6 +3273,12 @@
+     }
+ 
+     public boolean a(double d0, double d1, double d2, boolean flag) {
++        // CraftBukkit start
++        return safeTeleport(d0, d1, d2, flag, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN).orElse(false);
++    }
++
++    public Optional<Boolean> safeTeleport(double d0, double d1, double d2, boolean flag, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // CraftBukkit end
+         double d3 = this.locX();
+         double d4 = this.locY();
+         double d5 = this.locZ();
+@@ -2840,16 +3303,41 @@
              }
  
              if (flag2) {
 -                this.enderTeleportTo(d0, d6, d2);
--                if (world.getCubes(this) && !world.containsLiquid(this.getBoundingBox())) {
--                    flag1 = true;
 +                // CraftBukkit start - Teleport event
 +                // this.enderTeleportTo(d0, d6, d2);
-+                EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), d0, d6, d2));
-+                this.world.getServer().getPluginManager().callEvent(teleport);
-+                if (!teleport.isCancelled()) {
-+                    Location to = teleport.getTo();
-+                    this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
-+                    if (world.getCubes(this) && !world.containsLiquid(this.getBoundingBox())) {
-+                        flag1 = true;
-+                    }
++
++                // first set position, to check if the place to teleport is valid
++                this.setPosition(d0, d6, d2);
+                 if (world.getCubes(this) && !world.containsLiquid(this.getBoundingBox())) {
+                     flag1 = true;
                  }
++                // now revert and call event if the teleport place is valid
++                this.setPosition(d3, d4, d5);
++
++                if (flag1) {
++                    if (!(this instanceof EntityPlayer)) {
++                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.world.getWorld(), d3, d4, d5), new Location(this.world.getWorld(), d0, d6, d2));
++                        this.world.getServer().getPluginManager().callEvent(teleport);
++                        if (!teleport.isCancelled()) {
++                            Location to = teleport.getTo();
++                            this.enderTeleportTo(to.getX(), to.getY(), to.getZ());
++                        } else {
++                            return Optional.empty();
++                        }
++                    } else {
++                        // player teleport event is called in the underlining code
++                        if (((EntityPlayer) this).playerConnection.a(d0, d6, d2, this.yaw, this.pitch, java.util.Collections.emptySet(), cause)) {
++                            return Optional.empty();
++                        }
++                    }
++                }
 +                // CraftBukkit end
              }
          }
  
-@@ -2940,7 +3405,7 @@
+         if (!flag1) {
+-            this.enderTeleportTo(d3, d4, d5);
+-            return false;
++            // this.enderTeleportTo(d3, d4, d5); // CraftBukkit - already set the location back
++            return Optional.of(false); // CraftBukkit
+         } else {
+             if (flag) {
+                 world.broadcastEntityEffect(this, (byte) 46);
+@@ -2859,7 +3347,7 @@
+                 ((EntityCreature) this).getNavigation().o();
+             }
+ 
+-            return true;
++            return Optional.of(true); // CraftBukkit
+         }
+     }
+ 
+@@ -2940,7 +3428,7 @@
      }
  
      public void entityWakeup() {
@@ -915,7 +959,7 @@
          World world = this.world;
  
          this.world.getClass();
-@@ -3011,7 +3476,7 @@
+@@ -3011,7 +3499,7 @@
                  Pair<MobEffect, Float> pair = (Pair) iterator.next();
  
                  if (!world.isClientSide && pair.getFirst() != null && world.random.nextFloat() < (Float) pair.getSecond()) {

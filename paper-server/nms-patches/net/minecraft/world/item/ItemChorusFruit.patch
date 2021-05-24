@@ -1,37 +1,20 @@
 --- a/net/minecraft/world/item/ItemChorusFruit.java
 +++ b/net/minecraft/world/item/ItemChorusFruit.java
-@@ -9,6 +9,13 @@
- import net.minecraft.world.entity.player.EntityHuman;
- import net.minecraft.world.level.World;
- 
-+// CraftBukkit start
-+import net.minecraft.server.level.EntityPlayer;
-+import org.bukkit.Location;
-+import org.bukkit.entity.Player;
-+import org.bukkit.event.player.PlayerTeleportEvent;
-+// CraftBukkit end
-+
- public class ItemChorusFruit extends Item {
- 
-     public ItemChorusFruit(Item.Info item_info) {
-@@ -29,6 +36,20 @@
-                 double d4 = MathHelper.a(entityliving.locY() + (double) (entityliving.getRandom().nextInt(16) - 8), 0.0D, (double) (world.getHeight() - 1));
-                 double d5 = entityliving.locZ() + (entityliving.getRandom().nextDouble() - 0.5D) * 16.0D;
- 
-+                // CraftBukkit start
-+                if (entityliving instanceof EntityPlayer) {
-+                    Player player = ((EntityPlayer) entityliving).getBukkitEntity();
-+                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), new Location(player.getWorld(), d3, d4, d5), PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
-+                    world.getServer().getPluginManager().callEvent(teleEvent);
-+                    if (teleEvent.isCancelled()) {
-+                        break;
-+                    }
-+                    d3 = teleEvent.getTo().getX();
-+                    d4 = teleEvent.getTo().getY();
-+                    d5 = teleEvent.getTo().getZ();
-+                }
-+                // CraftBukkit end
-+
-                 if (entityliving.isPassenger()) {
+@@ -33,7 +33,16 @@
                      entityliving.stopRiding();
                  }
+ 
+-                if (entityliving.a(d3, d4, d5, true)) {
++                // CraftBukkit start - handle canceled status of teleport event
++                java.util.Optional<Boolean> status = entityliving.safeTeleport(d3, d4, d5, true, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.CHORUS_FRUIT);
++
++                if (!status.isPresent()) {
++                    // teleport event was canceled, no more tries
++                    break;
++                }
++
++                if (status.get()) {
++                    // CraftBukkit end
+                     SoundEffect soundeffect = entityliving instanceof EntityFox ? SoundEffects.ENTITY_FOX_TELEPORT : SoundEffects.ITEM_CHORUS_FRUIT_TELEPORT;
+ 
+                     world.playSound((EntityHuman) null, d0, d1, d2, soundeffect, SoundCategory.PLAYERS, 1.0F, 1.0F);

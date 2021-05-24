@@ -565,7 +565,7 @@
                                  if (flag) {
                                      this.player.fallDistance = 0.0F;
                                  }
-@@ -957,10 +1272,66 @@
+@@ -957,10 +1272,67 @@
      }
  
      public void a(double d0, double d1, double d2, float f, float f1) {
@@ -582,7 +582,7 @@
 +        this.a(d0, d1, d2, f, f1, set, PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
 +
-+    public void a(double d0, double d1, double d2, float f, float f1, Set<PacketPlayOutPosition.EnumPlayerTeleportFlags> set, PlayerTeleportEvent.TeleportCause cause) {
++    public boolean a(double d0, double d1, double d2, float f, float f1, Set<PacketPlayOutPosition.EnumPlayerTeleportFlags> set, PlayerTeleportEvent.TeleportCause cause) { // CraftBukkit - Return event status
 +        Player player = this.getPlayer();
 +        Location from = player.getLocation();
 +
@@ -596,7 +596,7 @@
 +        // SPIGOT-5171: Triggered on join
 +        if (from.equals(to)) {
 +            this.internalTeleport(d0, d1, d2, f, f1, set);
-+            return;
++            return false; // CraftBukkit - Return event status
 +        }
 +
 +        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
@@ -613,6 +613,7 @@
 +        }
 +
 +        this.internalTeleport(d0, d1, d2, f, f1, set);
++        return event.isCancelled(); // CraftBukkit - Return event status
 +    }
 +
 +    public void teleport(Location dest) {
@@ -633,7 +634,7 @@
          double d3 = set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.X) ? this.player.locX() : 0.0D;
          double d4 = set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.Y) ? this.player.locY() : 0.0D;
          double d5 = set.contains(PacketPlayOutPosition.EnumPlayerTeleportFlags.Z) ? this.player.locZ() : 0.0D;
-@@ -972,6 +1343,14 @@
+@@ -972,6 +1344,14 @@
              this.teleportAwait = 0;
          }
  
@@ -648,7 +649,7 @@
          this.A = this.e;
          this.player.setLocation(d0, d1, d2, f, f1);
          this.player.playerConnection.sendPacket(new PacketPlayOutPosition(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.teleportAwait));
-@@ -980,6 +1359,7 @@
+@@ -980,6 +1360,7 @@
      @Override
      public void a(PacketPlayInBlockDig packetplayinblockdig) {
          PlayerConnectionUtils.ensureMainThread(packetplayinblockdig, this, this.player.getWorldServer());
@@ -656,7 +657,7 @@
          BlockPosition blockposition = packetplayinblockdig.b();
  
          this.player.resetIdleTimer();
-@@ -990,14 +1370,46 @@
+@@ -990,14 +1371,46 @@
                  if (!this.player.isSpectator()) {
                      ItemStack itemstack = this.player.b(EnumHand.OFF_HAND);
  
@@ -705,7 +706,7 @@
                      this.player.dropItem(false);
                  }
  
-@@ -1034,6 +1446,7 @@
+@@ -1034,6 +1447,7 @@
      @Override
      public void a(PacketPlayInUseItem packetplayinuseitem) {
          PlayerConnectionUtils.ensureMainThread(packetplayinuseitem, this, this.player.getWorldServer());
@@ -713,7 +714,7 @@
          WorldServer worldserver = this.player.getWorldServer();
          EnumHand enumhand = packetplayinuseitem.b();
          ItemStack itemstack = this.player.b(enumhand);
-@@ -1044,6 +1457,14 @@
+@@ -1044,6 +1458,14 @@
          this.player.resetIdleTimer();
          if (blockposition.getY() < this.minecraftServer.getMaxBuildHeight()) {
              if (this.teleportPos == null && this.player.h((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D) < 64.0D && worldserver.a((EntityHuman) this.player, blockposition)) {
@@ -728,7 +729,7 @@
                  EnumInteractionResult enuminteractionresult = this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
  
                  if (enumdirection == EnumDirection.UP && !enuminteractionresult.a() && blockposition.getY() >= this.minecraftServer.getMaxBuildHeight() - 1 && a(this.player, itemstack)) {
-@@ -1067,12 +1488,51 @@
+@@ -1067,12 +1489,51 @@
      @Override
      public void a(PacketPlayInBlockPlace packetplayinblockplace) {
          PlayerConnectionUtils.ensureMainThread(packetplayinblockplace, this, this.player.getWorldServer());
@@ -780,7 +781,7 @@
              EnumInteractionResult enuminteractionresult = this.player.playerInteractManager.a(this.player, worldserver, itemstack, enumhand);
  
              if (enuminteractionresult.b()) {
-@@ -1093,7 +1553,7 @@
+@@ -1093,7 +1554,7 @@
                  Entity entity = packetplayinspectate.a(worldserver);
  
                  if (entity != null) {
@@ -789,7 +790,7 @@
                      return;
                  }
              }
-@@ -1102,7 +1562,12 @@
+@@ -1102,7 +1563,12 @@
      }
  
      @Override
@@ -803,7 +804,7 @@
  
      @Override
      public void a(PacketPlayInBoatMove packetplayinboatmove) {
-@@ -1117,11 +1582,26 @@
+@@ -1117,11 +1583,26 @@
  
      @Override
      public void a(IChatBaseComponent ichatbasecomponent) {
@@ -831,7 +832,7 @@
          ITextFilter itextfilter = this.player.Q();
  
          if (itextfilter != null) {
-@@ -1153,6 +1633,15 @@
+@@ -1153,6 +1634,15 @@
              }
          }
  
@@ -847,7 +848,7 @@
          try {
              this.networkManager.sendPacket(packet, genericfuturelistener);
          } catch (Throwable throwable) {
-@@ -1169,7 +1658,16 @@
+@@ -1169,7 +1659,16 @@
      @Override
      public void a(PacketPlayInHeldItemSlot packetplayinhelditemslot) {
          PlayerConnectionUtils.ensureMainThread(packetplayinhelditemslot, this, this.player.getWorldServer());
@@ -864,7 +865,7 @@
              if (this.player.inventory.itemInHandIndex != packetplayinhelditemslot.b() && this.player.getRaisedHand() == EnumHand.MAIN_HAND) {
                  this.player.clearActiveItem();
              }
-@@ -1178,65 +1676,286 @@
+@@ -1178,65 +1677,286 @@
              this.player.resetIdleTimer();
          } else {
              PlayerConnection.LOGGER.warn("{} tried to set an invalid carried item", this.player.getDisplayName().getString());
@@ -1160,7 +1161,7 @@
          this.player.resetIdleTimer();
          IJumpable ijumpable;
  
-@@ -1294,6 +2013,7 @@
+@@ -1294,6 +2014,7 @@
      @Override
      public void a(PacketPlayInUseEntity packetplayinuseentity) {
          PlayerConnectionUtils.ensureMainThread(packetplayinuseentity, this, this.player.getWorldServer());
@@ -1168,7 +1169,7 @@
          WorldServer worldserver = this.player.getWorldServer();
          Entity entity = packetplayinuseentity.a((World) worldserver);
  
-@@ -1307,18 +2027,72 @@
+@@ -1307,18 +2028,72 @@
                  ItemStack itemstack = enumhand != null ? this.player.b(enumhand).cloneItemStack() : ItemStack.b;
                  Optional<EnumInteractionResult> optional = Optional.empty();
  
@@ -1242,7 +1243,7 @@
                  }
  
                  if (optional.isPresent() && ((EnumInteractionResult) optional.get()).a()) {
-@@ -1365,15 +2139,21 @@
+@@ -1365,15 +2140,21 @@
      @Override
      public void a(PacketPlayInCloseWindow packetplayinclosewindow) {
          PlayerConnectionUtils.ensureMainThread(packetplayinclosewindow, this, this.player.getWorldServer());
@@ -1266,7 +1267,7 @@
                  NonNullList<ItemStack> nonnulllist = NonNullList.a();
  
                  for (int i = 0; i < this.player.activeContainer.slots.size(); ++i) {
-@@ -1382,8 +2162,285 @@
+@@ -1382,8 +2163,285 @@
  
                  this.player.a(this.player.activeContainer, nonnulllist);
              } else {
@@ -1553,7 +1554,7 @@
                  if (ItemStack.matches(packetplayinwindowclick.f(), itemstack)) {
                      this.player.playerConnection.sendPacket(new PacketPlayOutTransaction(packetplayinwindowclick.b(), packetplayinwindowclick.e(), true));
                      this.player.e = true;
-@@ -1423,6 +2480,7 @@
+@@ -1423,6 +2481,7 @@
      @Override
      public void a(PacketPlayInEnchantItem packetplayinenchantitem) {
          PlayerConnectionUtils.ensureMainThread(packetplayinenchantitem, this, this.player.getWorldServer());
@@ -1561,7 +1562,7 @@
          this.player.resetIdleTimer();
          if (this.player.activeContainer.windowId == packetplayinenchantitem.b() && this.player.activeContainer.c(this.player) && !this.player.isSpectator()) {
              this.player.activeContainer.a((EntityHuman) this.player, packetplayinenchantitem.c());
-@@ -1455,6 +2513,43 @@
+@@ -1455,6 +2514,43 @@
  
              boolean flag1 = packetplayinsetcreativeslot.b() >= 1 && packetplayinsetcreativeslot.b() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getDamage() >= 0 && itemstack.getCount() <= 64 && !itemstack.isEmpty();
@@ -1605,7 +1606,7 @@
  
              if (flag1 && flag2) {
                  if (itemstack.isEmpty()) {
-@@ -1476,6 +2571,7 @@
+@@ -1476,6 +2572,7 @@
      @Override
      public void a(PacketPlayInTransaction packetplayintransaction) {
          PlayerConnectionUtils.ensureMainThread(packetplayintransaction, this, this.player.getWorldServer());
@@ -1613,7 +1614,7 @@
          int i = this.player.activeContainer.windowId;
  
          if (i == packetplayintransaction.b() && this.k.getOrDefault(i, (short) (packetplayintransaction.c() + 1)) == packetplayintransaction.c() && !this.player.activeContainer.c(this.player) && !this.player.isSpectator()) {
-@@ -1494,6 +2590,7 @@
+@@ -1494,6 +2591,7 @@
      }
  
      private void a(PacketPlayInUpdateSign packetplayinupdatesign, List<String> list) {
@@ -1621,7 +1622,7 @@
          this.player.resetIdleTimer();
          WorldServer worldserver = this.player.getWorldServer();
          BlockPosition blockposition = packetplayinupdatesign.b();
-@@ -1510,12 +2607,28 @@
+@@ -1510,12 +2608,28 @@
  
              if (!tileentitysign.d() || tileentitysign.f() != this.player) {
                  PlayerConnection.LOGGER.warn("Player {} just tried to change non-editable sign", this.player.getDisplayName().getString());
@@ -1651,7 +1652,7 @@
  
              tileentitysign.update();
              worldserver.notify(blockposition, iblockdata, iblockdata, 3);
-@@ -1525,6 +2638,7 @@
+@@ -1525,6 +2639,7 @@
  
      @Override
      public void a(PacketPlayInKeepAlive packetplayinkeepalive) {
@@ -1659,7 +1660,7 @@
          if (this.awaitingKeepAlive && packetplayinkeepalive.b() == this.h) {
              int i = (int) (SystemUtils.getMonotonicMillis() - this.lastKeepAlive);
  
-@@ -1539,7 +2653,17 @@
+@@ -1539,7 +2654,17 @@
      @Override
      public void a(PacketPlayInAbilities packetplayinabilities) {
          PlayerConnectionUtils.ensureMainThread(packetplayinabilities, this, this.player.getWorldServer());
@@ -1678,7 +1679,7 @@
      }
  
      @Override
-@@ -1548,8 +2672,50 @@
+@@ -1548,8 +2673,50 @@
          this.player.a(packetplayinsettings);
      }
  
