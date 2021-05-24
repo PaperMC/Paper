@@ -1,54 +1,51 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Thu, 2 Jul 2020 16:10:10 -0700
-Subject: [PATCH] added PlayerTradeEvent
+Subject: [PATCH] Added PlayerTradeEvent
 
+[Amendment: Alexander <protonull@protonmail.com>]
+PlayerTradeEvent is used for player purchases from villagers and wandering
+traders, but not custom merchants created via Bukkit.createMerchant(). During
+discussions in Discord it was decided that it'd be better to add a new event
+that PlayerTradeEvent inherits from than change getVillager()'s annotation to
+@Nullable, especially since that'd also infringe on the implication of the
+event being about villager trades.
 
-diff --git a/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
-new file mode 100755
-index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a4bb33cf6
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c5648055c5e815474bf1e564a5c192ff5c0624fb
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
-@@ -0,0 +1,121 @@
++++ b/src/main/java/io/papermc/paper/event/player/PlayerPurchaseEvent.java
+@@ -0,0 +1,112 @@
 +package io.papermc.paper.event.player;
 +
-+import org.bukkit.entity.AbstractVillager;
++import java.util.Objects;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.MerchantRecipe;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +/**
-+ * Called when a player trades with a villager or wandering trader
++ * Called when a player trades with a standalone merchant GUI.
 + */
-+public class PlayerTradeEvent extends PlayerEvent implements Cancellable {
-+
++public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +
 +    private boolean increaseTradeUses;
 +    private boolean rewardExp;
-+    private final AbstractVillager villager;
 +    private MerchantRecipe trade;
 +
-+    public PlayerTradeEvent(@NotNull Player player, @NotNull AbstractVillager villager, @NotNull MerchantRecipe trade, boolean rewardExp, boolean increaseTradeUses) {
-+        super(player);
-+        this.villager = villager;
-+        this.trade = trade;
++    public PlayerPurchaseEvent(@NotNull Player player,
++                               @NotNull MerchantRecipe trade,
++                               boolean rewardExp,
++                               boolean increaseTradeUses) {
++        super(Objects.requireNonNull(player, "Player cannot be null!"));
++        setTrade(trade);
 +        this.rewardExp = rewardExp;
 +        this.increaseTradeUses = increaseTradeUses;
-+    }
-+
-+    /**
-+     * Gets the Villager or Wandering trader associated with this event
-+     * @return the villager or wandering trader
-+     */
-+    @NotNull
-+    public AbstractVillager getVillager() {
-+        return villager;
 +    }
 +
 +    /**
@@ -57,22 +54,22 @@ index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a
 +     */
 +    @NotNull
 +    public MerchantRecipe getTrade() {
-+        return trade;
++        return this.trade;
 +    }
 +
 +    /**
 +     * Sets the trade. This is then used to determine the next prices
 +     * @param trade the trade to use
 +     */
-+    public void setTrade(@Nullable MerchantRecipe trade) {
-+        this.trade = trade;
++    public void setTrade(@NotNull MerchantRecipe trade) {
++        this.trade = Objects.requireNonNull(trade, "Trade cannot be null!");
 +    }
 +
 +    /**
 +     * @return will trade try to reward exp
 +     */
 +    public boolean isRewardingExp() {
-+        return rewardExp;
++        return this.rewardExp;
 +    }
 +
 +    /**
@@ -87,7 +84,7 @@ index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a
 +     * @return whether or not the trade will count as a use of the trade
 +     */
 +    public boolean willIncreaseTradeUses() {
-+        return increaseTradeUses;
++        return this.increaseTradeUses;
 +    }
 +
 +    /**
@@ -130,4 +127,40 @@ index 0000000000000000000000000000000000000000..198e5464eae6b961c83148a57c18f91a
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
+new file mode 100755
+index 0000000000000000000000000000000000000000..a41fc186746b87f76347dfcc1f80d0969398322b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerTradeEvent.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.event.player;
++
++import org.bukkit.entity.AbstractVillager;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.MerchantRecipe;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when a player trades with a villager or wandering trader
++ */
++public class PlayerTradeEvent extends PlayerPurchaseEvent {
++
++    private final AbstractVillager villager;
++
++    public PlayerTradeEvent(@NotNull Player player, @NotNull AbstractVillager villager, @NotNull MerchantRecipe trade, boolean rewardExp, boolean increaseTradeUses) {
++        super(player, trade, rewardExp, increaseTradeUses);
++        this.villager = villager;
++    }
++
++    /**
++     * Gets the Villager or Wandering trader associated with this event
++     * @return the villager or wandering trader
++     */
++    @NotNull
++    public AbstractVillager getVillager() {
++        return this.villager;
++    }
++
 +}
