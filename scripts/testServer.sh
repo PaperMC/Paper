@@ -8,14 +8,15 @@ minecraftversion=$(cat "$workdir/BuildData/info.json"  | grep minecraftVersion |
 decompiledir="$workdir/Minecraft/$minecraftversion"
 gitcmd="git -c commit.gpgsign=false"
 
+
 #
 # FUNCTIONS
 #
-. $basedir/scripts/functions.sh
+. "${basedir}"/scripts/functions.sh
 
 updateTest() {
     paperstash
-    $gitcmd reset --hard origin/master
+    ${gitcmd} reset --hard origin/master
     paperunstash
 }
 
@@ -24,20 +25,22 @@ papertestdir="${PAPER_TEST_DIR:-$workdir/test-server}"
 mkdir -p "$papertestdir"
 cd "$papertestdir"
 
+
 #
 # SKELETON CHECK
 #
 
-if [ ! -d .git ]; then
-    $gitcmd init
-    $gitcmd remote add origin ${PAPER_TEST_SKELETON:-https://github.com/PaperMC/PaperTestServer}
-    $gitcmd fetch origin
+
+if [[ ! -d .git ]]; then
+    ${gitcmd} init
+    ${gitcmd} remote add origin ${PAPER_TEST_SKELETON:-git@github.com:PaperMC/PaperTestServer.git}
+    ${gitcmd} fetch origin
     updateTest
-elif [ "$2" == "update" ] || [ "$3" == "update" ]; then
+elif [[ "$2" == "update" ]] || [[ "$3" == "update" ]]; then
     updateTest
 fi
 
-if [ ! -f server.properties ] || [ ! -d plugins ]; then
+if [[ ! -f server.properties ]] || [[ ! -d plugins ]]; then
     echo " "
     echo " Checking out Test Server Skeleton"
     updateTest
@@ -60,12 +63,13 @@ if [ -z "$(grep true eula.txt 2>/dev/null)" ]; then
     echo "eula=true" > eula.txt
 fi
 
+
 #
 # JAR CHECK
 #
 
 jar="$basedir/Paper-Server/target/paper-${minecraftversion}.jar"
-if [ ! -f "$jar" ] || [ "$2" == "build" ] || [ "$3" == "build" ]; then
+if [[ ! -f "$jar" ]] || [[ "$2" == "build" ]] || [[ "$3" == "build" ]]; then
 (
     echo "Building Paper"
     cd "$basedir"
@@ -85,9 +89,10 @@ baseargs="$baseargs -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=50 -XX
 baseargs="$baseargs -XX:InitiatingHeapOccupancyPercent=10 -XX:G1MixedGCLiveThresholdPercent=50 "
 baseargs="$baseargs -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5100"
 
-cmd="java ${PAPER_TEST_BASE_JVM_ARGS:-$baseargs} ${PAPER_TEST_EXTRA_JVM_ARGS} -jar $jar"
+cmd="java ${PAPER_TEST_BASE_JVM_ARGS:-$baseargs} ${PAPER_TEST_EXTRA_JVM_ARGS} -jar \"$jar\""
 screen_command="screen -DURS papertest $cmd"
 tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
+
 
 #
 # MULTIPLEXER CHOICE
@@ -95,14 +100,14 @@ tmux_command="tmux new-session -A -s Paper -n 'Paper Test' -c '$(pwd)' '$cmd'"
 
 multiplex=${PAPER_TEST_MULTIPLEXER}
 
-if [ "$multiplex" == "screen" ]; then
+if [[ "$multiplex" == "screen" ]]; then
     if command -v "screen" >/dev/null 2>&1 ; then
         cmd="$screen_command"
     else
         echo "screen not found"
         exit 1
     fi
-elif [ "$multiplex" == "tmux" ] ; then
+elif [[ "$multiplex" == "tmux" ]] ; then
     if command -v "tmux" >/dev/null 2>&1 ; then
         cmd="$tmux_command"
     else
@@ -120,12 +125,13 @@ else
     fi
 fi
 
+
 #
 # START / LOG
 #
 
-if [ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]; then
-    $PAPER_TEST_COMMAND_WRAPPER $cmd
+if [[ ! -z "$PAPER_TEST_COMMAND_WRAPPER" ]]; then
+    ${PAPER_TEST_COMMAND_WRAPPER} ${cmd}
 else
     echo "Running command: $cmd"
     echo "In directory: $(pwd)"
