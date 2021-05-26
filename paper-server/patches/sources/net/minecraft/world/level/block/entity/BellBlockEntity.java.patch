@@ -44,8 +44,22 @@
 -        }).forEach(BellBlockEntity::glow);
 +        }).map((entity) -> (org.bukkit.entity.LivingEntity) entity.getBukkitEntity()).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new)); // CraftBukkit
 +
-+        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(world, pos, entities).forEach(BellBlockEntity::glow);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(world, pos, entities).forEach(entity -> glow(entity, pos)); // Paper - Add BellRevealRaiderEvent
 +        // CraftBukkit end
      }
  
      private static void showBellParticles(Level world, BlockPos pos, List<LivingEntity> hearingEntities) {
+@@ -178,6 +189,13 @@
+     }
+ 
+     private static void glow(LivingEntity entity) {
++        // Paper start - Add BellRevealRaiderEvent
++        glow(entity, null);
++    }
++
++    private static void glow(LivingEntity entity, @javax.annotation.Nullable BlockPos pos) {
++        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), (org.bukkit.entity.Raider) entity.getBukkitEntity()).callEvent()) return;
++        // Paper end - Add BellRevealRaiderEvent
+         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
+     }
+ 
