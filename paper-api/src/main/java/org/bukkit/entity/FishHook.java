@@ -322,4 +322,50 @@ public interface FishHook extends Projectile {
          */
         BOBBING;
     }
+
+    // Paper start - More FishHook API
+    /**
+     * Get the number of ticks the hook needs to wait for a fish to bite.
+     *
+     * @return Number of ticks
+     */
+    int getWaitTime();
+
+    /**
+     * Sets the number of ticks the hook needs to wait for a fish to bite.
+     *
+     * @param ticks Number of ticks
+     */
+    void setWaitTime(int ticks);
+
+    /**
+     * Get the number of ticks the fish has to swim until biting the hook.
+     * The {@link #getWaitTime()} has to be zero or below for the fish to start the time until bite timer.
+     *
+     * @return number of ticks.
+     *         A value of one indicates that the fish bites the very next time the fish hook is ticked
+     *         while a value of zero represents a fish that has already bitten the hook.
+     * @see #getWaitTime()
+     */
+    @org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE)
+    int getTimeUntilBite();
+
+    /**
+     * Sets the number of ticks the fish has to swim until biting the hook.
+     *
+     * @param ticks number of ticks.
+     *              One is the minimum that can be passed to this method and instructs the fish to bite the very next tick.
+     * @throws IllegalArgumentException if the passed tick value is less than one.
+     */
+    void setTimeUntilBite(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int ticks) throws IllegalArgumentException;
+
+    /**
+     * Completely resets this fishing hook's fishing state, re-randomizing the time needed until a fish is lured and
+     * bites the hook.
+     * <p>
+     * This method takes all properties of the fishing hook into account when resetting said values, such as a lure
+     * enchantment.
+     */
+    void resetFishingState();
+    // Paper end
 }

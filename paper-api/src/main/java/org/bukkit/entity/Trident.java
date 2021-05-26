@@ -38,5 +38,24 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * @throws IllegalArgumentException if the loyalty level is lower than 0 or greater than 127
      */
     void setLoyaltyLevel(int loyaltyLevel);
+
+    /**
+     * Gets if this trident has dealt damage to an
+     * entity yet or has hit the floor.
+     *
+     * If neither of these events have occurred yet, this will
+     * return false.
+     *
+     * @return has dealt damage
+     */
+    boolean hasDealtDamage();
+
+    /**
+     * Sets if this trident has dealt damage to an entity
+     * yet or has hit the floor.
+     *
+     * @param hasDealtDamage has dealt damage or hit the floor
+     */
+    void setHasDealtDamage(boolean hasDealtDamage);
 }
 // Paper end

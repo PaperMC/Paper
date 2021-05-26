@@ -32,12 +32,34 @@ public interface ThrownPotion extends ThrowableProjectile {
 
     /**
      * Set the ItemStack for this thrown potion.
-     * <p>
-     * The ItemStack must be of type {@link org.bukkit.Material#SPLASH_POTION}
-     * or {@link org.bukkit.Material#LINGERING_POTION}, otherwise an exception
-     * is thrown.
      *
      * @param item New ItemStack
      */
     public void setItem(@NotNull ItemStack item);
+
+    // Paper start - Projectile API
+    /**
+     * Gets a copy of the PotionMeta for this thrown potion.
+     * This includes what effects will be applied by this potion.
+     *
+     * @return potion meta
+     */
+    @NotNull
+    org.bukkit.inventory.meta.PotionMeta getPotionMeta();
+
+    /**
+     * Sets the PotionMeta of this thrown potion.
+     * This will modify the effects applied by this potion.
+     * <p>
+     * Note that the type of {@link #getItem()} is irrelevant
+     *
+     * @param meta potion meta
+     */
+    void setPotionMeta(@NotNull org.bukkit.inventory.meta.PotionMeta meta);
+
+    /**
+     * Splashes the potion at its current location.
+     */
+    void splash();
+    // Paper end
 }

@@ -16,6 +16,8 @@ public interface Firework extends Projectile {
 
     /**
      * Apply the provided meta to the fireworks
+     * <p>
+     * Adjusts detonation ticks automatically.
      *
      * @param meta The FireworkMeta to apply
      */
@@ -54,31 +56,39 @@ public interface Firework extends Projectile {
      * {@link #getMaxLife()}, the firework will detonate.
      *
      * @param ticks the ticks to set. Must be greater than or equal to 0
+     * @deprecated use {@link #setTicksFlown(int)}
      * @return true if the life was set, false if this firework has already detonated
      */
+    @Deprecated(forRemoval = true) // Paper
     boolean setLife(int ticks);
 
     /**
      * Get the ticks that this firework has been alive. When this value reaches
      * {@link #getMaxLife()}, the firework will detonate.
      *
+     * @deprecated use {@link #getTicksFlown()}
      * @return the life ticks
      */
+    @Deprecated(forRemoval = true) // Paper
     int getLife();
 
     /**
      * Set the time in ticks this firework will exist until it is detonated.
      *
      * @param ticks the ticks to set. Must be greater than 0
+     * @deprecated use {@link #setTicksToDetonate(int)}
      * @return true if the time was set, false if this firework has already detonated
      */
+    @Deprecated(forRemoval = true) // Paper
     boolean setMaxLife(int ticks);
 
     /**
      * Get the time in ticks this firework will exist until it is detonated.
      *
+     * @deprecated use {@link #getTicksToDetonate()}
      * @return the maximum life in ticks
      */
+    @Deprecated(forRemoval = true) // Paper
     int getMaxLife();
 
     /**
@@ -126,5 +136,53 @@ public interface Firework extends Projectile {
     default LivingEntity getBoostedEntity() {
         return getAttachedTo();
     }
+    // Paper end
+
+    // Paper start - Firework API
+    /**
+     * Gets the item used in the firework.
+     *
+     * @return firework item
+     */
+    @NotNull
+    public org.bukkit.inventory.ItemStack getItem();
+
+    /**
+     * Sets the item used in the firework.
+     * <p>
+     * Firework explosion effects are used from this item.
+     *
+     * @param itemStack item to set
+     */
+    void setItem(@org.jetbrains.annotations.Nullable org.bukkit.inventory.ItemStack itemStack);
+
+    /**
+     * Gets the number of ticks the firework has flown.
+     *
+     * @return ticks flown
+     */
+    int getTicksFlown();
+
+    /**
+     * Sets the number of ticks the firework has flown.
+     * Setting this greater than detonation ticks will cause the firework to explode.
+     *
+     * @param ticks ticks flown
+     */
+    void setTicksFlown(int ticks);
+
+    /**
+     * Gets the number of ticks the firework will detonate on.
+     *
+     * @return the tick to detonate on
+     */
+    int getTicksToDetonate();
+
+    /**
+     * Set the amount of ticks the firework will detonate on.
+     *
+     * @param ticks ticks to detonate on
+     */
+    void setTicksToDetonate(int ticks);
     // Paper end
 }

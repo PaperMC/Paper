@@ -139,17 +139,21 @@ public interface AbstractArrow extends Projectile {
      * Gets the ItemStack which will be picked up from this arrow.
      *
      * @return The picked up ItemStack
+     * @deprecated use {@link #getItemStack()}
      */
     @NotNull
     @ApiStatus.Experimental
+    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public ItemStack getItem();
 
     /**
      * Sets the ItemStack which will be picked up from this arrow.
      *
      * @param item ItemStack set to be picked up
+     * @deprecated use {@link #getItemStack()}
      */
     @ApiStatus.Experimental
+    @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public void setItem(@NotNull ItemStack item);
 
     /**
@@ -220,4 +224,52 @@ public interface AbstractArrow extends Projectile {
         CREATIVE_ONLY;
     }
     // Paper end
+
+    // Paper start - more projectile API
+    /**
+     * Gets the {@link ItemStack} for this arrow. This stack is used
+     * for both visuals on the arrow and the stack that could be picked up.
+     *
+     * @return The ItemStack, as if a player picked up the arrow
+     */
+    @NotNull ItemStack getItemStack();
+
+    /**
+     * Sets the {@link ItemStack} for this arrow. This stack is used for both
+     * visuals on the arrow and the stack that could be picked up.
+     *
+     * @param stack the arrow stack
+     */
+    void setItemStack(@NotNull ItemStack stack);
+
+    /**
+     * Sets the amount of ticks this arrow has been alive in the world
+     * This is used to determine when the arrow should be automatically despawned.
+     *
+     * @param ticks lifetime ticks
+     */
+    void setLifetimeTicks(int ticks);
+
+    /**
+     * Gets how many ticks this arrow has been in the world for.
+     *
+     * @return ticks this arrow has been in the world
+     */
+    int getLifetimeTicks();
+
+    /**
+     * Gets the sound that is played when this arrow hits an entity.
+     *
+     * @return sound that plays
+     */
+    @NotNull
+    org.bukkit.Sound getHitSound();
+
+    /**
+     * Sets the sound that is played when this arrow hits an entity.
+     *
+     * @param sound sound that is played
+     */
+    void setHitSound(@NotNull org.bukkit.Sound sound);
+    // Paper end - more projectile API
 }
