@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 27 May 2021 14:52:30 -0700
+Subject: [PATCH] Fix invulnerable end crystals
+
+MC-108513
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 795b76379eb698aa0ed83c000ea0679a844792d5..1a368df78feb4afdf522527af5ed1652afffcd15 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -825,4 +825,9 @@ public class PaperWorldConfig {
+     private void fixItemsMergingThroughWalls() {
+         fixItemsMergingThroughWalls = getBoolean("fix-items-merging-through-walls", fixItemsMergingThroughWalls);
+     }
++
++    public boolean fixInvulnerableEndCrystalExploit = true;
++    private void fixInvulnerableEndCrystalExploit() {
++        fixInvulnerableEndCrystalExploit = getBoolean("unsupported-settings.fix-invulnerable-end-crystal-exploit", fixInvulnerableEndCrystalExploit);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonBattle.java b/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonBattle.java
+index 0ab6319aa3e4e1f5679f37be36999ca56ca2484c..558216ea96bcdc34ffa595c848151278c33b5ca1 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonBattle.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EnderDragonBattle.java
+@@ -570,6 +570,7 @@ public class EnderDragonBattle {
+ 
+         while (iterator.hasNext()) {
+             WorldGenEnder.Spike worldgenender_spike = (WorldGenEnder.Spike) iterator.next();
++            if (!this.world.paperConfig.fixInvulnerableEndCrystalExploit || worldgenender_spike.crystal == null) { // Paper
+             List<EntityEnderCrystal> list = this.world.a(EntityEnderCrystal.class, worldgenender_spike.f());
+             Iterator iterator1 = list.iterator();
+ 
+@@ -579,6 +580,13 @@ public class EnderDragonBattle {
+                 entityendercrystal.setInvulnerable(false);
+                 entityendercrystal.setBeamTarget((BlockPosition) null);
+             }
++            // Paper start
++            } else {
++                worldgenender_spike.crystal.setInvulnerable(false);
++                worldgenender_spike.crystal.setBeamTarget(null);
++                worldgenender_spike.crystal = null;
++            }
++            // Paper end
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/WorldGenEnder.java b/src/main/java/net/minecraft/world/level/levelgen/feature/WorldGenEnder.java
+index dd623702131eaa1a65937a19a0e986e865322258..1960fc029262d54c6a5ee05c99d86428386cba4a 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/WorldGenEnder.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/WorldGenEnder.java
+@@ -42,7 +42,7 @@ public class WorldGenEnder extends WorldGenerator<WorldGenFeatureEndSpikeConfigu
+         return (List) WorldGenEnder.a.getUnchecked(i);
+     }
+ 
+-    public boolean a(GeneratorAccessSeed generatoraccessseed, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEndSpikeConfiguration worldgenfeatureendspikeconfiguration) {
++    public boolean generate(GeneratorAccessSeed generatoraccessseed, ChunkGenerator chunkgenerator, Random random, BlockPosition blockposition, WorldGenFeatureEndSpikeConfiguration worldgenfeatureendspikeconfiguration) { // Paper - decompile fix
+         List<WorldGenEnder.Spike> list = worldgenfeatureendspikeconfiguration.c();
+ 
+         if (list.isEmpty()) {
+@@ -107,6 +107,7 @@ public class WorldGenEnder extends WorldGenerator<WorldGenFeatureEndSpikeConfigu
+         entityendercrystal.setInvulnerable(worldgenfeatureendspikeconfiguration.b());
+         entityendercrystal.setPositionRotation((double) worldgenender_spike.a() + 0.5D, (double) (worldgenender_spike.d() + 1), (double) worldgenender_spike.b() + 0.5D, random.nextFloat() * 360.0F, 0.0F);
+         worldaccess.addEntity(entityendercrystal);
++        worldgenender_spike.crystal = entityendercrystal; // Paper
+         this.a(worldaccess, new BlockPosition(worldgenender_spike.a(), worldgenender_spike.d(), worldgenender_spike.b()), Blocks.BEDROCK.getBlockData());
+     }
+ 
+@@ -156,6 +157,7 @@ public class WorldGenEnder extends WorldGenerator<WorldGenFeatureEndSpikeConfigu
+         private final int e;
+         private final boolean f;
+         private final AxisAlignedBB g;
++        public EntityEnderCrystal crystal; // Paper
+ 
+         public Spike(int i, int j, int k, int l, boolean flag) {
+             this.b = i;
