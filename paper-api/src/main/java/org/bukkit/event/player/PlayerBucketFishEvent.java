@@ -1,29 +1,23 @@
 package org.bukkit.event.player;
 
 import org.bukkit.Material;
+import org.bukkit.Warning;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called whenever a player attempts to put a fish in a bucket.
+ *
+ * @deprecated Use the more generic {@link PlayerBucketEntityEvent}
  */
-public class PlayerBucketFishEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancalled;
-    private final Fish fish;
-    private final ItemStack waterBucket;
-    private final ItemStack fishBucket;
+@Deprecated
+@Warning(false)
+public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
 
     public PlayerBucketFishEvent(@NotNull Player player, @NotNull Fish fish, @NotNull ItemStack waterBucket, @NotNull ItemStack fishBucket) {
-        super(player);
-        this.fish = fish;
-        this.waterBucket = waterBucket;
-        this.fishBucket = fishBucket;
+        super(player, fish, waterBucket, fishBucket);
     }
 
     /**
@@ -32,8 +26,9 @@ public class PlayerBucketFishEvent extends PlayerEvent implements Cancellable {
      * @return The fish involved with this event
      */
     @NotNull
+    @Override
     public Fish getEntity() {
-        return fish;
+        return (Fish) super.getEntity();
     }
 
     /**
@@ -42,10 +37,12 @@ public class PlayerBucketFishEvent extends PlayerEvent implements Cancellable {
      * This refers to the bucket clicked with, ie {@link Material#WATER_BUCKET}.
      *
      * @return The used bucket
+     * @deprecated Use {@link #getOriginalBucket()}
      */
     @NotNull
+    @Deprecated
     public ItemStack getWaterBucket() {
-        return waterBucket;
+        return getOriginalBucket();
     }
 
     /**
@@ -55,30 +52,11 @@ public class PlayerBucketFishEvent extends PlayerEvent implements Cancellable {
      * {@link Material#PUFFERFISH_BUCKET}.
      *
      * @return The bucket that the fish will be put into
+     * @deprecated Use {@link #getEntityBucket()}
      */
     @NotNull
+    @Deprecated
     public ItemStack getFishBucket() {
-        return fishBucket;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancalled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancalled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return handlers;
+        return getEntityBucket();
     }
 }
