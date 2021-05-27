@@ -1,6 +1,20 @@
 --- a/net/minecraft/world/entity/monster/piglin/PiglinAI.java
 +++ b/net/minecraft/world/entity/monster/piglin/PiglinAI.java
-@@ -114,7 +114,8 @@
+@@ -72,6 +72,13 @@
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import java.util.stream.Collectors;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.entity.PiglinBarterEvent;
++// CraftBukkit end
++
+ public class PiglinAI {
+ 
+     public static final Item a = Items.GOLD_INGOT;
+@@ -114,7 +121,8 @@
      private static void b(EntityPiglin entitypiglin, BehaviorController<EntityPiglin> behaviorcontroller) {
          behaviorcontroller.a(Activity.FLIGHT, 10, ImmutableList.of(new BehaviorAttackTargetForget<>((entityliving) -> {
              return !b(entitypiglin, entityliving);
@@ -10,7 +24,7 @@
      }
  
      private static void c(BehaviorController<EntityPiglin> behaviorcontroller) {
-@@ -132,7 +133,8 @@
+@@ -132,7 +140,8 @@
      }
  
      private static void f(BehaviorController<EntityPiglin> behaviorcontroller) {
@@ -20,7 +34,7 @@
      }
  
      private static BehaviorGateSingle<EntityPiglin> a() {
-@@ -140,7 +142,8 @@
+@@ -140,7 +149,8 @@
      }
  
      private static BehaviorGateSingle<EntityPiglin> b() {
@@ -30,7 +44,7 @@
      }
  
      private static BehaviorWalkAway<BlockPosition> c() {
-@@ -157,10 +160,10 @@
+@@ -157,10 +167,10 @@
  
      protected static void b(EntityPiglin entitypiglin) {
          BehaviorController<EntityPiglin> behaviorcontroller = entitypiglin.getBehaviorController();
@@ -43,7 +57,7 @@
  
          if (activity != activity1) {
              d(entitypiglin).ifPresent(entitypiglin::a);
-@@ -192,14 +195,18 @@
+@@ -192,25 +202,29 @@
          n(entitypiglin);
          ItemStack itemstack;
  
@@ -64,7 +78,11 @@
  
          Item item = itemstack.getItem();
  
-@@ -210,7 +217,7 @@
+-        if (a(item)) {
++        if (a(entitypiglin, itemstack)) { // CraftBukkit - Changes to allow for custom payment in bartering
+             entitypiglin.getBehaviorController().removeMemory(MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM);
+             c(entitypiglin, itemstack);
+             d((EntityLiving) entitypiglin);
          } else if (c(item) && !u(entitypiglin)) {
              s(entitypiglin);
          } else {
@@ -73,7 +91,57 @@
  
              if (!flag) {
                  d(entitypiglin, itemstack);
-@@ -412,7 +419,7 @@
+@@ -246,9 +260,14 @@
+         boolean flag1;
+ 
+         if (entitypiglin.eM()) {
+-            flag1 = b(itemstack.getItem());
++            flag1 = isBarterItem(itemstack.getItem(), entitypiglin); // CraftBukkit - Changes to allow custom payment for bartering
+             if (flag && flag1) {
+-                a(entitypiglin, i(entitypiglin));
++                // CraftBukkit start
++                PiglinBarterEvent event = CraftEventFactory.callPiglinBarterEvent(entitypiglin, i(entitypiglin), itemstack);
++                if (!event.isCancelled()) {
++                    a(entitypiglin, event.getOutcome().stream().map(CraftItemStack::asNMSCopy).collect(Collectors.toList()));
++                }
++                // CraftBukkit end
+             } else if (!flag1) {
+                 boolean flag2 = entitypiglin.g(itemstack);
+ 
+@@ -261,7 +280,7 @@
+             if (!flag1) {
+                 ItemStack itemstack1 = entitypiglin.getItemInMainHand();
+ 
+-                if (a(itemstack1.getItem())) {
++                if (isLovedByPiglin(itemstack1.getItem(), entitypiglin)) { // CraftBukkit - Changes to allow for custom payment in bartering
+                     d(entitypiglin, itemstack1);
+                 } else {
+                     a(entitypiglin, Collections.singletonList(itemstack1));
+@@ -338,15 +357,21 @@
+             return false;
+         } else if (x(entitypiglin) && entitypiglin.getBehaviorController().hasMemory(MemoryModuleType.ATTACK_TARGET)) {
+             return false;
+-        } else if (b(item)) {
++        } else if (isBarterItem(item, entitypiglin)) { // CraftBukkit
+             return z(entitypiglin);
+         } else {
+             boolean flag = entitypiglin.l(itemstack);
+ 
+-            return item == Items.GOLD_NUGGET ? flag : (c(item) ? !u(entitypiglin) && flag : (!a(item) ? entitypiglin.o(itemstack) : z(entitypiglin) && flag));
++            return item == Items.GOLD_NUGGET ? flag : (c(item) ? !u(entitypiglin) && flag : (!isLovedByPiglin(item, entitypiglin) ? entitypiglin.o(itemstack) : z(entitypiglin) && flag)); //CraftBukkit
+         }
+     }
+ 
++    // CraftBukkit start - Added method to allow checking for custom payment items
++    protected static boolean isLovedByPiglin(Item item, EntityPiglin piglin) {
++        return a(item) || (piglin.interestItems.contains(item) || piglin.allowedBarterItems.contains(item));
++    }
++    // CraftBukkit end
++
+     protected static boolean a(Item item) {
+         return item.a((Tag) TagsItem.PIGLIN_LOVED);
+     }
+@@ -412,7 +437,7 @@
      }
  
      public static void a(EntityHuman entityhuman, boolean flag) {
@@ -82,7 +150,16 @@
  
          list.stream().filter(PiglinAI::d).filter((entitypiglin) -> {
              return !flag || BehaviorUtil.c(entitypiglin, entityhuman);
-@@ -648,7 +655,7 @@
+@@ -442,7 +467,7 @@
+     }
+ 
+     protected static boolean b(EntityPiglin entitypiglin, ItemStack itemstack) {
+-        return !x(entitypiglin) && !v(entitypiglin) && entitypiglin.eM() && b(itemstack.getItem());
++        return !x(entitypiglin) && !v(entitypiglin) && entitypiglin.eM() && isBarterItem(itemstack.getItem(), entitypiglin); // CraftBukkit
+     }
+ 
+     protected static void a(EntityPiglin entitypiglin, EntityLiving entityliving) {
+@@ -648,7 +673,7 @@
              EntityLiving entityliving = (EntityLiving) behaviorcontroller.getMemory(MemoryModuleType.AVOID_TARGET).get();
              EntityTypes<?> entitytypes = entityliving.getEntityType();
  
@@ -91,7 +168,20 @@
          }
      }
  
-@@ -730,7 +737,7 @@
+@@ -705,6 +730,12 @@
+         return entitypiglin.getBehaviorController().hasMemory(MemoryModuleType.ADMIRING_ITEM);
+     }
+ 
++    // CraftBukkit start - Changes to allow custom payment for bartering
++    private static boolean isBarterItem(Item item, EntityPiglin piglin) {
++        return b(item) || piglin.allowedBarterItems.contains(item);
++    }
++    // CraftBukkit end
++
+     private static boolean b(Item item) {
+         return item == PiglinAI.a;
+     }
+@@ -730,7 +761,7 @@
      }
  
      public static boolean b(EntityLiving entityliving) {
@@ -100,3 +190,12 @@
      }
  
      private static boolean x(EntityPiglin entitypiglin) {
+@@ -746,7 +777,7 @@
+     }
+ 
+     private static boolean z(EntityPiglin entitypiglin) {
+-        return entitypiglin.getItemInOffHand().isEmpty() || !a(entitypiglin.getItemInOffHand().getItem());
++        return entitypiglin.getItemInOffHand().isEmpty() || !isLovedByPiglin(entitypiglin.getItemInOffHand().getItem(), entitypiglin); // CraftBukkit - Changes to allow custom payment for bartering
+     }
+ 
+     public static boolean a(EntityTypes entitytypes) {
