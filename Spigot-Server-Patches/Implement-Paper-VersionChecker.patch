@@ -24,6 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.io.*;
 +import java.net.HttpURLConnection;
 +import java.net.URL;
++import java.util.stream.StreamSupport;
 +
 +public class PaperVersionFetcher implements VersionFetcher {
 +    private static final java.util.regex.Pattern VER_PATTERN = java.util.regex.Pattern.compile("^([0-9\\.]*)\\-.*R"); // R is an anchor, will always give '-R' at end
@@ -84,11 +85,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (siteApiVersion == null) { return -1; }
 +        try {
 +            try (BufferedReader reader = Resources.asCharSource(
-+                new URL("https://papermc.io/api/v1/paper/" + siteApiVersion + "/latest"),
++                new URL("https://papermc.io/api/v2/projects/paper/versions/" + siteApiVersion),
 +                Charsets.UTF_8
 +            ).openBufferedStream()) {
 +                JsonObject json = new Gson().fromJson(reader, JsonObject.class);
-+                int latest = json.get("build").getAsInt();
++                JsonArray builds = json.getAsJsonArray("builds");
++                int latest = StreamSupport.stream(builds.spliterator(), false)
++                    .mapToInt(e -> e.getAsInt())
++                    .max()
++                    .getAsInt();
 +                return latest - jenkinsBuild;
 +            } catch (JsonSyntaxException ex) {
 +                ex.printStackTrace();
