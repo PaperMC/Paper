@@ -129,6 +129,48 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
         return this.handle.getDescriptionId();
     }
 
+    // Paper start
+    @Override
+    public java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
+        // re-create map each time because a nms MobEffect can have its attributes modified
+        final java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> attributeMap = new java.util.HashMap<>();
+        this.handle.attributeModifiers.forEach((attribute, attributeModifier) -> {
+            attributeMap.put(
+                org.bukkit.craftbukkit.attribute.CraftAttribute.minecraftHolderToBukkit(attribute),
+                // use zero as amplifier to get the base amount, as it is amount = base * (amplifier + 1)
+                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(0))
+            );
+        });
+        return java.util.Map.copyOf(attributeMap);
+    }
+
+    @Override
+    public double getAttributeModifierAmount(org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
+        com.google.common.base.Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
+        Holder<net.minecraft.world.entity.ai.attributes.Attribute> nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraftHolder(attribute);
+        com.google.common.base.Preconditions.checkArgument(this.handle.attributeModifiers.containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
+        return this.handle.attributeModifiers.get(nmsAttribute).create(effectAmplifier).amount();
+    }
+
+    @Override
+    public PotionEffectType.Category getEffectCategory() {
+        return fromNMS(handle.getCategory());
+    }
+
+    @Override
+    public String translationKey() {
+        return this.handle.getDescriptionId();
+    }
+
+    public static PotionEffectType.Category fromNMS(net.minecraft.world.effect.MobEffectCategory mobEffectInfo) {
+        return switch (mobEffectInfo) {
+            case BENEFICIAL -> PotionEffectType.Category.BENEFICIAL;
+            case HARMFUL -> PotionEffectType.Category.HARMFUL;
+            case NEUTRAL -> PotionEffectType.Category.NEUTRAL;
+        };
+    }
+    // Paper end
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
