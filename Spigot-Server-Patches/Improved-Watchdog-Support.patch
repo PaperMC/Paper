@@ -100,6 +100,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot end
  
 +    public volatile Thread shutdownThread; // Paper
++    public volatile boolean abnormalExit = false; // Paper
 +
      public static <S extends MinecraftServer> S a(Function<Thread, S> function) {
          AtomicReference<S> atomicreference = new AtomicReference();
@@ -261,10 +262,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              //this.remoteStatusListener.b(); // Paper - don't wait for remote connections
          }
  
+-        System.exit(0); // CraftBukkit
 +        hasFullyShutdown = true; // Paper
-         System.exit(0); // CraftBukkit
++        System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper
      }
  
+     @Override
 @@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
      @Override
      public void stop() {
@@ -579,6 +582,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        RestartCommand.addShutdownHook( SpigotConfig.restartScript );
 +                    }
 +                    // try one last chance to safe shutdown on main incase it 'comes back'
++                    server.abnormalExit = true;
 +                    server.safeShutdown(false, restart);
 +                    try {
 +                        Thread.sleep(1000);
