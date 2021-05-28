@@ -29,7 +29,6 @@ import net.minecraft.world.level.block.BlockEnchantmentTable;
 import net.minecraft.world.level.block.BlockWorkbench;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
-import net.minecraft.world.level.block.entity.TileEntityContainer;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -295,7 +294,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         Containers<?> container = CraftContainer.getNotchInventoryType(inventory);
-        if (iinventory instanceof TileEntityContainer) {
+        if (iinventory instanceof ITileInventory) {
             getHandle().openContainer(iinventory);
         } else {
             openCustomInventory(inventory, player, container);
