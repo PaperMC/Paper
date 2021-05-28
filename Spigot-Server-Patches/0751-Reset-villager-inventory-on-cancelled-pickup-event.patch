@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Fri, 28 May 2021 06:48:48 -0500
+Subject: [PATCH] Reset villager inventory on cancelled pickup event
+
+
+diff --git a/src/main/java/net/minecraft/world/InventorySubcontainer.java b/src/main/java/net/minecraft/world/InventorySubcontainer.java
+index 760e61167a053b9df73823600561ddb0cf3ff2c7..4a30630ca7596f95c9dd871e5bc1e2e1ea8abc08 100644
+--- a/src/main/java/net/minecraft/world/InventorySubcontainer.java
++++ b/src/main/java/net/minecraft/world/InventorySubcontainer.java
+@@ -34,6 +34,16 @@ public class InventorySubcontainer implements IInventory, AutoRecipeOutput {
+         return this.items;
+     }
+ 
++    // Paper start
++    public void setContents(List<ItemStack> items) {
++        this.items.clear();
++        for(int i = 0; i < items.size(); i++) {
++            this.items.set(i, items.get(i));
++        }
++        this.update();
++    }
++    // Paper end
++
+     public void onOpen(CraftHumanEntity who) {
+         transaction.add(who);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+index 3f081177814dc874047e35e294ed18609f082d76..9278b8546a57f21051a65d59c2c01d39afaa68cc 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/EntityVillager.java
+@@ -845,8 +845,10 @@ public class EntityVillager extends EntityVillagerAbstract implements Reputation
+             }
+ 
+             // CraftBukkit start
++            List<ItemStack> contentsSnapshot = new java.util.ArrayList<>(inventorysubcontainer.getContents()); // Paper
+             ItemStack itemstack1 = inventorysubcontainer.a(itemstack);
+             if (CraftEventFactory.callEntityPickupItemEvent(this, entityitem, itemstack1.getCount(), false).isCancelled()) {
++                inventorysubcontainer.setContents(contentsSnapshot); // Paper
+                 return;
+             }
+             // CraftBukkit end
