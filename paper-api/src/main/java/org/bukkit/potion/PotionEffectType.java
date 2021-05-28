@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a type of potion and its effect on an entity.
  */
-public abstract class PotionEffectType implements Keyed, Translatable {
+public abstract class PotionEffectType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
     private static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
 
     /**
@@ -360,4 +360,57 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     public static PotionEffectType[] values() {
         return Lists.newArrayList(Registry.EFFECT).toArray(new PotionEffectType[0]);
     }
+
+    // Paper start
+    /**
+     * Gets the effect attributes in an immutable map.
+     *
+     * @return the attribute map
+     */
+    public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
+
+    /**
+     * Gets the true modifier amount based on the effect amplifier.
+     *
+     * @param attribute the attribute
+     * @param effectAmplifier the effect amplifier (0 indexed)
+     * @return the modifier amount
+     * @throws IllegalArgumentException if the supplied attribute is not present in the map from {@link #getEffectAttributes()}
+     */
+    public abstract double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier);
+
+    /**
+     * Gets the category of this effect
+     *
+     * @return the category
+     */
+    public abstract @NotNull PotionEffectType.Category getEffectCategory();
+
+    /**
+     * Category of {@link PotionEffectType}s
+     */
+    public enum Category {
+
+        BENEFICIAL(net.kyori.adventure.text.format.NamedTextColor.BLUE),
+        HARMFUL(net.kyori.adventure.text.format.NamedTextColor.RED),
+        NEUTRAL(net.kyori.adventure.text.format.NamedTextColor.BLUE);
+
+        private final net.kyori.adventure.text.format.TextColor color;
+
+        Category(net.kyori.adventure.text.format.TextColor color) {
+            this.color = color;
+        }
+
+        /**
+         * Gets the text color used when displaying potions
+         * of this category.
+         *
+         * @return the text color
+         */
+        @NotNull
+        public net.kyori.adventure.text.format.TextColor getColor() {
+            return color;
+        }
+    }
+    // Paper end
 }

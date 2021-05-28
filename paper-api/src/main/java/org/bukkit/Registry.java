@@ -367,6 +367,15 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see GameEvent
      */
     Registry<GameEvent> GAME_EVENT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.GAME_EVENT); // Paper
+
+    // Paper start - potion effect type registry
+    /**
+     * Potion effect types.
+     *
+     * @see org.bukkit.potion.PotionEffectType
+     */
+    Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
+    // Paper end - potion effect type registry
     /**
      * Get the object by its key.
      *
