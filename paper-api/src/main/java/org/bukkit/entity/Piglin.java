@@ -90,4 +90,47 @@ public interface Piglin extends PiglinAbstract, InventoryHolder, com.destroystok
      */
     @NotNull
     public Set<Material> getBarterList();
+
+    // Paper start
+    /**
+     * Causes the piglin to appear as if they are charging
+     * a crossbow.
+     * <p>
+     * This works with any item currently held in the piglin's hand.
+     *
+     * @param chargingCrossbow is charging
+     */
+    void setChargingCrossbow(boolean chargingCrossbow);
+
+    /**
+     * Gets if the piglin is currently charging the
+     * item in their hand.
+     *
+     * @return is charging
+     */
+    boolean isChargingCrossbow();
+
+    /**
+     * Sets whether the Piglin is dancing or not
+     *
+     * @param dancing is dancing
+     */
+    void setDancing(boolean dancing);
+
+    /**
+     * Causes the piglin to dance for a
+     * specified amount of time
+     *
+     * @param duration duration of the dance in ticks
+     */
+    void setDancing(long duration);
+
+    /**
+     * Gets if the piglin is currently dancing
+     *
+     * @return is dancing
+     */
+    boolean isDancing();
+    // Paper end
+
 }

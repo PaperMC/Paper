@@ -170,4 +170,38 @@ public interface Mob extends LivingEntity, Lootable {
         this.setSeed(seed);
     }
     // Paper end - LootTable API
+
+    // Paper start - Missing Entity API
+    /**
+     * Some mobs will raise their arm(s) when aggressive:
+     * <ul>
+     *     <li>{@link Drowned}</li>
+     *     <li>{@link Piglin}</li>
+     *     <li>{@link Skeleton}</li>
+     *     <li>{@link Zombie}</li>
+     *     <li>{@link ZombieVillager}</li>
+     *     <li>{@link Illusioner}</li>
+     *     <li>{@link Vindicator}</li>
+     *     <li>{@link Panda}</li>
+     *     <li>{@link Pillager}</li>
+     *     <li>{@link PiglinBrute}</li>
+     * </ul>
+     * <p>
+     * Note: This doesn't always show the actual aggressive state as
+     * set by {@link #setAggressive(boolean)}. {@link Panda}'s are always
+     * aggressive if their combined {@link Panda.Gene} is {@link Panda.Gene#AGGRESSIVE}.
+     *
+     * @return wether the mob is aggressive or not
+     */
+    boolean isAggressive();
+
+    /**
+     * Some mobs will raise their arm(s) when aggressive,
+     * see {@link #isAggressive()} for full list.
+     *
+     * @param aggressive wether the mob should be aggressive or not
+     * @see #isAggressive()
+     */
+    void setAggressive(boolean aggressive);
+    // Paper end - Missing Entity API
 }

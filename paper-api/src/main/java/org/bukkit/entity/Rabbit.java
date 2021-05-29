@@ -14,6 +14,23 @@ public interface Rabbit extends Animals {
      * @param type Sets the type of rabbit for this entity.
      */
     public void setRabbitType(@NotNull Type type);
+    // Paper start
+    /**
+     * Sets how many ticks this rabbit will wait
+     * until trying to find more carrots.
+     *
+     * @param ticks ticks
+     */
+    void setMoreCarrotTicks(int ticks);
+
+    /**
+     * Returns how many ticks this rabbit
+     * will wait until trying to find more carrots.
+     *
+     * @return ticks
+     */
+    int getMoreCarrotTicks();
+    // Paper end
 
     /**
      * Represents the various types a Rabbit might be.

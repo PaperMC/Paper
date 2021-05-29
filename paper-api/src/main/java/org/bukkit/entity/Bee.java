@@ -93,4 +93,56 @@ public interface Bee extends Animals {
      * @param ticks Ticks the bee cannot enter a hive for
      */
     void setCannotEnterHiveTicks(int ticks);
+
+    // Paper start
+    /**
+     * Sets the override for if the bee is currently rolling.
+     *
+     * @param rolling is rolling, or unset for vanilla behavior
+     */
+    void setRollingOverride(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState rolling);
+
+    /**
+     * Gets the plugin set override for if the bee is currently rolling.
+     *
+     * @return plugin set rolling override
+     */
+    @org.jetbrains.annotations.NotNull
+    net.kyori.adventure.util.TriState getRollingOverride();
+
+    /**
+     * Gets if the bee is currently rolling.
+     *
+     * @return is rolling
+     */
+    boolean isRolling();
+
+    /**
+     * Sets how many crops this bee has grown since it last
+     * pollinated.
+     * @param crops number of crops
+     */
+    void setCropsGrownSincePollination(int crops);
+
+    /**
+     * Gets how many crops this bee has grown since it last
+     * pollinated.
+     * @return number of crops
+     */
+    int getCropsGrownSincePollination();
+
+    /**
+     * Sets how many ticks this bee has gone without pollinating.
+     *
+     * @param ticks number of ticks
+     */
+    void setTicksSincePollination(int ticks);
+
+    /**
+     * Gets how many ticks this bee has gone without pollinating
+     *
+     * @return number of ticks
+     */
+    int getTicksSincePollination();
+    // Paper end
 }

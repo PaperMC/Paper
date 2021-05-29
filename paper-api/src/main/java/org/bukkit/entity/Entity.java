@@ -293,6 +293,40 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean isFrozen();
 
+    // Paper start - missing entity api
+    /**
+     * Sets whether the entity is invisible or not.
+     * <p>
+     * This setting is undefined for non-living entities like boats or paintings.
+     * Non-living entities that are marked as invisible through this method may e.g. only hide their shadow.
+     * To hide such entities from players completely, see {@link Player#hideEntity(org.bukkit.plugin.Plugin, Entity)}.
+     *
+     * @param invisible If the entity is invisible
+     */
+    void setInvisible(boolean invisible); // Paper - moved up from LivingEntity
+
+    /**
+     * Gets whether the entity is invisible or not.
+     *
+     * @return Whether the entity is invisible
+     */
+    boolean isInvisible(); // Paper - moved up from LivingEntity
+
+    /**
+     * Sets this entities no physics status.
+     *
+     * @param noPhysics boolean indicating if the entity should not have physics.
+     */
+    void setNoPhysics(boolean noPhysics);
+
+    /**
+     * Gets if this entity has no physics.
+     *
+     * @return true if the entity does not have physics.
+     */
+    boolean hasNoPhysics();
+    // Paper end - missing entity api
+
     /**
      * Mark the entity's removal.
      *

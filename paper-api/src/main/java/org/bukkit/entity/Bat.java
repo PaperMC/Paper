@@ -24,4 +24,23 @@ public interface Bat extends Ambient {
      * @param state the new state
      */
     void setAwake(boolean state);
+
+    // Paper start
+    /**
+     * Gets the location that this bat is currently trying to move towards.
+     *
+     * @return target location, or null if it's going to find a new location
+     */
+    @org.jetbrains.annotations.Nullable
+    org.bukkit.Location getTargetLocation();
+
+    /**
+     * Sets the location that this bat is currently trying to move towards.
+     * <p>
+     * This can be set to null to cause the bat to recalculate its target location
+     *
+     * @param location location to move towards (world is ignored, will always use the entity's world)
+     */
+    void setTargetLocation(@org.jetbrains.annotations.Nullable org.bukkit.Location location);
+    // Paper end
 }

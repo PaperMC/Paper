@@ -259,4 +259,20 @@ public interface AreaEffectCloud extends Entity {
      * @param source the {@link ProjectileSource} that threw the LingeringPotion
      */
     public void setSource(@Nullable ProjectileSource source);
+
+    // Paper start - owner API
+    /**
+     * Get the entity UUID for the owner of this area effect cloud.
+     *
+     * @return the entity owner uuid or null
+     */
+    @Nullable java.util.UUID getOwnerUniqueId();
+
+    /**
+     * Sets the entity UUID for the owner of this area effect cloud.
+     *
+     * @param ownerUuid the entity owner uuid or null to clear
+     */
+    void setOwnerUniqueId(@Nullable java.util.UUID ownerUuid);
+    // Paper end
 }

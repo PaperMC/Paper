@@ -30,6 +30,18 @@ public interface Warden extends Monster {
      */
     int getAnger(@NotNull Entity entity);
 
+    // Paper start
+    /**
+     * Gets the highest anger level of this warden.
+     * <p>
+     * Anger is an integer from 0 to 150. Once a Warden reaches 80 anger at a
+     * target it will actively pursue it.
+     *
+     * @return highest anger level
+     */
+    int getHighestAnger();
+    // Paper end
+
     /**
      * Increases the anger level of this warden.
      *

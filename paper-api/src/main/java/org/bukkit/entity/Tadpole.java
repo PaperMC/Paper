@@ -18,4 +18,21 @@ public interface Tadpole extends Fish {
      * @param age New age
      */
     public void setAge(int age);
+
+    // Paper start - Tadpole age lock api
+    /**
+     * Lock the age of the animal, setting this will prevent the animal from
+     * maturing.
+     *
+     * @param lock new lock
+     */
+    void setAgeLock(boolean lock);
+
+    /**
+     * Gets the current agelock.
+     *
+     * @return the current agelock
+     */
+    boolean getAgeLock();
+    // Paper end
 }

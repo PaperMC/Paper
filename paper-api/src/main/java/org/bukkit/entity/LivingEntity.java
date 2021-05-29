@@ -1004,6 +1004,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param invisible If the entity is invisible
      */
+    @Override // Paper - move invisibility up to Entity
     public void setInvisible(boolean invisible);
 
     /**
@@ -1011,6 +1012,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return Whether the entity is invisible
      */
+    @Override // Paper - move invisibility up to Entity
     public boolean isInvisible();
 
     // Paper start
@@ -1046,6 +1048,57 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     void setShieldBlockingDelay(int delay);
     // Paper end
+
+    // Paper start - missing entity API
+    /**
+     * Retrieves the sideways movement direction of the entity.
+     * <p>
+     * The returned value ranges from -1 to 1, where:
+     * - Positive 1 represents movement to the left.
+     * - Negative 1 represents movement to the right.
+     * <p>
+     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * <p>
+     * This method specifically provides information about the entity's sideways movement, whereas {@link #getVelocity()} returns
+     * a vector representing the entity's overall current momentum.
+     *
+     * @return Sideways movement direction, ranging from -1 (right) to 1 (left).
+     */
+    float getSidewaysMovement();
+
+    /**
+     * Retrieves the upwards movement direction of the entity.
+     * <p>
+     * The returned value ranges from -1 to 1, where:
+     * - Positive 1 represents upward movement.
+     * - Negative 1 represents downward movement.
+     * <p>
+     * Please note that for entities of type {@link Player}, this value is never updated.
+     * <p>
+     * This method specifically provides information about the entity's vertical movement,
+     * whereas {@link #getVelocity()} returns a vector representing the entity's overall
+     * current momentum.
+     *
+     * @return Upwards movement direction, ranging from -1 (downward) to 1 (upward).
+     */
+    float getUpwardsMovement();
+
+    /**
+     * Retrieves the forwards movement direction of the entity.
+     * <p>
+     * The returned value ranges from -1 to 1, where:
+     * - Positive 1 represents movement forwards.
+     * - Negative 1 represents movement backwards.
+     * <p>
+     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * <p>
+     * This method specifically provides information about the entity's forward and backward movement,
+     * whereas {@link #getVelocity()} returns a vector representing the entity's overall current momentum.
+     *
+     * @return Forwards movement direction, ranging from -1 (backward) to 1 (forward).
+     */
+    float getForwardsMovement();
+    // Paper end - missing entity API
 
     // Paper start - active item API
     /**

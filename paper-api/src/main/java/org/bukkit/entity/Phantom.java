@@ -40,5 +40,21 @@ public interface Phantom extends Flying, Enemy {
      * @param shouldBurnInDay True to burn in sunlight
      */
     public void setShouldBurnInDay(boolean shouldBurnInDay);
+
+    /**
+     * Gets the location that this phantom circles around when not attacking a player
+     * This will be changed after attacking a player.
+     *
+     * @return circling location
+     */
+    @org.jetbrains.annotations.NotNull
+    org.bukkit.Location getAnchorLocation();
+
+    /**
+     * Sets the location that this phantom circles around when not attacking a player
+     *
+     * @param location circling location (world is ignored, will always use the entity's world)
+     */
+    void setAnchorLocation(@org.jetbrains.annotations.NotNull org.bukkit.Location location);
     // Paper end
 }

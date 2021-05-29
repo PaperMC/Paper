@@ -107,6 +107,98 @@ public interface Panda extends Animals, Sittable {
      */
     int getUnhappyTicks();
 
+    // Paper start - Panda API
+    /**
+     * Sets the sneeze progress in this animation.
+     * This value counts up only if {@link Panda#isSneezing()} is true
+     *
+     * @param ticks sneeze progress
+     */
+    void setSneezeTicks(int ticks);
+
+    /**
+     * Gets the current sneeze progress, or how many ticks this panda will sneeze for.
+     *
+     * @return sneeze progress
+     */
+    int getSneezeTicks();
+
+    /**
+     * Sets the eating ticks for this panda.
+     * <p>
+     *
+     * This starts counting up as long as it is greater than 0.
+     *
+     * @param ticks eating ticks
+     */
+    void setEatingTicks(int ticks);
+
+    /**
+     * Gets the current eating progress, or how many ticks this panda has been eating for.
+     *
+     * @return eating progress
+     */
+    int getEatingTicks();
+
+    /**
+     * Sets the number of ticks this panda will be unhappy for.
+     * <p>
+     * This value counts down.
+     *
+     * @param ticks unhappy ticks
+     */
+    void setUnhappyTicks(int ticks);
+
+    /**
+     * Sets if this panda is currently on its back.
+     *
+     * @param onBack is on its back
+     * @deprecated use {@link #setOnBack(boolean)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19")
+    default void setIsOnBack(boolean onBack) {
+        this.setOnBack(onBack);
+    }
+
+    /**
+     * Sets if this panda is currently sitting.
+     *
+     * @param sitting is currently sitting
+     * @deprecated use {@link #setSitting(boolean)}
+     */
+    @Deprecated(forRemoval = true, since = "1.19")
+    default void setIsSitting(boolean sitting) {
+        this.setSitting(sitting);
+    }
+
+    /**
+     * Sets if this panda is currently sitting.
+     *
+     * @param sitting is currently sitting
+     */
+    @Override
+    void setSitting(boolean sitting);
+
+    /**
+     * Gets if this panda is sitting.
+     *
+     * @return is sitting
+     */
+    @Override
+    boolean isSitting();
+
+    /**
+     * Gets this Panda's combined gene.
+     * <p>
+     * The combined gene can be modified using
+     * {@link #setMainGene(Gene)} or {@link #setHiddenGene(Gene)}.
+     *
+     * @return combined gene
+     */
+    @NotNull
+    Gene getCombinedGene();
+    // Paper end - Panda API
+
     public enum Gene {
 
         NORMAL(false),

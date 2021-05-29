@@ -24,4 +24,23 @@ public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntit
      * @param enabled new enabled state
      */
     void setEnabled(boolean enabled);
+    // Paper start
+    /**
+     * Gets the number of ticks that this hopper minecart cannot pickup items up for.
+     *
+     * @return ticks left on cooldown
+     * @deprecated Hopper minecarts don't have cooldowns anymore
+     */
+    @Deprecated(forRemoval = true, since = "1.19.4")
+    int getPickupCooldown();
+
+    /**
+     * Sets the number of ticks that this hopper minecart cannot pickup items for.
+     *
+     * @param cooldown cooldown length in ticks
+     * @deprecated Hopper minecarts don't have cooldowns anymore
+     */
+    @Deprecated(forRemoval = true, since = "1.19.4")
+    void setPickupCooldown(int cooldown);
+    // Paper end
 }

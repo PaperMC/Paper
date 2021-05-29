@@ -64,4 +64,26 @@ public interface TNTPrimed extends Explosive {
     default org.bukkit.Location getSourceLoc() {
         return this.getOrigin();
     }
+
+    // Paper start
+    /**
+     * Sets the visual block data of this
+     * primed tnt.
+     * <br>
+     * The explosion of the tnt stays the
+     * same and is not affected by this change.
+     *
+     * @param data the visual block data
+     */
+    void setBlockData(@org.jetbrains.annotations.NotNull org.bukkit.block.data.BlockData data);
+
+    /**
+     * Gets the visual block data of this
+     * primed tnt.
+     *
+     * @return the visual block data
+     */
+    @org.jetbrains.annotations.NotNull
+    org.bukkit.block.data.BlockData getBlockData();
+    // Paper end
 }

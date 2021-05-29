@@ -53,5 +53,26 @@ public interface WanderingTrader extends AbstractVillager {
      * @return whether the mob will drink
      */
     public boolean canDrinkMilk();
+
+    /**
+     * Gets the location that this wandering trader is currently
+     * wandering towards.
+     * <p>
+     * This will return null if the wandering trader has finished
+     * wandering towards the given location.
+     *
+     * @return the location currently wandering towards, or null if not wandering
+     */
+    @org.jetbrains.annotations.Nullable
+    org.bukkit.Location getWanderingTowards();
+
+    /**
+     * Sets the location that this wandering trader is currently wandering towards.
+     * <p>
+     * This can be set to null to prevent the wandering trader from wandering further.
+     *
+     * @param location location to wander towards (world is ignored, will always use the entity's world)
+     */
+    void setWanderingTowards(@org.jetbrains.annotations.Nullable org.bukkit.Location location);
     // Paper end
 }

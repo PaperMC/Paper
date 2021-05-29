@@ -57,21 +57,30 @@ public interface Vex extends Monster {
      * Gets the remaining lifespan of this entity.
      *
      * @return life in ticks
+     * @deprecated This API duplicates existing API which uses the more
+     * preferable name due to mirroring internals better
      */
+    @Deprecated
     int getLifeTicks();
 
     /**
      * Sets the remaining lifespan of this entity.
      *
      * @param lifeTicks life in ticks, or negative for unlimited lifepan
+     * @deprecated This API duplicates existing API which uses the more
+     * preferable name due to mirroring internals better
      */
+    @Deprecated
     void setLifeTicks(int lifeTicks);
 
     /**
      * Gets if the entity has a limited life.
      *
      * @return true if the entity has limited life
+     * @deprecated This API duplicates existing API which uses the more
+     * preferable name due to mirroring internals better
      */
+    @Deprecated
     boolean hasLimitedLife();
     // Paper start
 
@@ -89,5 +98,37 @@ public interface Vex extends Monster {
      * @param summoner New summoner
      */
     void setSummoner(@Nullable Mob summoner);
+
+    /**
+     * Gets if this vex should start to take damage
+     * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
+     * 
+     * @return will take damage
+     */
+    boolean hasLimitedLifetime();
+
+    /**
+     * Sets if this vex should start to take damage
+     * once {@link Vex#getLimitedLifetimeTicks()} is less than or equal to 0.
+     *      
+     * @param hasLimitedLifetime should take damage
+     */
+    void setLimitedLifetime(boolean hasLimitedLifetime);
+
+    /**
+     * Gets the number of ticks remaining until the vex will start
+     * to take damage.
+     * 
+     * @return ticks until the vex will start to take damage
+     */
+    int getLimitedLifetimeTicks();
+
+    /**
+     * Sets the number of ticks remaining until the vex takes damage.
+     * This number is ticked down only if {@link Vex#hasLimitedLifetime()} is true.
+     * 
+     * @param ticks ticks remaining
+     */
+    void setLimitedLifetimeTicks(int ticks);
     // Paper end
 }

@@ -62,4 +62,25 @@ public interface Fireball extends Projectile, Explosive {
      */
     @NotNull
     Vector getAcceleration();
+
+    // Paper start - Expose power on fireball projectiles
+    /**
+     * Sets the power of a fireball. The power determines the direction and magnitude of its acceleration.
+     *
+     * @param power the power
+     * @deprecated use #setAcceleration(Vector) instead.
+     */
+    @Deprecated
+    public void setPower(@NotNull Vector power);
+
+    /**
+     * Gets the power of a fireball. The power determines the direction and magnitude of its acceleration.
+     *
+     * @return the power
+     * @deprecated Use #getAcceleration instead.
+     */
+    @Deprecated
+    @NotNull
+    public Vector getPower();
+    // Paper end - Expose power on fireball projectiles
 }

@@ -90,4 +90,36 @@ public interface Cat extends Tameable, Sittable {
             return Lists.newArrayList(Registry.CAT_VARIANT).toArray(new Type[0]);
         }
     }
+
+    // Paper start - More cat api
+    /**
+     * Sets if the cat is lying down.
+     * This is visual and does not affect the behaviour of the cat.
+     *
+     * @param lyingDown whether the cat should lie down
+     */
+    public void setLyingDown(boolean lyingDown);
+
+    /**
+     * Gets if the cat is lying down.
+     *
+     * @return whether the cat is lying down
+     */
+    public boolean isLyingDown();
+
+    /**
+     * Sets if the cat has its head up.
+     * This is visual and does not affect the behaviour of the cat.
+     *
+     * @param headUp head is up
+     */
+    public void setHeadUp(boolean headUp);
+
+    /**
+     * Gets if the cat has its head up.
+     *
+     * @return head is up
+     */
+    public boolean isHeadUp();
+    // Paper end - More cat api
 }
