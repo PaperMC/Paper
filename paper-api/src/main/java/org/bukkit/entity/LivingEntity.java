@@ -622,6 +622,19 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     public boolean hasLineOfSight(@NotNull Entity other);
 
+    // Paper start
+    /**
+     * Checks whether the living entity has block line of sight to the given block.
+     * <p>
+     * This uses the same algorithm that hostile mobs use to find the closest
+     * player.
+     *
+     * @param location the location to determine line of sight to
+     * @return true if there is a line of sight, false if not
+     */
+    public boolean hasLineOfSight(@NotNull Location location);
+    // Paper end
+
     /**
      * Returns if the living entity despawns when away from players or not.
      * <p>

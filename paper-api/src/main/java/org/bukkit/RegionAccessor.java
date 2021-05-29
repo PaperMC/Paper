@@ -461,5 +461,13 @@ public interface RegionAccessor extends Keyed { // Paper
     @NotNull
     @Override
     NamespacedKey getKey();
+
+    /**
+     * Tell whether a line of sight exists between the given locations
+     * @param from Location to start at
+     * @param to target Location
+     * @return whether a line of sight exists between {@code from} and {@code to}
+     */
+    public boolean lineOfSightExists(@NotNull Location from, @NotNull Location to);
     // Paper end
 }
