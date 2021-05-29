@@ -1683,23 +1683,22 @@ index 7ec93ddd7e7c9dc54e3e4dcfe0d1654c0b0a8536..3f057f0bd23bc1c693c8f04ee8acd662
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153bca9fcd3 100644
+index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2ad09749f3005c3eff143d83580e25910341aa6b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -562,8 +562,11 @@ public final class CraftServer implements Server {
+@@ -562,8 +562,10 @@ public final class CraftServer implements Server {
      }
  
      @Override
 +    @Deprecated // Paper start
      public int broadcastMessage(String message) {
 -        return broadcast(message, BROADCAST_CHANNEL_USERS);
-+        this.sendMessage(io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.deserialize(message));
-+        return this.getOnlinePlayers().size() + 1;
++        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
 +        // Paper end
      }
  
      public Player getPlayer(final EntityPlayer entity) {
-@@ -1307,7 +1310,15 @@ public final class CraftServer implements Server {
+@@ -1307,7 +1309,15 @@ public final class CraftServer implements Server {
          return configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -1715,7 +1714,7 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
      public String getShutdownMessage() {
          return configuration.getString("settings.shutdown-message");
      }
-@@ -1423,7 +1434,15 @@ public final class CraftServer implements Server {
+@@ -1423,7 +1433,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -1726,12 +1725,17 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
 +    }
 +
 +    @Override
++    public int broadcast(net.kyori.adventure.text.Component message) {
++        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
++    }
++
++    @Override
 +    public int broadcast(net.kyori.adventure.text.Component message, String permission) {
 +        // Paper end
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1431,14 +1450,14 @@ public final class CraftServer implements Server {
+@@ -1431,14 +1454,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -1748,7 +1752,7 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -1664,6 +1683,14 @@ public final class CraftServer implements Server {
+@@ -1664,6 +1687,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -1763,7 +1767,7 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Validate.isTrue(type.isCreatable(), "Cannot open an inventory of type ", type);
-@@ -1676,13 +1703,28 @@ public final class CraftServer implements Server {
+@@ -1676,13 +1707,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -1782,17 +1786,17 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
      }
  
 +    // Paper start
-     @Override
++    @Override
 +    public Merchant createMerchant(net.kyori.adventure.text.Component title) {
 +        return new org.bukkit.craftbukkit.inventory.CraftMerchantCustom(title == null ? InventoryType.MERCHANT.defaultTitle() : title);
 +    }
 +    // Paper end
-+    @Override
+     @Override
 +    @Deprecated // Paper
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -1726,6 +1768,12 @@ public final class CraftServer implements Server {
+@@ -1726,6 +1772,12 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(console.serverThread) || console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -1805,7 +1809,7 @@ index 0c1e12b0b43f949d4ace600b2ccdffe52faab1e6..2c2e87d96f61e7ef88847df70e1c6153
      @Override
      public String getMotd() {
          return console.getMotd();
-@@ -2154,5 +2202,15 @@ public final class CraftServer implements Server {
+@@ -2154,5 +2206,15 @@ public final class CraftServer implements Server {
              return null;
          }
      }
