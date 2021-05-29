@@ -4,7 +4,7 @@ import org.bukkit.entity.Minecart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface CommandMinecart extends Minecart {
+public interface CommandMinecart extends Minecart, io.papermc.paper.command.CommandBlockHolder { // Paper
 
     /**
      * Gets the command that this CommandMinecart will run when activated.
