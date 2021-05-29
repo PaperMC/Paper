@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
+Date: Sat, 29 May 2021 14:33:25 -0500
+Subject: [PATCH] Add LivingEntity#hasLineOfSight(Location)
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityLiving.java b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+index 2657dd71213455e2da3a4ff4d338a33896ffe855..f7fecdd925b21fc9ff4e0d63914a544813dadc90 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityLiving.java
++++ b/src/main/java/net/minecraft/world/entity/EntityLiving.java
+@@ -3094,6 +3094,7 @@ public abstract class EntityLiving extends Entity {
+         Vec3D vec3d = new Vec3D(this.locX(), this.getHeadY(), this.locZ());
+         Vec3D vec3d1 = new Vec3D(entity.locX(), entity.getHeadY(), entity.locZ());
+ 
++        // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location)
+         return this.world.rayTrace(new RayTrace(vec3d, vec3d1, RayTrace.BlockCollisionOption.COLLIDER, RayTrace.FluidCollisionOption.NONE, this)).getType() == MovingObjectPosition.EnumMovingObjectType.MISS;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 4545bac9309f5a3aad617f48f7808d8ae829602d..ec9d90031c85faa8f8597aefcf10fb4562043d8e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -561,6 +561,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return getHandle().hasLineOfSight(((CraftEntity) other).getHandle());
+     }
+ 
++    // Paper start
++    @Override
++    public boolean hasLineOfSight(Location loc) {
++        if (this.getHandle().world != ((CraftWorld) loc.getWorld()).getHandle()) return false;
++        Vec3D vec3d = new Vec3D(this.getHandle().locX(), this.getHandle().getHeadY(), this.getHandle().locZ());
++        Vec3D vec3d1 = new Vec3D(loc.getX(), loc.getY(), loc.getZ());
++
++        return this.getHandle().world.rayTrace(new RayTrace(vec3d, vec3d1, RayTrace.BlockCollisionOption.COLLIDER, RayTrace.FluidCollisionOption.NONE, this.getHandle())).getType() == MovingObjectPosition.EnumMovingObjectType.MISS;
++    }
++    // Paper end
++
+     @Override
+     public boolean getRemoveWhenFarAway() {
+         return getHandle() instanceof EntityInsentient && !((EntityInsentient) getHandle()).persistent;
