@@ -255,10 +255,10 @@ index 0000000000000000000000000000000000000000..85fd5d6777b53bab09cc54c360bb7514
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dc6db537ceba0baf6e7cc532cfb58290b241e096
+index 0000000000000000000000000000000000000000..718b860ace4077affad715a4e43961e10a83e9d9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,299 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatComposer;
@@ -292,6 +292,19 @@ index 0000000000000000000000000000000000000000..dc6db537ceba0baf6e7cc532cfb58290
 +    private final Component originalMessage;
 +    private Component message;
 +
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(player, async);
++        this.viewers = viewers;
++        this.recipients = new HashSet<>(Bukkit.getOnlinePlayers());
++        this.renderer = renderer;
++        this.message = message;
++        this.originalMessage = originalMessage;
++    }
++
++    /**
++     * @deprecated for removal with 1.17
++     */
++    @Deprecated
 +    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
 +        super(player, async);
 +        this.viewers = viewers;
@@ -299,6 +312,19 @@ index 0000000000000000000000000000000000000000..dc6db537ceba0baf6e7cc532cfb58290
 +        this.renderer = renderer;
 +        this.message = message;
 +        this.originalMessage = message;
++    }
++
++    /**
++     * @deprecated for removal with 1.17
++     */
++    @Deprecated
++    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(player, async);
++        this.recipients = recipients;
++        this.viewers = viewers;
++        this.renderer = renderer;
++        this.message = message;
++        this.originalMessage = originalMessage;
 +    }
 +
 +    /**
@@ -534,10 +560,10 @@ index 0000000000000000000000000000000000000000..dc6db537ceba0baf6e7cc532cfb58290
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d85006591808b61518545c9f5b0b5915c19e0a9d
+index 0000000000000000000000000000000000000000..ee7ec316a2f814ec759e0a3e5dfe5efbee782b22
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,73 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatComposer;
@@ -556,12 +582,28 @@ index 0000000000000000000000000000000000000000..d85006591808b61518545c9f5b0b5915
 +public final class AsyncChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
++    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(async, player, viewers, renderer, message, originalMessage);
++    }
++
++    /**
++     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
++     */
++    @Deprecated
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
 +        super(async, player, viewers, renderer, message);
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
++     */
++    @Deprecated
++    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(async, player, recipients, viewers, renderer, message, originalMessage);
++    }
++
++    /**
++     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
 +     */
 +    @Deprecated
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
@@ -569,7 +611,7 @@ index 0000000000000000000000000000000000000000..d85006591808b61518545c9f5b0b5915
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
 +     */
 +    @Deprecated
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatComposer composer, final @NotNull Component message) {
@@ -577,7 +619,7 @@ index 0000000000000000000000000000000000000000..d85006591808b61518545c9f5b0b5915
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #AsyncChatEvent(boolean, Player, Set, ChatRenderer, Component, Component)}
 +     */
 +    @Deprecated
 +    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
@@ -597,10 +639,10 @@ index 0000000000000000000000000000000000000000..d85006591808b61518545c9f5b0b5915
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6219aabaf40ab89f8e08c256d1255bf5522db4d3
+index 0000000000000000000000000000000000000000..c6bcf0dc3f77c631aa7eeb9b1e88b5bbfe445fc6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatComposer;
@@ -624,19 +666,28 @@ index 0000000000000000000000000000000000000000..6219aabaf40ab89f8e08c256d1255bf5
 +public final class ChatEvent extends AbstractChatEvent {
 +    private static final HandlerList HANDLERS = new HandlerList();
 +
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(false, player, viewers, renderer, message, originalMessage);
++    }
++
++    /**
++     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
++     */
++    @Deprecated
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
 +        super(false, player, viewers, renderer, message);
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
 +     */
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message) {
-+        super(false, player, recipients, viewers, renderer, message);
++    @Deprecated
++    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage) {
++        super(false, player, recipients, viewers, renderer, message, originalMessage);
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
 +     */
 +    @Deprecated
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatComposer composer, final @NotNull Component message) {
@@ -644,7 +695,7 @@ index 0000000000000000000000000000000000000000..6219aabaf40ab89f8e08c256d1255bf5
 +    }
 +
 +    /**
-+     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component)}
++     * @deprecated for removal with 1.17, use {@link #ChatEvent(Player, Set, ChatRenderer, Component, Component)}
 +     */
 +    @Deprecated
 +    public ChatEvent(final @NotNull Player player, final @NotNull Set<Player> recipients, final @NotNull ChatFormatter formatter, final @NotNull Component message) {
