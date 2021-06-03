@@ -56,7 +56,7 @@ index da93d38fe63035e4ff198ada84a4431f52d97c01..ddbc8cb712c50038922eded75dd6ca85
 +    }
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 54738ef346b1fe4c45ea95db2f236d10f8525a20..5ea593ccfedf55140a723f6dc29bebe282e77ab3 100644
+index 34c273178e711466ec6638f24e0371554e26e134..cb15606d528b2f94103d347ad89d3836fa93c360 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1057,6 +1057,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
@@ -147,7 +147,7 @@ index 54738ef346b1fe4c45ea95db2f236d10f8525a20..5ea593ccfedf55140a723f6dc29bebe2
                  // Spigot Start
                  CrashReport crashreport;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 138676e5b03bc80a777a1f4c12f3f4b5316e8dea..99108d2c8145c16943fb29872c55d8e74f75eb77 100644
+index 13ac946487bb05b5c47ee8ee10cb6ed1c992c0e2..48d0c37a1d7df9b7ac8077e1e82420566dc42718 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -22,6 +22,7 @@ import net.minecraft.core.BlockPosition;
@@ -174,24 +174,24 @@ index 138676e5b03bc80a777a1f4c12f3f4b5316e8dea..99108d2c8145c16943fb29872c55d8e7
          this.world.timings.doChunkUnload.stopTiming(); // Spigot
          this.world.getMethodProfiler().exit();
          this.clearCache();
-@@ -780,7 +783,7 @@ public class ChunkProviderServer extends IChunkProvider {
-                 entityPlayer.playerNaturallySpawnedEvent.callEvent();
+@@ -781,7 +784,7 @@ public class ChunkProviderServer extends IChunkProvider {
              };
              // Paper end
+             this.world.timings.chunkTicks.startTiming(); // Paper
 -            this.playerChunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
 +            final int[] chunksTicked = {0}; this.playerChunkMap.forEachVisibleChunk((playerchunk) -> { // Paper - safe iterator incase chunk loads, also no wrapping
                  Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
  
                  if (optional.isPresent()) {
-@@ -804,6 +807,7 @@ public class ChunkProviderServer extends IChunkProvider {
-                             this.world.timings.chunkTicks.startTiming(); // Spigot // Paper
+@@ -805,6 +808,7 @@ public class ChunkProviderServer extends IChunkProvider {
+                             //this.world.timings.chunkTicks.startTiming(); // Spigot // Paper
                              this.world.a(chunk, k);
-                             this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
+                             //this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
 +                            if (chunksTicked[0]++ % 10 == 0) this.world.getMinecraftServer().midTickLoadChunks(); // Paper
                          }
                      }
                  }
-@@ -960,6 +964,41 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -962,6 +966,41 @@ public class ChunkProviderServer extends IChunkProvider {
              super.executeTask(runnable);
          }
  
@@ -234,7 +234,7 @@ index 138676e5b03bc80a777a1f4c12f3f4b5316e8dea..99108d2c8145c16943fb29872c55d8e7
          protected boolean executeNext() {
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 8159baec6e862580dc340d8fd7c16013ec8f0e66..6f15e2d0302108d64b14b3449e81f18f985db7ae 100644
+index 35fc51ac93a62f6dc4b141dc94a3cda0399f0ce1..ce0bbd6fb467c84d14fa4eaa8f80ed5b261e07bd 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -571,6 +571,7 @@ public class WorldServer extends World implements GeneratorAccessSeed {

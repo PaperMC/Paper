@@ -1063,7 +1063,7 @@ index 8e2e415a022ccd486465f19d9bbf1f287b21fb95..59942eb6bb6e8e1e9a988bce0d09757e
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
-index 0b5bcb60472c778574702a5ac26a6d02d54bfeac..9ed97d5db81e3603ccccca7500420d7e401ef2a5 100644
+index 0b5bcb60472c778574702a5ac26a6d02d54bfeac..3351c6bcc5244fd7565ba7af08f63ea4d999ce97 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkProviderServer.java
 @@ -344,11 +344,13 @@ public class ChunkProviderServer extends IChunkProvider {
@@ -1102,7 +1102,7 @@ index 0b5bcb60472c778574702a5ac26a6d02d54bfeac..9ed97d5db81e3603ccccca7500420d7e
          this.world.timings.doChunkUnload.startTiming(); // Spigot
          this.world.getMethodProfiler().exitEnter("unload");
          this.playerChunkMap.unloadChunks(booleansupplier);
-@@ -596,8 +602,10 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -596,19 +602,24 @@ public class ChunkProviderServer extends IChunkProvider {
              boolean flag2 = world.ticksPerAnimalSpawns != 0L && worlddata.getTime() % world.ticksPerAnimalSpawns == 0L; // CraftBukkit
  
              this.world.getMethodProfiler().enter("naturalSpawnCount");
@@ -1113,7 +1113,11 @@ index 0b5bcb60472c778574702a5ac26a6d02d54bfeac..9ed97d5db81e3603ccccca7500420d7e
  
              this.p = spawnercreature_d;
              this.world.getMethodProfiler().exit();
-@@ -608,7 +616,9 @@ public class ChunkProviderServer extends IChunkProvider {
+             //List<PlayerChunk> list = Lists.newArrayList(this.playerChunkMap.f()); // Paper
+             //Collections.shuffle(list); // Paper
++            this.world.timings.chunkTicks.startTiming(); // Paper
+             this.playerChunkMap.f().forEach((playerchunk) -> { // Paper - no... just no...
+                 Optional<Chunk> optional = ((Either) playerchunk.a().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
  
                  if (optional.isPresent()) {
                      this.world.getMethodProfiler().enter("broadcast");
@@ -1123,19 +1127,20 @@ index 0b5bcb60472c778574702a5ac26a6d02d54bfeac..9ed97d5db81e3603ccccca7500420d7e
                      this.world.getMethodProfiler().exit();
                      Optional<Chunk> optional1 = ((Either) playerchunk.b().getNow(PlayerChunk.UNLOADED_CHUNK)).left();
  
-@@ -622,25 +632,25 @@ public class ChunkProviderServer extends IChunkProvider {
+@@ -622,25 +633,26 @@ public class ChunkProviderServer extends IChunkProvider {
                                  SpawnerCreature.a(this.world, chunk, spawnercreature_d, this.allowAnimals, this.allowMonsters, flag2);
                              }
  
 -                            this.world.timings.doTickTiles.startTiming(); // Spigot
-+                            this.world.timings.chunkTicks.startTiming(); // Spigot // Paper
++                            //this.world.timings.chunkTicks.startTiming(); // Spigot // Paper
                              this.world.a(chunk, k);
 -                            this.world.timings.doTickTiles.stopTiming(); // Spigot
-+                            this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
++                            //this.world.timings.chunkTicks.stopTiming(); // Spigot // Paper
                          }
                      }
                  }
              });
++            this.world.timings.chunkTicks.stopTiming(); // Paper
              this.world.getMethodProfiler().enter("customSpawners");
              if (flag1) {
 +                try (co.aikar.timings.Timing ignored = this.world.timings.miscMobSpawning.startTiming()) { // Paper - timings
