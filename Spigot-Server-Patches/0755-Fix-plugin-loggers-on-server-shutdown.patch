@@ -1,16 +1,16 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Jos=C3=A9=20Miguel=20Moreno?= <josemmo@pm.me>
-Date: Sat, 22 May 2021 17:59:24 +0200
+Date: Fri, 4 Jun 2021 21:15:27 +0200
 Subject: [PATCH] Fix plugin loggers on server shutdown
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java b/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java
+diff --git a/src/main/java/io/papermc/paper/log/CustomLogManager.java b/src/main/java/io/papermc/paper/log/CustomLogManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc9f5e3dd5a43c033a716675450c149be3e2d61d
+index 0000000000000000000000000000000000000000..c1d3bac79bb8b4796c013ff4472f75dcd79602dc
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/log/CustomLogManager.java
++++ b/src/main/java/io/papermc/paper/log/CustomLogManager.java
 @@ -0,0 +1,26 @@
-+package com.destroystokyo.paper.log;
++package io.papermc.paper.log;
 +
 +import java.util.logging.LogManager;
 +
@@ -37,19 +37,27 @@ index 0000000000000000000000000000000000000000..cc9f5e3dd5a43c033a716675450c149b
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 848219f43b2bcb2d79147107c68df52efd46d461..3604c367bbe4a138c6c434b1a4a27586b26f4ddc 100644
+index bf80e870e6a2a6fe1d4ae1bea355bcd7a0735d3b..9bbad437983d406ceb285ad2a431a653b270a73b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -968,6 +968,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
+@@ -14,6 +14,7 @@ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+ import io.papermc.paper.adventure.PaperAdventure; // Paper
+ import io.papermc.paper.event.entity.EntityMoveEvent;
++import io.papermc.paper.log.CustomLogManager;
+ import io.papermc.paper.util.TraceUtil;
+ import it.unimi.dsi.fastutil.longs.LongIterator;
+ import java.awt.image.BufferedImage;
+@@ -969,6 +970,7 @@ public abstract class MinecraftServer extends IAsyncTaskHandlerReentrant<TickTas
              net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
          } catch (Exception e) {
          }
-+        com.destroystokyo.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
++        CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
          this.exit();
          // Paper end
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 409fbeeb66fb8f58a72d94686bc9515299927b75..743139cb322f0934636e760a46c78478c27b7112 100644
+index 409fbeeb66fb8f58a72d94686bc9515299927b75..3a7b3264eb240ed43640fdc0623b328afb14453c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -20,6 +20,12 @@ public class Main {
@@ -58,7 +66,7 @@ index 409fbeeb66fb8f58a72d94686bc9515299927b75..743139cb322f0934636e760a46c78478
  
 +    // Paper start - Hijack log manager to ensure logging on shutdown
 +    static {
-+        System.setProperty("java.util.logging.manager", com.destroystokyo.paper.log.CustomLogManager.class.getName());
++        System.setProperty("java.util.logging.manager", io.papermc.paper.log.CustomLogManager.class.getName());
 +    }
 +    // Paper end
 +
