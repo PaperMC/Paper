@@ -845,11 +845,12 @@ public final class SimplePluginManager implements PluginManager {
         Preconditions.checkArgument(depend != null, "depend");
 
         if (dependencyGraph.nodes().contains(plugin.getName())) {
-            if (Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(depend.getName())) {
+            Set<String> reachableNodes = Graphs.reachableNodes(dependencyGraph, plugin.getName());
+            if (reachableNodes.contains(depend.getName())) {
                 return true;
             }
             for (String provided : depend.getProvides()) {
-                if (Graphs.reachableNodes(dependencyGraph, plugin.getName()).contains(provided)) {
+                if (reachableNodes.contains(provided)) {
                     return true;
                 }
             }
