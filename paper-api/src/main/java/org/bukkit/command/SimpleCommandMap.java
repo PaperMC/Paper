@@ -131,7 +131,7 @@ public class SimpleCommandMap implements CommandMap {
      */
     @Override
     public boolean dispatch(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException {
-        String[] args = commandLine.split(" ");
+        String[] args = org.apache.commons.lang3.StringUtils.split(commandLine, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
 
         if (args.length == 0) {
             return false;
