@@ -19,6 +19,12 @@ public class Main {
     public static boolean useJline = true;
     public static boolean useConsole = true;
 
+    // Paper start - Reset loggers after shutdown
+    static {
+        System.setProperty("java.util.logging.manager", "io.papermc.paper.log.CustomLogManager");
+    }
+    // Paper end - Reset loggers after shutdown
+
     public static void main(String[] args) {
         // Paper start
         final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");
