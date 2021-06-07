@@ -1,12 +1,10 @@
 --- a/net/minecraft/world/level/portal/BlockPortalShape.java
 +++ b/net/minecraft/world/level/portal/BlockPortalShape.java
-@@ -19,6 +19,13 @@
+@@ -19,6 +19,11 @@
  import net.minecraft.world.level.block.state.properties.BlockProperties;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.event.CraftPortalEvent;
 +import org.bukkit.event.world.PortalCreateEvent;
 +// CraftBukkit end
@@ -14,23 +12,58 @@
  public class BlockPortalShape {
  
      private static final BlockBase.e a = (iblockdata, iblockaccess, blockposition) -> {
-@@ -32,6 +39,7 @@
+@@ -32,6 +37,7 @@
      private BlockPosition position;
      private int height;
      private int width;
-+    java.util.List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<org.bukkit.block.BlockState>(); // CraftBukkit - add field
++    org.bukkit.craftbukkit.util.BlockStateListPopulator blocks; // CraftBukkit - add field
  
      public static Optional<BlockPortalShape> a(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
          return a(generatoraccess, blockposition, (blockportalshape) -> {
-@@ -96,6 +104,7 @@
+@@ -52,6 +58,7 @@
+     }
+ 
+     public BlockPortalShape(GeneratorAccess generatoraccess, BlockPosition blockposition, EnumDirection.EnumAxis enumdirection_enumaxis) {
++        blocks = new org.bukkit.craftbukkit.util.BlockStateListPopulator(generatoraccess.getMinecraftWorld()); // CraftBukkit
+         this.b = generatoraccess;
+         this.c = enumdirection_enumaxis;
+         this.d = enumdirection_enumaxis == EnumDirection.EnumAxis.X ? EnumDirection.WEST : EnumDirection.SOUTH;
+@@ -96,6 +103,7 @@
  
              if (!a(iblockdata)) {
                  if (BlockPortalShape.a.test(iblockdata, this.b, blockposition_mutableblockposition)) {
-+                    blocks.add(CraftBlock.at(this.b, blockposition_mutableblockposition).getState()); // CraftBukkit
++                    blocks.setTypeAndData(blockposition_mutableblockposition, iblockdata, 18); // CraftBukkit - lower left / right
                      return i;
                  }
                  break;
-@@ -167,12 +176,30 @@
+@@ -106,6 +114,7 @@
+             if (!BlockPortalShape.a.test(iblockdata1, this.b, blockposition_mutableblockposition)) {
+                 break;
+             }
++            blocks.setTypeAndData(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit - bottom row
+         }
+ 
+         return 0;
+@@ -125,6 +134,7 @@
+             if (!BlockPortalShape.a.test(this.b.getType(blockposition_mutableblockposition1), this.b, blockposition_mutableblockposition1)) {
+                 return false;
+             }
++            blocks.setTypeAndData(blockposition_mutableblockposition1, this.b.getType(blockposition_mutableblockposition1), 18); // CraftBukkit - upper row
+         }
+ 
+         return true;
+@@ -154,6 +164,10 @@
+                     ++this.e;
+                 }
+             }
++            // CraftBukkit start - left and right
++            blocks.setTypeAndData(blockposition_mutableblockposition.g(this.position).c(EnumDirection.UP, i).c(this.d, -1), this.b.getType(blockposition_mutableblockposition), 18);
++            blocks.setTypeAndData(blockposition_mutableblockposition.g(this.position).c(EnumDirection.UP, i).c(this.d, this.width), this.b.getType(blockposition_mutableblockposition), 18);
++            // CraftBukkit end
+         }
+ 
+         return 21;
+@@ -167,12 +181,28 @@
          return this.position != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
      }
  
@@ -43,12 +76,10 @@
          IBlockData iblockdata = (IBlockData) Blocks.NETHER_PORTAL.getBlockData().set(BlockPortal.AXIS, this.c);
  
          BlockPosition.a(this.position, this.position.shift(EnumDirection.UP, this.height - 1).shift(this.d, this.width - 1)).forEach((blockposition) -> {
-+            CraftBlockState state = CraftBlockState.getBlockState(this.b.getMinecraftWorld(), blockposition, 18);
-+            state.setData(iblockdata);
-+            blocks.add(state);
++            blocks.setTypeAndData(blockposition, iblockdata, 18);
 +        });
 +
-+        PortalCreateEvent event = new PortalCreateEvent(blocks, bworld, null, PortalCreateEvent.CreateReason.FIRE);
++        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blocks.getList(), bworld, null, PortalCreateEvent.CreateReason.FIRE);
 +        this.b.getMinecraftWorld().getMinecraftServer().server.getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) {
@@ -62,7 +93,7 @@
      }
  
      public boolean c() {
-@@ -209,7 +236,7 @@
+@@ -209,7 +239,7 @@
          return new Vec3D(d2, d3, d4);
      }
  
@@ -71,7 +102,7 @@
          BlockPosition blockposition = blockutil_rectangle.origin;
          IBlockData iblockdata = worldserver.getType(blockposition);
          EnumDirection.EnumAxis enumdirection_enumaxis1 = (EnumDirection.EnumAxis) iblockdata.get(BlockProperties.E);
-@@ -223,6 +250,6 @@
+@@ -223,6 +253,6 @@
          boolean flag = enumdirection_enumaxis1 == EnumDirection.EnumAxis.X;
          Vec3D vec3d3 = new Vec3D((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));
  
