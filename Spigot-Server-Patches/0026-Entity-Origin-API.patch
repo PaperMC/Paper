@@ -17,7 +17,7 @@ index 4f6f6f51f9807bafa88482c0fe776c8b163107d7..ce6572df63c4e7341708aee60330fb21
          if (i >= 0 && i < this.list.size()) {
              NBTBase nbtbase = (NBTBase) this.list.get(i);
 diff --git a/src/main/java/net/minecraft/server/level/WorldServer.java b/src/main/java/net/minecraft/server/level/WorldServer.java
-index 4170743875d2fb16987e513713b2d141918219a5..701b00e65c4d5eb66e974f8d622eecef0f744f82 100644
+index cf38d517821659e25e786a805e229ef2d626d75f..26d461196b4a998b445f8c6e67fd7ec0606344f6 100644
 --- a/src/main/java/net/minecraft/server/level/WorldServer.java
 +++ b/src/main/java/net/minecraft/server/level/WorldServer.java
 @@ -1246,6 +1246,11 @@ public class WorldServer extends World implements GeneratorAccessSeed {
@@ -33,7 +33,7 @@ index 4170743875d2fb16987e513713b2d141918219a5..701b00e65c4d5eb66e974f8d622eecef
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index cae9da158f54438d2a397665c7ce964f6f755469..83006297e59971f4c358eacc3da586417982540c 100644
+index cae9da158f54438d2a397665c7ce964f6f755469..f6f0d551e22ff085935c1543bf84392de0368214 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -247,6 +247,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
@@ -44,33 +44,38 @@ index cae9da158f54438d2a397665c7ce964f6f755469..83006297e59971f4c358eacc3da58641
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -1625,6 +1626,11 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1625,6 +1626,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
                  this.bukkitEntity.storeBukkitValues(nbttagcompound);
              }
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
++                nbttagcompound.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
 +                nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-@@ -1747,6 +1753,13 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1747,6 +1754,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              }
              // CraftBukkit end
  
 +            // Paper start - Restore the entity's origin location
 +            NBTTagList originTag = nbttagcompound.getList("Paper.Origin", 6);
 +            if (!originTag.isEmpty()) {
-+                origin = new org.bukkit.Location(world.getWorld(), originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
++                org.bukkit.World originWorld = world.getWorld();
++                if (nbttagcompound.hasKey("Paper.OriginWorld")) {
++                    originWorld = Bukkit.getWorld(nbttagcompound.getUUID("Paper.OriginWorld"));
++                }
++                origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
 +            }
 +            // Paper end
 +
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
-@@ -1808,6 +1821,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1808,6 +1826,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
  
      protected abstract void saveData(NBTTagCompound nbttagcompound);
  
