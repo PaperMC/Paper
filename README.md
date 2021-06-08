@@ -1,6 +1,15 @@
 Paper ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PaperMC/Paper/Build%20Paper/master)
 ===========
 
+**Warning**: This is a DEVELOPMENT branch. There exist no guarantees for this to be compilable,
+runnable, or playable. Please do not open issues regarding this branch, and do not run this branch
+in production.
+
+For more information on the Minecraft 1.17 update, please look at
+[issue #5785](https://github.com/PaperMC/Paper/issues/5785).
+
+---
+
 High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
 
 
