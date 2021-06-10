@@ -33,31 +33,35 @@ index cf38d517821659e25e786a805e229ef2d626d75f..26d461196b4a998b445f8c6e67fd7ec0
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index cae9da158f54438d2a397665c7ce964f6f755469..f6f0d551e22ff085935c1543bf84392de0368214 100644
+index cae9da158f54438d2a397665c7ce964f6f755469..63772205358715ff77be64da418aeb31ff0c3cef 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -247,6 +247,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -247,6 +247,8 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
      public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
      public boolean forceExplosionKnockback; // SPIGOT-949
      public boolean persistentInvisibility = false;
 +    public org.bukkit.Location origin; // Paper
++    private @Nullable UUID originWorldId; // Paper
      // Spigot start
      public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
      public final boolean defaultActivationState;
-@@ -1625,6 +1626,12 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1625,6 +1627,15 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
                  this.bukkitEntity.storeBukkitValues(nbttagcompound);
              }
              // CraftBukkit end
 +            // Paper start - Save the entity's origin location
 +            if (this.origin != null) {
-+                nbttagcompound.setUUID("Paper.OriginWorld", origin.getWorld().getUID());
++                if (this.originWorldId != null) {
++                    // Technically it is legal to no longer know the origin world... so that's fun.
++                    nbttagcompound.setUUID("Paper.OriginWorld", this.originWorldId);
++                }
 +                nbttagcompound.set("Paper.Origin", this.createList(origin.getX(), origin.getY(), origin.getZ()));
 +            }
 +            // Paper end
              return nbttagcompound;
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Saving entity NBT");
-@@ -1747,6 +1754,17 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1747,6 +1758,18 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
              }
              // CraftBukkit end
  
@@ -68,6 +72,7 @@ index cae9da158f54438d2a397665c7ce964f6f755469..f6f0d551e22ff085935c1543bf84392d
 +                if (nbttagcompound.hasKey("Paper.OriginWorld")) {
 +                    originWorld = Bukkit.getWorld(nbttagcompound.getUUID("Paper.OriginWorld"));
 +                }
++                this.originWorldId = originWorld == null ? null : originWorld.getUID();
 +                origin = new org.bukkit.Location(originWorld, originTag.getDoubleAt(0), originTag.getDoubleAt(1), originTag.getDoubleAt(2));
 +            }
 +            // Paper end
@@ -75,7 +80,7 @@ index cae9da158f54438d2a397665c7ce964f6f755469..f6f0d551e22ff085935c1543bf84392d
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.a(throwable, "Loading entity NBT");
              CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being loaded");
-@@ -1808,6 +1826,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
+@@ -1808,6 +1831,7 @@ public abstract class Entity implements INamableTileEntity, ICommandListener, ne
  
      protected abstract void saveData(NBTTagCompound nbttagcompound);
  
