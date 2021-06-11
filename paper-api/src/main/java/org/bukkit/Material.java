@@ -78,6 +78,7 @@ import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Slab;
+import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.block.data.type.Snow;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.StructureBlock;
@@ -525,9 +526,9 @@ public enum Material implements Keyed {
      */
     BIG_DRIPLEAF(26173, BigDripleaf.class),
     /**
-     * BlockData: {@link Dripleaf}
+     * BlockData: {@link SmallDripleaf}
      */
-    SMALL_DRIPLEAF(17540, Dripleaf.class),
+    SMALL_DRIPLEAF(17540, SmallDripleaf.class),
     /**
      * BlockData: {@link Bamboo}
      */
