@@ -15,8 +15,11 @@ import org.bukkit.SoundCategory;
 import org.bukkit.WeatherType;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapView;
@@ -394,6 +397,28 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data a data bit needed for some effects
      */
     public <T> void playEffect(@NotNull Location loc, @NotNull Effect effect, @Nullable T data);
+
+    /**
+     * Force this player to break a Block using the item in their main hand.
+     *
+     * This method will respect enchantments, handle item durability (if
+     * applicable) and drop experience and the correct items according to the
+     * tool/item in the player's hand.
+     * <p>
+     * Note that this method will call a {@link BlockBreakEvent}, meaning that
+     * this method may not be successful in breaking the block if the event was
+     * cancelled by a third party plugin. Care should be taken if running this
+     * method in a BlockBreakEvent listener as recursion may be possible if it
+     * is invoked on the same {@link Block} being broken in the event.
+     * <p>
+     * Additionally, a {@link BlockDropItemEvent} is called for the items
+     * dropped by this method (if successful).
+     *
+     * @param block the block to break
+     *
+     * @return true if the block was broken, false if the break failed
+     */
+    public boolean breakBlock(@NotNull Block block);
 
     /**
      * Send a block change. This fakes a block change packet for a user at a
