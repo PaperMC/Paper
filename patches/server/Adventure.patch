@@ -37,12 +37,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.TextComponent;
 +import net.minecraft.network.chat.MutableComponent;
 +import net.minecraft.network.chat.Style;
++import net.minecraft.util.FormattedCharSequence;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +
 +public final class AdventureComponent implements net.minecraft.network.chat.Component {
 +    final Component wrapped;
-+    private @MonotonicNonNull net.minecraft.network.chat.Component converted;
++    private net.minecraft.network.chat.@MonotonicNonNull Component converted;
 +
 +    public AdventureComponent(final Component wrapped) {
 +        this.wrapped = wrapped;
@@ -57,7 +58,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return converted;
 +    }
 +
-+    public @Nullable net.minecraft.network.chat.Component deepConvertedIfPresent() {
++    public net.minecraft.network.chat.@Nullable Component deepConvertedIfPresent() {
 +        return this.converted;
 +    }
 +
@@ -93,6 +94,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public MutableComponent copy() {
 +        return this.deepConverted().copy();
++    }
++
++    @Override
++    public FormattedCharSequence getVisualOrderText() {
++        return this.deepConverted().getVisualOrderText();
 +    }
 +
 +    public static class Serializer implements JsonSerializer<AdventureComponent> {
@@ -829,41 +835,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.Set;
 +import java.util.function.Consumer;
++import java.util.function.Function;
++
 +import net.kyori.adventure.bossbar.BossBar;
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
++import net.minecraft.world.BossEvent;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +public final class VanillaBossBarListener implements BossBar.Listener {
-+    private final Consumer<ClientboundBossEventPacket.Operation> action;
++    private final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action;
 +
-+    public VanillaBossBarListener(final Consumer<ClientboundBossEventPacket.Operation> action) {
++    public VanillaBossBarListener(final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action) {
 +        this.action = action;
 +    }
 +
 +    @Override
 +    public void bossBarNameChanged(final @NonNull BossBar bar, final @NonNull Component oldName, final @NonNull Component newName) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_NAME);
++        this.action.accept(ClientboundBossEventPacket::createUpdateNamePacket);
 +    }
 +
 +    @Override
 +    public void bossBarProgressChanged(final @NonNull BossBar bar, final float oldProgress, final float newProgress) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_PCT);
++        this.action.accept(ClientboundBossEventPacket::createUpdateProgressPacket);
 +    }
 +
 +    @Override
 +    public void bossBarColorChanged(final @NonNull BossBar bar, final BossBar.@NonNull Color oldColor, final BossBar.@NonNull Color newColor) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_STYLE);
++        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
 +    }
 +
 +    @Override
 +    public void bossBarOverlayChanged(final @NonNull BossBar bar, final BossBar.@NonNull Overlay oldOverlay, final BossBar.@NonNull Overlay newOverlay) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_STYLE);
++        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
 +    }
 +
 +    @Override
 +    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_PROPERTIES);
++        this.action.accept(ClientboundBossEventPacket::createUpdatePropertiesPacket);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
@@ -2433,7 +2442,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start
 +        public MinecraftInventory(final InventoryHolder owner, final int size, final net.kyori.adventure.text.Component title) {
 +            Validate.notNull(title, "Title cannot be null");
-+            this.items = NonNullList.a(size, ItemStack.EMPTY);
++            this.items = NonNullList.withSize(size, ItemStack.EMPTY);
 +            this.title = io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(title);
 +            this.adventure$title = title;
 +            this.viewers = new ArrayList<HumanEntity>();
@@ -2562,7 +2571,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  // Spigot start
  import static org.spigotmc.ValidateUtils.*;
 +
-+import BookMetaBuilder;
  import java.util.AbstractList;
  import net.md_5.bungee.api.chat.BaseComponent;
  import net.md_5.bungee.chat.ComponentSerializer;

@@ -8,7 +8,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -0,0 +0,0 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
          return Mth.sqrt(f * f + f1 * f1 + f2 * f2);
      }
  
@@ -21,25 +21,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -0,0 +0,0 @@ public final class EntitySelector {
-         return !entity.isSpectator();
      };
  
+     private EntitySelector() {}
 +    // Paper start
 +    public static final Predicate<Entity> affectsSpawning = (entity) -> {
-+        return !entity.isSpectator() && entity.isAlive() && (entity instanceof EntityPlayer) && ((EntityPlayer) entity).affectsSpawning;
++        return !entity.isSpectator() && entity.isAlive() && (entity instanceof net.minecraft.server.level.ServerPlayer) && ((net.minecraft.server.level.ServerPlayer) entity).affectsSpawning;
 +    };
 +    // Paper end
-+
-     public static Predicate<Entity> withinDistance(double x, double y, double z, double d3) {
-         double d4 = d3 * d3;
  
+     public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
+         double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity {
          if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
-             this.remove();
+             this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Player entityhuman = this.level.getNearestPlayer(this, -1.0D);
 +            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.affectsSpawning); // Paper
@@ -78,14 +77,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -0,0 +0,0 @@ public abstract class BaseSpawner {
-     private boolean isNearPlayer() {
-         BlockPos blockposition = this.getPos();
- 
--        return this.getLevel().hasNearbyAlivePlayer((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
-+        return this.getLevel().isAffectsSpawningPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
      }
  
-     public void tick() {
+     private boolean isNearPlayer(Level world, BlockPos pos) {
+-        return world.hasNearbyAlivePlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange);
++        return world.isAffectsSpawningPlayerNearby((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
+     }
+ 
+     public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
@@ -99,16 +98,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.findNearbyPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
 +    @Nullable default Player findNearbyPlayer(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { return getNearestPlayer(d0, d1, d2, d3, predicate); } // Paper - OBFHELPER
 +    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
-         double d4 = -1.0D;
-         Player entityhuman = null;
-         Iterator iterator = this.players().iterator();
+         double d = -1.0D;
+         Player player = null;
+ 
 @@ -0,0 +0,0 @@ public interface EntityGetter {
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
 +    // Paper end
 +    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
-+        Iterator iterator = this.players().iterator();
++        java.util.Iterator iterator = this.players().iterator();
 +        double d4;
 +        do {
 +            Player entityhuman;
@@ -128,8 +127,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
-         Iterator iterator = this.players().iterator();
- 
+         for(Player player : this.players()) {
+             if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
@@ -137,7 +136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      @Override
      public String getLocale() {
-         return getHandle().locale;
+         return this.getHandle().locale;
 +
 +    }
 +
@@ -154,4 +153,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public void updateCommands() {
-         if (getHandle().connection == null) return;
+         if (this.getHandle().connection == null) return;
