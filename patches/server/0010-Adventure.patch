@@ -22,10 +22,10 @@ index 1d03a79e9010bc514b72a81ba0ad4a62aeff1bb7..429b74474ced04d8dd8f038b8590b8df
  }
 diff --git a/src/main/java/io/papermc/paper/adventure/AdventureComponent.java b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b4cec054ad0146773b722c7e3708f988aeeb76d
+index 0000000000000000000000000000000000000000..e597a90def72c5903382d7169fb7a2fb667b8a69
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/AdventureComponent.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.adventure;
 +
 +import com.google.gson.JsonElement;
@@ -37,12 +37,13 @@ index 0000000000000000000000000000000000000000..4b4cec054ad0146773b722c7e3708f98
 +import net.kyori.adventure.text.TextComponent;
 +import net.minecraft.network.chat.MutableComponent;
 +import net.minecraft.network.chat.Style;
++import net.minecraft.util.FormattedCharSequence;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +
 +public final class AdventureComponent implements net.minecraft.network.chat.Component {
 +    final Component wrapped;
-+    private @MonotonicNonNull net.minecraft.network.chat.Component converted;
++    private net.minecraft.network.chat.@MonotonicNonNull Component converted;
 +
 +    public AdventureComponent(final Component wrapped) {
 +        this.wrapped = wrapped;
@@ -57,7 +58,7 @@ index 0000000000000000000000000000000000000000..4b4cec054ad0146773b722c7e3708f98
 +        return converted;
 +    }
 +
-+    public @Nullable net.minecraft.network.chat.Component deepConvertedIfPresent() {
++    public net.minecraft.network.chat.@Nullable Component deepConvertedIfPresent() {
 +        return this.converted;
 +    }
 +
@@ -93,6 +94,11 @@ index 0000000000000000000000000000000000000000..4b4cec054ad0146773b722c7e3708f98
 +    @Override
 +    public MutableComponent copy() {
 +        return this.deepConverted().copy();
++    }
++
++    @Override
++    public FormattedCharSequence getVisualOrderText() {
++        return this.deepConverted().getVisualOrderText();
 +    }
 +
 +    public static class Serializer implements JsonSerializer<AdventureComponent> {
@@ -821,49 +827,52 @@ index 0000000000000000000000000000000000000000..f72511a71c01718be48ee6b714e902d0
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ee6d9d5c072d68cace63068a8e2ed603ad475378
+index 0000000000000000000000000000000000000000..7493efba31403cbe7f26e493f165f1b83aa847bb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/VanillaBossBarListener.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.adventure;
 +
 +import java.util.Set;
 +import java.util.function.Consumer;
++import java.util.function.Function;
++
 +import net.kyori.adventure.bossbar.BossBar;
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
++import net.minecraft.world.BossEvent;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +public final class VanillaBossBarListener implements BossBar.Listener {
-+    private final Consumer<ClientboundBossEventPacket.Operation> action;
++    private final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action;
 +
-+    public VanillaBossBarListener(final Consumer<ClientboundBossEventPacket.Operation> action) {
++    public VanillaBossBarListener(final Consumer<Function<BossEvent, ClientboundBossEventPacket>> action) {
 +        this.action = action;
 +    }
 +
 +    @Override
 +    public void bossBarNameChanged(final @NonNull BossBar bar, final @NonNull Component oldName, final @NonNull Component newName) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_NAME);
++        this.action.accept(ClientboundBossEventPacket::createUpdateNamePacket);
 +    }
 +
 +    @Override
 +    public void bossBarProgressChanged(final @NonNull BossBar bar, final float oldProgress, final float newProgress) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_PCT);
++        this.action.accept(ClientboundBossEventPacket::createUpdateProgressPacket);
 +    }
 +
 +    @Override
 +    public void bossBarColorChanged(final @NonNull BossBar bar, final BossBar.@NonNull Color oldColor, final BossBar.@NonNull Color newColor) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_STYLE);
++        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
 +    }
 +
 +    @Override
 +    public void bossBarOverlayChanged(final @NonNull BossBar bar, final BossBar.@NonNull Overlay oldOverlay, final BossBar.@NonNull Overlay newOverlay) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_STYLE);
++        this.action.accept(ClientboundBossEventPacket::createUpdateStylePacket);
 +    }
 +
 +    @Override
 +    public void bossBarFlagsChanged(final @NonNull BossBar bar, final @NonNull Set<BossBar.Flag> flagsAdded, final @NonNull Set<BossBar.Flag> flagsRemoved) {
-+        this.action.accept(ClientboundBossEventPacket.Operation.UPDATE_PROPERTIES);
++        this.action.accept(ClientboundBossEventPacket::createUpdatePropertiesPacket);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
@@ -2373,7 +2382,7 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.javaE
 new file mode 100644
 index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
-index 6486a76466691f958349a4706d7c9caff9cb8f64..1a4e2534e8a2114125c505f46868ba4e3f2880a0 100644
+index 6486a76466691f958349a4706d7c9caff9cb8f64..08fc05836b26f5f93ae74324705d5f593b57315a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCustom.java
 @@ -19,6 +19,12 @@ public class CraftInventoryCustom extends CraftInventory {
@@ -2433,7 +2442,7 @@ index 6486a76466691f958349a4706d7c9caff9cb8f64..1a4e2534e8a2114125c505f46868ba4e
 +        // Paper start
 +        public MinecraftInventory(final InventoryHolder owner, final int size, final net.kyori.adventure.text.Component title) {
 +            Validate.notNull(title, "Title cannot be null");
-+            this.items = NonNullList.a(size, ItemStack.EMPTY);
++            this.items = NonNullList.withSize(size, ItemStack.EMPTY);
 +            this.title = io.papermc.paper.adventure.PaperAdventure.LEGACY_SECTION_UXRC.serialize(title);
 +            this.adventure$title = title;
 +            this.viewers = new ArrayList<HumanEntity>();
@@ -2539,7 +2548,7 @@ index b7cb3c94d88b2753fd1fc17c2842607576fd7874..f40d6a0048ad5b3f6e31d83894ee89f5
          @Override
          public CraftMerchant getCraftMerchant() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index ca359cb1ac5f48d4f75d33946fcddedb270407c2..f8796e5b450cfcd5091d7bd50e873f45bcdbf484 100644
+index ca359cb1ac5f48d4f75d33946fcddedb270407c2..a33dd184ea51df7e59ed08e5e2b0ea4ed9dadff5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -1,8 +1,9 @@
@@ -2553,7 +2562,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..f8796e5b450cfcd5091d7bd50e873f45
  import java.util.ArrayList;
  import java.util.Arrays;
  import java.util.List;
-@@ -17,9 +18,12 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
+@@ -17,9 +18,11 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
  import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.inventory.meta.BookMeta;
  import org.bukkit.inventory.meta.BookMeta.Generation;
@@ -2562,11 +2571,10 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..f8796e5b450cfcd5091d7bd50e873f45
  // Spigot start
  import static org.spigotmc.ValidateUtils.*;
 +
-+import BookMetaBuilder;
  import java.util.AbstractList;
  import net.md_5.bungee.api.chat.BaseComponent;
  import net.md_5.bungee.chat.ComponentSerializer;
-@@ -269,6 +273,141 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -269,6 +272,141 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          this.generation = (generation == null) ? null : generation.ordinal();
      }
  
@@ -2708,7 +2716,7 @@ index ca359cb1ac5f48d4f75d33946fcddedb270407c2..f8796e5b450cfcd5091d7bd50e873f45
      @Override
      public String getPage(final int page) {
          Validate.isTrue(this.isValidPage(page), "Invalid page number");
-@@ -413,7 +552,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -413,7 +551,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
      }
  
      @Override

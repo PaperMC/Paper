@@ -5,10 +5,10 @@ Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 706417f44c1eebc7cc5e8e7053fa0ab21f4caeba..392f2f2d67b688d5b37f77c8e4b3036348472d77 100644
+index b82dd96147224057ea0e0dc92506b27ffbc9f034..568ce924efcad6ab6b986f1a450eb56c80e89b02 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1353,6 +1353,7 @@ public abstract class Entity implements Nameable, CommandSource, net.minecraft.s
+@@ -1498,6 +1498,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, n
          return Mth.sqrt(f * f + f1 * f1 + f2 * f2);
      }
  
@@ -17,29 +17,28 @@ index 706417f44c1eebc7cc5e8e7053fa0ab21f4caeba..392f2f2d67b688d5b37f77c8e4b30363
          double d3 = this.getX() - x;
          double d4 = this.getY() - y;
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index f8c13881f59ccaccf8d8e5496d2f8f49ba7d7343..a3bad391a719363077740aa810c9412df34b4ae5 100644
+index 195989667c7d844399a72787819f62a3fd0d9c78..d17b75ad13bbc8a38cdc2f2d77ee5d88438cec31 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-@@ -29,6 +29,12 @@ public final class EntitySelector {
-         return !entity.isSpectator();
+@@ -28,6 +28,11 @@ public final class EntitySelector {
      };
  
+     private EntitySelector() {}
 +    // Paper start
 +    public static final Predicate<Entity> affectsSpawning = (entity) -> {
-+        return !entity.isSpectator() && entity.isAlive() && (entity instanceof EntityPlayer) && ((EntityPlayer) entity).affectsSpawning;
++        return !entity.isSpectator() && entity.isAlive() && (entity instanceof net.minecraft.server.level.ServerPlayer) && ((net.minecraft.server.level.ServerPlayer) entity).affectsSpawning;
 +    };
 +    // Paper end
-+
-     public static Predicate<Entity> withinDistance(double x, double y, double z, double d3) {
-         double d4 = d3 * d3;
  
+     public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
+         double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 4d3000067ae3d46b7ed4dda6146a21993199c6d9..09d39b73e8a3987e58a502bd914a6451b807421b 100644
+index 697f73cabfe89e716c9fceeb8362237d27ca3d02..b13774873f795b149c15fddb8053d9419f1841ca 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -755,7 +755,7 @@ public abstract class Mob extends LivingEntity {
+@@ -766,7 +766,7 @@ public abstract class Mob extends LivingEntity {
          if (this.level.getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
-             this.remove();
+             this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Player entityhuman = this.level.getNearestPlayer(this, -1.0D);
 +            Player entityhuman = this.level.findNearbyPlayer(this, -1.0D, EntitySelector.affectsSpawning); // Paper
@@ -47,10 +46,10 @@ index 4d3000067ae3d46b7ed4dda6146a21993199c6d9..09d39b73e8a3987e58a502bd914a6451
              if (entityhuman != null) {
                  double d0 = entityhuman.distanceToSqr((Entity) this); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-index 4ce9e37d7334ba0557c397c0ebd2cb7928c7c564..cfdbaec1de6add7a189c26eb66701dfa5f40fe4f 100644
+index 7d741c2aebbc1c6cf1ff59cca6480325db6ca29c..2459ae800a5f6b234a4f4bb1cd3738e4e9cac67d 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-@@ -122,7 +122,7 @@ public class Silverfish extends Monster {
+@@ -123,7 +123,7 @@ public class Silverfish extends Monster {
          if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
              Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
  
@@ -60,10 +59,10 @@ index 4ce9e37d7334ba0557c397c0ebd2cb7928c7c564..cfdbaec1de6add7a189c26eb66701dfa
              return false;
          }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 91f605c803c021c8743de87b67dcb0fb9fc807e9..3b451e75a7f49ea6b543aee9f0a51c0be3c4dfba 100644
+index 24530af0382be01e26516d8fa29f61c912ebb9aa..a76f1cab566a3c8c8d1b0204b5c2c8492312c9f0 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -161,6 +161,9 @@ public abstract class Player extends LivingEntity {
+@@ -176,6 +176,9 @@ public abstract class Player extends LivingEntity {
      private final ItemCooldowns cooldowns;
      @Nullable
      public FishingHook fishing;
@@ -74,23 +73,23 @@ index 91f605c803c021c8743de87b67dcb0fb9fc807e9..3b451e75a7f49ea6b543aee9f0a51c0b
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 98f85d59bc48451ef6381a47fe341f77b9920981..10058d3c3565382faa893b79119c5caf845bf29a 100644
+index 03bdbb832ff6a86f2dac9c008de45f3bb53aa688..a003e1c0d99a4d4c88269ea5bad250ba73bbc9c9 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-@@ -66,7 +66,7 @@ public abstract class BaseSpawner {
-     private boolean isNearPlayer() {
-         BlockPos blockposition = this.getPos();
- 
--        return this.getLevel().hasNearbyAlivePlayer((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange);
-+        return this.getLevel().isAffectsSpawningPlayerNearby((double) blockposition.getX() + 0.5D, (double) blockposition.getY() + 0.5D, (double) blockposition.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
+@@ -77,7 +77,7 @@ public abstract class BaseSpawner {
      }
  
-     public void tick() {
+     private boolean isNearPlayer(Level world, BlockPos pos) {
+-        return world.hasNearbyAlivePlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange);
++        return world.isAffectsSpawningPlayerNearby((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper
+     }
+ 
+     public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index 7e7a58b9a9ececdcc37fc33b33703428eb1d5faf..66681b9f0e2531d3da25629e44180417b32b4d66 100644
+index 389985e022b82c675fb21f363422471bd15b84b0..0b6e5ee9872a73823219bff7f642375fdc4ec243 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -92,8 +92,9 @@ public interface EntityGetter {
+@@ -71,8 +71,9 @@ public interface EntityGetter {
          }
      }
  
@@ -99,16 +98,16 @@ index 7e7a58b9a9ececdcc37fc33b33703428eb1d5faf..66681b9f0e2531d3da25629e44180417
 +    default Player findNearbyPlayer(Entity entity, double d0, @Nullable Predicate<Entity> predicate) { return this.findNearbyPlayer(entity.getX(), entity.getY(), entity.getZ(), d0, predicate); } // Paper
 +    @Nullable default Player findNearbyPlayer(double d0, double d1, double d2, double d3, @Nullable Predicate<Entity> predicate) { return getNearestPlayer(d0, d1, d2, d3, predicate); } // Paper - OBFHELPER
 +    @Nullable default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) { // Paper
-         double d4 = -1.0D;
-         Player entityhuman = null;
-         Iterator iterator = this.players().iterator();
-@@ -126,6 +127,27 @@ public interface EntityGetter {
+         double d = -1.0D;
+         Player player = null;
+ 
+@@ -100,6 +101,27 @@ public interface EntityGetter {
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
 +    // Paper end
 +    default boolean isAffectsSpawningPlayerNearby(double d0, double d1, double d2, double d3) {
-+        Iterator iterator = this.players().iterator();
++        java.util.Iterator iterator = this.players().iterator();
 +        double d4;
 +        do {
 +            Player entityhuman;
@@ -128,16 +127,16 @@ index 7e7a58b9a9ececdcc37fc33b33703428eb1d5faf..66681b9f0e2531d3da25629e44180417
 +    // Paper end
 +
      default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
-         Iterator iterator = this.players().iterator();
- 
+         for(Player player : this.players()) {
+             if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 50d11611702e3d1f0e980fb8f2280b05b891167b..e6c39c822c6a910f63e9b4899d53b7d75e1b77cf 100644
+index f4dff38b0f9e33be3495433559935765f77d662e..531ebabd1682539c453825111ba46a9a07f9dc8f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1768,8 +1768,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1769,8 +1769,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      @Override
      public String getLocale() {
-         return getHandle().locale;
+         return this.getHandle().locale;
 +
 +    }
 +
@@ -154,4 +153,4 @@ index 50d11611702e3d1f0e980fb8f2280b05b891167b..e6c39c822c6a910f63e9b4899d53b7d7
 +
      @Override
      public void updateCommands() {
-         if (getHandle().connection == null) return;
+         if (this.getHandle().connection == null) return;
