@@ -4,7 +4,7 @@ plugins {
     id("io.papermc.paperweight.core") version "1.0.0-LOCAL-SNAPSHOT"
 }
 
-group = "com.destroystokyo.paper"
+group = "io.papermc.paper"
 version = providers.gradleProperty("projectVersion").forUseAtConfigurationTime().get()
 
 val mcVersion = providers.gradleProperty("mcVersion")
