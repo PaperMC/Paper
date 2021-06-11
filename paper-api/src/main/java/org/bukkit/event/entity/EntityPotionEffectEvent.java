@@ -171,6 +171,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         ATTACK,
         /**
+         * When an entity gets the effect from an axolotl.
+         */
+        AXOLOTL,
+        /**
          * When beacon effects get applied due to the entity being nearby.
          */
         BEACON,

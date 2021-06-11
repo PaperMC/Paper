@@ -149,6 +149,11 @@ public final class GameRule<T> {
     public static final GameRule<Boolean> FIRE_DAMAGE = new GameRule<>("fireDamage", Boolean.class);
 
     /**
+     * Whether freeze damage is enabled or not.
+     */
+    public static final GameRule<Boolean> FREEZE_DAMAGE = new GameRule<>("freezeDamage", Boolean.class);
+
+    /**
      * Whether patrols should naturally spawn.
      */
     public static final GameRule<Boolean> DO_PATROL_SPAWNING = new GameRule<>("doPatrolSpawning", Boolean.class);
@@ -199,6 +204,12 @@ public final class GameRule<T> {
      * single tick from a single chain.
      */
     public static final GameRule<Integer> MAX_COMMAND_CHAIN_LENGTH = new GameRule<>("maxCommandChainLength", Integer.class);
+
+    /**
+     * The percentage of online players which must be sleeping for the night to
+     * advance.
+     */
+    public static final GameRule<Integer> PLAYERS_SLEEPING_PERCENTAGE = new GameRule<>("playersSleepingPercentage", Integer.class);
 
     // All GameRules instantiated above this for organizational purposes
     private final String name;

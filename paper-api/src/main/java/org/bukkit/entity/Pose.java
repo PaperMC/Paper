@@ -31,6 +31,10 @@ public enum Pose {
      */
     SNEAKING,
     /**
+     * Entity is long jumping.
+     */
+    LONG_JUMPING,
+    /**
      * Entity is dead.
      */
     DYING;

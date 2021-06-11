@@ -88,6 +88,8 @@ public enum Biome implements Keyed {
     CRIMSON_FOREST,
     WARPED_FOREST,
     BASALT_DELTAS,
+    DRIPSTONE_CAVES,
+    LUSH_CAVES,
     /**
      * Represents a custom Biome
      */

@@ -61,4 +61,18 @@ public interface Sign extends TileState, Colorable {
      * @param editable if this sign is currently editable
      */
     public void setEditable(boolean editable);
+
+    /**
+     * Gets whether this sign has glowing text.
+     *
+     * @return if this sign has glowing text
+     */
+    public boolean isGlowingText();
+
+    /**
+     * Sets whether this sign has glowing text.
+     *
+     * @param glowing if this sign has glowing text
+     */
+    public void setGlowingText(boolean glowing);
 }

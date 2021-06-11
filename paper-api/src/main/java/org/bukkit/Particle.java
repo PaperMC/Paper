@@ -82,6 +82,23 @@ public enum Particle {
     LANDING_OBSIDIAN_TEAR,
     REVERSE_PORTAL,
     WHITE_ASH,
+    LIGHT,
+    DUST_COLOR_TRANSITION(DustTransition.class),
+    VIBRATION(Vibration.class),
+    FALLING_SPORE_BLOSSOM,
+    SPORE_BLOSSOM_AIR,
+    SMALL_FLAME,
+    SNOWFLAKE,
+    DRIPPING_DRIPSTONE_LAVA,
+    FALLING_DRIPSTONE_LAVA,
+    DRIPPING_DRIPSTONE_WATER,
+    FALLING_DRIPSTONE_WATER,
+    GLOW_SQUID_INK,
+    GLOW,
+    WAX_ON,
+    WAX_OFF,
+    ELECTRIC_SPARK,
+    SCRAPE,
     // ----- Legacy Separator -----
     LEGACY_BLOCK_CRACK(MaterialData.class),
     LEGACY_BLOCK_DUST(MaterialData.class),
@@ -138,6 +155,31 @@ public enum Particle {
          */
         public float getSize() {
             return size;
+        }
+    }
+
+    /**
+     * Options which can be applied to a color transitioning dust particles.
+     */
+    public static class DustTransition extends DustOptions {
+
+        private final Color toColor;
+
+        public DustTransition(@NotNull Color fromColor, @NotNull Color toColor, float size) {
+            super(fromColor, size);
+
+            Preconditions.checkArgument(toColor != null, "toColor");
+            this.toColor = toColor;
+        }
+
+        /**
+         * The final of the particles to be displayed.
+         *
+         * @return final particle color
+         */
+        @NotNull
+        public Color getToColor() {
+            return toColor;
         }
     }
 }

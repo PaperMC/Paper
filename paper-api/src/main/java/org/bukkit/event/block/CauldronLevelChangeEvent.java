@@ -1,7 +1,11 @@
 package org.bukkit.event.block;
 
 import com.google.common.base.Preconditions;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -15,15 +19,13 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
     //
     private final Entity entity;
     private final ChangeReason reason;
-    private final int oldLevel;
-    private int newLevel;
+    private final BlockState newState;
 
-    public CauldronLevelChangeEvent(@NotNull Block block, @Nullable Entity entity, @NotNull ChangeReason reason, int oldLevel, int newLevel) {
+    public CauldronLevelChangeEvent(@NotNull Block block, @Nullable Entity entity, @NotNull ChangeReason reason, @NotNull BlockState newBlock) {
         super(block);
         this.entity = entity;
         this.reason = reason;
-        this.oldLevel = oldLevel;
-        this.newLevel = newLevel;
+        this.newState = newBlock;
     }
 
     /**
@@ -41,17 +43,59 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
         return reason;
     }
 
+    /**
+     * Gets the new state of the cauldron.
+     *
+     * @return The block state of the block that will be changed
+     */
+    @NotNull
+    public BlockState getNewState() {
+        return newState;
+    }
+
+    /**
+     * Gets the old level of the cauldron.
+     *
+     * @return old level
+     * @deprecated not all cauldron contents are Levelled
+     * @see #getBlock()
+     */
+    @Deprecated
     public int getOldLevel() {
-        return oldLevel;
+        BlockData oldBlock = getBlock().getBlockData();
+        return (oldBlock instanceof Levelled) ? ((Levelled) oldBlock).getLevel() : ((oldBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
     }
 
+    /**
+     * Gets the new level of the cauldron.
+     *
+     * @return new level
+     * @deprecated not all cauldron contents are Levelled
+     * @see #getNewState()
+     */
+    @Deprecated
     public int getNewLevel() {
-        return newLevel;
+        BlockData newBlock = newState.getBlockData();
+        return (newBlock instanceof Levelled) ? ((Levelled) newBlock).getLevel() : ((newBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
     }
 
+    /**
+     * Sets the new level of the cauldron.
+     *
+     * @param newLevel new level
+     * @deprecated not all cauldron contents are Levelled
+     * @see #getNewState()
+     */
+    @Deprecated
     public void setNewLevel(int newLevel) {
         Preconditions.checkArgument(0 <= newLevel && newLevel <= 3, "Cauldron level out of bounds 0 <= %s <= 3", newLevel);
-        this.newLevel = newLevel;
+        if (newLevel == 0) {
+            newState.setType(Material.CAULDRON);
+        } else if (newState.getBlockData() instanceof Levelled) {
+            ((Levelled) newState.getBlockData()).setLevel(newLevel);
+        } else {
+            // Error, non-levellable block
+        }
     }
 
     @Override
@@ -101,6 +145,10 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
          */
         ARMOR_WASH,
         /**
+         * Player cleaning a shulker box.
+         */
+        SHULKER_WASH,
+        /**
          * Entity being extinguished.
          */
         EXTINGUISH,
@@ -108,6 +156,10 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
          * Evaporating due to biome dryness.
          */
         EVAPORATE,
+        /**
+         * Filling due to natural fluid sources, eg rain.
+         */
+        NATURAL_FILL,
         /**
          * Unknown.
          */

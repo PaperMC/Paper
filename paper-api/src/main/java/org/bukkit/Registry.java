@@ -170,6 +170,25 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Fluid
      */
     Registry<Fluid> FLUID = new SimpleRegistry<>(Fluid.class);
+    /**
+     * Game events.
+     *
+     * @see GameEvent
+     */
+    Registry<GameEvent> GAME_EVENT = new Registry<GameEvent>() {
+
+        @NotNull
+        @Override
+        public Iterator iterator() {
+            return GameEvent.values().iterator();
+        }
+
+        @Nullable
+        @Override
+        public GameEvent get(@NotNull NamespacedKey key) {
+            return GameEvent.getByKey(key);
+        }
+    };
 
     /**
      * Get the object by its key.

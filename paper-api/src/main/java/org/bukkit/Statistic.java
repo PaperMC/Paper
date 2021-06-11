@@ -23,6 +23,7 @@ public enum Statistic implements Keyed {
      * Name is misleading, actually records ticks played.
      */
     PLAY_ONE_MINUTE,
+    TOTAL_WORLD_TIME,
     WALK_ONE_CM,
     WALK_ON_WATER_ONE_CM,
     FALL_ONE_CM,

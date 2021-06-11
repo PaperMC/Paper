@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Some types of rail may not be able to be laid out in all shapes, use
  * {@link #getShapes()} to get those applicable to this block.
  */
-public interface Rail extends BlockData {
+public interface Rail extends Waterlogged {
 
     /**
      * Gets the value of the 'shape' property.

@@ -205,6 +205,52 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public void setFireTicks(int ticks);
 
     /**
+     * Gets if the entity has visual fire (it will always appear to be on fire).
+     *
+     * @param fire whether visual fire is enabled
+     */
+    void setVisualFire(boolean fire);
+
+    /**
+     * Sets if the entity has visual fire (it will always appear to be on fire).
+     *
+     * @return whether visual fire is enabled
+     */
+    boolean isVisualFire();
+
+    /**
+     * Returns the entity's current freeze ticks (amount of ticks the entity has
+     * been in powdered snow).
+     *
+     * @return int freeze ticks
+     */
+    int getFreezeTicks();
+
+    /**
+     * Returns the entity's maximum freeze ticks (amount of ticks before it will
+     * be fully frozen)
+     *
+     * @return int max freeze ticks
+     */
+    int getMaxFreezeTicks();
+
+    /**
+     * Sets the entity's current freeze ticks (amount of ticks the entity has
+     * been in powdered snow).
+     *
+     * @param ticks Current ticks
+     */
+    void setFreezeTicks(int ticks);
+
+    /**
+     * Gets if the entity is fully frozen (it has been in powdered snow for max
+     * freeze ticks).
+     *
+     * @return freeze status
+     */
+    boolean isFrozen();
+
+    /**
      * Mark the entity's removal.
      */
     public void remove();

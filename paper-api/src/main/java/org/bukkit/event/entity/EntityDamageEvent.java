@@ -429,6 +429,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: 1
          */
-        DRYOUT
+        DRYOUT,
+        /**
+         * Damage caused from freezing.
+         * <p>
+         * Damage: 1 or 5
+         */
+        FREEZE;
     }
 }

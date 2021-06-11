@@ -266,6 +266,11 @@ public enum EntityType implements Keyed {
     STRIDER("strider", Strider.class, -1),
     ZOGLIN("zoglin", Zoglin.class, -1),
     PIGLIN_BRUTE("piglin_brute", PiglinBrute.class, -1),
+    AXOLOTL("axolotl", Axolotl.class, -1),
+    GLOW_ITEM_FRAME("glow_item_frame", GlowItemFrame.class, -1),
+    GLOW_SQUID("glow_squid", GlowSquid.class, -1),
+    GOAT("goat", Goat.class, -1),
+    MARKER("marker", Marker.class, -1),
     /**
      * A fishing line and bobber.
      */
