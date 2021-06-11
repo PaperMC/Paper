@@ -64,7 +64,7 @@ repositories {
 dependencies {
     paramMappings("org.quiltmc:yarn:1.17+build.2:mergedv2")
     remapper("org.quiltmc:tiny-remapper:0.3.2:fat@jar")
-    decompiler("net.minecraftforge:forgeflower:1.5.498.5@jar")
+    decompiler("net.minecraftforge:forgeflower:1.5.498.12@jar")
     paperclip("io.papermc:paperclip:2.0.0-SNAPSHOT@jar")
 }
 
